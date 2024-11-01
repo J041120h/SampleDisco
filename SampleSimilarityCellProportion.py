@@ -162,12 +162,12 @@ def calculate_sample_distances_cell_proprotion(
                 sample_distance_matrix.loc[sample_j, sample_i] = distance
 
     # Save the distance matrix
-    distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix.csv')
+    distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    print(f"Sample distance matrix saved to {distance_matrix_path}")
+    print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     # Optionally, generate a heatmap
-    heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap.pdf')
+    heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
     cell_type_distribution_map = os.path.join(output_dir, 'cell_type_distribution.pdf')
     # Convert the square distance matrix to condensed form
     condensed_distances = squareform(sample_distance_matrix.values)
