@@ -171,8 +171,8 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     sc.tl.umap(adata)
     
     # Cluster cells
-    if 'cell_type' in adata.obs.columns:
-        adata.obs['leiden'] = adata.obs['cell_type'].astype('category')
+    if 'celltype' in adata.obs.columns:
+        adata.obs['leiden'] = adata.obs['celltype'].astype('category')
     else:
         # Cluster cells as usual
         sc.tl.leiden(adata, resolution=resolution, flavor='igraph', n_iterations=2, directed=False)
@@ -189,7 +189,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     
     if verbose:
         print('=== Generate 2D cluster plot ===')
-    sc.pl.umap(adata, color='leiden', legend_loc='right margin', show=False)
+    sc.pl.umap(adata, color='leiden', legend_loc='right margin', figsize=(12, 8), show=False)
     plt.savefig(os.path.join(output_dir, 'umap_clusters.pdf'))
     plt.close()
 
