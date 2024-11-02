@@ -69,6 +69,8 @@ def plot_cell_type_abundances(proportions: pd.DataFrame, output_dir: str):
     plt.close()
     print(f"Cell type abundance plot saved to {plot_path}")
 
+
+
 def plot_cell_type_expression_heatmap(
     avg_expression: dict,
     output_dir: str,
@@ -116,13 +118,11 @@ def plot_cell_type_expression_heatmap(
             # If the cell type is not present, it should already be 0
             # expression_value = avg_expression[sample].get(cell_type, np.zeros(1))[0] if avg_expression[sample].get(cell_type, np.zeros(1)).size > 0 else 0
             # Alternatively, sum across genes if avg_expression[sample][cell_type] is a vector
-            expression_value = avg_expression[sample].get(cell_type, np.zeros(avg_expression[sample][list(avg_expression[sample].keys())[0]].shape)[0].astype(np.float64)).sum()
+            expression_value = avg_expression[sample].get(cell_type, np.zeros(avg_expression[sample][list(avg_expression[sample].keys())[0]].shape)[0].astype(np.float64)).mean()
             expression_matrix.loc[cell_type, sample] = expression_value
-    
     # Replace NaN with 0 (in case some cell types are missing in certain samples)
     expression_matrix.fillna(0, inplace=True)
     
-    # Optionally, order cell types and samples
     if cell_type_order:
         expression_matrix = expression_matrix.reindex(cell_type_order)
     if sample_order:
