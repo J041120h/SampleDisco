@@ -8,86 +8,7 @@ from pyemd import emd
 import seaborn as sns
 from anndata import AnnData
 from scipy.sparse import issparse
-
-def plot_cell_type_expression_heatmap(
-    avg_expression: dict,
-    output_dir: str,
-    cell_type_order: list = None,
-    sample_order: list = None,
-    figsize: tuple = (10, 8),
-    cmap: str = 'viridis',
-    annot: bool = False
-):
-    """
-    Generate a heatmap showing the average expression of each cell type across samples.
-    
-    Parameters:
-    ----------
-    avg_expression : dict
-        Nested dictionary where avg_expression[sample][cell_type] = average_expression_array
-    output_dir : str
-        Directory to save the heatmap.
-    cell_type_order : list, optional
-        Order of cell types in the heatmap. If None, uses the order in the dictionary.
-    sample_order : list, optional
-        Order of samples in the heatmap. If None, uses the order in the dictionary.
-    figsize : tuple, optional
-        Size of the heatmap figure.
-    cmap : str, optional
-        Colormap for the heatmap.
-    annot : bool, optional
-        Whether to annotate the heatmap cells with their values.
-    
-    Returns:
-    -------
-    None
-    """
-    
-    # Extract unique cell types and samples
-    samples = list(avg_expression.keys())
-    cell_types = list(next(iter(avg_expression.values())).keys()) if samples else []
-    
-    # Initialize a DataFrame with cell types as rows and samples as columns
-    expression_matrix = pd.DataFrame(index=cell_types, columns=samples, dtype=np.float64)
-    
-    for sample in samples:
-        for cell_type in cell_types:
-            # Sum the average expression array to get a single scalar value
-            # If the cell type is not present, it should already be 0
-            # expression_value = avg_expression[sample].get(cell_type, np.zeros(1))[0] if avg_expression[sample].get(cell_type, np.zeros(1)).size > 0 else 0
-            # Alternatively, sum across genes if avg_expression[sample][cell_type] is a vector
-            expression_value = avg_expression[sample].get(cell_type, np.zeros(avg_expression[sample][list(avg_expression[sample].keys())[0]].shape)[0].astype(np.float64)).sum()
-            expression_matrix.loc[cell_type, sample] = expression_value
-    
-    # Replace NaN with 0 (in case some cell types are missing in certain samples)
-    expression_matrix.fillna(0, inplace=True)
-    
-    # Optionally, order cell types and samples
-    if cell_type_order:
-        expression_matrix = expression_matrix.reindex(cell_type_order)
-    if sample_order:
-        expression_matrix = expression_matrix[sample_order]
-    
-    # Create the heatmap
-    plt.figure(figsize=figsize)
-    sns.heatmap(
-        expression_matrix,
-        cmap=cmap,
-        linewidths=0.5,
-        linecolor='grey',
-        annot=annot,
-        fmt=".2f"
-    )
-    plt.title('Average Expression of Cell Types Across Samples')
-    plt.xlabel('Samples')
-    plt.ylabel('Cell Types')
-    
-    # Save the heatmap
-    heatmap_path = os.path.join(output_dir, 'cell_type_expression_heatmap.pdf')
-    plt.tight_layout()
-    plt.savefig(heatmap_path)
-    plt.close()
-    print(f"Cell type expression heatmap saved to {heatmap_path}")
+from Visualization import plot_cell_type_expression_heatmap
 
 def calculate_sample_distances_cell_expression(
     adata: AnnData,
@@ -199,8 +120,8 @@ def calculate_sample_distances_cell_expression(
                 # Histograms (masses) for the two samples based on average expression per cell type
                 # For each cell type, calculate the total expression in the sample
                 # This assumes that higher expression indicates more "mass"
-                hist_i = np.array([avg_expression[sample_i][ct].sum() for ct in cell_type_list], dtype=np.float64)
-                hist_j = np.array([avg_expression[sample_j][ct].sum() for ct in cell_type_list], dtype=np.float64)
+                hist_i = np.array([avg_expression[sample_i][ct].mean() for ct in cell_type_list], dtype=np.float64)
+                hist_j = np.array([avg_expression[sample_j][ct].mean() for ct in cell_type_list], dtype=np.float64)
 
                 # Normalize histograms to ensure they sum to the same value (e.g., 1)
                 # This is necessary for EMD
@@ -213,17 +134,30 @@ def calculate_sample_distances_cell_expression(
                 else:
                     hist_i_normalized = (hist_i / sum_i).astype(np.float64)
                     hist_j_normalized = (hist_j / sum_j).astype(np.float64)
-
-                    # Compute EMD
                     distance = emd(hist_i_normalized, hist_j_normalized, ground_distance)
 
-                # Populate the distance matrix
                 sample_distance_matrix.loc[sample_i, sample_j] = distance
                 sample_distance_matrix.loc[sample_j, sample_i] = distance
 
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
+    avrg_expr_matrix_path = os.path.join(output_dir, 'avarage_expression.csv')
+
+    data_rows = []
+    for sample in samples:
+        row = {'Sample': sample}
+        # Iterate over each cell type
+        for ct in cell_type_list:
+            expression_array = avg_expression[sample][ct]
+            # Iterate over each expression index
+            for idx, expr_value in enumerate(expression_array):
+                # Create a column name like 'T_cells_0', 'T_cells_1', etc.
+                column_name = f"{ct}_{idx}"
+                row[column_name] = expr_value
+        data_rows.append(row)
+    df_wide = pd.DataFrame(data_rows)
+    df_wide.to_csv(avrg_expr_matrix_path)
     print(f"Sample distance matrix based on expression levels saved to {distance_matrix_path}")
 
     # 5. Generate a heatmap of the distance matrix
