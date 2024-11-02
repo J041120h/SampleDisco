@@ -173,8 +173,14 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # Cluster cells
     if 'celltype' in adata.obs.columns:
         adata.obs['leiden'] = adata.obs['celltype'].astype('category')
+        markers = [
+            'CD3D', 'CD14', 'CD19', 'NCAM1', 'CD4', 'CD8A',
+            'FCGR3A', 'CD1C', 'CD68', 'CD79A', 'CSF3R',
+            'CD33', 'CCR7', 'CD38', 'CD27', 'KLRD1'
+        ]
+        marker_dict = {i: markers[i - 1] for i in range(1, 17)}
+        adata.obs['leiden'] = adata.obs['leiden'].map(marker_dict)
     else:
-        # Cluster cells as usual
         sc.tl.leiden(adata, resolution=resolution, flavor='igraph', n_iterations=2, directed=False)
         adata.obs['leiden'] = (adata.obs['leiden'].astype(int) + 1).astype(str)
     
@@ -189,8 +195,17 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     
     if verbose:
         print('=== Generate 2D cluster plot ===')
-    sc.pl.umap(adata, color='leiden', legend_loc='right margin', figsize=(12, 8), show=False)
-    plt.savefig(os.path.join(output_dir, 'umap_clusters.pdf'))
+    plt.figure(figsize=(15, 12))
+    sc.pl.umap(
+        adata,
+        color='leiden',
+        legend_loc='right margin',
+        frameon=False,
+        size=50,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'umap_clusters.pdf'), bbox_inches='tight')
     plt.close()
 
     # Save AnnData object
