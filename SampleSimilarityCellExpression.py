@@ -54,7 +54,7 @@ def plot_cell_type_expression_heatmap(
         for cell_type in cell_types:
             # Sum the average expression array to get a single scalar value
             # If the cell type is not present, it should already be 0
-            expression_value = avg_expression[sample].get(cell_type, np.zeros(1))[0] if avg_expression[sample].get(cell_type, np.zeros(1)).size > 0 else 0
+            # expression_value = avg_expression[sample].get(cell_type, np.zeros(1))[0] if avg_expression[sample].get(cell_type, np.zeros(1)).size > 0 else 0
             # Alternatively, sum across genes if avg_expression[sample][cell_type] is a vector
             expression_value = avg_expression[sample].get(cell_type, np.zeros(avg_expression[sample][list(avg_expression[sample].keys())[0]].shape)[0].astype(np.float64)).sum()
             expression_matrix.loc[cell_type, sample] = expression_value

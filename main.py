@@ -24,7 +24,7 @@ def main():
     num_PCs=20
     num_harmony=20
 
-    treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path)
+    # treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path)
     AnnData = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/integrate.h5ad")
     calculate_sample_distances_cell_proprotion(AnnData, output_dir)
     calculate_sample_distances_cell_expression(AnnData, output_dir)
