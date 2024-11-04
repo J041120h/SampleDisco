@@ -14,7 +14,8 @@ def calculate_sample_distances_cell_expression(
     adata: AnnData,
     output_dir: str,
     cell_type_column: str = 'leiden',
-    sample_column: str = 'sample'
+    sample_column: str = 'sample',
+    cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the expression levels of each cell type using Earth Mover's Distance (EMD).

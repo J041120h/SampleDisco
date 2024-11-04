@@ -18,7 +18,8 @@ def calculate_sample_distances_cell_proprotion(
     adata: AnnData,
     output_dir: str,
     cell_type_column: str = 'leiden',
-    sample_column: str = 'sample'
+    sample_column: str = 'sample',
+    cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the proportions of each cell type using Earth Mover's Distance (EMD).
@@ -76,7 +77,7 @@ def calculate_sample_distances_cell_proprotion(
 
     # Now compute pairwise distances between cell type centroids
     centroids_matrix = np.vstack([cell_type_centroids[ct] for ct in cell_types])
-    ground_distance = cdist(centroids_matrix, centroids_matrix, metric='euclidean')
+    nd_distance = cdist(centroids_matrix, centroids_matrix, metric='euclidean')
 
     # Ensure that the ground distance matrix is of type float64
     ground_distance = ground_distance.astype(np.float64)
@@ -105,7 +106,7 @@ def calculate_sample_distances_cell_proprotion(
     # Optionally, generate a heatmap
     heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
     cell_type_distribution_map = os.path.join(output_dir, 'cell_type_distribution.pdf')
-    # Convert the square distance matrix to condensed form
+    # Convert the square distance matrix to condensed formgrou
     condensed_distances = squareform(sample_distance_matrix.values)
 
     # Compute the linkage matrix using the condensed distance matrix

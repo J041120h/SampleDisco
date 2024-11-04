@@ -18,7 +18,8 @@ def Sample_distances(
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
     proportion_weight: float = 1.0,
-    expression_weight: float = 1.0
+    expression_weight: float = 1.0,
+    cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """
     Calculate combined distances between samples based on cell type proportions and gene expression.

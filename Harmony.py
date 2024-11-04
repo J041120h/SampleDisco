@@ -5,8 +5,9 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from scipy.sparse import issparse
+from cell_group import cell_group
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, num_PCs=20, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=['sample'], resolution=0.5, verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = None, markers = None, num_PCs=20, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=['sample'], resolution=0.5, verbose=True):
     """
     Harmony Integration
 
@@ -173,13 +174,11 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # Cluster cells
     if 'celltype' in adata.obs.columns:
         adata.obs['leiden'] = adata.obs['celltype'].astype('category')
-        markers = [
-            'CD3D', 'CD14', 'CD19', 'NCAM1', 'CD4', 'CD8A',
-            'FCGR3A', 'CD1C', 'CD68', 'CD79A', 'CSF3R',
-            'CD33', 'CCR7', 'CD38', 'CD27', 'KLRD1'
-        ]
-        marker_dict = {i: markers[i - 1] for i in range(1, 17)}
-        adata.obs['leiden'] = adata.obs['leiden'].map(marker_dict)
+        if markers != None: 
+            marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
+            adata.obs['leiden'] = adata.obs['leiden'].map(marker_dict)
+            cell_group_dic = cell_group(markers)
+            adata.uns['cell_group_dic'] = cell_group_dic
     else:
         sc.tl.leiden(adata, resolution=resolution, flavor='igraph', n_iterations=2, directed=False)
         adata.obs['leiden'] = (adata.obs['leiden'].astype(int) + 1).astype(str)
