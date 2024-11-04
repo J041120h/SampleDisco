@@ -120,9 +120,5 @@ Contributions are welcome! Please follow these steps to contribute:
 
 Please ensure that your contributions adhere to the project's coding standards and include appropriate tests.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
 ---
 ```
