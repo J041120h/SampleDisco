@@ -19,7 +19,6 @@ def calculate_sample_distances_cell_proprotion(
     output_dir: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
-    cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the proportions of each cell type using Earth Mover's Distance (EMD).
@@ -80,7 +79,10 @@ def calculate_sample_distances_cell_proprotion(
     nd_distance = cdist(centroids_matrix, centroids_matrix, metric='euclidean')
 
     # Ensure that the ground distance matrix is of type float64
-    ground_distance = ground_distance.astype(np.float64)
+    ground_distance = nd_distance.astype(np.float64)
+    max_distance = ground_distance.max()
+    if max_distance > 0:
+        ground_distance /= max_distance
 
     # 3. Compute EMD between each pair of samples
     num_samples = len(samples)

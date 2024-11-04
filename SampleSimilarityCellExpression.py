@@ -15,7 +15,6 @@ def calculate_sample_distances_cell_expression(
     output_dir: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
-    cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the expression levels of each cell type using Earth Mover's Distance (EMD).
@@ -74,43 +73,66 @@ def calculate_sample_distances_cell_expression(
                 # If a cell type is not present in a sample, set average expression to zeros
                 avg_expression[sample][cell_type] = np.zeros(hvg.shape[1], dtype=np.float64)
 
-    # 2. Compute ground distance matrix between cell types based on average expression profiles
-    # Compute global average expression profiles for each cell type across all samples
-    global_avg_expression = {}
-    for cell_type in cell_types:
-        cell_type_data = hvg[hvg.obs[cell_type_column] == cell_type]
-        if cell_type_data.shape[0] > 0:
-            if issparse(cell_type_data.X):
-                avg_expr = cell_type_data.X.mean(axis=0).A1.astype(np.float64)
-            else:
-                avg_expr = cell_type_data.X.mean(axis=0).astype(np.float64)
-            global_avg_expression[cell_type] = avg_expr
-        else:
-            global_avg_expression[cell_type] = np.zeros(hvg.shape[1], dtype=np.float64)
+    # # 2. Compute ground distance matrix between cell types based on average expression profiles
+    # # Compute global average expression profiles for each cell type across all samples
+    # global_avg_expression = {}
+    # for cell_type in cell_types:
+    #     cell_type_data = hvg[hvg.obs[cell_type_column] == cell_type]
+    #     if cell_type_data.shape[0] > 0:
+    #         if issparse(cell_type_data.X):
+    #             avg_expr = cell_type_data.X.mean(axis=0).A1.astype(np.float64)
+    #         else:
+    #             avg_expr = cell_type_data.X.mean(axis=0).astype(np.float64)
+    #         global_avg_expression[cell_type] = avg_expr
+    #     else:
+    #         global_avg_expression[cell_type] = np.zeros(hvg.shape[1], dtype=np.float64)
 
     # Create a list of cell types to maintain order
     cell_type_list = list(cell_types)
     num_cell_types = len(cell_type_list)
 
-    # Initialize the ground distance matrix
-    ground_distance = np.zeros((num_cell_types, num_cell_types), dtype=np.float64)
+    # # Initialize the ground distance matrix
+    # ground_distance = np.zeros((num_cell_types, num_cell_types), dtype=np.float64)
 
-    # Populate the ground distance matrix with Euclidean distances between cell type centroids
-    for i in range(num_cell_types):
-        for j in range(num_cell_types):
-            expr_i = global_avg_expression[cell_type_list[i]]
-            expr_j = global_avg_expression[cell_type_list[j]]
-            distance = np.linalg.norm(expr_i - expr_j)
-            ground_distance[i, j] = distance
+    # # Populate the ground distance matrix with Euclidean distances between cell type centroids
+    # for i in range(num_cell_types):
+    #     for j in range(num_cell_types):
+    #         expr_i = global_avg_expression[cell_type_list[i]]
+    #         expr_j = global_avg_expression[cell_type_list[j]]
+    #         distance = np.linalg.norm(expr_i - expr_j)
+    #         ground_distance[i, j] = distance
 
-    # 3. Normalize the ground distance matrix (optional but recommended)
-    # This ensures that the distances are scaled appropriately for EMD
+    # # 3. Normalize the ground distance matrix (optional but recommended)
+    # # This ensures that the distances are scaled appropriately for EMD
+    # max_distance = ground_distance.max()
+    # if max_distance > 0:
+    #     ground_distance /= max_distance
+
+    # # Ensure ground_distance is float64
+    # ground_distance = ground_distance.astype(np.float64)
+
+    # 2. Compute ground distance matrix between cell types
+    # We'll use the centroids of cell types in PCA space
+    cell_type_centroids = {}
+    for cell_type in cell_types:
+        indices = adata.obs[adata.obs[cell_type_column] == cell_type].index
+        # Get PCA coordinates
+        if 'X_pca' in adata.obsm:
+            coords = adata.obsm['X_pca'][adata.obs_names.isin(indices)]
+        else:
+            raise ValueError("PCA coordinates not found in adata.obsm['X_pca']")
+        centroid = np.mean(coords, axis=0)
+        cell_type_centroids[cell_type] = centroid
+
+    # Now compute pairwise distances between cell type centroids
+    centroids_matrix = np.vstack([cell_type_centroids[ct] for ct in cell_types])
+    nd_distance = cdist(centroids_matrix, centroids_matrix, metric='euclidean')
+
+    # Ensure that the ground distance matrix is of type float64
+    ground_distance = nd_distance.astype(np.float64)
     max_distance = ground_distance.max()
     if max_distance > 0:
         ground_distance /= max_distance
-
-    # Ensure ground_distance is float64
-    ground_distance = ground_distance.astype(np.float64)
 
     # 4. Compute EMD between each pair of samples based on expression levels
     sample_distance_matrix = pd.DataFrame(0, index=samples, columns=samples, dtype=np.float64)

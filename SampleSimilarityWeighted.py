@@ -14,7 +14,6 @@ def calculate_sample_distances_weighted_expression(
     output_dir: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
-    cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the weighted expression levels of each cell type using Earth Mover's Distance (EMD).
