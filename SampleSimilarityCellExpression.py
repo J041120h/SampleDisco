@@ -8,7 +8,7 @@ from pyemd import emd
 import seaborn as sns
 from anndata import AnnData
 from scipy.sparse import issparse
-from Visualization import plot_cell_type_expression_heatmap
+from Visualization import plot_cell_type_expression_heatmap, visualizeGroupRelationship
 
 def calculate_sample_distances_cell_expression(
     adata: AnnData,
@@ -233,5 +233,8 @@ def calculate_sample_distances_cell_expression(
         cmap='viridis',
         annot=False  # Set to True if you want to annotate the heatmap with expression values
     )
+
+    visualizeGroupRelationship(len(adata.obs['sample']), sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_expression_relationship.pdf'))
+    
     
     return sample_distance_matrix

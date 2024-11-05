@@ -2,15 +2,14 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.spatial.distance import cdist, squareform
+from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage
-from pyemd import emd
 import seaborn as sns
 from anndata import AnnData
-from scipy.sparse import issparse
 from SampleSimilarityCellExpression import calculate_sample_distances_cell_expression
 from SampleSimilarityCellProportion import calculate_sample_distances_cell_proprotion
 from SampleSimilarityWeighted import calculate_sample_distances_weighted_expression
+from Visualization import visualizeGroupRelationship
 
 def Sample_distances(
     adata: AnnData,
@@ -99,5 +98,7 @@ def Sample_distances(
     plt.savefig(heatmap_path)
     plt.close()
     print(f"Sample distance heatmap saved to {heatmap_path}")
+
+    visualizeGroupRelationship(len(adata.obs['sample']), combined_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_combined_relationship.pdf'))
 
     return combined_matrix

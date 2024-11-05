@@ -8,6 +8,7 @@ from pyemd import emd
 import seaborn as sns
 from anndata import AnnData
 from scipy.sparse import issparse
+from Visualization import visualizeGroupRelationship
 
 def calculate_sample_distances_weighted_expression(
     adata: AnnData,
@@ -81,7 +82,7 @@ def calculate_sample_distances_weighted_expression(
             else:
                 # If a cell type is not present in a sample, set average expression to zeros
                 avg_expression[sample][cell_type] = np.zeros(hvg.shape[1], dtype=np.float64)
-                
+
     # Find the global min and max values
     all_values = [value for sample_dict in avg_expression.values() for value in sample_dict.values()]
     min_val = np.min(all_values)
@@ -214,5 +215,7 @@ def calculate_sample_distances_weighted_expression(
     plt.savefig(heatmap_path)
     plt.close()
     print(f"Sample distance heatmap based on weighted expression levels saved to {heatmap_path}")
+
+    visualizeGroupRelationship(len(adata.obs['sample']), sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_weighted_relationship.pdf'))
     
     return sample_distance_matrix

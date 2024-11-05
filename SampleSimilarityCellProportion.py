@@ -10,7 +10,7 @@ from anndata import AnnData
 from scipy.cluster.hierarchy import linkage
 import warnings
 from anndata._core.aligned_df import ImplicitModificationWarning
-from Visualization import plot_cell_type_abundances
+from Visualization import plot_cell_type_abundances, visualizeGroupRelationship
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 
@@ -128,5 +128,7 @@ def calculate_sample_distances_cell_proprotion(
     print(f"Sample distance heatmap saved to {heatmap_path}")
     plot_cell_type_abundances(proportions, output_dir)
     print(f"Cell type distirbution in Sample saved to {cell_type_distribution_map}")
+
+    visualizeGroupRelationship(len(adata.obs['sample']), sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf'))
 
     return sample_distance_matrix

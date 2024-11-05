@@ -5,7 +5,6 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from scipy.sparse import issparse
-from cell_group import cell_group
 
 def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = None, markers = None, num_PCs=20, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=['sample'], resolution=0.5, verbose=True):
     """
