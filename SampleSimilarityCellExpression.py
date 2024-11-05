@@ -72,6 +72,19 @@ def calculate_sample_distances_cell_expression(
             else:
                 # If a cell type is not present in a sample, set average expression to zeros
                 avg_expression[sample][cell_type] = np.zeros(hvg.shape[1], dtype=np.float64)
+    # Find the global min and max values
+    all_values = [value for sample_dict in avg_expression.values() for value in sample_dict.values()]
+    min_val = np.min(all_values)
+    max_val = np.max(all_values)
+
+    # Apply normalization
+    avg_expression = {
+        sample: {
+            cell_type: (value - min_val) / (max_val - min_val) if max_val > min_val else 0
+            for cell_type, value in sample_dict.items()
+        }
+        for sample, sample_dict in avg_expression.items()
+    }
 
     # # 2. Compute ground distance matrix between cell types based on average expression profiles
     # # Compute global average expression profiles for each cell type across all samples

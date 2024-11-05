@@ -224,6 +224,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     
     if verbose:
         print('=== End of preprocessing ===')
+        
     # # Find marker genes for each cluster
     # if verbose:
     #     print('=== Find gene markers for each cell cluster ===')

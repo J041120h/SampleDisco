@@ -33,11 +33,11 @@ def main():
     proportion_weight: float = 1.0,
     expression_weight: float = 1.0,
 
-    treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
+    # treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
     AnnData = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/integrate.h5ad")
     # for proportion_weight in np.arange(1.0, 10.0, 1.0):
     #     temo_output_dir = os.path.join(output_dir, 'weight' + str(proportion_weight))
-    # Sample_distances(AnnData, output_dir, proportion_weight)
+    Sample_distances(AnnData, output_dir)
     # calculate_sample_distances_weighted_expression(AnnData, output_dir)
     # calculate_sample_distances_cell_proprotion(AnnData, output_dir)
     # calculate_sample_distances_cell_expression(AnnData, output_dir)
