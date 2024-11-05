@@ -21,6 +21,8 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
         Output directory
     cell_meta_path : str, optional
         Path to the cell metadata CSV file that contains both 'barcode' (cell barcode) and 'sample' columns (its corresponding sample). By default, the sample information is contained in cell barcode with "sample:barcode" format. If your data is not in this format, you should specify this parameter.
+    marker : list, optional
+        list that match the cell cluster to specifc cell type. Only be considered when user input cell type
     num_PCs : int, optional
         Number of PCs used in integration (default: 20)
     num_harmony : int, optional
@@ -50,10 +52,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print("Autiomatically generating output directory")
-    
-    # Set random seed
-    np.random.seed(12345)
-    
+
     # 1. Input data
     if verbose:
         print('=== Read input dataset ===')
@@ -104,7 +103,6 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     
     # Create AnnData object
     adata = sc.AnnData(count.T)
-    
     adata.var_names = count.index.astype(str) #access gene barcode
     adata.obs_names = count.columns.astype(str) #access cell name
     
@@ -115,10 +113,9 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
         sc.pp.filter_cells(adata, min_genes=min_features)
     
     # Calculate percentage of mitochondrial genes
+    # Subset cells based on mitochondrial gene percentage
     adata.var['mt'] = adata.var_names.str.startswith('MT-')
     sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
-    
-    # Subset cells based on mitochondrial gene percentage
     adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
     
     # Exclude specified genes and mitochondrial genes
@@ -176,8 +173,6 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
         if markers != None: 
             marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
             adata.obs['leiden'] = adata.obs['leiden'].map(marker_dict)
-            cell_group_dic = cell_group(markers)
-            adata.uns['cell_group_dic'] = cell_group_dic
     else:
         sc.tl.leiden(adata, resolution=resolution, flavor='igraph', n_iterations=2, directed=False)
         adata.obs['leiden'] = (adata.obs['leiden'].astype(int) + 1).astype(str)
