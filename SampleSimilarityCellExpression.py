@@ -8,7 +8,7 @@ from pyemd import emd
 import seaborn as sns
 from anndata import AnnData
 from scipy.sparse import issparse
-from Visualization import plot_cell_type_expression_heatmap, visualizeGroupRelationship
+from Visualization import plot_cell_type_expression_heatmap, visualizeGroupRelationship, visualizeDistanceMatrix
 
 def calculate_sample_distances_cell_expression(
     adata: AnnData,
@@ -57,7 +57,6 @@ def calculate_sample_distances_cell_expression(
 
     # Initialize a dictionary to hold average expression profiles
     avg_expression = {sample: {} for sample in samples}
-
     for sample in samples:
         sample_data = hvg[hvg.obs[sample_column] == sample]
         for cell_type in cell_types:
@@ -86,46 +85,7 @@ def calculate_sample_distances_cell_expression(
         for sample, sample_dict in avg_expression.items()
     }
 
-    # # 2. Compute ground distance matrix between cell types based on average expression profiles
-    # # Compute global average expression profiles for each cell type across all samples
-    # global_avg_expression = {}
-    # for cell_type in cell_types:
-    #     cell_type_data = hvg[hvg.obs[cell_type_column] == cell_type]
-    #     if cell_type_data.shape[0] > 0:
-    #         if issparse(cell_type_data.X):
-    #             avg_expr = cell_type_data.X.mean(axis=0).A1.astype(np.float64)
-    #         else:
-    #             avg_expr = cell_type_data.X.mean(axis=0).astype(np.float64)
-    #         global_avg_expression[cell_type] = avg_expr
-    #     else:
-    #         global_avg_expression[cell_type] = np.zeros(hvg.shape[1], dtype=np.float64)
-
-    # Create a list of cell types to maintain order
     cell_type_list = list(cell_types)
-    num_cell_types = len(cell_type_list)
-
-    # # Initialize the ground distance matrix
-    # ground_distance = np.zeros((num_cell_types, num_cell_types), dtype=np.float64)
-
-    # # Populate the ground distance matrix with Euclidean distances between cell type centroids
-    # for i in range(num_cell_types):
-    #     for j in range(num_cell_types):
-    #         expr_i = global_avg_expression[cell_type_list[i]]
-    #         expr_j = global_avg_expression[cell_type_list[j]]
-    #         distance = np.linalg.norm(expr_i - expr_j)
-    #         ground_distance[i, j] = distance
-
-    # # 3. Normalize the ground distance matrix (optional but recommended)
-    # # This ensures that the distances are scaled appropriately for EMD
-    # max_distance = ground_distance.max()
-    # if max_distance > 0:
-    #     ground_distance /= max_distance
-
-    # # Ensure ground_distance is float64
-    # ground_distance = ground_distance.astype(np.float64)
-
-    # 2. Compute ground distance matrix between cell types
-    # We'll use the centroids of cell types in PCA space
     cell_type_centroids = {}
     for cell_type in cell_types:
         indices = adata.obs[adata.obs[cell_type_column] == cell_type].index
@@ -198,26 +158,8 @@ def calculate_sample_distances_cell_expression(
 
     # 5. Generate a heatmap of the distance matrix
     heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap_expression.pdf')
-
-    # Convert the square distance matrix to condensed form for linkage
-    condensed_distances = squareform(sample_distance_matrix.values)
-
-    # Compute the linkage matrix using the condensed distance matrix
-    linkage_matrix = linkage(condensed_distances, method='average')
-
-    # Generate the clustermap
-    sns.clustermap(
-        sample_distance_matrix,
-        cmap='viridis',
-        linewidths=0.5,
-        annot=True,
-        row_linkage=linkage_matrix,
-        col_linkage=linkage_matrix
-    )
-    plt.savefig(heatmap_path)
-    plt.close()
-    print(f"Sample distance heatmap based on expression levels saved to {heatmap_path}")
-
+    visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
+    
     # 6. Plot cell type expression abundances (optional)
     # Implement this function based on your specific visualization needs
     # plot_cell_type_expression_profiles(avg_expression, output_dir)
@@ -234,7 +176,6 @@ def calculate_sample_distances_cell_expression(
         annot=False  # Set to True if you want to annotate the heatmap with expression values
     )
 
-    visualizeGroupRelationship(len(adata.obs['sample']), sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_expression_relationship.pdf'))
-    
+    visualizeGroupRelationship(sample_distance_matrix, output_dir, os.path.join(output_dir, 'sample_expression_relationship.pdf'))
     
     return sample_distance_matrix

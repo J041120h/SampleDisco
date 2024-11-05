@@ -8,7 +8,7 @@ from pyemd import emd
 import seaborn as sns
 from anndata import AnnData
 from scipy.sparse import issparse
-from Visualization import visualizeGroupRelationship
+from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
 
 def calculate_sample_distances_weighted_expression(
     adata: AnnData,
@@ -196,26 +196,7 @@ def calculate_sample_distances_weighted_expression(
     
     # 9. Generate a heatmap of the distance matrix
     heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap_weighted_expression.pdf')
-    
-    # Convert the square distance matrix to condensed form for linkage
-    condensed_distances = squareform(sample_distance_matrix.values)
-    
-    # Compute the linkage matrix using the condensed distance matrix
-    linkage_matrix = linkage(condensed_distances, method='average')
-    
-    # Generate the clustermap
-    sns.clustermap(
-        sample_distance_matrix,
-        cmap='viridis',
-        linewidths=0.5,
-        annot=True,
-        row_linkage=linkage_matrix,
-        col_linkage=linkage_matrix
-    )
-    plt.savefig(heatmap_path)
-    plt.close()
-    print(f"Sample distance heatmap based on weighted expression levels saved to {heatmap_path}")
-
-    visualizeGroupRelationship(len(adata.obs['sample']), sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_weighted_relationship.pdf'))
+    visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
+    visualizeGroupRelationship(sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_weighted_relationship.pdf'))
     
     return sample_distance_matrix

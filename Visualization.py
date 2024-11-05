@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import MDS
+from scipy.spatial.distance import squareform
+from scipy.cluster.hierarchy import linkage
 
 def plot_cell_type_abundances(proportions: pd.DataFrame, output_dir: str):
     """
@@ -150,7 +152,7 @@ def plot_cell_type_expression_heatmap(
     plt.close()
     print(f"Cell type expression heatmap saved to {heatmap_path}")
 
-def visualizeGroupRelationship(sampleNumber, sample_distance_matrix, outputDir, heatmap_path=None):
+def visualizeGroupRelationship(sample_distance_matrix, outputDir, heatmap_path=None):
     # Ensure the output directory exists
     os.makedirs(outputDir, exist_ok=True)
 
@@ -186,3 +188,24 @@ def visualizeGroupRelationship(sampleNumber, sample_distance_matrix, outputDir, 
     plt.savefig(heatmap_path)
     plt.close()  # Close the plot to avoid displaying it in non-interactive environments
     print(f"Plot saved to {heatmap_path}")
+
+def visualizeDistanceMatrix(sample_distance_matrix, heatmap_path):
+    
+    # Convert the square distance matrix to condensed form for linkage
+    condensed_distances = squareform(sample_distance_matrix.values)
+
+    # Compute the linkage matrix using the condensed distance matrix
+    linkage_matrix = linkage(condensed_distances, method='average')
+
+    # Generate the clustermap
+    sns.clustermap(
+        sample_distance_matrix,
+        cmap='viridis',
+        linewidths=0.5,
+        annot=True,
+        row_linkage=linkage_matrix,
+        col_linkage=linkage_matrix
+    )
+    plt.savefig(heatmap_path)
+    plt.close()
+    print(f"Sample distance heatmap saved to {heatmap_path}")

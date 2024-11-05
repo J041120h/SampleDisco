@@ -58,38 +58,8 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
         print('=== Read input dataset ===')
     # Read count data
     count = pd.read_csv(count_path, index_col=0)
-    # for count_path, sample_meta_path in zip(counts_path, sample_meta_paths):
-    #     # Process count data
-    #     temp_count = pd.read_csv(count_path, index_col=0)
-    #     temp_count = temp_count.sort_index()
-        
-    #     # Extract sample name from the count file path
-    #     sample_name = extract_sample_name_from_path(count_path)
-        
-    #     # Prefix cell barcodes with sample name
-    #     temp_count.columns = [f"{sample_name}:{cell_barcode}" for cell_barcode in temp_count.columns]
-        
-    #     # Initialize or concatenate counts
-    #     if count is None:
-    #         count = temp_count
-    #     else:
-    #         count = count.sort_index()
-    #         if not temp_count.index.equals(count.index):
-    #             raise ValueError(f"Gene names do not match between files: {count_path}")
-    #         else:
-    #             count = pd.concat([count, temp_count], axis=1)
-        
-    #     # Process sample metadata
-    #     temp_meta = pd.read_csv(sample_meta_path)
-    #     temp_meta['sample'] = sample_name
-    #     sample_meta_list.append(temp_meta)
-
-    # # Combine all sample metadata into a single DataFrame
-    # sample_meta = pd.concat(sample_meta_list, ignore_index=True)
-
-    # # Optionally save the combined count matrix and sample metadata
-    # count.to_csv('combined_counts.csv')
-    # sample_meta.to_csv('combined_sample_meta.csv', index=False)
+    
+    #potential file combination
 
     if verbose:
         print(f'Dimension of raw data: {count.shape[0]} genes x {count.shape[1]} cells')
@@ -215,34 +185,10 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     plt.close()
     # Save AnnData object
     adata.write(os.path.join(output_dir, 'integrate.h5ad'))
+
+    #potential marker gene
     
     if verbose:
         print('=== End of preprocessing ===')
-        
-    # # Find marker genes for each cluster
-    # if verbose:
-    #     print('=== Find gene markers for each cell cluster ===')
-    
-    # if issparse(adata.X):
-    #     adata.X.data += 1e-6
-    # else:
-    #     adata.X += 1e-6
-
-    # if issparse(adata.X):
-    #     has_nan = np.isnan(adata.X.data).any()
-    #     has_zero = np.any(adata.X.data == 0)
-    # else:
-    #     has_nan = np.isnan(adata.X).any()
-    #     has_zero = np.any(adata.X == 0)
-
-    # print(f"Contains NaNs: {has_nan}, Contains Zeros: {has_zero}")
-
-    # sc.tl.rank_genes_groups(adata, 'leiden', method='wilcoxon')
-    # markers = sc.get.rank_genes_groups_df(adata, group=None)
-    # markers.to_csv(os.path.join(output_dir, 'markers.csv'), index=False)
-    
-    # # Get top 10 markers per cluster
-    # top10 = markers.groupby('group', observed=True).head(10)
-    # top10.to_csv(os.path.join(output_dir, 'markers_top10.csv'), index=False)
     
     return adata

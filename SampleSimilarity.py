@@ -9,7 +9,7 @@ from anndata import AnnData
 from SampleSimilarityCellExpression import calculate_sample_distances_cell_expression
 from SampleSimilarityCellProportion import calculate_sample_distances_cell_proprotion
 from SampleSimilarityWeighted import calculate_sample_distances_weighted_expression
-from Visualization import visualizeGroupRelationship
+from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
 
 def Sample_distances(
     adata: AnnData,
@@ -82,23 +82,7 @@ def Sample_distances(
     print(f"Combined distance matrix saved to {combined_matrix_path}")
 
     heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap.pdf')
-    # Convert the square distance matrix to condensed form for linkage
-    condensed_distances = squareform(combined_matrix.values)
-    # Compute the linkage matrix using the condensed distance matrix
-    linkage_matrix = linkage(condensed_distances, method='average')
-    # Generate the clustermap
-    sns.clustermap(
-        combined_matrix,
-        cmap='viridis',
-        linewidths=0.5,
-        annot=True,
-        row_linkage=linkage_matrix,
-        col_linkage=linkage_matrix
-    )
-    plt.savefig(heatmap_path)
-    plt.close()
-    print(f"Sample distance heatmap saved to {heatmap_path}")
-
-    visualizeGroupRelationship(len(adata.obs['sample']), combined_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_combined_relationship.pdf'))
+    visualizeDistanceMatrix(combined_matrix, heatmap_path)
+    visualizeGroupRelationship(combined_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_combined_relationship.pdf'))
 
     return combined_matrix

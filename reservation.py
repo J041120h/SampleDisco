@@ -53,3 +53,105 @@ def compute_ground_distance_matrix_cell_types(
 
     # Ensure the ground_distance_matrix is C-contiguous
     return ground_distance_matrix.copy(order='C')
+
+Harmony:
+# for count_path, sample_meta_path in zip(counts_path, sample_meta_paths):
+    #     # Process count data
+    #     temp_count = pd.read_csv(count_path, index_col=0)
+    #     temp_count = temp_count.sort_index()
+        
+    #     # Extract sample name from the count file path
+    #     sample_name = extract_sample_name_from_path(count_path)
+        
+    #     # Prefix cell barcodes with sample name
+    #     temp_count.columns = [f"{sample_name}:{cell_barcode}" for cell_barcode in temp_count.columns]
+        
+    #     # Initialize or concatenate counts
+    #     if count is None:
+    #         count = temp_count
+    #     else:
+    #         count = count.sort_index()
+    #         if not temp_count.index.equals(count.index):
+    #             raise ValueError(f"Gene names do not match between files: {count_path}")
+    #         else:
+    #             count = pd.concat([count, temp_count], axis=1)
+        
+    #     # Process sample metadata
+    #     temp_meta = pd.read_csv(sample_meta_path)
+    #     temp_meta['sample'] = sample_name
+    #     sample_meta_list.append(temp_meta)
+
+    # # Combine all sample metadata into a single DataFrame
+    # sample_meta = pd.concat(sample_meta_list, ignore_index=True)
+
+    # # Optionally save the combined count matrix and sample metadata
+    # count.to_csv('combined_counts.csv')
+    # sample_meta.to_csv('combined_sample_meta.csv', index=False)
+
+    # # Find marker genes for each cluster
+    # if verbose:
+    #     print('=== Find gene markers for each cell cluster ===')
+    
+    # if issparse(adata.X):
+    #     adata.X.data += 1e-6
+    # else:
+    #     adata.X += 1e-6
+
+    # if issparse(adata.X):
+    #     has_nan = np.isnan(adata.X.data).any()
+    #     has_zero = np.any(adata.X.data == 0)
+    # else:
+    #     has_nan = np.isnan(adata.X).any()
+    #     has_zero = np.any(adata.X == 0)
+
+    # print(f"Contains NaNs: {has_nan}, Contains Zeros: {has_zero}")
+
+    # sc.tl.rank_genes_groups(adata, 'leiden', method='wilcoxon')
+    # markers = sc.get.rank_genes_groups_df(adata, group=None)
+    # markers.to_csv(os.path.join(output_dir, 'markers.csv'), index=False)
+    
+    # # Get top 10 markers per cluster
+    # top10 = markers.groupby('group', observed=True).head(10)
+    # top10.to_csv(os.path.join(output_dir, 'markers_top10.csv'), index=False)
+
+
+
+sampleSimilarityExpression:
+# # 2. Compute ground distance matrix between cell types based on average expression profiles
+    # # Compute global average expression profiles for each cell type across all samples
+    # global_avg_expression = {}
+    # for cell_type in cell_types:
+    #     cell_type_data = hvg[hvg.obs[cell_type_column] == cell_type]
+    #     if cell_type_data.shape[0] > 0:
+    #         if issparse(cell_type_data.X):
+    #             avg_expr = cell_type_data.X.mean(axis=0).A1.astype(np.float64)
+    #         else:
+    #             avg_expr = cell_type_data.X.mean(axis=0).astype(np.float64)
+    #         global_avg_expression[cell_type] = avg_expr
+    #     else:
+    #         global_avg_expression[cell_type] = np.zeros(hvg.shape[1], dtype=np.float64)
+
+    # Create a list of cell types to maintain order
+   
+    # # Initialize the ground distance matrix
+    # ground_distance = np.zeros((num_cell_types, num_cell_types), dtype=np.float64)
+
+    # # Populate the ground distance matrix with Euclidean distances between cell type centroids
+    # for i in range(num_cell_types):
+    #     for j in range(num_cell_types):
+    #         expr_i = global_avg_expression[cell_type_list[i]]
+    #         expr_j = global_avg_expression[cell_type_list[j]]
+    #         distance = np.linalg.norm(expr_i - expr_j)
+    #         ground_distance[i, j] = distance
+
+    # # 3. Normalize the ground distance matrix (optional but recommended)
+    # # This ensures that the distances are scaled appropriately for EMD
+    # max_distance = ground_distance.max()
+    # if max_distance > 0:
+    #     ground_distance /= max_distance
+
+    # # Ensure ground_distance is float64
+    # ground_distance = ground_distance.astype(np.float64)
+
+    # 2. Compute ground distance matrix between cell types
+    # We'll use the centroids of cell types in PCA space

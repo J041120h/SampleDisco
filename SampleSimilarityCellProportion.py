@@ -10,7 +10,7 @@ from anndata import AnnData
 from scipy.cluster.hierarchy import linkage
 import warnings
 from anndata._core.aligned_df import ImplicitModificationWarning
-from Visualization import plot_cell_type_abundances, visualizeGroupRelationship
+from Visualization import plot_cell_type_abundances, visualizeGroupRelationship, visualizeDistanceMatrix
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 
@@ -105,30 +105,14 @@ def calculate_sample_distances_cell_proprotion(
     sample_distance_matrix.to_csv(distance_matrix_path)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
-    # Optionally, generate a heatmap
-    heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
+    #save the cell type distribution map
     cell_type_distribution_map = os.path.join(output_dir, 'cell_type_distribution.pdf')
-    # Convert the square distance matrix to condensed formgrou
-    condensed_distances = squareform(sample_distance_matrix.values)
-
-    # Compute the linkage matrix using the condensed distance matrix
-    linkage_matrix = linkage(condensed_distances, method='average')
-
-    # Generate the clustermap
-    sns.clustermap(
-        sample_distance_matrix,
-        cmap='viridis',
-        linewidths=0.5,
-        annot=True,
-        row_linkage=linkage_matrix,
-        col_linkage=linkage_matrix
-    )
-    plt.savefig(heatmap_path)
-    plt.close()
-    print(f"Sample distance heatmap saved to {heatmap_path}")
     plot_cell_type_abundances(proportions, output_dir)
     print(f"Cell type distirbution in Sample saved to {cell_type_distribution_map}")
 
-    visualizeGroupRelationship(len(adata.obs['sample']), sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf'))
+    # generate a heatmap for sample distance
+    heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
+    visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
+    visualizeGroupRelationship(sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf'))
 
     return sample_distance_matrix
