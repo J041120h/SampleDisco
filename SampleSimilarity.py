@@ -15,10 +15,10 @@ from SampleSimilarityWeighted import calculate_sample_distances_weighted_express
 def Sample_distances(
     adata: AnnData,
     output_dir: str,
-    cell_type_column: str = 'leiden',
-    sample_column: str = 'sample',
     proportion_weight: float = 1.0,
     expression_weight: float = 1.0,
+    cell_type_column: str = 'leiden',
+    sample_column: str = 'sample',
     cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """

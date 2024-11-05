@@ -207,6 +207,18 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     plt.savefig(os.path.join(output_dir, 'umap_clusters.pdf'), bbox_inches='tight')
     plt.close()
 
+    plt.figure(figsize=(15, 12))
+    sc.pl.umap(
+        adata,
+        color='sample',
+        legend_loc='right margin',
+        frameon=False,
+        size=10,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sample_clusters.pdf'), bbox_inches='tight')
+    plt.close()
     # Save AnnData object
     adata.write(os.path.join(output_dir, 'integrate.h5ad'))
     
