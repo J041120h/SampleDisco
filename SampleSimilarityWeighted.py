@@ -44,6 +44,14 @@ def calculate_sample_distances_weighted_expression(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print("Automatically generated output directory.")
+
+    # Append 'cell_weighted' to the output directory path
+    output_dir = os.path.join(output_dir, 'cell_weighted')
+
+    # Create the new subdirectory if it doesn’t exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print("Automatically generating cell_weighted subdirectory")
     
     # Check if highly variable genes are present
     if 'highly_variable' not in adata.var.columns:

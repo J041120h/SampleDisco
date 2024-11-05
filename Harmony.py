@@ -53,6 +53,14 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
         os.makedirs(output_dir)
         print("Autiomatically generating output directory")
 
+    # Append 'harmony' to the output directory path
+    output_dir = os.path.join(output_dir, 'harmony')
+
+    # Create the new subdirectory if it doesn’t exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print("Automatically generating harmony subdirectory")
+
     # 1. Input data
     if verbose:
         print('=== Read input dataset ===')

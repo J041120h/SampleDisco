@@ -43,10 +43,19 @@ def calculate_sample_distances_cell_proprotion(
         A symmetric matrix of distances between samples.
     """
 
-    # Ensure output directory exists
+    # Check if output directory exists and create if necessary
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print("Automatically generating output directory")
+
+    # Append 'cell_proportion' to the output directory path
+    output_dir = os.path.join(output_dir, 'cell_proportion')
+
+    # Create the new subdirectory if it doesn’t exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print("Automatically generating cell_proportion subdirectory")
+
 
     # 1. Compute cell type proportions in each sample
     samples = adata.obs[sample_column].unique()

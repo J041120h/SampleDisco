@@ -190,13 +190,10 @@ def visualizeGroupRelationship(sample_distance_matrix, outputDir, heatmap_path=N
     print(f"Plot saved to {heatmap_path}")
 
 def visualizeDistanceMatrix(sample_distance_matrix, heatmap_path):
-    
     # Convert the square distance matrix to condensed form for linkage
     condensed_distances = squareform(sample_distance_matrix.values)
-
     # Compute the linkage matrix using the condensed distance matrix
     linkage_matrix = linkage(condensed_distances, method='average')
-
     # Generate the clustermap
     sns.clustermap(
         sample_distance_matrix,

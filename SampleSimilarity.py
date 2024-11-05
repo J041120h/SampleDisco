@@ -44,6 +44,11 @@ def Sample_distances(
         A symmetric matrix of combined distances between samples.
     """
 
+    # Check if output directory exists and create if necessary
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print("Automatically generating output directory")
+
     # Calculate the proportion distance matrix
     proportion_matrix = calculate_sample_distances_cell_proprotion(
         adata=adata,
@@ -76,6 +81,14 @@ def Sample_distances(
     # Combine the two distance matrices with the specified weights
     combined_matrix = (proportion_weight * proportion_matrix) + (expression_weight * expression_matrix)
     
+    # Append 'cell_combined' to the output directory path
+    output_dir = os.path.join(output_dir, 'cell_combined')
+
+    # Create the new subdirectory if it doesn’t exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print("Automatically generating cell_combined subdirectory")
+
     # Optionally, save the combined distance matrix to a CSV file
     combined_matrix_path = os.path.join(output_dir, 'combined_distance_matrix.csv')
     combined_matrix.to_csv(combined_matrix_path)
