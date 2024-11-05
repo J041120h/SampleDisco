@@ -38,7 +38,7 @@ def main():
     # for proportion_weight in np.arange(1.0, 10.0, 1.0):
     #     temo_output_dir = os.path.join(output_dir, 'weight' + str(proportion_weight))
     Sample_distances(AnnData, output_dir)
-    # calculate_sample_distances_weighted_expression(AnnData, output_dir)
+    calculate_sample_distances_weighted_expression(AnnData, output_dir)
     # calculate_sample_distances_cell_proprotion(AnnData, output_dir)
     # calculate_sample_distances_cell_expression(AnnData, output_dir)
 
