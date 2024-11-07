@@ -18,7 +18,6 @@ def Sample_distances(
     expression_weight: float = 1.0,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
-    cell_group_weight = 0.8
 ) -> pd.DataFrame:
     """
     Calculate combined distances between samples based on cell type proportions and gene expression.
@@ -78,6 +77,11 @@ def Sample_distances(
     if not proportion_matrix.columns.equals(expression_matrix.columns):
         raise ValueError("The columns of proportion_matrix and expression_matrix do not match.")
     
+    # Adjust scale of both matrix
+    proportion_max = proportion_matrix.max().max()
+    expression_max = expression_matrix.max().max()
+    expression_matrix = expression_matrix * (proportion_max / expression_max)
+
     # Combine the two distance matrices with the specified weights
     combined_matrix = (proportion_weight * proportion_matrix) + (expression_weight * expression_matrix)
     
@@ -97,7 +101,5 @@ def Sample_distances(
     heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap.pdf')
     visualizeDistanceMatrix(combined_matrix, heatmap_path)
     visualizeGroupRelationship(combined_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_combined_relationship.pdf'))
-
-    calculate_sample_distances_weighted_expression(adata, output_dir)
 
     return combined_matrix
