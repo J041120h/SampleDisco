@@ -98,4 +98,6 @@ def Sample_distances(
     visualizeDistanceMatrix(combined_matrix, heatmap_path)
     visualizeGroupRelationship(combined_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_combined_relationship.pdf'))
 
+    calculate_sample_distances_weighted_expression(adata, output_dir)
+
     return combined_matrix

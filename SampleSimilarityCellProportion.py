@@ -69,7 +69,19 @@ def calculate_sample_distances_cell_proprotion(
         total_cells = sample_data.shape[0]
         counts = sample_data[cell_type_column].value_counts()
         proportions.loc[sample, counts.index] = counts.values / total_cells
+    
+        # Normalization
+    min_val = proportions.min().min()
+    max_val = proportions.max().max()
 
+    # Avoid division by zero
+    if max_val > min_val:
+        # Normalize the DataFrame
+        proportions = (proportions - min_val) / (max_val - min_val)
+    else:
+        # If all values are the same, set proportions to zero or handle accordingly
+        proportions = proportions - min_val  # This will set all values to zero
+    
     # 2. Compute ground distance matrix between cell types
     # We'll use the centroids of cell types in PCA space
     cell_type_centroids = {}
@@ -108,7 +120,7 @@ def calculate_sample_distances_cell_proprotion(
                 distance = emd(hist_i, hist_j, ground_distance)
                 sample_distance_matrix.loc[sample_i, sample_j] = distance
                 sample_distance_matrix.loc[sample_j, sample_i] = distance
-
+    
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
