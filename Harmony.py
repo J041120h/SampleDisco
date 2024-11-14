@@ -4,9 +4,8 @@ import pandas as pd
 import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
-from scipy.sparse import issparse
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = None, markers = None, num_PCs=20, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=['sample'], resolution=0.5, verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, num_PCs=40, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], resolution=0.5, verbose=True):
     """
     Harmony Integration
 
@@ -21,12 +20,12 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
         Output directory
     cell_meta_path : str, optional
         Path to the cell metadata CSV file that contains both 'barcode' (cell barcode) and 'sample' columns (its corresponding sample). By default, the sample information is contained in cell barcode with "sample:barcode" format. If your data is not in this format, you should specify this parameter.
-    marker : list, optional
-        list that match the cell cluster to specifc cell type. Only be considered when user input cell type
+    markers : list, optional
+        List that matches the cell cluster to specific cell types. Only considered when user inputs cell type.
     num_PCs : int, optional
         Number of PCs used in integration (default: 20)
     num_harmony : int, optional
-        Number of harmony embedding used in integration (default: 20)
+        Number of harmony embedding dimensions used in integration (default: 20)
     num_features : int, optional
         Number of features used in integration (default: 2000)
     min_cells : int, optional
@@ -34,24 +33,26 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     min_features : int, optional
         Include cells where at least this many features are detected (default: 0)
     pct_mito_cutoff : float, optional
-        Include cells with less than this many percent of mitochondrial percent are detected (default: 20). Ranges from 0 to 100. Will be used as a QC metric to subset the count matrix. Genes starting with 'MT-' are defined as a set of mitochondrial genes.
+        Include cells with less than this percentage of mitochondrial counts (default: 20). Ranges from 0 to 100. Genes starting with 'MT-' are defined as mitochondrial genes.
     exclude_genes : list, optional
         Additional genes to be excluded from integration. Will subset the count matrix.
     vars_to_regress : list, optional
-        Variables to be regressed out during Harmony integration (default: ['sample'])
+        Variables to be regressed out during scaling (default: [])
     resolution : float, optional
-        A clustering resolution (default: 0.5). A higher (lower) value indicates larger (smaller) number of cell subclusters.
+        A clustering resolution (default: 0.5). A higher (lower) value indicates a larger (smaller) number of cell subclusters.
     verbose : bool, optional
         Show progress
 
     Returns:
-    An AnnData object
+    adata_cluster, adata_sample_diff : AnnData objects
+        The first is used for clustering with batch effects mediated.
+        The second focuses on finding differences between samples without correcting for sample effects.
     """
 
     # Ensure output directory exists
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        print("Autiomatically generating output directory")
+        print("Automatically generating output directory")
 
     # Append 'harmony' to the output directory path
     output_dir = os.path.join(output_dir, 'harmony')
@@ -67,22 +68,18 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     # Read count data
     count = pd.read_csv(count_path, index_col=0)
     
-    #potential file combination
-
     if verbose:
         print(f'Dimension of raw data: {count.shape[0]} genes x {count.shape[1]} cells')
     
     # 2. Filter genes with zero expression across all cells
     count = count[count.sum(axis=1) > 0]
     
-    # 3. Harmony Integration
+    # 3. Create AnnData object
     if verbose:
-        print('=== Harmony Integration ===')
-    
-    # Create AnnData object
+        print('=== Creating AnnData object ===')
     adata = sc.AnnData(count.T)
-    adata.var_names = count.index.astype(str) #access gene barcode
-    adata.obs_names = count.columns.astype(str) #access cell name
+    adata.var_names = count.index.astype(str)  # Access gene names
+    adata.obs_names = count.columns.astype(str)  # Access cell names
     
     # Apply min_cells and min_features filters
     if min_cells > 0:
@@ -118,49 +115,53 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
     # Read sample metadata and merge
     sample_meta = pd.read_csv(sample_meta_path)
     adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
-    
-    # Compute highly variable genes per batch
-    sc.pp.highly_variable_genes(adata, flavor='seurat_v3', n_top_genes=num_features, batch_key='sample')
-    
-    # Normalize data
-    sc.pp.normalize_total(adata, target_sum=1e4)
-    sc.pp.log1p(adata)
-    adata_raw = adata.copy()
-    # Scale data
-    sc.pp.scale(adata, max_value=10)
-    
-    # Run PCA
-    sc.tl.pca(adata, n_comps=num_PCs, svd_solver='arpack', mask_var='highly_variable')
-    
+
+    # --- Split the data processing for two separate analyses ---
+    # Copy adata for cluster analysis (with batch effect correction)
+    adata_cluster = adata.copy()
+    # Copy adata for sample difference analysis (without batch effect correction)
+    adata_sample_diff = adata.copy()
+
+    # 4. Process adata_cluster (mediating sample batch effects)
     if verbose:
+        print('=== Processing data for clustering (mediating batch effects) ===')
+    # Normalize data
+    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
+    sc.pp.log1p(adata_cluster)
+    adata_cluster.raw = adata_cluster.copy()
+    # Find HVGs
+    sc.pp.highly_variable_genes(adata_cluster, n_top_genes=num_features, flavor='seurat_v3',batch_key='sample')
+    adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
+    sc.pp.scale(adata_cluster, max_value=10)
+    # PCA
+    sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
+    # Harmony integration
+    if verbose:
+        print('=== Running Harmony integration for clustering ===')
         print('Variables to be regressed out: ', ','.join(vars_to_regress))
         print(f'Clustering resolution: {resolution}')
-    
-    # Run Harmony integration
-    pca_embeddings = adata.obsm['X_pca']
-    ho = hm.run_harmony(pca_embeddings, adata.obs, vars_to_regress)
-    adata.obsm['X_pca_harmony'] = ho.Z_corr.T
-    
-    # Run UMAP on Harmony embeddings
-    sc.pp.neighbors(adata, use_rep='X_pca_harmony', n_pcs=num_harmony)
-    sc.tl.umap(adata)
-    
+    vars_to_regress.append("sample")
+    ho = hm.run_harmony(adata_cluster.obsm['X_pca'], adata_cluster.obs, vars_to_regress)
+    adata_cluster.obsm['X_pca_harmony'] = ho.Z_corr.T
+    # Neighbors and UMAP
+    sc.pp.neighbors(adata_cluster, use_rep='X_pca_harmony', n_pcs=num_harmony)
+    sc.tl.umap(adata_cluster, min_dist=0.5)
     # Cluster cells
-    if 'celltype' in adata.obs.columns:
-        adata.obs['leiden'] = adata.obs['celltype'].astype('category')
+    if 'celltype' in adata_cluster.obs.columns:
+        adata_cluster.obs['leiden'] = adata_cluster.obs['celltype'].astype('category')
         if markers != None: 
             marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
-            adata.obs['leiden'] = adata.obs['leiden'].map(marker_dict)
+            adata_cluster.obs['leiden'] = adata_cluster.obs['leiden'].map(marker_dict)
     else:
-        sc.tl.leiden(adata, resolution=resolution, flavor='igraph', n_iterations=2, directed=False)
-        adata.obs['leiden'] = (adata.obs['leiden'].astype(int) + 1).astype(str)
+        sc.tl.leiden(adata_cluster, resolution=resolution, flavor='igraph', n_iterations=2, directed=False)
+        adata_cluster.obs['leiden'] = (adata_cluster.obs['leiden'].astype(int) + 1).astype(str)
     
     # Build dendrogram (phylogenetic tree)
     if verbose:
         print('=== Build Tree ===')
-    adata.obs['leiden'] = adata.obs['leiden'].astype('category')
-    sc.tl.dendrogram(adata, groupby='leiden')
-    sc.pl.dendrogram(adata, groupby='leiden', show=False)
+    adata_cluster.obs['leiden'] = adata_cluster.obs['leiden'].astype('category')
+    sc.tl.dendrogram(adata_cluster, groupby='leiden')
+    sc.pl.dendrogram(adata_cluster, groupby='leiden', show=False)
     plt.savefig(os.path.join(output_dir, 'phylo_tree.pdf'))
     plt.close()
     
@@ -168,35 +169,94 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path = N
         print('=== Generate 2D cluster plot ===')
     plt.figure(figsize=(15, 12))
     sc.pl.umap(
-        adata,
+        adata_cluster,
         color='leiden',
         legend_loc='right margin',
         frameon=False,
-        size=50,
+        size=20,
         show=False
     )
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'umap_clusters.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'cell_cluster_umap_clusters.pdf'), bbox_inches='tight')
     plt.close()
-
     plt.figure(figsize=(15, 12))
+
     sc.pl.umap(
-        adata,
+        adata_cluster,
         color='sample',
         legend_loc='right margin',
         frameon=False,
-        size=10,
+        size=20,
         show=False
     )
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'sample_clusters.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'cell_cluster_sample_clusters.pdf'), bbox_inches='tight')
     plt.close()
-    # Save AnnData object
-    adata.write(os.path.join(output_dir, 'integrate.h5ad'))
+    # Save results
+    adata_cluster.write(os.path.join(output_dir, 'adata_cell.h5ad'))
 
-    #potential marker gene
-    
+    """
+    ==============================================================================================================
+    """
+
+    # 5. Process adata_sample_diff (focusing on sample differences)
     if verbose:
-        print('=== End of preprocessing ===')
-    
-    return adata
+        print('=== Processing data for sample differences (without batch effect correction) ===')
+    # Normalize data
+    sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
+    sc.pp.log1p(adata_sample_diff)
+    adata_sample_diff.raw = adata_sample_diff.copy()
+    # Calculate HVGs between samples
+    sample_means = adata_sample_diff.to_df().groupby(adata_sample_diff.obs['sample']).mean()
+    gene_variance = sample_means.var(axis=0)
+    top_hvg_genes = gene_variance.nlargest(num_features).index
+    adata_sample_diff = adata_sample_diff[:, top_hvg_genes].copy()
+    sc.pp.scale(adata_sample_diff, max_value=10)
+    # PCA
+    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack')
+    # Use PCA embeddings directly
+    adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca']
+    # Neighbors and UMAP
+    sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony,n_neighbors=15, metric='cosine')
+    sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
+    # Cluster cells
+    if 'celltype' in adata_sample_diff.obs.columns:
+        adata_sample_diff.obs['leiden'] = adata_sample_diff.obs['celltype'].astype('category')
+        if markers != None: 
+            marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
+            adata_sample_diff.obs['leiden'] = adata_sample_diff.obs['leiden'].map(marker_dict)
+    else:
+        adata_sample_diff.obs['leiden'] = adata_cluster.obs['leiden'] 
+
+    # Visualization for sample differences
+    if verbose:
+        print('=== Visualizing sample differences ===')
+    plt.figure(figsize=(15, 12))
+    sc.pl.umap(
+        adata_sample_diff,
+        color='sample',
+        legend_loc='right margin',
+        frameon=False,
+        size=20,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sample_umap_by_sample.pdf'), bbox_inches='tight')
+    plt.close()
+
+    # Build dendrogram (phylogenetic tree) for sample differences
+    if verbose:
+        print('=== Building dendrogram for sample differences ===')
+    adata_sample_diff.obs['leiden'] = adata_sample_diff.obs['leiden'].astype('category')
+    sc.tl.dendrogram(adata_sample_diff, groupby='leiden')
+    sc.pl.dendrogram(adata_sample_diff, groupby='leiden', show=False)
+    plt.savefig(os.path.join(output_dir, 'phylo_tree_sample_diff.pdf'))
+    plt.close()
+
+    # Save results
+    adata_sample_diff.write(os.path.join(output_dir, 'adata_sample.h5ad'))
+
+    if verbose:
+        print('=== End of processing ===')
+
+    return adata_cluster, adata_sample_diff
