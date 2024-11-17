@@ -5,7 +5,7 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, num_PCs=40, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], resolution=0.5, verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, num_PCs=50, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], resolution=0.5, verbose=True):
     """
     Harmony Integration
 
@@ -203,30 +203,34 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     if verbose:
         print('=== Processing data for sample differences (without batch effect correction) ===')
     # Normalize data
-    sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
+    sc.pp.normalize_total(adata_sample_diff, target_sum=1e4, inplace=True)
     sc.pp.log1p(adata_sample_diff)
     adata_sample_diff.raw = adata_sample_diff.copy()
     # Calculate HVGs between samples
+    # sc.tl.rank_genes_groups(adata_sample_diff, 'sample', method='t-test')
+    # deg_genes = adata_sample_diff.uns['rank_genes_groups']['names']
+    # deg_genes = pd.DataFrame(deg_genes).stack().reset_index(level=1, drop=True)
+    # deg_genes = deg_genes.unique()
+
+    # # Select top DEGs as highly variable genes
+    # top_deg_genes = deg_genes[:num_features]
+    # adata_sample_diff = adata_sample_diff[:, top_deg_genes].copy()
+    # adata_sample_diff.var['highly_variable'] = True
     sample_means = adata_sample_diff.to_df().groupby(adata_sample_diff.obs['sample']).mean()
     gene_variance = sample_means.var(axis=0)
     top_hvg_genes = gene_variance.nlargest(num_features).index
     adata_sample_diff = adata_sample_diff[:, top_hvg_genes].copy()
+
     sc.pp.scale(adata_sample_diff, max_value=10)
     # PCA
-    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack')
-    # Use PCA embeddings directly
-    adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca']
+    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
     # Neighbors and UMAP
+    ho = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, vars_to_regress)
+    adata_sample_diff.obsm['X_pca_harmony'] = ho.Z_corr.T
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony,n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
     # Cluster cells
-    if 'celltype' in adata_sample_diff.obs.columns:
-        adata_sample_diff.obs['leiden'] = adata_sample_diff.obs['celltype'].astype('category')
-        if markers != None: 
-            marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
-            adata_sample_diff.obs['leiden'] = adata_sample_diff.obs['leiden'].map(marker_dict)
-    else:
-        adata_sample_diff.obs['leiden'] = adata_cluster.obs['leiden'] 
+    adata_sample_diff.obs['leiden'] = adata_cluster.obs['leiden']
 
     # Visualization for sample differences
     if verbose:

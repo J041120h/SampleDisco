@@ -10,6 +10,7 @@ from SampleSimilarityCellExpression import calculate_sample_distances_cell_expre
 from SampleSimilarityCellProportion import calculate_sample_distances_cell_proprotion
 from SampleSimilarityWeighted import calculate_sample_distances_weighted_expression
 from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
+from distanceTest import distanceCheck
 
 def Sample_distances(
     adata: AnnData,
@@ -96,6 +97,7 @@ def Sample_distances(
     # Optionally, save the combined distance matrix to a CSV file
     combined_matrix_path = os.path.join(output_dir, 'combined_distance_matrix.csv')
     combined_matrix.to_csv(combined_matrix_path)
+    distanceCheck(combined_matrix_path)
     print(f"Combined distance matrix saved to {combined_matrix_path}")
 
     heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap.pdf')

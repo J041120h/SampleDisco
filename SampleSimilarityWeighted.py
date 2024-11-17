@@ -9,6 +9,7 @@ import seaborn as sns
 from anndata import AnnData
 from scipy.sparse import issparse
 from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
+from distanceTest import distanceCheck
 
 def calculate_sample_distances_weighted_expression(
     adata: AnnData,
@@ -181,6 +182,7 @@ def calculate_sample_distances_weighted_expression(
     # 7. Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_weighted_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
+    distanceCheck(distance_matrix_path)
     print(f"Sample distance matrix based on weighted expression levels saved to {distance_matrix_path}")
     
     # 8. Save the weighted average expression matrix

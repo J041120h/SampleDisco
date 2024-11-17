@@ -34,10 +34,10 @@ def main():
     expression_weight: float = 1.0,
 
     treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
-    # AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
-    # Sample_distances(AnnData_cell, os.path.join(output_dir, 'cell_level') )
-    # AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
-    # Sample_distances(AnnData_sample, os.path.join(output_dir, 'sample_level'))
+    AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
+    Sample_distances(AnnData_cell, os.path.join(output_dir, 'cell_level') )
+    AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
+    Sample_distances(AnnData_sample, os.path.join(output_dir, 'sample_level'))
 
 
 if __name__ == '__main__':

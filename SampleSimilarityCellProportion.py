@@ -3,14 +3,14 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import matplotlib.pyplot as plt
-from scipy.spatial.distance import cdist, squareform
+from scipy.spatial.distance import cdist
 import seaborn as sns
 from pyemd import emd
 from anndata import AnnData
-from scipy.cluster.hierarchy import linkage
 import warnings
 from anndata._core.aligned_df import ImplicitModificationWarning
 from Visualization import plot_cell_type_abundances, visualizeGroupRelationship, visualizeDistanceMatrix
+from distanceTest import distanceCheck
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 
@@ -124,6 +124,7 @@ def calculate_sample_distances_cell_proprotion(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
+    distanceCheck(distance_matrix_path)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     #save the cell type distribution map

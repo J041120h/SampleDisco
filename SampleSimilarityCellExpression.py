@@ -9,6 +9,7 @@ import seaborn as sns
 from anndata import AnnData
 from scipy.sparse import issparse
 from Visualization import plot_cell_type_expression_heatmap, visualizeGroupRelationship, visualizeDistanceMatrix
+from distanceTest import distanceCheck
 
 def calculate_sample_distances_cell_expression(
     adata: AnnData,
@@ -146,6 +147,7 @@ def calculate_sample_distances_cell_expression(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
+    distanceCheck(distance_matrix_path)
     avrg_expr_matrix_path = os.path.join(output_dir, 'avarage_expression.csv')
 
     data_rows = []
@@ -185,5 +187,4 @@ def calculate_sample_distances_cell_expression(
     )
 
     visualizeGroupRelationship(sample_distance_matrix, output_dir, os.path.join(output_dir, 'sample_expression_relationship.pdf'))
-    
     return sample_distance_matrix
