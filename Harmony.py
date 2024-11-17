@@ -215,18 +215,18 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # # Select top DEGs as highly variable genes
     # top_deg_genes = deg_genes[:num_features]
     # adata_sample_diff = adata_sample_diff[:, top_deg_genes].copy()
-    # adata_sample_diff.var['highly_variable'] = True
     sample_means = adata_sample_diff.to_df().groupby(adata_sample_diff.obs['sample']).mean()
     gene_variance = sample_means.var(axis=0)
     top_hvg_genes = gene_variance.nlargest(num_features).index
     adata_sample_diff = adata_sample_diff[:, top_hvg_genes].copy()
-
+    adata_sample_diff.var['highly_variable'] = True
     sc.pp.scale(adata_sample_diff, max_value=10)
     # PCA
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
     # Neighbors and UMAP
-    ho = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, vars_to_regress)
-    adata_sample_diff.obsm['X_pca_harmony'] = ho.Z_corr.T
+    # ho = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, vars_to_regress)
+    # adata_sample_diff.obsm['X_pca_harmony'] = ho.Z_corr.T
+    adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca_harmony']
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony,n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
     # Cluster cells
@@ -246,6 +246,43 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     )
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'sample_umap_by_sample.pdf'), bbox_inches='tight')
+    plt.close()
+
+    #visualize group difference
+    adata_sample_diff.obs['group'] = adata_sample_diff.obs['sample'].apply(
+        lambda x: 'HD' if x.startswith('HD') else ('Se' if x.startswith('Se') else 'Other')
+    )
+    if verbose:
+        print('=== Visualizing sample differences ===')
+    plt.figure(figsize=(15, 12))
+    sc.pl.umap(
+        adata_sample_diff,
+        color='group',
+        legend_loc='right margin',
+        frameon=False,
+        size=20,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sample_umap_by_group.pdf'), bbox_inches='tight')
+    plt.close()
+
+    adata_cluster.obs['group'] = adata_cluster.obs['sample'].apply(
+        lambda x: 'HD' if x.startswith('HD') else ('Se' if x.startswith('Se') else 'Other')
+    )
+    if verbose:
+        print('=== Visualizing sample differences ===')
+    plt.figure(figsize=(15, 12))
+    sc.pl.umap(
+        adata_cluster,
+        color='group',
+        legend_loc='right margin',
+        frameon=False,
+        size=20,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'cell_umap_by_group.pdf'), bbox_inches='tight')
     plt.close()
 
     # Build dendrogram (phylogenetic tree) for sample differences
