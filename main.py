@@ -6,9 +6,11 @@ import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from Harmony import treecor_harmony
-from SampleSimilarityCellProportion import calculate_sample_distances_cell_proprotion
-from SampleSimilarityCellExpression import calculate_sample_distances_cell_expression
-from SampleSimilarity import Sample_distances, calculate_sample_distances_weighted_expression
+from SampleDistanceCellProportionEMD import calculate_sample_distances_cell_proprotion
+from SampleDistanceCellExpressionEMD import calculate_sample_distances_cell_expression
+from SampleDistanceEMD import Sample_distances, calculate_sample_distances_weighted_expression
+from SampleSimilarityCellExpressionTest import calculate_sample_distances_cell_expression_Test
+from EuclidDistance import calculate_sample_distances_cell_proportion_euclid, calculate_sample_distances_average_expression_euclid, calculate_sample_distances_gene_expression_euclid
 
 def main():
     output_dir = "/users/harry/desktop/GenoDistance/result"
@@ -33,12 +35,14 @@ def main():
     proportion_weight: float = 1.0,
     expression_weight: float = 1.0,
 
-    treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
+    # treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
     AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
-    Sample_distances(AnnData_cell, os.path.join(output_dir, 'cell_level') )
+    # Sample_distances(AnnData_cell, os.path.join(output_dir, 'cell_level') )
     AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
     Sample_distances(AnnData_sample, os.path.join(output_dir, 'sample_level'))
-
+    calculate_sample_distances_cell_proportion_euclid(AnnData_sample, os.path.join(output_dir, 'Euclid_distance'))
+    calculate_sample_distances_average_expression_euclid(AnnData_sample, os.path.join(output_dir, 'Euclid_distance'))
+    calculate_sample_distances_gene_expression_euclid(AnnData_sample, os.path.join(output_dir, 'Euclid_distance'))
 
 if __name__ == '__main__':
     main()
