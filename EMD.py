@@ -12,7 +12,7 @@ from SampleDistanceWeightedEMD import calculate_sample_distances_weighted_expres
 from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
 from distanceTest import distanceCheck
 
-def Sample_distances(
+def EMD_distances(
     adata: AnnData,
     output_dir: str,
     proportion_weight: float = 1.0,

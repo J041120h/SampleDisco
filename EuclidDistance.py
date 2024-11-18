@@ -9,9 +9,10 @@ from scipy.spatial.distance import pdist, squareform
 from Visualization import plot_cell_type_abundances, visualizeGroupRelationship, visualizeDistanceMatrix
 from distanceTest import distanceCheck
 
-def calculate_sample_distances_cell_proportion_euclid(
+def calculate_sample_distances_cell_proportion(
     adata: AnnData,
     output_dir: str,
+    method: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample'
 ) -> pd.DataFrame:
@@ -23,12 +24,8 @@ def calculate_sample_distances_cell_proportion_euclid(
     cell_counts = adata.obs.groupby([sample_column, cell_type_column]).size().unstack(fill_value=0)
     cell_proportions = cell_counts.div(cell_counts.sum(axis=1), axis=0)
 
-    # Save cell proportions to a CSV file
-    cell_proportions.to_csv(os.path.join(output_dir, 'cell_type_proportions.csv'))
-    print(f"Cell type proportions saved to '{os.path.join(output_dir, 'cell_type_proportions.csv')}'.")
-
-    # Calculate Euclidean distance matrix
-    distance_matrix = pdist(cell_proportions.values, metric='euclidean')
+    # Calculate distance matrix
+    distance_matrix = pdist(cell_proportions.values, metric=method)
     distance_df = pd.DataFrame(
         squareform(distance_matrix),
         index=cell_proportions.index,
@@ -36,7 +33,7 @@ def calculate_sample_distances_cell_proportion_euclid(
     )
     distance_df = distance_df / distance_df.max().max()
     # Save the distance matrix
-    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_average_expression_euclidean.csv')
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_average_expression.csv')
     distance_df.to_csv(distance_matrix_path)
     distanceCheck(distance_matrix_path)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
@@ -45,17 +42,18 @@ def calculate_sample_distances_cell_proportion_euclid(
     heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
     visualizeDistanceMatrix(distance_df, heatmap_path)
     visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf'))
-    print("Euclidean distance matrix based on average expression per cell type saved to 'distance_matrix_proportion_euclidean.csv'.")
+    print("Distance matrix based on average expression per cell type saved to 'distance_matrix_proportion.csv'.")
     return distance_df
 
-def calculate_sample_distances_average_expression_euclid(
+def calculate_sample_distances_average_expression(
     adata: AnnData,
     output_dir: str,
+    method: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample'
 ) -> pd.DataFrame:
     """
-    Calculate Euclidean distance matrix based on average gene expression per cell type for each sample.
+    Calculate distance matrix based on average gene expression per cell type for each sample.
 
     Parameters:
     - adata: AnnData object containing single-cell data.
@@ -64,7 +62,7 @@ def calculate_sample_distances_average_expression_euclid(
     - sample_column: Column in adata.obs indicating sample identifiers.
 
     Returns:
-    - distance_df: DataFrame containing the pairwise Euclidean distances between samples.
+    - distance_df: DataFrame containing the pairwise distances between samples.
     """
     output_dir = os.path.join(output_dir, 'avarage_expression')
     os.makedirs(output_dir, exist_ok=True)
@@ -80,8 +78,8 @@ def calculate_sample_distances_average_expression_euclid(
     avg_expression.to_csv(os.path.join(output_dir, 'average_expression_per_cell_type.csv'))
     print("Average expression per cell type saved to 'average_expression_per_cell_type.csv'.")
 
-    # Calculate Euclidean distance matrix
-    distance_matrix = pdist(avg_expression.values, metric='euclidean')
+    # Calculate distance matrix
+    distance_matrix = pdist(avg_expression.values, metric = method)
     distance_df = pd.DataFrame(
         squareform(distance_matrix),
         index=avg_expression.index,
@@ -90,7 +88,7 @@ def calculate_sample_distances_average_expression_euclid(
     distance_df = distance_df / distance_df.max().max()
 
     # Save the distance matrix
-    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_average_expression_euclidean.csv')
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_average_expression.csv')
     distance_df.to_csv(distance_matrix_path)
     distanceCheck(distance_matrix_path)
     print(f"Sample distance avarage expresission matrix saved to {distance_matrix_path}")
@@ -99,18 +97,19 @@ def calculate_sample_distances_average_expression_euclid(
     heatmap_path = os.path.join(output_dir, 'sample_distance_average_expression_heatmap.pdf')
     visualizeDistanceMatrix(distance_df, heatmap_path)
     visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_avarage_expression_relationship.pdf'))
-    print("Euclidean distance matrix based on average expression per cell type saved to 'distance_matrix_average_expression_euclidean.csv'.")
+    print("Distance matrix based on average expression per cell type saved to 'distance_matrix_average_expression.csv'.")
     return distance_df
 
-def calculate_sample_distances_gene_expression_euclid(
+def calculate_sample_distances_gene_expression(
     adata: AnnData,
     output_dir: str,
+    method: str,
     sample_column: str = 'sample',
     normalize: bool = True,
     log_transform: bool = True
 ) -> pd.DataFrame:
     """
-    Calculate Euclidean distance matrix based on average gene expression for each sample.
+    Calculate distance matrix based on average gene expression for each sample.
 
     Parameters:
     - adata: AnnData object containing single-cell data.
@@ -120,29 +119,30 @@ def calculate_sample_distances_gene_expression_euclid(
     - log_transform: Whether to perform log1p transformation.
 
     Returns:
-    - distance_df: DataFrame containing the pairwise Euclidean distances between samples.
+    - distance_df: DataFrame containing the pairwise distances between samples.
     """
     output_dir = os.path.join(output_dir, 'gene_expression')
     os.makedirs(output_dir, exist_ok=True)
     
     # Compute the average expression of each gene per sample
-    avg_expression = adata.to_df().groupby(adata.obs[sample_column]).mean()
-    avg_expression.fillna(0, inplace=True)
+    gene_expression = adata.to_df().groupby(adata.obs[sample_column]).mean()
+    gene_expression.fillna(0, inplace=True)
     
     # Save the average expression to a CSV file
-    avg_expression.to_csv(os.path.join(output_dir, 'average_gene_expression_per_sample.csv'))
+    gene_expression.to_csv(os.path.join(output_dir, 'average_gene_expression_per_sample.csv'))
     print("Average gene expression per sample saved to 'average_gene_expression_per_sample.csv'.")
     
-    # Step 3: Calculate Euclidean Distance Matrix
-    distance_matrix = pdist(avg_expression.values, metric='euclidean')
+    # Step 3: Calculate Distance Matrix
+    distance_matrix = pdist(gene_expression.values, metric=method)
     distance_df = pd.DataFrame(
         squareform(distance_matrix),
-        index=avg_expression.index,
-        columns=avg_expression.index
+        index = gene_expression.index,
+        columns = gene_expression.index
     )
     
+    distance_df = distance_df / distance_df.max().max()
      # Save the distance matrix
-    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression_euclidean.csv')
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
     distanceCheck(distance_matrix_path)
     print(f"Sample distance gene expresission matrix saved to {distance_matrix_path}")
@@ -151,6 +151,17 @@ def calculate_sample_distances_gene_expression_euclid(
     heatmap_path = os.path.join(output_dir, 'sample_distance_gene_expression_heatmap.pdf')
     visualizeDistanceMatrix(distance_df, heatmap_path)
     visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_gene_expression_relationship.pdf'))
-    print("Euclidean distance matrix based on gene expression per sample saved to 'distance_matrix_gene_expression_euclidean.csv'.")
+    print("Distance matrix based on gene expression per sample saved to 'distance_matrix_gene_expression.csv'.")
     return distance_df
 
+def sample_distance(
+    adata: AnnData,
+    output_dir: str,
+    method: str,
+    sample_column: str = 'sample',
+    normalize: bool = True,
+    log_transform: bool = True
+) -> pd.DataFrame:
+    calculate_sample_distances_cell_proportion(adata, output_dir, method)
+    calculate_sample_distances_average_expression(adata, output_dir, method)
+    calculate_sample_distances_gene_expression(adata, output_dir, method)
