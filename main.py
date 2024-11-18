@@ -35,13 +35,32 @@ def main():
         ]
     proportion_weight: float = 1.0,
     expression_weight: float = 1.0,
+    methods = [
+        'euclidean',
+        'minkowski',
+        'cityblock',
+        'chebyshev',
+        'cosine',
+        'correlation',
+        'hamming',
+        'jaccard',
+        'canberra',
+        'braycurtis',
+        'sqeuclidean',
+        'matching',
+        'dice',
+    ]
+
 
     # treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
     AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
-    # Sample_distances(AnnData_cell, os.path.join(output_dir, 'cell_level') )
     AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
-    EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'))
-    sample_distance(AnnData_sample, os.path.join(output_dir, f'sample_level_{method}'), 'hamming')
+    # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'))
+    # EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'))
+    for md in methods:
+        print("\n\n\n\n" + md + "\n\n\n\n")
+        sample_distance(AnnData_sample, os.path.join(output_dir, 'Cell'), f'{md}')
+        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}')
 
 if __name__ == '__main__':
     main()

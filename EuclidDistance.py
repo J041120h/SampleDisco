@@ -31,6 +31,7 @@ def calculate_sample_distances_cell_proportion(
         index=cell_proportions.index,
         columns=cell_proportions.index
     )
+    distance_df = np.log1p(np.maximum(distance_df, 0))
     distance_df = distance_df / distance_df.max().max()
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_average_expression.csv')
@@ -85,6 +86,7 @@ def calculate_sample_distances_average_expression(
         index=avg_expression.index,
         columns=avg_expression.index
     )
+    distance_df = np.log1p(np.maximum(distance_df, 0))
     distance_df = distance_df / distance_df.max().max()
 
     # Save the distance matrix
@@ -132,7 +134,6 @@ def calculate_sample_distances_gene_expression(
     gene_expression.to_csv(os.path.join(output_dir, 'average_gene_expression_per_sample.csv'))
     print("Average gene expression per sample saved to 'average_gene_expression_per_sample.csv'.")
     
-    # Step 3: Calculate Distance Matrix
     distance_matrix = pdist(gene_expression.values, metric=method)
     distance_df = pd.DataFrame(
         squareform(distance_matrix),
@@ -140,8 +141,10 @@ def calculate_sample_distances_gene_expression(
         columns = gene_expression.index
     )
     
+    distance_df = np.log1p(np.maximum(distance_df, 0))
     distance_df = distance_df / distance_df.max().max()
-     # Save the distance matrix
+    
+    # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
     distanceCheck(distance_matrix_path)
@@ -162,6 +165,7 @@ def sample_distance(
     normalize: bool = True,
     log_transform: bool = True
 ) -> pd.DataFrame:
+    output_dir = os.path.join(os.path.join(output_dir, method))
     calculate_sample_distances_cell_proportion(adata, output_dir, method)
     calculate_sample_distances_average_expression(adata, output_dir, method)
     calculate_sample_distances_gene_expression(adata, output_dir, method)

@@ -226,7 +226,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # Neighbors and UMAP
     # ho = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, vars_to_regress)
     # adata_sample_diff.obsm['X_pca_harmony'] = ho.Z_corr.T
-    adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca_harmony']
+    adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca']
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony,n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
     # Cluster cells
