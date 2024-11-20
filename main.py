@@ -8,10 +8,11 @@ import matplotlib.pyplot as plt
 from Harmony import treecor_harmony
 from SampleDistanceCellProportionEMD import calculate_sample_distances_cell_proprotion
 from SampleDistanceCellExpressionEMD import calculate_sample_distances_cell_expression
-from EMD import EMD_distances, calculate_sample_distances_weighted_expression
+from EMD import EMD_distances
 from SampleSimilarityCellExpressionTest import calculate_sample_distances_cell_expression_Test
-from EuclidDistance import sample_distance
-
+from VectorDistance import sample_distance
+from ChiSquare import chi_square_distance
+from jensenshannon import jensen_shannon_distance
 def main():
     output_dir = "/users/harry/desktop/GenoDistance/result"
     count_path = "/users/harry/output_matrix.csv"
@@ -56,12 +57,13 @@ def main():
     # treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
     AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
     AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
-    EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_csv_path)
-    EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_csv_path)
-    for md in methods:
-        print("\n\n\n\n" + md + "\n\n\n\n")
-        sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_csv_path)
-        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_csv_path)
-
+    # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_csv_path)
+    # EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_csv_path)
+    # for md in methods:
+    #     print("\n\n\n\n" + md + "\n\n\n\n")
+    #     sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_csv_path)
+    #     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_csv_path)
+    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square'), summary_csv_path)
+    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon'), summary_csv_path)
 if __name__ == '__main__':
     main()
