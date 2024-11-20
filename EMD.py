@@ -10,11 +10,12 @@ from SampleDistanceCellExpressionEMD import calculate_sample_distances_cell_expr
 from SampleDistanceCellProportionEMD import calculate_sample_distances_cell_proprotion
 from SampleDistanceWeightedEMD import calculate_sample_distances_weighted_expression
 from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
-from distanceTest import distanceCheck
+from distanceTest import distanceCheck, distanceCheckSimple
 
 def EMD_distances(
     adata: AnnData,
     output_dir: str,
+    summary_csv_path: str,
     proportion_weight: float = 1.0,
     expression_weight: float = 1.0,
     cell_type_column: str = 'leiden',
@@ -54,7 +55,8 @@ def EMD_distances(
         adata=adata,
         output_dir=output_dir,
         cell_type_column=cell_type_column,
-        sample_column=sample_column
+        sample_column=sample_column,
+        summary_csv_path = summary_csv_path
     )
     
     # Calculate the expression distance matrix
@@ -62,14 +64,16 @@ def EMD_distances(
         adata=adata,
         output_dir=output_dir,
         cell_type_column=cell_type_column,
-        sample_column=sample_column
+        sample_column=sample_column,
+        summary_csv_path = summary_csv_path
     )
 
     calculate_sample_distances_weighted_expression (
         adata=adata,
         output_dir=output_dir,
         cell_type_column=cell_type_column,
-        sample_column=sample_column
+        sample_column=sample_column,
+        summary_csv_path = summary_csv_path
     )
     
     # Ensure that both matrices have the same order of samples
@@ -97,7 +101,7 @@ def EMD_distances(
     # Optionally, save the combined distance matrix to a CSV file
     combined_matrix_path = os.path.join(output_dir, 'combined_distance_matrix.csv')
     combined_matrix.to_csv(combined_matrix_path)
-    distanceCheck(combined_matrix_path)
+    distanceCheckSimple(combined_matrix_path)
     print(f"Combined distance matrix saved to {combined_matrix_path}")
 
     heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap.pdf')

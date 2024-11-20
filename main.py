@@ -16,6 +16,7 @@ def main():
     output_dir = "/users/harry/desktop/GenoDistance/result"
     count_path = "/users/harry/output_matrix.csv"
     sample_meta_path = "/users/harry/desktop/GenoDistance/Data/raw_data_sample_meta.csv"
+    summary_csv_path = "/users/harry/desktop/GenoDistance/result/summary.csv"
     method = "hamming"
     cell_group_weight = 0.8
     min_cells= 100
@@ -55,12 +56,12 @@ def main():
     # treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
     AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
     AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
-    # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'))
-    # EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'))
+    EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_csv_path)
+    EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_csv_path)
     for md in methods:
         print("\n\n\n\n" + md + "\n\n\n\n")
-        sample_distance(AnnData_sample, os.path.join(output_dir, 'Cell'), f'{md}')
-        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}')
+        sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_csv_path)
+        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_csv_path)
 
 if __name__ == '__main__':
     main()

@@ -16,6 +16,7 @@ def calculate_sample_distances_cell_expression(
     output_dir: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
+    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv"
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the expression levels of each cell type using Earth Mover's Distance (EMD).
@@ -147,7 +148,7 @@ def calculate_sample_distances_cell_expression(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path)
+    distanceCheck(distance_matrix_path,"average_expression", "EMD", summary_csv_path)
     avrg_expr_matrix_path = os.path.join(output_dir, 'avarage_expression.csv')
 
     data_rows = []

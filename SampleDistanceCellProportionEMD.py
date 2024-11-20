@@ -19,6 +19,7 @@ def calculate_sample_distances_cell_proprotion(
     output_dir: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
+    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv"
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the proportions of each cell type using Earth Mover's Distance (EMD).
@@ -124,7 +125,7 @@ def calculate_sample_distances_cell_proprotion(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path)
+    distanceCheck(distance_matrix_path, "cell_proportion", "EMD", summary_csv_path)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     #save the cell type distribution map

@@ -16,6 +16,7 @@ def calculate_sample_distances_weighted_expression(
     output_dir: str,
     cell_type_column: str = 'leiden',
     sample_column: str = 'sample',
+    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv"
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the weighted expression levels of each cell type using Earth Mover's Distance (EMD).
@@ -182,7 +183,7 @@ def calculate_sample_distances_weighted_expression(
     # 7. Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_weighted_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path)
+    distanceCheck(distance_matrix_path, "weighted_expression", "EMD", summary_csv_path)
     print(f"Sample distance matrix based on weighted expression levels saved to {distance_matrix_path}")
     
     # 8. Save the weighted average expression matrix
