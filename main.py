@@ -61,9 +61,9 @@ def main():
         print("\n\n\n\n" + md + "\n\n\n\n")
         sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_cell_csv_path)
         sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path)
-    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square'), summary_sample_csv_path)
-    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon'), summary_sample_csv_path)
-    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square'), summary_cell_csv_path)
-    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon'), summary_cell_csv_path)
+    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
+    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
+    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_cell'), summary_cell_csv_path)
+    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_cell'), summary_cell_csv_path)
 if __name__ == '__main__':
     main()

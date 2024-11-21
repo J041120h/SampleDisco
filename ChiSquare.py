@@ -465,7 +465,6 @@ def chi_square_distance(
     log_transform: bool = True
 ) -> pd.DataFrame:
     method = "Chi_Square"
-    output_dir = os.path.join(os.path.join(output_dir, method))
     calculate_sample_distances_cell_proportion_chi_square(adata, output_dir, summary_csv_path)
     calculate_sample_distances_cell_expression_chi_square(adata, output_dir, summary_csv_path)
     calculate_sample_distances_weighted_expression_chi_square(adata, output_dir, summary_csv_path)
