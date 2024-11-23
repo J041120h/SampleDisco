@@ -5,7 +5,7 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, num_PCs=50, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], resolution=0.5, verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None,cluster_resolution=0.5, tree_resolution=0, num_PCs=50, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], verbose=True):
     """
     Harmony Integration
 
@@ -38,8 +38,10 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
         Additional genes to be excluded from integration. Will subset the count matrix.
     vars_to_regress : list, optional
         Variables to be regressed out during scaling (default: [])
-    resolution : float, optional
-        A clustering resolution (default: 0.5). A higher (lower) value indicates a larger (smaller) number of cell subclusters.
+    cluster_resolution : float, optional
+        A clustering cluster_resolution (default: 0.5). A higher (lower) value indicates a larger (smaller) number of cell subclusters.
+    tree_resolution: float, optional
+        A tree_resolution (default: 0.5). It tells the specific location to identify the subgroup used for later sample HVG calculation.
     verbose : bool, optional
         Show progress
 
@@ -139,7 +141,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     if verbose:
         print('=== Running Harmony integration for clustering ===')
         print('Variables to be regressed out: ', ','.join(vars_to_regress))
-        print(f'Clustering resolution: {resolution}')
+        print(f'Clustering cluster_resolution: {cluster_resolution}')
     vars_to_regress.append("sample")
     ho = hm.run_harmony(adata_cluster.obsm['X_pca'], adata_cluster.obs, vars_to_regress)
     adata_cluster.obsm['X_pca_harmony'] = ho.Z_corr.T
@@ -153,7 +155,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
             marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
             adata_cluster.obs['leiden'] = adata_cluster.obs['leiden'].map(marker_dict)
     else:
-        sc.tl.leiden(adata_cluster, resolution=resolution, flavor='igraph', n_iterations=2, directed=False)
+        sc.tl.leiden(adata_cluster, resolution=cluster_resolution, flavor='igraph', n_iterations=2, directed=False)
         adata_cluster.obs['leiden'] = (adata_cluster.obs['leiden'].astype(int) + 1).astype(str)
     
     # Build dendrogram (phylogenetic tree)
@@ -206,15 +208,6 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     sc.pp.normalize_total(adata_sample_diff, target_sum=1e4, inplace=True)
     sc.pp.log1p(adata_sample_diff)
     adata_sample_diff.raw = adata_sample_diff.copy()
-    # Calculate HVGs between samples
-    # sc.tl.rank_genes_groups(adata_sample_diff, 'sample', method='t-test')
-    # deg_genes = adata_sample_diff.uns['rank_genes_groups']['names']
-    # deg_genes = pd.DataFrame(deg_genes).stack().reset_index(level=1, drop=True)
-    # deg_genes = deg_genes.unique()
-
-    # # Select top DEGs as highly variable genes
-    # top_deg_genes = deg_genes[:num_features]
-    # adata_sample_diff = adata_sample_diff[:, top_deg_genes].copy()
     sample_means = adata_sample_diff.to_df().groupby(adata_sample_diff.obs['sample']).mean()
     gene_variance = sample_means.var(axis=0)
     top_hvg_genes = gene_variance.nlargest(num_features).index
@@ -288,7 +281,6 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     if verbose:
         print('=== Building dendrogram for sample differences ===')
     adata_sample_diff.obs['leiden'] = adata_sample_diff.obs['leiden'].astype('category')
-    sc.tl.dendrogram(adata_sample_diff, groupby='leiden')
     sc.pl.dendrogram(adata_sample_diff, groupby='leiden', show=False)
     plt.savefig(os.path.join(output_dir, 'phylo_tree_sample_diff.pdf'))
     plt.close()
