@@ -5,7 +5,7 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None,cluster_resolution=0.5, tree_resolution=0, num_PCs=50, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=0.5, tree_resolution=0, num_PCs=50, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], verbose=True):
     """
     Harmony Integration
 
@@ -54,7 +54,8 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # Ensure output directory exists
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        print("Automatically generating output directory")
+        if verbose:
+            print("Automatically generating output directory")
 
     # Append 'harmony' to the output directory path
     output_dir = os.path.join(output_dir, 'harmony')
@@ -62,7 +63,8 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # Create the new subdirectory if it doesn’t exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        print("Automatically generating harmony subdirectory")
+        if verbose:
+            print("Automatically generating harmony subdirectory")
 
     # 1. Input data
     if verbose:
@@ -132,7 +134,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     sc.pp.log1p(adata_cluster)
     adata_cluster.raw = adata_cluster.copy()
     # Find HVGs
-    sc.pp.highly_variable_genes(adata_cluster, n_top_genes=num_features, flavor='seurat_v3',batch_key='sample')
+    sc.pp.highly_variable_genes(adata_cluster, n_top_genes=num_features, flavor='seurat_v3', batch_key='sample')
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
     sc.pp.scale(adata_cluster, max_value=10)
     # PCA
@@ -150,20 +152,20 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     sc.tl.umap(adata_cluster, min_dist=0.5)
     # Cluster cells
     if 'celltype' in adata_cluster.obs.columns:
-        adata_cluster.obs['leiden'] = adata_cluster.obs['celltype'].astype('category')
-        if markers != None: 
+        adata_cluster.obs['cell_type'] = adata_cluster.obs['celltype'].astype('category')
+        if markers is not None:
             marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
-            adata_cluster.obs['leiden'] = adata_cluster.obs['leiden'].map(marker_dict)
+            adata_cluster.obs['cell_type'] = adata_cluster.obs['cell_type'].map(marker_dict)
     else:
-        sc.tl.leiden(adata_cluster, resolution=cluster_resolution, flavor='igraph', n_iterations=2, directed=False)
-        adata_cluster.obs['leiden'] = (adata_cluster.obs['leiden'].astype(int) + 1).astype(str)
+        sc.tl.leiden(adata_cluster, resolution=cluster_resolution, flavor='igraph', n_iterations=2, directed=False, key_added='cell_type')
+        adata_cluster.obs['cell_type'] = (adata_cluster.obs['cell_type'].astype(int) + 1).astype(str)
     
     # Build dendrogram (phylogenetic tree)
     if verbose:
         print('=== Build Tree ===')
-    adata_cluster.obs['leiden'] = adata_cluster.obs['leiden'].astype('category')
-    sc.tl.dendrogram(adata_cluster, groupby='leiden')
-    sc.pl.dendrogram(adata_cluster, groupby='leiden', show=False)
+    adata_cluster.obs['cell_type'] = adata_cluster.obs['cell_type'].astype('category')
+    sc.tl.dendrogram(adata_cluster, groupby='cell_type')
+    sc.pl.dendrogram(adata_cluster, groupby='cell_type', show=False)
     plt.savefig(os.path.join(output_dir, 'phylo_tree.pdf'))
     plt.close()
     
@@ -172,7 +174,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     plt.figure(figsize=(15, 12))
     sc.pl.umap(
         adata_cluster,
-        color='leiden',
+        color='cell_type',
         legend_loc='right margin',
         frameon=False,
         size=20,
@@ -218,11 +220,10 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
     ho = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, vars_to_regress)
     adata_sample_diff.obsm['X_pca_harmony'] = ho.Z_corr.T
-    # adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca']
-    sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony,n_neighbors=15, metric='cosine')
+    sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony, n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
     # Cluster cells
-    adata_sample_diff.obs['leiden'] = adata_cluster.obs['leiden']
+    adata_sample_diff.obs['cell_type'] = adata_cluster.obs['cell_type']
 
     # Visualization for sample differences
     if verbose:
@@ -240,12 +241,12 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     plt.savefig(os.path.join(output_dir, 'sample_umap_by_sample.pdf'), bbox_inches='tight')
     plt.close()
 
-    #visualize group difference
+    # Visualize group difference
     adata_sample_diff.obs['group'] = adata_sample_diff.obs['sample'].apply(
         lambda x: 'HD' if x.startswith('HD') else ('Se' if x.startswith('Se') else 'Other')
     )
     if verbose:
-        print('=== Visualizing sample differences ===')
+        print('=== Visualizing group differences ===')
     plt.figure(figsize=(15, 12))
     sc.pl.umap(
         adata_sample_diff,
@@ -263,7 +264,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
         lambda x: 'HD' if x.startswith('HD') else ('Se' if x.startswith('Se') else 'Other')
     )
     if verbose:
-        print('=== Visualizing sample differences ===')
+        print('=== Visualizing cell differences by group ===')
     plt.figure(figsize=(15, 12))
     sc.pl.umap(
         adata_cluster,
@@ -280,8 +281,8 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # Build dendrogram (phylogenetic tree) for sample differences
     if verbose:
         print('=== Building dendrogram for sample differences ===')
-    adata_sample_diff.obs['leiden'] = adata_sample_diff.obs['leiden'].astype('category')
-    sc.pl.dendrogram(adata_sample_diff, groupby='leiden', show=False)
+    adata_sample_diff.obs['cell_type'] = adata_sample_diff.obs['cell_type'].astype('category')
+    sc.pl.dendrogram(adata_sample_diff, groupby='cell_type', show=False)
     plt.savefig(os.path.join(output_dir, 'phylo_tree_sample_diff.pdf'))
     plt.close()
 

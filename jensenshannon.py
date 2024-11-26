@@ -18,7 +18,7 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
     adata: AnnData,
     output_dir: str,
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
 ) -> pd.DataFrame:
     """
@@ -33,7 +33,7 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
     output_dir : str
         Directory to save the output files.
     cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'leiden').
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
     summary_csv_path : str, optional
@@ -112,7 +112,7 @@ def calculate_sample_distances_cell_expression_jensenshannon(
     adata: AnnData,
     output_dir: str,
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
 ) -> pd.DataFrame:
     """
@@ -127,7 +127,7 @@ def calculate_sample_distances_cell_expression_jensenshannon(
     output_dir : str
         Directory to save the output files.
     cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'leiden').
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
     summary_csv_path : str, optional
@@ -287,7 +287,7 @@ def calculate_sample_distances_weighted_expression_jensenshannon(
     adata: AnnData,
     output_dir: str,
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
 ) -> pd.DataFrame:
     """
@@ -303,7 +303,7 @@ def calculate_sample_distances_weighted_expression_jensenshannon(
     output_dir : str
         Directory to save the output files.
     cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'leiden').
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
         sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
         summary_csv_path : str, optional

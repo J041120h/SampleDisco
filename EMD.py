@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 def calculate_sample_distances_cell_proprotion(
     adata: AnnData,
     output_dir: str,
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv"
 ) -> pd.DataFrame:
@@ -36,7 +36,7 @@ def calculate_sample_distances_cell_proprotion(
     output_dir : str
         Directory to save the output files.
     cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'leiden').
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
 
@@ -145,7 +145,7 @@ def calculate_sample_distances_cell_proprotion(
 def calculate_sample_distances_cell_expression(
     adata: AnnData,
     output_dir: str,
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv"
 ) -> pd.DataFrame:
@@ -162,7 +162,7 @@ def calculate_sample_distances_cell_expression(
     output_dir : str
         Directory to save the output files.
     cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'leiden').
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
 
@@ -324,7 +324,7 @@ def calculate_sample_distances_cell_expression(
 def calculate_sample_distances_weighted_expression(
     adata: AnnData,
     output_dir: str,
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv"
 ) -> pd.DataFrame:
@@ -342,7 +342,7 @@ def calculate_sample_distances_weighted_expression(
     output_dir : str
         Directory to save the output files.
     cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'leiden').
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
     
@@ -528,7 +528,7 @@ def EMD_distances(
     summary_csv_path: str,
     proportion_weight: float = 1.0,
     expression_weight: float = 1.0,
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
 ) -> pd.DataFrame:
     """
@@ -541,7 +541,7 @@ def EMD_distances(
     output_dir : str
         Directory to save the output files.
     cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'leiden').
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
     proportion_weight : float, optional

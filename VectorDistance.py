@@ -15,7 +15,7 @@ def calculate_sample_distances_cell_proportion(
     output_dir: str,
     method: str,
     summary_csv_path: str,
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample'
 ) -> pd.DataFrame:
     # Ensure the directory exists
@@ -109,7 +109,7 @@ def calculate_sample_distances_weighted_expression(
     output_dir: str,
     method: str,
     summary_csv_path: str,
-    cell_type_column: str = 'leiden',
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample'
 ) -> pd.DataFrame:
     """
