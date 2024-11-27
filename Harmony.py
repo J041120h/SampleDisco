@@ -4,6 +4,7 @@ import pandas as pd
 import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 from HeirachicalConstruction import cell_type_dendrogram
 
 def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=0.2, num_PCs=20, num_harmony=5, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, method='average', metric='euclidean', distance_mode='centroid',vars_to_regress=[], verbose=True):
@@ -314,6 +315,50 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     # Save results
     adata_sample_diff.write(os.path.join(output_dir, 'adata_sample.h5ad'))
 
+    # Visualize sample relationship
+    if verbose:
+        print('=== Computing average HVG expression per sample ===')
+    hvg_genes = adata_sample_diff.var_names[adata_sample_diff.var['highly_variable']]
+    hvg_data = adata_sample_diff[:, hvg_genes].to_df()
+    # Add sample information to the DataFrame
+    hvg_data['sample'] = adata_sample_diff.obs['sample'].values
+    sample_means = hvg_data.groupby('sample').mean()
+    # Now, 'sample_means' is a DataFrame where each row corresponds to a sample and each column corresponds to an HVG
+    if verbose:
+        print(f'Computed average expression for {sample_means.shape[0]} samples and {sample_means.shape[1]} HVGs.')
+    # --- Dimensionality reduction to 2D ---
+    if verbose:
+        print('=== Performing PCA to reduce dimensions to 2D ===')
+    # Perform PCA on the sample means
+    pca = PCA(n_components=2)
+    sample_pca = pca.fit_transform(sample_means)
+    pca_df = pd.DataFrame(sample_pca, index=sample_means.index, columns=['PC1', 'PC2'])
+    if verbose:
+        print('=== Visualizing samples in 2D space ===')
+
+    plt.figure(figsize=(10, 8))
+    plt.scatter(pca_df['PC1'], pca_df['PC2'], s=100)
+
+    # Annotate each point with the sample name
+    for i, sample_name in enumerate(pca_df.index):
+        plt.text(
+            pca_df.iloc[i]['PC1'],
+            pca_df.iloc[i]['PC2'],
+            sample_name,
+            fontsize=9,
+            ha='right'
+        )
+
+    plt.xlabel('Principal Component 1')
+    plt.ylabel('Principal Component 2')
+    plt.title('PCA of Average HVG Expression per Sample')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca.pdf'))
+    plt.close()
+
+    if verbose:
+        print('=== Sample relationship visualization saved as sample_relationship_pca.pdf ===')
     if verbose:
         print('=== End of processing ===')
 
