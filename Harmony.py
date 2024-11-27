@@ -6,7 +6,7 @@ import harmonypy as hm
 import matplotlib.pyplot as plt
 from HeirachicalConstruction import cell_type_dendrogram
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=0.2, num_PCs=20, num_harmony=5, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=0.2, num_PCs=20, num_harmony=5, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, method='average', metric='euclidean', distance_mode='centroid',vars_to_regress=[], verbose=True):
     """
     Harmony Integration
 
