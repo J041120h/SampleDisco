@@ -3,16 +3,17 @@ import pandas as pd
 import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist, squareform
 import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import fcluster
 import os
 
 def cell_type_dendrogram(
     adata,
+    resolution,
     pca_key='X_pca',
-    groupby='celltype',
+    groupby='cell_type',
     method='average',
     metric='euclidean',
-    distance_mode='euclidean',
-    output_dir=None,
+    distance_mode='centroid',
     verbose=True
 ):
     """
@@ -32,17 +33,11 @@ def cell_type_dendrogram(
     - distance_mode : str, optional
         How to compute the distance matrix. Options are:
         - 'centroid': Compute distances between centroids of groups.
-        - 'euclidean': Compute pairwise distances between all data points using Euclidean distance.
-        - 'cosine': Compute pairwise distances between all data points using Cosine distance.
         Default is 'centroid'.
     - output_dir : str, optional
         Directory to save the dendrogram plot. If None, the plot is shown but not saved.
     - verbose : bool, optional
         If True, prints progress messages.
-
-    Returns:
-    - Z : linkage matrix
-        The linkage matrix resulting from hierarchical clustering.
     """
 
     if verbose:
@@ -86,33 +81,23 @@ def cell_type_dendrogram(
         print(f'Linkage method: {method}, Distance metric: {metric}')
     Z = sch.linkage(dist_matrix, method=method)
 
-    # Plot dendrogram
+    # Store the linkage matrix in adata for later use (e.g., plotting)
+    adata.uns['cell_type_linkage'] = Z
+
+    # Recluster cell types based on the resolution parameter
     if verbose:
-        print('=== Plotting dendrogram ===')
-    plt.figure(figsize=(10, 7))
-    if distance_mode == 'centroid':
-        sch.dendrogram(Z, labels=labels, leaf_rotation=90)
-        plt.xlabel('Cell Type')
-    else:
-        # Since there are too many data points, we cluster the cell types based on the linkage matrix
-        dendro = sch.dendrogram(Z, no_plot=True)
-        # Map labels back to cell types
-        ivl = dendro['ivl']
-        mapped_labels = [df_pca[groupby].unique()[int(i)] for i in ivl]
-        sch.dendrogram(Z, labels=mapped_labels, leaf_rotation=90)
-        plt.xlabel('Cell Type')
+        print(f'=== Reclustering cell types with resolution {resolution} ===')
+    max_height = np.max(Z[:, 2])
+    threshold = (1 - resolution) * max_height  # Smaller resolution leads to higher threshold
+    if verbose:
+        print(f'Using threshold {threshold} to cut the dendrogram (max height: {max_height})')
+    # Get new cluster labels for cell types
+    cluster_labels = fcluster(Z, t=threshold, criterion='distance')
+    if verbose:
+        print(f'Formed {len(np.unique(cluster_labels))} clusters at resolution {resolution}')
 
-    plt.title('Hierarchical Clustering Dendrogram of Cell Types')
-    plt.ylabel(f'{metric.capitalize()} Distance')
-
-    # Save or show the plot
-    if output_dir is not None:
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'cell_type_dendrogram.pdf'))
-        if verbose:
-            print(f'Dendrogram saved to {os.path.join(output_dir, "cell_type_dendrogram.pdf")}')
-        plt.close()
-    else:
-        plt.show()
-
-    return Z
+    # Map original cell types to new cluster labels
+    celltype_to_cluster = dict(zip(centroids.index, cluster_labels))
+    # Update the 'cell_type' column in adata.obs
+    adata.obs[groupby] = adata.obs[groupby].map(celltype_to_cluster).astype('category')
+    return adata

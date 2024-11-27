@@ -4,8 +4,9 @@ import pandas as pd
 import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
+from HeirachicalConstruction import cell_type_dendrogram
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=0.5, tree_resolution=0, num_PCs=50, num_harmony=20, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=0.2, num_PCs=20, num_harmony=5, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, vars_to_regress=[], verbose=True):
     """
     Harmony Integration
 
@@ -40,8 +41,6 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
         Variables to be regressed out during scaling (default: [])
     cluster_resolution : float, optional
         A clustering cluster_resolution (default: 0.5). A higher (lower) value indicates a larger (smaller) number of cell subclusters.
-    tree_resolution: float, optional
-        A tree_resolution (default: 0.5). It tells the specific location to identify the subgroup used for later sample HVG calculation.
     verbose : bool, optional
         Show progress
 
@@ -223,7 +222,17 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony, n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
     # Cluster cells
-    adata_sample_diff.obs['cell_type'] = adata_cluster.obs['cell_type']
+    if 'celltype' in adata_sample_diff.obs.columns:
+        adata_sample_diff.obs['cell_type'] = adata_sample_diff.obs['celltype'].astype('category')
+        if markers is not None:
+            marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
+            adata_sample_diff.obs['cell_type'] = adata_sample_diff.obs['cell_type'].map(marker_dict)
+        # If we have user provded Cell_type, we should manually computate the cluster
+        adata_sample_diff = cell_type_dendrogram(adata_sample_diff, cluster_resolution)
+    else:
+        # If we are using the leiden algorithm to calculate the cell_type, we would use the resolution directly
+        sc.tl.leiden(adata_sample_diff, resolution=cluster_resolution, flavor='igraph', n_iterations=2, directed=False, key_added='cell_type')
+        adata_sample_diff.obs['cell_type'] = (adata_sample_diff.obs['cell_type'].astype(int) + 1).astype(str)
 
     # Visualization for sample differences
     if verbose:
@@ -285,6 +294,22 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     sc.pl.dendrogram(adata_sample_diff, groupby='cell_type', show=False)
     plt.savefig(os.path.join(output_dir, 'phylo_tree_sample_diff.pdf'))
     plt.close()
+
+    if verbose:
+        print('=== Generate 2D cluster plot ===')
+    plt.figure(figsize=(15, 12))
+    sc.pl.umap(
+        adata_sample_diff,
+        color='cell_type',
+        legend_loc='right margin',
+        frameon=False,
+        size=20,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'cell_cluster_umap_sample.pdf'), bbox_inches='tight')
+    plt.close()
+    plt.figure(figsize=(15, 12))
 
     # Save results
     adata_sample_diff.write(os.path.join(output_dir, 'adata_sample.h5ad'))
