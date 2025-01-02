@@ -497,5 +497,5 @@ def jensen_shannon_distance(
     """
     method = "Jensen-Shannon"
     calculate_sample_distances_cell_proportion_jensenshannon(adata, output_dir, summary_csv_path)
-    calculate_sample_distances_cell_expression_jensenshannon(adata, output_dir, summary_csv_path)
-    calculate_sample_distances_weighted_expression_jensenshannon(adata, output_dir, summary_csv_path)
+    # calculate_sample_distances_cell_expression_jensenshannon(adata, output_dir, summary_csv_path)
+    # calculate_sample_distances_weighted_expression_jensenshannon(adata, output_dir, summary_csv_path)

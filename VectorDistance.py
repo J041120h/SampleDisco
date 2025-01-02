@@ -232,4 +232,4 @@ def sample_distance(
     output_dir = os.path.join(os.path.join(output_dir, method))
     calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path)
     calculate_sample_distances_gene_expression(adata, output_dir, method, summary_csv_path)
-    calculate_sample_distances_weighted_expression(adata, output_dir, method, summary_csv_path)
+    # calculate_sample_distances_weighted_expression(adata, output_dir, method, summary_csv_path)

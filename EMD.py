@@ -570,52 +570,52 @@ def EMD_distances(
     )
     
     # Calculate the expression distance matrix
-    expression_matrix = calculate_sample_distances_cell_expression(
-        adata=adata,
-        output_dir=output_dir,
-        cell_type_column=cell_type_column,
-        sample_column=sample_column,
-        summary_csv_path = summary_csv_path
-    )
+    # expression_matrix = calculate_sample_distances_cell_expression(
+    #     adata=adata,
+    #     output_dir=output_dir,
+    #     cell_type_column=cell_type_column,
+    #     sample_column=sample_column,
+    #     summary_csv_path = summary_csv_path
+    # )
 
-    calculate_sample_distances_weighted_expression (
-        adata=adata,
-        output_dir=output_dir,
-        cell_type_column=cell_type_column,
-        sample_column=sample_column,
-        summary_csv_path = summary_csv_path
-    )
+    # calculate_sample_distances_weighted_expression (
+    #     adata=adata,
+    #     output_dir=output_dir,
+    #     cell_type_column=cell_type_column,
+    #     sample_column=sample_column,
+    #     summary_csv_path = summary_csv_path
+    # )
     
     # Ensure that both matrices have the same order of samples
-    if not proportion_matrix.index.equals(expression_matrix.index):
-        raise ValueError("The indices of proportion_matrix and expression_matrix do not match.")
-    if not proportion_matrix.columns.equals(expression_matrix.columns):
-        raise ValueError("The columns of proportion_matrix and expression_matrix do not match.")
+    # if not proportion_matrix.index.equals(expression_matrix.index):
+    #     raise ValueError("The indices of proportion_matrix and expression_matrix do not match.")
+    # if not proportion_matrix.columns.equals(expression_matrix.columns):
+    #     raise ValueError("The columns of proportion_matrix and expression_matrix do not match.")
     
-    # Adjust scale of both matrix
-    proportion_max = proportion_matrix.max().max()
-    expression_max = expression_matrix.max().max()
-    expression_matrix = expression_matrix * (proportion_max / expression_max)
+    # # Adjust scale of both matrix
+    # proportion_max = proportion_matrix.max().max()
+    # expression_max = expression_matrix.max().max()
+    # expression_matrix = expression_matrix * (proportion_max / expression_max)
 
-    # Combine the two distance matrices with the specified weights
-    combined_matrix = (proportion_weight * proportion_matrix) + (expression_weight * expression_matrix)
+    # # Combine the two distance matrices with the specified weights
+    # combined_matrix = (proportion_weight * proportion_matrix) + (expression_weight * expression_matrix)
     
-    # Append 'cell_combined' to the output directory path
-    output_dir = os.path.join(output_dir, 'cell_combined')
+    # # Append 'cell_combined' to the output directory path
+    # output_dir = os.path.join(output_dir, 'cell_combined')
 
-    # Create the new subdirectory if it doesn’t exist
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        print("Automatically generating cell_combined subdirectory")
+    # # Create the new subdirectory if it doesn’t exist
+    # if not os.path.exists(output_dir):
+    #     os.makedirs(output_dir)
+    #     print("Automatically generating cell_combined subdirectory")
 
-    # Optionally, save the combined distance matrix to a CSV file
-    combined_matrix_path = os.path.join(output_dir, 'combined_distance_matrix.csv')
-    combined_matrix.to_csv(combined_matrix_path)
-    distanceCheckSimple(combined_matrix_path)
-    print(f"Combined distance matrix saved to {combined_matrix_path}")
+    # # Optionally, save the combined distance matrix to a CSV file
+    # combined_matrix_path = os.path.join(output_dir, 'combined_distance_matrix.csv')
+    # combined_matrix.to_csv(combined_matrix_path)
+    # distanceCheckSimple(combined_matrix_path)
+    # print(f"Combined distance matrix saved to {combined_matrix_path}")
 
-    heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap.pdf')
-    visualizeDistanceMatrix(combined_matrix, heatmap_path)
-    visualizeGroupRelationship(combined_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_combined_relationship.pdf'))
+    # heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap.pdf')
+    # visualizeDistanceMatrix(combined_matrix, heatmap_path)
+    # visualizeGroupRelationship(combined_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_combined_relationship.pdf'))
 
-    return combined_matrix
+    return proportion_matrix

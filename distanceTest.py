@@ -58,7 +58,7 @@ def distanceCheck(df_path, row, method, summary_csv_path):
         summary_df = pd.read_csv(summary_file, index_col=0)
     else:
         # Create a new DataFrame with the required rows and columns
-        rows = ['cell_proportion', 'average_expression', 'gene_expression', 'weighted_expression']
+        rows = ['cell_proportion', 'gene_expression']
         summary_df = pd.DataFrame(index=rows)
     
     # Ensure the method is in the columns

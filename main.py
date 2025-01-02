@@ -53,17 +53,18 @@ def main():
 
 
     treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
-    # AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
-    # AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
-    # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
-    # EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_cell_csv_path)
-    # for md in methods:
-    #     print("\n\n\n\n" + md + "\n\n\n\n")
-    #     sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_cell_csv_path)
-    #     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path)
-    # chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
-    # jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
-    # chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_cell'), summary_cell_csv_path)
-    # jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_cell'), summary_cell_csv_path)
+    AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
+    AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
+    EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
+    EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_cell_csv_path)
+    for md in methods:
+        print("\n\n\n\n" + md + "\n\n\n\n")
+        sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_cell_csv_path)
+        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path)
+    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
+    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
+    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_cell'), summary_cell_csv_path)
+    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_cell'), summary_cell_csv_path)
+
 if __name__ == '__main__':
     main()
