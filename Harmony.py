@@ -8,7 +8,7 @@ from sklearn.decomposition import PCA
 from HierarchicalConstruction import cell_type_dendrogram
 from HVG import find_hvgs
 
-def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=1, num_PCs=20, num_harmony=5, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, method='average', metric='euclidean', distance_mode='centroid', vars_to_regress=[], verbose=True):
+def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=None, markers=None, cluster_resolution=1, num_PCs=50, num_harmony=10, num_features=2000, min_cells=0, min_features=0, pct_mito_cutoff=20, exclude_genes=None, method='average', metric='euclidean', distance_mode='centroid', vars_to_regress=[], verbose=True):
     """
     Harmony Integration with proportional HVG selection by cell type.
     """
@@ -190,7 +190,7 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
     adata_sample_diff.obs['cell_type'] = adata_cluster.obs['cell_type']
 
     # At this point, adata_sample_diff should still have raw counts. Perfect for HVG detection.
-
+    adata_sample_diff.raw = adata_sample_diff.copy()
     # Run HVG detection on raw counts
     find_hvgs(
         adata=adata_sample_diff,
@@ -200,19 +200,18 @@ def treecor_harmony(count_path, sample_meta_path, output_dir, cell_meta_path=Non
         check_values = True,
         inplace = True
     )
-    adata_sample_diff.raw = adata_sample_diff.copy()
+    adata_sample_diff = adata_sample_diff[:, adata_sample_diff.var['highly_variable']].copy()
 
     # After HVGs are found, now we normalize and log-transform
     sc.pp.normalize_total(adata_sample_diff, target_sum=1e4, inplace=True)
     sc.pp.log1p(adata_sample_diff)
-    adata_sample_diff = adata_sample_diff[:, adata_sample_diff.var['highly_variable']].copy()
     sc.pp.scale(adata_sample_diff, max_value=10)
 
     # PCA and neighbors/UMAP
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
-    ha = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, vars_to_regress_for_harmony)
-    # adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca']
-    adata_sample_diff.obsm['X_pca_harmony'] = ha.Z_corr.T
+    # ha = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, vars_to_regress_for_harmony)
+    # adata_sample_diff.obsm['X_pca_harmony'] = ha.Z_corr.T
+    adata_sample_diff.obsm['X_pca_harmony'] = adata_sample_diff.obsm['X_pca']
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony, n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 
