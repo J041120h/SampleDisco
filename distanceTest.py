@@ -4,10 +4,8 @@ import os
 
 def distanceCheck(df_path, row, method, summary_csv_path):
     df = pd.read_csv(df_path, index_col=0)
-
     # Get the directory of the CSV file
     directory = os.path.dirname(os.path.abspath(df_path))
-
     # Get the sample names
     samples = df.index.tolist()
 

@@ -52,7 +52,7 @@ def main():
     ]
 
 
-    # treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
+    treecor_harmony(count_path, sample_meta_path, output_dir,cell_meta_path, markers)
     AnnData_cell = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_cell.h5ad")
     AnnData_sample = sc.read_h5ad("/users/harry/desktop/GenoDistance/result/harmony/adata_sample.h5ad")
     EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
