@@ -215,14 +215,8 @@ def treecor_harmony(h5ad_path,
     sc.pp.scale(adata_sample_diff, max_value=10)
 
     # PCA + Harmony (optional for sample difference dimension reduction)
-    sc.pp.regress_out(adata_sample_diff, ['batch'])
+    sc.pp.regress_out(adata_sample_diff, vars_to_regress_for_harmony)
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
-    # ha = hm.run_harmony(
-    #     adata_sample_diff.obsm['X_pca'],
-    #     adata_sample_diff.obs,
-    #     vars_to_regress
-    # )
-    # adata_sample_diff.obsm['X_pca_harmony'] = ha.Z_corr.T
 
     if verbose:
         print('=== Begin Harmony ===')
@@ -253,6 +247,16 @@ def treecor_harmony(h5ad_path,
     return adata_cluster, adata_sample_diff
 
 
+import os
+import matplotlib.pyplot as plt
+import scanpy as sc
+import pandas as pd
+from sklearn.decomposition import PCA
+
+# For interactive 3D plot
+import plotly.express as px
+import plotly.io as pio
+
 def visualization_harmony(
     adata_cluster,
     adata_sample_diff,
@@ -261,7 +265,6 @@ def visualization_harmony(
     age_bin_size=None,
     verbose=True
 ):
-
     # -----------------------------
     # 1. Ensure output directory
     # -----------------------------
@@ -272,6 +275,27 @@ def visualization_harmony(
     # -----------------------------
     # 2. Build Group Assignments
     # -----------------------------
+    def find_sample_grouping(adata, samples, grouping_columns, age_bin_size=None):
+        """
+        A placeholder function for your sample-grouping logic.
+        Modify as needed.
+        """
+        # Example: If you already have 'sev.level' in adata.obs
+        # and possibly an 'age' field for binning by age:
+        group_dict = {}
+        for sample in samples:
+            row = adata.obs.loc[adata.obs['sample'] == sample].iloc[0]
+            group_key = []
+            for col in grouping_columns:
+                group_key.append(str(row[col]))
+            if age_bin_size and 'age' in adata.obs.columns:
+                age_val = row['age']
+                age_bin = int(age_val // age_bin_size * age_bin_size)
+                group_key.append(f"AgeBin_{age_bin}")
+            group_name = "_".join(group_key)
+            group_dict[sample] = group_name
+        return group_dict
+
     # For adata_cluster
     cluster_samples = adata_cluster.obs['sample'].unique().tolist()
     cluster_groups = find_sample_grouping(
@@ -293,7 +317,7 @@ def visualization_harmony(
     adata_sample_diff.obs['plot_group'] = adata_sample_diff.obs['sample'].map(diff_groups)
 
     if verbose:
-        print("[visualization_harmony] 'plot_group' has been assigned via find_sample_grouping.")
+        print("[visualization_harmony] 'plot_group' assigned via find_sample_grouping.")
 
     # --------------------------------
     # 3. Dendrogram (by cell_type)
@@ -339,59 +363,102 @@ def visualization_harmony(
     plt.close()
 
     # --------------------------------
-    # 6. PCA of Average HVG Expression (computed here)
+    # 6. PCA of Average HVG Expression
     # --------------------------------
     if verbose:
         print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
 
+    # (A) Compute average expression per sample
     df = pd.DataFrame(
         adata_sample_diff.X,
         index=adata_sample_diff.obs_names,
         columns=adata_sample_diff.var_names
     )
     df['sample'] = adata_sample_diff.obs['sample']
-
     sample_means = df.groupby('sample').mean()
-    pca = PCA(n_components=2)
-    pca_coords = pca.fit_transform(sample_means)
-    pca_df = pd.DataFrame(pca_coords, index=sample_means.index, columns=['PC1', 'PC2'])
 
-    # Join the plot_group for color labeling
+    # Prepare a DataFrame for joining group labels
     sample_to_group = (
         adata_sample_diff.obs[['sample', 'plot_group']]
         .drop_duplicates()
         .set_index('sample')
     )
-    pca_df = pca_df.join(sample_to_group, how='left')
 
-    # Plot the 2D PCA, color by plot_group
-    plt.figure(figsize=(10, 8))
-    for grp in pca_df['plot_group'].unique():
-        mask = (pca_df['plot_group'] == grp)
+    # --------------------------------
+    # (A1) 2D PCA (No Legend, No Labels)
+    # --------------------------------
+    pca_2d = PCA(n_components=2)
+    pca_coords_2d = pca_2d.fit_transform(sample_means)
+    pca_2d_df = pd.DataFrame(
+        pca_coords_2d, 
+        index=sample_means.index, 
+        columns=['PC1', 'PC2']
+    )
+    pca_2d_df = pca_2d_df.join(sample_to_group, how='left')
+
+    plt.figure(figsize=(8, 6))
+    unique_groups = pca_2d_df['plot_group'].unique()
+    num_groups = len(unique_groups)
+    # Use a distinct color for each group
+    colors = plt.cm.get_cmap('tab10', num_groups)
+
+    for i, grp in enumerate(unique_groups):
+        mask = (pca_2d_df['plot_group'] == grp)
         plt.scatter(
-            pca_df.loc[mask, 'PC1'],
-            pca_df.loc[mask, 'PC2'],
-            label=grp,
-            s=100,
+            pca_2d_df.loc[mask, 'PC1'],
+            pca_2d_df.loc[mask, 'PC2'],
+            color=colors(i),
+            s=80,
             alpha=0.8
         )
-        # Optionally label each point with the sample name
-        for sample_name, row in pca_df.loc[mask].iterrows():
-            plt.text(
-                row['PC1'],
-                row['PC2'],
-                sample_name,
-                fontsize=8,
-                ha='right'
-            )
-    plt.xlabel('Principal Component 1')
-    plt.ylabel('Principal Component 2')
-    plt.title('PCA of Average HVG Expression per Sample')
-    plt.legend(loc='best')
+        # No legend, no text labels
+        # (i.e., do not call plt.legend or plt.text)
+
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of Avg HVG Expression (no legend/labels)')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_by_plot_group.pdf'))
+    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_no_legend.pdf'))
     plt.close()
 
+    # --------------------------------
+    # (A2) 3D PCA (Interactive via Plotly)
+    # --------------------------------
+    pca_3d = PCA(n_components=3)
+    pca_coords_3d = pca_3d.fit_transform(sample_means)
+    pca_3d_df = pd.DataFrame(
+        pca_coords_3d, 
+        index=sample_means.index, 
+        columns=['PC1', 'PC2', 'PC3']
+    )
+    pca_3d_df = pca_3d_df.join(sample_to_group, how='left')
+
+    # Create a 3D scatter plot in Plotly
+    fig_3d = px.scatter_3d(
+        pca_3d_df,
+        x='PC1',
+        y='PC2',
+        z='PC3',
+        color='plot_group',
+        # Hide hover text for 'plot_group' if desired
+        hover_data={'plot_group': False},
+    )
+    # Remove legend
+    fig_3d.update_layout(showlegend=False)
+    # Adjust marker size if you like
+    fig_3d.update_traces(marker=dict(size=5))
+
+    # Save to an interactive HTML file
+    output_html_path = os.path.join(output_dir, 'sample_relationship_pca_3D_interactive.html')
+    pio.write_html(fig_3d, file=output_html_path, auto_open=False)
+
+    if verbose:
+        print("[visualization_harmony] 2D (no legend/labels) and 3D (interactive) PCA plots saved.")
+        print(f"3D PCA Plotly HTML: {output_html_path}")
+
+    # --------------------------------
+    # Done
+    # --------------------------------
     if verbose:
         print("[visualization_harmony] All harmony visualizations have been saved.")
