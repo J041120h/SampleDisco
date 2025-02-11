@@ -13,7 +13,6 @@ matplotlib==3.9.2
 natsort==8.4.0
 networkx==3.4.2
 numba==0.60.0
-numpy @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_a51i_mbs7m/croot/numpy_and_numpy_base_1708638620867/work/dist/numpy-1.26.4-cp312-cp312-macosx_11_0_arm64.whl#sha256=37afb6b734a197702d848df93bd67c10b52f6467d56e518950d84b6b1c949d27
 packaging==24.1
 pandas==2.2.3
 patsy==0.5.6
@@ -38,4 +37,3 @@ tqdm==4.66.6
 tzdata==2024.2
 umap-learn==0.5.7
 v==1
-wheel==0.44.0

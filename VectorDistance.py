@@ -40,7 +40,7 @@ def calculate_sample_distances_cell_proportion(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_average_expression.csv')
     distance_df.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, 'cell_proportion', method, summary_csv_path)
+    distanceCheck(distance_matrix_path, 'cell_proportion', method, summary_csv_path, adata)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     # generate a heatmap for sample distance
@@ -96,7 +96,7 @@ def calculate_sample_distances_gene_expression(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, 'gene_expression', method, summary_csv_path)
+    distanceCheck(distance_matrix_path, 'gene_expression', method, summary_csv_path, adata)
     print(f"Sample distance gene expresission matrix saved to {distance_matrix_path}")
 
     # generate a heatmap for sample distance
@@ -202,7 +202,7 @@ def calculate_sample_distances_pca(
     # Perform distance checks or summaries if required
     if summary_csv_path:
         try:
-            distanceCheck(distance_matrix_path, 'pca_harmony', method, summary_csv_path)
+            distanceCheck(distance_matrix_path, 'pca_harmony', method, summary_csv_path, adata)
             print(f"Distance checks saved to: {summary_csv_path}")
         except Exception as e:
             print(f"ERROR: Failed to perform distance checks: {e}")
@@ -328,7 +328,7 @@ def calculate_sample_distances_weighted_expression(
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_weighted_expression.csv')
     distance_df.to_csv(distance_matrix_path)
     # Assuming distanceCheck is a function that processes the distance matrix
-    distanceCheck(distance_matrix_path, 'weighted_expression', method, summary_csv_path)
+    distanceCheck(distance_matrix_path, 'weighted_expression', method, summary_csv_path, adata)
     print(f"Sample distance weighted expression matrix saved to {distance_matrix_path}")
 
     # Generate heatmaps for sample distance

@@ -8,7 +8,7 @@ import seaborn as sns
 from pyemd import emd
 from anndata import AnnData
 from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix,plot_cell_type_abundances,plot_cell_type_expression_heatmap
-from distanceTest import distanceCheck, distanceCheckSimple
+from distanceTest import distanceCheck
 import warnings
 from scipy.sparse import issparse
 from scipy.spatial.distance import cdist
@@ -127,7 +127,9 @@ def calculate_sample_distances_cell_proprotion(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, "cell_proportion", "EMD", summary_csv_path)
+    print("Error checking before distance test\n\n")
+
+    distanceCheck(distance_matrix_path, "cell_proportion", "EMD", summary_csv_path, adata)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     #save the cell type distribution map
@@ -279,7 +281,7 @@ def calculate_sample_distances_cell_expression(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path,"average_expression", "EMD", summary_csv_path)
+    distanceCheck(distance_matrix_path,"average_expression", "EMD", summary_csv_path, adata)
     avrg_expr_matrix_path = os.path.join(output_dir, 'avarage_expression.csv')
 
     data_rows = []
@@ -493,7 +495,7 @@ def calculate_sample_distances_weighted_expression(
     # 7. Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_weighted_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, "weighted_expression", "EMD", summary_csv_path)
+    distanceCheck(distance_matrix_path, "weighted_expression", "EMD", summary_csv_path, adata)
     print(f"Sample distance matrix based on weighted expression levels saved to {distance_matrix_path}")
     
     # 8. Save the weighted average expression matrix

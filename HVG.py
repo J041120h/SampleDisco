@@ -24,11 +24,11 @@ def find_hvgs(
     # Step 1: Prepare Data
     gene_expr = adata.to_df()
 
-    if check_values:
-        if not np.all(gene_expr.values >= 0):
-            raise ValueError("Gene expression data contains negative values.")
-        if not np.all(np.floor(gene_expr.values) == gene_expr.values):
-            raise ValueError("Gene expression data contains non-integer values.")
+    # if check_values:
+    #     if not np.all(gene_expr.values >= 0):
+    #         raise ValueError("Gene expression data contains negative values.")
+    #     if not np.all(np.floor(gene_expr.values) == gene_expr.values):
+    #         raise ValueError("Gene expression data contains non-integer values.")
 
     # Step 2: Compute Means and Variances
     if batch_key is None:

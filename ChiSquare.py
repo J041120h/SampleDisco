@@ -92,7 +92,7 @@ def calculate_sample_distances_cell_proportion_chi_square(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, "cell_proportion", "Chi-Square", summary_csv_path)
+    distanceCheck(distance_matrix_path, "cell_proportion", "Chi-Square", summary_csv_path, adata)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     # Save the cell type distribution map
@@ -236,7 +236,7 @@ def calculate_sample_distances_cell_expression_chi_square(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, "average_expression", "Chi-Square", summary_csv_path)
+    distanceCheck(distance_matrix_path, "average_expression", "Chi-Square", summary_csv_path, adata)
     avg_expr_matrix_path = os.path.join(output_dir, 'average_expression.csv')
 
     # Save the average expression data
@@ -427,7 +427,7 @@ def calculate_sample_distances_weighted_expression_chi_square(
     # 5. Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_matrix_weighted_expression.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, "weighted_expression", "Chi-Square", summary_csv_path)
+    distanceCheck(distance_matrix_path, "weighted_expression", "Chi-Square", summary_csv_path, adata)
     print(f"Sample distance matrix based on weighted expression levels saved to {distance_matrix_path}")
     
     # 6. Save the weighted average expression matrix
