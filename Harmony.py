@@ -110,79 +110,79 @@ def treecor_harmony(h5ad_path,
     #    (a) Clustering with Harmony (adata_cluster)
     #    (b) Sample differences (adata_sample_diff)
     # ----------------------------------------------------------------------
-    adata_cluster = sc.read_h5ad("/users/hjiang/GenoDistance/Result/harmony/adata_cell.h5ad")      # with batch effect correction
+    adata_cluster = adata.copy()      # with batch effect correction
     adata_sample_diff = adata.copy()  # without batch effect correction
 
     # ==================== (a) Clustering with Harmony ====================
-    # if verbose:
-    #     print('=== Processing data for clustering (mediating batch effects) ===')
+    if verbose:
+        print('=== Processing data for clustering (mediating batch effects) ===')
 
-    # sc.pp.normalize_total(adata_cluster, target_sum=1e4)
-    # # Normalize and log transform
-    # sc.pp.log1p(adata_cluster)
-    # adata_cluster.raw = adata_cluster.copy()
+    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
+    # Normalize and log transform
+    sc.pp.log1p(adata_cluster)
+    adata_cluster.raw = adata_cluster.copy()
 
-    # # Find highly variable genes (HVGs)
-    # sc.pp.highly_variable_genes(
-    #     adata_cluster,
-    #     n_top_genes=num_features,
-    #     flavor='seurat_v3',
-    #     batch_key='sample'
-    # )
+    # Find highly variable genes (HVGs)
+    sc.pp.highly_variable_genes(
+        adata_cluster,
+        n_top_genes=num_features,
+        flavor='seurat_v3',
+        batch_key='sample'
+    )
 
-    # adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
+    adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
 
-    # # Scale data
-    # sc.pp.scale(adata_cluster, max_value=10)
-    # # PCA
-    # sc.pp.regress_out(adata_cluster, ['batch'])
-    # sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
-    # # Harmony batch correction
-    # if verbose:
-    #     print('=== Running Harmony integration for clustering ===')
-    #     print('Variables to be regressed out: ', ','.join(vars_to_regress))
-    #     print(f'Clustering cluster_resolution: {cluster_resolution}')
+    # Scale data
+    sc.pp.scale(adata_cluster, max_value=10)
+    # PCA
+    sc.pp.regress_out(adata_cluster, ['batch'])
+    sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
+    # Harmony batch correction
+    if verbose:
+        print('=== Running Harmony integration for clustering ===')
+        print('Variables to be regressed out: ', ','.join(vars_to_regress))
+        print(f'Clustering cluster_resolution: {cluster_resolution}')
 
     vars_to_regress_for_harmony = vars_to_regress.copy()
     if "sample" not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append("sample")
 
-    # sc.external.pp.harmony_integrate(adata_cluster, vars_to_regress_for_harmony)
+    sc.external.pp.harmony_integrate(adata_cluster, vars_to_regress_for_harmony)
 
-    # # Clustering
-    # # If "celltype" is not in the metadata, we perform Leiden clustering.
-    # if 'celltype' in adata_cluster.obs.columns:
-    #     adata_cluster.obs['cell_type'] = adata_cluster.obs['celltype'].astype('category')
-    #     if markers is not None:
-    #         marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
-    #         adata_cluster.obs['cell_type'] = adata_cluster.obs['cell_type'].map(marker_dict)
-    # else:
-    #     sc.tl.leiden(
-    #         adata_cluster,
-    #         resolution=cluster_resolution,
-    #         flavor='igraph',
-    #         n_iterations=1,
-    #         directed=False,
-    #         key_added='cell_type'
-    #     )
-    #     # Convert cluster IDs to "1, 2, 3..."
-    #     adata_cluster.obs['cell_type'] = (adata_cluster.obs['cell_type'].astype(int) + 1).astype(str)
+    # Clustering
+    # If "celltype" is not in the metadata, we perform Leiden clustering.
+    if 'celltype' in adata_cluster.obs.columns:
+        adata_cluster.obs['cell_type'] = adata_cluster.obs['celltype'].astype('category')
+        if markers is not None:
+            marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
+            adata_cluster.obs['cell_type'] = adata_cluster.obs['cell_type'].map(marker_dict)
+    else:
+        sc.tl.leiden(
+            adata_cluster,
+            resolution=cluster_resolution,
+            flavor='igraph',
+            n_iterations=1,
+            directed=False,
+            key_added='cell_type'
+        )
+        # Convert cluster IDs to "1, 2, 3..."
+        adata_cluster.obs['cell_type'] = (adata_cluster.obs['cell_type'].astype(int) + 1).astype(str)
 
-    # # Marker genes for dendrogram
-    # sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='wilcoxon', n_genes=100)
-    # rank_results = adata_cluster.uns['rank_genes_groups']
-    # groups = rank_results['names'].dtype.names
-    # all_marker_genes = []
-    # for group in groups:
-    #     all_marker_genes.extend(rank_results['names'][group])
-    # all_marker_genes = list(set(all_marker_genes))
+    # Marker genes for dendrogram
+    sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='wilcoxon', n_genes=100)
+    rank_results = adata_cluster.uns['rank_genes_groups']
+    groups = rank_results['names'].dtype.names
+    all_marker_genes = []
+    for group in groups:
+        all_marker_genes.extend(rank_results['names'][group])
+    all_marker_genes = list(set(all_marker_genes))
 
-    # # Neighbors and UMAP
-    # sc.pp.neighbors(adata_cluster, use_rep='X_pca_harmony', n_pcs=num_harmony)
-    # sc.tl.umap(adata_cluster, min_dist=0.5)
+    # Neighbors and UMAP
+    sc.pp.neighbors(adata_cluster, use_rep='X_pca_harmony', n_pcs=num_harmony)
+    sc.tl.umap(adata_cluster, min_dist=0.5)
 
-    # # Save results
-    # adata_cluster.write(os.path.join(output_dir, 'adata_cell.h5ad'))
+    # Save results
+    adata_cluster.write(os.path.join(output_dir, 'adata_cell.h5ad'))
 
     # ============== (b) Sample Differences (No batch correction) ==========
     if verbose:
@@ -220,7 +220,7 @@ def treecor_harmony(h5ad_path,
 
     if verbose:
         print('=== Begin Harmony ===')
-    sc.external.pp.harmony_integrate(adata_sample_diff, ['batch'])
+    sc.external.pp.harmony_integrate(adata_sample_diff, vars_to_regress_for_harmony)
 
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony, n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
@@ -329,6 +329,19 @@ def visualization_harmony(
     plt.savefig(os.path.join(output_dir, 'cluster_umap_by_plot_group.pdf'), bbox_inches='tight')
     plt.close()
 
+    plt.figure(figsize=(12, 10))
+    sc.pl.umap(
+        adata_cluster,
+        color='cell_type',
+        legend_loc=None,
+        frameon=False,
+        size=3,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'cluster_umap_cell_type.pdf'), bbox_inches='tight')
+    plt.close()
+
     # --------------------------------
     # 5. UMAP colored by plot_group (Sample Differences)
     # --------------------------------
@@ -343,6 +356,19 @@ def visualization_harmony(
     )
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'sample_umap_by_plot_group.pdf'), bbox_inches='tight')
+    plt.close()
+
+    plt.figure(figsize=(12, 10))
+    sc.pl.umap(
+        adata_sample_diff,
+        color='cell_type',
+        legend_loc=None,
+        frameon=False,
+        size=3,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sample_umap_by_cell_type.pdf'), bbox_inches='tight')
     plt.close()
 
     # --------------------------------
@@ -394,7 +420,7 @@ def visualization_harmony(
     )
     fig_3d.update_layout(showlegend=False)
     fig_3d.update_traces(marker=dict(size=5), hovertemplate='<extra></extra>')
-    output_html_path = os.path.join(output_dir, 'sample_relationship_pca_3D_interactive.html')
+    output_html_path = os.path.join(output_dir, 'sample_relationship_pca_3D.html')
     pio.write_html(fig_3d, file=output_html_path, auto_open=False)
 
     # --------------------------------
@@ -425,7 +451,7 @@ def visualization_harmony(
     fig_cell_3d.update_traces(marker=dict(size=2), hovertemplate='<extra></extra>')
 
     # Save plot
-    cell_3d_path = os.path.join(output_dir, 'cell_pca_sample_3D.html')
+    cell_3d_path = os.path.join(output_dir, 'cell_pca_sample.html')
     pio.write_html(fig_cell_3d, file=cell_3d_path, auto_open=False)
 
     if verbose:
@@ -459,7 +485,7 @@ def visualization_harmony(
     fig_cell_3d.update_traces(marker=dict(size=2), hovertemplate='<extra></extra>')
 
     # Save plot
-    cell_3d_path = os.path.join(output_dir, 'cell_pca_cluster_3D.html')
+    cell_3d_path = os.path.join(output_dir, 'cell_pca_cluster.html')
     pio.write_html(fig_cell_3d, file=cell_3d_path, auto_open=False)
 
     if verbose:
