@@ -50,17 +50,26 @@ def main():
     ]
     summary_cell_csv_path = "/users/hjiang/GenoDistance/result/summary_cell.csv"
     summary_sample_csv_path = "/users/hjiang/GenoDistance/result/summary_sample.csv"
+    vars_to_regress= ["batch"]
+
+    #on local mac
+    output_dir = "/Users/harry/Desktop/GenoDistance/result"
+    h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+    cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
+    sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    vars_to_regress = []
 
 
-    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress= ["batch"])
-    AnnData_cell = sc.read_h5ad("/users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad")
-    AnnData_sample = sc.read_h5ad("/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad")
+
+    AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    # AnnData_cell = sc.read_h5ad("/users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad")
+    # AnnData_sample = sc.read_h5ad("/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad")
 
     visualization_harmony(
         AnnData_cell,
         AnnData_sample,
         output_dir,
-        grouping_columns=['batch', 'sev.level'],
+        # grouping_columns=['batch', 'sev.level'],
         verbose=True
     )
     # if os.path.exists(summary_sample_csv_path):

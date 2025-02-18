@@ -135,7 +135,8 @@ def treecor_harmony(h5ad_path,
     # Scale data
     sc.pp.scale(adata_cluster, max_value=10)
     # PCA
-    sc.pp.regress_out(adata_cluster, ['batch'])
+    # sc.pp.regress_out(adata_cluster, ['batch'])
+
     sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
     # Harmony batch correction
     if verbose:
@@ -148,11 +149,13 @@ def treecor_harmony(h5ad_path,
         vars_to_regress_for_harmony.append("sample")
 
     sc.external.pp.harmony_integrate(adata_cluster, vars_to_regress_for_harmony)
+    if verbose:
+        print("End of harmony for adata_cluster.")
 
     # Clustering
     # If "celltype" is not in the metadata, we perform Leiden clustering.
     if 'celltype' in adata_cluster.obs.columns:
-        adata_cluster.obs['cell_type'] = adata_cluster.obs['celltype'].astype('category')
+        adata_cluster.obs['cell_type'] = adata_cluster.obs['celltype'].astype(str)
         if markers is not None:
             marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
             adata_cluster.obs['cell_type'] = adata_cluster.obs['cell_type'].map(marker_dict)
@@ -166,16 +169,30 @@ def treecor_harmony(h5ad_path,
             key_added='cell_type'
         )
         # Convert cluster IDs to "1, 2, 3..."
-        adata_cluster.obs['cell_type'] = (adata_cluster.obs['cell_type'].astype(int) + 1).astype(str)
+        adata_cluster.obs['cell_type'] = (adata_cluster.obs['cell_type'].astype(int) + 1).astype('category')
+    if verbose:
+        print("Finish find cell type")
 
-    # Marker genes for dendrogram
     sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='wilcoxon', n_genes=100)
+    
+    print("\n\n\n\n\n\n check3 \n\n\n\n\n\n")
     rank_results = adata_cluster.uns['rank_genes_groups']
     groups = rank_results['names'].dtype.names
     all_marker_genes = []
     for group in groups:
         all_marker_genes.extend(rank_results['names'][group])
     all_marker_genes = list(set(all_marker_genes))
+
+    adata_cluster = cell_type_dendrogram(
+        adata=adata_cluster,
+        resolution=cluster_resolution,
+        groupby='cell_type',
+        method='average',
+        metric='euclidean',
+        distance_mode='centroid',
+        marker_genes=all_marker_genes,
+        verbose=True
+    )
 
     # Neighbors and UMAP
     sc.pp.neighbors(adata_cluster, use_rep='X_pca_harmony', n_pcs=num_harmony)
