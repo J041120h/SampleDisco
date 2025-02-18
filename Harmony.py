@@ -54,21 +54,19 @@ def treecor_harmony(h5ad_path,
     if verbose:
         print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
 
-    if cell_meta_path is None:
-        # If no cell metadata, try to parse sample IDs from cell names
-        # e.g. if cell name is "SAMPLE1:ATCGG"
-        adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
-    else:
-        cell_meta = pd.read_csv(cell_meta_path)
-        # Assuming 'barcode' is the column with cell IDs
-        cell_meta.set_index('barcode', inplace=True)
-        # Join with adata.obs
-        adata.obs = adata.obs.join(cell_meta, how='left')
+    vars_to_regress_for_harmony = vars_to_regress.copy()
+    if "sample" not in vars_to_regress_for_harmony:
+        vars_to_regress_for_harmony.append("sample")
 
-    # 5. Attach sample metadata
-    sample_meta = pd.read_csv(sample_meta_path)
-    # Assuming 'sample' is the column to merge with
-    adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+    # if cell_meta_path is None:
+    #     adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
+    # else:
+    #     cell_meta = pd.read_csv(cell_meta_path)
+    #     cell_meta.set_index('barcode', inplace=True)
+    #     adata.obs = adata.obs.join(cell_meta, how='left')
+
+    # sample_meta = pd.read_csv(sample_meta_path)
+    # adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
 
     sc.pp.filter_genes(adata, min_cells=min_cells)
     sc.pp.filter_cells(adata, min_genes=min_features)
@@ -94,7 +92,11 @@ def treecor_harmony(h5ad_path,
     if verbose:
         print(f'Dimension of processed data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
 
-
+    sc.pp.scrublet(adata, batch_key="sample")
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    if verbose:
+        print("Preprocessing complete!")
     # ----------------------------------------------------------------------
     # We now split the data for two analyses:
     #    (a) Clustering with Harmony (adata_cluster)
@@ -107,9 +109,6 @@ def treecor_harmony(h5ad_path,
     if verbose:
         print('=== Processing data for clustering (mediating batch effects) ===')
 
-    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
-    # Normalize and log transform
-    sc.pp.log1p(adata_cluster)
     adata_cluster.raw = adata_cluster.copy()
 
     # Find highly variable genes (HVGs)
@@ -120,12 +119,7 @@ def treecor_harmony(h5ad_path,
         batch_key='sample'
     )
 
-    adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
-
-    # Scale data
-    sc.pp.scale(adata_cluster, max_value=10)
-    # PCA
-    
+    adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()    
     sc.pp.combat(adata_cluster, key = 'batch', inplace = True)
     sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
     # Harmony batch correction
@@ -134,16 +128,10 @@ def treecor_harmony(h5ad_path,
         print('Variables to be regressed out: ', ','.join(vars_to_regress))
         print(f'Clustering cluster_resolution: {cluster_resolution}')
 
-    vars_to_regress_for_harmony = vars_to_regress.copy()
-    if "sample" not in vars_to_regress_for_harmony:
-        vars_to_regress_for_harmony.append("sample")
-
     sc.external.pp.harmony_integrate(adata_cluster, vars_to_regress_for_harmony)
     if verbose:
         print("End of harmony for adata_cluster.")
 
-    # Clustering
-    # If "celltype" is not in the metadata, we perform Leiden clustering.
     if 'celltype' in adata_cluster.obs.columns:
         adata_cluster.obs['cell_type'] = adata_cluster.obs['celltype'].astype(str)
         if markers is not None:
@@ -159,19 +147,17 @@ def treecor_harmony(h5ad_path,
             key_added='cell_type'
         )
         # Convert cluster IDs to "1, 2, 3..."
-        adata_cluster.obs['cell_type'] = (adata_cluster.obs['cell_type'].astype(int) + 1).astype('category')
+        adata_cluster.obs['cell_type'] = (adata_cluster.obs['leiden'].astype(int) + 1).astype('category')
     if verbose:
         print("Finish find cell type")
 
-    sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='wilcoxon', n_genes=100)
-    
-    print("\n\n\n\n\n\n check3 \n\n\n\n\n\n")
-    rank_results = adata_cluster.uns['rank_genes_groups']
-    groups = rank_results['names'].dtype.names
-    all_marker_genes = []
-    for group in groups:
-        all_marker_genes.extend(rank_results['names'][group])
-    all_marker_genes = list(set(all_marker_genes))
+    # sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='logreg', n_genes=100)
+    # rank_results = adata_cluster.uns['rank_genes_groups']
+    # groups = rank_results['names'].dtype.names
+    # all_marker_genes = []
+    # for group in groups:
+    #     all_marker_genes.extend(rank_results['names'][group])
+    # all_marker_genes = list(set(all_marker_genes))
 
     adata_cluster = cell_type_dendrogram(
         adata=adata_cluster,
@@ -180,7 +166,7 @@ def treecor_harmony(h5ad_path,
         method='average',
         metric='euclidean',
         distance_mode='centroid',
-        marker_genes=all_marker_genes,
+        marker_genes=None,
         verbose=True
     )
 
@@ -200,13 +186,8 @@ def treecor_harmony(h5ad_path,
         adata_cluster.obs['cell_type'] = '1'
     adata_sample_diff.obs['cell_type'] = adata_cluster.obs['cell_type']
 
-    sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
-    sc.pp.log1p(adata_sample_diff)
-    adata_sample_diff.raw = adata_sample_diff.copy()
-    sc.pp.combat(adata_sample_diff, key = 'batch', inplace = True)
     if verbose:
         print('=== Preprocessing ===')
-    # Find HVGs on raw counts
     find_hvgs(
         adata=adata_sample_diff,
         sample_column='sample',
@@ -219,16 +200,13 @@ def treecor_harmony(h5ad_path,
 
     if verbose:
         print('=== HVG ===')
-    sc.pp.scale(adata_sample_diff, max_value=10)
 
     # PCA + Harmony (optional for sample difference dimension reduction)
-    sc.pp.regress_out(adata_sample_diff, vars_to_regress_for_harmony)
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
     if verbose:
         print('=== Begin Harmony ===')
-    sc.external.pp.harmony_integrate(adata_sample_diff, vars_to_regress_for_harmony)
-
+    sc.external.pp.harmony_integrate(adata_sample_diff, ['batch'])
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony, n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 

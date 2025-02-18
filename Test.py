@@ -147,33 +147,97 @@ if __name__ == '__main__':
     pct_mito_cutoff=20  # Example excluded genes
 )
     
-import anndata
+import os
 import numpy as np
+import anndata
+import pandas as pd
+from datetime import datetime
 
-def sample_anndata(h5ad_path, n):
+def sample_anndata_by_sample(h5ad_path, n, cell_meta_path, sample_meta_path, output_dir=None):
     """
-    Reads an AnnData object from the specified h5ad file, randomly selects n cells,
-    and returns a new AnnData object with the corresponding data.
+    Reads an AnnData object from the specified .h5ad file, randomly selects n unique samples based on 
+    the 'sample' column in adata.obs, subsets all cells corresponding to these samples, saves the subset 
+    AnnData locally, and returns the path to the saved file.
     
     Parameters:
-        h5ad_path (str): Path to the .h5ad file.
-        n (int): Number of cells to randomly select.
+        h5ad_path (str): Path to the input .h5ad file.
+        n (int): Number of unique samples to randomly select.
+        cell_meta_path (str or None): Path to the cell metadata CSV file. 
+                                      If None, sample IDs will be parsed from cell names.
+        sample_meta_path (str): Path to the sample metadata CSV file.
+        output_dir (str, optional): Directory to save the subset file. If None, uses the directory of h5ad_path.
     
     Returns:
-        anndata.AnnData: A new AnnData object containing the selected cells.
+        str: Path to the saved subset AnnData file.
     """
-    # Load the AnnData object from the file
+    # Step 1: Load the AnnData object from file
+    print("Step 1: Loading AnnData object from file...")
     adata = anndata.read_h5ad(h5ad_path)
+    print(f"Loaded AnnData with {adata.n_obs} cells and {adata.n_vars} features.")
     
-    # Check that n does not exceed the total number of cells
-    if n > adata.n_obs:
-        raise ValueError(f"Requested sample size n ({n}) exceeds the number of cells ({adata.n_obs}).")
+    # Step 2: Process cell metadata
+    if cell_meta_path is None:
+        print("Step 2: No cell metadata provided. Parsing sample IDs from cell names...")
+        # If no cell metadata, parse sample IDs from cell names (e.g. "SAMPLE1:ATCGG")
+        adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
+        print("Parsed 'sample' column from cell names.")
+    else:
+        print("Step 2: Loading cell metadata from file...")
+        cell_meta = pd.read_csv(cell_meta_path)
+        print(f"Loaded cell metadata with {cell_meta.shape[0]} rows and {cell_meta.shape[1]} columns.")
+        # Assuming 'barcode' is the column with cell IDs
+        cell_meta.set_index('barcode', inplace=True)
+        print("Merging cell metadata with AnnData.obs...")
+        adata.obs = adata.obs.join(cell_meta, how='left')
+        print("Merged cell metadata.")
     
-    # Randomly select n cell names (observations) without replacement
-    selected_cells = np.random.choice(adata.obs_names, size=n, replace=False)
+    # Step 3: Attach sample metadata
+    print("Step 3: Loading sample metadata from file...")
+    sample_meta = pd.read_csv(sample_meta_path)
+    print(f"Loaded sample metadata with {sample_meta.shape[0]} rows and {sample_meta.shape[1]} columns.")
+    print("Merging sample metadata with AnnData.obs...")
+    adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+    print("Merged sample metadata.")
     
-    # Subset the AnnData object to include only the selected cells.
-    # The .copy() ensures that the new object is independent of the original.
-    subset_adata = adata[selected_cells, :].copy()
+    # Check if 'sample' column exists
+    if 'sample' not in adata.obs.columns:
+        raise ValueError("The AnnData object does not contain a 'sample' column in .obs.")
     
-    return subset_adata
+    # Step 4: Extract unique sample labels
+    print("Step 4: Extracting unique sample labels...")
+    unique_samples = adata.obs['sample'].unique()
+    print(f"Found {len(unique_samples)} unique samples.")
+    
+    # Ensure that n does not exceed the total number of unique samples
+    if n > len(unique_samples):
+        raise ValueError(f"Requested sample size n ({n}) exceeds the number of unique samples ({len(unique_samples)}).")
+    
+    # Step 5: Randomly select n unique sample labels without replacement
+    print("Step 5: Randomly selecting samples...")
+    selected_samples = np.random.choice(unique_samples, size=n, replace=False)
+    print(f"Selected samples: {selected_samples}")
+    
+    # Step 6: Subset all cells corresponding to the selected sample labels
+    print("Step 6: Subsetting cells corresponding to selected samples...")
+    mask = adata.obs['sample'].isin(selected_samples)
+    subset_adata = adata[mask, :].copy()
+    print(f"Subset AnnData contains {subset_adata.n_obs} cells.")
+    
+    # Step 7: Determine and prepare the output directory
+    print("Step 7: Preparing output directory...")
+    if output_dir is None:
+        output_dir = os.path.dirname(os.path.abspath(h5ad_path))
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"Output directory is set to: {output_dir}")
+    
+    # Step 8: Create a unique filename and save the subset AnnData object
+    print("Step 8: Creating unique filename and saving subset AnnData...")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_filename = os.path.splitext(os.path.basename(h5ad_path))[0]
+    output_filename = f"{base_filename}_sample_{n}_{timestamp}.h5ad"
+    output_path = os.path.join(output_dir, output_filename)
+    subset_adata.write_h5ad(output_path)
+    print(f"Saved subset AnnData file to: {output_path}")
+    
+    print("Process completed successfully.")
+    return output_path
