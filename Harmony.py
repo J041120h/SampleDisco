@@ -125,8 +125,8 @@ def treecor_harmony(h5ad_path,
     # Scale data
     sc.pp.scale(adata_cluster, max_value=10)
     # PCA
-    # sc.pp.regress_out(adata_cluster, ['batch'])
-
+    
+    sc.pp.combat(adata_cluster, key = 'batch', inplace = True)
     sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
     # Harmony batch correction
     if verbose:
@@ -203,7 +203,7 @@ def treecor_harmony(h5ad_path,
     sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
     sc.pp.log1p(adata_sample_diff)
     adata_sample_diff.raw = adata_sample_diff.copy()
-
+    sc.pp.combat(adata_sample_diff, key = 'batch', inplace = True)
     if verbose:
         print('=== Preprocessing ===')
     # Find HVGs on raw counts

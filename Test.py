@@ -146,3 +146,34 @@ if __name__ == '__main__':
     min_features=200,
     pct_mito_cutoff=20  # Example excluded genes
 )
+    
+import anndata
+import numpy as np
+
+def sample_anndata(h5ad_path, n):
+    """
+    Reads an AnnData object from the specified h5ad file, randomly selects n cells,
+    and returns a new AnnData object with the corresponding data.
+    
+    Parameters:
+        h5ad_path (str): Path to the .h5ad file.
+        n (int): Number of cells to randomly select.
+    
+    Returns:
+        anndata.AnnData: A new AnnData object containing the selected cells.
+    """
+    # Load the AnnData object from the file
+    adata = anndata.read_h5ad(h5ad_path)
+    
+    # Check that n does not exceed the total number of cells
+    if n > adata.n_obs:
+        raise ValueError(f"Requested sample size n ({n}) exceeds the number of cells ({adata.n_obs}).")
+    
+    # Randomly select n cell names (observations) without replacement
+    selected_cells = np.random.choice(adata.obs_names, size=n, replace=False)
+    
+    # Subset the AnnData object to include only the selected cells.
+    # The .copy() ensures that the new object is independent of the original.
+    subset_adata = adata[selected_cells, :].copy()
+    
+    return subset_adata
