@@ -16,12 +16,12 @@ def treecor_harmony(h5ad_path,
                     output_dir,
                     cell_meta_path=None,
                     markers=None,
-                    cluster_resolution=1,
-                    num_PCs=30,
+                    cluster_resolution=0.8,
+                    num_PCs=20,
                     num_harmony=10,
                     num_features=2000,
-                    min_cells=5,
-                    min_features=5,
+                    min_cells=500,
+                    min_features=500,
                     pct_mito_cutoff=20,
                     exclude_genes=None,
                     method='average',
@@ -54,41 +54,6 @@ def treecor_harmony(h5ad_path,
     if verbose:
         print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
 
-    # 2. Filter out any genes that have zero expression across all cells
-    #    If your AnnData already uses the shape (cells, genes), do:
-    sc.pp.filter_genes(adata, min_cells=1)
-
-    # Optionally, also filter out any cells that have zero genes expressed
-    sc.pp.filter_cells(adata, min_genes=1)
-
-    # Additional user-defined filtering by min_cells and min_features
-    #   (Note: These can be redundant if you've already filtered above;
-    #    but we keep them for completeness.)
-    if min_cells > 0:
-        sc.pp.filter_genes(adata, min_cells=min_cells)
-    if min_features > 0:
-        sc.pp.filter_cells(adata, min_genes=min_features)
-
-    # 3. Calculate mitochondrial gene percentage & filter
-    #    We'll assume your gene symbols for mitochondrial genes start with "MT-"
-    adata.var['mt'] = adata.var_names.str.startswith('MT-')
-    sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
-
-    # Filter out cells with > pct_mito_cutoff% mitochondrial counts
-    adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
-
-    # Exclude (remove) mitochondrial genes and any other user-specified genes
-    mt_genes = adata.var_names[adata.var_names.str.startswith('MT-')]
-    if exclude_genes is not None:
-        genes_to_exclude = set(exclude_genes) | set(mt_genes)
-    else:
-        genes_to_exclude = set(mt_genes)
-    adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
-
-    if verbose:
-        print(f'Dimension of processed data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
-
-    # 4. Attach cell metadata if provided
     if cell_meta_path is None:
         # If no cell metadata, try to parse sample IDs from cell names
         # e.g. if cell name is "SAMPLE1:ATCGG"
@@ -104,6 +69,31 @@ def treecor_harmony(h5ad_path,
     sample_meta = pd.read_csv(sample_meta_path)
     # Assuming 'sample' is the column to merge with
     adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+
+    sc.pp.filter_genes(adata, min_cells=min_cells)
+    sc.pp.filter_cells(adata, min_genes=min_features)
+
+    adata.var['mt'] = adata.var_names.str.startswith('MT-')
+    sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
+    adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
+
+    mt_genes = adata.var_names[adata.var_names.str.startswith('MT-')]
+    if exclude_genes is not None:
+        genes_to_exclude = set(exclude_genes) | set(mt_genes)
+    else:
+        genes_to_exclude = set(mt_genes)
+    adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
+
+    cell_counts_per_patient = adata.obs.groupby('sample').size()
+    patients_to_keep = cell_counts_per_patient[cell_counts_per_patient >= min_cells].index
+    adata = adata[adata.obs['sample'].isin(patients_to_keep)].copy()
+
+    min_cells_for_gene = int(0.01 * adata.n_obs)
+    sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
+
+    if verbose:
+        print(f'Dimension of processed data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+
 
     # ----------------------------------------------------------------------
     # We now split the data for two analyses:
@@ -280,7 +270,8 @@ def visualization_harmony(
     output_dir,
     grouping_columns=['sev.level'],
     age_bin_size=None,
-    verbose=True
+    verbose=True,
+    dot_size = 3
 ):
     # -----------------------------
     # 1. Ensure output directory
@@ -339,7 +330,7 @@ def visualization_harmony(
         color='plot_group',
         legend_loc=None,
         frameon=False,
-        size=3,
+        size=dot_size,
         show=False
     )
     plt.tight_layout()
@@ -352,7 +343,7 @@ def visualization_harmony(
         color='cell_type',
         legend_loc=None,
         frameon=False,
-        size=3,
+        size=dot_size,
         show=False
     )
     plt.tight_layout()
@@ -368,7 +359,7 @@ def visualization_harmony(
         color='plot_group',
         legend_loc=None,
         frameon=False,
-        size=3,
+        size=dot_size,
         show=False
     )
     plt.tight_layout()
@@ -381,7 +372,7 @@ def visualization_harmony(
         color='cell_type',
         legend_loc=None,
         frameon=False,
-        size=3,
+        size=dot_size,
         show=False
     )
     plt.tight_layout()

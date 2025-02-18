@@ -24,7 +24,7 @@ def main():
     vars_to_regress=['sample']
     resolution=0.5
     verbose=True
-    num_PCs=20
+    num_PCs=10
     num_harmony=20
     markers = [
             'CD3D', 'CD14', 'CD19', 'NCAM1', 'CD4', 'CD8A',
@@ -57,20 +57,23 @@ def main():
     h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
     cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
     sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
+    AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
     vars_to_regress = []
 
 
 
     AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read_h5ad("/users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad")
-    # AnnData_sample = sc.read_h5ad("/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad")
+    AnnData_cell = sc.read_h5ad(AnnData_cell_path)
+    AnnData_sample = sc.read_h5ad(AnnData_sample_path)
 
     visualization_harmony(
         AnnData_cell,
         AnnData_sample,
         output_dir,
         # grouping_columns=['batch', 'sev.level'],
-        verbose=True
+        verbose=True,
+        dot_size = 20
     )
     # if os.path.exists(summary_sample_csv_path):
     #     os.remove(summary_sample_csv_path)
