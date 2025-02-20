@@ -10,7 +10,7 @@ from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
-from Test import sample_anndata_by_sample
+from Test import sample_anndata_by_sample, treecor_seurat_mapping
 def main():
     output_dir = "/users/hjiang/GenoDistance/test_10"
     h5ad_path = "/users/hjiang/GenoDistance/Data/count_data.h5ad"
@@ -81,28 +81,44 @@ def main():
     print(f"Number of cells cel: {num_cells}")
     print(f"Number of genes cel: {num_genes}")
 
-    visualization_harmony(
-        AnnData_cell,
-        AnnData_sample,
+    treecor_seurat_mapping(
+        h5ad_path,
+        sample_meta_path,
         output_dir,
-        grouping_columns=['sev.level'],
-        verbose=True,
-        dot_size = 20
+        cell_meta_path=cell_meta_path,
+        after_process_h5ad_path=AnnData_sample_path,
+        num_hvg=2000,
+        min_cells=500,
+        min_features=500,
+        pct_mito_cutoff=20,
+        exclude_genes=None,
+        doublet=True,
+        n_pcs=20,
+        vars_to_regress=[],
+        verbose=True
     )
+    # visualization_harmony(
+    #     AnnData_cell,
+    #     AnnData_sample,
+    #     output_dir,
+    #     grouping_columns=['sev.level'],
+    #     verbose=True,
+    #     dot_size = 20
+    # )
 
-    if os.path.exists(summary_sample_csv_path):
-        os.remove(summary_sample_csv_path)
-    sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path)
-    EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
-    EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_cell_csv_path)
-    for md in methods:
-        print("\n\n\n\n" + md + "\n\n\n\n")
-        sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_cell_csv_path)
-        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path)
-    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
-    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
-    chi_square_distance(AnnData_cell, os.path.join(output_dir, 'Chi_square_cell'), summary_cell_csv_path)
-    jensen_shannon_distance(AnnData_cell, os.path.join(output_dir, 'jensen_shannon_cell'), summary_cell_csv_path)
+    # if os.path.exists(summary_sample_csv_path):
+    #     os.remove(summary_sample_csv_path)
+    # sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path)
+    # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
+    # EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_cell_csv_path)
+    # for md in methods:
+    #     print("\n\n\n\n" + md + "\n\n\n\n")
+    #     sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_cell_csv_path)
+    #     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path)
+    # chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
+    # jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
+    # chi_square_distance(AnnData_cell, os.path.join(output_dir, 'Chi_square_cell'), summary_cell_csv_path)
+    # jensen_shannon_distance(AnnData_cell, os.path.join(output_dir, 'jensen_shannon_cell'), summary_cell_csv_path)
 
     print("End of Process")
     print("End of Process")
