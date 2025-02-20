@@ -24,6 +24,7 @@ def treecor_harmony(h5ad_path,
                     min_features=500,
                     pct_mito_cutoff=20,
                     exclude_genes=None,
+                    doublet = True,
                     method='average',
                     metric='euclidean',
                     distance_mode='centroid',
@@ -92,7 +93,10 @@ def treecor_harmony(h5ad_path,
     if verbose:
         print(f'Dimension of processed data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
 
-    sc.pp.scrublet(adata, batch_key="sample")
+    # Doublet detection is now optional
+    if doublet:
+        sc.pp.scrublet(adata, batch_key="sample")
+
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     if verbose:
