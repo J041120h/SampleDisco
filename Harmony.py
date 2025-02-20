@@ -352,11 +352,18 @@ def visualization_harmony(
     print("adata_sample_diff shape:", adata_sample_diff.shape)
     print("adata_sample_diff.X shape:", adata_sample_diff.X.shape)
     print("Is adata_sample_diff.X sparse?", issparse(adata_sample_diff.X))
-    df = pd.DataFrame(
-        adata_sample_diff.X.toarray(),
-        index=adata_sample_diff.obs_names,
-        columns=adata_sample_diff.var_names
-    )
+    if issparse(adata_sample_diff.X):
+        df = pd.DataFrame(
+            adata_sample_diff.X.toarray(),
+            index=adata_sample_diff.obs_names,
+            columns=adata_sample_diff.var_names
+        )
+    else:
+        df = pd.DataFrame(
+            adata_sample_diff.X,
+            index=adata_sample_diff.obs_names,
+            columns=adata_sample_diff.var_names
+        )
     df['sample'] = adata_sample_diff.obs['sample']
     sample_means = df.groupby('sample').mean()
     sample_to_group = adata_sample_diff.obs[['sample', 'plot_group']].drop_duplicates().set_index('sample')

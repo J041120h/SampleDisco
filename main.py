@@ -62,15 +62,17 @@ def main():
     sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
     AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
     AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
+    summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
+    summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
     vars_to_regress = []
 
 
     # Test_adata_path = sample_anndata_by_sample(h5ad_path, 20,cell_meta_path,sample_meta_path)
     # treecor_harmony(Test_adata_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
 
-    AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read_h5ad(AnnData_cell_path)
-    # AnnData_sample = sc.read_h5ad(AnnData_sample_path)
+    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    AnnData_cell = sc.read_h5ad(AnnData_cell_path)
+    AnnData_sample = sc.read_h5ad(AnnData_sample_path)
     num_cells, num_genes = AnnData_sample.shape
     print(f"Number of cells: {num_cells}")
     print(f"Number of genes: {num_genes}")
