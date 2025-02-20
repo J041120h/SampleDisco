@@ -132,7 +132,9 @@ def treecor_harmony(h5ad_path,
         print('Variables to be regressed out: ', ','.join(vars_to_regress))
         print(f'Clustering cluster_resolution: {cluster_resolution}')
 
-    sc.external.pp.harmony_integrate(adata_cluster, vars_to_regress_for_harmony)
+    ho = hm.run_harmony(adata_cluster.obsm['X_pca'], adata_cluster.obs, vars_to_regress_for_harmony, max_iter_harmony=30, max_iter_kmeans=50)
+    adata_cluster.obsm['X_pca_harmony'] = ho.Z_corr.T
+
     if verbose:
         print("End of harmony for adata_cluster.")
 
@@ -210,7 +212,9 @@ def treecor_harmony(h5ad_path,
 
     if verbose:
         print('=== Begin Harmony ===')
-    sc.external.pp.harmony_integrate(adata_sample_diff, ['batch'])
+    ho = hm.run_harmony(adata_sample_diff.obsm['X_pca'], adata_sample_diff.obs, ['batch'], max_iter_harmony=30, max_iter_kmeans=50)
+    adata_sample_diff.obsm['X_pca_harmony'] = ho.Z_corr.T
+
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_harmony, n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 

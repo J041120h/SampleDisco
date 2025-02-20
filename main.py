@@ -66,37 +66,34 @@ def main():
     summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
     vars_to_regress = []
 
+    AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    # AnnData_cell = sc.read_h5ad(AnnData_cell_path)
+    # AnnData_sample = sc.read_h5ad(AnnData_sample_path)
+    # num_cells, num_genes = AnnData_sample.shape
+    # print(f"Number of cells: {num_cells}")
+    # print(f"Number of genes: {num_genes}")
 
-    # Test_adata_path = sample_anndata_by_sample(h5ad_path, 20,cell_meta_path,sample_meta_path)
-    # treecor_harmony(Test_adata_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    # num_cells, num_genes = AnnData_cell.shape
+    # print(f"Number of cells cel: {num_cells}")
+    # print(f"Number of genes cel: {num_genes}")
 
-    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    AnnData_cell = sc.read_h5ad(AnnData_cell_path)
-    AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    num_cells, num_genes = AnnData_sample.shape
-    print(f"Number of cells: {num_cells}")
-    print(f"Number of genes: {num_genes}")
+    # treecor_seurat_mapping(
+    #     h5ad_path,
+    #     sample_meta_path,
+    #     output_dir,
+    #     cell_meta_path=cell_meta_path,
+    #     after_process_h5ad_path=AnnData_sample_path,
+    #     num_hvg=2000,
+    #     min_cells=500,
+    #     min_features=500,
+    #     pct_mito_cutoff=20,
+    #     exclude_genes=None,
+    #     doublet=True,
+    #     n_pcs=20,
+    #     vars_to_regress=[],
+    #     verbose=True
+    # )
 
-    num_cells, num_genes = AnnData_cell.shape
-    print(f"Number of cells cel: {num_cells}")
-    print(f"Number of genes cel: {num_genes}")
-
-    treecor_seurat_mapping(
-        h5ad_path,
-        sample_meta_path,
-        output_dir,
-        cell_meta_path=cell_meta_path,
-        after_process_h5ad_path=AnnData_sample_path,
-        num_hvg=2000,
-        min_cells=500,
-        min_features=500,
-        pct_mito_cutoff=20,
-        exclude_genes=None,
-        doublet=True,
-        n_pcs=20,
-        vars_to_regress=[],
-        verbose=True
-    )
     # visualization_harmony(
     #     AnnData_cell,
     #     AnnData_sample,
