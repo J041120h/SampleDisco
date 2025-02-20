@@ -58,15 +58,15 @@ def treecor_harmony(h5ad_path,
     if "sample" not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append("sample")
 
-    # if cell_meta_path is None:
-    #     adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
-    # else:
-    #     cell_meta = pd.read_csv(cell_meta_path)
-    #     cell_meta.set_index('barcode', inplace=True)
-    #     adata.obs = adata.obs.join(cell_meta, how='left')
+    if cell_meta_path is None:
+        adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
+    else:
+        cell_meta = pd.read_csv(cell_meta_path)
+        cell_meta.set_index('barcode', inplace=True)
+        adata.obs = adata.obs.join(cell_meta, how='left')
 
-    # sample_meta = pd.read_csv(sample_meta_path)
-    # adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+    sample_meta = pd.read_csv(sample_meta_path)
+    adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
 
     sc.pp.filter_genes(adata, min_cells=min_cells)
     sc.pp.filter_cells(adata, min_genes=min_features)
@@ -151,13 +151,13 @@ def treecor_harmony(h5ad_path,
     if verbose:
         print("Finish find cell type")
 
-    # sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='logreg', n_genes=100)
-    # rank_results = adata_cluster.uns['rank_genes_groups']
-    # groups = rank_results['names'].dtype.names
-    # all_marker_genes = []
-    # for group in groups:
-    #     all_marker_genes.extend(rank_results['names'][group])
-    # all_marker_genes = list(set(all_marker_genes))
+    sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='logreg', n_genes=100)
+    rank_results = adata_cluster.uns['rank_genes_groups']
+    groups = rank_results['names'].dtype.names
+    all_marker_genes = []
+    for group in groups:
+        all_marker_genes.extend(rank_results['names'][group])
+    all_marker_genes = list(set(all_marker_genes))
 
     adata_cluster = cell_type_dendrogram(
         adata=adata_cluster,
@@ -166,7 +166,7 @@ def treecor_harmony(h5ad_path,
         method='average',
         metric='euclidean',
         distance_mode='centroid',
-        marker_genes=None,
+        marker_genes=all_marker_genes,
         verbose=True
     )
 
@@ -237,7 +237,7 @@ import scanpy as sc
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
-
+from scipy.sparse import issparse
 # For interactive 3D plot
 import plotly.express as px
 import plotly.io as pio
@@ -257,24 +257,6 @@ def visualization_harmony(
     output_dir = os.path.join(output_dir, 'harmony')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-
-    # -----------------------------
-    # 2. Build Group Assignments
-    # -----------------------------
-    def find_sample_grouping(adata, samples, grouping_columns, age_bin_size=None):
-        group_dict = {}
-        for sample in samples:
-            row = adata.obs.loc[adata.obs['sample'] == sample].iloc[0]
-            group_key = []
-            for col in grouping_columns:
-                group_key.append(str(row[col]))
-            if age_bin_size and 'age' in adata.obs.columns:
-                age_val = row['age']
-                age_bin = int(age_val // age_bin_size * age_bin_size)
-                group_key.append(f"AgeBin_{age_bin}")
-            group_name = "_".join(group_key)
-            group_dict[sample] = group_name
-        return group_dict
 
     # Group assignments for both AnnData objects
     cluster_samples = adata_cluster.obs['sample'].unique().tolist()
@@ -363,8 +345,11 @@ def visualization_harmony(
     if verbose:
         print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
 
+    print("adata_sample_diff shape:", adata_sample_diff.shape)
+    print("adata_sample_diff.X shape:", adata_sample_diff.X.shape)
+    print("Is adata_sample_diff.X sparse?", issparse(adata_sample_diff.X))
     df = pd.DataFrame(
-        adata_sample_diff.X,
+        adata_sample_diff.X.toarray(),
         index=adata_sample_diff.obs_names,
         columns=adata_sample_diff.var_names
     )

@@ -51,6 +51,8 @@ def main():
     ]
     summary_cell_csv_path = "/users/hjiang/GenoDistance/test_10/summary_cell.csv"
     summary_sample_csv_path = "/users/hjiang/GenoDistance/test_10/summary_sample.csv"
+    AnnData_cell_path = '/users/hjiang/GenoDistance/test_10/harmony/adata_cell.h5ad'
+    AnnData_sample_path = '/users/hjiang/GenoDistance/test_10/harmony/adata_sample.h5ad'
     vars_to_regress= ["batch"]
 
     #on local mac
@@ -63,20 +65,29 @@ def main():
     # vars_to_regress = []
 
 
-    Test_adata_path = sample_anndata_by_sample(h5ad_path, 20,cell_meta_path,sample_meta_path)
-    treecor_harmony(Test_adata_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    # Test_adata_path = sample_anndata_by_sample(h5ad_path, 20,cell_meta_path,sample_meta_path)
+    # treecor_harmony(Test_adata_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
 
-    AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read_h5ad(AnnData_cell_path)
-    # AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    visualization_harmony(
-        AnnData_cell,
-        AnnData_sample,
-        output_dir,
-        # grouping_columns=['batch', 'sev.level'],
-        verbose=True,
-        dot_size = 20
-    )
+    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    AnnData_cell = sc.read_h5ad(AnnData_cell_path)
+    AnnData_sample = sc.read_h5ad(AnnData_sample_path)
+    num_cells, num_genes = AnnData_sample.shape
+    print(f"Number of cells: {num_cells}")
+    print(f"Number of genes: {num_genes}")
+
+    num_cells, num_genes = AnnData_cell.shape
+    print(f"Number of cells cel: {num_cells}")
+    print(f"Number of genes cel: {num_genes}")
+
+    # visualization_harmony(
+    #     AnnData_cell,
+    #     AnnData_sample,
+    #     output_dir,
+    #     grouping_columns=['sev.level'],
+    #     verbose=True,
+    #     dot_size = 5
+    # )
+
     if os.path.exists(summary_sample_csv_path):
         os.remove(summary_sample_csv_path)
     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path)
