@@ -68,7 +68,6 @@ def distanceCheck(df_path,
         for j, sample_j in enumerate(samples):
             if i >= j:
                 continue  # Avoid redundant pairs & self-distances
-
             distance = df.iloc[i, j]
             if groups[sample_i] == groups[sample_j]:
                 in_group_distances.append(distance)
@@ -109,7 +108,7 @@ def distanceCheck(df_path,
         summary_df = pd.read_csv(summary_csv_path, index_col=0)
     else:
         # Create a new DataFrame with some default rows
-        rows = ['cell_proportion', 'gene_expression']
+        rows = ['cell_proportion', 'gene_expression', "gene_pseudobulk"]
         summary_df = pd.DataFrame(index=rows)
 
     if method not in summary_df.columns:

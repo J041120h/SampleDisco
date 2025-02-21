@@ -106,6 +106,81 @@ def calculate_sample_distances_gene_expression(
     print("Distance matrix based on gene expression per sample saved to 'distance_matrix_gene_expression.csv'.")
     return distance_df
 
+
+def calculate_sample_distances_gene_pseudobulk(
+    adata: AnnData,
+    output_dir: str,
+    method: str,
+    summary_csv_path: str,
+    sample_column: str = 'sample',
+    celltype_column: str = 'cell_type',
+    normalize: bool = True,
+    log_transform: bool = True
+) -> pd.DataFrame:
+    """
+    1) Compute the average gene expression for each (sample, cell_type).
+    2) Concatenate these gene expressions by unstacking/pivoting so each sample
+       is a single row containing (gene x cell_type) columns.
+    3) Compute sample-sample distance using the chosen method (e.g., euclidean).
+    """
+
+    # Create sub-directory for outputs
+    output_dir = os.path.join(output_dir, 'gene_pseudobulk')
+    os.makedirs(output_dir, exist_ok=True)
+
+    # ---------------------------
+    # 1) Build a dataframe with expression + sample + cell_type
+    # ---------------------------
+    # adata.to_df() returns a DataFrame of shape [n_cells, n_genes],
+    # with column names as gene symbols/features in adata.var_names.
+    expr_df = adata.to_df().copy()
+
+    # Add columns for sample & cell_type from .obs
+    expr_df[sample_column] = adata.obs[sample_column].values
+    expr_df[celltype_column] = adata.obs[celltype_column].values
+
+    # ---------------------------
+    # 2) Group by (sample, cell_type) and compute mean
+    # ---------------------------
+    # This yields a multi-index DataFrame: Index levels = sample, cell_type
+    avg_expr = expr_df.groupby([sample_column, celltype_column]).mean()
+
+    # ---------------------------
+    # 3) "Concatenate" these means into a single vector for each sample
+    #    by unstacking cell_type. That way each row = 1 sample
+    #    and columns = gene x cell_type
+    # ---------------------------
+    avg_expr = avg_expr.unstack(level=celltype_column).fillna(0)
+
+    # Flatten the multi-level columns: (gene, cell_type) -> gene_celltype
+    avg_expr.columns = [f"{gene}_{ct}" for gene, ct in avg_expr.columns]
+
+    # Optionally, save the average expression to CSV
+    avg_expr_path = os.path.join(output_dir, 'average_gene_pseudobulk_per_sample.csv')
+    avg_expr.to_csv(avg_expr_path)
+    print(f"Average gene pseudobulk per sample saved to {avg_expr_path}")
+
+    # ---------------------------
+    # 4) Compute the sample distance
+    # ---------------------------
+    # avg_expr.index are the samples, each row is the concatenated expression vector
+    distance_matrix = pdist(avg_expr.values, metric=method)
+
+    # Convert to a square distance matrix
+    distance_df = pd.DataFrame(
+        squareform(distance_matrix),
+        index=avg_expr.index,
+        columns=avg_expr.index
+    )
+
+    # Save distance matrix
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_pseudobulk.csv')
+    distance_df.to_csv(distance_matrix_path)
+    distanceCheck(distance_matrix_path, 'gene_pseudobulk', method, summary_csv_path, adata)
+    print(f"Sample distance matrix saved to {distance_matrix_path}")
+
+    return distance_df
+
 def calculate_sample_distances_pca(
     adata: AnnData,
     output_dir: str,
@@ -357,4 +432,5 @@ def sample_distance(
     calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path)
     calculate_sample_distances_gene_expression(adata, output_dir, method, summary_csv_path)
     calculate_sample_distances_pca(adata, output_dir, method, summary_csv_path)
+    calculate_sample_distances_gene_pseudobulk(adata, output_dir, method, summary_csv_path)
     # calculate_sample_distances_weighted_expression(adata, output_dir, method, summary_csv_path)

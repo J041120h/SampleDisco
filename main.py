@@ -47,7 +47,6 @@ def main():
         'braycurtis',
         'sqeuclidean',
         'matching',
-        'dice',
     ]
     summary_cell_csv_path = "/users/hjiang/GenoDistance/test_10/summary_cell.csv"
     summary_sample_csv_path = "/users/hjiang/GenoDistance/test_10/summary_sample.csv"
@@ -66,9 +65,9 @@ def main():
     summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
     vars_to_regress = []
 
-    AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read_h5ad(AnnData_cell_path)
-    # AnnData_sample = sc.read_h5ad(AnnData_sample_path)
+    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    AnnData_cell = sc.read_h5ad(AnnData_cell_path)
+    AnnData_sample = sc.read_h5ad(AnnData_sample_path)
     # num_cells, num_genes = AnnData_sample.shape
     # print(f"Number of cells: {num_cells}")
     # print(f"Number of genes: {num_genes}")
@@ -108,10 +107,10 @@ def main():
     # sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path)
     # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
     # EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_cell_csv_path)
-    # for md in methods:
-    #     print("\n\n\n\n" + md + "\n\n\n\n")
-    #     sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_cell_csv_path)
-    #     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path)
+    for md in methods:
+        print("\n\n\n\n" + md + "\n\n\n\n")
+        sample_distance(AnnData_cell, os.path.join(output_dir, 'Cell'), f'{md}', summary_cell_csv_path)
+        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path)
     # chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
     # jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
     # chi_square_distance(AnnData_cell, os.path.join(output_dir, 'Chi_square_cell'), summary_cell_csv_path)
