@@ -25,6 +25,7 @@ def treecor_harmony(h5ad_path,
                     pct_mito_cutoff=20,
                     exclude_genes=None,
                     doublet = True,
+                    combat = False,
                     method='average',
                     metric='euclidean',
                     distance_mode='centroid',
@@ -123,8 +124,9 @@ def treecor_harmony(h5ad_path,
         batch_key='sample'
     )
 
-    adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()    
-    sc.pp.combat(adata_cluster, key = 'batch', inplace = True)
+    adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()  
+    if combat:  
+        sc.pp.combat(adata_cluster, key = 'batch', inplace = True)
     sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
     # Harmony batch correction
     if verbose:
@@ -208,6 +210,8 @@ def treecor_harmony(h5ad_path,
         print('=== HVG ===')
 
     # PCA + Harmony (optional for sample difference dimension reduction)
+    if combat:
+        sc.pp.combat(adata_sample_diff, key = 'batch', inplace = True)
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
     if verbose:
