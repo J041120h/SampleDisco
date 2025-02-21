@@ -34,6 +34,20 @@ def main():
         ]
     proportion_weight: float = 1.0,
     expression_weight: float = 1.0,
+    # methods = [
+    #     'euclidean',
+    #     'minkowski',
+    #     'cityblock',
+    #     'chebyshev',
+    #     'cosine',
+    #     'correlation',
+    #     'hamming',
+    #     'jaccard',
+    #     'canberra',
+    #     'braycurtis',
+    #     'sqeuclidean',
+    #     'matching',
+    # ]
     methods = [
         'euclidean',
         'minkowski',
@@ -41,12 +55,9 @@ def main():
         'chebyshev',
         'cosine',
         'correlation',
-        'hamming',
-        'jaccard',
         'canberra',
         'braycurtis',
         'sqeuclidean',
-        'matching',
     ]
     summary_cell_csv_path = "/users/hjiang/GenoDistance/test_10/summary_cell.csv"
     summary_sample_csv_path = "/users/hjiang/GenoDistance/test_10/summary_sample.csv"
