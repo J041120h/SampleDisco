@@ -380,6 +380,7 @@ def visualization_harmony(
     pca_coords_2d = pca_2d.fit_transform(sample_means)
     pca_2d_df = pd.DataFrame(pca_coords_2d, index=sample_means.index, columns=['PC1', 'PC2'])
     pca_2d_df = pca_2d_df.join(sample_to_group, how='left')
+    
 
     plt.figure(figsize=(8, 6))
     unique_groups = pca_2d_df['plot_group'].unique()
@@ -392,9 +393,50 @@ def visualization_harmony(
     plt.title('2D PCA of Avg HVG Expression ')
     plt.grid(True)
     plt.tight_layout()
-    plt.legend().remove()
-    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_no_legend.pdf'))
+    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf'))
     plt.close()
+
+    if verbose:
+        print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
+
+    print("adata_cluster shape:", adata_cluster.shape)
+    print("adata_cluster.X shape:", adata_cluster.X.shape)
+    print("Is adata_cluster.X sparse?", issparse(adata_cluster.X))
+    if issparse(adata_cluster.X):
+        df = pd.DataFrame(
+            adata_cluster.X.toarray(),
+            index=adata_cluster.obs_names,
+            columns=adata_cluster.var_names
+        )
+    else:
+        df = pd.DataFrame(
+            adata_cluster.X,
+            index=adata_cluster.obs_names,
+            columns=adata_cluster.var_names
+        )
+    df['sample'] = adata_cluster.obs['sample']
+    sample_means = df.groupby('sample').mean()
+    sample_to_group = adata_cluster.obs[['sample', 'plot_group']].drop_duplicates().set_index('sample')
+
+    pca_2d = PCA(n_components=2)
+    pca_coords_2d = pca_2d.fit_transform(sample_means)
+    pca_2d_df = pd.DataFrame(pca_coords_2d, index=sample_means.index, columns=['PC1', 'PC2'])
+    pca_2d_df = pca_2d_df.join(sample_to_group, how='left')
+
+    plt.figure(figsize=(8, 6))
+    unique_groups = pca_2d_df['plot_group'].unique()
+    colors = plt.cm.get_cmap('tab10', len(unique_groups))
+    for i, grp in enumerate(unique_groups):
+        mask = (pca_2d_df['plot_group'] == grp)
+        plt.scatter(pca_2d_df.loc[mask, 'PC1'], pca_2d_df.loc[mask, 'PC2'], color=colors(i), s=80, alpha=0.8)
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of Avg HVG Expression ')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_cluster.pdf'))
+    plt.close()
+
 
     # 3D Interactive PCA
     pca_3d = PCA(n_components=3)

@@ -395,3 +395,51 @@ def treecor_seurat_mapping(
         print("Analysis complete. The AnnData object is returned in memory only.")
 
     return adata
+
+import scanpy as sc
+import pandas as pd
+
+def count_samples_in_adata(h5ad_path, sample_meta_path, cell_meta_path=None, verbose=True):
+    """
+    Reads an AnnData object, combines sample and cell metadata, and counts unique sample entries.
+
+    Parameters:
+    h5ad_path (str): Path to the AnnData (.h5ad) file.
+    sample_meta_path (str): Path to the sample metadata CSV file.
+    cell_meta_path (str, optional): Path to the cell metadata CSV file. Defaults to None.
+    verbose (bool, optional): Whether to print status messages. Defaults to True.
+
+    Returns:
+    int: The number of unique samples in the dataset.
+    """
+    if verbose:
+        print('=== Reading input dataset ===')
+    adata = sc.read_h5ad(h5ad_path)
+    
+    if verbose:
+        print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+    
+    # Assign sample IDs to cells
+    if cell_meta_path is None:
+        adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
+    else:
+        if verbose:
+            print('=== Reading cell metadata ===')
+        cell_meta = pd.read_csv(cell_meta_path)
+        cell_meta.set_index('barcode', inplace=True)
+        adata.obs = adata.obs.join(cell_meta, how='left')
+    
+    if verbose:
+        print('=== Reading sample metadata ===')
+    sample_meta = pd.read_csv(sample_meta_path)
+    
+    # Merge sample metadata with observation data
+    adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+    
+    # Count unique samples
+    unique_samples = adata.obs['sample'].nunique()
+    
+    if verbose:
+        print(f'Number of unique samples in dataset: {unique_samples}')
+    
+    return unique_samples
