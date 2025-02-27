@@ -5,12 +5,14 @@ import scanpy as sc
 import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
-from Harmony import treecor_harmony,visualization_harmony
+from Harmony import treecor_harmony
 from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata
+from Visualization import visualization_harmony
+
 def main():
     output_dir = "/users/hjiang/GenoDistance/result"
     h5ad_path = "/users/hjiang/GenoDistance/Data/count_data.h5ad"
