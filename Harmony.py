@@ -6,7 +6,7 @@ import harmonypy as hm
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from Visualization import visualization_harmony
-from combat.pycombat import ComBat
+from combat.pycombat import pycombat
 
 # Local imports from your project
 from HierarchicalConstruction import cell_type_dendrogram
@@ -223,62 +223,200 @@ def treecor_harmony(h5ad_path,
     # At this point, we have create our comparison group as well as find the correct grouping of cell. 
     # Now all our operation should be based on a new round of operation of our new sample_diff adata.
 
-    # Step 1: Compute pseudo-bulk expression per cell type per sample
-    pseudo_bulk_expression = {}
-    cell_proportion = {}
-    samples = adata_sample_diff.obs['sample'].unique()
-    cell_types = adata_sample_diff.obs['cell_type'].unique()
-    gene_names = adata_sample_diff.var_names  # Retrieve gene names
+    compute_pseudobulk_dataframes(adata_sample_diff, output_dir, 'batch', 'sample', 'cell_type')
+
+
+def compute_pseudobulk_dataframes(
+    adata: sc.AnnData,
+    batch_col: str = 'batch',
+    sample_col: str = 'sample',
+    celltype_col: str = 'cell_type',
+    output_dir: str = './'
+):
+    """
+    Creates two DataFrames:
+
+    1) `cell_expression_df` with rows = cell types, columns = samples.
+       Each cell is a vector of average gene expressions for that cell type in that sample.
+    2) `cell_proportion_df` with rows = cell types, columns = samples.
+       Each cell is a single float for proportion of that cell type in that sample.
+
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data matrix (cells x genes).
+        Must have `sample_col` and `celltype_col` in .obs.
+    sample_col : str
+        Column in `adata.obs` indicating sample ID.
+    celltype_col : str
+        Column in `adata.obs` indicating cell type.
+    output_dir : str
+        Directory where the output might be saved. 
+        (Optional in this snippet; you can omit if not saving.)
+
+    Returns
+    -------
+    cell_expression_df : DataFrame
+        Rows = cell types, columns = samples, each element is a 1D numpy array of shape (n_genes,).
+    cell_proportion_df : DataFrame
+        Rows = cell types, columns = samples, each element is a float (the proportion).
+    """
+
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Extract relevant columns
+    samples = adata.obs[sample_col].unique()
+    cell_types = adata.obs[celltype_col].unique()
+    gene_names = adata.var_names
+
+    # Convert sparse matrix to dense if needed
+    X_data = adata.X
+    if not isinstance(X_data, np.ndarray):
+        X_data = X_data.toarray()
+
+    # Create empty DataFrames
+    # Each cell in cell_expression_df is initially set to None (or np.nan).
+    # We'll store arrays in them, so we use dtype=object for the expression DF.
+    cell_expression_df = pd.DataFrame(
+        index=cell_types,
+        columns=samples,
+        dtype=object
+    )
+    cell_proportion_df = pd.DataFrame(
+        index=cell_types,
+        columns=samples,
+        dtype=float
+    )
 
     for sample in samples:
-        pseudo_bulk_expression[sample] = {}
-        cell_proportion[sample] = {}
-        total_cells = (adata_sample_diff.obs['sample'] == sample).sum()
-        
-        for cell_type in cell_types:
-            # Select only cells belonging to this sample and cell type
-            cell_mask = (adata_sample_diff.obs['sample'] == sample) & (adata_sample_diff.obs['cell_type'] == cell_type)
-            cell_subset = adata_sample_diff[cell_mask]
-            
-            if cell_subset.shape[0] > 0:
-                pseudo_bulk_expression[sample][cell_type] = np.mean(cell_subset.X, axis=0)  # Mean expression per gene
-                cell_proportion[sample][cell_type] = cell_subset.shape[0] / total_cells  # Proportion of cell type
+        # Mask: all cells from this sample
+        sample_mask = (adata.obs[sample_col] == sample)
+        total_cells = np.sum(sample_mask)
+
+        for ctype in cell_types:
+            # Further subset to this cell type
+            ctype_mask = sample_mask & (adata.obs[celltype_col] == ctype)
+            num_cells = np.sum(ctype_mask)
+
+            if num_cells > 0:
+                # Average expression across genes for the subset
+                expr_values = X_data[ctype_mask, :].mean(axis=0)
+                proportion = num_cells / total_cells
             else:
-                pseudo_bulk_expression[sample][cell_type] = np.zeros(len(gene_names))  # Placeholder for missing cell types
-                cell_proportion[sample][cell_type] = 0.0
+                # No cells of this (sample, cell_type) combination
+                expr_values = np.zeros(len(gene_names))
+                proportion = 0.0
 
-    # Convert dictionaries to DataFrames
-    pseudo_bulk_df = pd.DataFrame.from_dict(
-        {(sample, cell_type): pseudo_bulk_expression[sample][cell_type] for sample in samples for cell_type in cell_types},
-        orient='index', columns=gene_names
-    )
+            # Store results in the DataFrames
+            cell_expression_df.loc[ctype, sample] = expr_values
+            cell_proportion_df.loc[ctype, sample] = proportion
 
-    cell_proportion_df = pd.DataFrame.from_dict(
-        {(sample, cell_type): cell_proportion[sample][cell_type] for sample in samples for cell_type in cell_types},
-        orient='index', columns=['proportion']
-    )
+    # (Optionally) do something with these DataFrames, e.g. store in `.uns` or write to disk:
+    adata.uns["cell_expression_df"] = cell_expression_df
+    adata.uns["cell_proportion_df"] = cell_proportion_df
+    adata.uns["cell_expression_corrected_df"] = compute_pseudobulk_dataframes(adata_sample_diff, output_dir, 'batch', 'sample', 'cell_type')
 
-    # Step 2: Apply ComBat for batch effect correction per cell type
-    batch_info = adata_sample_diff.obs['batch'].astype(str)
-    combat_corrected = {}
+    return cell_expression_df, cell_proportion_df
 
-    for cell_type in cell_types:
-        cell_type_df = pseudo_bulk_df.xs(cell_type, level=1)
-        batch_vector = batch_info.loc[cell_type_df.index.get_level_values(0)]  # Get batch info for corresponding samples
-        
-        corrected_values = ComBat(dat=cell_type_df.T, batch=batch_vector)  # Transpose to match expected input format
-        combat_corrected[cell_type] = corrected_values.T  # Transpose back
+def combat_correct_cell_expressions(
+    adata: sc.AnnData,
+    cell_expression_df: pd.DataFrame,
+    batch_col: str = 'batch',
+    sample_col: str = 'sample'
+) -> pd.DataFrame:
+    """
+    Applies ComBat batch correction to each cell type across samples for a
+    DataFrame where:
+      - Rows = cell types
+      - Columns = sample IDs
+      - Each cell is a 1D array of shape (n_genes,).
 
-    # Convert to DataFrame
-    combat_corrected_df = pd.concat(combat_corrected, names=['cell_type'])
+    Parameters
+    ----------
+    adata : sc.AnnData
+        AnnData object that includes `batch_col` and `sample_col` in `adata.obs`
+        for each cell. We'll look up the batch for each sample from here.
+    cell_expression_df : DataFrame
+        Rows = cell types, columns = samples.
+        Each cell in the table is a 1D numpy array of length n_genes.
+    batch_col : str
+        The name of the column in `adata.obs` that indicates batch.
+    sample_col : str
+        The name of the column in `adata.obs` that indicates sample ID.
 
-    # Store results in AnnData
-    adata_sample_diff.obsm["pseudo_bulk_expression"] = pseudo_bulk_df
-    adata_sample_diff.obsm["pseudo_bulk_corrected"] = combat_corrected_df
-    adata_sample_diff.obsm["cell_proportion"] = cell_proportion_df
+    Returns
+    -------
+    corrected_df : DataFrame
+        Same shape as `cell_expression_df` (rows = cell types, columns = samples),
+        but each cell's array is now ComBat-corrected.
+    """
 
-    # Save final integrated data
-    adata_sample_diff.write(os.path.join(output_dir, 'adata_sample.h5ad'))
+    sample_batch_map = (adata.obs[[sample_col, batch_col]]
+                        .drop_duplicates()
+                        .set_index(sample_col)[batch_col]
+                        .to_dict())
 
-    return adata_cluster, adata_sample_diff
+    # We'll also gather the list of genes from the first row's first cell
+    # (assuming all arrays have the same length, i.e., same set/order of genes).
+    # If your code has a known gene ordering, you can pass it directly.
+    # Here we assume at least 1 row x 1 column is present.
+    example_row = cell_expression_df.iloc[0].dropna()
+    example_array = next((arr for arr in example_row if arr is not None and len(arr) > 0), None)
+    if example_array is None:
+        raise ValueError("Unable to find a non-empty array in cell_expression_df.")
+    n_genes = len(example_array)
 
+    # Make a copy to store corrected values
+    corrected_df = cell_expression_df.copy(deep=True)
+
+    # ---------------------------
+    # 2. Loop over cell types
+    # ---------------------------
+    for ctype in corrected_df.index:  # each row
+        # Extract the row as a Series: index=sample IDs, values=arrays of shape (n_genes,)
+        row_data = corrected_df.loc[ctype]
+
+        # Build an (n_samples x n_genes) matrix by stacking the arrays in row order
+        # Also collect the batch labels in the same order
+        arrays_for_this_ctype = []
+        batch_labels = []
+        samples_in_row = row_data.index
+
+        for sample_id in samples_in_row:
+            expr_array = row_data[sample_id]
+            # It might be None or an empty array if data is missing
+            if expr_array is None or len(expr_array) == 0:
+                expr_array = np.zeros(n_genes, dtype=float)
+            
+            arrays_for_this_ctype.append(expr_array)
+
+            # Lookup the batch for this sample. If not found, use a placeholder or skip.
+            batch = sample_batch_map.get(sample_id, "missing_batch")
+            batch_labels.append(batch)
+
+        # Convert to shape (n_samples, n_genes)
+        expr_matrix = np.vstack(arrays_for_this_ctype)  # shape: (n_samples, n_genes)
+
+        # If there's only one sample or only one unique batch, ComBat doesn't do anything meaningful.
+        # We can skip or at least check for that here:
+        unique_batches = pd.unique(batch_labels)
+        if len(batch_labels) < 2 or len(unique_batches) < 2:
+            # Skip ComBat, leave row as is
+            continue
+
+        # ---------------------------
+        # 3. Apply ComBat
+        # ---------------------------
+        # pycombat expects shape (n_genes x n_samples), so transpose
+        expr_matrix_t = expr_matrix.T  # shape: (n_genes, n_samples)
+        corrected_matrix_t = pycombat(expr_matrix_t, batch=batch_labels)
+        corrected_matrix = corrected_matrix_t.T  # back to shape (n_samples, n_genes)
+
+        # ---------------------------
+        # 4. Write corrected arrays back to corrected_df
+        # ---------------------------
+        for i, sample_id in enumerate(samples_in_row):
+            corrected_df.loc[ctype, sample_id] = corrected_matrix[i]
+
+    return corrected_df

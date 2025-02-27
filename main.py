@@ -5,7 +5,7 @@ import scanpy as sc
 import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
-from Harmony import treecor_harmony
+from Harmony import treecor_harmony, compute_pseudobulk_dataframes
 from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
@@ -68,36 +68,37 @@ def main():
     vars_to_regress= ["batch"]
 
     #on local mac
-    # output_dir = "/Users/harry/Desktop/GenoDistance/result"
-    # h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-    # cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
-    # sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
-    # AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
-    # AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
-    # summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
-    # summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
-    # vars_to_regress = []
-
-    # in /dcs04/hongkai/data/HarryJ
-    output_dir = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat"
+    output_dir = "/Users/harry/Desktop/GenoDistance/result"
     h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
     cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
     sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
-    AnnData_cell_path = '/dcs04/hongkai/data/HarryJ/fully_same_without_combat/harmony/adata_cell.h5ad'
-    AnnData_sample_path = '/dcs04/hongkai/data/HarryJ/fully_same_without_combat/harmony/adata_sample.h5ad'
-    summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_cell.csv"
-    summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_sample.csv"
+    AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
+    AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
+    summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
+    summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
+    vars_to_regress = []
+
+    # in /dcs04/hongkai/data/HarryJ
+    # output_dir = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat"
+    # h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+    # cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
+    # sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    # AnnData_cell_path = '/dcs04/hongkai/data/HarryJ/fully_same_without_combat/harmony/adata_cell.h5ad'
+    # AnnData_sample_path = '/dcs04/hongkai/data/HarryJ/fully_same_without_combat/harmony/adata_sample.h5ad'
+    # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_cell.csv"
+    # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_sample.csv"
 
     # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    AnnData_cell = sc.read_h5ad(AnnData_cell_path)
+    # AnnData_cell = sc.read_h5ad(AnnData_cell_path)
     AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    num_cells, num_genes = AnnData_sample.shape
-    print(f"Number of cells: {num_cells}")
-    print(f"Number of genes: {num_genes}")
+    compute_pseudobulk_dataframes(AnnData_sample, output_dir, 'batch', 'sample', 'cell_type')
+    # num_cells, num_genes = AnnData_sample.shape
+    # print(f"Number of cells: {num_cells}")
+    # print(f"Number of genes: {num_genes}")
 
-    num_cells, num_genes = AnnData_cell.shape
-    print(f"Number of cells cel: {num_cells}")
-    print(f"Number of genes cel: {num_genes}")
+    # num_cells, num_genes = AnnData_cell.shape
+    # print(f"Number of cells cel: {num_cells}")
+    # print(f"Number of genes cel: {num_genes}")
 
     # visualization_harmony(
     #     AnnData_cell,
@@ -108,13 +109,13 @@ def main():
     #     dot_size = 3
     # )
 
-    if os.path.exists(summary_sample_csv_path):
-        os.remove(summary_sample_csv_path)
-    if os.path.exists(summary_cell_csv_path):
-        os.remove(summary_cell_csv_path)
+    # if os.path.exists(summary_sample_csv_path):
+    #     os.remove(summary_sample_csv_path)
+    # if os.path.exists(summary_cell_csv_path):
+    #     os.remove(summary_cell_csv_path)
 
-    sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), 'cosine', summary_sample_csv_path)
-    sample_distance(AnnData_cell, os.path.join(output_dir, 'cell'), 'cosine', summary_cell_csv_path)
+    # sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), 'cosine', summary_sample_csv_path)
+    # sample_distance(AnnData_cell, os.path.join(output_dir, 'cell'), 'cosine', summary_cell_csv_path)
     # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
     # EMD_distances(AnnData_cell, os.path.join(output_dir, 'cell_level_EMD'), summary_cell_csv_path)
     # for md in methods:
