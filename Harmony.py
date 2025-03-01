@@ -224,7 +224,8 @@ def treecor_harmony(h5ad_path,
     # Now all our operation should be based on a new round of operation of our new sample_diff adata.
 
     compute_pseudobulk_dataframes(adata_sample_diff, 'batch', 'sample', 'cell_type', output_dir)
-
+    sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
+    return adata_cluster, adata_sample_diff
 
 def compute_pseudobulk_dataframes(
     adata: sc.AnnData,
@@ -314,11 +315,13 @@ def compute_pseudobulk_dataframes(
     
     print("Successfuly computed pseudobulk dataframes.")
 
-    # (Optionally) do something with these DataFrames, e.g. store in `.uns` or write to disk:
-    adata.uns["cell_expression_df"] = cell_expression_df
-    adata.uns["cell_proportion_df"] = cell_proportion_df
-    adata.uns["cell_expression_corrected_df"] = combat_correct_cell_expressions(adata, cell_expression_df)
+    # Save DataFrames as CSV files without modifying their structure
+    cell_expression_df.to_csv(os.path.join(output_dir, "cell_expression.csv"), index=True)
+    cell_proportion_df.to_csv(os.path.join(output_dir, "cell_proportion.csv"), index=True)
 
+    # Compute corrected expression and save it
+    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df)
+    cell_expression_corrected_df.to_csv(os.path.join(output_dir, "cell_expression_corrected.csv"), index=True)
     return cell_expression_df, cell_proportion_df
 
 def combat_correct_cell_expressions(

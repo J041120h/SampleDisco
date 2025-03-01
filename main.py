@@ -88,17 +88,8 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_sample.csv"
 
-    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read_h5ad(AnnData_cell_path)
-    AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    compute_pseudobulk_dataframes(AnnData_sample)
-    # num_cells, num_genes = AnnData_sample.shape
-    # print(f"Number of cells: {num_cells}")
-    # print(f"Number of genes: {num_genes}")
-
-    # num_cells, num_genes = AnnData_cell.shape
-    # print(f"Number of cells cel: {num_cells}")
-    # print(f"Number of genes cel: {num_genes}")
+    AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), 'cosine', summary_sample_csv_path)
 
     # visualization_harmony(
     #     AnnData_cell,

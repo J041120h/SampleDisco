@@ -16,38 +16,66 @@ def calculate_sample_distances_cell_proportion(
     adata: AnnData,
     output_dir: str,
     method: str,
-    summary_csv_path: str,
-    cell_type_column: str = 'cell_type',
-    sample_column: str = 'sample'
+    summary_csv_path: str
 ) -> pd.DataFrame:
+    """
+    Calculate a distance matrix between samples based on the previously
+    computed cell proportions (stored in adata.uns["cell_proportion_df"]).
+
+    Parameters
+    ----------
+    adata : AnnData
+        The AnnData object containing adata.uns["cell_proportion_df"] 
+        (rows=cell types, columns=samples).
+    output_dir : str
+        Directory to save outputs (heatmaps, CSVs, etc.).
+    method : str
+        Distance metric to pass to scipy's pdist (e.g. 'euclidean', 'cityblock', 'correlation', etc.).
+    summary_csv_path : str
+        Path to a summary CSV that might be updated by `distanceCheck` or other QC logs.
+
+    Returns
+    -------
+    distance_df : pd.DataFrame
+        A square DataFrame with samples as both rows and columns, containing
+        the pairwise distances.
+    """
     # Ensure the directory exists
     output_dir = os.path.join(output_dir, 'cell_proportion')
     os.makedirs(output_dir, exist_ok=True)
 
-    # Calculate cell type proportions
-    cell_counts = adata.obs.groupby([sample_column, cell_type_column]).size().unstack(fill_value=0)
-    cell_proportions = cell_counts.div(cell_counts.sum(axis=1), axis=0)
+    # 1. Load the previously computed cell_proportion_df and transpose
+    #    so that rows = samples, columns = cell types.
+    if "cell_proportion_df" not in adata.uns:
+        raise ValueError("adata.uns does not contain 'cell_proportion_df'. Make sure it is computed first.")
+    cell_proportions = adata.uns["cell_proportion_df"].T
 
-    # Calculate distance matrix
-    distance_matrix = pdist(cell_proportions.values, metric=method)
+    # 2. Calculate the distance matrix between sample rows
+    distance_matrix = pdist(cell_proportions.values, metric=method)  
     distance_df = pd.DataFrame(
         squareform(distance_matrix),
-        index=cell_proportions.index,
-        columns=cell_proportions.index
+        index=cell_proportions.index,    # sample IDs
+        columns=cell_proportions.index   # sample IDs
     )
+
+    # 3. Transform/normalize distances (optional, as per your snippet)
     distance_df = np.log1p(np.maximum(distance_df, 0))
     distance_df = distance_df / distance_df.max().max()
-    # Save the distance matrix
-    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_average_expression.csv')
+
+    # 4. Save and log
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_proportion.csv')
     distance_df.to_csv(distance_matrix_path)
     distanceCheck(distance_matrix_path, 'cell_proportion', method, summary_csv_path, adata)
-    print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
+    print(f"Sample distance (cell proportion) matrix saved to: {distance_matrix_path}")
 
-    # generate a heatmap for sample distance
+    # 5. Visualize (optional utilities)
     heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
     visualizeDistanceMatrix(distance_df, heatmap_path)
-    visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf'))
-    print("Distance matrix based on average expression per cell type saved to 'distance_matrix_proportion.csv'.")
+
+    relationship_pdf = os.path.join(output_dir, 'sample_proportion_relationship.pdf')
+    visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=relationship_pdf)
+
+    print("Distance matrix based on cell proportion has been computed and visualized.")
     return distance_df
 
 def calculate_sample_distances_gene_expression(
