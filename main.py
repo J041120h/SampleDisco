@@ -76,6 +76,7 @@ def main():
     AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
     summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
     summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
+    pseudobulk_data_path = "/Users/harry/Desktop/GenoDistance/result/harmony"
     vars_to_regress = []
 
     # in /dcs04/hongkai/data/HarryJ
@@ -88,8 +89,12 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_sample.csv"
 
-    AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-    sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), 'cosine', summary_sample_csv_path)
+    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    # AnnData_sample = sc.read_h5ad(AnnData_sample_path)
+    # sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), 'cosine', summary_sample_csv_path, pseudobulk_data_path)
+    cell_proportion_file = os.path.join(pseudobulk_data_path, "cell_expression_corrected.csv")
+    cell_proportions = pd.read_csv(cell_proportion_file, index_col=0)
+    cell_proportions.head()
 
     # visualization_harmony(
     #     AnnData_cell,
