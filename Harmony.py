@@ -223,7 +223,5 @@ def treecor_harmony(h5ad_path,
 
     # At this point, we have create our comparison group as well as find the correct grouping of cell. 
     # Now all our operation should be based on a new round of operation of our new sample_diff adata.
-
-    compute_pseudobulk_dataframes(adata_sample_diff, 'batch', 'sample', 'cell_type', output_dir)
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_cluster, adata_sample_diff

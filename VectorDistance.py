@@ -17,7 +17,7 @@ def calculate_sample_distances_cell_proportion(
     output_dir: str,
     method: str,
     summary_csv_path: str,
-    pseudobulk_data_path: str
+    pseudobulk: dict
 ) -> pd.DataFrame:
     """
     Calculate a distance matrix between samples based on the previously
@@ -45,8 +45,7 @@ def calculate_sample_distances_cell_proportion(
     output_dir = os.path.join(output_dir, 'cell_proportion')
     os.makedirs(output_dir, exist_ok=True)
 
-    cell_proportion_file = os.path.join(pseudobulk_data_path, "cell_proportion.csv")
-    cell_proportions = pd.read_csv(cell_proportion_file, index_col=0)
+    cell_proportions = pseudobulk["cell_proportion"]
 
     # 2. Calculate the distance matrix between sample rows
     distance_matrix = pdist(cell_proportions.values, metric=method)  
@@ -138,7 +137,7 @@ def calculate_sample_distances_gene_pseudobulk(
     output_dir: str,
     method: str,
     summary_csv_path: str,
-    pseudobulk_data_path: str,
+    pseudobulk: dict,
     sample_column: str = 'sample',
     celltype_column: str = 'cell_type',
     normalize: bool = True,
@@ -450,15 +449,15 @@ def sample_distance(
     output_dir: str,
     method: str,
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
-    pseudobulk_data_path: str = "/users/harry/desktop/GenoDistance/result/harmony",
+    pseudobulk: dict = None,
     sample_column: str = 'sample',
     normalize: bool = True,
     log_transform: bool = True
 ) -> pd.DataFrame:
     output_dir = os.path.join(os.path.join(output_dir, method))
     adata = adata[:, adata.var['highly_variable']].copy()
-    calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path, pseudobulk_data_path)
+    calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path, pseudobulk)
     calculate_sample_distances_gene_expression(adata, output_dir, method, summary_csv_path)
     calculate_sample_distances_pca(adata, output_dir, method, summary_csv_path)
-    calculate_sample_distances_gene_pseudobulk(adata, output_dir, method, summary_csv_path, pseudobulk_data_path)
+    calculate_sample_distances_gene_pseudobulk(adata, output_dir, method, summary_csv_path, pseudobulk)
     # calculate_sample_distances_weighted_expression(adata, output_dir, method, summary_csv_path)

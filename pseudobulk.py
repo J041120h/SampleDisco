@@ -97,14 +97,15 @@ def compute_pseudobulk_dataframes(
     
     print("Successfuly computed pseudobulk dataframes.")
 
-    # Save DataFrames as CSV files without modifying their structure
-    cell_expression_df.to_csv(os.path.join(output_dir, "cell_expression.csv"), index=True)
-    cell_proportion_df.to_csv(os.path.join(output_dir, "cell_proportion.csv"), index=True)
-
-    # Compute corrected expression and save it
     cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df)
-    cell_expression_corrected_df.to_csv(os.path.join(output_dir, "cell_expression_corrected.csv"), index=True)
-    return cell_expression_df, cell_proportion_df
+    # Create a dictionary to store DataFrames
+    pseudobulk = {
+        "cell_expression": cell_expression_df,
+        "cell_proportion": cell_proportion_df,
+        "cell_expression_corrected": cell_expression_corrected_df
+    }
+
+    return pseudobulk
 
 
 def contains_nan_in_lists(df: pd.DataFrame) -> bool:
