@@ -91,7 +91,7 @@ def main():
     # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
     # AnnData_cell = sc.read_h5ad(AnnData_cell_path)
     AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    compute_pseudobulk_dataframes(AnnData_sample, output_dir, 'batch', 'sample', 'cell_type')
+    compute_pseudobulk_dataframes(AnnData_sample)
     # num_cells, num_genes = AnnData_sample.shape
     # print(f"Number of cells: {num_cells}")
     # print(f"Number of genes: {num_genes}")

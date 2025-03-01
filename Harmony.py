@@ -223,7 +223,7 @@ def treecor_harmony(h5ad_path,
     # At this point, we have create our comparison group as well as find the correct grouping of cell. 
     # Now all our operation should be based on a new round of operation of our new sample_diff adata.
 
-    compute_pseudobulk_dataframes(adata_sample_diff, output_dir, 'batch', 'sample', 'cell_type')
+    compute_pseudobulk_dataframes(adata_sample_diff, 'batch', 'sample', 'cell_type', output_dir)
 
 
 def compute_pseudobulk_dataframes(
@@ -311,11 +311,13 @@ def compute_pseudobulk_dataframes(
             # Store results in the DataFrames
             cell_expression_df.loc[ctype, sample] = expr_values
             cell_proportion_df.loc[ctype, sample] = proportion
+    
+    print("Successfuly computed pseudobulk dataframes.")
 
     # (Optionally) do something with these DataFrames, e.g. store in `.uns` or write to disk:
     adata.uns["cell_expression_df"] = cell_expression_df
     adata.uns["cell_proportion_df"] = cell_proportion_df
-    adata.uns["cell_expression_corrected_df"] = compute_pseudobulk_dataframes(adata_sample_diff, output_dir, 'batch', 'sample', 'cell_type')
+    adata.uns["cell_expression_corrected_df"] = combat_correct_cell_expressions(adata, cell_expression_df)
 
     return cell_expression_df, cell_proportion_df
 
@@ -388,6 +390,7 @@ def combat_correct_cell_expressions(
             # It might be None or an empty array if data is missing
             if expr_array is None or len(expr_array) == 0:
                 expr_array = np.zeros(n_genes, dtype=float)
+                print(f"\nWarning: Missing data for cell type '{ctype}' in sample '{sample_id}'.\n")
             
             arrays_for_this_ctype.append(expr_array)
 
@@ -403,6 +406,7 @@ def combat_correct_cell_expressions(
         unique_batches = pd.unique(batch_labels)
         if len(batch_labels) < 2 or len(unique_batches) < 2:
             # Skip ComBat, leave row as is
+            print(f"Skipping ComBat correction for cell type '{ctype}' due to insufficient samples or batches.")
             continue
 
         # ---------------------------
@@ -410,13 +414,27 @@ def combat_correct_cell_expressions(
         # ---------------------------
         # pycombat expects shape (n_genes x n_samples), so transpose
         expr_matrix_t = expr_matrix.T  # shape: (n_genes, n_samples)
-        corrected_matrix_t = pycombat(expr_matrix_t, batch=batch_labels)
-        corrected_matrix = corrected_matrix_t.T  # back to shape (n_samples, n_genes)
+        expr_df_t = pd.DataFrame(
+        expr_matrix_t,
+        columns=samples_in_row,      # samples_in_row is your list of sample IDs
+        index=range(n_genes)         # or gene names if you have them
+        )
+
+        # Convert the batch labels into a Series, indexed by sample:
+        batch_series = pd.Series(batch_labels, index=samples_in_row, name='batch')
+
+        # Now pass DataFrame + Series to pycombat
+        corrected_df_t = pycombat(expr_df_t, batch=batch_series)
+
+        # Convert the DataFrame back to a NumPy array if needed
+        corrected_matrix_t = corrected_df_t.values
 
         # ---------------------------
         # 4. Write corrected arrays back to corrected_df
         # ---------------------------
         for i, sample_id in enumerate(samples_in_row):
-            corrected_df.loc[ctype, sample_id] = corrected_matrix[i]
+            corrected_df.loc[ctype, sample_id] = corrected_matrix_t[i]
+        
+        print(f"ComBat correction complete for cell type '{ctype}'.")
 
     return corrected_df
