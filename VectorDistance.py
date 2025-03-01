@@ -131,82 +131,6 @@ def calculate_sample_distances_gene_expression(
     print("Distance matrix based on gene expression per sample saved to 'distance_matrix_gene_expression.csv'.")
     return distance_df
 
-
-def calculate_sample_distances_gene_pseudobulk(
-    adata: AnnData,
-    output_dir: str,
-    method: str,
-    summary_csv_path: str,
-    pseudobulk: dict,
-    sample_column: str = 'sample',
-    celltype_column: str = 'cell_type',
-    normalize: bool = True,
-    log_transform: bool = True
-) -> pd.DataFrame:
-    """
-    1) Compute the average gene expression for each (sample, cell_type).
-    2) Concatenate these gene expressions by unstacking/pivoting so each sample
-       is a single row containing (gene x cell_type) columns.
-    3) Compute sample-sample distance using the chosen method (e.g., euclidean).
-    """
-
-    # Create sub-directory for outputs
-    output_dir = os.path.join(output_dir, 'gene_pseudobulk')
-    os.makedirs(output_dir, exist_ok=True)
-
-    # ---------------------------
-    # 1) Build a dataframe with expression + sample + cell_type
-    # ---------------------------
-    # adata.to_df() returns a DataFrame of shape [n_cells, n_genes],
-    # with column names as gene symbols/features in adata.var_names.
-    expr_df = adata.to_df().copy()
-
-    # Add columns for sample & cell_type from .obs
-    expr_df[sample_column] = adata.obs[sample_column].values
-    expr_df[celltype_column] = adata.obs[celltype_column].values
-
-    # ---------------------------
-    # 2) Group by (sample, cell_type) and compute mean
-    # ---------------------------
-    # This yields a multi-index DataFrame: Index levels = sample, cell_type
-    avg_expr = expr_df.groupby([sample_column, celltype_column]).mean()
-
-    # ---------------------------
-    # 3) "Concatenate" these means into a single vector for each sample
-    #    by unstacking cell_type. That way each row = 1 sample
-    #    and columns = gene x cell_type
-    # ---------------------------
-    avg_expr = avg_expr.unstack(level=celltype_column).fillna(0)
-
-    # Flatten the multi-level columns: (gene, cell_type) -> gene_celltype
-    avg_expr.columns = [f"{gene}_{ct}" for gene, ct in avg_expr.columns]
-
-    # Optionally, save the average expression to CSV
-    avg_expr_path = os.path.join(output_dir, 'average_gene_pseudobulk_per_sample.csv')
-    avg_expr.to_csv(avg_expr_path)
-    print(f"Average gene pseudobulk per sample saved to {avg_expr_path}")
-
-    # ---------------------------
-    # 4) Compute the sample distance
-    # ---------------------------
-    # avg_expr.index are the samples, each row is the concatenated expression vector
-    distance_matrix = pdist(avg_expr.values, metric=method)
-
-    # Convert to a square distance matrix
-    distance_df = pd.DataFrame(
-        squareform(distance_matrix),
-        index=avg_expr.index,
-        columns=avg_expr.index
-    )
-
-    # Save distance matrix
-    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_pseudobulk.csv')
-    distance_df.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, 'gene_pseudobulk', method, summary_csv_path, adata)
-    print(f"Sample distance matrix saved to {distance_matrix_path}")
-
-    return distance_df
-
 def calculate_sample_distances_pca(
     adata: AnnData,
     output_dir: str,
@@ -326,6 +250,88 @@ def calculate_sample_distances_pca(
 
     print("Distance calculation based on PCA-harmony completed successfully.")
     return distance_df
+
+def calculate_sample_distances_gene_pseudobulk(
+    adata: AnnData,
+    output_dir: str,
+    method: str,
+    summary_csv_path: str,
+    pseudobulk: dict,
+    sample_column: str = 'sample',
+    celltype_column: str = 'cell_type',
+    normalize: bool = True,
+    log_transform: bool = True
+) -> pd.DataFrame:
+    """
+    1) For each sample, read the average-expression vector for each cell type from 
+       pseudobulk['cell_expression_corrected'], and concatenate them to form a single vector.
+       - 'pseudobulk["cell_expression_corrected"]' is a DataFrame of shape [n_cell_types, n_samples],
+         where each cell contains a 1D array (average expression across genes).
+    2) Combine all samples to form a DataFrame of shape [n_samples, n_cell_types * n_genes].
+    3) Select the top 2000 most variable features across samples.
+    4) Compute sample–sample distance on the reduced feature set.
+    """
+
+    # Create a sub-directory for outputs
+    output_subdir = os.path.join(output_dir, 'gene_pseudobulk')
+    os.makedirs(output_subdir, exist_ok=True)
+
+    #--------------------------------------------------
+    # 1) Build a single expression vector for each sample
+    #    by concatenating each cell type's average expression vector
+    #--------------------------------------------------
+    # cell_expr: DataFrame, index=cell_types, columns=samples, each cell is a 1D array of gene expressions
+    cell_expr = pseudobulk['cell_expression_corrected']
+    samples = cell_expr.columns
+    cell_types = cell_expr.index
+
+    sample_vectors = {}
+    for sample in samples:
+        vectors_for_sample = []
+        for ct in cell_types:
+            avg_expr_vec = cell_expr.loc[ct, sample]
+            vectors_for_sample.append(avg_expr_vec)
+
+        # Now concatenate all cell types' vectors into one
+        cat_vector = np.concatenate(vectors_for_sample)
+        sample_vectors[sample] = cat_vector
+
+    sample_df = pd.DataFrame.from_dict(sample_vectors, orient='index')
+    sample_df.index.name = 'sample'
+    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+
+    #--------------------------------------------------
+    # 3) Select the top 2000 most variable features
+    #--------------------------------------------------
+    feature_vars = sample_df.var(axis=0)
+    top_2000_features = feature_vars.nlargest(2000).index
+    sample_df_top2000 = sample_df[top_2000_features]
+
+    # Save the top-2000 "wide" pivot
+    avg_expr_path = os.path.join(output_subdir, 'average_gene_pseudobulk_per_sample_top2000.csv')
+    sample_df_top2000.to_csv(avg_expr_path)
+    print(f"Top-2000-feature pseudobulk matrix saved to {avg_expr_path}")
+
+    #--------------------------------------------------
+    # 4) Compute the sample–sample distance
+    #--------------------------------------------------
+    distance_matrix = pdist(sample_df_top2000.values, metric=method)
+    distance_df = pd.DataFrame(
+        squareform(distance_matrix),
+        index=sample_df_top2000.index,
+        columns=sample_df_top2000.index
+    )
+
+    # Save distance matrix
+    distance_matrix_path = os.path.join(output_subdir, 'distance_matrix_gene_pseudobulk_top2000.csv')
+    distance_df.to_csv(distance_matrix_path)
+    print(f"Sample distance matrix (top 2000 HVG) saved to {distance_matrix_path}")
+
+    # If you have a custom distanceCheck function, you can re-enable it:
+    # distanceCheck(distance_matrix_path, 'gene_pseudobulk_top2000', method, summary_csv_path, adata)
+
+    return distance_df
+
 
 
 def calculate_sample_distances_weighted_expression(

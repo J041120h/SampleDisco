@@ -9,105 +9,6 @@ from Visualization import visualization_harmony
 from combat.pycombat import pycombat
 
 
-def compute_pseudobulk_dataframes(
-    adata: sc.AnnData,
-    batch_col: str = 'batch',
-    sample_col: str = 'sample',
-    celltype_col: str = 'cell_type',
-    output_dir: str = './'
-):
-    """
-    Creates two DataFrames:
-
-    1) `cell_expression_df` with rows = cell types, columns = samples.
-       Each cell is a vector of average gene expressions for that cell type in that sample.
-    2) `cell_proportion_df` with rows = cell types, columns = samples.
-       Each cell is a single float for proportion of that cell type in that sample.
-
-    Parameters
-    ----------
-    adata : AnnData
-        Annotated data matrix (cells x genes).
-        Must have `sample_col` and `celltype_col` in .obs.
-    sample_col : str
-        Column in `adata.obs` indicating sample ID.
-    celltype_col : str
-        Column in `adata.obs` indicating cell type.
-    output_dir : str
-        Directory where the output might be saved. 
-        (Optional in this snippet; you can omit if not saving.)
-
-    Returns
-    -------
-    cell_expression_df : DataFrame
-        Rows = cell types, columns = samples, each element is a 1D numpy array of shape (n_genes,).
-    cell_proportion_df : DataFrame
-        Rows = cell types, columns = samples, each element is a float (the proportion).
-    """
-
-    # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Extract relevant columns
-    samples = adata.obs[sample_col].unique()
-    cell_types = adata.obs[celltype_col].unique()
-    gene_names = adata.var_names
-
-    # Convert sparse matrix to dense if needed
-    X_data = adata.X
-    if not isinstance(X_data, np.ndarray):
-        X_data = X_data.toarray()
-
-    # Create empty DataFrames
-    # Each cell in cell_expression_df is initially set to None (or np.nan).
-    # We'll store arrays in them, so we use dtype=object for the expression DF.
-    cell_expression_df = pd.DataFrame(
-        index=cell_types,
-        columns=samples,
-        dtype=object
-    )
-    cell_proportion_df = pd.DataFrame(
-        index=cell_types,
-        columns=samples,
-        dtype=float
-    )
-
-    for sample in samples:
-        # Mask: all cells from this sample
-        sample_mask = (adata.obs[sample_col] == sample)
-        total_cells = np.sum(sample_mask)
-
-        for ctype in cell_types:
-            # Further subset to this cell type
-            ctype_mask = sample_mask & (adata.obs[celltype_col] == ctype)
-            num_cells = np.sum(ctype_mask)
-
-            if num_cells > 0:
-                # Average expression across genes for the subset
-                expr_values = X_data[ctype_mask, :].mean(axis=0)
-                proportion = num_cells / total_cells
-            else:
-                # No cells of this (sample, cell_type) combination
-                expr_values = np.zeros(len(gene_names))
-                proportion = 0.0
-
-            # Store results in the DataFrames
-            cell_expression_df.loc[ctype, sample] = expr_values
-            cell_proportion_df.loc[ctype, sample] = proportion
-    
-    print("Successfuly computed pseudobulk dataframes.")
-
-    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df)
-    # Create a dictionary to store DataFrames
-    pseudobulk = {
-        "cell_expression": cell_expression_df,
-        "cell_proportion": cell_proportion_df,
-        "cell_expression_corrected": cell_expression_corrected_df
-    }
-
-    return pseudobulk
-
-
 def contains_nan_in_lists(df: pd.DataFrame) -> bool:
     """
     Checks if any of the lists (numpy arrays) inside the DataFrame contain NaN values.
@@ -246,8 +147,107 @@ def combat_correct_cell_expressions(
     # 5. Check for NaNs
     # ---------------------------
     if contains_nan_in_lists(corrected_df):
-        print("Warning: NaN values detected in corrected data. Returning original cell_expression_df.")
+        print("\n\n\n\nWarning: NaN values detected in corrected data. Returning original cell_expression_df.\n\n\n\n")
         return cell_expression_df  # Return the uncorrected version
 
     print("ComBat correction completed successfully without NaNs.")
     return corrected_df
+
+
+def compute_pseudobulk_dataframes(
+    adata: sc.AnnData,
+    batch_col: str = 'batch',
+    sample_col: str = 'sample',
+    celltype_col: str = 'cell_type',
+    output_dir: str = './'
+):
+    """
+    Creates two DataFrames:
+
+    1) `cell_expression_df` with rows = cell types, columns = samples.
+       Each cell is a vector of average gene expressions for that cell type in that sample.
+    2) `cell_proportion_df` with rows = cell types, columns = samples.
+       Each cell is a single float for proportion of that cell type in that sample.
+
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data matrix (cells x genes).
+        Must have `sample_col` and `celltype_col` in .obs.
+    sample_col : str
+        Column in `adata.obs` indicating sample ID.
+    celltype_col : str
+        Column in `adata.obs` indicating cell type.
+    output_dir : str
+        Directory where the output might be saved. 
+        (Optional in this snippet; you can omit if not saving.)
+
+    Returns
+    -------
+    cell_expression_df : DataFrame
+        Rows = cell types, columns = samples, each element is a 1D numpy array of shape (n_genes,).
+    cell_proportion_df : DataFrame
+        Rows = cell types, columns = samples, each element is a float (the proportion).
+    """
+
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Extract relevant columns
+    samples = adata.obs[sample_col].unique()
+    cell_types = adata.obs[celltype_col].unique()
+    gene_names = adata.var_names
+
+    # Convert sparse matrix to dense if needed
+    X_data = adata.X
+    if not isinstance(X_data, np.ndarray):
+        X_data = X_data.toarray()
+
+    # Create empty DataFrames
+    # Each cell in cell_expression_df is initially set to None (or np.nan).
+    # We'll store arrays in them, so we use dtype=object for the expression DF.
+    cell_expression_df = pd.DataFrame(
+        index=cell_types,
+        columns=samples,
+        dtype=object
+    )
+    cell_proportion_df = pd.DataFrame(
+        index=cell_types,
+        columns=samples,
+        dtype=float
+    )
+
+    for sample in samples:
+        # Mask: all cells from this sample
+        sample_mask = (adata.obs[sample_col] == sample)
+        total_cells = np.sum(sample_mask)
+
+        for ctype in cell_types:
+            # Further subset to this cell type
+            ctype_mask = sample_mask & (adata.obs[celltype_col] == ctype)
+            num_cells = np.sum(ctype_mask)
+
+            if num_cells > 0:
+                # Average expression across genes for the subset
+                expr_values = X_data[ctype_mask, :].mean(axis=0)
+                proportion = num_cells / total_cells
+            else:
+                # No cells of this (sample, cell_type) combination
+                expr_values = np.zeros(len(gene_names))
+                proportion = 0.0
+
+            # Store results in the DataFrames
+            cell_expression_df.loc[ctype, sample] = expr_values
+            cell_proportion_df.loc[ctype, sample] = proportion
+    
+    print("Successfuly computed pseudobulk dataframes.")
+
+    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df)
+    # Create a dictionary to store DataFrames
+    pseudobulk = {
+        "cell_expression": cell_expression_df,
+        "cell_proportion": cell_proportion_df,
+        "cell_expression_corrected": cell_expression_corrected_df
+    }
+
+    return pseudobulk
