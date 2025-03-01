@@ -75,6 +75,12 @@ def calculate_sample_distances_cell_proportion(
     print("Distance matrix based on cell proportion has been computed and visualized.")
     return distance_df
 
+import os
+import numpy as np
+import pandas as pd
+from anndata import AnnData
+from scipy.spatial.distance import pdist, squareform
+
 def calculate_sample_distances_gene_expression(
     adata: AnnData,
     output_dir: str,
@@ -85,50 +91,101 @@ def calculate_sample_distances_gene_expression(
     log_transform: bool = True
 ) -> pd.DataFrame:
     """
-    Calculate distance matrix based on average gene expression for each sample.
+    Calculate distance matrix based on average gene expression for each sample,
+    then select the top 2000 most variable genes and compute distance on that subset.
 
-    Parameters:
-    - adata: AnnData object containing single-cell data.
-    - output_dir: Directory to save the distance matrix and related plots.
-    - sample_column: Column in adata.obs indicating sample identifiers.
-    - normalize: Whether to perform normalization (e.g., total count normalization).
-    - log_transform: Whether to perform log1p transformation.
+    Parameters
+    ----------
+    adata : AnnData
+        The single-cell data, with .obs containing sample labels under `sample_column`.
+    output_dir : str
+        Directory to save output files (distance matrix, CSV of average gene expression, etc.).
+    method : str
+        Distance metric for computing pairwise sample distance (e.g., 'euclidean', 'correlation', etc.).
+    summary_csv_path : str
+        Path to a CSV file where distanceCheck can log summary info (if applicable).
+    sample_column : str, optional
+        Column name in adata.obs indicating sample identifiers.
+    normalize : bool, optional
+        If True, each gene will be optionally Z-scored across samples before distance calculation.
+        (Assumes that raw expression is not heavily scaled yet. Adjust to your pipeline.)
+    log_transform : bool, optional
+        If True, applies log1p transform to average gene expression values prior to distance calculation.
 
-    Returns:
-    - distance_df: DataFrame containing the pairwise distances between samples.
+    Returns
+    -------
+    distance_df : pd.DataFrame
+        Square-form pairwise distance matrix of shape [n_samples, n_samples].
     """
+
+    # Create a subdirectory for saving results
     output_dir = os.path.join(output_dir, 'gene_expression')
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Compute the average expression of each gene per sample
+
+    #-------------------------------------------------------------
+    # 1) Compute the average expression of each gene per sample
+    #-------------------------------------------------------------
+    # adata.to_df() -> shape [n_cells, n_genes]
+    # group by sample to get shape [n_samples, n_genes]
     gene_expression = adata.to_df().groupby(adata.obs[sample_column]).mean()
     gene_expression.fillna(0, inplace=True)
-    
-    # Save the average expression to a CSV file
-    gene_expression.to_csv(os.path.join(output_dir, 'average_gene_expression_per_sample.csv'))
-    print("Average gene expression per sample saved to 'average_gene_expression_per_sample.csv'.")
-    
-    distance_matrix = pdist(gene_expression.values, metric=method)
+
+    #-------------------------------------------------------------
+    # 2) Select the top 2000 most variable genes
+    #-------------------------------------------------------------
+    variances = gene_expression.var(axis=0)
+    top_2000_genes = variances.nlargest(2000).index
+    gene_expression_top2000 = gene_expression[top_2000_genes]
+
+    #-------------------------------------------------------------
+    # 3) Save the average gene expression (all genes) to file
+    #    and also optionally save the top-2000 matrix
+    #-------------------------------------------------------------
+    all_expr_path = os.path.join(output_dir, 'average_gene_expression_per_sample.csv')
+    gene_expression.to_csv(all_expr_path)
+    print(f"Average gene expression per sample saved to '{all_expr_path}'.")
+
+    top2000_expr_path = os.path.join(output_dir, 'average_gene_expression_per_sample_top2000.csv')
+    gene_expression_top2000.to_csv(top2000_expr_path)
+    print(f"Top-2000 highly variable genes per sample saved to '{top2000_expr_path}'.")
+
+    #-------------------------------------------------------------
+    # 4) Compute sample-sample distances using the chosen method
+    #    on the top-2000 genes
+    #-------------------------------------------------------------
+    distance_matrix = pdist(gene_expression_top2000.values, metric=method)
     distance_df = pd.DataFrame(
         squareform(distance_matrix),
-        index = gene_expression.index,
-        columns = gene_expression.index 
+        index=gene_expression_top2000.index,
+        columns=gene_expression_top2000.index
     )
-    
-    distance_df = np.log1p(np.maximum(distance_df, 0))
+
+    # Optional step: if your pipeline specifically wants to log-scale the distance
+    # matrix or scale it (less typical, but if it was in the old script, keep it):
+    distance_df = np.log1p(np.maximum(distance_df, 0))  # May or may not be desired
     distance_df = distance_df / distance_df.max().max()
-    
-    # Save the distance matrix
+
+    #-------------------------------------------------------------
+    # 5) Save the distance matrix and generate your heatmaps
+    #-------------------------------------------------------------
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, 'gene_expression', method, summary_csv_path, adata)
-    print(f"Sample distance gene expresission matrix saved to {distance_matrix_path}")
 
-    # generate a heatmap for sample distance
+    # If you have a custom logging / summary function
+    distanceCheck(distance_matrix_path, 'gene_expression_top2000', method, summary_csv_path, adata)
+    print(f"Distance matrix (using top 2000 HVG) saved to '{distance_matrix_path}'.")
+
+    # If you have visualization functions available:
     heatmap_path = os.path.join(output_dir, 'sample_distance_gene_expression_heatmap.pdf')
     visualizeDistanceMatrix(distance_df, heatmap_path)
-    visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_gene_expression_relationship.pdf'))
-    print("Distance matrix based on gene expression per sample saved to 'distance_matrix_gene_expression.csv'.")
+
+    visualizeGroupRelationship(
+        distance_df,
+        outputDir=output_dir,
+        heatmap_path=os.path.join(output_dir, 'sample_gene_expression_relationship.pdf')
+    )
+    print("Heatmap and group-relationship plots generated.")
+
     return distance_df
 
 def calculate_sample_distances_pca(
