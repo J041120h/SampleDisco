@@ -127,7 +127,7 @@ def combat_correct_cell_expressions(
 
     # Final check: if any NaNs remain, revert to uncorrected data
     if contains_nan_in_lists(corrected_df):
-        print("Warning: NaN values detected even after correction. Returning uncorrected data.")
+        print("\n\n\n\nWarning: NaN values detected even after correction. Returning uncorrected data.\n\n\n\n")
         return cell_expression_df
 
     print("ComBat correction completed.")

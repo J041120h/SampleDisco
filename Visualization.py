@@ -237,9 +237,7 @@ def visualizeGroupRelationship(
         ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
         ax.grid(True)
 
-        # Add legend only once
-        if i == 0:
-            ax.legend(handles=legend_handles, labels=unique_groups, title="Groups", loc="best")
+        ax.legend(handles=legend_handles, labels=unique_groups, title="Groups", loc="best")
 
     # Determine output filenames
     if heatmap_path is None:
