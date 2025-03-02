@@ -76,6 +76,7 @@ def calculate_sample_distances_cell_proportion(
     visualizeGroupRelationship(
         distance_df,
         outputDir=output_dir,
+        adata = adata,
         heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf')
     )
 
@@ -131,7 +132,7 @@ def calculate_sample_distances_gene_expression(
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
     visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_gene_expression_heatmap.pdf'))
-    visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_gene_expression_relationship.pdf'))
+    visualizeGroupRelationship(distance_df, outputDir=output_dir, adata = adata, heatmap_path=os.path.join(output_dir, 'sample_gene_expression_relationship.pdf'))
 
     print(f"Gene expression-based distance matrix saved to: {distance_matrix_path}")
     return distance_df
@@ -179,7 +180,7 @@ def calculate_sample_distances_pca(
     # Save and visualize
     distance_df.to_csv(os.path.join(output_dir, 'distance_matrix_pca_harmony.csv'))
     visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_pca_harmony_heatmap.pdf'))
-    visualizeGroupRelationship(distance_df, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_pca_harmony_relationship.pdf'))
+    visualizeGroupRelationship(distance_df, outputDir=output_dir, adata = adata, heatmap_path=os.path.join(output_dir, 'sample_pca_harmony_relationship.pdf'))
 
     print(f"PCA-based distance matrix saved to: {output_dir}")
     return distance_df
@@ -240,7 +241,7 @@ def calculate_sample_distances_gene_pseudobulk(
     distance_matrix_path = os.path.join(output_subdir, 'distance_matrix_gene_pseudobulk_top2000.csv')
     distance_df.to_csv(distance_matrix_path)
     visualizeDistanceMatrix(distance_df, os.path.join(output_subdir, 'sample_distance_pseudobulk_heatmap.pdf'))
-    visualizeGroupRelationship(distance_df, outputDir=output_subdir, heatmap_path=os.path.join(output_subdir, 'sample_pseudobulk_relationship.pdf'))
+    visualizeGroupRelationship(distance_df, outputDir=output_subdir, adata = adata, heatmap_path=os.path.join(output_subdir, 'sample_pseudobulk_relationship.pdf'))
     print(f"Sample distance matrix (top 2000 HVG) saved to {distance_matrix_path}")
 
     return distance_df
