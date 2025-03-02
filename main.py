@@ -70,15 +70,15 @@ def main():
     vars_to_regress= ["batch"]
 
     #on local mac
-    output_dir = "/Users/harry/Desktop/GenoDistance/result"
-    h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-    cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
-    sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
-    AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
-    AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
-    summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
-    summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
-    vars_to_regress = []
+    # output_dir = "/Users/harry/Desktop/GenoDistance/result"
+    # h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+    # cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
+    # sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    # AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
+    # AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
+    # summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
+    # summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
+    # vars_to_regress = []
 
     # in /dcs04/hongkai/data/HarryJ
     # output_dir = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat"
@@ -93,7 +93,7 @@ def main():
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_sample = sc.read_h5ad(AnnData_sample_path)
     pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-    sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path, pseudobulk)
+    # sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path, pseudobulk)
 
 
     # visualization_harmony(
