@@ -151,6 +151,12 @@ def plot_cell_type_expression_heatmap(
     plt.close()
     print(f"Cell type expression heatmap saved to {heatmap_path}")
 
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.manifold import MDS
+from sklearn.decomposition import PCA
+
 def visualizeGroupRelationship(
     sample_distance_matrix,
     outputDir,
@@ -160,9 +166,9 @@ def visualizeGroupRelationship(
     heatmap_path=None
 ):
     """
-    Generates a 2D MDS plot from a sample distance matrix, coloring points
+    Generates 2D MDS and PCA plots from a sample distance matrix, coloring points
     according to groups identified by `find_sample_grouping`. 
-    Does not print sample names or include a legend.
+    Includes a legend mapping colors to groups.
     
     Arguments:
     ----------
@@ -179,7 +185,7 @@ def visualizeGroupRelationship(
         If grouping by age, specify the bin size here (optional).
     heatmap_path : str or None, optional
         If provided, the final figure will be saved to this path. Otherwise,
-        the filename is derived automatically.
+        filenames are derived automatically.
     """
     # Ensure output directory exists
     os.makedirs(outputDir, exist_ok=True)
@@ -193,10 +199,13 @@ def visualizeGroupRelationship(
 
     # Perform MDS on the distance matrix to get 2D coordinates
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
-    points_2d = mds.fit_transform(sym_matrix)
+    points_mds = mds.fit_transform(sym_matrix)
+
+    # Perform PCA for comparison (PCA requires a square numerical matrix)
+    pca = PCA(n_components=2)
+    points_pca = pca.fit_transform(sym_matrix)
 
     # Determine group assignments for each sample
-    # (Adjust find_sample_grouping calls as needed for your project.)
     group_mapping = find_sample_grouping(
         adata,
         samples,
@@ -206,29 +215,49 @@ def visualizeGroupRelationship(
     group_labels = [group_mapping[sample] for sample in samples]
     unique_groups = sorted(set(group_labels))
 
-    # Choose colors for each group (one color per group, no legend, no text labels)
+    # Choose colors for each group (same colors for both plots)
     color_map = plt.cm.get_cmap("tab10", len(unique_groups))
+    group_colors = {group: color_map(i) for i, group in enumerate(unique_groups)}
 
-    plt.figure(figsize=(8, 6))
+    # Create figure with two subplots (MDS and PCA)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    titles = ["MDS Visualization", "PCA Visualization"]
 
-    # Plot each group separately, with its own color
-    for i, group in enumerate(unique_groups):
-        idx = [j for j, lbl in enumerate(group_labels) if lbl == group]
-        plt.scatter(points_2d[idx, 0], points_2d[idx, 1],
-                    s=100, c=[color_map(i)], alpha=0.8)
+    for i, (points, ax, method) in enumerate(zip([points_mds, points_pca], axes, ['MDS', 'PCA'])):
+        legend_handles = []  # Store legend handles
 
-    plt.xlabel("MDS Dimension 1")
-    plt.ylabel("MDS Dimension 2")
-    plt.title("2D MDS Visualization of Sample Distance Matrix")
-    plt.grid(True)
+        for group in unique_groups:
+            idx = [j for j, lbl in enumerate(group_labels) if lbl == group]
+            scatter = ax.scatter(points[idx, 0], points[idx, 1],
+                                 s=100, c=[group_colors[group]], alpha=0.8, label=group)
+            legend_handles.append(scatter)
 
-    # Determine output path if not provided
+        ax.set_xlabel(f"{method} Dimension 1")
+        ax.set_ylabel(f"{method} Dimension 2")
+        ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
+        ax.grid(True)
+
+        # Add legend only once
+        if i == 0:
+            ax.legend(handles=legend_handles, labels=unique_groups, title="Groups", loc="best")
+
+    # Determine output filenames
     if heatmap_path is None:
-        heatmap_path = os.path.join(outputDir, "sample_distance_matrix_MDS.png")
+        mds_path = os.path.join(outputDir, "sample_distance_matrix_MDS.png")
+        pca_path = os.path.join(outputDir, "sample_distance_matrix_PCA.png")
+    else:
+        mds_path = heatmap_path.replace(".png", "_MDS.png")
+        pca_path = heatmap_path.replace(".png", "_PCA.png")
 
-    plt.savefig(heatmap_path)
+    # Save and close
+    plt.tight_layout()
+    plt.savefig(mds_path)
+    plt.savefig(pca_path)
     plt.close()
-    print(f"Plot saved to {heatmap_path}")
+
+    print(f"MDS plot saved to {mds_path}")
+    print(f"PCA plot saved to {pca_path}")
+
 
 def visualizeDistanceMatrix(sample_distance_matrix, heatmap_path):
     # Convert the square distance matrix to condensed form for linkage
