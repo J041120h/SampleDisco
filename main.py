@@ -5,7 +5,9 @@ import scanpy as sc
 import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
-from Harmony import treecor_harmony, compute_pseudobulk_dataframes
+from pseudobulk import compute_pseudobulk_dataframes
+from combat.pycombat import pycombat
+from Harmony import harmony
 from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
@@ -88,7 +90,7 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/fully_same_without_combat/summary_sample.csv"
 
-    # AnnData_cell,AnnData_sample = treecor_harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_sample = sc.read_h5ad(AnnData_sample_path)
     pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path, pseudobulk)
