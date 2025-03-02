@@ -6,6 +6,7 @@ import seaborn as sns
 from sklearn.manifold import MDS
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage
+from Grouping import find_sample_grouping
 
 def plot_cell_type_abundances(proportions: pd.DataFrame, output_dir: str):
     """
@@ -150,41 +151,83 @@ def plot_cell_type_expression_heatmap(
     plt.close()
     print(f"Cell type expression heatmap saved to {heatmap_path}")
 
-def visualizeGroupRelationship(sample_distance_matrix, outputDir, heatmap_path=None):
-    # Ensure the output directory exists
+def visualizeGroupRelationship(
+    sample_distance_matrix,
+    outputDir,
+    adata,
+    grouping_columns=['sev.level'],
+    age_bin_size=None,
+    heatmap_path=None
+):
+    """
+    Generates a 2D MDS plot from a sample distance matrix, coloring points
+    according to groups identified by `find_sample_grouping`. 
+    Does not print sample names or include a legend.
+    
+    Arguments:
+    ----------
+    sample_distance_matrix : pd.DataFrame
+        A square, symmetric distance matrix with samples as both rows and columns.
+    outputDir : str
+        Directory where the plot will be saved.
+    adata : anndata.AnnData
+        An AnnData object (or any structure) needed by find_sample_grouping
+        to determine group assignments per sample.
+    grouping_columns : list, optional
+        Which columns in `adata.obs` to use for grouping (example: ['sev.level']).
+    age_bin_size : int or None, optional
+        If grouping by age, specify the bin size here (optional).
+    heatmap_path : str or None, optional
+        If provided, the final figure will be saved to this path. Otherwise,
+        the filename is derived automatically.
+    """
+    # Ensure output directory exists
     os.makedirs(outputDir, exist_ok=True)
 
-    # Use the true sample names from the distance matrix index
+    # Retrieve the sample names from the distance matrix index
     samples = sample_distance_matrix.index.tolist()
 
-    # Making the distance matrix symmetric and setting diagonal to 0
-    sample_distance_matrix = (sample_distance_matrix + sample_distance_matrix.T) / 2
-    np.fill_diagonal(sample_distance_matrix.values, 0)
+    # Make the matrix symmetric and set diagonal to zero
+    sym_matrix = (sample_distance_matrix + sample_distance_matrix.T) / 2
+    np.fill_diagonal(sym_matrix.values, 0)
 
-    # Perform MDS to get a 2D embedding based on the distance matrix
+    # Perform MDS on the distance matrix to get 2D coordinates
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
-    points_2d = mds.fit_transform(sample_distance_matrix)
+    points_2d = mds.fit_transform(sym_matrix)
 
-    # Plot the 2D embedding
+    # Determine group assignments for each sample
+    # (Adjust find_sample_grouping calls as needed for your project.)
+    group_mapping = find_sample_grouping(
+        adata,
+        samples,
+        grouping_columns=grouping_columns,
+        age_bin_size=age_bin_size
+    )
+    group_labels = [group_mapping[sample] for sample in samples]
+    unique_groups = sorted(set(group_labels))
+
+    # Choose colors for each group (one color per group, no legend, no text labels)
+    color_map = plt.cm.get_cmap("tab10", len(unique_groups))
+
     plt.figure(figsize=(8, 6))
-    plt.scatter(points_2d[:, 0], points_2d[:, 1], color='blue', s=100)
 
-    # Annotate points with the actual sample names
-    for i, (x, y) in enumerate(points_2d):
-        plt.text(x, y, samples[i], fontsize=12, ha='right')
+    # Plot each group separately, with its own color
+    for i, group in enumerate(unique_groups):
+        idx = [j for j, lbl in enumerate(group_labels) if lbl == group]
+        plt.scatter(points_2d[idx, 0], points_2d[idx, 1],
+                    s=100, c=[color_map(i)], alpha=0.8)
 
     plt.xlabel("MDS Dimension 1")
     plt.ylabel("MDS Dimension 2")
     plt.title("2D MDS Visualization of Sample Distance Matrix")
     plt.grid(True)
 
-    # Determine output path
+    # Determine output path if not provided
     if heatmap_path is None:
         heatmap_path = os.path.join(outputDir, "sample_distance_matrix_MDS.png")
 
-    # Save the plot to the output path
     plt.savefig(heatmap_path)
-    plt.close()  # Close the plot to avoid displaying it in non-interactive environments
+    plt.close()
     print(f"Plot saved to {heatmap_path}")
 
 def visualizeDistanceMatrix(sample_distance_matrix, heatmap_path):
