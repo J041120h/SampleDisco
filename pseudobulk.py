@@ -76,8 +76,7 @@ def combat_correct_cell_expressions(
 ) -> pd.DataFrame:
     # Check for problematic values (NaN or negatives) in the data
     check_nan_and_negative_in_lists(cell_expression_df)
-        
-    # Create a map from sample IDs to batch labels
+    
     sample_batch_map = (
         adata.obs[[sample_col, batch_col]]
         .drop_duplicates()
@@ -85,7 +84,6 @@ def combat_correct_cell_expressions(
         .to_dict()
     )
     
-    # Get an example array to determine the number of genes
     example_array = next(
         (arr for arr in cell_expression_df.iloc[0].dropna() if arr is not None and len(arr) > 0),
         None
@@ -204,10 +202,14 @@ def compute_pseudobulk_dataframes(
     # Check for NaN values and print if any are found
     if np.isnan(X_data).any():
         print("\n\n\n\nWarning: X_data contains NaN values.\n\n\n\n")
+    else:
+        print("\n\n\n\nNo NaN values found in X_data.\n\n\n\n")
 
     # Check for negative values and print if any are found
     if (X_data < 0).any():
         print("\n\n\n\nWarning: X_data contains negative values.\n\n\n\n")
+    else:
+        print("\n\n\n\nNo negative values found in X_data.\n\n\n\n")
 
     if np.any(np.isnan(X_data)) or np.any(np.isinf(X_data)):
         print("\n\n\n\nWarning: Found NaN or Inf values in expression data. Replacing with zeros.\n\n\n\n")
