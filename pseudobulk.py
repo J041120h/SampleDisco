@@ -69,19 +69,23 @@ def save_dataframe_as_strings(df: pd.DataFrame, output_dir: str, filename: str):
 def combat_correct_cell_expressions(
     adata: sc.AnnData,
     cell_expression_df: pd.DataFrame,
-    pseudobulk_dir = str, 
+    pseudobulk_dir: str, 
     batch_col: str = 'batch',
     sample_col: str = 'sample',
     parametric: bool = True
 ) -> pd.DataFrame:
+    # Check for problematic values (NaN or negatives) in the data
     check_nan_and_negative_in_lists(cell_expression_df)
         
+    # Create a map from sample IDs to batch labels
     sample_batch_map = (
         adata.obs[[sample_col, batch_col]]
         .drop_duplicates()
         .set_index(sample_col)[batch_col]
         .to_dict()
     )
+    
+    # Get an example array to determine the number of genes
     example_array = next(
         (arr for arr in cell_expression_df.iloc[0].dropna() if arr is not None and len(arr) > 0),
         None
@@ -89,39 +93,65 @@ def combat_correct_cell_expressions(
     if example_array is None:
         raise ValueError("No valid arrays found in cell_expression_df.")
     n_genes = len(example_array)
+    
+    # Make a deep copy of the original DataFrame to store corrected data
     corrected_df = cell_expression_df.copy(deep=True)
+    
+    # Process each cell type separately
     for ctype in corrected_df.index:
         row_data = corrected_df.loc[ctype]
         batch_labels = []
         arrays_for_this_ctype = []
+        valid_sample_ids = []  # keep track of samples with non-zero proportion
+        
+        # Loop over samples for the given cell type
         for sample_id in row_data.index:
             expr_array = row_data[sample_id]
-            if expr_array is None or len(expr_array) == 0:
-                expr_array = np.zeros(n_genes)
+            # Check if the cell type is absent in the sample by testing if its expression vector is all zeros.
+            if expr_array is None or len(expr_array) == 0 or np.allclose(expr_array, 0):
+                print(f"Skipping sample '{sample_id}' for cell type '{ctype}' due to zero expression (likely absent).")
+                continue
             else:
                 expr_array = np.array(expr_array, dtype=float)
+            # Replace NaN or infinite values with a small positive constant
             expr_array = np.nan_to_num(expr_array, nan=1e-8, posinf=1e-8, neginf=1e-8)
             arrays_for_this_ctype.append(expr_array)
             batch_labels.append(sample_batch_map.get(sample_id, "missing_batch"))
+            valid_sample_ids.append(sample_id)
+        
+        # If no samples with non-zero expression were found, skip Combat for this cell type.
+        if len(arrays_for_this_ctype) == 0:
+            print(f"Skipping ComBat for '{ctype}' because no samples with non-zero expression were found.")
+            continue
+        
+        # Update row_data to include only the samples used in Combat correction.
+        row_data = row_data[valid_sample_ids]
         batch_labels_array = np.array(batch_labels)
         unique_batches = pd.unique(batch_labels_array)
         batch_counts = pd.Series(batch_labels).value_counts()
         if len(unique_batches) < 2 or any(batch_counts < 2):
             print(f"\n\n\n\nSkipping ComBat for '{ctype}' due to insufficient batch diversity or small batch sizes: {batch_counts.to_dict()}.\n\n\n\n")
             continue
+        
+        # Create the expression matrix for Combat: genes x samples
         expr_matrix = np.vstack(arrays_for_this_ctype).T
         if np.any(expr_matrix < 0):
             print(f"\n\n\n\nWarning: Negative values detected in '{ctype}' expression matrix.\n\n\n\n")
+        
+        # Identify genes with zero variance (they can cause errors in Combat)
         var_per_gene = np.var(expr_matrix, axis=1)
         zero_var_idx = np.where(var_per_gene == 0)[0]
         if len(zero_var_idx) == expr_matrix.shape[0]:
             print(f"\n\n\n\nSkipping ComBat for '{ctype}' because all genes have zero variance.\n\n\n\n")
             continue
+        
+        # Remove zero-variance genes for Combat, then run pycombat
         expr_matrix_sub = np.delete(expr_matrix, zero_var_idx, axis=0)
-        expr_df_t = pd.DataFrame(expr_matrix_sub, columns=row_data.index)
-        batch_series = pd.Series(batch_labels, index=row_data.index, name='batch')
+        expr_df_t = pd.DataFrame(expr_matrix_sub, columns=valid_sample_ids)
+        batch_series = pd.Series(batch_labels, index=valid_sample_ids, name='batch')
         if expr_df_t.isnull().values.any():
             print(f"\n\n\n\nWarning: NaN values detected in expression data for '{ctype}' before ComBat.\n\n\n\n")
+        
         corrected_df_sub = pycombat(
             expr_df_t,
             batch=batch_series,
@@ -129,15 +159,18 @@ def combat_correct_cell_expressions(
         )
         print(f"After pycombat: {np.isnan(corrected_df_sub.values).sum()} nan values")
         corrected_values_sub = corrected_df_sub.values
+        
+        # Reconstruct the full corrected expression matrix by reinserting the zero-variance genes
         corrected_expr_matrix = expr_matrix.copy()
         corrected_expr_matrix[zero_var_idx, :] = expr_matrix[zero_var_idx, :]
         non_zero_idx = np.delete(np.arange(n_genes), zero_var_idx)
         corrected_expr_matrix[non_zero_idx, :] = corrected_values_sub
         corrected_expr_matrix_t = corrected_expr_matrix.T
-        for i, sample_id in enumerate(row_data.index):
+        
+        # Update the corrected DataFrame only for the samples included in Combat correction
+        for i, sample_id in enumerate(valid_sample_ids):
             corrected_df.loc[ctype, sample_id] = corrected_expr_matrix_t[i]
         print(f"ComBat correction applied for '{ctype}'.")
-
 
     save_dataframe_as_strings(corrected_df, pseudobulk_dir, "corrected_expression.csv")
     if contains_nan_in_lists(corrected_df):
