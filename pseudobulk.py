@@ -8,17 +8,6 @@ from sklearn.decomposition import PCA
 from Visualization import visualization_harmony
 from combat.pycombat import pycombat
 
-def contains_nan_in_lists(df: pd.DataFrame) -> bool:
-    found_nan = False
-    for row_index, row in df.iterrows():
-        for col in df.columns:
-            cell = row[col]
-            if isinstance(cell, np.ndarray) and np.isnan(cell).any():
-                print(f"Found NaN in row {row_index}, column '{col}'.")
-                found_nan = True
-    return found_nan
-
-
 def check_nan_and_negative_in_lists(df: pd.DataFrame) -> bool:
     found_nan = False
     found_negative = False
@@ -50,14 +39,11 @@ def vector_to_string(vector):
     arr = np.array(vector)
     return np.array2string(arr, threshold=np.inf, separator=', ')
 
-def save_dataframe_as_strings(df: pd.DataFrame, output_dir: str, filename: str):
+def save_dataframe_as_strings(df: pd.DataFrame, pseudobulk_dir: str, filename: str):
     """
     Convert all cells in a DataFrame (where each cell is a vector) to strings without truncation,
     and save to a CSV file in a 'pseudobulk' subdirectory within output_dir.
     """
-    # Create the 'pseudobulk' subdirectory inside the given output directory.
-    pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
-    os.makedirs(pseudobulk_dir, exist_ok=True)
 
     # Set numpy print options to ensure full vectors are printed without truncation.
     np.set_printoptions(threshold=np.inf)
@@ -73,6 +59,16 @@ def save_dataframe_as_strings(df: pd.DataFrame, output_dir: str, filename: str):
     print(f"DataFrame saved as strings to {file_path}")
 
 
+
+def contains_nan_in_lists(df: pd.DataFrame) -> bool:
+    found_nan = False
+    for row_index, row in df.iterrows():
+        for col in df.columns:
+            cell = row[col]
+            if isinstance(cell, np.ndarray) and np.isnan(cell).any():
+                print(f"Found NaN in row {row_index}, column '{col}'.")
+                found_nan = True
+    return found_nan
 
 def combat_correct_cell_expressions(
     adata: sc.AnnData,
@@ -177,15 +173,22 @@ def combat_correct_cell_expressions(
         for i, sample_id in enumerate(valid_sample_ids):
             corrected_df.loc[ctype, sample_id] = corrected_expr_matrix_t[i]
         print(f"ComBat correction applied for '{ctype}'.")
-
+    
     save_dataframe_as_strings(corrected_df, pseudobulk_dir, "corrected_expression.csv")
+    
+    # Check for any NaN in the corrected DataFrame and replace the affected rows with the original values
     if contains_nan_in_lists(corrected_df):
-        print("\n\n\n\nWarning: NaN values detected even after correction. Returning uncorrected data.\n\n\n\n")
-        return cell_expression_df
+        for idx in corrected_df.index:
+            row = corrected_df.loc[idx]
+            if any(isinstance(cell, np.ndarray) and np.isnan(cell).any() for cell in row):
+                print(f"\nWarning: Row '{idx}' contains NaN values after ComBat correction. Replacing with original data.\n")
+                corrected_df.loc[idx] = cell_expression_df.loc[idx]
     else:
-        print("\n\n\n\nNo NaN values detected, Good to continue.\n\n\n\n")
+        print("\nNo NaN values detected, good to continue.\n")
+    
     print("ComBat correction completed.")
     return corrected_df
+
 
 def compute_pseudobulk_dataframes(
     adata: sc.AnnData,
@@ -244,9 +247,14 @@ def compute_pseudobulk_dataframes(
             cell_proportion_df.loc[ctype, sample] = proportion
     print("\n\n\n\nSuccessfully computed pseudobulk data.\n\n\n\n")
 
-    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, pseudobulk_dir)
+    print(cell_expression_df.loc[10, "CoV-18-Lee"])
+    print(cell_expression_df.loc[9, "CoV-18-Lee"])
+
+
     save_dataframe_as_strings(cell_expression_df, pseudobulk_dir, "expression.csv")
     save_dataframe_as_strings(cell_proportion_df, pseudobulk_dir, "proportion.csv")
+
+    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, pseudobulk_dir)
     pseudobulk = {
         "cell_expression": cell_expression_df,
         "cell_proportion": cell_proportion_df,
