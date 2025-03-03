@@ -15,24 +15,67 @@ def contains_nan_in_lists(df: pd.DataFrame) -> bool:
                 return True
     return False
 
+def check_nan_and_negative_in_lists(df: pd.DataFrame) -> bool:
+    found_nan = False
+    found_negative = False
+    for row_index, row in df.iterrows():
+        for col in df.columns:
+            cell = row[col]
+            if isinstance(cell, np.ndarray):
+                if np.isnan(cell).any():
+                    print(f"Found NaN value in cell at row {row_index}, column '{col}'.")
+                    found_nan = True
+                if (cell < 0).any():
+                    print(f"Found negative value(s) in cell at row {row_index}, column '{col}'.")
+                    found_negative = True
+    if not found_nan and not found_negative:
+        print("No NaN or negative values found in any numpy array cell.")
+    return found_nan or found_negative
+
+
 import numpy as np
 import pandas as pd
 from combat.pycombat import pycombat
 import os
 
+def vector_to_string(vector):
+    """
+    Convert a vector (list, np.array, etc.) to a full string representation without truncation.
+    """
+    # Ensure the vector is a NumPy array and set the threshold to infinity to prevent truncation.
+    arr = np.array(vector)
+    return np.array2string(arr, threshold=np.inf, separator=', ')
+
 def save_dataframe_as_strings(df: pd.DataFrame, output_dir: str, filename: str):
-    os.makedirs(output_dir, exist_ok=True)
-    file_path = os.path.join(output_dir, filename)
-    df.astype(str).to_csv(file_path, index=True)
+    """
+    Convert all cells in a DataFrame (where each cell is a vector) to strings without truncating the vectors
+    and save to a CSV file in a 'pseudobulk' subdirectory within output_dir.
+    """
+    # Create the 'pseudobulk' subdirectory inside the given output directory.
+    pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
+    os.makedirs(pseudobulk_dir, exist_ok=True)
+
+    # Create the full file path.
+    file_path = os.path.join(pseudobulk_dir, filename)
+
+    # Apply custom conversion to each cell.
+    df_as_strings = df.applymap(vector_to_string)
+
+    # Save the resulting DataFrame to CSV.
+    df_as_strings.to_csv(file_path, index=True)
     print(f"DataFrame saved as strings to {file_path}")
+
 
 def combat_correct_cell_expressions(
     adata: sc.AnnData,
     cell_expression_df: pd.DataFrame,
+    pseudobulk_dir = str, 
     batch_col: str = 'batch',
     sample_col: str = 'sample',
     parametric: bool = True
 ) -> pd.DataFrame:
+    check_nan_and_negative_in_lists(cell_expression_df)
+        
     sample_batch_map = (
         adata.obs[[sample_col, batch_col]]
         .drop_duplicates()
@@ -57,33 +100,34 @@ def combat_correct_cell_expressions(
                 expr_array = np.zeros(n_genes)
             else:
                 expr_array = np.array(expr_array, dtype=float)
-            expr_array = np.nan_to_num(expr_array, nan=1e-308, posinf=1e-308, neginf=1e-308)
+            expr_array = np.nan_to_num(expr_array, nan=1e-8, posinf=1e-8, neginf=1e-8)
             arrays_for_this_ctype.append(expr_array)
             batch_labels.append(sample_batch_map.get(sample_id, "missing_batch"))
         batch_labels_array = np.array(batch_labels)
         unique_batches = pd.unique(batch_labels_array)
         batch_counts = pd.Series(batch_labels).value_counts()
         if len(unique_batches) < 2 or any(batch_counts < 2):
-            print(f"Skipping ComBat for '{ctype}' due to insufficient batch diversity or small batch sizes: {batch_counts.to_dict()}.")
+            print(f"\n\n\n\nSkipping ComBat for '{ctype}' due to insufficient batch diversity or small batch sizes: {batch_counts.to_dict()}.\n\n\n\n")
             continue
         expr_matrix = np.vstack(arrays_for_this_ctype).T
         if np.any(expr_matrix < 0):
-            print(f"Warning: Negative values detected in '{ctype}' expression matrix.")
+            print(f"\n\n\n\nWarning: Negative values detected in '{ctype}' expression matrix.\n\n\n\n")
         var_per_gene = np.var(expr_matrix, axis=1)
         zero_var_idx = np.where(var_per_gene == 0)[0]
         if len(zero_var_idx) == expr_matrix.shape[0]:
-            print(f"Skipping ComBat for '{ctype}' because all genes have zero variance.")
+            print(f"\n\n\n\nSkipping ComBat for '{ctype}' because all genes have zero variance.\n\n\n\n")
             continue
         expr_matrix_sub = np.delete(expr_matrix, zero_var_idx, axis=0)
         expr_df_t = pd.DataFrame(expr_matrix_sub, columns=row_data.index)
         batch_series = pd.Series(batch_labels, index=row_data.index, name='batch')
         if expr_df_t.isnull().values.any():
-            print(f"Warning: NaN values detected in expression data for '{ctype}' before ComBat.")
+            print(f"\n\n\n\nWarning: NaN values detected in expression data for '{ctype}' before ComBat.\n\n\n\n")
         corrected_df_sub = pycombat(
             expr_df_t,
             batch=batch_series,
             parametric=parametric
         )
+        print(f"After pycombat: {np.isnan(corrected_df_sub.values).sum()} nan values")
         corrected_values_sub = corrected_df_sub.values
         corrected_expr_matrix = expr_matrix.copy()
         corrected_expr_matrix[zero_var_idx, :] = expr_matrix[zero_var_idx, :]
@@ -93,6 +137,9 @@ def combat_correct_cell_expressions(
         for i, sample_id in enumerate(row_data.index):
             corrected_df.loc[ctype, sample_id] = corrected_expr_matrix_t[i]
         print(f"ComBat correction applied for '{ctype}'.")
+
+
+    save_dataframe_as_strings(corrected_df, pseudobulk_dir, "corrected_expression.csv")
     if contains_nan_in_lists(corrected_df):
         print("\n\n\n\nWarning: NaN values detected even after correction. Returning uncorrected data.\n\n\n\n")
         return cell_expression_df
@@ -120,9 +167,18 @@ def compute_pseudobulk_dataframes(
         print(f"\n\n\n\nWarning: The following batches have fewer than 5 samples: {small_batches.to_dict()}. Consider merging these batches.\n\n\n\n")
 
     X_data = adata.X.toarray() if not isinstance(adata.X, np.ndarray) else adata.X
+
+    # Check for NaN values and print if any are found
+    if np.isnan(X_data).any():
+        print("\n\n\n\nWarning: X_data contains NaN values.\n\n\n\n")
+
+    # Check for negative values and print if any are found
+    if (X_data < 0).any():
+        print("\n\n\n\nWarning: X_data contains negative values.\n\n\n\n")
+
     if np.any(np.isnan(X_data)) or np.any(np.isinf(X_data)):
         print("\n\n\n\nWarning: Found NaN or Inf values in expression data. Replacing with zeros.\n\n\n\n")
-        X_data = np.nan_to_num(X_data, nan=0.0, posinf=0.0, neginf=0.0)
+        X_data = np.nan_to_num(X_data, nan=1e-8, posinf=1e-8, neginf=1e-8)
     gene_variances = np.var(X_data, axis=0)
     nonzero_variance_mask = gene_variances > 0
     if not np.all(nonzero_variance_mask):
@@ -144,14 +200,13 @@ def compute_pseudobulk_dataframes(
             cell_expression_df.loc[ctype, sample] = expr_values
             cell_proportion_df.loc[ctype, sample] = proportion
     print("\n\n\n\nSuccessfully computed pseudobulk data.\n\n\n\n")
-    
-    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df)
+
+    # cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, pseudobulk_dir)
     save_dataframe_as_strings(cell_expression_df, pseudobulk_dir, "expression.csv")
     save_dataframe_as_strings(cell_proportion_df, pseudobulk_dir, "proportion.csv")
-    save_dataframe_as_strings(cell_expression_corrected_df, pseudobulk_dir, "corrected_expression.csv")
-    pseudobulk = {
-        "cell_expression": cell_expression_df,
-        "cell_proportion": cell_proportion_df,
-        "cell_expression_corrected": cell_expression_corrected_df
-    }
-    return pseudobulk
+    # pseudobulk = {
+    #     "cell_expression": cell_expression_df,
+    #     "cell_proportion": cell_proportion_df,
+    #     "cell_expression_corrected": cell_expression_corrected_df
+    # }
+    return None
