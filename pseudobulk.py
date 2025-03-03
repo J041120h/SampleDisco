@@ -9,11 +9,15 @@ from Visualization import visualization_harmony
 from combat.pycombat import pycombat
 
 def contains_nan_in_lists(df: pd.DataFrame) -> bool:
-    for row in df.itertuples(index=False):
-        for array in row:
-            if isinstance(array, np.ndarray) and np.isnan(array).any():
-                return True
-    return False
+    found_nan = False
+    for row_index, row in df.iterrows():
+        for col in df.columns:
+            cell = row[col]
+            if isinstance(cell, np.ndarray) and np.isnan(cell).any():
+                print(f"Found NaN in row {row_index}, column '{col}'.")
+                found_nan = True
+    return found_nan
+
 
 def check_nan_and_negative_in_lists(df: pd.DataFrame) -> bool:
     found_nan = False
@@ -48,22 +52,26 @@ def vector_to_string(vector):
 
 def save_dataframe_as_strings(df: pd.DataFrame, output_dir: str, filename: str):
     """
-    Convert all cells in a DataFrame (where each cell is a vector) to strings without truncating the vectors
+    Convert all cells in a DataFrame (where each cell is a vector) to strings without truncation,
     and save to a CSV file in a 'pseudobulk' subdirectory within output_dir.
     """
     # Create the 'pseudobulk' subdirectory inside the given output directory.
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
 
+    # Set numpy print options to ensure full vectors are printed without truncation.
+    np.set_printoptions(threshold=np.inf)
+    
+    # Convert each cell to a string: use vector_to_string for lists/arrays; otherwise, convert to string.
+    df_as_strings = df.applymap(lambda x: vector_to_string(x) if isinstance(x, (list, np.ndarray)) else str(x))
+
     # Create the full file path.
     file_path = os.path.join(pseudobulk_dir, filename)
-
-    # Apply custom conversion to each cell.
-    df_as_strings = df.applymap(vector_to_string)
 
     # Save the resulting DataFrame to CSV.
     df_as_strings.to_csv(file_path, index=True)
     print(f"DataFrame saved as strings to {file_path}")
+
 
 
 def combat_correct_cell_expressions(
@@ -236,12 +244,12 @@ def compute_pseudobulk_dataframes(
             cell_proportion_df.loc[ctype, sample] = proportion
     print("\n\n\n\nSuccessfully computed pseudobulk data.\n\n\n\n")
 
-    # cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, pseudobulk_dir)
+    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, pseudobulk_dir)
     save_dataframe_as_strings(cell_expression_df, pseudobulk_dir, "expression.csv")
     save_dataframe_as_strings(cell_proportion_df, pseudobulk_dir, "proportion.csv")
-    # pseudobulk = {
-    #     "cell_expression": cell_expression_df,
-    #     "cell_proportion": cell_proportion_df,
-    #     "cell_expression_corrected": cell_expression_corrected_df
-    # }
+    pseudobulk = {
+        "cell_expression": cell_expression_df,
+        "cell_proportion": cell_proportion_df,
+        "cell_expression_corrected": cell_expression_corrected_df
+    }
     return None
