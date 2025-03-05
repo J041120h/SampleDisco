@@ -92,7 +92,8 @@ def main():
 
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
+
+    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
 
     # visualization_harmony(
     #     AnnData_sample,
@@ -103,14 +104,14 @@ def main():
     #     dot_size = 3
     # )
 
-    # if os.path.exists(summary_sample_csv_path):
-    #     os.remove(summary_sample_csv_path)
-    # if os.path.exists(summary_cell_csv_path):
-    #     os.remove(summary_cell_csv_path)
+    if os.path.exists(summary_sample_csv_path):
+        os.remove(summary_sample_csv_path)
+    if os.path.exists(summary_cell_csv_path):
+        os.remove(summary_cell_csv_path)
 
-    # for md in methods:
-    #     print("\n\n\n\n" + md + "\n\n\n\n")
-    #     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk)
+    for md in methods:
+        print("\n\n\n\n" + md + "\n\n\n\n")
+        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk)
     EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
     chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
     jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)

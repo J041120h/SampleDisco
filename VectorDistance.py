@@ -131,6 +131,7 @@ def calculate_sample_distances_gene_expression(
     # Save and visualize
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
+    distanceCheck(distance_matrix_path, 'cell_expression', method, summary_csv_path, adata)
     visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_gene_expression_heatmap.pdf'))
     visualizeGroupRelationship(distance_df, outputDir=output_dir, adata = adata, heatmap_path=os.path.join(output_dir, 'sample_gene_expression_relationship.pdf'))
 
@@ -178,7 +179,9 @@ def calculate_sample_distances_pca(
     distance_df = np.log1p(np.maximum(distance_df, 0)) / distance_df.max().max()
 
     # Save and visualize
-    distance_df.to_csv(os.path.join(output_dir, 'distance_matrix_pca_harmony.csv'))
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
+    distance_df.to_csv(distance_matrix_path)
+    distanceCheck(distance_matrix_path, 'pca_harmony', method, summary_csv_path, adata)
     visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_pca_harmony_heatmap.pdf'))
     visualizeGroupRelationship(distance_df, outputDir=output_dir, adata = adata, heatmap_path=os.path.join(output_dir, 'sample_pca_harmony_relationship.pdf'))
 
@@ -238,8 +241,9 @@ def calculate_sample_distances_gene_pseudobulk(
     distance_df = pd.DataFrame(squareform(distance_matrix), index=samples, columns=samples)
 
     # Save results
-    distance_matrix_path = os.path.join(output_subdir, 'distance_matrix_gene_pseudobulk_top2000.csv')
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
+    distanceCheck(distance_matrix_path, 'cell_pseudobulk', method, summary_csv_path, adata)
     visualizeDistanceMatrix(distance_df, os.path.join(output_subdir, 'sample_distance_pseudobulk_heatmap.pdf'))
     visualizeGroupRelationship(distance_df, outputDir=output_subdir, adata = adata, heatmap_path=os.path.join(output_subdir, 'sample_pseudobulk_relationship.pdf'))
     print(f"Sample distance matrix (top 2000 HVG) saved to {distance_matrix_path}")

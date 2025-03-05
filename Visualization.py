@@ -564,3 +564,77 @@ def visualization_harmony(
     if verbose:
         print("[visualization_harmony] All visualizations saved.")
 
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+def plot_cell_type_proportions_pca(adata, output_dir, grouping_columns=['sev.level'], age_bin_size=None):
+    output_dir = os.path.join(output_dir, 'harmony')
+    os.makedirs(output_dir, exist_ok=True)
+
+    samples = adata.obs['sample'].unique()
+    cell_types = list(adata.obs['cell_type'].unique())  # Ensure it's a list
+    
+    proportions = pd.DataFrame(0, index=samples, columns=cell_types, dtype=np.float64)
+    for sample in samples:
+        sample_data = adata.obs[adata.obs['sample'] == sample]
+        total_cells = sample_data.shape[0]
+        counts = sample_data['cell_type'].value_counts()
+        proportions.loc[sample, counts.index] = counts.values / total_cells
+
+    diff_groups = find_sample_grouping(adata, samples, grouping_columns, age_bin_size)
+
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+
+    if not isinstance(diff_groups, pd.DataFrame):
+        raise TypeError(f"Expected diff_groups to be a DataFrame, but got {type(diff_groups)}")
+
+    if 'plot_group' not in diff_groups.columns:
+        raise KeyError("Column 'plot_group' is missing in diff_groups.")
+
+    proportions.index = proportions.index.astype(str).str.strip().str.lower()
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+
+    print("Proportions Index Samples:", proportions.index.tolist()[:5])
+    print("Diff Groups Index Samples:", diff_groups.index.tolist()[:5])
+
+    diff_groups = diff_groups.reset_index()
+    diff_groups.rename(columns={'index': 'sample'}, inplace=True)
+
+    proportions = proportions.reset_index()
+    proportions.rename(columns={'index': 'sample'}, inplace=True)
+
+    proportions = proportions.merge(diff_groups, on='sample', how='left').set_index('sample')
+
+    proportions[list(cell_types)] = proportions[list(cell_types)].apply(pd.to_numeric, errors='coerce')
+    proportions.fillna(0, inplace=True)
+
+    pca = PCA(n_components=2)
+    pca_coords = pca.fit_transform(proportions[cell_types])
+    
+    pca_df = pd.DataFrame(pca_coords, index=proportions.index, columns=['PC1', 'PC2'])
+    pca_df = pca_df.join(proportions[['plot_group']])
+
+    plt.figure(figsize=(8, 6))
+    unique_groups = pca_df['plot_group'].unique()
+    colors = plt.cm.get_cmap('tab10', len(unique_groups))
+
+    for i, grp in enumerate(unique_groups):
+        mask = pca_df['plot_group'] == grp
+        plt.scatter(pca_df.loc[mask, 'PC1'], pca_df.loc[mask, 'PC2'], color=colors(i), s=80, alpha=0.8, label=str(grp))
+
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of Cell Type Proportions')
+    plt.grid(True)
+    plt.legend(title="Group")
+    plt.tight_layout()
+
+    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample_proportion.pdf')
+    plt.savefig(plot_path)
+    plt.show()
+
+    print(f"PCA plot saved to: {plot_path}")
