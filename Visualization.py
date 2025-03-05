@@ -425,6 +425,7 @@ def visualization_harmony(
     plt.title('2D PCA of Avg HVG Expression ')
     plt.grid(True)
     plt.tight_layout()
+    plt.legend()
     plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf'))
     plt.close()
 
@@ -434,6 +435,7 @@ def visualization_harmony(
     print("adata_cluster shape:", adata_cluster.shape)
     print("adata_cluster.X shape:", adata_cluster.X.shape)
     print("Is adata_cluster.X sparse?", issparse(adata_cluster.X))
+
     if issparse(adata_cluster.X):
         df = pd.DataFrame(
             adata_cluster.X.toarray(),
@@ -466,6 +468,7 @@ def visualization_harmony(
     plt.title('2D PCA of Avg HVG Expression ')
     plt.grid(True)
     plt.tight_layout()
+    plt.legend()
     plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_cluster.pdf'))
     plt.close()
 
@@ -560,3 +563,4 @@ def visualization_harmony(
     # --------------------------------
     if verbose:
         print("[visualization_harmony] All visualizations saved.")
+

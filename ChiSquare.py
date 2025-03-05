@@ -106,6 +106,7 @@ def calculate_sample_distances_cell_proportion_chi_square(
     visualizeGroupRelationship(
         sample_distance_matrix,
         outputDir=output_dir,
+        adata = adata,
         heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf')
     )
 
@@ -276,6 +277,7 @@ def calculate_sample_distances_cell_expression_chi_square(
     visualizeGroupRelationship(
         sample_distance_matrix,
         outputDir=output_dir,
+        adata = adata,
         heatmap_path=os.path.join(output_dir, 'sample_expression_relationship.pdf')
     )
 
@@ -452,7 +454,7 @@ def calculate_sample_distances_weighted_expression_chi_square(
     # 7. Generate a heatmap of the distance matrix
     heatmap_path = os.path.join(output_dir, 'sample_distance_heatmap_weighted_expression.pdf')
     visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
-    visualizeGroupRelationship(sample_distance_matrix, outputDir=output_dir, heatmap_path=os.path.join(output_dir, 'sample_weighted_relationship.pdf'))
+    visualizeGroupRelationship(sample_distance_matrix, outputDir=output_dir, adata = adata, heatmap_path=os.path.join(output_dir, 'sample_weighted_relationship.pdf'))
     
     return sample_distance_matrix
 

@@ -13,7 +13,7 @@ from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata
-from Visualization import visualization_harmony
+from Visualization import visualization_harmony, plot_cell_type_proportions_pca
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/result"
@@ -92,12 +92,10 @@ def main():
 
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-    # sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path, pseudobulk)
-
+    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
 
     # visualization_harmony(
-    #     AnnData_cell,
+    #     AnnData_sample,
     #     AnnData_sample,
     #     output_dir,
     #     grouping_columns=['sev.level'],
@@ -113,9 +111,9 @@ def main():
     # for md in methods:
     #     print("\n\n\n\n" + md + "\n\n\n\n")
     #     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk)
-    # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
-    # chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
-    # jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
+    EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
+    chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
+    jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
 
     print("End of Process")
     print("End of Process")

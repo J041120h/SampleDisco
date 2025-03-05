@@ -111,12 +111,12 @@ def combat_correct_cell_expressions(
             expr_array = row_data[sample_id]
             # Check if the cell type is absent in the sample by testing if its expression vector is all zeros.
             if expr_array is None or len(expr_array) == 0 or np.allclose(expr_array, 0):
-                print(f"Skipping sample '{sample_id}' for cell type '{ctype}' due to zero expression (likely absent).")
+                # print(f"Skipping sample '{sample_id}' for cell type '{ctype}' due to zero expression (likely absent).")
                 continue
             else:
                 expr_array = np.array(expr_array, dtype=float)
             # Replace NaN or infinite values with a small positive constant
-            expr_array = np.nan_to_num(expr_array, nan=1e-8, posinf=1e-8, neginf=1e-8)
+            expr_array = np.nan_to_num(expr_array, nan=0, posinf=0, neginf=0)
             arrays_for_this_ctype.append(expr_array)
             batch_labels.append(sample_batch_map.get(sample_id, "missing_batch"))
             valid_sample_ids.append(sample_id)
@@ -159,6 +159,7 @@ def combat_correct_cell_expressions(
             batch=batch_series,
             parametric=parametric
         )
+        
         print(f"After pycombat: {np.isnan(corrected_df_sub.values).sum()} nan values")
         corrected_values_sub = corrected_df_sub.values
         
@@ -224,7 +225,7 @@ def compute_pseudobulk_dataframes(
 
     if np.any(np.isnan(X_data)) or np.any(np.isinf(X_data)):
         print("\n\n\n\nWarning: Found NaN or Inf values in expression data. Replacing with zeros.\n\n\n\n")
-        X_data = np.nan_to_num(X_data, nan=1e-8, posinf=1e-8, neginf=1e-8)
+        X_data = np.nan_to_num(X_data, nan=0, posinf=0, neginf=0)
     gene_variances = np.var(X_data, axis=0)
     nonzero_variance_mask = gene_variances > 0
     if not np.all(nonzero_variance_mask):
@@ -247,10 +248,6 @@ def compute_pseudobulk_dataframes(
             cell_proportion_df.loc[ctype, sample] = proportion
     print("\n\n\n\nSuccessfully computed pseudobulk data.\n\n\n\n")
 
-    print(cell_expression_df.loc[10, "CoV-18-Lee"])
-    print(cell_expression_df.loc[9, "CoV-18-Lee"])
-
-
     save_dataframe_as_strings(cell_expression_df, pseudobulk_dir, "expression.csv")
     save_dataframe_as_strings(cell_proportion_df, pseudobulk_dir, "proportion.csv")
 
@@ -260,4 +257,4 @@ def compute_pseudobulk_dataframes(
         "cell_proportion": cell_proportion_df,
         "cell_expression_corrected": cell_expression_corrected_df
     }
-    return None
+    return pseudobulk

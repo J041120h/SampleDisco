@@ -8,7 +8,7 @@ def distanceCheck(df_path,
                   method, 
                   summary_csv_path, 
                   adata=None,
-                  grouping_columns=['sample','batch'],
+                  grouping_columns=['sev.level'],
                   age_bin_size=10):
     """
     Calculate in-group vs. between-group distances based on a grouping of samples,
