@@ -152,6 +152,7 @@ def plot_cell_type_expression_heatmap(
     print(f"Cell type expression heatmap saved to {heatmap_path}")
 
 import os
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import MDS
@@ -167,9 +168,10 @@ def visualizeGroupRelationship(
 ):
     """
     Generates 2D MDS and PCA plots from a sample distance matrix, coloring points
-    according to groups identified by `find_sample_grouping`. 
-    Includes a legend mapping colors to groups.
-    
+    according to severity levels extracted from group assignments determined by
+    find_sample_grouping. A continuous color scale is used based on the observed
+    range of severity values.
+
     Arguments:
     ----------
     sample_distance_matrix : pd.DataFrame
@@ -180,7 +182,7 @@ def visualizeGroupRelationship(
         An AnnData object (or any structure) needed by find_sample_grouping
         to determine group assignments per sample.
     grouping_columns : list, optional
-        Which columns in `adata.obs` to use for grouping (example: ['sev.level']).
+        Which columns in `adata.obs` to use for grouping (default: ['sev.level']).
     age_bin_size : int or None, optional
         If grouping by age, specify the bin size here (optional).
     heatmap_path : str or None, optional
@@ -205,39 +207,50 @@ def visualizeGroupRelationship(
     pca = PCA(n_components=2)
     points_pca = pca.fit_transform(sym_matrix)
 
-    # Determine group assignments for each sample
+    # Determine group assignments for each sample via find_sample_grouping
     group_mapping = find_sample_grouping(
         adata,
         samples,
         grouping_columns=grouping_columns,
         age_bin_size=age_bin_size
     )
+    
+    # Assume group_mapping returns a mapping from sample to a string like "sev.level_X.XX"
     group_labels = [group_mapping[sample] for sample in samples]
-    unique_groups = sorted(set(group_labels))
 
-    # Choose colors for each group (same colors for both plots)
-    color_map = plt.cm.get_cmap("tab10", len(unique_groups))
-    group_colors = {group: color_map(i) for i, group in enumerate(unique_groups)}
+    # Extract numeric severity levels from the group labels using regex
+    sev_levels = []
+    for lbl in group_labels:
+        m = re.search(r'(\d+\.\d+)', lbl)
+        if m:
+            sev_levels.append(float(m.group(1)))
+        else:
+            sev_levels.append(np.nan)
+    sev_levels = np.array(sev_levels)
+    if np.isnan(sev_levels).any():
+        raise ValueError("Some plot_group values could not be parsed for severity levels.")
+
+    # Normalize severity values based on observed min and max
+    sev_min, sev_max = sev_levels.min(), sev_levels.max()
+    norm_sev = (sev_levels - sev_min) / (sev_max - sev_min)
+
+    # Use a continuous colormap (blue for low, red for high severity)
+    cmap = plt.cm.coolwarm
 
     # Create figure with two subplots (MDS and PCA)
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-    titles = ["MDS Visualization", "PCA Visualization"]
-
-    for i, (points, ax, method) in enumerate(zip([points_mds, points_pca], axes, ['MDS', 'PCA'])):
-        legend_handles = []  # Store legend handles
-
-        for group in unique_groups:
-            idx = [j for j, lbl in enumerate(group_labels) if lbl == group]
-            scatter = ax.scatter(points[idx, 0], points[idx, 1],
-                                 s=100, c=[group_colors[group]], alpha=0.8, label=group)
-            legend_handles.append(scatter)
-
+    for ax, method, points in zip(axes, ['MDS', 'PCA'], [points_mds, points_pca]):
+        sc = ax.scatter(
+            points[:, 0], points[:, 1],
+            s=100, c=norm_sev, cmap=cmap, alpha=0.8, edgecolors='k'
+        )
         ax.set_xlabel(f"{method} Dimension 1")
         ax.set_ylabel(f"{method} Dimension 2")
         ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
         ax.grid(True)
 
-        ax.legend(handles=legend_handles, labels=unique_groups, title="Groups", loc="best")
+    # Add a common colorbar for the entire figure showing the severity scale
+    # cbar = fig.colorbar(sc, ax=axes.ravel().tolist(), label="Severity Level")
 
     # Determine output filenames
     if heatmap_path is None:
@@ -247,7 +260,7 @@ def visualizeGroupRelationship(
         mds_path = heatmap_path.replace(".png", "_MDS.png")
         pca_path = heatmap_path.replace(".png", "_PCA.png")
 
-    # Save and close
+    # Save the figure (both subplots are saved together)
     plt.tight_layout()
     plt.savefig(mds_path)
     plt.savefig(pca_path)
@@ -285,6 +298,8 @@ from scipy.sparse import issparse
 # For interactive 3D plot
 import plotly.express as px
 import plotly.io as pio
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 
 def visualization_harmony(
     adata_cluster,
@@ -392,6 +407,7 @@ def visualization_harmony(
     print("adata_sample_diff shape:", adata_sample_diff.shape)
     print("adata_sample_diff.X shape:", adata_sample_diff.X.shape)
     print("Is adata_sample_diff.X sparse?", issparse(adata_sample_diff.X))
+
     if issparse(adata_sample_diff.X):
         df = pd.DataFrame(
             adata_sample_diff.X.toarray(),
@@ -404,37 +420,54 @@ def visualization_harmony(
             index=adata_sample_diff.obs_names,
             columns=adata_sample_diff.var_names
         )
+
     df['sample'] = adata_sample_diff.obs['sample']
     sample_means = df.groupby('sample').mean()
+
+    # Map samples to severity levels
     sample_to_group = adata_sample_diff.obs[['sample', 'plot_group']].drop_duplicates().set_index('sample')
 
+    # Perform PCA
     pca_2d = PCA(n_components=2)
     pca_coords_2d = pca_2d.fit_transform(sample_means)
     pca_2d_df = pd.DataFrame(pca_coords_2d, index=sample_means.index, columns=['PC1', 'PC2'])
     pca_2d_df = pca_2d_df.join(sample_to_group, how='left')
-    
 
+    # Extract severity level and convert to numeric
+    pca_2d_df['sev_level'] = pca_2d_df['plot_group'].str.extract(r'(\d\.\d+)').astype(float)
+
+    # Check for missing severity levels
+    if pca_2d_df['sev_level'].isna().sum() > 0:
+        raise ValueError("Some plot_group values could not be parsed for severity levels.")
+
+    # Normalize severity levels for colormap mapping
+    norm = mcolors.Normalize(vmin=1.00, vmax=4.00)
+    cmap = cm.get_cmap('coolwarm')
+
+    # Plot PCA with color mapping
     plt.figure(figsize=(8, 6))
-    unique_groups = pca_2d_df['plot_group'].unique()
-    colors = plt.cm.get_cmap('tab10', len(unique_groups))
-    for i, grp in enumerate(unique_groups):
-        mask = (pca_2d_df['plot_group'] == grp)
-        plt.scatter(pca_2d_df.loc[mask, 'PC1'], pca_2d_df.loc[mask, 'PC2'], color=colors(i), s=80, alpha=0.8)
+    for _, row in pca_2d_df.iterrows():
+        color = cmap(norm(row['sev_level']))
+        plt.scatter(row['PC1'], row['PC2'], color=color, s=80, alpha=0.8, label=f"sev.level_{row['sev_level']:.2f}")
+
     plt.xlabel('PC1')
     plt.ylabel('PC2')
-    plt.title('2D PCA of Avg HVG Expression ')
+    plt.title('2D PCA of Avg HVG Expression')
     plt.grid(True)
     plt.tight_layout()
-    plt.legend()
+
+    # Create a colorbar legend
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm)
+    cbar.set_label('Severity Level')
+
+    # Save and close figure
     plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf'))
     plt.close()
 
     if verbose:
         print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
-
-    print("adata_cluster shape:", adata_cluster.shape)
-    print("adata_cluster.X shape:", adata_cluster.X.shape)
-    print("Is adata_cluster.X sparse?", issparse(adata_cluster.X))
 
     if issparse(adata_cluster.X):
         df = pd.DataFrame(
@@ -576,7 +609,8 @@ def plot_cell_type_proportions_pca(adata, output_dir, grouping_columns=['sev.lev
 
     samples = adata.obs['sample'].unique()
     cell_types = list(adata.obs['cell_type'].unique())  # Ensure it's a list
-    
+
+    # Compute cell type proportions per sample
     proportions = pd.DataFrame(0, index=samples, columns=cell_types, dtype=np.float64)
     for sample in samples:
         sample_data = adata.obs[adata.obs['sample'] == sample]
@@ -595,46 +629,300 @@ def plot_cell_type_proportions_pca(adata, output_dir, grouping_columns=['sev.lev
     if 'plot_group' not in diff_groups.columns:
         raise KeyError("Column 'plot_group' is missing in diff_groups.")
 
+    # Standardize index formats
     proportions.index = proportions.index.astype(str).str.strip().str.lower()
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
 
     print("Proportions Index Samples:", proportions.index.tolist()[:5])
     print("Diff Groups Index Samples:", diff_groups.index.tolist()[:5])
 
-    diff_groups = diff_groups.reset_index()
-    diff_groups.rename(columns={'index': 'sample'}, inplace=True)
-
-    proportions = proportions.reset_index()
-    proportions.rename(columns={'index': 'sample'}, inplace=True)
-
+    # Merge proportions with grouping information
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    proportions = proportions.reset_index().rename(columns={'index': 'sample'})
     proportions = proportions.merge(diff_groups, on='sample', how='left').set_index('sample')
 
-    proportions[list(cell_types)] = proportions[list(cell_types)].apply(pd.to_numeric, errors='coerce')
+    proportions[cell_types] = proportions[cell_types].apply(pd.to_numeric, errors='coerce')
     proportions.fillna(0, inplace=True)
 
+    # Perform PCA
     pca = PCA(n_components=2)
     pca_coords = pca.fit_transform(proportions[cell_types])
     
     pca_df = pd.DataFrame(pca_coords, index=proportions.index, columns=['PC1', 'PC2'])
     pca_df = pca_df.join(proportions[['plot_group']])
 
-    plt.figure(figsize=(8, 6))
-    unique_groups = pca_df['plot_group'].unique()
-    colors = plt.cm.get_cmap('tab10', len(unique_groups))
+    # Extract severity levels from 'plot_group' (assuming format "sev.level_X.XX")
+    pca_df['severity'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
 
-    for i, grp in enumerate(unique_groups):
-        mask = pca_df['plot_group'] == grp
-        plt.scatter(pca_df.loc[mask, 'PC1'], pca_df.loc[mask, 'PC2'], color=colors(i), s=80, alpha=0.8, label=str(grp))
+    # Normalize severity values between 0 and 1 for color mapping
+    norm_severity = (pca_df['severity'] - pca_df['severity'].min()) / (
+            pca_df['severity'].max() - pca_df['severity'].min()
+    )
+
+    # Define colormap from blue (low severity) to red (high severity)
+    colormap = plt.cm.coolwarm
+
+    plt.figure(figsize=(8, 6))
+    sc = plt.scatter(
+        pca_df['PC1'], pca_df['PC2'],
+        c=norm_severity, cmap=colormap, s=80, alpha=0.8, edgecolors='k'
+    )
+
+    # Add colorbar for severity levels
+    cbar = plt.colorbar(sc)
+    cbar.set_label('Severity Level')
 
     plt.xlabel('PC1')
     plt.ylabel('PC2')
-    plt.title('2D PCA of Cell Type Proportions')
+    plt.title('2D PCA of Cell Type Proportions (Severity Gradient)')
     plt.grid(True)
-    plt.legend(title="Group")
     plt.tight_layout()
 
+    # Save the plot
     plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample_proportion.pdf')
     plt.savefig(plot_path)
     plt.show()
 
     print(f"PCA plot saved to: {plot_path}")
+
+
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.sparse import issparse
+from sklearn.decomposition import PCA
+
+# Note: Ensure that find_sample_grouping is imported or defined in your environment
+
+def plot_avg_hvg_expression_pca(adata_sample_diff, output_dir, grouping_columns=['sev.level'], age_bin_size=None, verbose=False):
+    """
+    Computes and plots a 2D PCA of the average HVG expression per sample.
+    The PCA points are colored based on severity levels extracted from the 'plot_group'
+    field, which is derived by calling find_sample_grouping on the input data.
+
+    Parameters:
+    -----------
+    adata_sample_diff : AnnData-like object
+        Object with attributes .X (expression data) and .obs (observation metadata).
+    output_dir : str
+        Directory where the output plot will be saved.
+    grouping_columns : list, optional
+        List of columns to use for grouping samples (default is ['sev.level']).
+    age_bin_size : int or None, optional
+        Age bin size for grouping, if applicable.
+    verbose : bool, optional
+        If True, prints additional debugging information.
+    """
+    if verbose:
+        print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
+    
+    # Debug prints for data shapes
+    print("adata_sample_diff shape:", adata_sample_diff.shape)
+    print("adata_sample_diff.X shape:", adata_sample_diff.X.shape)
+    print("Is adata_sample_diff.X sparse?", issparse(adata_sample_diff.X))
+    
+    # Convert expression data to a DataFrame (handling sparse and dense cases)
+    if issparse(adata_sample_diff.X):
+        df = pd.DataFrame(
+            adata_sample_diff.X.toarray(),
+            index=adata_sample_diff.obs_names,
+            columns=adata_sample_diff.var_names
+        )
+    else:
+        df = pd.DataFrame(
+            adata_sample_diff.X,
+            index=adata_sample_diff.obs_names,
+            columns=adata_sample_diff.var_names
+        )
+    
+    # Add sample information and compute average HVG expression per sample
+    df['sample'] = adata_sample_diff.obs['sample']
+    sample_means = df.groupby('sample').mean()
+    
+    # Derive the plot grouping using the find_sample_grouping function
+    samples = adata_sample_diff.obs['sample'].unique()
+    diff_groups = find_sample_grouping(adata_sample_diff, samples, grouping_columns, age_bin_size)
+    
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+    
+    if not isinstance(diff_groups, pd.DataFrame):
+        raise TypeError(f"Expected diff_groups to be a DataFrame, but got {type(diff_groups)}")
+    if 'plot_group' not in diff_groups.columns:
+        raise KeyError("Column 'plot_group' is missing in diff_groups.")
+    
+    # Standardize index formats for merging
+    sample_means.index = sample_means.index.astype(str).str.strip().str.lower()
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+    
+    # Reset index and merge grouping information with sample_means
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    sample_means = sample_means.reset_index().rename(columns={'index': 'sample'})
+    sample_means = sample_means.merge(diff_groups, on='sample', how='left').set_index('sample')
+    
+    # Perform PCA on the sample-averaged data (excluding the plot_group column)
+    pca = PCA(n_components=2)
+    pca_coords = pca.fit_transform(sample_means.drop(columns=['plot_group']))
+    pca_df = pd.DataFrame(pca_coords, index=sample_means.index, columns=['PC1', 'PC2'])
+    pca_df = pca_df.join(sample_means[['plot_group']])
+    
+    # Extract severity level as a numeric value from the plot_group string (e.g., "sev.level_X.XX")
+    pca_df['sev_level'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
+    
+    if pca_df['sev_level'].isna().sum() > 0:
+        raise ValueError("Some plot_group values could not be parsed for severity levels.")
+    
+    # Normalize severity values based on the observed range
+    sev_min = pca_df['sev_level'].min()
+    sev_max = pca_df['sev_level'].max()
+    norm_severity = (pca_df['sev_level'] - sev_min) / (sev_max - sev_min)
+    
+    # Define the colormap (blue for low severity, red for high)
+    colormap = plt.cm.coolwarm
+    
+    plt.figure(figsize=(8, 6))
+    sc = plt.scatter(
+        pca_df['PC1'], pca_df['PC2'],
+        c=norm_severity, cmap=colormap, s=80, alpha=0.8, edgecolors='k'
+    )
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of Avg HVG Expression')
+    plt.grid(True)
+    plt.tight_layout()
+    
+    # Add a colorbar to show severity levels
+    cbar = plt.colorbar(sc)
+    cbar.set_label('Severity Level')
+    
+    # Save the plot
+    os.makedirs(output_dir, exist_ok=True)
+    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf')
+    plt.savefig(plot_path)
+    plt.close()
+    
+    if verbose:
+        print(f"[visualization_harmony] PCA plot saved to: {plot_path}")
+    
+    import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from anndata import AnnData
+
+# Assume find_sample_grouping is defined elsewhere
+# def find_sample_grouping(adata, samples, grouping_columns, age_bin_size):
+#     ...
+
+def pseudobulk_pca_visualization(
+    adata: AnnData,
+    output_dir: str,
+    pseudobulk: dict,
+    grouping_columns: list,
+    age_bin_size: int,
+    verbose: bool = False
+) -> None:
+    """
+    Combines pseudobulk generation with PCA visualization.
+    
+    After constructing a sample-by-feature dataframe (each sample represented 
+    by a 1x2000 vector of the most variable features), this function uses PCA 
+    to embed the samples into 2D. Samples are colored by a severity level that 
+    is extracted from the sample grouping information.
+    
+    Parameters:
+    - adata: AnnData object with sample metadata in adata.obs.
+    - output_dir: Directory where the PCA plot will be saved.
+    - pseudobulk: Dictionary containing 'cell_expression_corrected'. 
+                  This should be a DataFrame with cell types as rows and samples as columns.
+    - grouping_columns: List of column names to use for sample grouping.
+    - age_bin_size: An integer specifying the bin size for age grouping.
+    - verbose: If True, prints the location of the saved plot.
+    
+    Returns:
+    - None; the plot is saved to disk.
+    """
+    # === Part 1: Create the sample-by-feature dataframe ===
+    cell_expr = pseudobulk['cell_expression_corrected']
+    samples = cell_expr.columns
+    cell_types = cell_expr.index
+
+    # Build concatenated expression vectors per sample
+    sample_vectors = {
+        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_types])
+        for sample in samples
+    }
+    sample_df = pd.DataFrame.from_dict(sample_vectors, orient='index')
+    sample_df.index.name = 'sample'
+    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+
+    # Select the top 2000 most variable features across samples
+    top_2000_features = sample_df.var(axis=0).nlargest(2000).index
+    sample_means = sample_df[top_2000_features]
+
+    # === Part 2: Derive the sample grouping and merge with expression data ===
+    # Get unique sample names from adata
+    samples_in_adata = adata.obs['sample'].unique()
+    
+    diff_groups = find_sample_grouping(adata, samples_in_adata, grouping_columns, age_bin_size)
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+    
+    if not isinstance(diff_groups, pd.DataFrame):
+        raise TypeError(f"Expected diff_groups to be a DataFrame, but got {type(diff_groups)}")
+    if 'plot_group' not in diff_groups.columns:
+        raise KeyError("Column 'plot_group' is missing in diff_groups.")
+    
+    # Standardize index formats for merging
+    sample_means.index = sample_means.index.astype(str).str.strip().str.lower()
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+
+    # Reset index and merge grouping information with sample_means
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    sample_means = sample_means.reset_index().rename(columns={'index': 'sample'})
+    sample_means = sample_means.merge(diff_groups, on='sample', how='left').set_index('sample')
+    
+    # === Part 3: PCA embedding and visualization ===
+    pca = PCA(n_components=2)
+    pca_coords = pca.fit_transform(sample_means.drop(columns=['plot_group']))
+    pca_df = pd.DataFrame(pca_coords, index=sample_means.index, columns=['PC1', 'PC2'])
+    pca_df = pca_df.join(sample_means[['plot_group']])
+    
+    # Extract severity level (assumes plot_group strings contain a pattern like "sev.level_X.XX")
+    pca_df['sev_level'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
+    
+    if pca_df['sev_level'].isna().sum() > 0:
+        raise ValueError("Some plot_group values could not be parsed for severity levels.")
+    
+    # Normalize severity values for the colormap
+    sev_min = pca_df['sev_level'].min()
+    sev_max = pca_df['sev_level'].max()
+    norm_severity = (pca_df['sev_level'] - sev_min) / (sev_max - sev_min)
+    
+    # Create a 2D scatter plot of the PCA embedding
+    colormap = plt.cm.coolwarm  # blue for low severity, red for high severity
+    plt.figure(figsize=(8, 6))
+    sc = plt.scatter(
+        pca_df['PC1'], pca_df['PC2'],
+        c=norm_severity, cmap=colormap, s=80, alpha=0.8, edgecolors='k'
+    )
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of Avg HVG Expression')
+    plt.grid(True)
+    plt.tight_layout()
+    
+    # Add colorbar to indicate severity levels
+    cbar = plt.colorbar(sc)
+    cbar.set_label('Severity Level')
+    
+    # Save the plot to the output directory
+    os.makedirs(output_dir, exist_ok=True)
+    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf')
+    plt.savefig(plot_path)
+    plt.close()
+    
+    if verbose:
+        print(f"PCA plot saved to: {plot_path}")
