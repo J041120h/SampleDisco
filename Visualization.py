@@ -812,7 +812,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from anndata import AnnData
 
-def plot_avg_hvg_expression_pca(
+def plot_pseudobulk_pca(
     adata: AnnData,
     output_dir: str,
     pseudobulk: dict,
