@@ -805,51 +805,44 @@ def plot_avg_hvg_expression_pca(adata_sample_diff, output_dir, grouping_columns=
     if verbose:
         print(f"[visualization_harmony] PCA plot saved to: {plot_path}")
     
-    import os
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from anndata import AnnData
 
-# Assume find_sample_grouping is defined elsewhere
-# def find_sample_grouping(adata, samples, grouping_columns, age_bin_size):
-#     ...
-
-def pseudobulk_pca_visualization(
+def plot_avg_hvg_expression_pca(
     adata: AnnData,
     output_dir: str,
     pseudobulk: dict,
-    grouping_columns: list,
-    age_bin_size: int,
+    grouping_columns: list = ['sev.level'],
+    age_bin_size: int = None,
     verbose: bool = False
 ) -> None:
     """
-    Combines pseudobulk generation with PCA visualization.
-    
-    After constructing a sample-by-feature dataframe (each sample represented 
-    by a 1x2000 vector of the most variable features), this function uses PCA 
-    to embed the samples into 2D. Samples are colored by a severity level that 
-    is extracted from the sample grouping information.
+    Constructs a sample-by-feature dataframe from pseudobulk-corrected expression data,
+    selects the top 2000 variable features, and then performs PCA to embed each sample into
+    2D. Samples are colored by a severity level extracted from the grouping information.
     
     Parameters:
-    - adata: AnnData object with sample metadata in adata.obs.
+    - adata: AnnData object. It is expected that pseudobulk information is stored in adata.uns['pseudobulk']
+             and that sample metadata is in adata.obs.
     - output_dir: Directory where the PCA plot will be saved.
-    - pseudobulk: Dictionary containing 'cell_expression_corrected'. 
-                  This should be a DataFrame with cell types as rows and samples as columns.
-    - grouping_columns: List of column names to use for sample grouping.
-    - age_bin_size: An integer specifying the bin size for age grouping.
-    - verbose: If True, prints the location of the saved plot.
+    - grouping_columns: List of columns to use for grouping. Default is ['sev.level'].
+    - age_bin_size: Integer for age binning, if required by find_sample_grouping. Default is None.
+    - verbose: If True, prints additional information.
     
     Returns:
-    - None; the plot is saved to disk.
+    - None; the PCA plot is saved as a PDF in output_dir.
     """
-    # === Part 1: Create the sample-by-feature dataframe ===
+
+    # === Part 1: Build the sample-by-feature DataFrame ===
     cell_expr = pseudobulk['cell_expression_corrected']
     samples = cell_expr.columns
     cell_types = cell_expr.index
 
-    # Build concatenated expression vectors per sample
+    # Construct concatenated expression vectors for each sample.
     sample_vectors = {
         sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_types])
         for sample in samples
@@ -858,15 +851,16 @@ def pseudobulk_pca_visualization(
     sample_df.index.name = 'sample'
     sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
 
-    # Select the top 2000 most variable features across samples
+    # Select the top 2000 most variable features
     top_2000_features = sample_df.var(axis=0).nlargest(2000).index
     sample_means = sample_df[top_2000_features]
 
-    # === Part 2: Derive the sample grouping and merge with expression data ===
-    # Get unique sample names from adata
+    # === Part 2: Derive sample grouping and merge grouping info ===
+    # Get unique sample names from the AnnData object
     samples_in_adata = adata.obs['sample'].unique()
-    
     diff_groups = find_sample_grouping(adata, samples_in_adata, grouping_columns, age_bin_size)
+    
+    # If grouping is returned as a dict, convert it to a DataFrame
     if isinstance(diff_groups, dict):
         diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
     
@@ -879,34 +873,33 @@ def pseudobulk_pca_visualization(
     sample_means.index = sample_means.index.astype(str).str.strip().str.lower()
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
 
-    # Reset index and merge grouping information with sample_means
+    # Reset index and merge grouping information
     diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
     sample_means = sample_means.reset_index().rename(columns={'index': 'sample'})
     sample_means = sample_means.merge(diff_groups, on='sample', how='left').set_index('sample')
     
-    # === Part 3: PCA embedding and visualization ===
+    # === Part 3: PCA and visualization ===
+    # Perform PCA on the 2000 features (exclude the 'plot_group' column)
     pca = PCA(n_components=2)
     pca_coords = pca.fit_transform(sample_means.drop(columns=['plot_group']))
     pca_df = pd.DataFrame(pca_coords, index=sample_means.index, columns=['PC1', 'PC2'])
     pca_df = pca_df.join(sample_means[['plot_group']])
     
-    # Extract severity level (assumes plot_group strings contain a pattern like "sev.level_X.XX")
+    # Extract numeric severity level from the plot_group string (assumes a pattern like "sev.level_X.XX")
     pca_df['sev_level'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
-    
     if pca_df['sev_level'].isna().sum() > 0:
         raise ValueError("Some plot_group values could not be parsed for severity levels.")
     
-    # Normalize severity values for the colormap
+    # Normalize severity values for coloring (0 = low, 1 = high)
     sev_min = pca_df['sev_level'].min()
     sev_max = pca_df['sev_level'].max()
     norm_severity = (pca_df['sev_level'] - sev_min) / (sev_max - sev_min)
     
-    # Create a 2D scatter plot of the PCA embedding
-    colormap = plt.cm.coolwarm  # blue for low severity, red for high severity
+    # Create the 2D scatter plot using a blue-to-red colormap (coolwarm)
     plt.figure(figsize=(8, 6))
     sc = plt.scatter(
         pca_df['PC1'], pca_df['PC2'],
-        c=norm_severity, cmap=colormap, s=80, alpha=0.8, edgecolors='k'
+        c=norm_severity, cmap=plt.cm.coolwarm, s=80, alpha=0.8, edgecolors='k'
     )
     plt.xlabel('PC1')
     plt.ylabel('PC2')
@@ -914,11 +907,11 @@ def pseudobulk_pca_visualization(
     plt.grid(True)
     plt.tight_layout()
     
-    # Add colorbar to indicate severity levels
+    # Add a colorbar to display the severity level scale
     cbar = plt.colorbar(sc)
     cbar.set_label('Severity Level')
     
-    # Save the plot to the output directory
+    # Save the plot
     os.makedirs(output_dir, exist_ok=True)
     plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf')
     plt.savefig(plot_path)

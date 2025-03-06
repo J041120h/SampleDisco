@@ -13,7 +13,7 @@ from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata
-from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_avg_hvg_expression_pca, pseudobulk_pca_visualization
+from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_avg_hvg_expression_pca
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/result"
@@ -94,7 +94,7 @@ def main():
     AnnData_sample = sc.read_h5ad(AnnData_sample_path)
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-    sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{'cosine'}', summary_sample_csv_path, pseudobulk)
+    plot_avg_hvg_expression_pca(AnnData_sample, output_dir, pseudobulk, grouping_columns=['sev.level'], age_bin_size=None, verbose=True)
     # plot_avg_hvg_expression_pca(AnnData_sample, output_dir, verbose=True)
     # visualization_harmony(
     #     AnnData_sample,
