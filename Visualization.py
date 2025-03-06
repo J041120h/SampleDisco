@@ -822,100 +822,70 @@ def plot_avg_hvg_expression_pca(
 ) -> None:
     """
     Constructs a sample-by-feature dataframe from pseudobulk-corrected expression data,
-    selects the top 2000 variable features, and then performs PCA to embed each sample into
-    2D. Samples are colored by a severity level extracted from the grouping information.
-    
+    selects the top 2000 highly variable genes (HVGs), and performs PCA to embed samples in 2D.
+    Samples are colored by severity level.
+
     Parameters:
-    - adata: AnnData object. It is expected that pseudobulk information is stored in adata.uns['pseudobulk']
-             and that sample metadata is in adata.obs.
-    - output_dir: Directory where the PCA plot will be saved.
-    - grouping_columns: List of columns to use for grouping. Default is ['sev.level'].
-    - age_bin_size: Integer for age binning, if required by find_sample_grouping. Default is None.
+    - adata: AnnData object containing sample metadata in adata.obs.
+    - output_dir: Directory to save the PCA plot.
+    - pseudobulk: Dictionary containing 'cell_expression_corrected' with expression data.
+    - grouping_columns: Columns to use for grouping. Default is ['sev.level'].
+    - age_bin_size: Integer for age binning if required. Default is None.
     - verbose: If True, prints additional information.
-    
-    Returns:
-    - None; the PCA plot is saved as a PDF in output_dir.
     """
-
-    # === Part 1: Build the sample-by-feature DataFrame ===
+    # Extract corrected cell expression data
     cell_expr = pseudobulk['cell_expression_corrected']
-    samples = cell_expr.columns
-    cell_types = cell_expr.index
-
-    # Construct concatenated expression vectors for each sample.
-    sample_vectors = {
-        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_types])
-        for sample in samples
-    }
-    sample_df = pd.DataFrame.from_dict(sample_vectors, orient='index')
+    
+    # Construct sample-by-feature matrix by concatenating expression across cell types
+    sample_df = pd.DataFrame({
+        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_expr.index])
+        for sample in cell_expr.columns
+    }).T
     sample_df.index.name = 'sample'
     sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
-
-    # Select the top 2000 most variable features
-    top_2000_features = sample_df.var(axis=0).nlargest(2000).index
-    sample_means = sample_df[top_2000_features]
-
-    # === Part 2: Derive sample grouping and merge grouping info ===
-    # Get unique sample names from the AnnData object
-    samples_in_adata = adata.obs['sample'].unique()
-    diff_groups = find_sample_grouping(adata, samples_in_adata, grouping_columns, age_bin_size)
     
-    # If grouping is returned as a dict, convert it to a DataFrame
+    # Select top 2000 most variable features
+    top_features = sample_df.var(axis=0).nlargest(2000).index
+    sample_df = sample_df[top_features]
+    
+    # Get sample grouping information
+    diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
     if isinstance(diff_groups, dict):
         diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
-    
-    if not isinstance(diff_groups, pd.DataFrame):
-        raise TypeError(f"Expected diff_groups to be a DataFrame, but got {type(diff_groups)}")
     if 'plot_group' not in diff_groups.columns:
         raise KeyError("Column 'plot_group' is missing in diff_groups.")
     
-    # Standardize index formats for merging
-    sample_means.index = sample_means.index.astype(str).str.strip().str.lower()
+    # Ensure consistent formatting and merge grouping information
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
-
-    # Reset index and merge grouping information
-    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
-    sample_means = sample_means.reset_index().rename(columns={'index': 'sample'})
-    sample_means = sample_means.merge(diff_groups, on='sample', how='left').set_index('sample')
+    sample_df.index = sample_df.index.astype(str).str.strip().str.lower()
+    sample_df = sample_df.merge(diff_groups.reset_index().rename(columns={'index': 'sample'}), on='sample', how='left')
     
-    # === Part 3: PCA and visualization ===
-    # Perform PCA on the 2000 features (exclude the 'plot_group' column)
+    # Perform PCA on top HVGs (excluding the 'plot_group' column)
     pca = PCA(n_components=2)
-    pca_coords = pca.fit_transform(sample_means.drop(columns=['plot_group']))
-    pca_df = pd.DataFrame(pca_coords, index=sample_means.index, columns=['PC1', 'PC2'])
-    pca_df = pca_df.join(sample_means[['plot_group']])
+    pca_coords = pca.fit_transform(sample_df.drop(columns=['plot_group']))
+    pca_df = pd.DataFrame(pca_coords, index=sample_df.index, columns=['PC1', 'PC2'])
+    pca_df['plot_group'] = sample_df['plot_group']
     
-    # Extract numeric severity level from the plot_group string (assumes a pattern like "sev.level_X.XX")
+    # Extract numeric severity levels for coloring
     pca_df['sev_level'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
     if pca_df['sev_level'].isna().sum() > 0:
         raise ValueError("Some plot_group values could not be parsed for severity levels.")
     
-    # Normalize severity values for coloring (0 = low, 1 = high)
-    sev_min = pca_df['sev_level'].min()
-    sev_max = pca_df['sev_level'].max()
-    norm_severity = (pca_df['sev_level'] - sev_min) / (sev_max - sev_min)
+    # Normalize severity levels for color mapping
+    norm_severity = (pca_df['sev_level'] - pca_df['sev_level'].min()) / (pca_df['sev_level'].max() - pca_df['sev_level'].min())
     
-    # Create the 2D scatter plot using a blue-to-red colormap (coolwarm)
+    # Plot PCA results
     plt.figure(figsize=(8, 6))
-    sc = plt.scatter(
-        pca_df['PC1'], pca_df['PC2'],
-        c=norm_severity, cmap=plt.cm.coolwarm, s=80, alpha=0.8, edgecolors='k'
-    )
+    sc = plt.scatter(pca_df['PC1'], pca_df['PC2'], c=norm_severity, cmap='coolwarm', s=80, alpha=0.8, edgecolors='k')
     plt.xlabel('PC1')
     plt.ylabel('PC2')
-    plt.title('2D PCA of Avg HVG Expression')
-    plt.grid(True)
-    plt.tight_layout()
+    plt.title('2D PCA of HVG Expression')
+    plt.colorbar(sc, label='Severity Level')
     
-    # Add a colorbar to display the severity level scale
-    cbar = plt.colorbar(sc)
-    cbar.set_label('Severity Level')
-    
-    # Save the plot
+    # Save plot
     os.makedirs(output_dir, exist_ok=True)
-    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf')
-    plt.savefig(plot_path)
+    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf'))
     plt.close()
     
     if verbose:
-        print(f"PCA plot saved to: {plot_path}")
+        print(f"PCA plot saved to {output_dir}/sample_relationship_pca_2D_sample.pdf")
