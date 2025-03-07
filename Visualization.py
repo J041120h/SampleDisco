@@ -862,7 +862,8 @@ def plot_pseudobulk_pca(
     
     # Perform PCA on top HVGs (excluding the 'plot_group' column)
     pca = PCA(n_components=2)
-    pca_coords = pca.fit_transform(sample_df.drop(columns=['plot_group']))
+    numeric_cols = sample_df.select_dtypes(include=[np.number]).columns
+    pca_coords = pca.fit_transform(sample_df[numeric_cols])
     pca_df = pd.DataFrame(pca_coords, index=sample_df.index, columns=['PC1', 'PC2'])
     pca_df['plot_group'] = sample_df['plot_group']
     
@@ -889,3 +890,112 @@ def plot_pseudobulk_pca(
     
     if verbose:
         print(f"PCA plot saved to {output_dir}/sample_relationship_pca_2D_sample.pdf")
+
+    
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from anndata import AnnData
+
+def plot_pseudobulk_batch_test(
+    adata: AnnData,
+    output_dir: str,
+    pseudobulk: dict,
+    grouping_columns: list = ['batch'],
+    age_bin_size: int = None,
+    verbose: bool = False
+) -> None:
+    """
+    Constructs a sample-by-feature dataframe from pseudobulk-corrected expression data,
+    selects the top 2000 highly variable genes (HVGs), and performs PCA to embed samples in 2D.
+    Samples are colored by batch.
+
+    Parameters:
+    - adata: AnnData object containing sample metadata in adata.obs.
+    - output_dir: Directory to save the PCA plot.
+    - pseudobulk: Dictionary containing 'cell_expression_corrected' with expression data.
+    - grouping_columns: List of columns in adata.obs to use for grouping. Default is ['batch'].
+    - age_bin_size: Integer for age binning if required. Default is None.
+    - verbose: If True, prints additional information.
+    """
+    # Ensure required data exists
+    if 'cell_expression_corrected' not in pseudobulk:
+        raise KeyError("Missing 'cell_expression_corrected' key in pseudobulk dictionary.")
+
+    # Extract corrected cell expression data
+    cell_expr = pseudobulk['cell_expression_corrected']
+
+    # Construct sample-by-feature matrix
+    sample_df = pd.DataFrame({
+        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_expr.index])
+        for sample in cell_expr.columns
+    }).T
+    sample_df.index.name = 'sample'
+    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+
+    # Select top 2000 most variable features (if applicable)
+    if sample_df.shape[1] > 2000:
+        top_features = sample_df.var(axis=0).nlargest(2000).index
+        sample_df = sample_df[top_features]
+
+    # Retrieve batch (or grouping) information using find_sample_grouping
+    diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
+
+    # Convert to DataFrame if necessary
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+
+    if 'plot_group' not in diff_groups.columns:
+        raise KeyError("Column 'plot_group' is missing in diff_groups.")
+
+    # Format index for merging
+    sample_df.index = sample_df.index.astype(str).str.strip().str.lower()
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+
+    # Merge grouping information
+    sample_df = sample_df.merge(diff_groups, on='sample', how='left')
+
+    # Perform PCA
+    pca = PCA(n_components=2)
+    numeric_cols = sample_df.select_dtypes(include=[np.number]).columns
+    pca_coords = pca.fit_transform(sample_df[numeric_cols])
+    pca_df = pd.DataFrame(pca_coords, index=sample_df.index, columns=['PC1', 'PC2'])
+    pca_df['batch'] = sample_df['plot_group']  # Assigning batch labels from plot_group
+
+    # Drop NaN values from batch column
+    pca_df = pca_df.dropna(subset=['batch'])
+
+    # Plot PCA results with batch coloring
+    plt.figure(figsize=(8, 6))
+
+    unique_batches = pca_df['batch'].unique()
+    cmap = plt.cm.get_cmap('tab10', min(len(unique_batches), 10))  # Limit to 10 colors
+
+    has_legend = False  # Track if any labels were added
+
+    for i, batch in enumerate(unique_batches):
+        subset = pca_df[pca_df['batch'] == batch]
+        if not subset.empty:
+            plt.scatter(subset['PC1'], subset['PC2'], label=str(batch),
+                        color=cmap(i % 10), s=80, alpha=0.8, edgecolors='k')
+            has_legend = True  # A valid label was added
+
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of HVG Expression (Colored by Batch)')
+
+    # Only add legend if there are labeled batches
+    if has_legend:
+        plt.legend(title='Batch', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Save plot
+    os.makedirs(output_dir, exist_ok=True)
+    save_path = os.path.join(output_dir, 'sample_relationship_pca_2D_batch.pdf')
+    plt.savefig(save_path, bbox_inches='tight')
+    plt.close()
+
+    if verbose:
+        print(f"PCA plot saved to {save_path}")
