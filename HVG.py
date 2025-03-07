@@ -219,3 +219,60 @@ def find_hvgs(
             return hvgs_df
 
     return None
+
+import numpy as np
+import pandas as pd
+from statsmodels.nonparametric.smoothers_lowess import lowess
+
+def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
+    """
+    Select highly variable features (HVFs) from pseudobulk data using LOESS.
+    
+    Parameters:
+    -----------
+    pseudobulk : dict
+        A dictionary that contains 'cell_expression_corrected'.
+    n_features : int, default 2000
+        Number of top HVFs to select (only used if the total feature count is > n_features).
+    frac : float, default 0.3
+        Fraction parameter passed to LOESS. Controls the degree of smoothing.
+    
+    Returns:
+    --------
+    sample_df : pd.DataFrame
+        Sample-by-feature matrix (rows = samples, columns = selected features).
+    top_features : pd.Index
+        Index of the selected features.
+    """
+
+    cell_expr = pseudobulk['cell_expression_corrected']
+
+    # Construct the sample-by-feature matrix
+    sample_df = pd.DataFrame({
+        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_expr.index])
+        for sample in cell_expr.columns
+    }).T
+    sample_df.index.name = 'sample'
+    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+
+    # Compute per-feature mean and variance
+    means = sample_df.mean(axis=0)
+    variances = sample_df.var(axis=0)
+
+    # Fit LOESS of variance vs. mean
+    loess_fit = lowess(variances, means, frac=frac)
+
+    # Interpolate to get the LOESS-fitted variance for each feature's mean
+    fitted_var = np.interp(means, loess_fit[:, 0], loess_fit[:, 1])
+
+    # Residual = observed variance - LOESS-fitted variance
+    residuals = variances - fitted_var
+
+    # Select the top n_features by largest positive residual
+    if sample_df.shape[1] > n_features:
+        top_features = residuals.nlargest(n_features).index
+        sample_df = sample_df[top_features]
+    else:
+        top_features = sample_df.columns
+
+    return sample_df, top_features
