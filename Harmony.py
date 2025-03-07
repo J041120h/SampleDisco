@@ -5,10 +5,10 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+from harmony import harmonize
 
 # Local imports from your project
 from Visualization import visualization_harmony  # if you use it later
-from combat.pycombat import pycombat
 from pseudobulk import compute_pseudobulk_dataframes
 from HierarchicalConstruction import cell_type_dendrogram
 from HVG import find_hvgs
@@ -65,14 +65,13 @@ def anndata_cluster(
         print(f'Clustering cluster_resolution: {cluster_resolution}')
 
     # Step A3: Harmony
-    ho = hm.run_harmony(
+    Z = harmonize(
         adata_cluster.obsm['X_pca'],
         adata_cluster.obs,
-        vars_to_regress_for_harmony or ['sample'],
-        max_iter_harmony=num_harmony,
-        max_iter_kmeans=50
+        batch_key = vars_to_regress_for_harmony,
+        max_iter_harmony=num_harmony
     )
-    adata_cluster.obsm['X_pca_harmony'] = ho.Z_corr.T
+    adata_cluster.obsm['X_pca_harmony'] = Z
 
     if verbose:
         print("End of harmony for adata_cluster.")
@@ -173,14 +172,14 @@ def anndata_sample(
     # Step B3: Harmony on 'batch'
     if verbose:
         print('=== Begin Harmony ===')
-    ho = hm.run_harmony(
+    
+    Z = harmonize(
         adata_sample_diff.obsm['X_pca'],
         adata_sample_diff.obs,
-        ['batch'],  # Hard-coded for demonstration
-        max_iter_harmony=num_harmony,
-        max_iter_kmeans=50
+        batch_key = ['batch'],
+        max_iter_harmony=num_harmony
     )
-    adata_sample_diff.obsm['X_pca_harmony'] = ho.Z_corr.T
+    adata_sample_diff.obsm['X_pca_harmony'] = Z
 
     # Step B4: Neighbors + UMAP using Harmony embedding
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
@@ -190,6 +189,8 @@ def anndata_sample(
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_sample_diff
 
+
+import time
 
 def harmony(
     h5ad_path,
@@ -224,6 +225,9 @@ def harmony(
          (b) adata_sample_diff – used for sample-level analysis (minimal batch correction).
       3. Returns both AnnData objects.
     """
+
+    # Start timing
+    start_time = time.time()
 
     # 0. Create output directories if not present
     if not os.path.exists(output_dir):
@@ -337,5 +341,13 @@ def harmony(
         num_harmony=num_harmony,
         verbose=verbose
     )
+
+    # End timing
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    # Print execution time
+    if verbose:
+        print(f"Function execution time: {elapsed_time:.2f} seconds")
 
     return adata_cluster, adata_sample_diff
