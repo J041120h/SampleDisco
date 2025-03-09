@@ -276,3 +276,98 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
         top_features = sample_df.columns
 
     return sample_df, top_features
+
+import numpy as np
+import pandas as pd
+from skmisc.loess import loess
+
+def highly_variable_gene_selection(
+    cell_expression_corrected_df: pd.DataFrame,
+    n_top_genes: int = None,
+    loess_span: float = 0.3
+) -> pd.DataFrame:
+    """
+    Identify Highly Variable Genes (HVGs) for each cell type independently using LOESS regression
+    of log(variance) vs. log(mean). Then truncate the original expression vectors so that only
+    the HVGs are kept for each cell type.
+
+    Parameters
+    ----------
+    cell_expression_corrected_df : pd.DataFrame
+        DataFrame indexed by cell_type and columns by sample. Each cell is a vector (np.array)
+        of length n_genes, representing corrected expression values for that cell type in that sample.
+    n_top_genes : int, optional
+        If specified, retain the top N HVGs with the largest positive residuals. If None,
+        retain all genes that have a positive residual.
+    loess_span : float, optional
+        The span parameter used by LOESS for smoothing. Default is 0.3.
+
+    Returns
+    -------
+    hvg_truncated_df : pd.DataFrame
+        A new DataFrame with the same shape (same cell_type index, same sample columns),
+        but each cell is a truncated vector containing only the HVG expression values.
+    """
+
+    hvg_truncated_df = cell_expression_corrected_df.copy(deep=True)
+
+    print("Starting HVG selection process...")
+    
+    for ctype in hvg_truncated_df.index:
+        print(f"\nProcessing cell type: {ctype}")
+
+        sample_vectors = [
+            hvg_truncated_df.loc[ctype, sample_id]
+            for sample_id in hvg_truncated_df.columns
+            if (hvg_truncated_df.loc[ctype, sample_id] is not None
+                and len(hvg_truncated_df.loc[ctype, sample_id]) > 0)
+        ]
+        if len(sample_vectors) == 0:
+            print(f"Skipping {ctype} due to lack of data.")
+            continue
+
+        expr_matrix = np.vstack(sample_vectors)
+        n_samples, n_genes = expr_matrix.shape
+
+        if n_samples < 2:
+            print(f"Skipping {ctype} due to insufficient samples (n_samples={n_samples}).")
+            continue
+
+        print(f"Computing mean and variance for {n_genes} genes across {n_samples} samples...")
+        gene_means = expr_matrix.mean(axis=0)
+        gene_vars = expr_matrix.var(axis=0)
+
+        epsilon = 1e-8
+        log_means = np.log(gene_means + epsilon)
+        log_vars = np.log(gene_vars + epsilon)
+
+        print(f"Fitting LOESS model with span={loess_span}...")
+        loess_model = loess(x=log_means, y=log_vars, span=loess_span, degree=2)
+        loess_model.fit()
+        fitted_vals = loess_model.outputs.fitted_values
+
+        residuals = log_vars - fitted_vals
+
+        print("Selecting highly variable genes...")
+        if n_top_genes is not None:
+            positive_mask = residuals > 0
+            candidate_genes_idx = np.where(positive_mask)[0]
+            if len(candidate_genes_idx) == 0:
+                hvg_genes_idx = []
+                print(f"No HVGs found for {ctype}.")
+            else:
+                candidate_sorted = candidate_genes_idx[np.argsort(residuals[candidate_genes_idx])[::-1]]
+                hvg_genes_idx = candidate_sorted[:n_top_genes]
+                print(f"Selected top {len(hvg_genes_idx)} HVGs for {ctype}.")
+        else:
+            hvg_genes_idx = np.where(residuals > 0)[0]
+            print(f"Selected {len(hvg_genes_idx)} HVGs for {ctype} (using positive residuals).")
+
+        print("Updating truncated expression matrix...")
+        for sample_id in hvg_truncated_df.columns:
+            orig_vector = hvg_truncated_df.loc[ctype, sample_id]
+            if (orig_vector is not None) and (len(orig_vector) == n_genes):
+                hvg_truncated_df.loc[ctype, sample_id] = orig_vector[hvg_genes_idx]
+
+    print("\nHVG selection process completed.")
+    return hvg_truncated_df

@@ -12,7 +12,7 @@ from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
-from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata
+from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata, test_harmony
 from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_pseudobulk_pca, plot_pseudobulk_batch_test, plot_pseudobulk_umap, plot_pseudobulk_batch_umap
 
 def main():
@@ -90,9 +90,9 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
+    AnnData_cell,AnnData_sample = test_harmony(h5ad_path, AnnData_cell_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
     # AnnData_sample = sc.read_h5ad(AnnData_sample_path)
-    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
+    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir, pseudobulk, verbose=True)
     # plot_pseudobulk_batch_test(AnnData_sample, output_dir, pseudobulk, verbose=True)
     # plot_avg_hvg_expression_pca(AnnData_sample, output_dir, verbose=True)

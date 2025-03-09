@@ -443,3 +443,138 @@ def count_samples_in_adata(h5ad_path, sample_meta_path, cell_meta_path=None, ver
         print(f'Number of unique samples in dataset: {unique_samples}')
     
     return unique_samples
+
+import os
+import numpy as np
+import pandas as pd
+import scanpy as sc
+import harmonypy as hm
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from harmony import harmonize
+
+# Local imports from your project
+from Visualization import visualization_harmony  # if you use it later
+from pseudobulk import compute_pseudobulk_dataframes
+from HierarchicalConstruction import cell_type_dendrogram
+from HVG import find_hvgs
+from Grouping import find_sample_grouping
+
+def test_harmony(
+    h5ad_path,
+    anndata_cluster_path,
+    sample_meta_path,
+    output_dir,
+    cell_meta_path=None,
+    markers=None,
+    cluster_resolution=0.8,
+    num_PCs=20,
+    num_harmony=30,
+    num_features=2000,
+    min_cells=500,
+    min_features=500,
+    pct_mito_cutoff=20,
+    exclude_genes=None,
+    doublet=True,
+    combat=True,  # Note: not fully implemented in example
+    method='average',
+    metric='euclidean',
+    distance_mode='centroid',
+    vars_to_regress=[],
+    verbose=True
+):
+    """
+    Harmony Integration with proportional HVG selection by cell type,
+    now reading an existing H5AD file that only contains raw counts (no meta).
+
+    This function:
+      1. Reads and preprocesses the data (filter genes/cells, remove MT genes, etc.).
+      2. Splits into two branches for:
+         (a) adata_cluster used for clustering with Harmony
+         (b) adata_sample_diff used for sample-level analysis (minimal batch correction).
+      3. Returns both AnnData objects.
+    """
+
+    # 0. Create output directories if not present
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        if verbose:
+            print("Automatically generating output directory")
+
+    # Append 'harmony' subdirectory
+    output_dir = os.path.join(output_dir, 'harmony')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        if verbose:
+            print("Automatically generating harmony subdirectory")
+
+    # 1. Read the raw count data from an existing H5AD
+    if verbose:
+        print('=== Read input dataset ===')
+    adata = sc.read_h5ad(h5ad_path)
+    if verbose:
+        print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+
+    # Attach sample info
+    if cell_meta_path is None:
+        # If no cell metadata provided, assume the obs_names "barcode" has "sample" in front
+        adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
+    else:
+        cell_meta = pd.read_csv(cell_meta_path)
+        cell_meta.set_index('barcode', inplace=True)
+        adata.obs = adata.obs.join(cell_meta, how='left')
+
+    sample_meta = pd.read_csv(sample_meta_path)
+    adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+
+    # Basic filtering
+    sc.pp.filter_genes(adata, min_cells=min_cells)
+    sc.pp.filter_cells(adata, min_genes=min_features)
+
+    # Mito QC
+    adata.var['mt'] = adata.var_names.str.startswith('MT-')
+    sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
+    adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
+
+    # Exclude genes if needed
+    mt_genes = adata.var_names[adata.var_names.str.startswith('MT-')]
+    if exclude_genes is not None:
+        genes_to_exclude = set(exclude_genes) | set(mt_genes)
+    else:
+        genes_to_exclude = set(mt_genes)
+    adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
+
+    # Only keep samples with enough cells
+    cell_counts_per_patient = adata.obs.groupby('sample').size()
+    patients_to_keep = cell_counts_per_patient[cell_counts_per_patient >= min_cells].index
+    adata = adata[adata.obs['sample'].isin(patients_to_keep)].copy()
+
+    # Drop genes that are too rare in these final cells
+    min_cells_for_gene = int(0.01 * adata.n_obs)  # e.g., gene must appear in 1% of cells
+    sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
+
+    if verbose:
+        print(f'Dimension of processed data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+
+    # Optional doublet detection
+    if doublet:
+        sc.pp.scrublet(adata, batch_key="sample")
+
+    # Normalization & log transform
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+
+    if verbose:
+        print("Preprocessing complete!")
+
+    # Split data for two separate analyses
+    adata_cluster = sc.read_h5ad(anndata_cluster_path)
+    adata_sample_diff = adata.copy()  # used for sample-level analysis
+
+    # 2(b). Sample-level analysis
+    # Carry over the cell_type from the cluster object if needed
+    if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
+        adata_cluster.obs['cell_type'] = '1'
+    adata_sample_diff.obs['cell_type'] = adata_cluster.obs['cell_type']
+
+    return adata_cluster, adata_sample_diff
