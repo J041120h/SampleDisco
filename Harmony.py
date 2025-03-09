@@ -152,24 +152,24 @@ def anndata_sample(
     if verbose:
         print('=== Processing data for sample differences (without batch effect correction) ===')
 
-    # Step B1: HVG selection
-    find_hvgs(
-        adata=adata_sample_diff,
-        sample_column=sample_column,
-        num_features=num_features,
-        batch_key='cell_type',    # or whichever key you want
-        check_values=True,
-        inplace=True
-    )
-    adata_sample_diff = adata_sample_diff[:, adata_sample_diff.var['highly_variable']].copy()
+    # We are not finding HVGs here, as we are looking for HVG within each cell type after combat
+    # find_hvgs(
+    #     adata=adata_sample_diff,
+    #     sample_column=sample_column,
+    #     num_features=num_features,
+    #     batch_key='cell_type',    # or whichever key you want
+    #     check_values=True,
+    #     inplace=True
+    # )
+    # adata_sample_diff = adata_sample_diff[:, adata_sample_diff.var['highly_variable']].copy()
 
     if verbose:
         print('=== HVG selected. Performing PCA. ===')
 
-    # Step B2: PCA
+    # Step B1: PCA
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
-    # Step B3: Harmony on 'batch'
+    # Step B2: Harmony on 'batch'
     if verbose:
         print('=== Begin Harmony ===')
     
@@ -181,7 +181,7 @@ def anndata_sample(
     )
     adata_sample_diff.obsm['X_pca_harmony'] = Z
 
-    # Step B4: Neighbors + UMAP using Harmony embedding
+    # Step B3: Neighbors + UMAP using Harmony embedding
     sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
     sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 
@@ -221,8 +221,8 @@ def harmony(
     This function:
       1. Reads and preprocesses the data (filter genes/cells, remove MT genes, etc.).
       2. Splits into two branches for:
-         (a) adata_cluster  – used for clustering with Harmony
-         (b) adata_sample_diff – used for sample-level analysis (minimal batch correction).
+         (a) adata_cluster used for clustering with Harmony
+         (b) adata_sample_diff used for sample-level analysis (minimal batch correction).
       3. Returns both AnnData objects.
     """
 

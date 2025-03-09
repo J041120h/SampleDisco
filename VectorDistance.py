@@ -10,6 +10,7 @@ from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
 from distanceTest import distanceCheck
 from scipy.sparse import issparse
 from typing import Optional
+from HVG import select_hvf_loess
 import logging
 
 def calculate_sample_distances_cell_proportion(
@@ -230,14 +231,13 @@ def calculate_sample_distances_gene_pseudobulk(
     sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
 
     # Select top 2000 most variable features
-    top_2000_features = sample_df.var(axis=0).nlargest(2000).index
-    sample_df_top2000 = sample_df[top_2000_features]
+    sample_df = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
 
     # Save transformed data
-    sample_df_top2000.to_csv(os.path.join(output_subdir, 'average_gene_pseudobulk_per_sample_top2000.csv'))
+    sample_df.to_csv(os.path.join(output_subdir, 'average_gene_pseudobulk_per_sample_top2000.csv'))
 
     # Compute pairwise distances
-    distance_matrix = pdist(sample_df_top2000.values, metric=method)
+    distance_matrix = pdist(sample_df.values, metric=method)
     distance_df = pd.DataFrame(squareform(distance_matrix), index=samples, columns=samples)
 
     # Save results

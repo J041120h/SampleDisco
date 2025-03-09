@@ -190,7 +190,6 @@ def combat_correct_cell_expressions(
     print("ComBat correction completed.")
     return corrected_df
 
-
 def compute_pseudobulk_dataframes(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -257,4 +256,5 @@ def compute_pseudobulk_dataframes(
         "cell_proportion": cell_proportion_df,
         "cell_expression_corrected": cell_expression_corrected_df
     }
+    
     return pseudobulk

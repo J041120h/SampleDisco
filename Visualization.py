@@ -1136,7 +1136,7 @@ def plot_pseudobulk_batch_test(
         raise KeyError("Missing 'cell_expression_corrected' key in pseudobulk dictionary.")
 
     # Use the new HVF selection function
-    sample_df, top_features = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
+    sample_df = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
 
     # Retrieve grouping info
     diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
