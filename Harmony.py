@@ -6,14 +6,10 @@ import harmonypy as hm
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from harmony import harmonize
+import time
 
 # Local imports from your project
-from Visualization import visualization_harmony  # if you use it later
-from pseudobulk import compute_pseudobulk_dataframes
 from HierarchicalConstruction import cell_type_dendrogram
-from HVG import find_hvgs
-from Grouping import find_sample_grouping
-
 
 def anndata_cluster(
     adata_cluster,
@@ -188,9 +184,6 @@ def anndata_sample(
     # Write out final
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_sample_diff
-
-
-import time
 
 def harmony(
     h5ad_path,
