@@ -1,0 +1,16 @@
+======================================
+ Job ID:            14963560
+ Job Name:          test
+ Partition:         shared
+ Node List:         compute-155
+ CPUs per Task:     1
+ Memory Alloc:      400G
+ GPU Requested:     1
+ Start Time:        Sun Mar  9 06:57:16 PM EDT 2025
+======================================
+Starting main.py...
+End of Process
+End of Process
+End of Process
+Finished main.py.
+End Time: Sun Mar  9 06:58:38 PM EDT 2025

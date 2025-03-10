@@ -1110,7 +1110,7 @@ def plot_pseudobulk_pca(
         print(f"PCA plot saved to {output_dir}/sample_relationship_pca_2D_sample.pdf")
 
 
-def plot_pseudobulk_batch_test(
+def plot_pseudobulk_batch_test_pca(
     adata: AnnData,
     output_dir: str,
     pseudobulk: dict,
@@ -1135,8 +1135,8 @@ def plot_pseudobulk_batch_test(
     if 'cell_expression_corrected' not in pseudobulk:
         raise KeyError("Missing 'cell_expression_corrected' key in pseudobulk dictionary.")
 
-    # Use the new HVF selection function
-    sample_df = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
+    # Use the new HVF selection function to get the filtered sample-by-feature DataFrame
+    sample_df, top_features = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
 
     # Retrieve grouping info
     diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
@@ -1145,14 +1145,20 @@ def plot_pseudobulk_batch_test(
     if 'plot_group' not in diff_groups.columns:
         raise KeyError("Column 'plot_group' is missing in diff_groups.")
 
-    # Merge grouping info
+    # Format indices for merging
     sample_df.index = sample_df.index.astype(str).str.strip().str.lower()
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+
+    # Convert the sample index into a column so we can merge on='sample'
     sample_df = sample_df.reset_index().rename(columns={'index': 'sample'})
     diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
-    sample_df = sample_df.merge(diff_groups, on='sample', how='left')
 
-    # Perform PCA
+    # Merge grouping info
+    sample_df = sample_df.merge(diff_groups, on='sample', how='left')
+    if sample_df['plot_group'].isna().any():
+        raise ValueError("Some samples could not be matched to grouping information.")
+
+    # Perform PCA on numeric columns only
     pca = PCA(n_components=2)
     numeric_cols = sample_df.select_dtypes(include=[np.number]).columns
     pca_coords = pca.fit_transform(sample_df[numeric_cols])

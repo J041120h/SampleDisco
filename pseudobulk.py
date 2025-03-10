@@ -253,7 +253,7 @@ def compute_pseudobulk_dataframes(
 
     cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, pseudobulk_dir)
     # Then we calculate the HVG for each cell type after combat correction
-    cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df)
+    cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, 2000)
     pseudobulk = {
         "cell_expression": cell_expression_df,
         "cell_proportion": cell_proportion_df,

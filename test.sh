@@ -5,13 +5,18 @@
 ############################################
 
 #SBATCH --job-name=test
+#SBATCH --partition=shared
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --time=1:00:00
+#SBATCH --mem=400GB
 #SBATCH --output=test.out            # Fixed output file
 #SBATCH --error=test.err             # Fixed error file
-#SBATCH --ntasks=1                   # 1 MPI task (if any)
-#SBATCH --cpus-per-task=8            # 8 CPU cores
-#SBATCH --time=72:00:00              # Time limit, e.g., 72 hours
-#SBATCH --mail-type=ALL              # Email on job start/end/fail
+#SBATCH --mail-type=END,ALL
 #SBATCH --mail-user=hjiang55@jh.edu  # Replace with your email
+#SBATCH --array=0
 
 ############################################
 # Print job info for logging and debugging #
@@ -22,7 +27,7 @@ echo " Job Name:          ${SLURM_JOB_NAME}"
 echo " Partition:         ${SLURM_JOB_PARTITION}"
 echo " Node List:         ${SLURM_NODELIST}"
 echo " CPUs per Task:     ${SLURM_CPUS_PER_TASK}"
-echo " Memory Alloc:      800G"
+echo " Memory Alloc:      400G"
 echo " GPU Requested:     1"
 echo " Start Time:        $(date)"
 echo "======================================"

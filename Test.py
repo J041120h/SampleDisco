@@ -576,5 +576,6 @@ def test_harmony(
     if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
         adata_cluster.obs['cell_type'] = '1'
     adata_sample_diff.obs['cell_type'] = adata_cluster.obs['cell_type']
+    sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
 
     return adata_cluster, adata_sample_diff
