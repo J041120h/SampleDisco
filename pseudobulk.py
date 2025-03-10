@@ -240,27 +240,25 @@ def compute_pseudobulk_dataframes(
 
     X_data = adata.X.toarray() if not isinstance(adata.X, np.ndarray) else adata.X
 
-    # Check for NaN values and print if any are found
-    if np.isnan(X_data).any():
-        print("\n\n\n\nWarning: X_data contains NaN values.\n\n\n\n")
-    else:
-        print("\n\n\n\nNo NaN values found in X_data.\n\n\n\n")
-
-    # Check for negative values and print if any are found
-    if (X_data < 0).any():
-        print("\n\n\n\nWarning: X_data contains negative values.\n\n\n\n")
-    else:
-        print("\n\n\n\nNo negative values found in X_data.\n\n\n\n")
-
-    if np.any(np.isnan(X_data)) or np.any(np.isinf(X_data)):
+    if np.isnan(X_data).any() or (X_data < 0).any() or np.isinf(X_data).any():
+        if np.isnan(X_data).any():
+            print("\n\n\n\nWarning: X_data contains NaN values.\n\n\n\n")
+        if (X_data < 0).any():
+            print("\n\n\n\nWarning: X_data contains negative values.\n\n\n\n")
+        if np.isinf(X_data).any():
+            print("\n\n\n\nWarning: X_data contains Inf values.\n\n\n\n")
         print("\n\n\n\nWarning: Found NaN or Inf values in expression data. Replacing with zeros.\n\n\n\n")
         X_data = np.nan_to_num(X_data, nan=0, posinf=0, neginf=0)
+    else:
+        print("\n\n\n\nNo NaN, negative, or Inf values found in X_data.\n\n\n\n")
+
     gene_variances = np.var(X_data, axis=0)
     nonzero_variance_mask = gene_variances > 0
     if not np.all(nonzero_variance_mask):
         print("\n\n\n\nWarning: Found genes with zero variance. Excluding these genes from analysis.\n\n\n\n")
     gene_names = adata.var_names[nonzero_variance_mask]
     X_data = X_data[:, nonzero_variance_mask]
+    
     samples = adata.obs[sample_col].unique()
     cell_types = adata.obs[celltype_col].unique()
     cell_expression_df = pd.DataFrame(index=cell_types, columns=samples, dtype=object)
