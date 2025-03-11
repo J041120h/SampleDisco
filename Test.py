@@ -579,3 +579,331 @@ def test_harmony(
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
 
     return adata_cluster, adata_sample_diff
+
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from anndata import AnnData
+from umap import UMAP
+
+def plot_pseudobulk_umap(
+    adata: AnnData,
+    output_dir: str,
+    pseudobulk: dict,
+    grouping_columns: list = ['sev.level'],
+    age_bin_size: int = None,
+    verbose: bool = False
+) -> None:
+    """
+    Constructs a sample-by-feature dataframe from pseudobulk-corrected expression data,
+    selects the top 2000 highly variable genes (HVGs), and performs UMAP to embed samples in 2D.
+    Samples are colored by severity level.
+
+    Parameters:
+    - adata: AnnData object containing sample metadata in adata.obs.
+    - output_dir: Directory to save the UMAP plot.
+    - pseudobulk: Dictionary containing 'cell_expression_corrected' with expression data.
+    - grouping_columns: Columns to use for grouping. Default is ['sev.level'].
+    - age_bin_size: Integer for age binning if required. Default is None.
+    - verbose: If True, prints additional information.
+    """
+    # Extract corrected cell expression data
+    cell_expr = pseudobulk['cell_expression']
+    
+    # Construct sample-by-feature matrix by concatenating expression across cell types
+    sample_df = pd.DataFrame({
+        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_expr.index])
+        for sample in cell_expr.columns
+    }).T
+    sample_df.index.name = 'sample'
+    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+    
+    # Select top 2000 most variable features
+    top_features = sample_df.var(axis=0).nlargest(2000).index
+    sample_df = sample_df[top_features]
+    
+    # Get sample grouping information
+    diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+    if 'plot_group' not in diff_groups.columns:
+        raise KeyError("Column 'plot_group' is missing in diff_groups.")
+    
+    # Ensure consistent formatting and merge grouping information
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+    sample_df.index = sample_df.index.astype(str).str.strip().str.lower()
+    sample_df = sample_df.merge(diff_groups.reset_index().rename(columns={'index': 'sample'}), on='sample', how='left')
+    
+    # Identify numeric columns (excluding the 'plot_group' column)
+    numeric_cols = sample_df.select_dtypes(include=[np.number]).columns
+    
+    # Perform UMAP on top HVGs
+    umap_model = UMAP(n_components=2, random_state=42)
+    umap_coords = umap_model.fit_transform(sample_df[numeric_cols])
+    umap_df = pd.DataFrame(umap_coords, index=sample_df.index, columns=['UMAP1', 'UMAP2'])
+    umap_df['plot_group'] = sample_df['plot_group']
+    
+    # Extract numeric severity levels for coloring
+    umap_df['sev_level'] = umap_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
+    if umap_df['sev_level'].isna().sum() > 0:
+        raise ValueError("Some plot_group values could not be parsed for severity levels.")
+    
+    # Normalize severity levels for color mapping
+    norm_severity = (
+        (umap_df['sev_level'] - umap_df['sev_level'].min()) 
+        / (umap_df['sev_level'].max() - umap_df['sev_level'].min())
+    )
+    
+    # Plot UMAP results
+    plt.figure(figsize=(8, 6))
+    sc = plt.scatter(
+        umap_df['UMAP1'], 
+        umap_df['UMAP2'], 
+        c=norm_severity, 
+        cmap='coolwarm', 
+        s=80, 
+        alpha=0.8, 
+        edgecolors='k'
+    )
+    plt.xlabel('UMAP1')
+    plt.ylabel('UMAP2')
+    plt.title('2D UMAP of HVG Expression')
+    plt.colorbar(sc, label='Severity Level')
+    
+    # Save plot
+    os.makedirs(output_dir, exist_ok=True)
+    plt.savefig(os.path.join(output_dir, 'sample_relationship_umap_2D_sample.pdf'))
+    plt.close()
+    
+    if verbose:
+        print(f"UMAP plot saved to {output_dir}/sample_relationship_umap_2D_sample.pdf")
+
+
+def plot_pseudobulk_batch_umap(
+    adata: AnnData,
+    output_dir: str,
+    pseudobulk: dict,
+    grouping_columns: list = ['batch'],
+    age_bin_size: int = None,
+    verbose: bool = False
+) -> None:
+    """
+    Constructs a sample-by-feature dataframe from pseudobulk-corrected expression data,
+    selects the top 2000 highly variable genes (HVGs), and performs UMAP to embed samples in 2D.
+    Samples are colored by batch.
+
+    Parameters:
+    - adata: AnnData object containing sample metadata in adata.obs.
+    - output_dir: Directory to save the UMAP plot.
+    - pseudobulk: Dictionary containing 'cell_expression_corrected' with expression data.
+    - grouping_columns: List of columns in adata.obs to use for grouping. Default is ['batch'].
+    - age_bin_size: Integer for age binning if required. Default is None.
+    - verbose: If True, prints additional information.
+    """
+    # Ensure required data exists
+    if 'cell_expression_corrected' not in pseudobulk:
+        raise KeyError("Missing 'cell_expression_corrected' key in pseudobulk dictionary.")
+
+    # Extract corrected cell expression data
+    cell_expr = pseudobulk['cell_expression_corrected']
+
+    # Construct sample-by-feature matrix
+    sample_df = pd.DataFrame({
+        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_expr.index])
+        for sample in cell_expr.columns
+    }).T
+    sample_df.index.name = 'sample'
+    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+
+    # Select top 2000 most variable features (if applicable)
+    if sample_df.shape[1] > 2000:
+        top_features = sample_df.var(axis=0).nlargest(2000).index
+        sample_df = sample_df[top_features]
+
+    # Retrieve batch (or grouping) information
+    diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
+
+    # Convert to DataFrame if necessary
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+
+    if 'plot_group' not in diff_groups.columns:
+        raise KeyError("Column 'plot_group' is missing in diff_groups.")
+
+    # Format index for merging
+    sample_df.index = sample_df.index.astype(str).str.strip().str.lower()
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+
+    # Merge grouping information
+    sample_df = sample_df.merge(diff_groups, on='sample', how='left')
+
+    # Identify numeric columns (excluding 'plot_group')
+    numeric_cols = sample_df.select_dtypes(include=[np.number]).columns
+
+    # Perform UMAP
+    umap_model = UMAP(n_components=2, random_state=42)
+    umap_coords = umap_model.fit_transform(sample_df[numeric_cols])
+    umap_df = pd.DataFrame(umap_coords, index=sample_df.index, columns=['UMAP1', 'UMAP2'])
+    umap_df['batch'] = sample_df['plot_group']
+
+    # Drop NaN values from batch column
+    umap_df = umap_df.dropna(subset=['batch'])
+
+    # Plot UMAP results with batch coloring
+    plt.figure(figsize=(8, 6))
+
+    unique_batches = umap_df['batch'].unique()
+    cmap = plt.cm.get_cmap('tab10', min(len(unique_batches), 10))  # Up to 10 unique colors
+
+    has_legend = False
+
+    for i, batch in enumerate(unique_batches):
+        subset = umap_df[umap_df['batch'] == batch]
+        if not subset.empty:
+            plt.scatter(
+                subset['UMAP1'],
+                subset['UMAP2'],
+                label=str(batch),
+                color=cmap(i % 10),
+                s=80,
+                alpha=0.8,
+                edgecolors='k'
+            )
+            has_legend = True
+
+    plt.xlabel('UMAP1')
+    plt.ylabel('UMAP2')
+    plt.title('2D UMAP of HVG Expression (Colored by Batch)')
+
+    if has_legend:
+        plt.legend(title='Batch', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Save plot
+    os.makedirs(output_dir, exist_ok=True)
+    save_path = os.path.join(output_dir, 'sample_relationship_umap_2D_batch.pdf')
+    plt.savefig(save_path, bbox_inches='tight')
+    plt.close()
+
+    if verbose:
+        print(f"UMAP plot saved to {save_path}")
+
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.sparse import issparse
+from sklearn.decomposition import PCA
+
+# Note: Ensure that find_sample_grouping is imported or defined in your environment
+
+def plot_avg_hvg_expression_pca(adata_sample_diff, output_dir, grouping_columns=['sev.level'], age_bin_size=None, verbose=False):
+    """
+    Computes and plots a 2D PCA of the average HVG expression per sample.
+    The PCA points are colored based on severity levels extracted from the 'plot_group'
+    field, which is derived by calling find_sample_grouping on the input data.
+
+    Parameters:
+    -----------
+    adata_sample_diff : AnnData-like object
+        Object with attributes .X (expression data) and .obs (observation metadata).
+    output_dir : str
+        Directory where the output plot will be saved.
+    grouping_columns : list, optional
+        List of columns to use for grouping samples (default is ['sev.level']).
+    age_bin_size : int or None, optional
+        Age bin size for grouping, if applicable.
+    verbose : bool, optional
+        If True, prints additional debugging information.
+    """
+    if verbose:
+        print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
+    
+    # Debug prints for data shapes
+    print("adata_sample_diff shape:", adata_sample_diff.shape)
+    print("adata_sample_diff.X shape:", adata_sample_diff.X.shape)
+    print("Is adata_sample_diff.X sparse?", issparse(adata_sample_diff.X))
+    
+    # Convert expression data to a DataFrame (handling sparse and dense cases)
+    if issparse(adata_sample_diff.X):
+        df = pd.DataFrame(
+            adata_sample_diff.X.toarray(),
+            index=adata_sample_diff.obs_names,
+            columns=adata_sample_diff.var_names
+        )
+    else:
+        df = pd.DataFrame(
+            adata_sample_diff.X,
+            index=adata_sample_diff.obs_names,
+            columns=adata_sample_diff.var_names
+        )
+    
+    # Add sample information and compute average HVG expression per sample
+    df['sample'] = adata_sample_diff.obs['sample']
+    sample_means = df.groupby('sample').mean()
+    
+    # Derive the plot grouping using the find_sample_grouping function
+    samples = adata_sample_diff.obs['sample'].unique()
+    diff_groups = find_sample_grouping(adata_sample_diff, samples, grouping_columns, age_bin_size)
+    
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+    
+    if not isinstance(diff_groups, pd.DataFrame):
+        raise TypeError(f"Expected diff_groups to be a DataFrame, but got {type(diff_groups)}")
+    if 'plot_group' not in diff_groups.columns:
+        raise KeyError("Column 'plot_group' is missing in diff_groups.")
+    
+    # Standardize index formats for merging
+    sample_means.index = sample_means.index.astype(str).str.strip().str.lower()
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+    
+    # Reset index and merge grouping information with sample_means
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    sample_means = sample_means.reset_index().rename(columns={'index': 'sample'})
+    sample_means = sample_means.merge(diff_groups, on='sample', how='left').set_index('sample')
+    
+    # Perform PCA on the sample-averaged data (excluding the plot_group column)
+    pca = PCA(n_components=2)
+    pca_coords = pca.fit_transform(sample_means.drop(columns=['plot_group']))
+    pca_df = pd.DataFrame(pca_coords, index=sample_means.index, columns=['PC1', 'PC2'])
+    pca_df = pca_df.join(sample_means[['plot_group']])
+    
+    # Extract severity level as a numeric value from the plot_group string (e.g., "sev.level_X.XX")
+    pca_df['sev_level'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
+    
+    if pca_df['sev_level'].isna().sum() > 0:
+        raise ValueError("Some plot_group values could not be parsed for severity levels.")
+    
+    # Normalize severity values based on the observed range
+    sev_min = pca_df['sev_level'].min()
+    sev_max = pca_df['sev_level'].max()
+    norm_severity = (pca_df['sev_level'] - sev_min) / (sev_max - sev_min)
+    
+    # Define the colormap (blue for low severity, red for high)
+    colormap = plt.cm.coolwarm
+    
+    plt.figure(figsize=(8, 6))
+    sc = plt.scatter(
+        pca_df['PC1'], pca_df['PC2'],
+        c=norm_severity, cmap=colormap, s=80, alpha=0.8, edgecolors='k'
+    )
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of Avg HVG Expression')
+    plt.grid(True)
+    plt.tight_layout()
+    
+    # Add a colorbar to show severity levels
+    cbar = plt.colorbar(sc)
+    cbar.set_label('Severity Level')
+    
+    # Save the plot
+    os.makedirs(output_dir, exist_ok=True)
+    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf')
+    plt.savefig(plot_path)
+    plt.close()
+    
+    if verbose:
+        print(f"[visualization_harmony] PCA plot saved to: {plot_path}")
