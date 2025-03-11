@@ -95,6 +95,9 @@ def main():
     AnnData_sample = sc.read(AnnData_sample_path)
     pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
     process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir)
+    plot_cell_type_proportions_pca(AnnData_sample, output_dir)
+    plot_pseudobulk_pca(AnnData_sample, output_dir)
+    plot_pseudobulk_batch_test_pca(AnnData_sample, output_dir)
 
     # visualization_harmony(
     #     AnnData_sample,

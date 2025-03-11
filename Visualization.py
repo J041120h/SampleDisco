@@ -80,7 +80,7 @@ def plot_cell_type_expression_heatmap(
     cell_type_order: list = None,
     sample_order: list = None,
     figsize: tuple = (10, 8),
-    cmap: str = 'viridis',
+    cmap: str = 'viridis_r',
     annot: bool = False
 ):
     """
@@ -602,268 +602,168 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
+from anndata import AnnData
 
-def plot_cell_type_proportions_pca(adata, output_dir, grouping_columns=['sev.level'], age_bin_size=None):
+def plot_cell_type_proportions_pca(
+    adata: AnnData, 
+    output_dir: str, 
+    grouping_columns: list = ['sev.level'], 
+    age_bin_size: int = None,
+    verbose: bool = False
+) -> None:
+    """
+    Reads precomputed PCA results for cell type proportions from adata.uns["X_pca_proportion"]
+    and visualizes PC1 vs. PC2, coloring samples by severity.
+
+    Parameters:
+    - adata: AnnData object containing PCA results in `adata.uns["X_pca_proportion"]`
+    - output_dir: Directory to save the PCA plot.
+    - grouping_columns: Columns used for grouping. Default is ['sev.level'].
+    - age_bin_size: Integer for age binning if required. Default is None.
+    """
     output_dir = os.path.join(output_dir, 'harmony')
     os.makedirs(output_dir, exist_ok=True)
 
+    if "X_pca_proportion" not in adata.uns:
+        raise KeyError("Missing 'X_pca_proportion' in adata.uns. Ensure PCA was run on cell proportions.")
+
+    pca_coords = adata.uns["X_pca_proportion"]
     samples = adata.obs['sample'].unique()
-    cell_types = list(adata.obs['cell_type'].unique())  # Ensure it's a list
-
-    # Compute cell type proportions per sample
-    proportions = pd.DataFrame(0, index=samples, columns=cell_types, dtype=np.float64)
-    for sample in samples:
-        sample_data = adata.obs[adata.obs['sample'] == sample]
-        total_cells = sample_data.shape[0]
-        counts = sample_data['cell_type'].value_counts()
-        proportions.loc[sample, counts.index] = counts.values / total_cells
-
+    
+    # Construct PCA DataFrame
+    pca_df = pd.DataFrame(pca_coords[:, :2], index=samples, columns=['PC1', 'PC2'])
+    
+    # Retrieve grouping info
     diff_groups = find_sample_grouping(adata, samples, grouping_columns, age_bin_size)
-
     if isinstance(diff_groups, dict):
         diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
-
-    if not isinstance(diff_groups, pd.DataFrame):
-        raise TypeError(f"Expected diff_groups to be a DataFrame, but got {type(diff_groups)}")
-
-    if 'plot_group' not in diff_groups.columns:
-        raise KeyError("Column 'plot_group' is missing in diff_groups.")
-
-    # Standardize index formats
-    proportions.index = proportions.index.astype(str).str.strip().str.lower()
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
-
-    print("Proportions Index Samples:", proportions.index.tolist()[:5])
-    print("Diff Groups Index Samples:", diff_groups.index.tolist()[:5])
-
-    # Merge proportions with grouping information
-    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
-    proportions = proportions.reset_index().rename(columns={'index': 'sample'})
-    proportions = proportions.merge(diff_groups, on='sample', how='left').set_index('sample')
-
-    proportions[cell_types] = proportions[cell_types].apply(pd.to_numeric, errors='coerce')
-    proportions.fillna(0, inplace=True)
-
-    # Perform PCA
-    pca = PCA(n_components=2)
-    pca_coords = pca.fit_transform(proportions[cell_types])
     
-    pca_df = pd.DataFrame(pca_coords, index=proportions.index, columns=['PC1', 'PC2'])
-    pca_df = pca_df.join(proportions[['plot_group']])
+    # Merge grouping info
+    pca_df.index = pca_df.index.astype(str).str.strip().str.lower()
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.merge(diff_groups, on='sample', how='left')
 
-    # Extract severity levels from 'plot_group' (assuming format "sev.level_X.XX")
+    # Extract and normalize severity levels for color mapping
     pca_df['severity'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
+    norm_severity = (pca_df['severity'] - pca_df['severity'].min()) / (pca_df['severity'].max() - pca_df['severity'].min())
 
-    # Normalize severity values between 0 and 1 for color mapping
-    norm_severity = (pca_df['severity'] - pca_df['severity'].min()) / (
-            pca_df['severity'].max() - pca_df['severity'].min()
-    )
-
-    # Define colormap from blue (low severity) to red (high severity)
-    colormap = plt.cm.coolwarm
-
+    # Plot PCA
     plt.figure(figsize=(8, 6))
-    sc = plt.scatter(
-        pca_df['PC1'], pca_df['PC2'],
-        c=norm_severity, cmap=colormap, s=80, alpha=0.8, edgecolors='k'
-    )
-
-    # Add colorbar for severity levels
-    cbar = plt.colorbar(sc)
-    cbar.set_label('Severity Level')
-
+    sc = plt.scatter(pca_df['PC1'], pca_df['PC2'], c=norm_severity, cmap='viridis_r', s=80, alpha=0.8, edgecolors='k')
+    plt.colorbar(sc, label='Severity Level')
     plt.xlabel('PC1')
     plt.ylabel('PC2')
     plt.title('2D PCA of Cell Type Proportions (Severity Gradient)')
     plt.grid(True)
     plt.tight_layout()
-
-    # Save the plot
+    
+    # Save plot
     plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample_proportion.pdf')
     plt.savefig(plot_path)
-    plt.show()
-
     print(f"PCA plot saved to: {plot_path}")
 
-import os
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from anndata import AnnData
-
-
-def plot_pseudobulk_pca(
-    adata: AnnData,
-    output_dir: str,
-    pseudobulk: dict,
-    grouping_columns: list = ['sev.level'],
-    age_bin_size: int = None,
-    verbose: bool = False
-) -> None:
+def plot_pseudobulk_pca(adata: AnnData, output_dir: str) -> None:
     """
-    Constructs a sample-by-feature dataframe from pseudobulk-corrected expression data,
-    selects the top 2000 highly variable genes (HVGs), and performs PCA to embed samples in 2D.
-    Samples are colored by severity level.
+    Reads precomputed PCA results for batch-corrected pseudobulk expression data from
+    adata.uns["X_pca_expression"] and visualizes PC1 vs. PC2, coloring samples by severity.
 
     Parameters:
-    - adata: AnnData object containing sample metadata in adata.obs.
+    - adata: AnnData object containing PCA results in `adata.uns["X_pca_expression"]`
     - output_dir: Directory to save the PCA plot.
-    - pseudobulk: Dictionary containing 'cell_expression_corrected' with expression data.
-    - grouping_columns: Columns to use for grouping. Default is ['sev.level'].
-    - age_bin_size: Integer for age binning if required. Default is None.
-    - verbose: If True, prints additional information.
     """
-    # Use the new HVF selection function to get the filtered sample-by-feature DataFrame
-    sample_df, top_features = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
-
+    if "X_pca_expression" not in adata.uns:
+        raise KeyError("Missing 'X_pca_expression' in adata.uns. Ensure PCA was run on cell expression.")
+    
+    output_dir = os.path.join(output_dir, 'harmony')
+    os.makedirs(output_dir, exist_ok=True)
+    pca_coords = adata.uns["X_pca_expression"]
+    samples = adata.obs['sample'].unique()
+    
+    # Construct PCA DataFrame
+    pca_df = pd.DataFrame(pca_coords[:, :2], index=samples, columns=['PC1', 'PC2'])
+    
     # Retrieve grouping info
-    diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
+    grouping_columns = ['sev.level']
+    diff_groups = find_sample_grouping(adata, samples, grouping_columns)
     if isinstance(diff_groups, dict):
         diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
-    if 'plot_group' not in diff_groups.columns:
-        raise KeyError("Column 'plot_group' is missing in diff_groups.")
-
-    # Format indices for merging
-    sample_df.index = sample_df.index.astype(str).str.strip().str.lower()
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
-
-    # Convert the sample index into a column so we can merge on='sample'
-    sample_df = sample_df.reset_index().rename(columns={'index': 'sample'})
-    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
-
+    
     # Merge grouping info
-    sample_df = sample_df.merge(diff_groups, on='sample', how='left')
-    if sample_df['plot_group'].isna().any():
-        raise ValueError("Some samples could not be matched to grouping information.")
+    pca_df.index = pca_df.index.astype(str).str.strip().str.lower()
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.merge(diff_groups, on='sample', how='left')
 
-    # Perform PCA on numeric columns only
-    pca = PCA(n_components=2)
-    numeric_cols = sample_df.select_dtypes(include=[np.number]).columns
-    pca_coords = pca.fit_transform(sample_df[numeric_cols])
-    pca_df = pd.DataFrame(pca_coords, index=sample_df.index, columns=['PC1', 'PC2'])
+    # Extract and normalize severity levels for color mapping
+    pca_df['severity'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
+    norm_severity = (pca_df['severity'] - pca_df['severity'].min()) / (pca_df['severity'].max() - pca_df['severity'].min())
 
-    # Store grouping info (severity levels) for plotting
-    pca_df['plot_group'] = sample_df['plot_group']
-
-    # Attempt to extract numeric severity levels from group labels
-    pca_df['sev_level'] = pca_df['plot_group'].str.extract(r'(\d+\.\d+)').astype(float)
-    if pca_df['sev_level'].isna().sum() > 0:
-        raise ValueError("Some plot_group values could not be parsed for severity levels.")
-
-    # Normalize severity levels for color mapping
-    norm_severity = (
-        (pca_df['sev_level'] - pca_df['sev_level'].min()) /
-        (pca_df['sev_level'].max() - pca_df['sev_level'].min())
-    )
-
-    # Plot PCA results
+    # Plot PCA
     plt.figure(figsize=(8, 6))
-    sc = plt.scatter(pca_df['PC1'], pca_df['PC2'], c=norm_severity, cmap='coolwarm',
-                     s=80, alpha=0.8, edgecolors='k')
+    sc = plt.scatter(pca_df['PC1'], pca_df['PC2'], c=norm_severity, cmap='viridis_r', s=80, alpha=0.8, edgecolors='k')
+    plt.colorbar(sc, label='Severity Level')
     plt.xlabel('PC1')
     plt.ylabel('PC2')
     plt.title('2D PCA of HVG Expression')
-    plt.colorbar(sc, label='Severity Level')
-
+    plt.grid(True)
+    plt.tight_layout()
+    
     # Save plot
-    os.makedirs(output_dir, exist_ok=True)
-    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf'))
-    plt.close()
+    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf')
+    plt.savefig(plot_path)
+    print(f"PCA plot saved to: {plot_path}")
 
-    if verbose:
-        print(f"PCA plot saved to {output_dir}/sample_relationship_pca_2D_sample.pdf")
-
-
-def plot_pseudobulk_batch_test_pca(
-    adata: AnnData,
-    output_dir: str,
-    pseudobulk: dict,
-    grouping_columns: list = ['batch'],
-    age_bin_size: int = None,
-    verbose: bool = False
-) -> None:
+def plot_pseudobulk_batch_test_pca(adata: AnnData, output_dir: str) -> None:
     """
-    Constructs a sample-by-feature dataframe from pseudobulk-corrected expression data,
-    selects the top 2000 highly variable genes (HVGs), and performs PCA to embed samples in 2D.
-    Samples are colored by batch.
+    Reads precomputed PCA results for pseudobulk expression from `adata.uns["X_pca_expression"]`
+    and visualizes PC1 vs. PC2, coloring samples by batch.
 
     Parameters:
-    - adata: AnnData object containing sample metadata in adata.obs.
+    - adata: AnnData object containing PCA results in `adata.uns["X_pca_expression"]`
     - output_dir: Directory to save the PCA plot.
-    - pseudobulk: Dictionary containing 'cell_expression_corrected' with expression data.
-    - grouping_columns: List of columns in adata.obs to use for grouping. Default is ['batch'].
-    - age_bin_size: Integer for age binning if required. Default is None.
-    - verbose: If True, prints additional information.
     """
-    # Ensure the corrected data is in pseudobulk
-    if 'cell_expression_corrected' not in pseudobulk:
-        raise KeyError("Missing 'cell_expression_corrected' key in pseudobulk dictionary.")
+    if "X_pca_expression" not in adata.uns:
+        raise KeyError("Missing 'X_pca_expression' in adata.uns.")
+    
+    output_dir = os.path.join(output_dir, 'harmony')
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Use the new HVF selection function to get the filtered sample-by-feature DataFrame
-    sample_df, top_features = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
-
-    # Retrieve grouping info
-    diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
+    pca_coords = adata.uns["X_pca_expression"]
+    samples = adata.obs['sample'].unique()
+    
+    # Construct PCA DataFrame
+    pca_df = pd.DataFrame(pca_coords[:, :2], index=samples, columns=['PC1', 'PC2'])
+    
+    # Retrieve batch grouping info
+    grouping_columns = ['batch']
+    diff_groups = find_sample_grouping(adata, samples, grouping_columns)
     if isinstance(diff_groups, dict):
         diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
-    if 'plot_group' not in diff_groups.columns:
-        raise KeyError("Column 'plot_group' is missing in diff_groups.")
-
-    # Format indices for merging
-    sample_df.index = sample_df.index.astype(str).str.strip().str.lower()
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
-
-    # Convert the sample index into a column so we can merge on='sample'
-    sample_df = sample_df.reset_index().rename(columns={'index': 'sample'})
-    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
-
+    
     # Merge grouping info
-    sample_df = sample_df.merge(diff_groups, on='sample', how='left')
-    if sample_df['plot_group'].isna().any():
-        raise ValueError("Some samples could not be matched to grouping information.")
+    pca_df.index = pca_df.index.astype(str).str.strip().str.lower()
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.merge(diff_groups, on='sample', how='left')
 
-    # Perform PCA on numeric columns only
-    pca = PCA(n_components=2)
-    numeric_cols = sample_df.select_dtypes(include=[np.number]).columns
-    pca_coords = pca.fit_transform(sample_df[numeric_cols])
-    pca_df = pd.DataFrame(pca_coords, index=sample_df.index, columns=['PC1', 'PC2'])
-
-    # Batch labels
-    pca_df['batch'] = sample_df['plot_group']
-
-    # Drop any samples with missing batch info
-    pca_df.dropna(subset=['batch'], inplace=True)
-
-    # Plot PCA, coloring by batch
+    # Plot PCA colored by batch
     plt.figure(figsize=(8, 6))
-    unique_batches = pca_df['batch'].unique()
-
-    # Basic colormap limiting to 10 distinct colors
-    cmap = plt.cm.get_cmap('tab10', min(len(unique_batches), 10))
-
-    has_legend = False
-    for i, batch in enumerate(unique_batches):
-        subset = pca_df[pca_df['batch'] == batch]
-        if not subset.empty:
-            plt.scatter(subset['PC1'], subset['PC2'],
-                        label=str(batch),
-                        color=cmap(i % 10),
-                        s=80, alpha=0.8, edgecolors='k')
-            has_legend = True
+    batches = pca_df['plot_group'].unique()
+    for i, batch in enumerate(batches):
+        subset = pca_df[pca_df['plot_group'] == batch]
+        plt.scatter(subset['PC1'], subset['PC2'], label=batch, s=80, alpha=0.8, edgecolors='k')
 
     plt.xlabel('PC1')
     plt.ylabel('PC2')
     plt.title('2D PCA of HVG Expression (Colored by Batch)')
-    if has_legend:
-        plt.legend(title='Batch', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
 
-    # Save plot
-    os.makedirs(output_dir, exist_ok=True)
-    save_path = os.path.join(output_dir, 'sample_relationship_pca_2D_batch.pdf')
-    plt.savefig(save_path, bbox_inches='tight')
-    plt.close()
-
-    if verbose:
-        print(f"PCA plot saved to {save_path}")
+    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_batch.pdf')
+    plt.savefig(plot_path)
+    print(f"PCA plot saved to: {plot_path}")
