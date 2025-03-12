@@ -49,7 +49,7 @@ def run_pca_expression(
         raise KeyError("Missing 'cell_expression_corrected' key in pseudobulk dictionary.")
 
     # Select highly variable genes and construct the sample-by-feature matrix
-    sample_df, top_features = select_hvf_loess(pseudobulk, n_features=n_features, frac=frac)
+    sample_df = pseudobulk["cell_expression_corrected"]
 
     # Retrieve grouping info
     diff_groups = find_sample_grouping(adata, adata.obs['sample'].unique(), grouping_columns, age_bin_size)
@@ -114,7 +114,7 @@ def run_pca_proportion(
         raise KeyError("Missing 'cell_proportion' key in pseudobulk dictionary.")
 
     # Extract the sample-by-cell-type proportion matrix
-    proportion_df = pseudobulk["cell_proportion"].T  # Transpose to get (samples x cell types)
+    proportion_df = pseudobulk["cell_proportion"]  # Transpose to get (samples x cell types)
 
     # Ensure no NaNs exist in the data
     proportion_df = proportion_df.fillna(0)
@@ -136,6 +136,7 @@ def process_anndata_with_pca(
     n_expression_pcs: int = 10, 
     n_proportion_pcs: int = 10, 
     output_dir: str = "./", 
+    adata_path: str = None,
     verbose: bool = True
 ) -> None:
     """
@@ -220,6 +221,6 @@ def process_anndata_with_pca(
     if verbose:
         print("PCA on cell proportions completed.")
 
-    sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata)
+    sc.write(adata_path, adata)
     if verbose:
         print(f"Modified AnnData object saved to original position with PCA results.")

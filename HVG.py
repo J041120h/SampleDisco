@@ -4,7 +4,9 @@ import pandas as pd
 from skmisc.loess import loess
 from anndata import AnnData
 from typing import Optional
-import scipy.sparse as sp_sparse
+import numpy as np
+import pandas as pd
+from skmisc.loess import loess
 
 def find_hvgs(
     adata: AnnData,
@@ -230,8 +232,6 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
     
     Parameters:
     -----------
-    pseudobulk : dict
-        A dictionary that contains 'cell_expression_corrected'.
     n_features : int, default 2000
         Number of top HVFs to select (only used if the total feature count is > n_features).
     frac : float, default 0.3
@@ -245,7 +245,7 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
         Index of the selected features.
     """
 
-    cell_expr = pseudobulk['cell_expression_corrected']
+    cell_expr = pseudobulk
 
     # Construct the sample-by-feature matrix
     sample_df = pd.DataFrame({
@@ -276,10 +276,6 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
         top_features = sample_df.columns
 
     return sample_df, top_features
-
-import numpy as np
-import pandas as pd
-from skmisc.loess import loess
 
 def highly_variable_gene_selection(
     cell_expression_corrected_df: pd.DataFrame,

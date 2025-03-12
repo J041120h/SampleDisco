@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from Visualization import visualization_harmony
 from combat.pycombat import pycombat
-from HVG import highly_variable_gene_selection
+from HVG import highly_variable_gene_selection, select_hvf_loess
 
 def check_nan_and_negative_in_lists(df: pd.DataFrame) -> bool:
     found_nan = False
@@ -225,7 +225,9 @@ def compute_pseudobulk_dataframes(
     batch_col: str = 'batch',
     sample_col: str = 'sample',
     celltype_col: str = 'cell_type',
-    output_dir: str = './'
+    output_dir: str = './',
+    n_features: int = 2000, 
+    frac: float = 0.3
 ):
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
@@ -278,9 +280,11 @@ def compute_pseudobulk_dataframes(
     cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, cell_proportion_df, pseudobulk_dir)
     # Then we calculate the HVG for each cell type after combat correction
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, 2000)
+    cell_expression_corrected_df, top_features = select_hvf_loess(cell_expression_corrected_df, n_features=n_features, frac=frac)
+    proportion_df = cell_proportion_df.T
     pseudobulk = {
         "cell_expression": cell_expression_df,
-        "cell_proportion": cell_proportion_df,
+        "cell_proportion": proportion_df,
         "cell_expression_corrected": cell_expression_corrected_df
     }
     save_dataframe_as_strings(cell_expression_df, pseudobulk_dir, "expression.csv")
