@@ -15,7 +15,7 @@ from jensenshannon import jensen_shannon_distance
 from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata, test_harmony
 from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_pseudobulk_pca, plot_pseudobulk_batch_test_pca
 from PCA import process_anndata_with_pca
-from CCA import cca_trajectory_analysis_proportion, cca_trajectory_analysis_expression, plot_cell_type_proportions_pca_with_cca
+from CCA import cca_trajectory_analysis_proportion, plot_pca_with_cca_trajectory
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/result"
@@ -96,8 +96,8 @@ def main():
     AnnData_sample = sc.read(AnnData_sample_path)
     pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
     # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path)
-    cca_prop, transformed_prop, sev_level = cca_trajectory_analysis_expression(pseudobulk["cell_expression_corrected"], sample_meta_path)
-    plot_cell_type_proportions_pca_with_cca(AnnData_sample, cca_prop, transformed_prop, sev_level, output_dir,)
+    cca_prop, transformed_prop, sev_level = cca_trajectory_analysis_proportion(pseudobulk["cell_expression_corrected"], sample_meta_path)
+    plot_pca_with_cca_trajectory(AnnData_sample.uns["X_pca_expression"][:, :2], transformed_prop)
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_batch_test_pca(AnnData_sample, output_dir)
