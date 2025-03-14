@@ -94,7 +94,7 @@ def main():
 
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_sample = sc.read(AnnData_sample_path)
-    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
+    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
     # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path)
     CCA_Call(AnnData_sample, sample_meta_path, output_dir)
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)

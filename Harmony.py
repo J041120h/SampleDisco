@@ -159,27 +159,27 @@ def anndata_sample(
     # )
     # adata_sample_diff = adata_sample_diff[:, adata_sample_diff.var['highly_variable']].copy()
 
-    if verbose:
-        print('=== HVG selected. Performing PCA. ===')
+    # if verbose:
+    #     print('=== HVG selected. Performing PCA. ===')
 
-    # Step B1: PCA
-    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
+    # # Step B1: PCA
+    # sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
-    # Step B2: Harmony on 'batch'
-    if verbose:
-        print('=== Begin Harmony ===')
+    # # Step B2: Harmony on 'batch'
+    # if verbose:
+    #     print('=== Begin Harmony ===')
     
-    Z = harmonize(
-        adata_sample_diff.obsm['X_pca'],
-        adata_sample_diff.obs,
-        batch_key = ['batch'],
-        max_iter_harmony=num_harmony
-    )
-    adata_sample_diff.obsm['X_pca_harmony'] = Z
+    # Z = harmonize(
+    #     adata_sample_diff.obsm['X_pca'],
+    #     adata_sample_diff.obs,
+    #     batch_key = ['batch'],
+    #     max_iter_harmony=num_harmony
+    # )
+    # adata_sample_diff.obsm['X_pca_harmony'] = Z
 
     # Step B3: Neighbors + UMAP using Harmony embedding
-    sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
-    sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
+    # sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
+    # sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 
     # Write out final
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
