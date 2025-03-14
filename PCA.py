@@ -19,7 +19,7 @@ def run_pca_expression(
     """
     Performs PCA on pseudobulk-corrected expression data and stores the principal components in the AnnData object.
     
-    Parameters:
+    Parameters: 
     -----------
     adata : sc.AnnData
         AnnData object containing sample metadata in adata.obs.

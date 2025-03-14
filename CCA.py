@@ -82,8 +82,6 @@ def run_cca_on_2d_pca_from_adata(
     if "sample" not in adata.obs.columns:
         raise KeyError("adata.obs must have a 'sample' column to match the CSV severity data.")
     samples = adata.obs["sample"].values.unique()
-    print(len(samples))
-    print(pca_coords_2d.shape[0])
     if len(samples) != pca_coords_2d.shape[0]:
         raise ValueError("The number of PCA rows does not match the number of samples in adata.obs['sample'].")
 
@@ -96,7 +94,6 @@ def run_cca_on_2d_pca_from_adata(
 
     return pca_coords_2d, sev_levels, cca
 
-
 def plot_cca_on_2d_pca(
     pca_coords_2d: np.ndarray,
     sev_levels: np.ndarray,
@@ -105,9 +102,9 @@ def plot_cca_on_2d_pca(
     sample_labels=None
 ):
     """
-    Plots a scatter of the first two PCA coordinates (colored by severity) with an arrow
-    showing the CCA direction in that 2D plane.
-    
+    Plots a scatter of the first two PCA coordinates (colored by severity) with a dashed line
+    extending in both directions to represent the CCA direction in the 2D plane.
+
     Parameters
     ----------
     pca_coords_2d : np.ndarray
@@ -138,13 +135,29 @@ def plot_cca_on_2d_pca(
     )
     plt.colorbar(sc, label='Severity')
 
-    # CCA direction vector: 
-    # Since we used 2D PCA as input, cca.x_weights_ has shape (2, 1)
+    # CCA direction vector
     dx, dy = cca.x_weights_[:, 0]
-    # Optionally scale for clarity:
-    scale_factor = 2.0
-    plt.arrow(0, 0, scale_factor*dx, scale_factor*dy,
-              width=0.005, length_includes_head=True, head_length=0.05)
+
+    # Get PCA range for scaling
+    pc1_min, pc1_max = np.min(pca_coords_2d[:, 0]), np.max(pca_coords_2d[:, 0])
+    pc2_min, pc2_max = np.min(pca_coords_2d[:, 1]), np.max(pca_coords_2d[:, 1])
+
+    max_range = max(pc1_max - pc1_min, pc2_max - pc2_min)  # Maximum PCA span
+
+    # Extend the line fully to the min/max range
+    scale_factor = 0.5 * max_range  # Extends symmetrically in both directions
+    x_start, x_end = -scale_factor * dx, scale_factor * dx
+    y_start, y_end = -scale_factor * dy, scale_factor * dy
+
+    # Dashed line representing the CCA direction
+    plt.plot(
+        [x_start, x_end], 
+        [y_start, y_end], 
+        linestyle="dashed", 
+        color="red", 
+        linewidth=2, 
+        label="CCA Direction"
+    )
 
     # Optionally label each point (sample name)
     if sample_labels is not None:
@@ -155,6 +168,7 @@ def plot_cca_on_2d_pca(
     plt.ylabel("PC2")
     plt.title("2D PCA of Cell Type Proportions with CCA Direction")
     plt.grid(True)
+    plt.legend()
     plt.tight_layout()
 
     if output_path:
@@ -164,15 +178,7 @@ def plot_cca_on_2d_pca(
         plt.show()
 
 
-def example_usage(adata: AnnData, summary_sample_csv_path: str, output_dir: str):
-    """
-    Example that ties together:
-    1) Reading 2D PCA from adata.uns["X_pca_proportion"]
-    2) Loading severity from CSV
-    3) Running CCA
-    4) Plotting the results with an arrow for the CCA direction
-    """
-    # Step 1 & 2: Get PCA coords & severity, run CCA
+def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir: str):
     pca_coords_2d, sev_levels, cca_model = run_cca_on_2d_pca_from_adata(
         adata,
         summary_sample_csv_path
@@ -181,12 +187,12 @@ def example_usage(adata: AnnData, summary_sample_csv_path: str, output_dir: str)
     # Step 3: Plot
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
+    output_dir = os.path.join(output_dir, 'CCA')
     output_path = os.path.join(output_dir, "pca_2d_cca_direction.pdf")
 
     plot_cca_on_2d_pca(
         pca_coords_2d=pca_coords_2d,
         sev_levels=sev_levels,
         cca=cca_model,
-        output_path=output_path,
-        sample_labels=adata.obs["sample"].values  # optional
+        output_path=output_path
     )
