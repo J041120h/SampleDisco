@@ -46,7 +46,8 @@ def load_severity_levels(summary_sample_csv_path: str, sample_index: pd.Index) -
 
 def run_cca_on_2d_pca_from_adata(
     adata: AnnData,
-    summary_sample_csv_path: str
+    summary_sample_csv_path: str,
+    column: str
 ):
     """
     1) Reads the 2D PCA coordinates from `adata.uns["X_pca_proportion"]`.
@@ -71,9 +72,9 @@ def run_cca_on_2d_pca_from_adata(
     cca : CCA
         The fitted CCA model (n_components=1).
     """
-    pca_coords = adata.uns["X_pca_proportion"]
+    pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
-        raise ValueError("X_pca_proportion must have at least 2 components for 2D plotting.")
+        raise ValueError("X_pca must have at least 2 components for 2D plotting.")
 
     # Extract the first two PC coordinates
     pca_coords_2d = pca_coords[:, :2]  # shape: (n_samples, 2)
@@ -91,7 +92,6 @@ def run_cca_on_2d_pca_from_adata(
     # CCA on the 2D PCA coordinates vs severity
     cca = CCA(n_components=1)
     cca.fit(pca_coords_2d, sev_levels_2d)
-
     return pca_coords_2d, sev_levels, cca
 
 def plot_cca_on_2d_pca(
@@ -166,11 +166,10 @@ def plot_cca_on_2d_pca(
 
     plt.xlabel("PC1")
     plt.ylabel("PC2")
-    plt.title("2D PCA of Cell Type Proportions with CCA Direction")
+    plt.title("2D PCA of with CCA Direction")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-
     if output_path:
         plt.savefig(output_path)
         print(f"Saved CCA direction plot to {output_path}")
@@ -178,21 +177,38 @@ def plot_cca_on_2d_pca(
         plt.show()
 
 
-def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir: str):
+def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None):
+    # Step 3: Plot
+    if output_dir:
+        output_dir = os.path.join(output_dir, 'CCA')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+    
+    output_path_proportion = os.path.join(output_dir, "pca_2d_cca_proportion.pdf")
+    output_path_expression = os.path.join(output_dir, "pca_2d_cca_expression.pdf")
+
     pca_coords_2d, sev_levels, cca_model = run_cca_on_2d_pca_from_adata(
         adata,
-        summary_sample_csv_path
+        summary_sample_csv_path,
+        "X_pca_proportion"
     )
-
-    # Step 3: Plot
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-    output_dir = os.path.join(output_dir, 'CCA')
-    output_path = os.path.join(output_dir, "pca_2d_cca_direction.pdf")
 
     plot_cca_on_2d_pca(
         pca_coords_2d=pca_coords_2d,
         sev_levels=sev_levels,
         cca=cca_model,
-        output_path=output_path
+        output_path=output_path_proportion
+    )
+
+    pca_coords_2d, sev_levels, cca_model = run_cca_on_2d_pca_from_adata(
+        adata,
+        summary_sample_csv_path,
+        "X_pca_expression"
+    )
+
+    plot_cca_on_2d_pca(
+        pca_coords_2d=pca_coords_2d,
+        sev_levels=sev_levels,
+        cca=cca_model,
+        output_path=output_path_expression
     )

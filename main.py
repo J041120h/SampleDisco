@@ -13,9 +13,9 @@ from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata, test_harmony
-from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_pseudobulk_pca, plot_pseudobulk_batch_test_pca
+from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_pseudobulk_batch_test_pca
 from PCA import process_anndata_with_pca
-from CCA import run_cca_on_2d_pca_from_adata,plot_cca_on_2d_pca
+from CCA import CCA_Call
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/result"
@@ -96,8 +96,7 @@ def main():
     AnnData_sample = sc.read(AnnData_sample_path)
     pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
     # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path)
-    pca_coords_2d, sev_levels, cca = run_cca_on_2d_pca_from_adata(AnnData_sample, sample_meta_path)
-    plot_cca_on_2d_pca(pca_coords_2d, sev_levels, cca)
+    CCA_Call(AnnData_sample, sample_meta_path, output_dir)
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_batch_test_pca(AnnData_sample, output_dir)

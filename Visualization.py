@@ -664,7 +664,7 @@ def plot_cell_type_proportions_pca(
     plt.savefig(plot_path)
     print(f"PCA plot saved to: {plot_path}")
 
-def plot_pseudobulk_pca(adata: AnnData, output_dir: str) -> None:
+def plot_pseudobulk_expression_pca(adata: AnnData, output_dir: str) -> None:
     """
     Reads precomputed PCA results for batch-corrected pseudobulk expression data from
     adata.uns["X_pca_expression"] and visualizes PC1 vs. PC2, coloring samples by severity.
