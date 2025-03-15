@@ -5,6 +5,7 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+from sklearn.neighbors import KNeighborsTransformer
 from harmony import harmonize
 import time
 
@@ -14,6 +15,7 @@ from HierarchicalConstruction import cell_type_dendrogram
 def anndata_cluster(
     adata_cluster,
     output_dir,
+    cell_column='cell_type',
     cluster_resolution=0.8,
     markers=None,
     num_features=2000,
@@ -73,15 +75,34 @@ def anndata_cluster(
         print("End of harmony for adata_cluster.")
 
     # Step A4: Clustering / cell_type annotation
-    if 'celltype' in adata_cluster.obs.columns:
+    if cell_column in adata_cluster.obs.columns:
         # If there's an existing "celltype" annotation, rename it
-        adata_cluster.obs['cell_type'] = adata_cluster.obs['celltype'].astype(str)
+        adata_cluster.obs['cell_type'] = adata_cluster.obs[cell_column].astype(str)
         if markers is not None:
             # Optionally map numeric IDs to markers
             marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
             adata_cluster.obs['cell_type'] = adata_cluster.obs['cell_type'].map(marker_dict)
+        
+        sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='logreg', n_genes=100)
+        rank_results = adata_cluster.uns['rank_genes_groups']
+        groups = rank_results['names'].dtype.names
+        all_marker_genes = set()
+        for group in groups:
+            all_marker_genes.update(rank_results['names'][group])
+
+        adata_cluster = cell_type_dendrogram(
+            adata=adata_cluster,
+            resolution=cluster_resolution,
+            groupby='cell_type',
+            method=method,
+            metric=metric,
+            distance_mode=distance_mode,
+            marker_genes=list(all_marker_genes),
+            verbose=verbose
+    )
     else:
-        # Otherwise, run Leiden clustering
+        transformer = KNeighborsTransformer(n_neighbors=10, metric='manhattan', algorithm='kd_tree')
+        sc.pp.neighbors(adata_cluster, transformer=transformer)
         sc.tl.leiden(
             adata_cluster,
             resolution=cluster_resolution,
@@ -95,26 +116,6 @@ def anndata_cluster(
 
     if verbose:
         print("Finished assigning cell types.")
-
-    # Step A5: Rank marker genes
-    sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='logreg', n_genes=100)
-    rank_results = adata_cluster.uns['rank_genes_groups']
-    groups = rank_results['names'].dtype.names
-    all_marker_genes = set()
-    for group in groups:
-        all_marker_genes.update(rank_results['names'][group])
-
-    # Step A6: Construct dendrogram
-    adata_cluster = cell_type_dendrogram(
-        adata=adata_cluster,
-        resolution=cluster_resolution,
-        groupby='cell_type',
-        method=method,
-        metric=metric,
-        distance_mode=distance_mode,
-        marker_genes=list(all_marker_genes),
-        verbose=verbose
-    )
 
     # Step A7: Neighbors + UMAP using Harmony embedding
     sc.pp.neighbors(adata_cluster, use_rep='X_pca_harmony', n_pcs=num_PCs)
@@ -163,23 +164,23 @@ def anndata_sample(
     #     print('=== HVG selected. Performing PCA. ===')
 
     # # Step B1: PCA
-    # sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
+    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
     # # Step B2: Harmony on 'batch'
-    # if verbose:
-    #     print('=== Begin Harmony ===')
+    if verbose:
+        print('=== Begin Harmony ===')
     
-    # Z = harmonize(
-    #     adata_sample_diff.obsm['X_pca'],
-    #     adata_sample_diff.obs,
-    #     batch_key = ['batch'],
-    #     max_iter_harmony=num_harmony
-    # )
-    # adata_sample_diff.obsm['X_pca_harmony'] = Z
+    Z = harmonize(
+        adata_sample_diff.obsm['X_pca'],
+        adata_sample_diff.obs,
+        batch_key = ['batch'],
+        max_iter_harmony=num_harmony
+    )
+    adata_sample_diff.obsm['X_pca_harmony'] = Z
 
     # Step B3: Neighbors + UMAP using Harmony embedding
-    # sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
-    # sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
+    sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
+    sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 
     # Write out final
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
@@ -189,6 +190,7 @@ def harmony(
     h5ad_path,
     sample_meta_path,
     output_dir,
+    cell_column='cell_type',
     cell_meta_path=None,
     markers=None,
     cluster_resolution=0.8,
@@ -307,6 +309,7 @@ def harmony(
     adata_cluster = anndata_cluster(
         adata_cluster=adata_cluster,
         output_dir=output_dir,
+        cell_column=cell_column,
         cluster_resolution=cluster_resolution,
         markers=markers,
         num_features=num_features,

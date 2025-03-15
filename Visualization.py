@@ -303,7 +303,6 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 
 def visualization_harmony(
-    adata_cluster,
     adata_sample_diff,
     output_dir,
     grouping_columns=['sev.level'],
@@ -311,19 +310,10 @@ def visualization_harmony(
     verbose=True,
     dot_size = 3
 ):
-    # -----------------------------
-    # 1. Ensure output directory
-    # -----------------------------
+    # 1. Preprocessing
     output_dir = os.path.join(output_dir, 'harmony')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-
-    # Group assignments for both AnnData objects
-    cluster_samples = adata_cluster.obs['sample'].unique().tolist()
-    cluster_groups = find_sample_grouping(
-        adata_cluster, cluster_samples, grouping_columns, age_bin_size
-    )
-    adata_cluster.obs['plot_group'] = adata_cluster.obs['sample'].map(cluster_groups)
 
     diff_samples = adata_sample_diff.obs['sample'].unique().tolist()
     diff_groups = find_sample_grouping(
@@ -334,45 +324,12 @@ def visualization_harmony(
     if verbose:
         print("[visualization_harmony] 'plot_group' assigned via find_sample_grouping.")
 
-    # --------------------------------
-    # 3. Dendrogram (by cell_type)
-    # --------------------------------
-    sc.pl.dendrogram(adata_cluster, groupby='cell_type', show=False)
+    # 2. Dendrogram (by cell_type)
+    sc.pl.dendrogram(adata_sample_diff, groupby='cell_type', show=False)
     plt.savefig(os.path.join(output_dir, 'phylo_tree.pdf'))
     plt.close()
 
-    # --------------------------------
-    # 4. UMAP colored by plot_group (Clusters)
-    # --------------------------------
-    plt.figure(figsize=(12, 10))
-    sc.pl.umap(
-        adata_cluster,
-        color='plot_group',
-        legend_loc=None,
-        frameon=False,
-        size=dot_size,
-        show=False
-    )
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'cluster_umap_by_plot_group.pdf'), bbox_inches='tight')
-    plt.close()
-
-    plt.figure(figsize=(12, 10))
-    sc.pl.umap(
-        adata_cluster,
-        color='cell_type',
-        legend_loc=None,
-        frameon=False,
-        size=dot_size,
-        show=False
-    )
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'cluster_umap_cell_type.pdf'), bbox_inches='tight')
-    plt.close()
-
-    # --------------------------------
-    # 5. UMAP colored by plot_group (Sample Differences)
-    # --------------------------------
+    # 3. UMAP colored by plot_group (Sample Differences)
     plt.figure(figsize=(12, 10))
     sc.pl.umap(
         adata_sample_diff,
@@ -399,14 +356,9 @@ def visualization_harmony(
     plt.savefig(os.path.join(output_dir, 'sample_umap_by_cell_type.pdf'), bbox_inches='tight')
     plt.close()
 
-    # --------------------------------
-    # 6. PCA of Average HVG Expression
-    # --------------------------------
+    # 4. PCA of Average HVG Expression
     if verbose:
         print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
-
-    print("adata_sample_diff shape:", adata_sample_diff.shape)
-    print("adata_sample_diff.X shape:", adata_sample_diff.X.shape)
     print("Is adata_sample_diff.X sparse?", issparse(adata_sample_diff.X))
 
     if issparse(adata_sample_diff.X):
@@ -425,19 +377,12 @@ def visualization_harmony(
     df['sample'] = adata_sample_diff.obs['sample']
     sample_means = df.groupby('sample').mean()
 
-    # Map samples to severity levels
     sample_to_group = adata_sample_diff.obs[['sample', 'plot_group']].drop_duplicates().set_index('sample')
-
-    # Perform PCA
     pca_2d = PCA(n_components=2)
     pca_coords_2d = pca_2d.fit_transform(sample_means)
     pca_2d_df = pd.DataFrame(pca_coords_2d, index=sample_means.index, columns=['PC1', 'PC2'])
     pca_2d_df = pca_2d_df.join(sample_to_group, how='left')
-
-    # Extract severity level and convert to numeric
     pca_2d_df['sev_level'] = pca_2d_df['plot_group'].str.extract(r'(\d\.\d+)').astype(float)
-
-    # Check for missing severity levels
     if pca_2d_df['sev_level'].isna().sum() > 0:
         raise ValueError("Some plot_group values could not be parsed for severity levels.")
 
@@ -446,68 +391,31 @@ def visualization_harmony(
     cmap = cm.get_cmap('coolwarm')
 
     # Plot PCA with color mapping
-    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(8, 6))  # Create a figure and axis
     for _, row in pca_2d_df.iterrows():
         color = cmap(norm(row['sev_level']))
-        plt.scatter(row['PC1'], row['PC2'], color=color, s=80, alpha=0.8, label=f"sev.level_{row['sev_level']:.2f}")
+        ax.scatter(row['PC1'], row['PC2'], color=color, s=80, alpha=0.8, label=f"sev.level_{row['sev_level']:.2f}")
 
-    plt.xlabel('PC1')
-    plt.ylabel('PC2')
-    plt.title('2D PCA of Avg HVG Expression')
-    plt.grid(True)
-    plt.tight_layout()
+    ax.set_xlabel('PC1')
+    ax.set_ylabel('PC2')
+    ax.set_title('2D PCA of Avg HVG Expression')
+    ax.grid(True)
 
-    # Create a colorbar legend
+    # Create a colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cbar = plt.colorbar(sm)
+    cbar = plt.colorbar(sm, ax=ax)  # Attach to the correct Axes
     cbar.set_label('Severity Level')
 
-    # Save and close figure
+    # Save the figure
+    plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf'))
     plt.close()
 
     if verbose:
         print("[visualization_harmony] Computing sample-level PCA from average HVG expression.")
 
-    if issparse(adata_cluster.X):
-        df = pd.DataFrame(
-            adata_cluster.X.toarray(),
-            index=adata_cluster.obs_names,
-            columns=adata_cluster.var_names
-        )
-    else:
-        df = pd.DataFrame(
-            adata_cluster.X,
-            index=adata_cluster.obs_names,
-            columns=adata_cluster.var_names
-        )
-    df['sample'] = adata_cluster.obs['sample']
-    sample_means = df.groupby('sample').mean()
-    sample_to_group = adata_cluster.obs[['sample', 'plot_group']].drop_duplicates().set_index('sample')
-
-    pca_2d = PCA(n_components=2)
-    pca_coords_2d = pca_2d.fit_transform(sample_means)
-    pca_2d_df = pd.DataFrame(pca_coords_2d, index=sample_means.index, columns=['PC1', 'PC2'])
-    pca_2d_df = pca_2d_df.join(sample_to_group, how='left')
-
-    plt.figure(figsize=(8, 6))
-    unique_groups = pca_2d_df['plot_group'].unique()
-    colors = plt.cm.get_cmap('tab10', len(unique_groups))
-    for i, grp in enumerate(unique_groups):
-        mask = (pca_2d_df['plot_group'] == grp)
-        plt.scatter(pca_2d_df.loc[mask, 'PC1'], pca_2d_df.loc[mask, 'PC2'], color=colors(i), s=80, alpha=0.8)
-    plt.xlabel('PC1')
-    plt.ylabel('PC2')
-    plt.title('2D PCA of Avg HVG Expression ')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.legend()
-    plt.savefig(os.path.join(output_dir, 'sample_relationship_pca_cluster.pdf'))
-    plt.close()
-
-
-    # 3D Interactive PCA
+    # 3D Interactive PCA for sample 
     pca_3d = PCA(n_components=3)
     pca_coords_3d = pca_3d.fit_transform(sample_means)
     pca_3d_df = pd.DataFrame(pca_coords_3d, index=sample_means.index, columns=['PC1', 'PC2', 'PC3'])
@@ -524,9 +432,7 @@ def visualization_harmony(
     output_html_path = os.path.join(output_dir, 'sample_relationship_pca_3D.html')
     pio.write_html(fig_3d, file=output_html_path, auto_open=False)
 
-    # --------------------------------
-    # 7. 3D Visualization of Cell-level Harmony PCA
-    # --------------------------------
+    # 7. 3D Visualization for cell
     if verbose:
         print("[visualization_harmony] Generating 3D cell-level Harmony PCA visualization.")
 
@@ -553,40 +459,6 @@ def visualization_harmony(
 
     # Save plot
     cell_3d_path = os.path.join(output_dir, 'cell_pca_sample.html')
-    pio.write_html(fig_cell_3d, file=cell_3d_path, auto_open=False)
-
-    if verbose:
-        print(f"[visualization_harmony] 3D cell-level PCA saved to {cell_3d_path}")
-
-    # --------------------------------
-    # 8. 3D Visualization of Cell-level Harmony PCA from cluster
-    # --------------------------------
-    if verbose:
-        print("[visualization_harmony] Generating 3D cell-level Harmony PCA visualization.")
-
-    # If using obsm (standard):
-    harmony_coords = adata_cluster.obsm['X_pca_harmony'][:, :3]
-    pca_cell_df = pd.DataFrame(
-        harmony_coords,
-        columns=['PC1', 'PC2', 'PC3'],
-        index=adata_cluster.obs.index
-    )
-    pca_cell_df['plot_group'] = adata_cluster.obs['plot_group']
-
-    # Create interactive plot
-    fig_cell_3d = px.scatter_3d(
-        pca_cell_df,
-        x='PC1',
-        y='PC2',
-        z='PC3',
-        color='plot_group',
-        hover_data={'plot_group': False}
-    )
-    fig_cell_3d.update_layout(showlegend=False)
-    fig_cell_3d.update_traces(marker=dict(size=2), hovertemplate='<extra></extra>')
-
-    # Save plot
-    cell_3d_path = os.path.join(output_dir, 'cell_pca_cluster.html')
     pio.write_html(fig_cell_3d, file=cell_3d_path, auto_open=False)
 
     if verbose:
