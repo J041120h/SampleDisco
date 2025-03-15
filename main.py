@@ -16,6 +16,7 @@ from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_
 from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_pseudobulk_batch_test_pca
 from PCA import process_anndata_with_pca
 from CCA import CCA_Call
+from CellType import cell_types, cell_type_assign
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/result"
@@ -70,6 +71,7 @@ def main():
     AnnData_cell_path = '/users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad'
     AnnData_sample_path = '/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad'
     vars_to_regress= ['sample']
+    cell_column = "celltype"
 
     #on local mac
     output_dir = "/Users/harry/Desktop/GenoDistance/result"
@@ -81,6 +83,7 @@ def main():
     summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
     summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
     vars_to_regress = []
+    cell_column = "cell_type"
 
     # in /dcs04/hongkai/data/HarryJ
     # output_dir = "/dcs04/hongkai/data/HarryJ/harmony_after_combat"
@@ -92,9 +95,23 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir,cell_meta_path, vars_to_regress = vars_to_regress)
-
+    # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
+    AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
+    cell_types(
+        AnnData_cell, 
+        cell_column='cell_type', 
+        Save=True,
+        output_dir=output_dir,
+        cluster_resolution=0.8, 
+        markers=None, 
+        method='average', 
+        metric='euclidean', 
+        distance_mode='centroid', 
+        num_PCs=20, 
+        verbose=True
+    )
+    cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)
     # CCA_Call(AnnData_sample, sample_meta_path, output_dir)
 
     # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)

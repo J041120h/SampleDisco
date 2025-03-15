@@ -456,7 +456,7 @@ from harmony import harmonize
 # Local imports from your project
 from Visualization import visualization_harmony  # if you use it later
 from pseudobulk import compute_pseudobulk_dataframes
-from HierarchicalConstruction import cell_type_dendrogram
+from CellType import cell_type_dendrogram
 from HVG import find_hvgs
 from Grouping import find_sample_grouping
 

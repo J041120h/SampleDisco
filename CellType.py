@@ -1,8 +1,11 @@
 import numpy as np
 import pandas as pd
+import os
 import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import fcluster
+import scanpy as sc
+from sklearn.neighbors import KNeighborsTransformer
 
 def cell_type_dendrogram(
     adata,
@@ -103,3 +106,101 @@ def cell_type_dendrogram(
     adata.obs[groupby] = adata.obs[groupby].map(celltype_to_cluster).astype('category')
 
     return adata
+
+def cell_types(
+    adata, 
+    cell_column='cell_type', 
+    Save=False,
+    output_dir=None,
+    cluster_resolution=0.8, 
+    markers=None, 
+    method='average', 
+    metric='euclidean', 
+    distance_mode='centroid', 
+    num_PCs=20, 
+    verbose=True
+):
+    """
+    Assigns cell types based on existing annotations or performs Leiden clustering if no annotation exists.
+
+    Parameters:
+    - adata: AnnData object
+    - cell_column: Column name containing cell type annotations
+    - Save: Boolean, whether to save the output
+    - output_dir: Directory to save the output if Save=True
+    - cluster_resolution: Resolution for Leiden clustering
+    - markers: List of markers for mapping numeric IDs to names
+    - method, metric, distance_mode: Parameters for hierarchical clustering
+    - num_PCs: Number of principal components for neighborhood graph
+    - verbose: Whether to print progress messages
+
+    Returns:
+    - Updated AnnData object with assigned cell types
+    """
+    if cell_column in adata.obs.columns:
+        if verbose:
+            print("[cell_types] Found existing cell type annotation.")
+        adata.obs['cell_type'] = adata.obs[cell_column].astype(str)
+
+        if markers is not None:
+            marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
+            adata.obs['cell_type'] = adata.obs['cell_type'].map(marker_dict)
+
+        sc.tl.rank_genes_groups(adata, groupby='cell_type', method='logreg', n_genes=100)
+        rank_results = adata.uns['rank_genes_groups']
+        groups = rank_results['names'].dtype.names
+        all_marker_genes = set()
+        for group in groups:
+            all_marker_genes.update(rank_results['names'][group])
+
+        adata = cell_type_dendrogram(
+            adata=adata,
+            resolution=cluster_resolution,
+            groupby='cell_type',
+            method=method,
+            metric=metric,
+            distance_mode=distance_mode,
+            marker_genes=list(all_marker_genes),
+            verbose=verbose
+        )
+
+        sc.pp.neighbors(adata, use_rep='X_pca_harmony', n_pcs=num_PCs)
+
+    else:
+        if verbose:
+            print("[cell_types] No cell type annotation found. Performing clustering.")
+        transformer = KNeighborsTransformer(n_neighbors=10, metric='manhattan', algorithm='kd_tree')
+        sc.pp.neighbors(adata, use_rep='X_pca_harmony', transformer=transformer)
+
+        sc.tl.leiden(
+            adata,
+            resolution=cluster_resolution,
+            flavor='igraph',
+            n_iterations=1,
+            directed=False,
+            key_added='cell_type'
+        )
+
+        adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype('category')
+
+    if verbose:
+        print("[cell_types] Finished assigning cell types.")
+    
+    sc.tl.umap(adata, min_dist=0.5)
+    if Save and output_dir:
+        save_path = os.path.join(output_dir, 'adata_cell.h5ad')
+        sc.write(save_path, adata)
+        if verbose:
+            print(f"[cell_types] Saved AnnData object to {save_path}")
+
+    return adata
+
+def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None,verbose = True):
+    if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
+        adata_cluster.obs['cell_type'] = '1'
+    adata.obs['cell_type'] = adata_cluster.obs['cell_type']
+    if Save and output_dir:
+        save_path = os.path.join(output_dir, 'adata_sample.h5ad')
+        sc.write(save_path, adata)
+        if verbose:
+            print(f"[cell_types] Saved AnnData object to {save_path}")

@@ -10,7 +10,7 @@ from harmony import harmonize
 import time
 
 # Local imports from your project
-from HierarchicalConstruction import cell_type_dendrogram
+from CellType import cell_type_dendrogram
 
 def anndata_cluster(
     adata_cluster,
@@ -74,57 +74,9 @@ def anndata_cluster(
     if verbose:
         print("End of harmony for adata_cluster.")
 
-    # Step A4: Clustering / cell_type annotation
-    if cell_column in adata_cluster.obs.columns:
-        # If there's an existing "celltype" annotation, rename it
-        adata_cluster.obs['cell_type'] = adata_cluster.obs[cell_column].astype(str)
-        if markers is not None:
-            # Optionally map numeric IDs to markers
-            marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
-            adata_cluster.obs['cell_type'] = adata_cluster.obs['cell_type'].map(marker_dict)
-        
-        sc.tl.rank_genes_groups(adata_cluster, groupby='cell_type', method='logreg', n_genes=100)
-        rank_results = adata_cluster.uns['rank_genes_groups']
-        groups = rank_results['names'].dtype.names
-        all_marker_genes = set()
-        for group in groups:
-            all_marker_genes.update(rank_results['names'][group])
-
-        adata_cluster = cell_type_dendrogram(
-            adata=adata_cluster,
-            resolution=cluster_resolution,
-            groupby='cell_type',
-            method=method,
-            metric=metric,
-            distance_mode=distance_mode,
-            marker_genes=list(all_marker_genes),
-            verbose=verbose
-    )
-    else:
-        transformer = KNeighborsTransformer(n_neighbors=10, metric='manhattan', algorithm='kd_tree')
-        sc.pp.neighbors(adata_cluster, transformer=transformer)
-        sc.tl.leiden(
-            adata_cluster,
-            resolution=cluster_resolution,
-            flavor='igraph',
-            n_iterations=1,
-            directed=False,
-            key_added='cell_type'
-        )
-        # Convert cluster IDs to "1, 2, 3, ..."
-        adata_cluster.obs['cell_type'] = (adata_cluster.obs['cell_type'].astype(int) + 1).astype('category')
-
-    if verbose:
-        print("Finished assigning cell types.")
-
-    # Step A7: Neighbors + UMAP using Harmony embedding
-    sc.pp.neighbors(adata_cluster, use_rep='X_pca_harmony', n_pcs=num_PCs)
-    sc.tl.umap(adata_cluster, min_dist=0.5)
-
     # Step A8: Write out final
     sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
     return adata_cluster
-
 
 def anndata_sample(
     adata_sample_diff,
@@ -321,12 +273,6 @@ def harmony(
         distance_mode=distance_mode,
         verbose=verbose
     )
-
-    # 2(b). Sample-level analysis
-    # Carry over the cell_type from the cluster object if needed
-    if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
-        adata_cluster.obs['cell_type'] = '1'
-    adata_sample_diff.obs['cell_type'] = adata_cluster.obs['cell_type']
 
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
