@@ -1,1 +1,12 @@
-/var/spool/slurm/d/job14963560/slurm_script: line 38: nvidia-smi: command not found
+Lmod has detected the following error: The following module(s) are unknown:
+"cuda/12.4"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore_cache load "cuda/12.4"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+

@@ -95,9 +95,9 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read(AnnData_cell_path)
-    # AnnData_sample = sc.read(AnnData_sample_path)
+    # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
+    AnnData_cell = sc.read(AnnData_cell_path)
+    AnnData_sample = sc.read(AnnData_sample_path)
     cell_types(
         AnnData_cell, 
         cell_column='cell_type', 

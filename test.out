@@ -1,16 +1,32 @@
 ======================================
- Job ID:            14963560
+ Job ID:            15268192
  Job Name:          test
- Partition:         shared
- Node List:         compute-155
- CPUs per Task:     1
- Memory Alloc:      400G
+ Partition:         gpu
+ Node List:         compute-123
+ CPUs per Task:     16
+ Memory Alloc:      262144
  GPU Requested:     1
- Start Time:        Sun Mar  9 06:57:16 PM EDT 2025
+ Start Time:        Mon Mar 17 01:16:32 PM EDT 2025
 ======================================
+Checking GPU status...
+Mon Mar 17 13:16:34 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
+| N/A   42C    P0             39W /  250W |       1MiB /  32768MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
 Starting main.py...
-End of Process
-End of Process
-End of Process
-Finished main.py.
-End Time: Sun Mar  9 06:58:38 PM EDT 2025

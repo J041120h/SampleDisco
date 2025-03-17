@@ -5,18 +5,18 @@
 ############################################
 
 #SBATCH --job-name=test
-#SBATCH --partition=shared
+#SBATCH --partition=gpu                 # Use GPU partition
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=32              # Increased to 4 CPUs per task for better parallelism
-#SBATCH --gres=gpu:1                    # Explicitly request 1 GPU
+#SBATCH --cpus-per-task=16              # Reduce CPU count for better node matching
+#SBATCH --gpus=1                     # Request 1 GPU
 #SBATCH --time=2:00:00
-#SBATCH --mem=400GB                     
-#SBATCH --output=test.out            # Output file with Job ID
-#SBATCH --error=test.err             # Error file with Job ID
-#SBATCH --mail-type=END,FAIL            # Only notify on job completion or failure
-#SBATCH --mail-user=hjiang55@jh.edu     # Replace with your email
+#SBATCH --mem=256GB                      # Reduce memory to match node configurations
+#SBATCH --output=test.out
+#SBATCH --error=test.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=hjiang55@jh.edu
 #SBATCH --array=0
 
 ############################################
