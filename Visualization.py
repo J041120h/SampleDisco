@@ -1,11 +1,22 @@
 import os
+import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import scanpy as sc
+from anndata import AnnData
 from sklearn.manifold import MDS
+from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage
+from scipy.sparse import issparse
+import plotly.express as px
+import plotly.io as pio
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+
+# Custom module imports
 from Grouping import find_sample_grouping
 from HVG import select_hvf_loess
 
@@ -152,13 +163,6 @@ def plot_cell_type_expression_heatmap(
     plt.close()
     print(f"Cell type expression heatmap saved to {heatmap_path}")
 
-import os
-import re
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.manifold import MDS
-from sklearn.decomposition import PCA
-
 def visualizeGroupRelationship(
     sample_distance_matrix,
     outputDir,
@@ -288,19 +292,6 @@ def visualizeDistanceMatrix(sample_distance_matrix, heatmap_path):
     plt.savefig(heatmap_path)
     plt.close()
     print(f"Sample distance heatmap saved to {heatmap_path}")
-
-import os
-import matplotlib.pyplot as plt
-import scanpy as sc
-import pandas as pd
-import numpy as np
-from sklearn.decomposition import PCA
-from scipy.sparse import issparse
-# For interactive 3D plot
-import plotly.express as px
-import plotly.io as pio
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
 
 def visualization_harmony(
     adata_sample_diff,
@@ -469,12 +460,6 @@ def visualization_harmony(
     # --------------------------------
     if verbose:
         print("[visualization_harmony] All visualizations saved.")
-
-import os
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from anndata import AnnData
 
 def plot_cell_type_proportions_pca(
     adata: AnnData, 

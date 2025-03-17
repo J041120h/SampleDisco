@@ -6,6 +6,7 @@ from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import fcluster
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
+import time
 
 def cell_type_dendrogram(
     adata,
@@ -39,28 +40,22 @@ def cell_type_dendrogram(
     - verbose : bool, optional
         Print progress messages.
     """
-
+    start_time = time.time()
     if verbose:
         print('=== Preparing data for dendrogram (using marker genes) ===')
 
-    # Check that the groupby column exists
     if groupby not in adata.obs.columns:
         raise ValueError(f"The groupby key '{groupby}' is not present in adata.obs.")
 
-    # Check marker genes
     if marker_genes is None or len(marker_genes) == 0:
         raise ValueError("No marker genes provided. Please supply a non-empty list of marker genes.")
 
-    # Ensure marker genes are in adata
     marker_genes = [g for g in marker_genes if g in adata.var_names]
     if len(marker_genes) == 0:
         raise ValueError("None of the provided marker genes are found in adata.var_names.")
 
-    # Extract marker gene expression data
-    # adata.X is typically log-normalized if following standard Scanpy workflow
     marker_data = adata[:, marker_genes].X
 
-    # Create a DataFrame for convenience
     df_markers = pd.DataFrame(marker_data.toarray() if hasattr(marker_data, 'toarray') else marker_data,
                               index=adata.obs_names,
                               columns=marker_genes)
@@ -69,7 +64,6 @@ def cell_type_dendrogram(
     if distance_mode == 'centroid':
         if verbose:
             print('=== Computing centroids of cell types in marker gene space ===')
-        # Calculate centroids for each cell type using marker genes
         centroids = df_markers.groupby(groupby).mean()
         if verbose:
             print(f'Calculated centroids for {centroids.shape[0]} cell types.')
@@ -79,16 +73,13 @@ def cell_type_dendrogram(
     else:
         raise ValueError(f"Unsupported distance_mode '{distance_mode}' for marker gene approach.")
 
-    # Perform hierarchical clustering
     if verbose:
         print('=== Performing hierarchical clustering on marker gene centroids ===')
         print(f'Linkage method: {method}, Distance metric: {metric}')
     Z = sch.linkage(dist_matrix, method=method)
 
-    # Store the linkage matrix in adata
     adata.uns['cell_type_linkage'] = Z
 
-    # Reclustering cell types based on resolution
     if verbose:
         print(f'=== Reclustering cell types with resolution {resolution} ===')
     max_height = np.max(Z[:, 2])
@@ -96,14 +87,16 @@ def cell_type_dendrogram(
     if verbose:
         print(f'Using threshold {threshold} to cut the dendrogram (max height: {max_height})')
 
-    # Get new cluster labels
     cluster_labels = fcluster(Z, t=threshold, criterion='distance')
     if verbose:
         print(f'Formed {len(np.unique(cluster_labels))} clusters at resolution {resolution}')
 
-    # Map original cell types to new cluster labels
     celltype_to_cluster = dict(zip(centroids.index, cluster_labels))
     adata.obs[groupby] = adata.obs[groupby].map(celltype_to_cluster).astype('category')
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Function execution time: {elapsed_time:.2f} seconds")
 
     return adata
 
@@ -204,3 +197,108 @@ def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None,verbose =
         sc.write(save_path, adata)
         if verbose:
             print(f"[cell_types] Saved AnnData object to {save_path}")
+
+# import numpy as np
+# import pandas as pd
+# import cupy as cp
+# import scanpy as sc
+# from cuml.cluster import AgglomerativeClustering
+# from scipy.cluster.hierarchy import linkage, fcluster
+# from scipy.spatial.distance import pdist, squareform
+# from anndata import AnnData
+
+# def cell_type_dendrogram_gpu(
+#     adata: AnnData,
+#     resolution: float,
+#     groupby: str = 'cell_type',
+#     method: str = 'average',
+#     metric: str = 'euclidean',
+#     marker_genes: list = None,
+#     verbose: bool = True
+# ):
+#     """
+#     Constructs a dendrogram of cell types based on selected marker genes using GPU acceleration.
+
+#     Parameters:
+#     - adata : AnnData
+#         Annotated data matrix.
+#     - resolution : float
+#         Clustering resolution.
+#     - groupby : str, optional
+#         The observation key to group cells by. Default is 'cell_type'.
+#     - method : str, optional
+#         The linkage method ('ward', 'average', 'complete', etc.).
+#     - metric : str, optional
+#         The distance metric ('euclidean', 'cosine', etc.).
+#     - marker_genes : list, optional
+#         List of marker genes for dendrogram construction.
+#     - verbose : bool, optional
+#         Whether to print progress messages.
+
+#     Returns:
+#     - Updated AnnData with hierarchical clustering results.
+#     """
+#     if verbose:
+#         print('=== Preparing data for GPU-accelerated dendrogram ===')
+
+#     if groupby not in adata.obs.columns:
+#         raise ValueError(f"The groupby key '{groupby}' is not in adata.obs.")
+
+#     if not marker_genes:
+#         raise ValueError("No marker genes provided.")
+
+#     marker_genes = [g for g in marker_genes if g in adata.var_names]
+#     if len(marker_genes) == 0:
+#         raise ValueError("None of the provided marker genes exist in adata.var_names.")
+
+#     # Extract marker gene expression and move to GPU
+#     marker_data = adata[:, marker_genes].X
+#     df_markers = pd.DataFrame(
+#         marker_data.toarray() if hasattr(marker_data, 'toarray') else marker_data,
+#         index=adata.obs_names,
+#         columns=marker_genes
+#     )
+#     df_markers[groupby] = adata.obs[groupby].values
+
+#     # Compute centroids for each cell type using CuPy
+#     if verbose:
+#         print('=== Computing centroids of cell types in marker gene space ===')
+#     centroids = df_markers.groupby(groupby).mean()
+#     centroid_gpu = cp.asarray(centroids.values)
+
+#     # Compute pairwise distance matrix using GPU
+#     if verbose:
+#         print(f'=== Computing distance matrix using GPU with {metric} metric ===')
+#     dist_matrix = cp.asnumpy(squareform(cp.asarray(pdist(centroid_gpu, metric=metric))))
+
+#     # Perform hierarchical clustering using RAPIDS cuML
+#     if verbose:
+#         print('=== Performing GPU-powered hierarchical clustering ===')
+#     agg_cluster = AgglomerativeClustering(
+#         n_clusters=None,
+#         affinity='precomputed',
+#         linkage=method,
+#         distance_threshold=None
+#     )
+#     Z = agg_cluster.fit(dist_matrix)
+
+#     # Store clustering results
+#     adata.uns['cell_type_linkage'] = Z
+
+#     # Reclustering at specified resolution
+#     if verbose:
+#         print(f'=== Reclustering cell types at resolution {resolution} ===')
+#     max_height = np.max(Z.children_)  # Get max height from linkage
+#     threshold = (1 - resolution) * max_height
+
+#     # Apply fcluster to assign cluster labels
+#     cluster_labels = fcluster(linkage(dist_matrix, method=method), t=threshold, criterion='distance')
+    
+#     if verbose:
+#         print(f'Formed {len(np.unique(cluster_labels))} clusters at resolution {resolution}')
+
+#     # Map clusters to original cell types
+#     celltype_to_cluster = dict(zip(centroids.index, cluster_labels))
+#     adata.obs[groupby] = adata.obs[groupby].map(celltype_to_cluster).astype('category')
+
+#     return adata

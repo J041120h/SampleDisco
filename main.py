@@ -95,9 +95,9 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
-    AnnData_cell = sc.read(AnnData_cell_path)
-    AnnData_sample = sc.read(AnnData_sample_path)
+    AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
+    # AnnData_cell = sc.read(AnnData_cell_path)
+    # AnnData_sample = sc.read(AnnData_sample_path)
     cell_types(
         AnnData_cell, 
         cell_column='cell_type', 
@@ -112,23 +112,22 @@ def main():
         verbose=True
     )
     cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)
-    # CCA_Call(AnnData_sample, sample_meta_path, output_dir)
 
-    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-    # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path)
+    # visualization_harmony(
+    #     AnnData_sample,
+    #     output_dir,
+    #     grouping_columns=['sev.level'],
+    #     verbose=True,
+    #     dot_size = 3
+    # )
+    
+    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
+    process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path)
+    CCA_Call(AnnData_sample, sample_meta_path, output_dir)
+
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_batch_test_pca(AnnData_sample, output_dir)
-
-
-    visualization_harmony(
-        AnnData_sample,
-        output_dir,
-        grouping_columns=['sev.level'],
-        verbose=True,
-        dot_size = 3
-    )
-
     # if os.path.exists(summary_sample_csv_path):
     #     os.remove(summary_sample_csv_path)
     # if os.path.exists(summary_cell_csv_path):
