@@ -9,13 +9,14 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
-#SBATCH --time=1:00:00
-#SBATCH --mem=400GB
-#SBATCH --output=test.out            # Fixed output file
-#SBATCH --error=test.err             # Fixed error file
-#SBATCH --mail-type=END,ALL
-#SBATCH --mail-user=hjiang55@jh.edu  # Replace with your email
+#SBATCH --cpus-per-task=32              # Increased to 4 CPUs per task for better parallelism
+#SBATCH --gres=gpu:1                    # Explicitly request 1 GPU
+#SBATCH --time=2:00:00
+#SBATCH --mem=400GB                     
+#SBATCH --output=test.out            # Output file with Job ID
+#SBATCH --error=test.err             # Error file with Job ID
+#SBATCH --mail-type=END,FAIL            # Only notify on job completion or failure
+#SBATCH --mail-user=hjiang55@jh.edu     # Replace with your email
 #SBATCH --array=0
 
 ############################################
@@ -27,7 +28,7 @@ echo " Job Name:          ${SLURM_JOB_NAME}"
 echo " Partition:         ${SLURM_JOB_PARTITION}"
 echo " Node List:         ${SLURM_NODELIST}"
 echo " CPUs per Task:     ${SLURM_CPUS_PER_TASK}"
-echo " Memory Alloc:      400G"
+echo " Memory Alloc:      ${SLURM_MEM_PER_NODE}"
 echo " GPU Requested:     1"
 echo " Start Time:        $(date)"
 echo "======================================"
@@ -35,24 +36,29 @@ echo "======================================"
 ############################################
 # Load modules / activate environments     #
 ############################################
-nvidia-smi
-
 module load conda
 conda activate hongkai
+
+# Load CUDA and cuDNN modules (ensure compatibility)
+module load cuda/12.4
+
+# Check GPU availability
+echo "Checking GPU status..."
+nvidia-smi || { echo "GPU check failed! Exiting."; exit 1; }
 
 ############################################
 # Move to the submission directory (good practice)
 ############################################
-cd "${SLURM_SUBMIT_DIR}"
+cd "${SLURM_SUBMIT_DIR}" || { echo "Failed to change directory! Exiting."; exit 1; }
 
-# If using multi-threading (e.g., OpenMP):
+# Optimize multi-threading settings
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 
 ############################################
 # Run your actual code                     #
 ############################################
 echo "Starting main.py..."
-python -u main.py
+python -u main.py || { echo "Python script failed! Exiting."; exit 1; }
 echo "Finished main.py."
 
 echo "End Time: $(date)"
