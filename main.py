@@ -99,7 +99,7 @@ def main():
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
-    cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.8717143329719974)
+    cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.8717143329719974, output_dir)
     # column = "X_pca_expression"
     # find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column)
 

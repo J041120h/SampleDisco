@@ -2,6 +2,7 @@ import anndata as ad
 import pandas as pd
 from sklearn.cross_decomposition import CCA
 import numpy as np
+import os
 from pseudobulk import compute_pseudobulk_dataframes
 from PCA import process_anndata_with_pca
 from CCA import run_cca_on_2d_pca_from_adata, load_severity_levels
@@ -94,16 +95,18 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
     df_coarse = pd.DataFrame(list(score_counter.items()), columns=["resolution", "score"])
     df_fine = pd.DataFrame(list(fine_score_counter.items()), columns=["resolution", "score"])
     df_results = pd.concat([df_coarse, df_fine], ignore_index=True)
-    df_results.to_csv("resolution_scores.csv", index=False)
+    output_dir = os.path.join(output_dir, "CCA test")
+    os.makedirs(output_dir, exist_ok=True) 
+    to_csv_path = os.path.join(output_dir, "resolution_scores.csv")
+    df_results.to_csv(to_csv_path, index=False)
 
     print("Resolution scores saved as 'resolution_scores.csv'.")
     print("All data saved locally.")
 
-
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import CCA
-import pandas as pd
 from anndata import AnnData
 
 def cca_pvalue_test(
@@ -111,6 +114,7 @@ def cca_pvalue_test(
     summary_sample_csv_path: str,
     column: str,
     input_correlation: float,
+    output_directory: str,
     num_simulations: int = 1000
 ):
     """
@@ -119,8 +123,8 @@ def cca_pvalue_test(
     1) Reads the 2D PCA coordinates from `adata.uns[column]`.
     2) Loads and aligns severity levels based on `adata.obs["sample"]`.
     3) Performs a Monte Carlo simulation with randomly generated feature values.
-    4) Plots the distribution of simulated correlation scores.
-    5) Computes the p-value for a given user-input correlation.
+    4) Plots the distribution of simulated correlation scores and saves it.
+    5) Computes the p-value for a given user-input correlation and saves it in a text file.
 
     Parameters
     ----------
@@ -134,6 +138,8 @@ def cca_pvalue_test(
         The key in `adata.uns` that contains the 2D PCA coordinates.
     input_correlation : float
         The observed correlation to test against the null distribution.
+    output_directory : str
+        Directory where the plot and p-value text file will be saved.
     num_simulations : int, optional
         Number of Monte Carlo simulations (default is 1000).
     
@@ -142,6 +148,11 @@ def cca_pvalue_test(
     p_value : float
         The p-value indicating how extreme the observed correlation is compared to the null distribution.
     """
+
+    # Ensure output directory exists
+    output_directory = os.path.join(output_directory, "CCA test")
+    os.makedirs(output_directory, exist_ok=True)
+
     pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
         raise ValueError("X_pca must have at least 2 components for 2D plotting.")
@@ -181,8 +192,19 @@ def cca_pvalue_test(
     plt.ylabel('Frequency')
     plt.title('Monte Carlo Simulated Distribution of CCA Correlations')
     plt.legend()
-    plt.show()
 
+    # Save plot
+    plot_path = os.path.join(output_directory, "cca_pvalue_distribution.png")
+    plt.savefig(plot_path, dpi=300)
+    plt.close()
+
+    # Save p-value to text file
+    p_value_path = os.path.join(output_directory, "cca_pvalue_result.txt")
+    with open(p_value_path, "w") as f:
+        f.write(f"Observed correlation: {input_correlation}\n")
+        f.write(f"P-value: {p_value}\n")
+
+    # Print p-value
     print(f"P-value for observed correlation {input_correlation}: {p_value}")
-    return p_value
 
+    return p_value
