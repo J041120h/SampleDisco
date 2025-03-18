@@ -176,6 +176,11 @@ def cell_types(
 
         adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype('category')
 
+        adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype('category')
+        num_clusters = adata.obs['cell_type'].nunique()
+        if verbose:
+            print(f"\n[cell_types] Found {num_clusters} clusters after Leiden clustering.\n")
+
     if verbose:
         print("[cell_types] Finished assigning cell types.")
     

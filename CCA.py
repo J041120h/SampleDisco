@@ -43,7 +43,6 @@ def load_severity_levels(summary_sample_csv_path: str, sample_index: pd.Index) -
 
     return sev_levels.reshape(-1, 1)  # shape: (n_samples, 1)
 
-
 def run_cca_on_2d_pca_from_adata(
     adata: AnnData,
     summary_sample_csv_path: str,
@@ -92,6 +91,9 @@ def run_cca_on_2d_pca_from_adata(
     # CCA on the 2D PCA coordinates vs severity
     cca = CCA(n_components=1)
     cca.fit(pca_coords_2d, sev_levels_2d)
+    U, V = cca.transform(pca_coords_2d, sev_levels_2d)
+    first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+    print(first_component_score)
     return pca_coords_2d, sev_levels, cca
 
 def plot_cca_on_2d_pca(
