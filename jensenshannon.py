@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from anndata import AnnData
 import warnings
+from scipy.sparse import issparse
+from scipy.spatial.distance import jensenshannon 
 from anndata._core.aligned_df import ImplicitModificationWarning
 from Visualization import plot_cell_type_expression_heatmap, plot_cell_type_abundances, visualizeGroupRelationship, visualizeDistanceMatrix
 from distanceTest import distanceCheck
-from scipy.sparse import issparse
-from scipy.spatial.distance import jensenshannon  # Import Jensen-Shannon Divergence
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 

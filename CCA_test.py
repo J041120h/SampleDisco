@@ -8,7 +8,7 @@ from sklearn.cross_decomposition import CCA
 from anndata import AnnData
 from pseudobulk import compute_pseudobulk_dataframes
 from PCA import process_anndata_with_pca
-from CCA import run_cca_on_2d_pca_from_adata, load_severity_levels
+from CCA import load_severity_levels
 from CellType import cell_types, cell_type_assign
 
 def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summary_sample_csv_path, AnnData_sample_path, column):
@@ -145,7 +145,6 @@ def cca_pvalue_test(
         The p-value indicating how extreme the observed correlation is compared to the null distribution.
     """
 
-    # Ensure output directory exists
     output_directory = os.path.join(output_directory, "CCA test")
     os.makedirs(output_directory, exist_ok=True)
 

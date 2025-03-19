@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from pandas.api.types import is_numeric_dtype, is_categorical_dtype
+from pandas.api.types import is_numeric_dtype
 
 
 def find_sample_grouping(
