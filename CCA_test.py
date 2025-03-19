@@ -3,6 +3,9 @@ import pandas as pd
 from sklearn.cross_decomposition import CCA
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+from sklearn.cross_decomposition import CCA
+from anndata import AnnData
 from pseudobulk import compute_pseudobulk_dataframes
 from PCA import process_anndata_with_pca
 from CCA import run_cca_on_2d_pca_from_adata, load_severity_levels
@@ -16,7 +19,7 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
         cell_types(
             AnnData_cell, 
             cell_column='cell_type', 
-            Save=True,
+            Save=False,
             output_dir=output_dir,
             cluster_resolution=resolution, 
             markers=None, 
@@ -24,9 +27,9 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
             metric='euclidean', 
             distance_mode='centroid', 
             num_PCs=20, 
-            verbose=True
+            verbose=False
         )
-        cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = False)
+        cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir,verbose = False)
         pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
         process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = False)
 
@@ -55,7 +58,7 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
         cell_types(
             AnnData_cell, 
             cell_column='cell_type', 
-            Save=True,
+            Save=False,
             output_dir=output_dir,
             cluster_resolution=resolution, 
             markers=None, 
@@ -97,17 +100,11 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
     df_results = pd.concat([df_coarse, df_fine], ignore_index=True)
     output_dir = os.path.join(output_dir, "CCA test")
     os.makedirs(output_dir, exist_ok=True) 
-    to_csv_path = os.path.join(output_dir, "resolution_scores.csv")
+    to_csv_path = os.path.join(output_dir, f"resolution_scores_{column}.csv")
     df_results.to_csv(to_csv_path, index=False)
 
     print("Resolution scores saved as 'resolution_scores.csv'.")
     print("All data saved locally.")
-
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.cross_decomposition import CCA
-from anndata import AnnData
 
 def cca_pvalue_test(
     adata: AnnData,
@@ -194,12 +191,12 @@ def cca_pvalue_test(
     plt.legend()
 
     # Save plot
-    plot_path = os.path.join(output_directory, "cca_pvalue_distribution.png")
+    plot_path = os.path.join(output_directory, f"cca_pvalue_distributio_{column}.png")
     plt.savefig(plot_path, dpi=300)
     plt.close()
 
     # Save p-value to text file
-    p_value_path = os.path.join(output_directory, "cca_pvalue_result.txt")
+    p_value_path = os.path.join(output_directory, f"cca_pvalue_result_{column}.txt")
     with open(p_value_path, "w") as f:
         f.write(f"Observed correlation: {input_correlation}\n")
         f.write(f"P-value: {p_value}\n")

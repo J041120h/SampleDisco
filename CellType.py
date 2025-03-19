@@ -186,6 +186,7 @@ def cell_types(
     
     sc.tl.umap(adata, min_dist=0.5)
     if Save and output_dir:
+        output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_cell.h5ad')
         sc.write(save_path, adata)
         if verbose:
@@ -198,6 +199,7 @@ def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None,verbose =
         adata_cluster.obs['cell_type'] = '1'
     adata.obs['cell_type'] = adata_cluster.obs['cell_type']
     if Save and output_dir:
+        output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_sample.h5ad')
         sc.write(save_path, adata)
         if verbose:
