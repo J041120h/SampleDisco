@@ -99,16 +99,12 @@ def main():
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
-    # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.8717143329719974, output_dir)
-    # column = "X_pca_expression"
-    # find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column)
-
     # cell_types(
     #     AnnData_cell, 
     #     cell_column='cell_type', 
     #     Save=True,
     #     output_dir=output_dir,
-    #     cluster_resolution=0.8, 
+    #     cluster_resolution=0.19, 
     #     markers=None, 
     #     method='average', 
     #     metric='euclidean', 
@@ -116,11 +112,13 @@ def main():
     #     num_PCs=20, 
     #     verbose=True
     # )
-    # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)   
-    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
-    EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
+    # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
+    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
     # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
     # CCA_Call(AnnData_sample, sample_meta_path, output_dir)
+    # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.8449111150006337, output_dir)
+    column = "X_pca_expression"
+    find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
 
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir)

@@ -143,6 +143,7 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
         top_features = sample_df.columns
 
     return sample_df, top_features
+
 def highly_variable_gene_selection(
     cell_expression_corrected_df: pd.DataFrame,
     n_top_genes: int = None,

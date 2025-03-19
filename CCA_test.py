@@ -102,6 +102,20 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
     to_csv_path = os.path.join(output_dir, f"resolution_scores_{column}.csv")
     df_results.to_csv(to_csv_path, index=False)
 
+    plt.figure(figsize=(8, 6))
+    plt.plot(df_results["resolution"], df_results["score"], marker='o', linestyle='-', color='b', label="CCA Score")
+    plt.xlabel("Resolution")
+    plt.ylabel("CCA Score")
+    plt.title("Resolution vs. CCA Score")
+    plt.legend()
+    plt.grid(True)
+
+    # Save plot locally
+    plot_path = os.path.join(output_dir, f"resolution_vs_cca_score_{column}.png")
+    plt.savefig(plot_path, dpi=300)
+    plt.close()
+
+    print(f"Resolution vs. CCA Score plot saved as '{plot_path}'.")
     print("Resolution scores saved as 'resolution_scores.csv'.")
     print("All data saved locally.")
 
