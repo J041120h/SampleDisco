@@ -11,7 +11,6 @@ from PCA import process_anndata_with_pca
 from CCA import run_cca_on_2d_pca_from_adata, load_severity_levels
 from CellType import cell_types, cell_type_assign
 
-
 def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summary_sample_csv_path, AnnData_sample_path, column):
     score_counter = dict()
     for resolution in np.arange(0.1, 1.1, 0.1):
