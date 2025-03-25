@@ -99,7 +99,7 @@ def main():
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
-    cell_types(
+    AnnData_cell = cell_types(
         AnnData_cell, 
         cell_column='cell_type', 
         Save=True,
@@ -112,10 +112,10 @@ def main():
         num_PCs=20, 
         verbose=True
     )
-    cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
-    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
-    process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
-    CCA_Call(AnnData_sample, sample_meta_path, output_dir)
+    # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
+    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
+    # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
+    # CCA_Call(AnnData_sample, sample_meta_path, output_dir)
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.8449111150006337, output_dir)
 
     # column = "X_pca_expression"

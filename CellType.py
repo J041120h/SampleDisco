@@ -103,6 +103,8 @@ def cell_type_dendrogram(
 def cell_types(
     adata, 
     cell_column='cell_type', 
+    existing_cell_types=False,
+    umap = False,
     Save=False,
     output_dir=None,
     cluster_resolution=0.8, 
@@ -130,10 +132,9 @@ def cell_types(
     Returns:
     - Updated AnnData object with assigned cell types
     """
-
     start_time = time.time() if verbose else None
 
-    if cell_column in adata.obs.columns:
+    if cell_column in adata.obs.columns and existing_cell_types:
         if verbose:
             print("[cell_types] Found existing cell type annotation.")
         adata.obs['cell_type'] = adata.obs[cell_column].astype(str)
@@ -161,18 +162,17 @@ def cell_types(
         )
 
         sc.pp.neighbors(adata, use_rep='X_pca_harmony', n_pcs=num_PCs)
-
     else:
         if verbose:
             print("[cell_types] No cell type annotation found. Performing clustering.")
-        transformer = KNeighborsTransformer(n_neighbors=10, metric='manhattan', algorithm='kd_tree')
-        sc.pp.neighbors(adata, use_rep='X_pca_harmony', transformer=transformer)
 
+        transformer = KNeighborsTransformer(n_neighbors=10, metric='manhattan', algorithm='kd_tree')
+        sc.pp.neighbors(adata, use_rep='X_pca_harmony', transformer=transformer, n_pcs=num_PCs)
         sc.tl.leiden(
             adata,
             resolution=cluster_resolution,
             flavor='igraph',
-            n_iterations=1,
+            n_iterations=2,
             directed=False,
             key_added='cell_type'
         )
@@ -187,7 +187,9 @@ def cell_types(
     if verbose:
         print("[cell_types] Finished assigning cell types.")
     
-    sc.tl.umap(adata, min_dist=0.5)
+    if umap:
+        sc.tl.umap(adata, min_dist=0.5)
+    
     if Save and output_dir:
         output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_cell.h5ad')
