@@ -1,12 +1,34 @@
-Lmod has detected the following error: The following module(s) are unknown:
-"cuda/12.4"
-
-Please check the spelling or version number. Also try "module spider ..."
-It is also possible your cache file is out-of-date; it may help to try:
-  $ module --ignore_cache load "cuda/12.4"
-
-Also make sure that all modulefiles written in TCL start with the string
-#%Module
-
-
-
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/.conda/envs/hongkai/lib/python3.12/site-packages/combat/pycombat.py:159: RuntimeWarning: divide by zero encountered in divide
+  np.absolute(d_new-d_old)/d_old))  # maximum difference between new and old estimate
+/users/hjiang/GenoDistance/python/pseudobulk.py:42: FutureWarning: DataFrame.applymap has been deprecated. Use DataFrame.map instead.
+  df_as_strings = df.applymap(lambda x: vector_to_string(x) if isinstance(x, (list, np.ndarray)) else str(x))
+/users/hjiang/GenoDistance/python/pseudobulk.py:42: FutureWarning: DataFrame.applymap has been deprecated. Use DataFrame.map instead.
+  df_as_strings = df.applymap(lambda x: vector_to_string(x) if isinstance(x, (list, np.ndarray)) else str(x))
+/users/hjiang/GenoDistance/python/pseudobulk.py:42: FutureWarning: DataFrame.applymap has been deprecated. Use DataFrame.map instead.
+  df_as_strings = df.applymap(lambda x: vector_to_string(x) if isinstance(x, (list, np.ndarray)) else str(x))

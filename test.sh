@@ -9,13 +9,13 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=16              # Reduce CPU count for better node matching
-#SBATCH --gpus=1                     # Request 1 GPU
-#SBATCH --time=2:00:00
-#SBATCH --mem=256GB                      # Reduce memory to match node configurations
+#SBATCH --cpus-per-task=32              # CPU count
+#SBATCH --gpus=1                        # Request 1 GPU
+#SBATCH --time=1-00:00:00
+#SBATCH --mem=200GB                     # Memory allocation
 #SBATCH --output=test.out
 #SBATCH --error=test.err
-#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-type=ALL
 #SBATCH --mail-user=hjiang55@jh.edu
 #SBATCH --array=0
 
@@ -39,15 +39,17 @@ echo "======================================"
 module load conda
 conda activate hongkai
 
-# Load CUDA and cuDNN modules (ensure compatibility)
-module load cuda/12.4
+# CUDA module removed — using system-installed CUDA instead
+# Explicitly export CUDA paths (optional, but recommended)
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 # Check GPU availability
 echo "Checking GPU status..."
 nvidia-smi || { echo "GPU check failed! Exiting."; exit 1; }
 
 ############################################
-# Move to the submission directory (good practice)
+# Move to the submission directory         #
 ############################################
 cd "${SLURM_SUBMIT_DIR}" || { echo "Failed to change directory! Exiting."; exit 1; }
 

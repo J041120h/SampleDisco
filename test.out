@@ -1,15 +1,15 @@
 ======================================
- Job ID:            15268192
+ Job ID:            15322041
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
- CPUs per Task:     16
- Memory Alloc:      262144
+ CPUs per Task:     32
+ Memory Alloc:      204800
  GPU Requested:     1
- Start Time:        Mon Mar 17 01:16:32 PM EDT 2025
+ Start Time:        Mon Mar 24 11:29:51 AM EDT 2025
 ======================================
 Checking GPU status...
-Mon Mar 17 13:16:34 2025       
+Mon Mar 24 11:29:52 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Mon Mar 17 13:16:34 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   42C    P0             39W /  250W |       1MiB /  32768MiB |      0%      Default |
+| N/A   48C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -30,3 +30,129 @@ Mon Mar 17 13:16:34 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
+[cell_types] No cell type annotation found. Performing clustering.
+
+[cell_types] Found 23 clusters after Leiden clustering.
+
+[cell_types] Finished assigning cell types.
+[cell_types] Saved AnnData object to /users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad
+[cell_types] Saved AnnData object to /users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad
+
+
+
+
+No NaN, negative, or Inf values found in X_data.
+
+
+
+
+
+
+
+
+Successfully computed pseudobulk data.
+
+
+
+
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 11 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+Starting PCA computation for cell expression...
+Adjusted n_expression_pcs: 10
+Adjusted n_proportion_pcs: 10
+PCA completed. Stored 10 components in `adata.obsm['X_pca']`.
+Cell expression PCA completed. Now processing cell proportions...
+PCA on cell proportions completed. Stored 10 components in `adata.obsm['X_PCA_proportion']`.
+PCA on cell proportions completed.
+Modified AnnData object saved to original position with PCA results.
+0.44774005254663607
+Saved CCA direction plot to /users/hjiang/GenoDistance/result/CCA/pca_2d_cca_proportion.pdf
+0.5807686668238389
+Saved CCA direction plot to /users/hjiang/GenoDistance/result/CCA/pca_2d_cca_expression.pdf
+End of Process
+End of Process
+End of Process
+Finished main.py.
+End Time: Mon Mar 24 06:31:40 PM EDT 2025
