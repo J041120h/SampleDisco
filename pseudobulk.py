@@ -68,6 +68,9 @@ def combat_correct_cell_expressions(
     parametric: bool = True,
     verbose: bool = False
 ) -> pd.DataFrame:
+    
+    start_time = time.time() if verbose else None
+
     # Check for problematic values (NaN or negatives) in the data
     check_nan_and_negative_in_lists(cell_expression_df)
     
@@ -210,6 +213,9 @@ def combat_correct_cell_expressions(
     save_dataframe_as_strings(corrected_df, pseudobulk_dir, "corrected_expression.csv")
     if verbose:
         print("ComBat correction completed.")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[combat] Total runtime: {elapsed_time:.2f} seconds\n\n")
     return corrected_df
 
 def compute_pseudobulk_dataframes(
@@ -222,6 +228,9 @@ def compute_pseudobulk_dataframes(
     frac: float = 0.3,
     verbose: bool = False
 ):
+    
+    start_time = time.time() if verbose else None
+
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
 
@@ -276,7 +285,12 @@ def compute_pseudobulk_dataframes(
     if verbose:
         print("\n\n\n\nSuccessfully computed pseudobulk data.\n\n\n\n")
 
-    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, cell_proportion_df, pseudobulk_dir)
+    if verbose:
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[pseudobulk] Total runtime: {elapsed_time:.2f} seconds\n\n")
+
+    cell_expression_corrected_df = combat_correct_cell_expressions(adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, verbose=verbose)
     # Then we calculate the HVG for each cell type after combat correction
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, 2000)
     cell_expression_corrected_df, top_features = select_hvf_loess(cell_expression_corrected_df, n_features=n_features, frac=frac)

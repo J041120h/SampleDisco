@@ -6,6 +6,7 @@ from anndata import AnnData
 from typing import Optional
 import numpy as np
 import pandas as pd
+import time
 
 def find_hvgs(
     adata: AnnData,
@@ -93,7 +94,7 @@ import numpy as np
 import pandas as pd
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
+def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
     """
     Select highly variable features (HVFs) from pseudobulk data using LOESS.
     
@@ -111,7 +112,7 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
     top_features : pd.Index
         Index of the selected features.
     """
-
+    start_time = time.time() if verbose else None
     cell_expr = pseudobulk
 
     # Construct the sample-by-feature matrix
@@ -141,6 +142,11 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3):
         sample_df = sample_df[top_features]
     else:
         top_features = sample_df.columns
+    
+    if verbose:
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[select top features after concatenation] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
     return sample_df, top_features
 
@@ -174,6 +180,7 @@ def highly_variable_gene_selection(
         A new DataFrame with the same shape (same cell_type index, same sample columns),
         but each cell is a truncated vector containing only the HVG expression values.
     """
+    start_time = time.time() if verbose else None
 
     hvg_truncated_df = cell_expression_corrected_df.copy(deep=True)
 
@@ -252,5 +259,8 @@ def highly_variable_gene_selection(
 
     if verbose:
         print("\nHVG selection process completed.")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[HVG for each cell type]Total execution time: {elapsed_time:.2f} seconds\n\n")
 
     return hvg_truncated_df

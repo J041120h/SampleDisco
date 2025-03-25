@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
 import scanpy as sc
+import time
 from Grouping import find_sample_grouping
 from HVG import select_hvf_loess
 
@@ -167,6 +168,8 @@ def process_anndata_with_pca(
         - `adata.obsm["X_PCA_proportion"]` for cell proportion PCA.
     """
 
+    start_time = time.time() if verbose else None
+
     # Ensure the necessary data is available
     if "cell_expression_corrected" not in pseudobulk or "cell_proportion" not in pseudobulk:
         raise KeyError("Missing required keys ('cell_expression_corrected' or 'cell_proportion') in pseudobulk dictionary.")
@@ -220,6 +223,9 @@ def process_anndata_with_pca(
 
     if verbose:
         print("PCA on cell proportions completed.")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[PCA]Total runtime for PCA processing: {elapsed_time:.2f} seconds\n\n")
 
     sc.write(adata_path, adata)
     if verbose:

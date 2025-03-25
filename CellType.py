@@ -130,6 +130,9 @@ def cell_types(
     Returns:
     - Updated AnnData object with assigned cell types
     """
+
+    start_time = time.time() if verbose else None
+
     if cell_column in adata.obs.columns:
         if verbose:
             print("[cell_types] Found existing cell type annotation.")
@@ -191,6 +194,11 @@ def cell_types(
         sc.write(save_path, adata)
         if verbose:
             print(f"[cell_types] Saved AnnData object to {save_path}")
+    
+    if verbose:
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[cell_types] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
     return adata
 

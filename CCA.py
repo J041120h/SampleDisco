@@ -93,7 +93,7 @@ def run_cca_on_2d_pca_from_adata(
     cca.fit(pca_coords_2d, sev_levels_2d)
     U, V = cca.transform(pca_coords_2d, sev_levels_2d)
     first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-    print(first_component_score)
+    print(f"\n\nThe CCA score for {column} is {first_component_score}\n\n")
     return pca_coords_2d, sev_levels, cca
 
 def plot_cca_on_2d_pca(
