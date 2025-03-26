@@ -205,6 +205,22 @@ def cell_types(
     return adata
 
 def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None,verbose = True):
+    """
+    Assign cell type labels from one AnnData object to another and optionally save the result.
+
+    Parameters
+    ----------
+    adata_cluster : AnnData
+        AnnData object containing a 'cell_type' column in `.obs` to be used for assignment.
+    adata : AnnData
+        Target AnnData object to receive the 'cell_type' labels.
+    Save : bool, optional
+        If True, saves the modified `adata` object to disk.
+    output_dir : str, optional
+        Directory to save the `adata` object if `Save` is True.
+    verbose : bool, optional
+        If True and saving is enabled, prints the save location.
+    """
     if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
         adata_cluster.obs['cell_type'] = '1'
     adata.obs['cell_type'] = adata_cluster.obs['cell_type']

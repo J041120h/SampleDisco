@@ -68,11 +68,11 @@ def wrapper(
 
     # ===== CCA Parameters =====
     summary_sample_csv_path=None,
+    summary_cell_csv_path=None,
     cca_output_dir=None,
 
     # ===== Paths for Skipping Preprocessing =====
     AnnData_cell_path=None,
-    AnnData_sample_path=None,
 
     # ===== Process Control Flags =====
     preprocessing=True,
@@ -82,14 +82,16 @@ def wrapper(
 
     # ===== Distance Methods =====
     methods=None,
+    EMD = False,
+    chi_square = False,
+    jensen_shannon = False
 ):
     if vars_to_regress is None:
         vars_to_regress = []
 
     if methods is None:
         methods = [
-            'euclidean', 'minkowski', 'cityblock', 'chebyshev',
-            'cosine', 'correlation', 'canberra', 'braycurtis', 'sqeuclidean'
+            'cosine', 'correlation'
         ]
 
     if pseudobulk_output_dir is None:
@@ -217,23 +219,26 @@ def wrapper(
                 summary_sample_csv_path,
                 pseudobulk_df
             )
+        
+        if EMD:
+            EMD_distances(
+                AnnData_sample,
+                os.path.join(output_dir, 'sample_level_EMD'),
+                summary_sample_csv_path
+            )
 
-        EMD_distances(
-            AnnData_sample,
-            os.path.join(output_dir, 'sample_level_EMD'),
-            summary_sample_csv_path
-        )
+        if chi_square:
+            chi_square_distance(
+                AnnData_sample,
+                os.path.join(output_dir, 'Chi_square_sample'),
+                summary_sample_csv_path
+            )
 
-        chi_square_distance(
-            AnnData_sample,
-            os.path.join(output_dir, 'Chi_square_sample'),
-            summary_sample_csv_path
-        )
-
-        jensen_shannon_distance(
-            AnnData_sample,
-            os.path.join(output_dir, 'jensen_shannon_sample'),
-            summary_sample_csv_path
-        )
+        if jensen_shannon:
+            jensen_shannon_distance(
+                AnnData_sample,
+                os.path.join(output_dir, 'jensen_shannon_sample'),
+                summary_sample_csv_path
+            )
 
     print("End of Process\n" * 3)

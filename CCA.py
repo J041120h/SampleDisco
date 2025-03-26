@@ -180,7 +180,18 @@ def plot_cca_on_2d_pca(
 
 
 def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None):
-    # Step 3: Plot
+    """
+    Run CCA analysis on two PCA projections stored in an AnnData object and plot the results.
+    
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData object with PCA coordinates under 'X_pca_proportion' and 'X_pca_expression'.
+    summary_sample_csv_path : str
+        Path to CSV file with severity levels.
+    output_dir : str, optional
+        Directory to save output plots.
+    """
     if output_dir:
         output_dir = os.path.join(output_dir, 'CCA')
         if not os.path.exists(output_dir):
