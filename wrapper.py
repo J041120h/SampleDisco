@@ -84,7 +84,26 @@ def wrapper(
     methods=None,
     EMD = False,
     chi_square = False,
-    jensen_shannon = False
+    jensen_shannon = False,
+
+    # ===== Distance Methods =====
+    Visualization = True,
+    verbose_Visualization = True,
+    grouping_columns=['sev.level'],
+    age_bin_size=None,
+    verbose_visualization=True,
+    dot_size=3,
+
+    plot_dendrogram_flag=True,
+    plot_umap_by_plot_group_flag=True,
+    plot_umap_by_cell_type_flag=True,
+    plot_pca_2d_flag=True,
+    plot_pca_3d_flag=True,
+    plot_3d_cells_flag=True,
+
+    plot_cell_type_proportions_pca_flag=False,
+    plot_pseudobulk_expression_pca_flag=False,
+    plot_pseudobulk_batch_test_pca_flag=False
 ):
     if vars_to_regress is None:
         vars_to_regress = []
@@ -239,6 +258,28 @@ def wrapper(
                 AnnData_sample,
                 os.path.join(output_dir, 'jensen_shannon_sample'),
                 summary_sample_csv_path
+            )
+        
+        #Visualization
+        if Visualization:
+            visualization_harmony(
+                AnnData_sample,
+                output_dir,
+                grouping_columns=grouping_columns,
+                age_bin_size=age_bin_size,
+                verbose=verbose_Visualization,
+                dot_size=dot_size,
+
+                plot_dendrogram_flag=plot_dendrogram_flag,
+                plot_umap_by_plot_group_flag=plot_umap_by_plot_group_flag,
+                plot_umap_by_cell_type_flag=plot_umap_by_cell_type_flag,
+                plot_pca_2d_flag=plot_pca_2d_flag,
+                plot_pca_3d_flag=plot_pca_3d_flag,
+                plot_3d_cells_flag=plot_3d_cells_flag,
+
+                plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
+                plot_pseudobulk_expression_pca_flag=plot_pseudobulk_expression_pca_flag,
+                plot_pseudobulk_batch_test_pca_flag=plot_pseudobulk_batch_test_pca_flag
             )
 
     print("End of Process\n" * 3)
