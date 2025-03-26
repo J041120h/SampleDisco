@@ -6,7 +6,6 @@ import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from pseudobulk import compute_pseudobulk_dataframes
-from combat.pycombat import pycombat
 from Harmony import harmony
 from EMD import EMD_distances
 from VectorDistance import sample_distance

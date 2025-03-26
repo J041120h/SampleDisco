@@ -6,7 +6,6 @@ import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from pseudobulk import compute_pseudobulk_dataframes
-from combat.pycombat import pycombat
 from Harmony import harmony
 from EMD import EMD_distances
 from VectorDistance import sample_distance
@@ -19,48 +18,222 @@ from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 
-def wrapper(output_dir, cell_column, cluster_resolution, markers, num_features=2000, num_PCs=20, num_harmony=30, vars_to_regress_for_harmony=None, method='average', metric='euclidean', distance_mode='centroid', verbose=True):
-    AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
+def wrapper(
+    # ===== Harmony Preprocessing Parameters =====
+    h5ad_path,
+    sample_meta_path,
+    output_dir,
+    cell_column='cell_type',
+    cell_meta_path=None,
+    markers=None,
+    cluster_resolution=0.8,
+    num_PCs=20,
+    num_harmony=30,
+    num_features=2000,
+    min_cells=500,
+    min_features=500,
+    pct_mito_cutoff=20,
+    exclude_genes=None,
+    doublet=True,
+    combat=True,
+    method='average',
+    metric='euclidean',
+    distance_mode='centroid',
+    vars_to_regress=None,
+    verbose=True,
 
-    
-if __name__ == "__main__":
-    output_dir = "/users/hjiang/GenoDistance/result"
-    h5ad_path = "/users/hjiang/GenoDistance/Data/count_data.h5ad"
-    cell_meta_path="/users/hjiang/GenoDistance/Data/cell_data.csv"
-    sample_meta_path = "/users/hjiang/GenoDistance/Data/sample_data.csv"
-    method = "hamming"
-    cell_group_weight = 0.8
-    min_cells= 100
-    min_features= 3
-    pct_mito_cutoff=20
-    exclude_genes=None
-    vars_to_regress=['sample']
-    resolution=0.5
-    verbose=True
-    num_PCs=10
-    num_harmony=20
-    markers = [
-            'CD3D', 'CD14', 'CD19', 'NCAM1', 'CD4', 'CD8A',
-            'FCGR3A', 'CD1C', 'CD68', 'CD79A', 'CSF3R',
-            'CD33', 'CCR7', 'CD38', 'CD27', 'KLRD1'
+    # ===== Cell Type Clustering Parameters =====
+    existing_cell_types=False,
+    umap=False,
+    cell_type_save=True,
+
+    # ===== Cell Type Assignment Parameters =====
+    assign_save=True,
+
+    # ===== Pseudobulk Parameters =====
+    batch_col='batch',
+    sample_col='sample',
+    celltype_col='cell_type',
+    pseudobulk_output_dir=None,
+    n_features=2000,
+    frac=0.3,
+    pseudobulk_verbose=True,
+
+    # ===== PCA Parameters =====
+    n_expression_pcs=10,
+    n_proportion_pcs=10,
+    pca_output_dir=None,
+    AnnData_sample_path=None,
+    pca_verbose=True,
+
+    # ===== CCA Parameters =====
+    summary_sample_csv_path=None,
+    cca_output_dir=None,
+
+    # ===== Paths for Skipping Preprocessing =====
+    AnnData_cell_path=None,
+    AnnData_sample_path=None,
+
+    # ===== Process Control Flags =====
+    preprocessing=True,
+    cell_type_cluster=True,
+    pseudobulk=True,
+    cca=True,
+
+    # ===== Distance Methods =====
+    methods=None,
+):
+    if vars_to_regress is None:
+        vars_to_regress = []
+
+    if methods is None:
+        methods = [
+            'euclidean', 'minkowski', 'cityblock', 'chebyshev',
+            'cosine', 'correlation', 'canberra', 'braycurtis', 'sqeuclidean'
         ]
-    proportion_weight: float = 1.0
-    expression_weight: float = 1.0
-    methods = [
-            'euclidean',
-            'minkowski',
-            'cityblock',
-            'chebyshev',
-            'cosine',
-            'correlation',
-            'canberra',
-            'braycurtis',
-            'sqeuclidean',
-        ]
-    summary_cell_csv_path = "/users/hjiang/GenoDistance/result/summary_cell.csv"
-    summary_sample_csv_path = "/users/hjiang/GenoDistance/result/summary_sample.csv"
-    AnnData_cell_path = '/users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad'
-    AnnData_sample_path = '/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad'
-    vars_to_regress= ['sample']
-    cell_column = "celltype"
-    wrapper()
+
+    if pseudobulk_output_dir is None:
+        pseudobulk_output_dir = output_dir
+
+    if pca_output_dir is None:
+        pca_output_dir = output_dir
+
+    if cca_output_dir is None:
+        cca_output_dir = output_dir
+
+    # Step 1: Harmony Preprocessing
+    if preprocessing:
+        AnnData_cell, AnnData_sample = harmony(
+            h5ad_path=h5ad_path,
+            sample_meta_path=sample_meta_path,
+            output_dir=output_dir,
+            cell_column=cell_column,
+            cell_meta_path=cell_meta_path,
+            markers=markers,
+            cluster_resolution=cluster_resolution,
+            num_PCs=num_PCs,
+            num_harmony=num_harmony,
+            num_features=num_features,
+            min_cells=min_cells,
+            min_features=min_features,
+            pct_mito_cutoff=pct_mito_cutoff,
+            exclude_genes=exclude_genes,
+            doublet=doublet,
+            combat=combat,
+            method=method,
+            metric=metric,
+            distance_mode=distance_mode,
+            vars_to_regress=vars_to_regress,
+            verbose=verbose
+        )
+    else:
+        AnnData_cell = sc.read(AnnData_cell_path)
+        AnnData_sample = sc.read(AnnData_sample_path)
+
+    # Step 2: Cell Type Clustering
+    if cell_type_cluster:
+        AnnData_cell = cell_types(
+            adata=AnnData_cell,
+            cell_column=cell_column,
+            existing_cell_types=existing_cell_types,
+            umap=umap,
+            Save=cell_type_save,
+            output_dir=output_dir,
+            cluster_resolution=cluster_resolution,
+            markers=markers,
+            method=method,
+            metric=metric,
+            distance_mode=distance_mode,
+            num_PCs=num_PCs,
+            verbose=verbose
+        )
+
+        cell_type_assign(
+            adata_cluster=AnnData_cell,
+            adata=AnnData_sample,
+            Save=assign_save,
+            output_dir=output_dir,
+            verbose=verbose
+        )
+
+    # Step 3: Pseudobulk
+    if pseudobulk:
+        pseudobulk_df = compute_pseudobulk_dataframes(
+            adata=AnnData_sample,
+            batch_col=batch_col,
+            sample_col=sample_col,
+            celltype_col=celltype_col,
+            output_dir=pseudobulk_output_dir,
+            n_features=n_features,
+            frac=frac,
+            verbose=pseudobulk_verbose
+        )
+
+        process_anndata_with_pca(
+            adata=AnnData_sample,
+            pseudobulk=pseudobulk_df,
+            n_expression_pcs=n_expression_pcs,
+            n_proportion_pcs=n_proportion_pcs,
+            output_dir=pca_output_dir,
+            adata_path=AnnData_sample_path,
+            verbose=pca_verbose
+        )
+
+    # Step 4: CCA + Distances
+    if cca:
+        CCA_Call(AnnData_sample, summary_sample_csv_path, cca_output_dir)
+
+        cca_pvalue_test(
+            AnnData_sample,
+            sample_meta_path,
+            "X_pca_expression",
+            0.8449111150006337,  # could be parameterized
+            cca_output_dir
+        )
+
+        find_optimal_cell_resolution(
+            AnnData_cell,
+            AnnData_sample,
+            cca_output_dir,
+            sample_meta_path,
+            AnnData_sample_path,
+            "X_pca_expression"
+        )
+
+        plot_cell_type_proportions_pca(AnnData_sample, cca_output_dir)
+        plot_pseudobulk_batch_test_pca(AnnData_sample, cca_output_dir)
+
+        if os.path.exists(summary_sample_csv_path):
+            os.remove(summary_sample_csv_path)
+        if os.path.exists(summary_cell_csv_path):
+            os.remove(summary_cell_csv_path)
+
+        for md in methods:
+            print(f"\nRunning sample distance: {md}\n")
+            sample_distance(
+                AnnData_sample,
+                os.path.join(output_dir, 'Sample'),
+                md,
+                summary_sample_csv_path,
+                pseudobulk_df
+            )
+
+        EMD_distances(
+            AnnData_sample,
+            os.path.join(output_dir, 'sample_level_EMD'),
+            summary_sample_csv_path
+        )
+
+        chi_square_distance(
+            AnnData_sample,
+            os.path.join(output_dir, 'Chi_square_sample'),
+            summary_sample_csv_path
+        )
+
+        jensen_shannon_distance(
+            AnnData_sample,
+            os.path.join(output_dir, 'jensen_shannon_sample'),
+            summary_sample_csv_path
+        )
+
+    print("End of Process\n" * 3)
