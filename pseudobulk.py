@@ -6,7 +6,7 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from Visualization import visualization_harmony
+from Visualization import visualization
 from combat.pycombat import pycombat
 from HVG import highly_variable_gene_selection, select_hvf_loess
 

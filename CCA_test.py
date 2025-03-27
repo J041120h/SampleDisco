@@ -13,7 +13,7 @@ from CellType import cell_types, cell_type_assign
 
 def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summary_sample_csv_path, AnnData_sample_path, column):
     score_counter = dict()
-    for resolution in np.arange(0.1, 1.1, 0.1):
+    for resolution in np.arange(0.01, 1.01, 0.01):
         print(f"\n\nTesting resolution: {resolution}\n\n")
         cell_types(
             AnnData_cell, 
@@ -103,7 +103,7 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
     df_results.to_csv(to_csv_path, index=False)
 
     plt.figure(figsize=(8, 6))
-    plt.plot(df_results["resolution"], df_results["score"], marker='o', linestyle='-', color='b', label="CCA Score")
+    plt.plot(df_results["resolution"], df_results["score"], marker='o', linestyle='None', color='b', label="CCA Score")
     plt.xlabel("Resolution")
     plt.ylabel("CCA Score")
     plt.title("Resolution vs. CCA Score")

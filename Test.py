@@ -454,7 +454,7 @@ from sklearn.decomposition import PCA
 from harmony import harmonize
 
 # Local imports from your project
-from Visualization import visualization_harmony  # if you use it later
+from Visualization import visualization  # if you use it later
 from pseudobulk import compute_pseudobulk_dataframes
 from CellType import cell_type_dendrogram
 from HVG import find_hvgs
