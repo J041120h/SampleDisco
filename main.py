@@ -74,16 +74,16 @@ def main():
     cell_column = "celltype"
 
     #on local mac
-    output_dir = "/Users/harry/Desktop/GenoDistance/result"
-    h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-    cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
-    sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
-    AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
-    AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
-    summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
-    summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
-    vars_to_regress = []
-    cell_column = "cell_type"
+    # output_dir = "/Users/harry/Desktop/GenoDistance/result"
+    # h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+    # cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
+    # sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    # AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
+    # AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
+    # summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
+    # summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
+    # vars_to_regress = []
+    # cell_column = "cell_type"
 
     # in /dcs04/hongkai/data/HarryJ
     # output_dir = "/dcs04/hongkai/data/HarryJ/harmony_after_combat"
@@ -112,18 +112,11 @@ def main():
         verbose=True
     )
     cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
-    visualization_harmony(
-        AnnData_sample,
-        output_dir,
-        grouping_columns=['sev.level'],
-        age_bin_size=None,
-        verbose=True,
-        dot_size = 20
-    )
-    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
-    # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
-    # CCA_Call(AnnData_sample, sample_meta_path, output_dir)
-    # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.8449111150006337, output_dir)
+    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
+    process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
+    CCA_Call(AnnData_sample, sample_meta_path, output_dir)
+    cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.8449111150006337, output_dir)
+    cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.8449111150006337, output_dir)
 
     # column = "X_pca_expression"
     # find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 

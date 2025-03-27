@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from anndata import AnnData
 from sklearn.cross_decomposition import CCA
+import time
 
 def load_severity_levels(summary_sample_csv_path: str, sample_index: pd.Index) -> np.ndarray:
     """
@@ -179,7 +180,7 @@ def plot_cca_on_2d_pca(
         plt.show()
 
 
-def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None):
+def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None, verbose = False):
     """
     Run CCA analysis on two PCA projections stored in an AnnData object and plot the results.
     
@@ -192,6 +193,8 @@ def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None):
     output_dir : str, optional
         Directory to save output plots.
     """
+    start_time = time.time() if verbose else None
+
     if output_dir:
         output_dir = os.path.join(output_dir, 'CCA')
         if not os.path.exists(output_dir):
@@ -225,3 +228,9 @@ def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None):
         cca=cca_model,
         output_path=output_path_expression
     )
+
+    if verbose:
+        print("PCA on cell proportions completed.")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[CCA]Total runtime for CCA processing: {elapsed_time:.2f} seconds\n\n")
