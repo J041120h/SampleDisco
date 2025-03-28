@@ -230,7 +230,7 @@ def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None, ve
     )
 
     if verbose:
-        print("PCA on cell proportions completed.")
+        print("CCA completed.")
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"\n\n[CCA]Total runtime for CCA processing: {elapsed_time:.2f} seconds\n\n")

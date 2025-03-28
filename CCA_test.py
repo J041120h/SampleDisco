@@ -6,6 +6,7 @@ import os
 import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import CCA
 from anndata import AnnData
+import time
 from pseudobulk import compute_pseudobulk_dataframes
 from PCA import process_anndata_with_pca
 from CCA import load_severity_levels
@@ -125,7 +126,8 @@ def cca_pvalue_test(
     column: str,
     input_correlation: float,
     output_directory: str,
-    num_simulations: int = 1000
+    num_simulations: int = 1000,
+    verbose = False
 ):
     """
     Runs a statistical test to determine whether the observed correlation is significant.
@@ -158,6 +160,7 @@ def cca_pvalue_test(
     p_value : float
         The p-value indicating how extreme the observed correlation is compared to the null distribution.
     """
+    start_time = time.time() if verbose else None
 
     output_directory = os.path.join(output_directory, "CCA test")
     os.makedirs(output_directory, exist_ok=True)
@@ -215,5 +218,11 @@ def cca_pvalue_test(
 
     # Print p-value
     print(f"P-value for observed correlation {input_correlation}: {p_value}")
+
+    if verbose:
+        print("CCA p-value test on cell proportions completed.")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n\n[CCA p-test]Total runtime processing: {elapsed_time:.2f} seconds\n\n")
 
     return p_value

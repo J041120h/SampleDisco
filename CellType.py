@@ -166,8 +166,18 @@ def cell_types(
         if verbose:
             print("[cell_types] No cell type annotation found. Performing clustering.")
 
+        start_time_internal = time.time() if verbose else None
         transformer = KNeighborsTransformer(n_neighbors=10, metric='manhattan', algorithm='kd_tree')
+        if verbose:
+            end_time_neighbor = time.time()
+            elapsed_time = end_time_neighbor - start_time_internal
+            print(f"\n\n[KNT] Total runtime: {elapsed_time:.2f} seconds\n\n")
+            start_time_internal = end_time_neighbor
         sc.pp.neighbors(adata, use_rep='X_pca_harmony', transformer=transformer, n_pcs=num_PCs)
+        if verbose:
+            end_time_neighbor = time.time()
+            elapsed_time = end_time_neighbor - start_time_internal
+            print(f"\n\n[KNT] Total runtime: {elapsed_time:.2f} seconds\n\n")
         sc.tl.leiden(
             adata,
             resolution=cluster_resolution,
@@ -176,6 +186,10 @@ def cell_types(
             directed=False,
             key_added='cell_type'
         )
+        if verbose:
+            end_time_leiden = time.time()
+            elapsed_time = end_time_leiden - start_time_internal
+            print(f"\n\n[Leiden] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
         adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype('category')
 

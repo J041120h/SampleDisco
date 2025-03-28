@@ -1,15 +1,15 @@
 ======================================
- Job ID:            15322041
+ Job ID:            15571868
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
  CPUs per Task:     32
  Memory Alloc:      204800
  GPU Requested:     1
- Start Time:        Mon Mar 24 11:29:51 AM EDT 2025
+ Start Time:        Wed Mar 26 11:24:12 PM EDT 2025
 ======================================
 Checking GPU status...
-Mon Mar 24 11:29:52 2025       
+Wed Mar 26 23:24:13 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -32,10 +32,15 @@ Mon Mar 24 11:29:52 2025
 Starting main.py...
 [cell_types] No cell type annotation found. Performing clustering.
 
-[cell_types] Found 23 clusters after Leiden clustering.
+[cell_types] Found 22 clusters after Leiden clustering.
 
 [cell_types] Finished assigning cell types.
 [cell_types] Saved AnnData object to /users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad
+
+
+[cell_types] Total runtime: 22261.46 seconds
+
+
 [cell_types] Saved AnnData object to /users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad
 
 
@@ -55,90 +60,164 @@ Successfully computed pseudobulk data.
 
 
 
+
+
+[pseudobulk] Total runtime: 306.63 seconds
+
+
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '2'
+ComBat correction applied for '2'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '8'
+ComBat correction applied for '8'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '14'
+ComBat correction applied for '14'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '7'
+ComBat correction applied for '7'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '10'
+ComBat correction applied for '10'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '15'
+ComBat correction applied for '15'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '17'
+ComBat correction applied for '17'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '9'
+ComBat correction applied for '9'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '5'
+ComBat correction applied for '5'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '18'
+ComBat correction applied for '18'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '11'
+ComBat correction applied for '11'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '6'
+ComBat correction applied for '6'.
+Found 12 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+After pycombat: 0 NaN values for '4'
+ComBat correction applied for '4'.
 Found 11 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '16'
+ComBat correction applied for '16'.
 Found 12 batches.
 Adjusting for 0 covariate(s) or covariate level(s).
 Standardizing Data across genes.
 Fitting L/S model and finding priors.
 Finding parametric adjustments.
 Adjusting the Data
+After pycombat: 0 NaN values for '3'
+ComBat correction applied for '3'.
+
+Deleting '13' due to insufficient batch diversity or small batch sizes: {'SS2': 23, 'SS1': 13, 'Wilk': 10, 'Lee': 3, 'Su': 2, 'Aruna': 1, 'Silvin': 1, 'Mudd': 1}.
+
+
+Deleting '21' due to insufficient batch diversity or small batch sizes: {'Wilk': 2, 'Aruna': 1, 'SS1': 1, 'Su': 1}.
+
+
+Deleting '22' due to insufficient batch diversity or small batch sizes: {'Lee': 4, 'SS1': 1}.
+
+
+Deleting '23' due to insufficient batch diversity or small batch sizes: {'Su': 5, 'Lee': 1, 'SS2': 1}.
+
+
+Deleting '12' due to insufficient batch diversity or small batch sizes: {'Aruna': 1}.
+
+
+Deleting '19' due to insufficient batch diversity or small batch sizes: {'SS1': 2, 'Silvin': 1}.
+
+
+Deleting '20' due to insufficient batch diversity or small batch sizes: {'Su': 1}.
+
+
+Removing 7 cell types that failed checks: {12, 13, 19, 20, 21, 22, 23}
+
+
+Drop '{12, 13, 19, 20, 21, 22, 23}'
+
+ComBat correction completed.
+
+
+[combat] Total runtime: 412.09 seconds
+
+
 Starting PCA computation for cell expression...
 Adjusted n_expression_pcs: 10
 Adjusted n_proportion_pcs: 10
@@ -146,13 +225,28 @@ PCA completed. Stored 10 components in `adata.obsm['X_pca']`.
 Cell expression PCA completed. Now processing cell proportions...
 PCA on cell proportions completed. Stored 10 components in `adata.obsm['X_PCA_proportion']`.
 PCA on cell proportions completed.
+
+
+[PCA]Total runtime for PCA processing: 0.90 seconds
+
+
 Modified AnnData object saved to original position with PCA results.
-0.44774005254663607
+
+
+The CCA score for X_pca_proportion is 0.4469812131147195
+
+
 Saved CCA direction plot to /users/hjiang/GenoDistance/result/CCA/pca_2d_cca_proportion.pdf
-0.5807686668238389
+
+
+The CCA score for X_pca_expression is 0.578407028756856
+
+
 Saved CCA direction plot to /users/hjiang/GenoDistance/result/CCA/pca_2d_cca_expression.pdf
+P-value for observed correlation 0.5807686668238389: 0.0
+P-value for observed correlation 0.44774005254663607: 0.0
 End of Process
 End of Process
 End of Process
 Finished main.py.
-End Time: Mon Mar 24 06:31:40 PM EDT 2025
+End Time: Thu Mar 27 06:11:59 AM EDT 2025
