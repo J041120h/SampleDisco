@@ -127,7 +127,7 @@ def cca_pvalue_test(
     input_correlation: float,
     output_directory: str,
     num_simulations: int = 1000,
-    verbose = False
+    verbose = True
 ):
     """
     Runs a statistical test to determine whether the observed correlation is significant.

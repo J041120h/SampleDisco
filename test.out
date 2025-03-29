@@ -1,15 +1,15 @@
 ======================================
- Job ID:            15571868
+ Job ID:            15593563
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
  CPUs per Task:     32
  Memory Alloc:      204800
  GPU Requested:     1
- Start Time:        Wed Mar 26 11:24:12 PM EDT 2025
+ Start Time:        Fri Mar 28 01:57:07 PM EDT 2025
 ======================================
 Checking GPU status...
-Wed Mar 26 23:24:13 2025       
+Fri Mar 28 13:57:08 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Wed Mar 26 23:24:13 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   48C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
+| N/A   47C    P0             40W /  250W |       1MiB /  32768MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -32,13 +32,28 @@ Wed Mar 26 23:24:13 2025
 Starting main.py...
 [cell_types] No cell type annotation found. Performing clustering.
 
+
+[KNT] Total runtime: 0.00 seconds
+
+
+
+
+[KNT] Total runtime: 21962.08 seconds
+
+
+
+
+[Leiden] Total runtime: 22019.51 seconds
+
+
+
 [cell_types] Found 22 clusters after Leiden clustering.
 
 [cell_types] Finished assigning cell types.
 [cell_types] Saved AnnData object to /users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad
 
 
-[cell_types] Total runtime: 22261.46 seconds
+[cell_types] Total runtime: 22564.87 seconds
 
 
 [cell_types] Saved AnnData object to /users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad
@@ -62,7 +77,7 @@ Successfully computed pseudobulk data.
 
 
 
-[pseudobulk] Total runtime: 306.63 seconds
+[pseudobulk] Total runtime: 307.39 seconds
 
 
 Found 12 batches.
@@ -215,7 +230,7 @@ Drop '{12, 13, 19, 20, 21, 22, 23}'
 ComBat correction completed.
 
 
-[combat] Total runtime: 412.09 seconds
+[combat] Total runtime: 409.43 seconds
 
 
 Starting PCA computation for cell expression...
@@ -227,7 +242,7 @@ PCA on cell proportions completed. Stored 10 components in `adata.obsm['X_PCA_pr
 PCA on cell proportions completed.
 
 
-[PCA]Total runtime for PCA processing: 0.90 seconds
+[PCA]Total runtime for PCA processing: 0.98 seconds
 
 
 Modified AnnData object saved to original position with PCA results.
@@ -239,14 +254,32 @@ The CCA score for X_pca_proportion is 0.4469812131147195
 Saved CCA direction plot to /users/hjiang/GenoDistance/result/CCA/pca_2d_cca_proportion.pdf
 
 
-The CCA score for X_pca_expression is 0.578407028756856
+The CCA score for X_pca_expression is 0.5784070296812781
 
 
 Saved CCA direction plot to /users/hjiang/GenoDistance/result/CCA/pca_2d_cca_expression.pdf
+CCA completed.
+
+
+[CCA]Total runtime for CCA processing: 0.70 seconds
+
+
 P-value for observed correlation 0.5807686668238389: 0.0
+CCA p-value test on cell proportions completed.
+
+
+[CCA p-test]Total runtime processing: 1.77 seconds
+
+
 P-value for observed correlation 0.44774005254663607: 0.0
+CCA p-value test on cell proportions completed.
+
+
+[CCA p-test]Total runtime processing: 1.75 seconds
+
+
 End of Process
 End of Process
 End of Process
 Finished main.py.
-End Time: Thu Mar 27 06:11:59 AM EDT 2025
+End Time: Fri Mar 28 08:49:59 PM EDT 2025
