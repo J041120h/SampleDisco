@@ -178,7 +178,7 @@ def cell_types(
             end_time_neighbor = time.time()
             elapsed_time = end_time_neighbor - start_time_internal
             print(f"\n\n[KNT] Total runtime: {elapsed_time:.2f} seconds\n\n")
-        sc.tl.leiden(
+        rapids_singlecell.tl.leiden(
             adata,
             resolution=cluster_resolution,
             flavor='igraph',
