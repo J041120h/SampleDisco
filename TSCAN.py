@@ -143,8 +143,6 @@ def find_branching_paths(G, origin, main_path, verbose=False):
 
     return branching_paths
 
-import numpy as np
-
 def project_cells_onto_edges(
     pca_data: np.ndarray,
     sample_cluster: dict[str, list[str]],
@@ -178,10 +176,7 @@ def project_cells_onto_edges(
           }
     """
 
-    # ------------------------------------------------
-    # 1. Gather all unique clusters and compute centroids
-    # ------------------------------------------------
-    # Build a sample-> index map for pca_data lookups
+    #simply get the unique sample ids
     sample_ids = []
     for clust, cells in sample_cluster.items():
         sample_ids.extend(cells)
@@ -202,8 +197,7 @@ def project_cells_onto_edges(
             centroid = coords.mean(axis=0)
             cluster_centroids[clust] = centroid
         else:
-            # Edge case: if cluster is empty or not in pca_data
-            cluster_centroids[clust] = np.zeros(pca_data.shape[1])
+            raise ValueError(f"Cluster '{clust}' has no valid samples in PCA data.")
 
     # ------------------------------------------------
     # 2. Assign cells to edges and compute projections
@@ -216,11 +210,9 @@ def project_cells_onto_edges(
         numerator = np.dot(Ek - Ei, v_ij)
         denom = np.linalg.norm(v_ij)
         if denom == 0:
+            print(f"[project_cells_onto_edges] Warning: Zero length edge between {Ei} and {Ej}.")
             return 0.0
         return numerator / denom
-
-    # Create a quick map from cluster name to its position in main_path
-    cluster_to_path_index = {cl: i for i, cl in enumerate(main_path)}
     
     # Helper to get Euclidean distance from a cell to a cluster centroid
     def _dist_cell_to_centroid(Ek, Ec):
@@ -228,12 +220,14 @@ def project_cells_onto_edges(
 
     M = len(main_path)
     for i, clust in enumerate(main_path):
+        clust = f"cluster_{clust + 1}"
         cells = sample_cluster[clust]
         Ei = cluster_centroids[clust]
         
         if i == 0:
             # All cells in first cluster project onto the edge (C0->C1)
             next_clust = main_path[i+1]
+            next_clust = f"cluster_{next_clust + 1}"
             Ej = cluster_centroids[next_clust]
             for c in cells:
                 row_idx = sample_index_map[c]
@@ -250,6 +244,7 @@ def project_cells_onto_edges(
         elif i == M - 1:
             # All cells in last cluster project onto the edge (C(M-1)->CM)
             prev_clust = main_path[i-1]
+            prev_clust = f"cluster_{prev_clust + 1}"
             Eprev = cluster_centroids[prev_clust]
             for c in cells:
                 row_idx = sample_index_map[c]
@@ -266,6 +261,8 @@ def project_cells_onto_edges(
             # Intermediate cluster: decide if each cell is closer to the previous or next centroid
             prev_clust = main_path[i-1]
             next_clust = main_path[i+1]
+            prev_clust = f"cluster_{prev_clust + 1}"
+            next_clust = f"cluster_{next_clust + 1}"
             Eprev = cluster_centroids[prev_clust]
             Enext = cluster_centroids[next_clust]
             for c in cells:
@@ -327,8 +324,6 @@ def order_cells_along_paths(
     #   (cluster_path_index, edge_index, projection_value, cell_id)
     # Then we sort by the first three fields and keep cell_id as a tiebreak or stable sort.
     sortable = []
-    # Make a map cluster->index for consistent ordering
-    cluster_to_path_index = {cl: i for i, cl in enumerate(main_path)}
 
     for cell_id, info in cell_projections.items():
         c_index = info["cluster_index"]      # position in main_path
@@ -356,6 +351,7 @@ def TSCAN(AnnData_sample, column, n_clusters, verbose=False, origin=None):
         random_state=0,
         verbose=verbose
     )
+    print(sample_cluster)
 
     pairwise_distances = Cluster_distance(
         pca_data, 
@@ -387,11 +383,27 @@ def TSCAN(AnnData_sample, column, n_clusters, verbose=False, origin=None):
         for i, path in enumerate(branching_paths):
             print(f"[TSCAN] Branch {i+1}: {path}")
 
+    cell_projections= project_cells_onto_edges(
+        pca_data = pca_data,
+        sample_cluster = sample_cluster,
+        main_path = main_path,
+        verbose = verbose
+    )
+        
+    ordered_cells = order_cells_along_paths(
+        cell_projections = cell_projections,
+        main_path = main_path,
+        verbose = verbose,
+    ) 
+    if verbose:
+        print(f"[TSCAN] Ordered cells: {ordered_cells}")
     return {
         "main_path": main_path,
         "origin": origin,
         "branching_paths": branching_paths,
         "graph": G,
         "sample_cluster": sample_cluster,
-        "pca_data": pca_data
+        "pca_data": pca_data,
+        "cell_projections": cell_projections,
+        "ordered_cells": ordered_cells
     }
