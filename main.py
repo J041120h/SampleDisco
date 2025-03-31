@@ -17,7 +17,7 @@ from PCA import process_anndata_with_pca
 from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
-from TSCAN import cluster_samples_by_pca, Cluster_distance, construct_MST
+from TSCAN import TSCAN
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/result"
@@ -99,9 +99,7 @@ def main():
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
-    sample_cluster, pca_data = cluster_samples_by_pca(AnnData_sample, "expression", 5, key_added="kmeans_expression_5", random_state=0, verbose=True)
-    pairwise_distances =  Cluster_distance(pca_data, sample_cluster, verbose=True)
-    construct_MST(pairwise_distances)
+    TSCAN(AnnData_sample, "expression", 5, verbose = True, origin=None)
     # AnnData_cell = cell_types(
     #     AnnData_cell, 
     #     cell_column='cell_type', 
