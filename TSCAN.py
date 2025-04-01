@@ -383,6 +383,8 @@ def TSCAN(AnnData_sample, column, n_clusters, verbose=False, origin=None):
         for i, path in enumerate(branching_paths):
             print(f"[TSCAN] Branch {i+1}: {path}")
 
+    cell_projections = dict()
+    ordered_cells = dict()
     cell_projections= project_cells_onto_edges(
         pca_data = pca_data,
         sample_cluster = sample_cluster,
@@ -395,6 +397,25 @@ def TSCAN(AnnData_sample, column, n_clusters, verbose=False, origin=None):
         main_path = main_path,
         verbose = verbose,
     ) 
+
+    for index, path in enumerate(branching_paths):
+        # project branching paths as well
+        cell_projections_branching_paths = dict() # reset for branching paths
+        ordered_cells_branching_paths = dict()
+        cell_projections_branching_paths[index] = project_cells_onto_edges(
+            pca_data = pca_data,
+            sample_cluster = sample_cluster,
+            main_path = path,
+            verbose = verbose
+        )
+
+        # Order cells in the branching path
+        ordered_cells_branching_paths[index] = order_cells_along_paths(
+            cell_projections = cell_projections_branching_paths[index],
+            main_path = path,
+            verbose = verbose
+        )
+        
     if verbose:
         print(f"[TSCAN] Ordered cells: {ordered_cells}")
     return {
@@ -405,5 +426,7 @@ def TSCAN(AnnData_sample, column, n_clusters, verbose=False, origin=None):
         "sample_cluster": sample_cluster,
         "pca_data": pca_data,
         "cell_projections": cell_projections,
-        "ordered_cells": ordered_cells
+        "ordered_cells": ordered_cells,
+        "cell_projections_branching_paths": cell_projections_branching_paths,
+        "ordered_cells_branching_paths": ordered_cells_branching_paths
     }
