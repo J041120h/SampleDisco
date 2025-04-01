@@ -431,9 +431,8 @@ def TSCAN(AnnData_sample, column, n_clusters, output_dir, verbose=False, origin=
         verbose = verbose
     )
         
-    if verbose:
-        print(f"[TSCAN] Ordered cells: {ordered_cells}")
-    return {
+    if branching_paths:
+        return {
         "main_path": main_path,
         "origin": origin,
         "branching_paths": branching_paths,
@@ -444,4 +443,15 @@ def TSCAN(AnnData_sample, column, n_clusters, output_dir, verbose=False, origin=
         "ordered_cells": ordered_cells,
         "cell_projections_branching_paths": cell_projections_branching_paths,
         "ordered_cells_branching_paths": ordered_cells_branching_paths
+    }
+
+    return {
+        "main_path": main_path,
+        "origin": origin,
+        "branching_paths": branching_paths,
+        "graph": G,
+        "sample_cluster": sample_cluster,
+        "pca_data": pca_data,
+        "cell_projections": cell_projections,
+        "ordered_cells": ordered_cells
     }
