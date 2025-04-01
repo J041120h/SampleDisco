@@ -17,10 +17,7 @@ def cluster_samples_by_pca(
     random_state: int = 0,
     verbose: bool = False
 ) -> tuple[dict, np.ndarray]:
-    if column not in ["expression", "proportion"]:
-        raise ValueError("`column` must be either 'expression' or 'proportion'.")
-
-    pca_key = f"X_pca_{column}"
+    pca_key = column
     if pca_key not in adata.uns:
         raise KeyError(f"PCA data not found in `adata.uns['{pca_key}']`.")
 
@@ -430,7 +427,7 @@ def TSCAN(AnnData_sample, column, n_clusters, output_dir, verbose=False, origin=
         main_path = main_path,
         branching_paths = branching_paths,
         output_dir = output_dir,
-        pca_key = f"X_pca_{column}",
+        pca_key = column,
         verbose = verbose
     )
         

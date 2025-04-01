@@ -99,7 +99,7 @@ def main():
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
-    TSCAN(AnnData_sample, "expression", 5, output_dir, verbose = True, origin=None)
+    TSCAN(AnnData_sample, "X_pca_expression", 5, output_dir, verbose = True, origin=None)
     # AnnData_cell = cell_types(
     #     AnnData_cell, 
     #     cell_column='cell_type', 
