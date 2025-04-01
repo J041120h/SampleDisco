@@ -8,6 +8,7 @@ from scipy.sparse.csgraph import minimum_spanning_tree
 import networkx as nx
 import random
 import os
+from Visualization import visualize_TSCAN_paths
 
 def cluster_samples_by_pca(
     adata: sc.AnnData,
@@ -342,8 +343,15 @@ def order_cells_along_paths(
     
     return ordered_cells
 
+def TSCAN(AnnData_sample, column, n_clusters, output_dir, verbose=False, origin=None):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        if verbose:
+            print("Automatically generating output directory")
 
-def TSCAN(AnnData_sample, column, n_clusters, verbose=False, origin=None):
+    # Append 'harmony' subdirectory
+    output_dir = os.path.join(output_dir, 'TSCAN')
+
     sample_cluster, pca_data = cluster_samples_by_pca(
         AnnData_sample,
         column=column,
@@ -415,6 +423,16 @@ def TSCAN(AnnData_sample, column, n_clusters, verbose=False, origin=None):
             main_path = path,
             verbose = verbose
         )
+    
+    visualize_TSCAN_paths(
+        AnnData_sample,
+        sample_cluster = sample_cluster,
+        main_path = main_path,
+        branching_paths = branching_paths,
+        output_dir = output_dir,
+        pca_key = f"X_pca_{column}",
+        verbose = verbose
+    )
         
     if verbose:
         print(f"[TSCAN] Ordered cells: {ordered_cells}")
