@@ -75,16 +75,16 @@ def main():
     cell_column = "celltype"
 
     #on local mac
-    # output_dir = "/Users/harry/Desktop/GenoDistance/result"
-    # h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-    # cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
-    # sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
-    # AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
-    # AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
-    # summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
-    # summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
-    # vars_to_regress = []
-    # cell_column = "cell_type"
+    output_dir = "/Users/harry/Desktop/GenoDistance/result"
+    h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+    cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
+    sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
+    AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
+    summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
+    summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
+    vars_to_regress = []
+    cell_column = "cell_type"
 
     # in /dcs04/hongkai/data/HarryJ
     # output_dir = "/dcs04/hongkai/data/HarryJ/harmony_after_combat"
@@ -99,7 +99,7 @@ def main():
     # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
     AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
-    TSCAN(AnnData_sample, "X_pca_expression", 5, output_dir, verbose = True, origin=None)
+    TSCAN(AnnData_sample, "X_pca_expression", 8, output_dir, verbose = True, origin=None)
     # AnnData_cell = cell_types(
     #     AnnData_cell, 
     #     cell_column='cell_type', 
