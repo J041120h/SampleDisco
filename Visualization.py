@@ -729,152 +729,61 @@ from typing import List, Dict
 
 from Grouping import find_sample_grouping
 
-def visualize_TSCAN_paths(
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+from typing import List, Dict
+
+def plot_clusters_by_cluster(
     adata,
     sample_cluster: Dict[str, List[str]],
     main_path: List[int],
     branching_paths: List[List[int]],
-    output_dir: str,
+    output_path: str,
     pca_key: str = "X_pca_expression",
-    grouping_columns: List[str] = ["sev.level"],
     verbose: bool = False
 ):
-    """
-    Generates two 2D PCA plots (and saves them locally) visualizing:
-      1) Clusters returned by `cluster_samples_by_pca` (colored by cluster).
-      2) The same lines but colored by a user-defined grouping (e.g. severity).
-
-    Arguments
-    ---------
-    adata : AnnData
-        Annotated data object with PCA results in `adata.uns[pca_key]` as a DataFrame.
-        The DataFrame must have row index = sample_name, columns = ["PC1", "PC2", ...].
-    sample_cluster : dict
-        Mapping from cluster_name (e.g. "cluster_1") -> list of sample IDs in that cluster.
-    main_path : list
-        List of cluster indices (0-based) forming the principal path (e.g. [0,1,2]).
-    branching_paths : list of lists
-        Each inner list is a path that branches from `main_path`.
-    output_dir : str
-        Directory to which plots will be saved.
-    pca_key : str
-        Key in `adata.uns` where the PCA DataFrame is stored.
-    grouping_columns : list
-        Columns used by `find_sample_grouping` (or similar) to color the second plot.
-    verbose : bool
-        If True, prints logging info.
-
-    Returns
-    -------
-    None
-        The function saves two PDF plots to `output_dir`.
-    """
-
-    # ----------------------------------------------------------
-    # 1. Validate and gather PCA data
-    # ----------------------------------------------------------
     if pca_key not in adata.uns:
         raise KeyError(f"Missing PCA data in adata.uns['{pca_key}'].")
     pca_df = adata.uns[pca_key]
     if not isinstance(pca_df, pd.DataFrame):
-        raise TypeError(
-            f"Expected a DataFrame in adata.uns['{pca_key}'], but got {type(pca_df)}."
-        )
-    if pca_df.shape[1] < 2:
-        raise ValueError("PCA DataFrame must have at least 2 components (e.g., PC1 and PC2).")
+        raise TypeError(f"Expected a DataFrame in adata.uns['{pca_key}'], but got {type(pca_df)}.")
 
-    # Ensure the columns we need exist
     required_pcs = {"PC1", "PC2"}
     if not required_pcs.issubset(pca_df.columns):
-        raise ValueError(
-            f"PCA DataFrame must contain at least {required_pcs}. Found columns: {pca_df.columns.tolist()}"
-        )
+        raise ValueError(f"PCA DataFrame must contain at least {required_pcs}. Found columns: {pca_df.columns.tolist()}")
 
-    # Make sure output_dir exists
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    # ----------------------------------------------------------
-    # 2. Check sample alignment and compute cluster centroids
-    # ----------------------------------------------------------
     cluster_names = sorted(sample_cluster.keys())
-    all_samples_in_clusters = set()
-    for clust_name, samples in sample_cluster.items():
-        all_samples_in_clusters.update(samples)
-
-    # Check for missing samples in the PCA index
-    missing_in_pca = [s for s in all_samples_in_clusters if s not in pca_df.index]
-    if missing_in_pca:
-        raise ValueError(
-            "Some sample(s) in `sample_cluster` are not present in the PCA DataFrame index:\n"
-            f"{missing_in_pca}\n"
-            "Ensure `pca_df.index` includes all these samples."
-        )
-
-    # Compute centroids (mean of PC1, PC2) for each cluster
     cluster_centroids = {}
     for clust in cluster_names:
-        # Subset the PCA data to only the samples in this cluster
         subset = pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
-        centroid = subset.mean(axis=0).values  # shape (2,)
+        centroid = subset.mean(axis=0).values
         cluster_centroids[clust] = centroid
 
-    if verbose:
-        print("[visualize_TSCAN_paths] Computed cluster centroids for each cluster.")
-
-    # A helper function to connect two cluster centroids in the plot
     def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
-        """
-        Draws a line between the centroids of clusters c1 and c2 on the active plot.
-        """
         p1 = cluster_centroids[c1]
         p2 = cluster_centroids[c2]
-        plt.plot(
-            [p1[0], p2[0]],
-            [p1[1], p2[1]],
-            linestyle=style,
-            color=color,
-            linewidth=linewidth,
-            zorder=1
-        )
+        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
 
-    # ----------------------------------------------------------
-    # 3. Plot #1: color by cluster
-    # ----------------------------------------------------------
     plt.figure(figsize=(8, 6))
-    n_clusters = len(cluster_names)
-    cmap = plt.cm.get_cmap("tab20", n_clusters)  # color map with enough distinct colors
+    cmap = plt.cm.get_cmap("tab20", len(cluster_names))
 
-    # Plot each cluster
     for i, clust in enumerate(cluster_names):
         subset = pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
-        plt.scatter(
-            subset["PC1"], subset["PC2"],
-            color=cmap(i),
-            label=clust,
-            s=60,
-            alpha=0.8,
-            edgecolors="k"
-        )
+        plt.scatter(subset["PC1"], subset["PC2"], color=cmap(i), label=clust, s=60, alpha=0.8, edgecolors="k")
 
-    # Connect main_path with solid lines
     for i in range(len(main_path) - 1):
-        c1 = f"cluster_{main_path[i] + 1}"
-        c2 = f"cluster_{main_path[i + 1] + 1}"
-        _connect_clusters(c1, c2, style="-")
+        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", style="-")
 
-    # Connect branching paths with dashed lines
     for path in branching_paths:
         for j in range(len(path) - 1):
-            c1 = f"cluster_{path[j] + 1}"
-            c2 = f"cluster_{path[j + 1] + 1}"
-            _connect_clusters(c1, c2, style="--")
+            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", style="--")
 
-    # Label each centroid
     for clust in cluster_names:
         cx, cy = cluster_centroids[clust]
-        plt.text(cx, cy, clust.replace("cluster_", ""),  # e.g. "1", "2", etc.
-                 fontsize=12, ha="center", va="center",
-                 bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
+        plt.text(cx, cy, clust.replace("cluster_", ""), fontsize=12, ha="center", va="center", bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
 
     plt.title("PCA (2D) - Colored by Cluster")
     plt.xlabel("PC1")
@@ -882,71 +791,70 @@ def visualize_TSCAN_paths(
     plt.grid(True)
     plt.legend(loc="best")
     plt.tight_layout()
+    plt.savefig(output_path)
 
-    outpath_1 = os.path.join(output_dir, "pca_cluster_paths_by_cluster.pdf")
-    plt.savefig(outpath_1)
     if verbose:
-        print(f"[visualize_TSCAN_paths] Plot #1 saved to {outpath_1}")
+        print(f"[plot_clusters_by_cluster] Plot saved to {output_path}")
 
-    # ----------------------------------------------------------
-    # 4. Plot #2: color by user-defined grouping (e.g. severity)
-    # ----------------------------------------------------------
-    # Build a fresh DataFrame with sample, PC1, PC2
-    pca_plot_df = pca_df[["PC1", "PC2"]].copy()
-    pca_plot_df = pca_plot_df.reset_index().rename(columns={"index": "sample"})
-    pca_plot_df["sample"] = pca_plot_df["sample"].astype(str).str.strip().str.lower()
+def plot_clusters_by_grouping(
+    adata,
+    sample_cluster: Dict[str, List[str]],
+    main_path: List[int],
+    branching_paths: List[List[int]],
+    output_path: str,
+    find_sample_grouping,
+    pca_key: str = "X_pca_expression",
+    grouping_columns: List[str] = ["sev.level"],
+    verbose: bool = False
+):
+    pca_df = adata.uns[pca_key]
+    pca_df = pca_df[["PC1", "PC2"]].copy().reset_index().rename(columns={"index": "sample"})
+    pca_df["sample"] = pca_df["sample"].astype(str).str.strip().str.lower()
 
-    # Retrieve grouping info (depends on your function 'find_sample_grouping')
-    diff_groups = find_sample_grouping(adata, list(pca_plot_df["sample"]), grouping_columns)
+    diff_groups = find_sample_grouping(adata, list(pca_df["sample"]), grouping_columns)
     if isinstance(diff_groups, dict):
         diff_groups = pd.DataFrame.from_dict(diff_groups, orient="index", columns=["plot_group"])
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
     diff_groups = diff_groups.reset_index().rename(columns={"index": "sample"})
 
-    # Merge into pca_plot_df
-    pca_plot_df = pca_plot_df.merge(diff_groups, how="left", on="sample")
+    pca_df = pca_df.merge(diff_groups, how="left", on="sample")
+    pca_df["severity"] = pca_df["plot_group"].str.extract(r"(\d+\.\d+)").astype(float)
 
-    # Extract numeric severity for color mapping if it exists
-    pca_plot_df["severity"] = pca_plot_df["plot_group"].str.extract(r"(\d+\.\d+)").astype(float)
-    min_sev, max_sev = pca_plot_df["severity"].min(), pca_plot_df["severity"].max()
-
-    if pd.isnull(min_sev) or pd.isnull(max_sev) or min_sev == max_sev:
-        # fallback if no numeric severity is found
-        pca_plot_df["severity"] = 1.0
-        norm_severity = pca_plot_df["severity"]
+    if pd.isnull(pca_df["severity"]).any():
+        pca_df["severity"] = 1.0
+        norm_severity = pca_df["severity"]
     else:
-        norm_severity = (pca_plot_df["severity"] - min_sev) / (max_sev - min_sev)
+        min_sev, max_sev = pca_df["severity"].min(), pca_df["severity"].max()
+        norm_severity = (pca_df["severity"] - min_sev) / (max_sev - min_sev)
 
-    # Create second plot
+    cluster_names = sorted(sample_cluster.keys())
+    cluster_centroids = {}
+    full_pca_df = adata.uns[pca_key]
+    for clust in cluster_names:
+        subset = full_pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
+        centroid = subset.mean(axis=0).values
+        cluster_centroids[clust] = centroid
+
+    def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
+        p1 = cluster_centroids[c1]
+        p2 = cluster_centroids[c2]
+        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
+
     plt.figure(figsize=(8, 6))
     scatter_obj = plt.scatter(
-        pca_plot_df["PC1"],
-        pca_plot_df["PC2"],
-        c=norm_severity,
-        cmap="viridis_r",
-        s=80,
-        alpha=0.8,
-        edgecolors="k",
-        zorder=2
+        pca_df["PC1"], pca_df["PC2"], c=norm_severity, cmap="viridis_r", s=80, alpha=0.8, edgecolors="k", zorder=2
     )
 
-    # Connect cluster centroids as before
     for i in range(len(main_path) - 1):
-        c1 = f"cluster_{main_path[i] + 1}"
-        c2 = f"cluster_{main_path[i + 1] + 1}"
-        _connect_clusters(c1, c2, style="-")
+        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", style="-")
 
     for path in branching_paths:
         for j in range(len(path) - 1):
-            c1 = f"cluster_{path[j] + 1}"
-            c2 = f"cluster_{path[j + 1] + 1}"
-            _connect_clusters(c1, c2, style="--")
+            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", style="--")
 
-    # Label each centroid
     for clust in cluster_names:
         cx, cy = cluster_centroids[clust]
-        plt.text(cx, cy, clust.replace("cluster_", ""), fontsize=12, ha="center", va="center",
-                 bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
+        plt.text(cx, cy, clust.replace("cluster_", ""), fontsize=12, ha="center", va="center", bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
 
     plt.colorbar(scatter_obj, label="Severity Level (normalized)")
     plt.title("PCA (2D) - Colored by Sample Grouping")
@@ -954,11 +862,8 @@ def visualize_TSCAN_paths(
     plt.ylabel("PC2")
     plt.grid(True)
     plt.tight_layout()
-
-    outpath_2 = os.path.join(output_dir, "pca_cluster_paths_by_severity.pdf")
-    plt.savefig(outpath_2)
+    plt.savefig(output_path)
     plt.close("all")
 
     if verbose:
-        print(f"[visualize_TSCAN_paths] Plot #2 saved to {outpath_2}")
-        print("[visualize_TSCAN_paths] Done. Two plots saved.")
+        print(f"[plot_clusters_by_grouping] Plot saved to {output_path}")
