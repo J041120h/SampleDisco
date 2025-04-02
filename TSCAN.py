@@ -10,7 +10,7 @@ from collections import defaultdict
 from scipy.spatial.distance import pdist, squareform
 from scipy.sparse.csgraph import minimum_spanning_tree
 
-from Visualization import visualize_TSCAN_paths
+from Visualization import plot_clusters_by_cluster, plot_clusters_by_grouping
 # (Assuming your existing visualize_TSCAN_paths is imported correctly)
 
 def cluster_samples_by_pca(
@@ -96,7 +96,6 @@ def Cluster_distance(
     pca_data: pd.DataFrame,
     sample_cluster: dict,
     metric: str = "euclidean",
-    output_file: str = "cluster_distances.csv",
     verbose: bool = False
 ) -> np.ndarray:
     """
@@ -145,11 +144,6 @@ def Cluster_distance(
         index=cluster_names,
         columns=cluster_names
     )
-
-    distance_df.to_csv(output_file)
-    if verbose:
-        print(f"[Cluster_distance] Pairwise distances among clusters saved to: {output_file}")
-        print(distance_df)
 
     return pairwise_dists
 
@@ -402,6 +396,7 @@ def TSCAN(
     column: str,
     n_clusters: int,
     output_dir: str,
+    grouping_columns = None,
     verbose: bool = False,
     origin: int = None
 ):
@@ -420,8 +415,8 @@ def TSCAN(
             print(f"[TSCAN] Output directory created: {output_dir}")
 
     # subdirectory for TSCAN results
-    output_dir = os.path.join(output_dir, "TSCAN")
-    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "TSCAN")
+    os.makedirs(output_path, exist_ok=True)
 
     # --------------------------------------------------
     # 1. Cluster samples by PCA
@@ -443,7 +438,6 @@ def TSCAN(
         pca_df, 
         sample_cluster, 
         metric="euclidean",
-        output_file=os.path.join(output_dir, "cluster_distances.csv"),
         verbose=verbose
     )
 
@@ -512,15 +506,27 @@ def TSCAN(
     # 6. Visualization
     # --------------------------------------------------
     # (Your existing function that expects sample_cluster, main_path, branching_paths, etc.)
-    visualize_TSCAN_paths(
-        AnnData_sample,
-        sample_cluster=sample_cluster,
-        main_path=main_path,
-        branching_paths=branching_paths,
-        output_dir=output_dir,
-        pca_key=column,
-        verbose=verbose
+    plot_clusters_by_cluster(
+        adata = AnnData_sample,
+        sample_cluster = sample_cluster,
+        main_path = main_path,
+        branching_paths = branching_paths,
+        output_path = output_path,
+        pca_key = column,
+        verbose = verbose
     )
+
+    if grouping_columns is not None:
+        plot_clusters_by_grouping(
+            adata = AnnData_sample,
+            sample_cluster = sample_cluster,
+            main_path = main_path,
+            branching_paths = branching_paths,
+            output_path = output_path,
+            pca_key = column,
+            grouping_columns = grouping_columns,
+            verbose = verbose
+        )
 
     # --------------------------------------------------
     # 7. Return everything
