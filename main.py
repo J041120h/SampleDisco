@@ -101,7 +101,7 @@ def main():
     AnnData_sample = sc.read(AnnData_sample_path)
     # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
     # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
-    TSCAN(AnnData_sample, "X_pca_expression", 2, output_dir, grouping_columns = ["sev.level"], verbose = True, origin=None)
+    # TSCAN(AnnData_sample, "X_pca_expression", 2, output_dir, grouping_columns = ["sev.level"], verbose = True, origin=None)
 
     # AnnData_cell = cell_types(
     #     AnnData_cell, 
@@ -118,7 +118,7 @@ def main():
     # )
     # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
     # CCA_Call(AnnData_sample, sample_meta_path, output_dir, verbose = True)
-    # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
+    cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.44774005254663607, output_dir)
 
     # column = "X_pca_proportion"

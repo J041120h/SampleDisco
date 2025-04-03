@@ -127,39 +127,14 @@ def cca_pvalue_test(
     input_correlation: float,
     output_directory: str,
     num_simulations: int = 1000,
-    verbose = True
+    verbose: bool = True
 ):
-    """
-    Runs a statistical test to determine whether the observed correlation is significant.
-    
-    1) Reads the 2D PCA coordinates from `adata.uns[column]`.
-    2) Loads and aligns severity levels based on `adata.obs["sample"]`.
-    3) Performs a Monte Carlo simulation with randomly generated feature values.
-    4) Plots the distribution of simulated correlation scores and saves it.
-    5) Computes the p-value for a given user-input correlation and saves it in a text file.
+    import os
+    import time
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn.cross_decomposition import CCA
 
-    Parameters
-    ----------
-    adata : AnnData
-        Must contain:
-            - `adata.uns[column]` of shape (n_samples, >=2)
-            - `adata.obs["sample"]` with sample names
-    summary_sample_csv_path : str
-        Path to CSV with columns ['sample', 'sev.level'].
-    column : str
-        The key in `adata.uns` that contains the 2D PCA coordinates.
-    input_correlation : float
-        The observed correlation to test against the null distribution.
-    output_directory : str
-        Directory where the plot and p-value text file will be saved.
-    num_simulations : int, optional
-        Number of Monte Carlo simulations (default is 1000).
-    
-    Returns
-    -------
-    p_value : float
-        The p-value indicating how extreme the observed correlation is compared to the null distribution.
-    """
     start_time = time.time() if verbose else None
 
     output_directory = os.path.join(output_directory, "CCA test")
@@ -168,61 +143,58 @@ def cca_pvalue_test(
     pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
         raise ValueError("X_pca must have at least 2 components for 2D plotting.")
+    pca_coords = pca_coords.values
+    pca_coords_2d = pca_coords[:, :2]
 
-    # Extract the first two PC coordinates
-    pca_coords_2d = pca_coords[:, :2]  # shape: (n_samples, 2)
-
-    # Align severity to our samples
     if "sample" not in adata.obs.columns:
         raise KeyError("adata.obs must have a 'sample' column to match the CSV severity data.")
-    samples = adata.obs["sample"].values.unique()
+    samples = adata.obs["sample"].unique()
     if len(samples) != pca_coords_2d.shape[0]:
         raise ValueError("The number of PCA rows does not match the number of samples in adata.obs['sample'].")
 
     sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples)
-    sev_levels = sev_levels_2d.flatten()  # make it 1D
+    sev_levels_1d = sev_levels_2d.flatten()
 
-    # Run Monte Carlo simulations
     simulated_scores = []
     for _ in range(num_simulations):
-        random_features = np.random.rand(*pca_coords_2d.shape)  # Generate random features
-        cca = CCA(n_components=1)
-        cca.fit(random_features, sev_levels_2d)
-        U, V = cca.transform(random_features, sev_levels_2d)
-        first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-        simulated_scores.append(first_component_score)
+        permuted_sev_levels = np.random.permutation(sev_levels_1d).reshape(sev_levels_2d.shape)
 
-    # Compute p-value
+        cca = CCA(n_components=1)
+        cca.fit(pca_coords_2d, permuted_sev_levels)
+
+        U, V = cca.transform(pca_coords_2d, permuted_sev_levels)
+
+        corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+        simulated_scores.append(corr)
+
     simulated_scores = np.array(simulated_scores)
+
     p_value = np.mean(simulated_scores >= input_correlation)
 
-    # Plot the histogram of simulated correlation scores
     plt.figure(figsize=(8, 5))
-    plt.hist(simulated_scores, bins=30, alpha=0.7, color='blue', edgecolor='black')
-    plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2, label=f'Observed correlation: {input_correlation}')
+    plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
+    plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
+                label=f'Observed correlation: {input_correlation}')
     plt.xlabel('Simulated Correlation Scores')
     plt.ylabel('Frequency')
-    plt.title('Monte Carlo Simulated Distribution of CCA Correlations')
+    plt.title('Permutation Test: CCA Correlations')
     plt.legend()
 
-    # Save plot
-    plot_path = os.path.join(output_directory, f"cca_pvalue_distributio_{column}.png")
+    plot_path = os.path.join(output_directory, f"cca_pvalue_distribution_{column}.png")
     plt.savefig(plot_path, dpi=300)
     plt.close()
 
-    # Save p-value to text file
     p_value_path = os.path.join(output_directory, f"cca_pvalue_result_{column}.txt")
     with open(p_value_path, "w") as f:
         f.write(f"Observed correlation: {input_correlation}\n")
         f.write(f"P-value: {p_value}\n")
 
-    # Print p-value
     print(f"P-value for observed correlation {input_correlation}: {p_value}")
 
     if verbose:
-        print("CCA p-value test on cell proportions completed.")
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"\n\n[CCA p-test]Total runtime processing: {elapsed_time:.2f} seconds\n\n")
+        print("CCA p-value test on cell proportions completed.")
+        print(f"\n[CCA p-test] Total runtime processing: {elapsed_time:.2f} seconds\n")
 
     return p_value
