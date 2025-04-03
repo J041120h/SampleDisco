@@ -15,7 +15,11 @@ import plotly.express as px
 import plotly.io as pio
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+from typing import List, Dict
 from Grouping import find_sample_grouping
+
+
+#------------------- VISUALIZATION FOR SAMPLE DISTANCE -------------------
 
 def plot_cell_type_abundances(proportions: pd.DataFrame, output_dir: str):
     """
@@ -255,6 +259,150 @@ def visualizeDistanceMatrix(sample_distance_matrix, heatmap_path):
     plt.savefig(heatmap_path)
     plt.close()
     print(f"Sample distance heatmap saved to {heatmap_path}")
+
+#------------------- VISUALIZATION FOR TSCAN -------------------
+
+def plot_clusters_by_cluster(
+    adata,
+    sample_cluster: Dict[str, List[str]],
+    main_path: List[int],
+    branching_paths: List[List[int]],
+    output_path: str,
+    pca_key: str = "X_pca_expression",
+    verbose: bool = False
+):
+    if pca_key not in adata.uns:
+        raise KeyError(f"Missing PCA data in adata.uns['{pca_key}'].")
+    pca_df = adata.uns[pca_key]
+    if not isinstance(pca_df, pd.DataFrame):
+        raise TypeError(f"Expected a DataFrame in adata.uns['{pca_key}'], but got {type(pca_df)}.")
+
+    required_pcs = {"PC1", "PC2"}
+    if not required_pcs.issubset(pca_df.columns):
+        raise ValueError(f"PCA DataFrame must contain at least {required_pcs}. Found columns: {pca_df.columns.tolist()}")
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    cluster_names = sorted(sample_cluster.keys())
+    cluster_centroids = {}
+    for clust in cluster_names:
+        subset = pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
+        centroid = subset.mean(axis=0).values
+        cluster_centroids[clust] = centroid
+
+    def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
+        p1 = cluster_centroids[c1]
+        p2 = cluster_centroids[c2]
+        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
+
+    plt.figure(figsize=(8, 6))
+    cmap = plt.cm.get_cmap("tab20", len(cluster_names))
+
+    for i, clust in enumerate(cluster_names):
+        subset = pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
+        plt.scatter(subset["PC1"], subset["PC2"], color=cmap(i), label=clust, s=60, alpha=0.8, edgecolors="k")
+
+    for i in range(len(main_path) - 1):
+        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", style="-")
+
+    for path in branching_paths:
+        for j in range(len(path) - 1):
+            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", style="--")
+
+    for clust in cluster_names:
+        cx, cy = cluster_centroids[clust]
+        plt.text(cx, cy, clust.replace("cluster_", ""), fontsize=12, ha="center", va="center", bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
+
+    plt.title("PCA (2D) - Colored by Cluster")
+    plt.xlabel("PC1")
+    plt.ylabel("PC2")
+    plt.grid(True)
+    plt.legend(loc="best")
+    plt.tight_layout()
+    output_path = os.path.join(output_path, "clusters_by_cluster.png")
+    plt.savefig(output_path)
+
+    if verbose:
+        print(f"[plot_clusters_by_cluster] Plot saved to {output_path}")
+
+def plot_clusters_by_grouping(
+    adata,
+    sample_cluster: Dict[str, List[str]],
+    main_path: List[int],
+    branching_paths: List[List[int]],
+    output_path: str,
+    pca_key: str = "X_pca_expression",
+    grouping_columns: List[str] = ["sev.level"],
+    verbose: bool = False
+):
+    pca_df = adata.uns[pca_key]
+    pca_df = pca_df[["PC1", "PC2"]].copy().reset_index().rename(columns={"index": "sample"})
+    pca_df["sample"] = pca_df["sample"].astype(str).str.strip().str.lower()
+
+    # Get grouping info
+    diff_groups = find_sample_grouping(adata, list(pca_df["sample"]), grouping_columns)
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient="index", columns=["plot_group"])
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+    diff_groups = diff_groups.reset_index().rename(columns={"index": "sample"})
+
+    # Merge and process severity
+    pca_df = pca_df.merge(diff_groups, how="left", on="sample")
+    pca_df["severity"] = pca_df["plot_group"].str.extract(r"(\d+\.\d+)").astype(float)
+
+    # Normalize severity with improved handling
+    if pca_df["severity"].notnull().all():
+        norm_severity = (pca_df["severity"] - pca_df["severity"].min()) / (pca_df["severity"].max() - pca_df["severity"].min())
+    else:
+        pca_df["severity"].fillna(1.0, inplace=True)
+        norm_severity = pca_df["severity"]
+
+    # Compute cluster centroids
+    cluster_names = sorted(sample_cluster.keys())
+    cluster_centroids = {}
+    full_pca_df = adata.uns[pca_key]
+    for clust in cluster_names:
+        subset = full_pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
+        centroid = subset.mean(axis=0).values
+        cluster_centroids[clust] = centroid
+
+    def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
+        p1 = cluster_centroids[c1]
+        p2 = cluster_centroids[c2]
+        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
+
+    # Plotting
+    plt.figure(figsize=(8, 6))
+    scatter_obj = plt.scatter(
+        pca_df["PC1"], pca_df["PC2"], c=norm_severity, cmap="viridis_r", s=80, alpha=0.8, edgecolors="k", zorder=2
+    )
+
+    # Draw main and branching paths
+    for i in range(len(main_path) - 1):
+        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", style="-")
+
+    for path in branching_paths:
+        for j in range(len(path) - 1):
+            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", style="--")
+
+    # Label clusters
+    for clust in cluster_names:
+        cx, cy = cluster_centroids[clust]
+        plt.text(cx, cy, clust.replace("cluster_", ""), fontsize = 7, ha="center", va="center", bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
+
+    plt.colorbar(scatter_obj, label="Severity Level (normalized)")
+    plt.title("PCA (2D) - Colored by Sample Grouping")
+    plt.xlabel("PC1")
+    plt.ylabel("PC2")
+    plt.grid(True)
+    plt.tight_layout()
+    output_path = os.path.join(output_path, "clusters_by_grouping.png")
+    plt.savefig(output_path)
+    plt.close("all")
+
+    if verbose:
+        print(f"[plot_clusters_by_grouping] Plot saved to {output_path}")
+
 
 def plot_cell_type_proportions_pca(
     adata: AnnData, 
@@ -720,152 +868,3 @@ def visualization(
 
     if verbose:
         print("[visualization_harmony] All requested visualizations saved.")
-
-import os
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from typing import List, Dict
-
-from Grouping import find_sample_grouping
-
-def plot_clusters_by_cluster(
-    adata,
-    sample_cluster: Dict[str, List[str]],
-    main_path: List[int],
-    branching_paths: List[List[int]],
-    output_path: str,
-    pca_key: str = "X_pca_expression",
-    verbose: bool = False
-):
-    if pca_key not in adata.uns:
-        raise KeyError(f"Missing PCA data in adata.uns['{pca_key}'].")
-    pca_df = adata.uns[pca_key]
-    if not isinstance(pca_df, pd.DataFrame):
-        raise TypeError(f"Expected a DataFrame in adata.uns['{pca_key}'], but got {type(pca_df)}.")
-
-    required_pcs = {"PC1", "PC2"}
-    if not required_pcs.issubset(pca_df.columns):
-        raise ValueError(f"PCA DataFrame must contain at least {required_pcs}. Found columns: {pca_df.columns.tolist()}")
-
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    cluster_names = sorted(sample_cluster.keys())
-    cluster_centroids = {}
-    for clust in cluster_names:
-        subset = pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
-        centroid = subset.mean(axis=0).values
-        cluster_centroids[clust] = centroid
-
-    def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
-        p1 = cluster_centroids[c1]
-        p2 = cluster_centroids[c2]
-        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
-
-    plt.figure(figsize=(8, 6))
-    cmap = plt.cm.get_cmap("tab20", len(cluster_names))
-
-    for i, clust in enumerate(cluster_names):
-        subset = pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
-        plt.scatter(subset["PC1"], subset["PC2"], color=cmap(i), label=clust, s=60, alpha=0.8, edgecolors="k")
-
-    for i in range(len(main_path) - 1):
-        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", style="-")
-
-    for path in branching_paths:
-        for j in range(len(path) - 1):
-            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", style="--")
-
-    for clust in cluster_names:
-        cx, cy = cluster_centroids[clust]
-        plt.text(cx, cy, clust.replace("cluster_", ""), fontsize=12, ha="center", va="center", bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
-
-    plt.title("PCA (2D) - Colored by Cluster")
-    plt.xlabel("PC1")
-    plt.ylabel("PC2")
-    plt.grid(True)
-    plt.legend(loc="best")
-    plt.tight_layout()
-    output_path = os.path.join(output_path, "clusters_by_cluster.png")
-    plt.savefig(output_path)
-
-    if verbose:
-        print(f"[plot_clusters_by_cluster] Plot saved to {output_path}")
-
-def plot_clusters_by_grouping(
-    adata,
-    sample_cluster: Dict[str, List[str]],
-    main_path: List[int],
-    branching_paths: List[List[int]],
-    output_path: str,
-    pca_key: str = "X_pca_expression",
-    grouping_columns: List[str] = ["sev.level"],
-    verbose: bool = False
-):
-    pca_df = adata.uns[pca_key]
-    pca_df = pca_df[["PC1", "PC2"]].copy().reset_index().rename(columns={"index": "sample"})
-    pca_df["sample"] = pca_df["sample"].astype(str).str.strip().str.lower()
-
-    # Get grouping info
-    diff_groups = find_sample_grouping(adata, list(pca_df["sample"]), grouping_columns)
-    if isinstance(diff_groups, dict):
-        diff_groups = pd.DataFrame.from_dict(diff_groups, orient="index", columns=["plot_group"])
-    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
-    diff_groups = diff_groups.reset_index().rename(columns={"index": "sample"})
-
-    # Merge and process severity
-    pca_df = pca_df.merge(diff_groups, how="left", on="sample")
-    pca_df["severity"] = pca_df["plot_group"].str.extract(r"(\d+\.\d+)").astype(float)
-
-    # Normalize severity with improved handling
-    if pca_df["severity"].notnull().all():
-        norm_severity = (pca_df["severity"] - pca_df["severity"].min()) / (pca_df["severity"].max() - pca_df["severity"].min())
-    else:
-        pca_df["severity"].fillna(1.0, inplace=True)
-        norm_severity = pca_df["severity"]
-
-    # Compute cluster centroids
-    cluster_names = sorted(sample_cluster.keys())
-    cluster_centroids = {}
-    full_pca_df = adata.uns[pca_key]
-    for clust in cluster_names:
-        subset = full_pca_df.loc[sample_cluster[clust], ["PC1", "PC2"]]
-        centroid = subset.mean(axis=0).values
-        cluster_centroids[clust] = centroid
-
-    def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
-        p1 = cluster_centroids[c1]
-        p2 = cluster_centroids[c2]
-        plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
-
-    # Plotting
-    plt.figure(figsize=(8, 6))
-    scatter_obj = plt.scatter(
-        pca_df["PC1"], pca_df["PC2"], c=norm_severity, cmap="viridis_r", s=80, alpha=0.8, edgecolors="k", zorder=2
-    )
-
-    # Draw main and branching paths
-    for i in range(len(main_path) - 1):
-        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", style="-")
-
-    for path in branching_paths:
-        for j in range(len(path) - 1):
-            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", style="--")
-
-    # Label clusters
-    for clust in cluster_names:
-        cx, cy = cluster_centroids[clust]
-        plt.text(cx, cy, clust.replace("cluster_", ""), fontsize = 7, ha="center", va="center", bbox=dict(facecolor="white", alpha=0.7, boxstyle="round"))
-
-    plt.colorbar(scatter_obj, label="Severity Level (normalized)")
-    plt.title("PCA (2D) - Colored by Sample Grouping")
-    plt.xlabel("PC1")
-    plt.ylabel("PC2")
-    plt.grid(True)
-    plt.tight_layout()
-    output_path = os.path.join(output_path, "clusters_by_grouping.png")
-    plt.savefig(output_path)
-    plt.close("all")
-
-    if verbose:
-        print(f"[plot_clusters_by_grouping] Plot saved to {output_path}")

@@ -70,16 +70,11 @@ def wrapper(
     summary_sample_csv_path=None,
     summary_cell_csv_path=None,
     cca_output_dir=None,
+    cca_optimal_cell_resolution=False,
+    cca_pvalue=False,
 
     # ===== Paths for Skipping Preprocessing =====
     AnnData_cell_path=None,
-
-    # ===== Process Control Flags =====
-    preprocessing=True,
-    cell_type_cluster=True,
-    pseudobulk=True,
-    cca=True,
-
     # ===== Distance Methods =====
     methods=None,
     EMD = False,
@@ -87,7 +82,6 @@ def wrapper(
     jensen_shannon = False,
 
     # ===== Distance Methods =====
-    Visualization = True,
     verbose_Visualization = True,
     grouping_columns=['sev.level'],
     age_bin_size=None,
@@ -103,7 +97,16 @@ def wrapper(
 
     plot_cell_type_proportions_pca_flag=False,
     plot_pseudobulk_expression_pca_flag=False,
-    plot_pseudobulk_batch_test_pca_flag=False
+    plot_pseudobulk_batch_test_pca_flag=False,
+
+    # ===== Process Control Flags =====
+    preprocessing=True,
+    cell_type_cluster=True,
+    sample_distance = True,
+    pseudobulk=True,
+    cca=True,
+    Visualization = True
+
 ):
     if vars_to_regress is None:
         vars_to_regress = []
@@ -200,7 +203,7 @@ def wrapper(
             verbose=pca_verbose
         )
 
-    # Step 4: CCA + Distances
+    # Step 4: CCA
     if cca:
         CCA_Call(AnnData_sample, summary_sample_csv_path, cca_output_dir)
 
@@ -221,6 +224,21 @@ def wrapper(
             "X_pca_expression"
         )
 
+        if cca_optimal_cell_resolution:
+            column = "X_pca_proportion"
+            find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
+            column = "X_pca_expression"
+            find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
+        
+        if cca_pvalue:
+            cca_pvalue_test(
+                AnnData_sample,
+                sample_meta_path,
+                "X_pca_expression",
+                0.5807686668238389,  # could be parameterized
+                cca_output_dir
+            )
+
         plot_cell_type_proportions_pca(AnnData_sample, cca_output_dir)
         plot_pseudobulk_batch_test_pca(AnnData_sample, cca_output_dir)
 
@@ -229,6 +247,8 @@ def wrapper(
         if os.path.exists(summary_cell_csv_path):
             os.remove(summary_cell_csv_path)
 
+    # Step 5: Sample Distance
+    if sample_distance:
         for md in methods:
             print(f"\nRunning sample distance: {md}\n")
             sample_distance(
@@ -260,26 +280,26 @@ def wrapper(
                 summary_sample_csv_path
             )
         
-        #Visualization
-        if Visualization:
-            visualization_harmony(
-                AnnData_sample,
-                output_dir,
-                grouping_columns=grouping_columns,
-                age_bin_size=age_bin_size,
-                verbose=verbose_Visualization,
-                dot_size=dot_size,
+    #Visualization
+    if Visualization:
+        visualization_harmony(
+            AnnData_sample,
+            output_dir,
+            grouping_columns=grouping_columns,
+            age_bin_size=age_bin_size,
+            verbose=verbose_Visualization,
+            dot_size=dot_size,
 
-                plot_dendrogram_flag=plot_dendrogram_flag,
-                plot_umap_by_plot_group_flag=plot_umap_by_plot_group_flag,
-                plot_umap_by_cell_type_flag=plot_umap_by_cell_type_flag,
-                plot_pca_2d_flag=plot_pca_2d_flag,
-                plot_pca_3d_flag=plot_pca_3d_flag,
-                plot_3d_cells_flag=plot_3d_cells_flag,
+            plot_dendrogram_flag=plot_dendrogram_flag,
+            plot_umap_by_plot_group_flag=plot_umap_by_plot_group_flag,
+            plot_umap_by_cell_type_flag=plot_umap_by_cell_type_flag,
+            plot_pca_2d_flag=plot_pca_2d_flag,
+            plot_pca_3d_flag=plot_pca_3d_flag,
+            plot_3d_cells_flag=plot_3d_cells_flag,
 
-                plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
-                plot_pseudobulk_expression_pca_flag=plot_pseudobulk_expression_pca_flag,
-                plot_pseudobulk_batch_test_pca_flag=plot_pseudobulk_batch_test_pca_flag
-            )
+            plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
+            plot_pseudobulk_expression_pca_flag=plot_pseudobulk_expression_pca_flag,
+            plot_pseudobulk_batch_test_pca_flag=plot_pseudobulk_batch_test_pca_flag
+        )
 
-    print("End of Process\n" * 3)
+    print("End of Process\n")
