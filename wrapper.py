@@ -12,7 +12,7 @@ from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata, test_harmony
-from Visualization import visualization_harmony, plot_cell_type_proportions_pca, plot_pseudobulk_batch_test_pca
+from Visualization import visualization, plot_cell_type_proportions_pca, plot_pseudobulk_batch_test_pca
 from PCA import process_anndata_with_pca
 from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
@@ -67,7 +67,6 @@ def wrapper(
     pca_verbose=True,
 
     # ===== CCA Parameters =====
-    summary_sample_csv_path=None,
     summary_cell_csv_path=None,
     cca_output_dir=None,
     cca_optimal_cell_resolution=False,
@@ -76,16 +75,16 @@ def wrapper(
     # ===== Paths for Skipping Preprocessing =====
     AnnData_cell_path=None,
     # ===== Distance Methods =====
+    summary_sample_csv_path = None,
     methods=None,
-    EMD = False,
-    chi_square = False,
-    jensen_shannon = False,
+    EMD = True,
+    chi_square = True,
+    jensen_shannon = True,
 
     # ===== Distance Methods =====
     verbose_Visualization = True,
     grouping_columns=['sev.level'],
     age_bin_size=None,
-    verbose_visualization=True,
     dot_size=3,
 
     plot_dendrogram_flag=True,
@@ -102,12 +101,12 @@ def wrapper(
     # ===== Process Control Flags =====
     preprocessing=True,
     cell_type_cluster=True,
-    sample_distance = True,
+    sample_distance_calculation = True,
     pseudobulk=True,
     cca=True,
-    Visualization = True
-
+    visualize_data = True
 ):
+    print("Start of Process\n")
     if vars_to_regress is None:
         vars_to_regress = []
 
@@ -124,6 +123,9 @@ def wrapper(
 
     if cca_output_dir is None:
         cca_output_dir = output_dir
+    
+    if summary_sample_csv_path is None:
+        summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
 
     # Step 1: Harmony Preprocessing
     if preprocessing:
@@ -205,24 +207,7 @@ def wrapper(
 
     # Step 4: CCA
     if cca:
-        CCA_Call(AnnData_sample, summary_sample_csv_path, cca_output_dir)
-
-        cca_pvalue_test(
-            AnnData_sample,
-            sample_meta_path,
-            "X_pca_expression",
-            0.8449111150006337,  # could be parameterized
-            cca_output_dir
-        )
-
-        find_optimal_cell_resolution(
-            AnnData_cell,
-            AnnData_sample,
-            cca_output_dir,
-            sample_meta_path,
-            AnnData_sample_path,
-            "X_pca_expression"
-        )
+        CCA_Call(AnnData_sample, sample_meta_path, cca_output_dir)
 
         if cca_optimal_cell_resolution:
             column = "X_pca_proportion"
@@ -244,20 +229,12 @@ def wrapper(
 
         if os.path.exists(summary_sample_csv_path):
             os.remove(summary_sample_csv_path)
-        if os.path.exists(summary_cell_csv_path):
-            os.remove(summary_cell_csv_path)
 
     # Step 5: Sample Distance
-    if sample_distance:
+    if sample_distance_calculation:
         for md in methods:
             print(f"\nRunning sample distance: {md}\n")
-            sample_distance(
-                AnnData_sample,
-                os.path.join(output_dir, 'Sample'),
-                md,
-                summary_sample_csv_path,
-                pseudobulk_df
-            )
+            sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk_df)
         
         if EMD:
             EMD_distances(
@@ -281,8 +258,8 @@ def wrapper(
             )
         
     #Visualization
-    if Visualization:
-        visualization_harmony(
+    if visualize_data:
+        visualization(
             AnnData_sample,
             output_dir,
             grouping_columns=grouping_columns,
@@ -303,3 +280,19 @@ def wrapper(
         )
 
     print("End of Process\n")
+
+
+if __name__ == '__main__':
+    wrapper(
+        h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad", 
+        output_dir = "/Users/harry/Desktop/GenoDistance/result", 
+        sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv", 
+        AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad', 
+        AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad', 
+        preprocessing=False, 
+        cell_type_cluster=False, 
+        sample_distance_calculation = True, 
+        pseudobulk=True, 
+        cca=False, 
+        visualize_data = True
+        )

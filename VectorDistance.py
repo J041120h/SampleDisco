@@ -51,7 +51,6 @@ def calculate_sample_distances_cell_proportion(
 
     # Transpose so that rows = samples, columns = cell types
     # Now each row is a sample vector of cell-type proportions
-    cell_proportions = cell_proportions.T
 
     # Compute the sample-sample distance matrix and normalize it
     distance_matrix = pdist(cell_proportions.values, metric=method)
@@ -77,8 +76,7 @@ def calculate_sample_distances_cell_proportion(
     visualizeGroupRelationship(
         distance_df,
         outputDir=output_dir,
-        adata = adata,
-        heatmap_path=os.path.join(output_dir, 'sample_proportion_relationship.pdf')
+        adata = adata
     )
 
     print(f"Cell proportion-based sample distance matrix saved to: {distance_matrix_path}")
@@ -158,40 +156,39 @@ def calculate_sample_distances_gene_pseudobulk(
     Returns:
     - distance_df: Pairwise distance matrix.
     """
-    output_subdir = os.path.join(output_dir, 'gene_pseudobulk')
-    os.makedirs(output_subdir, exist_ok=True)
+    output_dir = os.path.join(output_dir, 'cell_expression')
+    os.makedirs(output_dir, exist_ok=True)
 
-    cell_expr = pseudobulk['cell_expression_corrected']
-    samples, cell_types = cell_expr.columns, cell_expr.index
+    # cell_proportions is assumed to be a DataFrame where:
+    #   rows = cell types, columns = samples, each value = proportion
+    cell_expression_corrected = pseudobulk["cell_expression_corrected"]
 
-    # Build concatenated expression vectors per sample
-    sample_vectors = {
-        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_types])
-        for sample in samples
-    }
+    distance_matrix = pdist(cell_expression_corrected.values, metric=method)
+    distance_df = pd.DataFrame(
+        squareform(distance_matrix),
+        index=cell_expression_corrected.index,
+        columns=cell_expression_corrected.index
+    )
 
-    sample_df = pd.DataFrame.from_dict(sample_vectors, orient='index')
-    sample_df.index.name = 'sample'
-    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+    distance_df = np.log1p(np.maximum(distance_df, 0))
+    distance_df = distance_df / distance_df.max().max()
 
-    # Select top 2000 most variable features
-    sample_df = select_hvf_loess(pseudobulk, n_features=2000, frac=0.3)
-
-    # Save transformed data
-    sample_df.to_csv(os.path.join(output_subdir, 'average_gene_pseudobulk_per_sample_top2000.csv'))
-
-    # Compute pairwise distances
-    distance_matrix = pdist(sample_df.values, metric=method)
-    distance_df = pd.DataFrame(squareform(distance_matrix), index=samples, columns=samples)
-
-    # Save results
-    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
+    # Save distance matrix to CSV
+    distance_matrix_path = os.path.join(output_dir, 'distance_matrix_expression.csv')
     distance_df.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, 'cell_pseudobulk', method, summary_csv_path, adata)
-    visualizeDistanceMatrix(distance_df, os.path.join(output_subdir, 'sample_distance_pseudobulk_heatmap.pdf'))
-    visualizeGroupRelationship(distance_df, outputDir=output_subdir, adata = adata, heatmap_path=os.path.join(output_subdir, 'sample_pseudobulk_relationship.pdf'))
-    print(f"Sample distance matrix (top 2000 HVG) saved to {distance_matrix_path}")
 
+    # If you have a custom distanceCheck function for logging
+    distanceCheck(distance_matrix_path, 'cell_expression', method, summary_csv_path, adata)
+
+    # Visualizations
+    visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_expression_heatmap.pdf'))
+    visualizeGroupRelationship(
+        distance_df,
+        outputDir=output_dir,
+        adata = adata
+    )
+
+    print(f"Cell expression-based sample distance matrix saved to: {distance_matrix_path}")
     return distance_df
 
 def sample_distance(
@@ -218,8 +215,6 @@ def sample_distance(
     """
     output_dir = os.path.join(output_dir, method)
     os.makedirs(output_dir, exist_ok=True)
-
-    adata = adata[:, adata.var['highly_variable']].copy()
 
     # Compute distances using different methods
     calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path, pseudobulk)

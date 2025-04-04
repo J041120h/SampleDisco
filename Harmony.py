@@ -101,21 +101,6 @@ def anndata_sample(
     if verbose:
         print('=== Processing data for sample differences (without batch effect correction) ===')
 
-    # We are not finding HVGs here, as we are looking for HVG within each cell type after combat
-    # find_hvgs(
-    #     adata=adata_sample_diff,
-    #     sample_column=sample_column,
-    #     num_features=num_features,
-    #     batch_key='cell_type',    # or whichever key you want
-    #     check_values=True,
-    #     inplace=True
-    # )
-    # adata_sample_diff = adata_sample_diff[:, adata_sample_diff.var['highly_variable']].copy()
-
-    # if verbose:
-    #     print('=== HVG selected. Performing PCA. ===')
-
-    # # Step B1: PCA
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
     # # Step B2: Harmony on 'batch'

@@ -6,14 +6,14 @@ from anndata import AnnData
 from sklearn.cross_decomposition import CCA
 import time
 
-def load_severity_levels(summary_sample_csv_path: str, sample_index: pd.Index) -> np.ndarray:
+def load_severity_levels(sample_meta_path: str, sample_index: pd.Index) -> np.ndarray:
     """
     Load severity levels from a CSV file and align them with the provided sample index (which
     must match adata.obs["sample"]).
     
     Parameters
     ----------
-    summary_sample_csv_path : str
+    sample_meta_path : str
         Path to the CSV file containing severity levels.
         Must have columns ['sample', 'sev.level'].
     sample_index : pd.Index
@@ -25,7 +25,7 @@ def load_severity_levels(summary_sample_csv_path: str, sample_index: pd.Index) -
         A 2D array (n_samples, 1) of severity levels aligned to `sample_index`.
         Missing values are replaced with the mean severity.
     """
-    summary_df = pd.read_csv(summary_sample_csv_path)
+    summary_df = pd.read_csv(sample_meta_path)
     if 'sample' not in summary_df.columns or 'sev.level' not in summary_df.columns:
         raise ValueError("CSV must contain columns: 'sample' and 'sev.level'.")
 
@@ -46,7 +46,7 @@ def load_severity_levels(summary_sample_csv_path: str, sample_index: pd.Index) -
 
 def run_cca_on_2d_pca_from_adata(
     adata: AnnData,
-    summary_sample_csv_path: str,
+    sample_meta_path: str,
     column: str
 ):
     """
@@ -60,7 +60,7 @@ def run_cca_on_2d_pca_from_adata(
         Must have:
             - adata.uns["X_pca_proportion"] of shape (n_samples, >=2)
             - adata.obs["sample"] containing sample names
-    summary_sample_csv_path : str
+    sample_meta_path : str
         Path to CSV with columns ['sample', 'sev.level'].
 
     Returns
@@ -75,7 +75,7 @@ def run_cca_on_2d_pca_from_adata(
     pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
         raise ValueError("X_pca must have at least 2 components for 2D plotting.")
-
+    pca_coords = pca_coords.values 
     # Extract the first two PC coordinates
     pca_coords_2d = pca_coords[:, :2]  # shape: (n_samples, 2)
 
@@ -86,7 +86,7 @@ def run_cca_on_2d_pca_from_adata(
     if len(samples) != pca_coords_2d.shape[0]:
         raise ValueError("The number of PCA rows does not match the number of samples in adata.obs['sample'].")
 
-    sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples)
+    sev_levels_2d = load_severity_levels(sample_meta_path, samples)
     sev_levels = sev_levels_2d.flatten()  # make it 1D
 
     # CCA on the 2D PCA coordinates vs severity
@@ -180,7 +180,7 @@ def plot_cca_on_2d_pca(
         plt.show()
 
 
-def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None, verbose = False):
+def CCA_Call(adata: AnnData, sample_meta_path: str, output_dir = None, verbose = False):
     """
     Run CCA analysis on two PCA projections stored in an AnnData object and plot the results.
     
@@ -188,7 +188,7 @@ def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None, ve
     ----------
     adata : AnnData
         AnnData object with PCA coordinates under 'X_pca_proportion' and 'X_pca_expression'.
-    summary_sample_csv_path : str
+    sample_meta_path : str
         Path to CSV file with severity levels.
     output_dir : str, optional
         Directory to save output plots.
@@ -205,7 +205,7 @@ def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None, ve
 
     pca_coords_2d, sev_levels, cca_model = run_cca_on_2d_pca_from_adata(
         adata,
-        summary_sample_csv_path,
+        sample_meta_path,
         "X_pca_proportion"
     )
 
@@ -218,7 +218,7 @@ def CCA_Call(adata: AnnData, summary_sample_csv_path: str, output_dir = None, ve
 
     pca_coords_2d, sev_levels, cca_model = run_cca_on_2d_pca_from_adata(
         adata,
-        summary_sample_csv_path,
+        sample_meta_path,
         "X_pca_expression"
     )
 

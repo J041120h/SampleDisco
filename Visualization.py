@@ -180,6 +180,7 @@ def visualizeGroupRelationship(
     """
     os.makedirs(outputDir, exist_ok=True)
     samples = sample_distance_matrix.index.tolist()
+    
     sym_matrix = (sample_distance_matrix + sample_distance_matrix.T) / 2
     np.fill_diagonal(sym_matrix.values, 0)
 
@@ -427,7 +428,7 @@ def plot_cell_type_proportions_pca(
     if "X_pca_proportion" not in adata.uns:
         raise KeyError("Missing 'X_pca_proportion' in adata.uns. Ensure PCA was run on cell proportions.")
 
-    pca_coords = adata.uns["X_pca_proportion"]
+    pca_coords = adata.uns["X_pca_proportion"].values
     samples = adata.obs['sample'].unique()
     
     # Construct PCA DataFrame

@@ -295,6 +295,7 @@ def compute_pseudobulk_dataframes(
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, 2000)
     cell_expression_corrected_df, top_features = select_hvf_loess(cell_expression_corrected_df, n_features=n_features, frac=frac)
     proportion_df = cell_proportion_df.T
+    
     pseudobulk = {
         "cell_expression": cell_expression_df,
         "cell_proportion": proportion_df,
@@ -302,4 +303,5 @@ def compute_pseudobulk_dataframes(
     }
     save_dataframe_as_strings(cell_expression_df, pseudobulk_dir, "expression.csv")
     save_dataframe_as_strings(cell_proportion_df, pseudobulk_dir, "proportion.csv")
+    
     return pseudobulk

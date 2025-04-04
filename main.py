@@ -96,29 +96,30 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    # AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read(AnnData_cell_path)
-    AnnData_sample = sc.read(AnnData_sample_path)
-    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
+    AnnData_cell,AnnData_sample = harmony(h5ad_path, sample_meta_path, output_dir, cell_column, cell_meta_path, vars_to_regress = vars_to_regress)
+    # # AnnData_cell = sc.read(AnnData_cell_path)
+    # AnnData_sample = sc.read(AnnData_sample_path)
+    AnnData_cell = cell_types(
+        AnnData_cell, 
+        cell_column='cell_type', 
+        Save=True,
+        output_dir=output_dir,
+        cluster_resolution=0.82, 
+        markers=None, 
+        method='average', 
+        metric='euclidean', 
+        distance_mode='centroid', 
+        num_PCs=20, 
+        verbose=True
+    )
+    cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
+    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
     # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
     # TSCAN(AnnData_sample, "X_pca_expression", 2, output_dir, grouping_columns = ["sev.level"], verbose = True, origin=None)
 
-    # AnnData_cell = cell_types(
-    #     AnnData_cell, 
-    #     cell_column='cell_type', 
-    #     Save=True,
-    #     output_dir=output_dir,
-    #     cluster_resolution=0.82, 
-    #     markers=None, 
-    #     method='average', 
-    #     metric='euclidean', 
-    #     distance_mode='centroid', 
-    #     num_PCs=20, 
-    #     verbose=True
-    # )
-    # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
+
     # CCA_Call(AnnData_sample, sample_meta_path, output_dir, verbose = True)
-    cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
+    # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.44774005254663607, output_dir)
 
     # column = "X_pca_proportion"
@@ -132,9 +133,9 @@ def main():
     # if os.path.exists(summary_cell_csv_path):
     #     os.remove(summary_cell_csv_path)
 
-    # for md in methods:
-    #     print("\n\n\n\n" + md + "\n\n\n\n")
-    #     sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk)
+    for md in methods:
+        print("\n\n\n\n" + md + "\n\n\n\n")
+        sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk)
     # EMD_distances(AnnData_sample, os.path.join(output_dir, 'sample_level_EMD'), summary_sample_csv_path)
     # chi_square_distance(AnnData_sample, os.path.join(output_dir, 'Chi_square_sample'), summary_sample_csv_path)
     # jensen_shannon_distance(AnnData_sample, os.path.join(output_dir, 'jensen_shannon_sample'), summary_sample_csv_path)
