@@ -16,6 +16,7 @@ from PCA import process_anndata_with_pca
 from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
+from TSCAN import TSCAN
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -67,10 +68,15 @@ def wrapper(
 
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised = False,
+
     cca_output_dir=None,
     sev_col_cca = "sev.level",
     cca_optimal_cell_resolution=False,
     cca_pvalue=False,
+
+    grouping_columns = ["sev.level"], 
+    trajectory_verbose = True, 
+    TSCAN_origin = None,
 
     # ===== Paths for Skipping Preprocessing =====
     AnnData_cell_path=None,
@@ -80,7 +86,7 @@ def wrapper(
 
     # ===== Distance Methods =====
     verbose_Visualization = True,
-    grouping_columns=['sev.level'],
+    trajectory_visalization_label=['sev.level'],
     age_bin_size=None,
     dot_size=3,
 
@@ -230,8 +236,11 @@ def wrapper(
                     first_component_score_expression,
                     cca_output_dir
                 )
+        else:
+            TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+            TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
 
-        if os.path.exists(summary_sample_csv_path):
+    if os.path.exists(summary_sample_csv_path):
             os.remove(summary_sample_csv_path)
 
     # Step 5: Sample Distance
