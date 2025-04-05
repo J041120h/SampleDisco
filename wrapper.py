@@ -65,8 +65,10 @@ def wrapper(
     AnnData_sample_path=None,
     pca_verbose=True,
 
-    # ===== CCA Parameters =====
+    # ===== Trajectory Analysis Parameters =====
+    trajectory_supervised = False,
     cca_output_dir=None,
+    sev_col_cca = "sev.level",
     cca_optimal_cell_resolution=False,
     cca_pvalue=False,
 
@@ -98,7 +100,7 @@ def wrapper(
     cell_type_cluster=True,
     sample_distance_calculation = True,
     DimensionalityReduction=True,
-    cca=True,
+    trajectory_analysis=True,
     visualize_data = True
 ):
     ## ====== Preprocessing to add ungiven parameter======
@@ -202,31 +204,32 @@ def wrapper(
         )
 
     # Step 4: CCA
-    if cca:
-        first_component_score_proportion, first_component_score_expression = CCA_Call(AnnData_sample, sample_meta_path, cca_output_dir)
+    if trajectory_analysis:
+        if trajectory_supervised:
+            first_component_score_proportion, first_component_score_expression = CCA_Call(AnnData_sample, sample_meta_path, cca_output_dir, sev_col = sev_col_cca)
 
-        if cca_optimal_cell_resolution:
-            column = "X_pca_proportion"
-            find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
-            column = "X_pca_expression"
-            find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
-        
-        if cca_pvalue:
-            cca_pvalue_test(
-                AnnData_sample,
-                sample_meta_path,
-                "X_pca_proportion",
-                first_component_score_proportion,
-                cca_output_dir
-            )
+            if cca_optimal_cell_resolution:
+                column = "X_pca_proportion"
+                find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
+                column = "X_pca_expression"
+                find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
+            
+            if cca_pvalue:
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_proportion",
+                    first_component_score_proportion,
+                    cca_output_dir
+                )
 
-            cca_pvalue_test(
-                AnnData_sample,
-                sample_meta_path,
-                "X_pca_expression",
-                first_component_score_expression,
-                cca_output_dir
-            )
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_expression",
+                    first_component_score_expression,
+                    cca_output_dir
+                )
 
         if os.path.exists(summary_sample_csv_path):
             os.remove(summary_sample_csv_path)
@@ -294,8 +297,5 @@ if __name__ == '__main__':
         cell_type_cluster=False, 
         sample_distance_calculation = False, 
         DimensionalityReduction=False, 
-        cca=False, 
-        visualize_data = True,
-        umap = True,
-        cca_pvalue = True,
+        trajectory_analysis=True
         )

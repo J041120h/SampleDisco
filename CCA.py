@@ -6,96 +6,89 @@ from anndata import AnnData
 from sklearn.cross_decomposition import CCA
 import time
 
-def load_severity_levels(sample_meta_path: str, sample_index: pd.Index) -> np.ndarray:
+def load_severity_levels(sample_meta_path: str, sample_index: pd.Index, sev_col: str = "sev.level") -> np.ndarray:
     """
-    Load severity levels from a CSV file and align them with the provided sample index (which
-    must match adata.obs["sample"]).
-    
+    Load severity levels from a CSV file and align them with the provided sample index.
+
     Parameters
     ----------
     sample_meta_path : str
         Path to the CSV file containing severity levels.
-        Must have columns ['sample', 'sev.level'].
     sample_index : pd.Index
-        Index (or array of sample names) that we need to align to the CSV data.
-    
+        Index of sample names to align to.
+    sev_col : str
+        Column name in the CSV that contains severity levels.
+
     Returns
     -------
     np.ndarray
         A 2D array (n_samples, 1) of severity levels aligned to `sample_index`.
-        Missing values are replaced with the mean severity.
     """
     summary_df = pd.read_csv(sample_meta_path)
-    if 'sample' not in summary_df.columns or 'sev.level' not in summary_df.columns:
-        raise ValueError("CSV must contain columns: 'sample' and 'sev.level'.")
+    if 'sample' not in summary_df.columns or sev_col not in summary_df.columns:
+        raise ValueError(f"CSV must contain columns: 'sample' and '{sev_col}'.")
 
-    # Make sure severity is numeric
-    summary_df['sev.level'] = pd.to_numeric(summary_df['sev.level'], errors='coerce')
-    sample_to_sev = summary_df.set_index('sample')['sev.level'].to_dict()
+    summary_df[sev_col] = pd.to_numeric(summary_df[sev_col], errors='coerce')
+    sample_to_sev = summary_df.set_index('sample')[sev_col].to_dict()
 
-    # Align to our sample_index
     sev_levels = np.array([sample_to_sev.get(sample, np.nan) for sample in sample_index])
-
-    # Handle missing
     missing_samples = np.isnan(sev_levels).sum()
+
     if missing_samples > 0:
         print(f"Warning: {missing_samples} samples have missing severity levels. Imputing with mean.\n")
         sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
 
-    return sev_levels.reshape(-1, 1)  # shape: (n_samples, 1)
+    return sev_levels.reshape(-1, 1)
+
 
 def run_cca_on_2d_pca_from_adata(
     adata: AnnData,
     sample_meta_path: str,
-    column: str
+    column: str,
+    sev_col: str = "sev.level"
 ):
     """
-    1) Reads the 2D PCA coordinates from `adata.uns["X_pca_proportion"]`.
-    2) Loads and aligns severity levels based on `adata.obs["sample"]`.
-    3) Performs single-component CCA on the (PC1, PC2) vs. severity.
+    Run CCA on 2D PCA coordinates from adata.uns[column] vs. severity levels from CSV.
 
     Parameters
     ----------
     adata : AnnData
-        Must have:
-            - adata.uns["X_pca_proportion"] of shape (n_samples, >=2)
-            - adata.obs["sample"] containing sample names
     sample_meta_path : str
-        Path to CSV with columns ['sample', 'sev.level'].
+    column : str
+        Key in adata.uns containing PCA coordinates.
+    sev_col : str
+        Column name for severity levels in the metadata CSV.
 
     Returns
     -------
     pca_coords_2d : np.ndarray
-        The first 2 columns from `adata.uns["X_pca_proportion"]`.
     sev_levels : np.ndarray
-        1D severity levels, aligned to `adata.obs["sample"]`.
     cca : CCA
-        The fitted CCA model (n_components=1).
+    first_component_score : float
     """
     pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
         raise ValueError("X_pca must have at least 2 components for 2D plotting.")
-    pca_coords = pca_coords.values 
-    # Extract the first two PC coordinates
-    pca_coords_2d = pca_coords[:, :2]  # shape: (n_samples, 2)
+    pca_coords = pca_coords.values
+    pca_coords_2d = pca_coords[:, :2]
 
-    # Align severity to our samples
     if "sample" not in adata.obs.columns:
         raise KeyError("adata.obs must have a 'sample' column to match the CSV severity data.")
     samples = adata.obs["sample"].values.unique()
     if len(samples) != pca_coords_2d.shape[0]:
-        raise ValueError("The number of PCA rows does not match the number of samples in adata.obs['sample'].")
+        raise ValueError("Mismatch between PCA rows and number of unique samples in adata.obs['sample'].")
 
-    sev_levels_2d = load_severity_levels(sample_meta_path, samples)
-    sev_levels = sev_levels_2d.flatten()  # make it 1D
+    sev_levels_2d = load_severity_levels(sample_meta_path, samples, sev_col=sev_col)
+    sev_levels = sev_levels_2d.flatten()
 
-    # CCA on the 2D PCA coordinates vs severity
     cca = CCA(n_components=1)
     cca.fit(pca_coords_2d, sev_levels_2d)
     U, V = cca.transform(pca_coords_2d, sev_levels_2d)
     first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+
     print(f"\n\nThe CCA score for {column} is {first_component_score}\n\n")
     return pca_coords_2d, sev_levels, cca, first_component_score
+
 
 def plot_cca_on_2d_pca(
     pca_coords_2d: np.ndarray,
@@ -105,21 +98,15 @@ def plot_cca_on_2d_pca(
     sample_labels=None
 ):
     """
-    Plots a scatter of the first two PCA coordinates (colored by severity) with a dashed line
-    extending in both directions to represent the CCA direction in the 2D plane.
+    Plot PCA 2D scatter colored by severity and show CCA direction.
 
     Parameters
     ----------
     pca_coords_2d : np.ndarray
-        (n_samples, 2) PCA coordinates.
     sev_levels : np.ndarray
-        (n_samples,) severity levels (for color mapping).
     cca : CCA
-        Fitted CCA model with n_components=1.
     output_path : str, optional
-        If provided, saves the figure to the given path. Otherwise, it shows interactively.
     sample_labels : array-like, optional
-        If provided, text labels for the points (useful for debugging).
     """
     plt.figure(figsize=(7, 6))
 
@@ -127,49 +114,36 @@ def plot_cca_on_2d_pca(
     min_sev, max_sev = np.min(sev_levels), np.max(sev_levels)
     norm_sev = (sev_levels - min_sev) / (max_sev - min_sev + 1e-16)
 
-    # Scatter: PC1 vs PC2
     sc = plt.scatter(
-        pca_coords_2d[:, 0], 
-        pca_coords_2d[:, 1], 
-        c=norm_sev, 
+        pca_coords_2d[:, 0],
+        pca_coords_2d[:, 1],
+        c=norm_sev,
         cmap='viridis_r',
         edgecolors='k',
         alpha=0.8
     )
     plt.colorbar(sc, label='Severity')
 
-    # CCA direction vector
+    # CCA direction
     dx, dy = cca.x_weights_[:, 0]
-
-    # Get PCA range for scaling
-    pc1_min, pc1_max = np.min(pca_coords_2d[:, 0]), np.max(pca_coords_2d[:, 0])
-    pc2_min, pc2_max = np.min(pca_coords_2d[:, 1]), np.max(pca_coords_2d[:, 1])
-
-    max_range = max(pc1_max - pc1_min, pc2_max - pc2_min)  # Maximum PCA span
-
-    # Extend the line fully to the min/max range
-    scale_factor = 0.5 * max_range  # Extends symmetrically in both directions
-    x_start, x_end = -scale_factor * dx, scale_factor * dx
-    y_start, y_end = -scale_factor * dy, scale_factor * dy
-
-    # Dashed line representing the CCA direction
-    plt.plot(
-        [x_start, x_end], 
-        [y_start, y_end], 
-        linestyle="dashed", 
-        color="red", 
-        linewidth=2, 
-        label="CCA Direction"
+    max_range = max(
+        np.ptp(pca_coords_2d[:, 0]),
+        np.ptp(pca_coords_2d[:, 1])
     )
+    scale = 0.5 * max_range
+    x_start, x_end = -scale * dx, scale * dx
+    y_start, y_end = -scale * dy, scale * dy
 
-    # Optionally label each point (sample name)
+    plt.plot([x_start, x_end], [y_start, y_end],
+             linestyle="dashed", color="red", linewidth=2, label="CCA Direction")
+
     if sample_labels is not None:
         for i, label in enumerate(sample_labels):
             plt.text(pca_coords_2d[i, 0], pca_coords_2d[i, 1], label, fontsize=8)
 
     plt.xlabel("PC1")
     plt.ylabel("PC2")
-    plt.title("2D PCA of with CCA Direction")
+    plt.title("2D PCA with CCA Direction")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
@@ -180,33 +154,39 @@ def plot_cca_on_2d_pca(
         plt.show()
 
 
-def CCA_Call(adata: AnnData, sample_meta_path: str, output_dir = None, verbose = False):
+def CCA_Call(
+    adata: AnnData,
+    sample_meta_path: str,
+    output_dir=None,
+    verbose=False,
+    sev_col: str = "sev.level"
+):
     """
-    Run CCA analysis on two PCA projections stored in an AnnData object and plot the results.
-    
+    Run CCA analysis on PCA projections in AnnData object and plot results.
+
     Parameters
     ----------
     adata : AnnData
-        AnnData object with PCA coordinates under 'X_pca_proportion' and 'X_pca_expression'.
     sample_meta_path : str
-        Path to CSV file with severity levels.
     output_dir : str, optional
-        Directory to save output plots.
+    verbose : bool
+    sev_col : str
+        Column name in CSV for severity levels.
     """
     start_time = time.time() if verbose else None
 
     if output_dir:
         output_dir = os.path.join(output_dir, 'CCA')
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir, exist_ok=True)
-    
-    output_path_proportion = os.path.join(output_dir, "pca_2d_cca_proportion.pdf")
-    output_path_expression = os.path.join(output_dir, "pca_2d_cca_expression.pdf")
+        os.makedirs(output_dir, exist_ok=True)
+
+    output_path_proportion = os.path.join(output_dir, "pca_2d_cca_proportion.pdf") if output_dir else None
+    output_path_expression = os.path.join(output_dir, "pca_2d_cca_expression.pdf") if output_dir else None
 
     pca_coords_2d, sev_levels, cca_model, first_component_score_proportion = run_cca_on_2d_pca_from_adata(
         adata,
         sample_meta_path,
-        "X_pca_proportion"
+        "X_pca_proportion",
+        sev_col=sev_col
     )
 
     plot_cca_on_2d_pca(
@@ -219,7 +199,8 @@ def CCA_Call(adata: AnnData, sample_meta_path: str, output_dir = None, verbose =
     pca_coords_2d, sev_levels, cca_model, first_component_score_expression = run_cca_on_2d_pca_from_adata(
         adata,
         sample_meta_path,
-        "X_pca_expression"
+        "X_pca_expression",
+        sev_col=sev_col
     )
 
     plot_cca_on_2d_pca(
@@ -231,8 +212,6 @@ def CCA_Call(adata: AnnData, sample_meta_path: str, output_dir = None, verbose =
 
     if verbose:
         print("CCA completed.")
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        print(f"\n\n[CCA]Total runtime for CCA processing: {elapsed_time:.2f} seconds\n\n")
-    
+        print(f"\n\n[CCA]Total runtime for CCA processing: {time.time() - start_time:.2f} seconds\n\n")
+
     return first_component_score_proportion, first_component_score_expression

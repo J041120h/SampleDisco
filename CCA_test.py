@@ -12,94 +12,109 @@ from PCA import process_anndata_with_pca
 from CCA import load_severity_levels
 from CellType import cell_types, cell_type_assign
 
-def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summary_sample_csv_path, AnnData_sample_path, column):
+def find_optimal_cell_resolution(
+    AnnData_cell,
+    AnnData_sample,
+    output_dir,
+    summary_sample_csv_path,
+    AnnData_sample_path,
+    column,
+    sev_col: str = "sev.level"
+):
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from sklearn.cross_decomposition import CCA
+    import os
+
     score_counter = dict()
     for resolution in np.arange(0.01, 1.01, 0.01):
         print(f"\n\nTesting resolution: {resolution}\n\n")
         cell_types(
-            AnnData_cell, 
-            cell_column='cell_type', 
+            AnnData_cell,
+            cell_column='cell_type',
             Save=False,
             output_dir=output_dir,
-            cluster_resolution=resolution, 
-            markers=None, 
-            method='average', 
-            metric='euclidean', 
-            distance_mode='centroid', 
-            num_PCs=20, 
+            cluster_resolution=resolution,
+            markers=None,
+            method='average',
+            metric='euclidean',
+            distance_mode='centroid',
+            num_PCs=20,
             verbose=False
         )
-        cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir,verbose = False)
+        cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
         pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-        process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = False)
+        process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, adata_path=AnnData_sample_path, verbose=False)
 
         pca_coords = AnnData_sample.uns[column]
-        pca_coords_2d = pca_coords[:, :2]  # shape: (n_samples, 2)
+        pca_coords_2d = pca_coords[:, :2]
 
         samples = AnnData_sample.obs["sample"].values.unique()
-        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples)
+        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sev_col=sev_col)
 
-        # CCA on the 2D PCA coordinates vs severity
         cca = CCA(n_components=1)
         cca.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca.transform(pca_coords_2d, sev_levels_2d)
         first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
         print(first_component_score)
         score_counter[resolution] = first_component_score
+
         if 'cell_type' in AnnData_cell.obs.columns:
             del AnnData_cell.obs['cell_type']
         if 'cell_type' in AnnData_sample.obs.columns:
             del AnnData_sample.obs['cell_type']
-    
+
     best_resolution = max(score_counter, key=score_counter.get)
     print(f"Best resolution from first pass: {best_resolution}")
     fine_score_counter = dict()
+
     for resolution in np.arange(max(0.1, best_resolution - 0.1), min(1.0, best_resolution + 0.1) + 0.01, 0.01):
         cell_types(
-            AnnData_cell, 
-            cell_column='cell_type', 
+            AnnData_cell,
+            cell_column='cell_type',
             Save=False,
             output_dir=output_dir,
-            cluster_resolution=resolution, 
-            markers=None, 
-            method='average', 
-            metric='euclidean', 
-            distance_mode='centroid', 
-            num_PCs=20, 
+            cluster_resolution=resolution,
+            markers=None,
+            method='average',
+            metric='euclidean',
+            distance_mode='centroid',
+            num_PCs=20,
             verbose=False
         )
         cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir, verbose=False)
         pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-        process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, adata_path=AnnData_sample_path,verbose=False)
+        process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, adata_path=AnnData_sample_path, verbose=False)
 
         pca_coords = AnnData_sample.uns[column]
-        pca_coords_2d = pca_coords[:, :2]  # shape: (n_samples, 2)
+        pca_coords_2d = pca_coords[:, :2]
 
         samples = AnnData_sample.obs["sample"].values.unique()
-        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples)
+        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sev_col=sev_col)
 
-        # CCA on the 2D PCA coordinates vs severity
         cca = CCA(n_components=1)
         cca.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca.transform(pca_coords_2d, sev_levels_2d)
         first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
 
-        print(f"Fine-tuned Resolution {resolution}: Score {first_component_score}")
+        print(f"Fine-tuned Resolution {resolution:.2f}: Score {first_component_score}")
         fine_score_counter[resolution] = first_component_score
+
         if 'cell_type' in AnnData_cell.obs.columns:
             del AnnData_cell.obs['cell_type']
         if 'cell_type' in AnnData_sample.obs.columns:
             del AnnData_sample.obs['cell_type']
 
-    # Find the best resolution from the finer search
     final_best_resolution = max(fine_score_counter, key=fine_score_counter.get)
     print(f"Final best resolution: {final_best_resolution}")
 
     df_coarse = pd.DataFrame(list(score_counter.items()), columns=["resolution", "score"])
     df_fine = pd.DataFrame(list(fine_score_counter.items()), columns=["resolution", "score"])
     df_results = pd.concat([df_coarse, df_fine], ignore_index=True)
+
     output_dir = os.path.join(output_dir, "CCA test")
-    os.makedirs(output_dir, exist_ok=True) 
+    os.makedirs(output_dir, exist_ok=True)
     to_csv_path = os.path.join(output_dir, f"resolution_scores_{column}.csv")
     df_results.to_csv(to_csv_path, index=False)
 
@@ -111,7 +126,6 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
     plt.legend()
     plt.grid(True)
 
-    # Save plot locally
     plot_path = os.path.join(output_dir, f"resolution_vs_cca_score_{column}.png")
     plt.savefig(plot_path, dpi=300)
     plt.close()
@@ -120,6 +134,8 @@ def find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, summa
     print("Resolution scores saved as 'resolution_scores.csv'.")
     print("All data saved locally.")
 
+    return final_best_resolution
+
 def cca_pvalue_test(
     adata: AnnData,
     summary_sample_csv_path: str,
@@ -127,6 +143,7 @@ def cca_pvalue_test(
     input_correlation: float,
     output_directory: str,
     num_simulations: int = 1000,
+    sev_col: str = "sev.level",
     verbose: bool = True
 ):
     import os
@@ -152,7 +169,8 @@ def cca_pvalue_test(
     if len(samples) != pca_coords_2d.shape[0]:
         raise ValueError("The number of PCA rows does not match the number of samples in adata.obs['sample'].")
 
-    sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples)
+    # Updated to use the customizable severity column name
+    sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sev_col=sev_col)
     sev_levels_1d = sev_levels_2d.flatten()
 
     simulated_scores = []
