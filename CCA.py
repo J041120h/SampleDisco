@@ -95,7 +95,7 @@ def run_cca_on_2d_pca_from_adata(
     U, V = cca.transform(pca_coords_2d, sev_levels_2d)
     first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
     print(f"\n\nThe CCA score for {column} is {first_component_score}\n\n")
-    return pca_coords_2d, sev_levels, cca
+    return pca_coords_2d, sev_levels, cca, first_component_score
 
 def plot_cca_on_2d_pca(
     pca_coords_2d: np.ndarray,
@@ -203,7 +203,7 @@ def CCA_Call(adata: AnnData, sample_meta_path: str, output_dir = None, verbose =
     output_path_proportion = os.path.join(output_dir, "pca_2d_cca_proportion.pdf")
     output_path_expression = os.path.join(output_dir, "pca_2d_cca_expression.pdf")
 
-    pca_coords_2d, sev_levels, cca_model = run_cca_on_2d_pca_from_adata(
+    pca_coords_2d, sev_levels, cca_model, first_component_score_proportion = run_cca_on_2d_pca_from_adata(
         adata,
         sample_meta_path,
         "X_pca_proportion"
@@ -216,7 +216,7 @@ def CCA_Call(adata: AnnData, sample_meta_path: str, output_dir = None, verbose =
         output_path=output_path_proportion
     )
 
-    pca_coords_2d, sev_levels, cca_model = run_cca_on_2d_pca_from_adata(
+    pca_coords_2d, sev_levels, cca_model, first_component_score_expression = run_cca_on_2d_pca_from_adata(
         adata,
         sample_meta_path,
         "X_pca_expression"
@@ -234,3 +234,5 @@ def CCA_Call(adata: AnnData, sample_meta_path: str, output_dir = None, verbose =
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"\n\n[CCA]Total runtime for CCA processing: {elapsed_time:.2f} seconds\n\n")
+    
+    return first_component_score_proportion, first_component_score_expression

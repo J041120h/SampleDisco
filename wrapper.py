@@ -11,8 +11,7 @@ from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
-from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_in_adata, test_harmony
-from Visualization import visualization, plot_cell_type_proportions_pca, plot_pseudobulk_batch_test_pca
+from Visualization import visualization
 from PCA import process_anndata_with_pca
 from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
@@ -67,7 +66,6 @@ def wrapper(
     pca_verbose=True,
 
     # ===== CCA Parameters =====
-    summary_cell_csv_path=None,
     cca_output_dir=None,
     cca_optimal_cell_resolution=False,
     cca_pvalue=False,
@@ -76,10 +74,7 @@ def wrapper(
     AnnData_cell_path=None,
     # ===== Distance Methods =====
     summary_sample_csv_path = None,
-    methods=None,
-    EMD = True,
-    chi_square = True,
-    jensen_shannon = True,
+    sample_distance_methods=None,
 
     # ===== Distance Methods =====
     verbose_Visualization = True,
@@ -94,24 +89,25 @@ def wrapper(
     plot_pca_3d_flag=True,
     plot_3d_cells_flag=True,
 
-    plot_cell_type_proportions_pca_flag=False,
-    plot_pseudobulk_expression_pca_flag=False,
-    plot_pseudobulk_batch_test_pca_flag=False,
-
+    plot_cell_type_proportions_pca_flag=True,
+    plot_cell_type_expression_pca_flag=True,
+    plot_pseudobulk_batch_test_expression_flag=False,
+    plot_pseudobulk_batch_test_proportion_flag=False,
     # ===== Process Control Flags =====
     preprocessing=True,
     cell_type_cluster=True,
     sample_distance_calculation = True,
-    pseudobulk=True,
+    DimensionalityReduction=True,
     cca=True,
     visualize_data = True
 ):
+    ## ====== Preprocessing to add ungiven parameter======
     print("Start of Process\n")
     if vars_to_regress is None:
         vars_to_regress = []
 
-    if methods is None:
-        methods = [
+    if sample_distance_methods is None:
+        sample_distance_methods = [
             'cosine', 'correlation'
         ]
 
@@ -182,8 +178,8 @@ def wrapper(
             verbose=verbose
         )
 
-    # Step 3: Pseudobulk
-    if pseudobulk:
+    # Step 3: Pseudobulk and PCA
+    if DimensionalityReduction:
         pseudobulk_df = compute_pseudobulk_dataframes(
             adata=AnnData_sample,
             batch_col=batch_col,
@@ -207,7 +203,7 @@ def wrapper(
 
     # Step 4: CCA
     if cca:
-        CCA_Call(AnnData_sample, sample_meta_path, cca_output_dir)
+        first_component_score_proportion, first_component_score_expression = CCA_Call(AnnData_sample, sample_meta_path, cca_output_dir)
 
         if cca_optimal_cell_resolution:
             column = "X_pca_proportion"
@@ -219,38 +215,43 @@ def wrapper(
             cca_pvalue_test(
                 AnnData_sample,
                 sample_meta_path,
-                "X_pca_expression",
-                0.5807686668238389,  # could be parameterized
+                "X_pca_proportion",
+                first_component_score_proportion,
                 cca_output_dir
             )
 
-        plot_cell_type_proportions_pca(AnnData_sample, cca_output_dir)
-        plot_pseudobulk_batch_test_pca(AnnData_sample, cca_output_dir)
+            cca_pvalue_test(
+                AnnData_sample,
+                sample_meta_path,
+                "X_pca_expression",
+                first_component_score_expression,
+                cca_output_dir
+            )
 
         if os.path.exists(summary_sample_csv_path):
             os.remove(summary_sample_csv_path)
 
     # Step 5: Sample Distance
     if sample_distance_calculation:
-        for md in methods:
+        for md in sample_distance_methods:
             print(f"\nRunning sample distance: {md}\n")
             sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk_df)
         
-        if EMD:
+        if "EMD" in sample_distance_methods:
             EMD_distances(
                 AnnData_sample,
                 os.path.join(output_dir, 'sample_level_EMD'),
                 summary_sample_csv_path
             )
 
-        if chi_square:
+        if "chi_square" in sample_distance_methods:
             chi_square_distance(
                 AnnData_sample,
                 os.path.join(output_dir, 'Chi_square_sample'),
                 summary_sample_csv_path
             )
 
-        if jensen_shannon:
+        if "jensen_shannon" in sample_distance_methods:
             jensen_shannon_distance(
                 AnnData_sample,
                 os.path.join(output_dir, 'jensen_shannon_sample'),
@@ -260,12 +261,12 @@ def wrapper(
     #Visualization
     if visualize_data:
         visualization(
-            AnnData_sample,
-            output_dir,
-            grouping_columns=grouping_columns,
-            age_bin_size=age_bin_size,
-            verbose=verbose_Visualization,
-            dot_size=dot_size,
+            adata_sample_diff = AnnData_sample,
+            output_dir = output_dir,
+            grouping_columns = grouping_columns,
+            age_bin_size = age_bin_size,
+            verbose = verbose_Visualization,
+            dot_size = dot_size,
 
             plot_dendrogram_flag=plot_dendrogram_flag,
             plot_umap_by_plot_group_flag=plot_umap_by_plot_group_flag,
@@ -275,10 +276,10 @@ def wrapper(
             plot_3d_cells_flag=plot_3d_cells_flag,
 
             plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
-            plot_pseudobulk_expression_pca_flag=plot_pseudobulk_expression_pca_flag,
-            plot_pseudobulk_batch_test_pca_flag=plot_pseudobulk_batch_test_pca_flag
+            plot_cell_type_expression_pca_flag=plot_cell_type_expression_pca_flag,
+            plot_pseudobulk_batch_test_expression_flag=plot_pseudobulk_batch_test_expression_flag,
+            plot_pseudobulk_batch_test_proportion_flag=plot_pseudobulk_batch_test_proportion_flag
         )
-
     print("End of Process\n")
 
 
@@ -291,8 +292,10 @@ if __name__ == '__main__':
         AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad', 
         preprocessing=False, 
         cell_type_cluster=False, 
-        sample_distance_calculation = True, 
-        pseudobulk=True, 
+        sample_distance_calculation = False, 
+        DimensionalityReduction=False, 
         cca=False, 
-        visualize_data = True
+        visualize_data = True,
+        umap = True,
+        cca_pvalue = True,
         )

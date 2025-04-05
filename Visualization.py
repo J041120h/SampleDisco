@@ -479,12 +479,21 @@ def plot_pseudobulk_expression_pca(adata: AnnData, output_dir: str) -> None:
     
     output_dir = os.path.join(output_dir, 'harmony')
     os.makedirs(output_dir, exist_ok=True)
+
     pca_coords = adata.uns["X_pca_expression"]
     samples = adata.obs['sample'].unique()
-    
+
+    # Convert pca_coords to numpy array if it's a DataFrame
+    if isinstance(pca_coords, pd.DataFrame):
+        pca_coords = pca_coords.values
+
+    # Sanity check: number of rows must match number of samples
+    if pca_coords.shape[0] != len(samples):
+        raise ValueError(f"Mismatch: PCA data has {pca_coords.shape[0]} rows but found {len(samples)} unique samples in adata.obs.")
+
     # Construct PCA DataFrame
     pca_df = pd.DataFrame(pca_coords[:, :2], index=samples, columns=['PC1', 'PC2'])
-    
+
     # Retrieve grouping info
     grouping_columns = ['sev.level']
     diff_groups = find_sample_grouping(adata, samples, grouping_columns)
@@ -504,27 +513,27 @@ def plot_pseudobulk_expression_pca(adata: AnnData, output_dir: str) -> None:
 
     # Plot PCA
     plt.figure(figsize=(8, 6))
-    sc = plt.scatter(pca_df['PC1'], pca_df['PC2'], c=norm_severity, cmap='viridis_r', s=80, alpha=0.8, edgecolors='k')
+    sc = plt.scatter(
+        pca_df['PC1'], pca_df['PC2'],
+        c=norm_severity,
+        cmap='viridis_r',
+        s=80, alpha=0.8, edgecolors='k'
+    )
     plt.colorbar(sc, label='Severity Level')
     plt.xlabel('PC1')
     plt.ylabel('PC2')
     plt.title('2D PCA of HVG Expression')
     plt.grid(True)
     plt.tight_layout()
-    
+
     # Save plot
     plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_sample.pdf')
     plt.savefig(plot_path)
     print(f"PCA plot saved to: {plot_path}")
-
-def plot_pseudobulk_batch_test_pca(adata: AnnData, output_dir: str) -> None:
+def plot_pseudobulk_batch_test_expression(adata: AnnData, output_dir: str) -> None:
     """
     Reads precomputed PCA results for pseudobulk expression from `adata.uns["X_pca_expression"]`
     and visualizes PC1 vs. PC2, coloring samples by batch.
-
-    Parameters:
-    - adata: AnnData object containing PCA results in `adata.uns["X_pca_expression"]`
-    - output_dir: Directory to save the PCA plot.
     """
     if "X_pca_expression" not in adata.uns:
         raise KeyError("Missing 'X_pca_expression' in adata.uns.")
@@ -534,24 +543,27 @@ def plot_pseudobulk_batch_test_pca(adata: AnnData, output_dir: str) -> None:
 
     pca_coords = adata.uns["X_pca_expression"]
     samples = adata.obs['sample'].unique()
-    
-    # Construct PCA DataFrame
+
+    # Convert to numpy array if necessary
+    if isinstance(pca_coords, pd.DataFrame):
+        pca_coords = pca_coords.values
+
+    if pca_coords.shape[0] != len(samples):
+        raise ValueError(f"Mismatch: PCA data has {pca_coords.shape[0]} rows but found {len(samples)} unique samples in adata.obs.")
+
     pca_df = pd.DataFrame(pca_coords[:, :2], index=samples, columns=['PC1', 'PC2'])
-    
-    # Retrieve batch grouping info
+
     grouping_columns = ['batch']
     diff_groups = find_sample_grouping(adata, samples, grouping_columns)
     if isinstance(diff_groups, dict):
         diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
     diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
-    
-    # Merge grouping info
+
     pca_df.index = pca_df.index.astype(str).str.strip().str.lower()
     diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
     pca_df = pca_df.reset_index().rename(columns={'index': 'sample'})
     pca_df = pca_df.merge(diff_groups, on='sample', how='left')
 
-    # Plot PCA colored by batch
     plt.figure(figsize=(8, 6))
     batches = pca_df['plot_group'].unique()
     for i, batch in enumerate(batches):
@@ -565,9 +577,61 @@ def plot_pseudobulk_batch_test_pca(adata: AnnData, output_dir: str) -> None:
     plt.grid(True)
     plt.tight_layout()
 
-    plot_path = os.path.join(output_dir, 'sample_relationship_pca_2D_batch.pdf')
+    plot_path = os.path.join(output_dir, 'sample_relationship_batch_expression.pdf')
     plt.savefig(plot_path)
     print(f"PCA plot saved to: {plot_path}")
+
+def plot_pseudobulk_batch_test_proportion(adata: AnnData, output_dir: str) -> None:
+    """
+    Reads precomputed PCA results for pseudobulk proportions from `adata.uns["X_pca_proportion"]`
+    and visualizes PC1 vs. PC2, coloring samples by batch.
+    """
+    if "X_pca_proportion" not in adata.uns:
+        raise KeyError("Missing 'X_pca_proportion' in adata.uns.")
+    
+    output_dir = os.path.join(output_dir, 'harmony')
+    os.makedirs(output_dir, exist_ok=True)
+
+    pca_coords = adata.uns["X_pca_proportion"]
+    samples = adata.obs['sample'].unique()
+
+    # Convert to numpy array if necessary
+    if isinstance(pca_coords, pd.DataFrame):
+        pca_coords = pca_coords.values
+
+    if pca_coords.shape[0] != len(samples):
+        raise ValueError(f"Mismatch: PCA data has {pca_coords.shape[0]} rows but found {len(samples)} unique samples in adata.obs.")
+
+    pca_df = pd.DataFrame(pca_coords[:, :2], index=samples, columns=['PC1', 'PC2'])
+
+    grouping_columns = ['batch']
+    diff_groups = find_sample_grouping(adata, samples, grouping_columns)
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient='index', columns=['plot_group'])
+    diff_groups.index = diff_groups.index.astype(str).str.strip().str.lower()
+
+    pca_df.index = pca_df.index.astype(str).str.strip().str.lower()
+    diff_groups = diff_groups.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.reset_index().rename(columns={'index': 'sample'})
+    pca_df = pca_df.merge(diff_groups, on='sample', how='left')
+
+    plt.figure(figsize=(8, 6))
+    batches = pca_df['plot_group'].unique()
+    for i, batch in enumerate(batches):
+        subset = pca_df[pca_df['plot_group'] == batch]
+        plt.scatter(subset['PC1'], subset['PC2'], label=batch, s=80, alpha=0.8, edgecolors='k')
+
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('2D PCA of HVG Proportion (Colored by Batch)')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    plot_path = os.path.join(output_dir, 'sample_relationship_pca_batch_proportion.pdf')
+    plt.savefig(plot_path)
+    print(f"PCA plot saved to: {plot_path}")
+
 
 def _preprocessing(
     adata_sample_diff,
@@ -814,8 +878,9 @@ def visualization(
     plot_3d_cells_flag=True,
 
     plot_cell_type_proportions_pca_flag=False,
-    plot_pseudobulk_expression_pca_flag=False,
-    plot_pseudobulk_batch_test_pca_flag=False
+    plot_cell_type_expression_pca_flag=False,
+    plot_pseudobulk_batch_test_expression_flag=False,
+    plot_pseudobulk_batch_test_proportion_flag=False,
 ):
     """
     Main function to handle all steps. Sub-functions are called conditionally based on flags.
@@ -861,11 +926,14 @@ def visualization(
             verbose=verbose
         )
 
-    if plot_pseudobulk_expression_pca_flag:
+    if plot_cell_type_expression_pca_flag:
         plot_pseudobulk_expression_pca(adata_sample_diff, os.path.dirname(output_dir))
 
-    if plot_pseudobulk_batch_test_pca_flag:
-        plot_pseudobulk_batch_test_pca(adata_sample_diff, os.path.dirname(output_dir))
+    if plot_pseudobulk_batch_test_expression_flag:
+        plot_pseudobulk_batch_test_expression(adata_sample_diff, os.path.dirname(output_dir))
+    
+    if plot_pseudobulk_batch_test_expression_flag:
+        plot_pseudobulk_batch_test_proportion(adata_sample_diff, os.path.dirname(output_dir))
 
     if verbose:
         print("[visualization_harmony] All requested visualizations saved.")

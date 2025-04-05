@@ -107,11 +107,11 @@ def cell_types(
     umap = False,
     Save=False,
     output_dir=None,
-    cluster_resolution=0.8, 
+    cluster_resolution=0.8,
     markers=None, 
     method='average', 
     metric='euclidean', 
-    distance_mode='centroid', 
+    distance_mode='centroid',
     num_PCs=20, 
     verbose=True
 ):
