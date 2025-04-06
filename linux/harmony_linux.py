@@ -2,11 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 import scanpy as sc
-import harmonypy as hm
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from sklearn.neighbors import KNeighborsTransformer
 from harmony import harmonize
+import rapids_singlecell as rsc
+from scipy import sparse
 import time
 
 def anndata_cluster(
@@ -24,26 +23,11 @@ def anndata_cluster(
     distance_mode='centroid',
     verbose=True
 ):
-    """
-    Given an AnnData object, perform:
-      - HVG selection (Seurat v3),
-      - PCA,
-      - Harmony batch correction for clustering,
-      - Leiden clustering or label transfer to 'cell_type',
-      - Ranking marker genes,
-      - Hierarchical dendrogram,
-      - UMAP projection.
-
-    Results and the final adata are written to 'adata_cell.h5ad' under output_dir/harmony.
-    """
     if verbose:
-        print('=== Processing data for clustering (mediating batch effects) ===')
+        print('=== [GPU] Processing data for clustering ===')
 
-    # Keep a copy of raw
-    adata_cluster.raw = adata_cluster.copy()
-
-    # Step A1: HVG selection
-    sc.pp.highly_variable_genes(
+    # Step A1: HVG selection (run on CPU before GPU conversion)
+    rsc.pp.highly_variable_genes(
         adata_cluster,
         n_top_genes=num_features,
         flavor='seurat_v3',
@@ -51,30 +35,31 @@ def anndata_cluster(
     )
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
 
-    # Step A2: PCA
-    sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
+    # Step A2: GPU PCA
+    rsc.pp.pca(adata_cluster, n_comps=num_PCs)
 
     if verbose:
-        print('=== Running Harmony integration for clustering ===')
-        print('Variables to be regressed out: ', ','.join(vars_to_regress_for_harmony or []))
-        print(f'Clustering cluster_resolution: {cluster_resolution}')
+        print('=== [GPU] Running Harmony integration ===')
+        print('Variables to regress:', ', '.join(vars_to_regress_for_harmony or []))
 
-    # Step A3: Harmony
+    # Step A3: GPU Harmony
     Z = harmonize(
         adata_cluster.obsm['X_pca'],
         adata_cluster.obs,
-        batch_key = vars_to_regress_for_harmony,
+        batch_key=vars_to_regress_for_harmony,
         max_iter_harmony=num_harmony,
-        use_gpu = True
+        use_gpu=True
     )
     adata_cluster.obsm['X_pca_harmony'] = Z
 
     if verbose:
         print("End of harmony for adata_cluster.")
 
-    # Step A8: Write out final
+    # Back to CPU before saving
+    rsc.get.anndata_to_CPU(adata_cluster)
     sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
     return adata_cluster
+
 
 def anndata_sample(
     adata_sample_diff,
@@ -85,44 +70,36 @@ def anndata_sample(
     num_harmony=30,
     verbose=True
 ):
-    """
-    Given an AnnData object, perform:
-      - HVG selection by cell_type,
-      - PCA,
-      - Harmony integration (here by default on 'batch'),
-      - UMAP projection,
-      - and writes out 'adata_sample.h5ad'.
-
-    This version does minimal or no batch correction on the front-end so that
-    the sample differences remain interpretable.
-    """
     if verbose:
-        print('=== Processing data for sample differences (without batch effect correction) ===')
+        print('=== [GPU] Processing data for sample differences ===')
+    rsc.get.anndata_to_GPU(adata_sample_diff)
+    # GPU PCA
+    rsc.pp.pca(adata_sample_diff, n_comps=num_PCs)
 
-    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
-
-    # # Step B2: Harmony on 'batch'
     if verbose:
-        print('=== Begin Harmony ===')
-    
+        print('=== [GPU] Begin Harmony ===')
+
+    # Harmony
     Z = harmonize(
         adata_sample_diff.obsm['X_pca'],
         adata_sample_diff.obs,
-        batch_key = ['batch'],
+        batch_key=['batch'],
         max_iter_harmony=num_harmony,
-        use_gpu = True
+        use_gpu=True
     )
     adata_sample_diff.obsm['X_pca_harmony'] = Z
 
-    # Step B3: Neighbors + UMAP using Harmony embedding
-    sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
-    sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
+    # GPU neighbors and UMAP
+    rsc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_neighbors=15, metric='cosine')
+    rsc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 
-    # Write out final
+    # Back to CPU before saving
+    rsc.get.anndata_to_CPU(adata_sample_diff)
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_sample_diff
 
-def harmony(
+
+def harmony_linux(
     h5ad_path,
     sample_meta_path,
     output_dir,
@@ -138,56 +115,37 @@ def harmony(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    combat=True,  # Note: not fully implemented in example
+    combat=True,
     method='average',
     metric='euclidean',
     distance_mode='centroid',
     vars_to_regress=[],
     verbose=True
 ):
-    """
-    Harmony Integration with proportional HVG selection by cell type,
-    now reading an existing H5AD file that only contains raw counts (no meta).
-
-    This function:
-      1. Reads and preprocesses the data (filter genes/cells, remove MT genes, etc.).
-      2. Splits into two branches for:
-         (a) adata_cluster used for clustering with Harmony
-         (b) adata_sample_diff used for sample-level analysis (minimal batch correction).
-      3. Returns both AnnData objects.
-    """
-
-    # Start timing
     start_time = time.time()
 
-    # 0. Create output directories if not present
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
-            print("Automatically generating output directory")
+            print("Created output directory")
 
-    # Append 'harmony' subdirectory
     output_dir = os.path.join(output_dir, 'harmony')
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        if verbose:
-            print("Automatically generating harmony subdirectory")
+    os.makedirs(output_dir, exist_ok=True)
 
-    # 1. Read the raw count data from an existing H5AD
     if verbose:
-        print('=== Read input dataset ===')
+        print('=== Reading input dataset ===')
+
     adata = sc.read_h5ad(h5ad_path)
     if verbose:
-        print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+        print(f'Raw shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
-    # We want to regress "sample" plus anything else the user included
+    # Add sample to vars_to_regress if missing
     vars_to_regress_for_harmony = vars_to_regress.copy()
     if "sample" not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append("sample")
 
-    # Attach sample info
+    # Attach metadata
     if cell_meta_path is None:
-        # If no cell metadata provided, assume the obs_names "barcode" has "sample" in front
         adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
     else:
         cell_meta = pd.read_csv(cell_meta_path)
@@ -196,52 +154,53 @@ def harmony(
 
     sample_meta = pd.read_csv(sample_meta_path)
     adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+    # Convert to GPU
+    print("Before GPU conversion. Type of adata.X:", type(adata.X))
+    print("adata.X dtype:", adata.X.dtype)
+    print("adata.X is sparse:", sparse.issparse(adata.X))
 
-    # Basic filtering
-    sc.pp.filter_genes(adata, min_cells=min_cells)
-    sc.pp.filter_cells(adata, min_genes=min_features)
+    # Convert adata.X to float32 if needed
+    if adata.X.dtype != np.float32:
+        print(f"Converting adata.X from {adata.X.dtype} to float32")
+        adata.X = adata.X.astype(np.float32)
+    rsc.get.anndata_to_GPU(adata)
+    print("Converted to GPU. Type of adata.X:", type(adata.X))
 
-    # Mito QC
+    # QC and filtering
+    rsc.pp.filter_genes(adata, min_cells=min_cells)
+    rsc.pp.filter_cells(adata, min_genes=min_features)
     adata.var['mt'] = adata.var_names.str.startswith('MT-')
-    sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
+    rsc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], log1p=False)
     adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
 
-    # Exclude genes if needed
+    # Remove excluded genes
     mt_genes = adata.var_names[adata.var_names.str.startswith('MT-')]
-    if exclude_genes is not None:
-        genes_to_exclude = set(exclude_genes) | set(mt_genes)
-    else:
-        genes_to_exclude = set(mt_genes)
+    genes_to_exclude = set(mt_genes) | set(exclude_genes or [])
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
 
-    # Only keep samples with enough cells
-    cell_counts_per_patient = adata.obs.groupby('sample').size()
-    patients_to_keep = cell_counts_per_patient[cell_counts_per_patient >= min_cells].index
-    adata = adata[adata.obs['sample'].isin(patients_to_keep)].copy()
+    # Filter by sample size
+    cell_counts = adata.obs.groupby('sample').size()
+    keep = cell_counts[cell_counts >= min_cells].index
+    adata = adata[adata.obs['sample'].isin(keep)].copy()
 
-    # Drop genes that are too rare in these final cells
-    min_cells_for_gene = int(0.01 * adata.n_obs)  # e.g., gene must appear in 1% of cells
-    sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
+    rsc.pp.filter_genes(adata, min_cells=int(0.01 * adata.n_obs))
 
     if verbose:
-        print(f'Dimension of processed data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+        print(f'Processed shape: {adata.shape[0]} cells * {adata.shape[1]} genes')
 
-    # Optional doublet detection
     if doublet:
-        sc.pp.scrublet(adata, batch_key="sample")
+        rsc.pp.scrublet(adata, batch_key="sample")
 
-    # Normalization & log transform
-    sc.pp.normalize_total(adata, target_sum=1e4)
-    sc.pp.log1p(adata)
+    rsc.pp.normalize_total(adata, target_sum=1e4)
+    rsc.pp.log1p(adata)
 
     if verbose:
         print("Preprocessing complete!")
 
-    # Split data for two separate analyses
-    adata_cluster = adata.copy()      # used for clustering (with batch effect correction)
-    adata_sample_diff = adata.copy()  # used for sample-level analysis
+    # Split into clustering & sample-diff paths
+    adata_cluster = adata.copy()
+    adata_sample_diff = adata.copy()
 
-    # 2(a). Clustering and cell-type annotation
     adata_cluster = anndata_cluster(
         adata_cluster=adata_cluster,
         output_dir=output_dir,
@@ -268,12 +227,7 @@ def harmony(
         verbose=verbose
     )
 
-    # End timing
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    # Print execution time
     if verbose:
-        print(f"Function execution time: {elapsed_time:.2f} seconds")
+        print(f"Total runtime: {time.time() - start_time:.2f} seconds")
 
     return adata_cluster, adata_sample_diff
