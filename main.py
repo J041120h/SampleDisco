@@ -15,7 +15,7 @@ from Test import sample_anndata_by_sample, treecor_seurat_mapping,count_samples_
 from Visualization import visualization, plot_cell_type_proportions_pca, plot_pseudobulk_batch_test_pca
 from PCA import process_anndata_with_pca
 from CCA import CCA_Call
-from CellType import cell_types, cell_type_assign
+from code.CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 

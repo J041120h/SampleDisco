@@ -1,0 +1,92 @@
+# ===== Harmony Preprocessing Parameters =====
+h5ad_path: "/users/hjiang/GenoDistance/Data/count_data.h5ad"
+sample_meta_path: "/users/hjiang/GenoDistance/Data/cell_data.csv"
+output_dir: "/users/hjiang/GenoDistance/result"
+cell_column: "cell_type"
+cell_meta_path: null
+markers: null
+cluster_resolution: 0.8
+num_PCs: 20
+num_harmony: 30
+num_features: 2000
+min_cells: 500
+min_features: 500
+pct_mito_cutoff: 20
+exclude_genes: null
+doublet: true
+combat: true
+method: "average"
+metric: "euclidean"
+distance_mode: "centroid"
+vars_to_regress: null
+verbose: true
+
+# ===== Cell Type Clustering Parameters =====
+existing_cell_types: false
+umap: false
+cell_type_save: true
+
+# ===== Cell Type Assignment Parameters =====
+assign_save: true
+
+# ===== Pseudobulk Parameters =====
+batch_col: "batch"
+sample_col: "sample"
+celltype_col: "cell_type"
+pseudobulk_output_dir: null
+n_features: 2000
+frac: 0.3
+pseudobulk_verbose: true
+
+# ===== PCA Parameters =====
+n_expression_pcs: 10
+n_proportion_pcs: 10
+pca_output_dir: null
+AnnData_sample_path: null
+pca_verbose: true
+
+# ===== Trajectory Analysis Parameters =====
+trajectory_supervised: false
+cca_output_dir: null
+sev_col_cca: "sev.level"
+cca_optimal_cell_resolution: false
+cca_pvalue: false
+grouping_columns:
+  - "sev.level"
+trajectory_verbose: true
+TSCAN_origin: null
+
+# ===== Paths for Skipping Preprocessing =====
+AnnData_cell_path: null
+
+# ===== Sample Distance Parameters =====
+summary_sample_csv_path: null
+sample_distance_methods: null
+
+# ===== Visualization Parameters =====
+verbose_Visualization: true
+trajectory_visalization_label:
+  - "sev.level"
+age_bin_size: null
+dot_size: 3
+
+plot_dendrogram_flag: true
+plot_cell_umap_by_plot_group_flag: true
+plot_umap_by_cell_type_flag: true
+plot_pca_2d_flag: true
+plot_pca_3d_flag: true
+plot_3d_cells_flag: true
+
+plot_cell_type_proportions_pca_flag: true
+plot_cell_type_expression_pca_flag: true
+plot_pseudobulk_batch_test_expression_flag: false
+plot_pseudobulk_batch_test_proportion_flag: false
+
+# ===== Process Control Flags =====
+preprocessing: true
+cell_type_cluster: true
+sample_distance_calculation: true
+DimensionalityReduction: true
+trajectory_analysis: true
+visualize_data: true
+initialization: false

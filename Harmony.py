@@ -9,9 +9,6 @@ from sklearn.neighbors import KNeighborsTransformer
 from harmony import harmonize
 import time
 
-# Local imports from your project
-from CellType import cell_type_dendrogram
-
 def anndata_cluster(
     adata_cluster,
     output_dir,
@@ -67,7 +64,8 @@ def anndata_cluster(
         adata_cluster.obsm['X_pca'],
         adata_cluster.obs,
         batch_key = vars_to_regress_for_harmony,
-        max_iter_harmony=num_harmony
+        max_iter_harmony=num_harmony,
+        use_gpu = True
     )
     adata_cluster.obsm['X_pca_harmony'] = Z
 
@@ -111,7 +109,8 @@ def anndata_sample(
         adata_sample_diff.obsm['X_pca'],
         adata_sample_diff.obs,
         batch_key = ['batch'],
-        max_iter_harmony=num_harmony
+        max_iter_harmony=num_harmony,
+        use_gpu = True
     )
     adata_sample_diff.obsm['X_pca_harmony'] = Z
 
