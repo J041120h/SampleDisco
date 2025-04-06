@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -91,7 +92,7 @@ def wrapper(
     dot_size=3,
 
     plot_dendrogram_flag=True,
-    plot_umap_by_plot_group_flag=True,
+    plot_cell_umap_by_plot_group_flag=True,
     plot_umap_by_cell_type_flag=True,
     plot_pca_2d_flag=True,
     plot_pca_3d_flag=True,
@@ -107,7 +108,8 @@ def wrapper(
     sample_distance_calculation = True,
     DimensionalityReduction=True,
     trajectory_analysis=True,
-    visualize_data = True
+    visualize_data = True,
+    initialization=False
 ):
     ## ====== Preprocessing to add ungiven parameter======
     print("Start of Process\n")
@@ -130,6 +132,30 @@ def wrapper(
     
     if summary_sample_csv_path is None:
         summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
+    
+    #Check the status of previous processing, to ensure consistent data processing
+    status_file_path = os.path.join(output_dir, "process_status.json")
+    status_flags = {
+        "preprocessing": False,
+        "cell_type_cluster": False,
+        "sample_distance_calculation": False,
+        "DimensionalityReduction": False,
+        "trajectory_analysis": False,
+        "visualize_data": False
+    }
+    if os.path.exists(status_file_path) and initialization == False:
+        with open(status_file_path, 'r') as f:
+            status_flags.update(json.load(f))
+        print("Resuming process from previous progress:")
+        print(json.dumps(status_flags, indent=4))
+    else:
+        check_output_dir = os.path.join(output_dir, "result")
+        if os.path.exists(check_output_dir):
+            os.remove(check_output_dir)
+        print("Initializing process status file.")
+        os.makedirs(output_dir, exist_ok=True)
+        with open(status_file_path, 'w') as f:
+            json.dump(status_flags, f, indent=4)
 
     # Step 1: Harmony Preprocessing
     if preprocessing:
@@ -156,7 +182,19 @@ def wrapper(
             vars_to_regress=vars_to_regress,
             verbose=verbose
         )
+        status_flags["preprocessing"] = True
+        with open(status_file_path, 'w') as f:
+            json.dump(status_flags, f, indent=4)
     else:
+        if not status_flags["preprocessing"]:
+            raise ValueError("Preprocessing is skipped, but no preprocessed data found.")
+        if not AnnData_cell_path or not AnnData_sample_path:
+            temp_cell_path = os.path.join(output_dir, "harmony", "adata_cell.h5ad")
+            temp_sample_path = os.path.join(output_dir, "harmony", "adata_sample.h5ad")
+            if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
+                raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
+            AnnData_cell_path = temp_cell_path
+            AnnData_sample_path = temp_sample_path
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
 
@@ -185,9 +223,14 @@ def wrapper(
             output_dir=output_dir,
             verbose=verbose
         )
+        status_flags["cell_type_cluster"] = True
+        with open(status_file_path, 'w') as f:
+            json.dump(status_flags, f, indent=4)
 
     # Step 3: Pseudobulk and PCA
     if DimensionalityReduction:
+        if status_flags["cell_type_cluster"] == False:
+            raise ValueError("Cell type clustering is required before dimension reduction.")
         pseudobulk_df = compute_pseudobulk_dataframes(
             adata=AnnData_sample,
             batch_col=batch_col,
@@ -208,13 +251,21 @@ def wrapper(
             adata_path=AnnData_sample_path,
             verbose=pca_verbose
         )
+        status_flags["DimensionalityReduction"] = True
+        with open(status_file_path, 'w') as f:
+            json.dump(status_flags, f, indent=4)
 
     # Step 4: CCA
     if trajectory_analysis:
+        if not status_flags["DimensionalityReduction"]:
+            raise ValueError("Dimensionality reduction is required before trajectory analysis.")
         if trajectory_supervised:
-            first_component_score_proportion, first_component_score_expression = CCA_Call(AnnData_sample, sample_meta_path, cca_output_dir, sev_col = sev_col_cca)
+            if sev_col_cca not in AnnData_sample.obs.columns:
+                raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
+            first_component_score_proportion, first_component_score_expression = CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sev_col = sev_col_cca)
 
             if cca_optimal_cell_resolution:
+                # !!! need future adjustment !!!
                 column = "X_pca_proportion"
                 find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
                 column = "X_pca_expression"
@@ -236,6 +287,9 @@ def wrapper(
                     first_component_score_expression,
                     cca_output_dir
                 )
+            status_flags["trajectory_analysis"] = True
+            with open(status_file_path, 'w') as f:
+                json.dump(status_flags, f, indent=4)
         else:
             TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
             TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
@@ -245,6 +299,8 @@ def wrapper(
 
     # Step 5: Sample Distance
     if sample_distance_calculation:
+        if not status_flags["DimensionalityReduction"]:
+            raise ValueError("Dimensionality reduction is required before sample distance calculation.")
         for md in sample_distance_methods:
             print(f"\nRunning sample distance: {md}\n")
             sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk_df)
@@ -269,9 +325,23 @@ def wrapper(
                 os.path.join(output_dir, 'jensen_shannon_sample'),
                 summary_sample_csv_path
             )
+        status_flags["sample_distance_calculation"] = True
+        with open(status_file_path, 'w') as f:
+            json.dump(status_flags, f, indent=4)
         
     #Visualization
     if visualize_data:
+        if not status_flags["preprocessing"]:
+            if plot_cell_umap_by_plot_group_flag or plot_umap_by_cell_type_flag:
+                raise ValueError("Preprocessing is required before the required visualization.")
+        if not status_flags["cell_type_cluster"] and plot_cell_umap_by_plot_group_flag:
+            raise ValueError("Cell type clustering is required before the required visualization.")
+        
+        if not status_flags["DimensionalityReduction"]:
+            if plot_pca_2d_flag or plot_pca_3d_flag or plot_3d_cells_flag or plot_cell_type_proportions_pca_flag or plot_cell_type_expression_pca_flag or plot_pseudobulk_batch_test_expression_flag or plot_pseudobulk_batch_test_proportion_flag:
+                raise ValueError("Dimensionality reduction is required before the required visualization.")
+            raise ValueError("Dimensionality reduction is required before the required visualization.")
+        
         visualization(
             adata_sample_diff = AnnData_sample,
             output_dir = output_dir,
@@ -281,7 +351,7 @@ def wrapper(
             dot_size = dot_size,
 
             plot_dendrogram_flag=plot_dendrogram_flag,
-            plot_umap_by_plot_group_flag=plot_umap_by_plot_group_flag,
+            plot_umap_by_plot_group_flag=plot_cell_umap_by_plot_group_flag,
             plot_umap_by_cell_type_flag=plot_umap_by_cell_type_flag,
             plot_pca_2d_flag=plot_pca_2d_flag,
             plot_pca_3d_flag=plot_pca_3d_flag,
@@ -292,6 +362,9 @@ def wrapper(
             plot_pseudobulk_batch_test_expression_flag=plot_pseudobulk_batch_test_expression_flag,
             plot_pseudobulk_batch_test_proportion_flag=plot_pseudobulk_batch_test_proportion_flag
         )
+        status_flags["visualize_data"] = True
+        with open(status_file_path, 'w') as f:
+            json.dump(status_flags, f, indent=4)
     print("End of Process\n")
 
 
@@ -300,11 +373,10 @@ if __name__ == '__main__':
         h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad", 
         output_dir = "/Users/harry/Desktop/GenoDistance/result", 
         sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv", 
-        AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad', 
-        AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad', 
-        preprocessing=False, 
-        cell_type_cluster=False, 
-        sample_distance_calculation = False, 
-        DimensionalityReduction=False, 
-        trajectory_analysis=True
+        preprocessing=True, 
+        cell_type_cluster=True, 
+        sample_distance_calculation = True, 
+        DimensionalityReduction=True, 
+        trajectory_analysis=True,
+        visualize_data = True
         )
