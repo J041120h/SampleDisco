@@ -6,6 +6,7 @@ import scanpy as sc
 import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
+import shutil
 from pseudobulk import compute_pseudobulk_dataframes
 from Harmony import harmony
 from EMD import EMD_distances
@@ -134,7 +135,7 @@ def wrapper(
         summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
     
     #Check the status of previous processing, to ensure consistent data processing
-    status_file_path = os.path.join(output_dir, "process_status.json")
+    status_file_path = os.path.join(output_dir, "sys_log", "process_status.json")
     status_flags = {
         "preprocessing": False,
         "cell_type_cluster": False,
@@ -143,15 +144,28 @@ def wrapper(
         "trajectory_analysis": False,
         "visualize_data": False
     }
-    if os.path.exists(status_file_path) and initialization == False:
-        with open(status_file_path, 'r') as f:
-            status_flags.update(json.load(f))
-        print("Resuming process from previous progress:")
-        print(json.dumps(status_flags, indent=4))
+
+    # Ensure the sys_log directory exists
+    os.makedirs(os.path.dirname(status_file_path), exist_ok=True)
+
+    if os.path.exists(status_file_path) and not initialization:
+        try:
+            with open(status_file_path, 'r') as f:
+                saved_status = json.load(f)
+                status_flags.update(saved_status)
+            print("Resuming process from previous progress:")
+            print(json.dumps(status_flags, indent=4))
+        except Exception as e:
+            print(f"Error reading status file: {e}")
+            print("Reinitializing status from scratch.")
     else:
         check_output_dir = os.path.join(output_dir, "result")
         if os.path.exists(check_output_dir):
-            os.remove(check_output_dir)
+            try:
+                shutil.rmtree(check_output_dir)
+                print(f"Removed existing result directory: {check_output_dir}")
+            except Exception as e:
+                print(f"Failed to remove existing result directory: {e}")
         print("Initializing process status file.")
         os.makedirs(output_dir, exist_ok=True)
         with open(status_file_path, 'w') as f:
