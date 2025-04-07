@@ -6,6 +6,9 @@ import scanpy as sc
 import anndata as ad
 import harmonypy as hm
 import matplotlib.pyplot as plt
+import subprocess
+import sys
+import platform
 import shutil
 from pseudobulk import compute_pseudobulk_dataframes
 from Harmony import harmony
@@ -110,9 +113,11 @@ def wrapper(
     DimensionalityReduction=True,
     trajectory_analysis=True,
     visualize_data = True,
-    initialization=False
+    initialization=True
 ):
     ## ====== Preprocessing to add ungiven parameter======
+    linux_system = False
+
     print("Start of Process\n")
     if vars_to_regress is None:
         vars_to_regress = []
@@ -171,9 +176,28 @@ def wrapper(
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
 
+    # Add new function that if system dependent:
+    if platform.system() == "Linux":
+        print("Linux system detected.")
+
+        # Install dependencies for rapids-singlecell
+        subprocess.check_call([
+        sys.executable, "-m", "pip", "install",
+        "rapids-singlecell[rapids12]",
+        "--extra-index-url=https://pypi.nvidia.com"
+        ])
+        linux_system = True
+        from linux.harmony_linux import harmony_linux
+        from linux.CellType_linux import cell_types_linux
+        from linux.CCA_test_linux import find_optimal_cell_resolution_linux
+
+    else: 
+        print("nNon-Linux system detected.")
+    
     # Step 1: Harmony Preprocessing
     if preprocessing:
-        AnnData_cell, AnnData_sample = harmony(
+        if linux_system:
+            AnnData_cell, AnnData_sample = harmony_linux(
             h5ad_path=h5ad_path,
             sample_meta_path=sample_meta_path,
             output_dir=output_dir,
@@ -196,6 +220,30 @@ def wrapper(
             vars_to_regress=vars_to_regress,
             verbose=verbose
         )
+        else:
+            AnnData_cell, AnnData_sample = harmony(
+                h5ad_path=h5ad_path,
+                sample_meta_path=sample_meta_path,
+                output_dir=output_dir,
+                cell_column=cell_column,
+                cell_meta_path=cell_meta_path,
+                markers=markers,
+                cluster_resolution=cluster_resolution,
+                num_PCs=num_PCs,
+                num_harmony=num_harmony,
+                num_features=num_features,
+                min_cells=min_cells,
+                min_features=min_features,
+                pct_mito_cutoff=pct_mito_cutoff,
+                exclude_genes=exclude_genes,
+                doublet=doublet,
+                combat=combat,
+                method=method,
+                metric=metric,
+                distance_mode=distance_mode,
+                vars_to_regress=vars_to_regress,
+                verbose=verbose
+            )
         status_flags["preprocessing"] = True
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
@@ -214,21 +262,38 @@ def wrapper(
 
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
-        AnnData_cell = cell_types(
-            adata=AnnData_cell,
-            cell_column=cell_column,
-            existing_cell_types=existing_cell_types,
-            umap=umap,
-            Save=cell_type_save,
-            output_dir=output_dir,
-            cluster_resolution=cluster_resolution,
-            markers=markers,
-            method=method,
-            metric=metric,
-            distance_mode=distance_mode,
-            num_PCs=num_PCs,
-            verbose=verbose
-        )
+        if linux_system:
+            AnnData_cell = cell_types_linux(
+                adata=AnnData_cell,
+                cell_column=cell_column,
+                existing_cell_types=existing_cell_types,
+                umap=umap,
+                Save=cell_type_save,
+                output_dir=output_dir,
+                cluster_resolution=cluster_resolution,
+                markers=markers,
+                method=method,
+                metric=metric,
+                distance_mode=distance_mode,
+                num_PCs=num_PCs,
+                verbose=verbose
+            )
+        else:
+            AnnData_cell = cell_types(
+                adata=AnnData_cell,
+                cell_column=cell_column,
+                existing_cell_types=existing_cell_types,
+                umap=umap,
+                Save=cell_type_save,
+                output_dir=output_dir,
+                cluster_resolution=cluster_resolution,
+                markers=markers,
+                method=method,
+                metric=metric,
+                distance_mode=distance_mode,
+                num_PCs=num_PCs,
+                verbose=verbose
+            )
 
         cell_type_assign(
             adata_cluster=AnnData_cell,
@@ -279,12 +344,41 @@ def wrapper(
             first_component_score_proportion, first_component_score_expression = CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sev_col = sev_col_cca)
 
             if cca_optimal_cell_resolution:
-                # !!! need future adjustment !!!
-                column = "X_pca_proportion"
-                find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
-                column = "X_pca_expression"
-                find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
-            
+                if linux_system:
+                    find_optimal_cell_resolution_linux(
+                        AnnData_cell,
+                        AnnData_sample,
+                        output_dir,
+                        sample_meta_path,
+                        AnnData_sample_path,
+                        "X_pca_proportion"
+                    )
+                    find_optimal_cell_resolution_linux(
+                        AnnData_cell,
+                        AnnData_sample,
+                        output_dir,
+                        sample_meta_path,
+                        AnnData_sample_path,
+                        "X_pca_expression"
+                    )
+                else:
+                    print("Without using rapids-singlecell in linux, the cpu version of the finding optimal resolution is strongly discouraged") 
+                    find_optimal_cell_resolution(
+                        AnnData_cell,
+                        AnnData_sample,
+                        output_dir,
+                        sample_meta_path,
+                        AnnData_sample_path,
+                        "X_pca_proportion"
+                    )
+                    find_optimal_cell_resolution(
+                        AnnData_cell,
+                        AnnData_sample,
+                        output_dir,
+                        sample_meta_path,
+                        AnnData_sample_path,
+                        "X_pca_expression"
+                    )
             if cca_pvalue:
                 cca_pvalue_test(
                     AnnData_sample,
