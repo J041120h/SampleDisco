@@ -18,6 +18,7 @@ from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from linux.harmony_linux import harmony_linux
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
+from linux.CCA_test_linux import find_optimal_cell_resolution_linux
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/Test/result"
@@ -95,40 +96,27 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
-    AnnData_cell = sc.read(AnnData_cell_path)
-    AnnData_sample = sc.read(AnnData_sample_path)
-    AnnData_cell = cell_types_linux(
-            adata=AnnData_cell,
-            cell_column=cell_column,
-            Save=True,
-            output_dir=output_dir,
-            cluster_resolution=0.82,
-            markers=markers,
-            method=method,
-            num_PCs=num_PCs,
-            verbose=verbose
-        )
+    AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
+    # AnnData_cell = sc.read(AnnData_cell_path)
+    # AnnData_sample = sc.read(AnnData_sample_path)
+    # AnnData_cell = cell_types_linux(
+    #         adata=AnnData_cell,
+    #         cell_column=cell_column,
+    #         Save=True,
+    #         output_dir=output_dir,
+    #         cluster_resolution=0.82,
+    #         markers=markers,
+    #         method=method,
+    #         num_PCs=num_PCs,
+    #         verbose=verbose
+    #     )
 
-    cell_type_assign_linux(
-        adata_cluster=AnnData_cell,
-        adata=AnnData_sample,
-        Save=True,
-        output_dir=output_dir,
-        verbose=verbose
-    )
-    # AnnData_cell = cell_types(
-    #     AnnData_cell, 
-    #     cell_column='cell_type', 
+    # cell_type_assign_linux(
+    #     adata_cluster=AnnData_cell,
+    #     adata=AnnData_sample,
     #     Save=True,
     #     output_dir=output_dir,
-    #     cluster_resolution=0.82, 
-    #     markers=None, 
-    #     method='average', 
-    #     metric='euclidean', 
-    #     distance_mode='centroid', 
-    #     num_PCs=20, 
-    #     verbose=True
+    #     verbose=verbose
     # )
     # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
     # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
@@ -140,8 +128,8 @@ def main():
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.44774005254663607, output_dir)
 
-    # column = "X_pca_proportion"
-    # find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
+    column = "X_pca_proportion"
+    find_optimal_cell_resolution_linux(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
 
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir)

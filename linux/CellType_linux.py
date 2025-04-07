@@ -209,17 +209,18 @@ def cell_types_linux(
             print("[cell_types] Computing UMAP.")
         rsc.tl.umap(adata, min_dist=0.5)
     
+    
     rsc.get.anndata_to_CPU(adata)
     if Save and output_dir:
         if verbose:
             print(f"saving the data to {output_dir}")
         output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_cell.h5ad')
-        if os.path.exists(save_path):
-            if verbose:
-                print(f"[cell_types] Removing existing file at {save_path}")
-            os.remove(save_path)
-        sc.write(save_path, adata)  # saving in CPU-based .h5ad format
+        # if os.path.exists(save_path):
+        #     if verbose:
+        #         print(f"[cell_types] Removing existing file at {save_path}")
+        #     os.remove(save_path)
+        adata.write(save_path)  # saving in CPU-based .h5ad format
         if verbose:
             print(f"[cell_types] Saved AnnData object to {save_path}")
     
@@ -256,6 +257,6 @@ def cell_type_assign_linux(adata_cluster, adata, Save=False, output_dir=None, ve
     if Save and output_dir:
         output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_sample.h5ad')
-        sc.write(save_path, adata)  # saving in CPU-based .h5ad format
+        adata.write(save_path)  # saving in CPU-based .h5ad format
         if verbose:
             print(f"[cell_types] Saved AnnData object to {save_path}")

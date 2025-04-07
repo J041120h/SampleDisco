@@ -4,7 +4,6 @@ from sklearn.cross_decomposition import CCA
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from sklearn.cross_decomposition import CCA
 from anndata import AnnData
 import time
 from pseudobulk import compute_pseudobulk_dataframes
