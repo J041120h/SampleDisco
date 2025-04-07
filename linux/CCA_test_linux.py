@@ -85,12 +85,12 @@ def find_optimal_cell_resolution_linux(
             num_PCs=20,
             verbose=False
         )
-        cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir, verbose=False)
+        cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
         pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-        process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, adata_path=AnnData_sample_path, verbose=False)
+        process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, verbose=False)
 
         pca_coords = AnnData_sample.uns[column]
-        pca_coords_2d = pca_coords[:, :2]
+        pca_coords_2d = pca_coords.iloc[:, :2].values
 
         samples = AnnData_sample.obs["sample"].values.unique()
         sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sev_col=sev_col)

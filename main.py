@@ -4,7 +4,7 @@ import pandas as pd
 import scanpy as sc
 import anndata as ad
 import harmonypy as hm
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 from pseudobulk import compute_pseudobulk_dataframes
 from Harmony import harmony
 from EMD import EMD_distances
@@ -16,9 +16,10 @@ from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
-from linux.harmony_linux import harmony_linux
-from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
-from linux.CCA_test_linux import find_optimal_cell_resolution_linux
+# from linux.harmony_linux import harmony_linux
+# from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
+# from linux.CCA_test_linux import find_optimal_cell_resolution_linux
+from resolution_parallel import find_optimal_cell_resolution_parallel
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/Test/result"
@@ -75,16 +76,16 @@ def main():
     cell_column = "celltype"
 
     #on local mac
-    # output_dir = "/Users/harry/Desktop/GenoDistance/result"
-    # h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-    # cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
-    # sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
-    # AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
-    # AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
-    # summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
-    # summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
-    # vars_to_regress = []
-    # cell_column = "cell_type"
+    output_dir = "/Users/harry/Desktop/GenoDistance/result"
+    h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+    cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
+    sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
+    AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
+    summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
+    summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
+    vars_to_regress = []
+    cell_column = "cell_type"
 
     # in /dcs04/hongkai/data/HarryJ
     # output_dir = "/dcs04/hongkai/data/HarryJ/harmony_after_combat"
@@ -96,9 +97,9 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
-    # AnnData_cell = sc.read(AnnData_cell_path)
-    # AnnData_sample = sc.read(AnnData_sample_path)
+    # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
+    AnnData_cell = sc.read(AnnData_cell_path)
+    AnnData_sample = sc.read(AnnData_sample_path)
     # AnnData_cell = cell_types_linux(
     #         adata=AnnData_cell,
     #         cell_column=cell_column,
@@ -129,7 +130,7 @@ def main():
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.44774005254663607, output_dir)
 
     column = "X_pca_proportion"
-    find_optimal_cell_resolution_linux(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, AnnData_sample_path, column) 
+    find_optimal_cell_resolution_parallel(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, column) 
 
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir)
