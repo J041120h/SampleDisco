@@ -57,6 +57,7 @@ def anndata_cluster(
 
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_cluster)
+    adata_cluster.raw = None
     sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
     return adata_cluster
 
@@ -95,6 +96,7 @@ def anndata_sample(
 
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_sample_diff)
+    adata_sample_diff.raw = None
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_sample_diff
 

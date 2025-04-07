@@ -55,6 +55,11 @@ cd "${SLURM_SUBMIT_DIR}" || { echo "Failed to change directory! Exiting."; exit 
 
 # Optimize multi-threading settings
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+export OPENBLAS_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+
+
 
 ############################################
 # Run your actual code                     #

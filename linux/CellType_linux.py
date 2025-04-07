@@ -4,11 +4,12 @@ import os
 import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import fcluster
+import rapids_singlecell as rsc 
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
 
-def cell_type_dendrogram(
+def cell_type_dendrogram_linux(
     adata,
     resolution,
     groupby='cell_type',
@@ -56,9 +57,11 @@ def cell_type_dendrogram(
 
     marker_data = adata[:, marker_genes].X
 
-    df_markers = pd.DataFrame(marker_data.toarray() if hasattr(marker_data, 'toarray') else marker_data,
-                              index=adata.obs_names,
-                              columns=marker_genes)
+    df_markers = pd.DataFrame(
+        marker_data.toarray() if hasattr(marker_data, 'toarray') else marker_data,
+        index=adata.obs_names,
+        columns=marker_genes
+    )
     df_markers[groupby] = adata.obs[groupby].values
 
     if distance_mode == 'centroid':
@@ -100,11 +103,12 @@ def cell_type_dendrogram(
 
     return adata
 
-def cell_types(
+
+def cell_types_linux(
     adata, 
     cell_column='cell_type', 
     existing_cell_types=False,
-    umap = False,
+    umap=False,
     Save=False,
     output_dir=None,
     cluster_resolution=0.8,
@@ -121,6 +125,8 @@ def cell_types(
     Parameters:
     - adata: AnnData object
     - cell_column: Column name containing cell type annotations
+    - existing_cell_types: bool, whether to use existing cell types
+    - umap: bool, whether to compute UMAP
     - Save: Boolean, whether to save the output
     - output_dir: Directory to save the output if Save=True
     - cluster_resolution: Resolution for Leiden clustering
@@ -133,24 +139,26 @@ def cell_types(
     - Updated AnnData object with assigned cell types
     """
     start_time = time.time() if verbose else None
-
+    rsc.get.anndata_to_GPU(adata)
     if cell_column in adata.obs.columns and existing_cell_types:
         if verbose:
             print("[cell_types] Found existing cell type annotation.")
         adata.obs['cell_type'] = adata.obs[cell_column].astype(str)
 
         if markers is not None:
+            # if numeric cluster labels and want to map them to known cell type names
             marker_dict = {i: markers[i - 1] for i in range(1, len(markers) + 1)}
             adata.obs['cell_type'] = adata.obs['cell_type'].map(marker_dict)
 
-        sc.tl.rank_genes_groups(adata, groupby='cell_type', method='logreg', n_genes=100)
+        # rank genes for each cell type
+        rsc.tl.rank_genes_groups(adata, groupby='cell_type', method='logreg', n_genes=100)
         rank_results = adata.uns['rank_genes_groups']
         groups = rank_results['names'].dtype.names
         all_marker_genes = set()
         for group in groups:
             all_marker_genes.update(rank_results['names'][group])
 
-        adata = cell_type_dendrogram(
+        adata = cell_type_dendrogram_linux(
             adata=adata,
             resolution=cluster_resolution,
             groupby='cell_type',
@@ -161,29 +169,24 @@ def cell_types(
             verbose=verbose
         )
 
-        sc.pp.neighbors(adata, use_rep='X_pca_harmony', n_pcs=num_PCs)
+        # rebuild neighbors using 'X_pca_harmony'
+        rsc.pp.neighbors(adata, use_rep='X_pca_harmony', n_pcs=num_PCs)
     else:
         if verbose:
             print("[cell_types] No cell type annotation found. Performing clustering.")
 
         start_time_internal = time.time() if verbose else None
-        transformer = KNeighborsTransformer(n_neighbors=10, metric='manhattan', algorithm='kd_tree')
+        # build the neighbor graph
+        rsc.pp.neighbors(adata, use_rep='X_pca_harmony', n_pcs=num_PCs)
         if verbose:
             end_time_neighbor = time.time()
             elapsed_time = end_time_neighbor - start_time_internal
-            print(f"\n\n[KNT] Total runtime: {elapsed_time:.2f} seconds\n\n")
-            start_time_internal = end_time_neighbor
-        sc.pp.neighbors(adata, use_rep='X_pca_harmony', transformer=transformer, n_pcs=num_PCs)
-        if verbose:
-            end_time_neighbor = time.time()
-            elapsed_time = end_time_neighbor - start_time_internal
-            print(f"\n\n[KNT] Total runtime: {elapsed_time:.2f} seconds\n\n")
-        sc.tl.leiden(
+            print(f"\n\n[rsc.neighbors] Total runtime: {elapsed_time:.2f} seconds\n\n")
+
+        # perform Leiden clustering
+        rsc.tl.leiden(
             adata,
             resolution=cluster_resolution,
-            flavor='igraph',
-            n_iterations=2,
-            directed=False,
             key_added='cell_type'
         )
         if verbose:
@@ -191,9 +194,9 @@ def cell_types(
             elapsed_time = end_time_leiden - start_time_internal
             print(f"\n\n[Leiden] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
+        # convert numeric labels to categories (1-based)
         adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype('category')
 
-        adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype('category')
         num_clusters = adata.obs['cell_type'].nunique()
         if verbose:
             print(f"\n[cell_types] Found {num_clusters} clusters after Leiden clustering.\n")
@@ -202,12 +205,21 @@ def cell_types(
         print("[cell_types] Finished assigning cell types.")
     
     if umap:
-        sc.tl.umap(adata, min_dist=0.5)
+        if verbose:
+            print("[cell_types] Computing UMAP.")
+        rsc.tl.umap(adata, min_dist=0.5)
     
+    rsc.get.anndata_to_CPU(adata)
     if Save and output_dir:
+        if verbose:
+            print(f"saving the data to {output_dir}")
         output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_cell.h5ad')
-        sc.write(save_path, adata)
+        if os.path.exists(save_path):
+            if verbose:
+                print(f"[cell_types] Removing existing file at {save_path}")
+            os.remove(save_path)
+        sc.write(save_path, adata)  # saving in CPU-based .h5ad format
         if verbose:
             print(f"[cell_types] Saved AnnData object to {save_path}")
     
@@ -218,7 +230,8 @@ def cell_types(
 
     return adata
 
-def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None,verbose = True):
+
+def cell_type_assign_linux(adata_cluster, adata, Save=False, output_dir=None, verbose=True):
     """
     Assign cell type labels from one AnnData object to another and optionally save the result.
 
@@ -237,10 +250,12 @@ def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None,verbose =
     """
     if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
         adata_cluster.obs['cell_type'] = '1'
+
     adata.obs['cell_type'] = adata_cluster.obs['cell_type']
+
     if Save and output_dir:
         output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_sample.h5ad')
-        sc.write(save_path, adata)
+        sc.write(save_path, adata)  # saving in CPU-based .h5ad format
         if verbose:
             print(f"[cell_types] Saved AnnData object to {save_path}")

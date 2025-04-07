@@ -17,6 +17,7 @@ from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from linux.harmony_linux import harmony_linux
+from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/Test/result"
@@ -94,9 +95,28 @@ def main():
     # summary_cell_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_cell.csv"
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
-    AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
-    # # AnnData_cell = sc.read(AnnData_cell_path)
-    # AnnData_sample = sc.read(AnnData_sample_path)
+    # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
+    AnnData_cell = sc.read(AnnData_cell_path)
+    AnnData_sample = sc.read(AnnData_sample_path)
+    AnnData_cell = cell_types_linux(
+            adata=AnnData_cell,
+            cell_column=cell_column,
+            Save=True,
+            output_dir=output_dir,
+            cluster_resolution=0.82,
+            markers=markers,
+            method=method,
+            num_PCs=num_PCs,
+            verbose=verbose
+        )
+
+    cell_type_assign_linux(
+        adata_cluster=AnnData_cell,
+        adata=AnnData_sample,
+        Save=True,
+        output_dir=output_dir,
+        verbose=verbose
+    )
     # AnnData_cell = cell_types(
     #     AnnData_cell, 
     #     cell_column='cell_type', 
@@ -143,4 +163,4 @@ def main():
     print("End of Process")
 
 if __name__ == '__main__':
-    
+    main()
