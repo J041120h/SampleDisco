@@ -8,7 +8,6 @@ import rapids_singlecell as rsc
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
-
 def cell_type_dendrogram_linux(
     adata,
     resolution,
@@ -42,6 +41,7 @@ def cell_type_dendrogram_linux(
         Print progress messages.
     """
     start_time = time.time()
+
     if verbose:
         print('=== Preparing data for dendrogram (using marker genes) ===')
 
@@ -99,7 +99,8 @@ def cell_type_dendrogram_linux(
 
     end_time = time.time()
     elapsed_time = end_time - start_time
-    print(f"Function execution time: {elapsed_time:.2f} seconds")
+    if verbose:
+        print(f"Function execution time: {elapsed_time:.2f} seconds")
 
     return adata
 

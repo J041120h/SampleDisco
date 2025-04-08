@@ -1,6 +1,6 @@
 # ===== Harmony Preprocessing Parameters =====
 h5ad_path: "/users/hjiang/GenoDistance/Data/count_data.h5ad"
-sample_meta_path: "/users/hjiang/GenoDistance/Data/cell_data.csv"
+sample_meta_path: "/users/hjiang/GenoDistance/Data/sample_data.csv"
 output_dir: "/users/hjiang/GenoDistance/result"
 cell_column: "cell_type"
 cell_meta_path: null
@@ -46,11 +46,11 @@ AnnData_sample_path: null
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
-trajectory_supervised: false
+trajectory_supervised: true
 cca_output_dir: null
 sev_col_cca: "sev.level"
-cca_optimal_cell_resolution: false
-cca_pvalue: false
+cca_optimal_cell_resolution: true
+cca_pvalue: true
 grouping_columns:
   - "sev.level"
 trajectory_verbose: true
@@ -85,8 +85,8 @@ plot_pseudobulk_batch_test_proportion_flag: false
 # ===== Process Control Flags =====
 preprocessing: true
 cell_type_cluster: true
-sample_distance_calculation: true
+sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true
-visualize_data: true
+visualize_data: false
 initialization: false
