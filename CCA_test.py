@@ -16,7 +16,6 @@ def find_optimal_cell_resolution(
     AnnData_sample,
     output_dir,
     summary_sample_csv_path,
-    AnnData_sample_path,
     column,
     sev_col: str = "sev.level"
 ):
