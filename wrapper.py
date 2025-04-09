@@ -351,7 +351,26 @@ def wrapper(
             if sev_col_cca not in AnnData_sample.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
             first_component_score_proportion, first_component_score_expression = CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sev_col = sev_col_cca)
+            if cca_pvalue:
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_proportion",
+                    first_component_score_proportion,
+                    cca_output_dir
+                )
 
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_expression",
+                    first_component_score_expression,
+                    cca_output_dir
+                )
+            status_flags["trajectory_analysis"] = True
+            with open(status_file_path, 'w') as f:
+                json.dump(status_flags, f, indent=4)
+            
             if cca_optimal_cell_resolution:
                 if linux_system:
                     find_optimal_cell_resolution_linux(
@@ -388,25 +407,6 @@ def wrapper(
                         AnnData_sample_path,
                         "X_pca_expression"
                     )
-            if cca_pvalue:
-                cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_proportion",
-                    first_component_score_proportion,
-                    cca_output_dir
-                )
-
-                cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_expression",
-                    first_component_score_expression,
-                    cca_output_dir
-                )
-            status_flags["trajectory_analysis"] = True
-            with open(status_file_path, 'w') as f:
-                json.dump(status_flags, f, indent=4)
         else:
             TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
             TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)

@@ -306,3 +306,4 @@
   df_as_strings = df.applymap(lambda x: vector_to_string(x) if isinstance(x, (list, np.ndarray)) else str(x))
 /users/hjiang/GenoDistance/code/pseudobulk.py:42: FutureWarning: DataFrame.applymap has been deprecated. Use DataFrame.map instead.
   df_as_strings = df.applymap(lambda x: vector_to_string(x) if isinstance(x, (list, np.ndarray)) else str(x))
+slurmstepd: error: *** JOB 15884942 ON compute-123 CANCELLED AT 2025-04-08T23:39:27 ***
