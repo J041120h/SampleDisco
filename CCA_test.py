@@ -26,7 +26,7 @@ def find_optimal_cell_resolution(
     import os
 
     start_time = time.time()
-    
+
     score_counter = dict()
     for resolution in np.arange(0.01, 1.01, 0.01):
         print(f"\n\nTesting resolution: {resolution}\n\n")
@@ -69,7 +69,7 @@ def find_optimal_cell_resolution(
     print(f"Best resolution from first pass: {best_resolution}")
     fine_score_counter = dict()
 
-    for resolution in np.arange(max(0.1, best_resolution - 0.1), min(1.0, best_resolution + 0.1) + 0.01, 0.01):
+    for resolution in np.arange(max(0.1, best_resolution - 0.05), min(1.0, best_resolution + 0.05) + 0.01, 0.01):
         cell_types(
             AnnData_cell,
             cell_column='cell_type',
@@ -113,7 +113,7 @@ def find_optimal_cell_resolution(
     df_fine = pd.DataFrame(list(fine_score_counter.items()), columns=["resolution", "score"])
     df_results = pd.concat([df_coarse, df_fine], ignore_index=True)
 
-    output_dir = os.path.join(output_dir, "CCA test")
+    output_dir = os.path.join(output_dir, "CCA_test")
     os.makedirs(output_dir, exist_ok=True)
     to_csv_path = os.path.join(output_dir, f"resolution_scores_{column}.csv")
     df_results.to_csv(to_csv_path, index=False)
@@ -131,7 +131,7 @@ def find_optimal_cell_resolution(
     plt.close()
 
     print(f"Resolution vs. CCA Score plot saved as '{plot_path}'.")
-    print("Resolution scores saved as 'resolution_scores.csv'.")
+    print(f"Resolution scores saved as 'resolution_scores.csv{column}'.")
     print("All data saved locally.")
 
     end_time = time.time()
@@ -158,7 +158,7 @@ def cca_pvalue_test(
 
     start_time = time.time() if verbose else None
 
-    output_directory = os.path.join(output_directory, "CCA test")
+    output_directory = os.path.join(output_directory, "CCA_test")
     os.makedirs(output_directory, exist_ok=True)
 
     pca_coords = adata.uns[column]
