@@ -22,6 +22,7 @@ from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
+from resolution_parallel import find_optimal_cell_resolution_parallel
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -390,23 +391,64 @@ def wrapper(
                         "X_pca_expression"
                     )
                 else:
-                    print("Without using rapids-singlecell in linux, the cpu version of the finding optimal resolution is strongly discouraged") 
-                    find_optimal_cell_resolution(
-                        AnnData_cell,
-                        AnnData_sample,
-                        output_dir,
-                        sample_meta_path,
-                        AnnData_sample_path,
-                        "X_pca_proportion"
-                    )
-                    find_optimal_cell_resolution(
-                        AnnData_cell,
-                        AnnData_sample,
-                        output_dir,
-                        sample_meta_path,
-                        AnnData_sample_path,
-                        "X_pca_expression"
-                    )
+                    try:
+                        find_optimal_cell_resolution_parallel(
+                            AnnData_cell = AnnData_cell,
+                            AnnData_sample = AnnData_sample,
+                            output_dir = output_dir,
+                            summary_sample_csv_path = sample_meta_path,
+                            column = "X_pca_proportion",
+                            sev_col = sev_col_cca,
+                            n_jobs = -1,
+                            verbose = False
+                        )
+                        find_optimal_cell_resolution_parallel(
+                            AnnData_cell = AnnData_cell,
+                            AnnData_sample = AnnData_sample,
+                            output_dir = output_dir,
+                            summary_sample_csv_path = sample_meta_path,
+                            column = "X_pca_expression",
+                            sev_col = sev_col_cca,
+                            n_jobs = -1,
+                            verbose = False
+                        )
+                    except MemoryError:
+                        print("MemoryError: Using the CPU version of the finding optimal resolution in parallel exceed memory")
+                        find_optimal_cell_resolution(
+                            AnnData_cell,
+                            AnnData_sample,
+                            output_dir,
+                            sample_meta_path,
+                            AnnData_sample_path,
+                            "X_pca_proportion"
+                        )
+                        find_optimal_cell_resolution(
+                            AnnData_cell,
+                            AnnData_sample,
+                            output_dir,
+                            sample_meta_path,
+                            AnnData_sample_path,
+                            "X_pca_expression"
+                        )
+            if cca_pvalue:
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_proportion",
+                    first_component_score_proportion,
+                    cca_output_dir
+                )
+
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_expression",
+                    first_component_score_expression,
+                    cca_output_dir
+                )
+            status_flags["trajectory_analysis"] = True
+            with open(status_file_path, 'w') as f:
+                json.dump(status_flags, f, indent=4)
         else:
             TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
             TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)

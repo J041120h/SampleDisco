@@ -76,16 +76,16 @@ def main():
     cell_column = "celltype"
 
     #on local mac
-    # output_dir = "/Users/harry/Desktop/GenoDistance/result"
-    # h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-    # cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
-    # sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
-    # AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
-    # AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
-    # summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
-    # summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
-    # vars_to_regress = []
-    # cell_column = "cell_type"
+    output_dir = "/Users/harry/Desktop/GenoDistance/result"
+    h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+    cell_meta_path="/Users/harry/Desktop/GenoDistance/Data/cell_data.csv"
+    sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+    AnnData_cell_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad'
+    AnnData_sample_path = '/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad'
+    summary_cell_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_cell.csv"
+    summary_sample_csv_path = "/Users/harry/Desktop/GenoDistance/result/summary_sample.csv"
+    vars_to_regress = []
+    cell_column = "cell_type"
 
     # in /dcs04/hongkai/data/HarryJ
     # output_dir = "/dcs04/hongkai/data/HarryJ/harmony_after_combat"
@@ -98,7 +98,7 @@ def main():
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
     # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
-    AnnData_cell = sc.read(AnnData_cell_path)
+    # AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
     # AnnData_cell = cell_types_linux(
     #         adata=AnnData_cell,
@@ -120,7 +120,7 @@ def main():
     #     verbose=verbose
     # )
     # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
-    # pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
+    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
     # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
     # TSCAN(AnnData_sample, "X_pca_expression", 2, output_dir, grouping_columns = ["sev.level"], verbose = True, origin=None)
 
@@ -129,8 +129,8 @@ def main():
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.44774005254663607, output_dir)
 
-    column = "X_pca_proportion"
-    find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, column) 
+    # column = "X_pca_proportion"
+    # find_optimal_cell_resolution(AnnData_cell, AnnData_sample, output_dir, sample_meta_path, column) 
 
     # plot_cell_type_proportions_pca(AnnData_sample, output_dir)
     # plot_pseudobulk_pca(AnnData_sample, output_dir)
