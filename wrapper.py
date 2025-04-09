@@ -190,7 +190,16 @@ def wrapper(
         from linux.harmony_linux import harmony_linux
         from linux.CellType_linux import cell_types_linux
         from linux.CCA_test_linux import find_optimal_cell_resolution_linux
-
+        # Enable `managed_memory`
+        import rmm
+        from rmm.allocators.cupy import rmm_cupy_allocator
+        import cupy as cp
+        print("\n\nEnabling managed memory for RMM...\n\n")
+        rmm.reinitialize(
+            managed_memory=True,
+            pool_allocator=False,
+        )
+        cp.cuda.set_allocator(rmm_cupy_allocator)
     else: 
         print("nNon-Linux system detected.")
     

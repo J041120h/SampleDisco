@@ -65,7 +65,7 @@ export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 # Run your actual code                     #
 ############################################
 echo "Starting main.py..."
-python main.py || { echo "Python script failed! Exiting."; exit 1; }
+python GenoDistance.py -m complex --config "/users/hjiang/GenoDistance/code/config/config_linux.yaml" || { echo "Python script failed! Exiting."; exit 1; }
 echo "Finished main.py."
 
 echo "End Time: $(date)"
