@@ -97,58 +97,74 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
     """
     Select highly variable features (HVFs) from pseudobulk data using LOESS.
-    
-    Parameters:
-    -----------
+
+    Parameters
+    ----------
+    pseudobulk : pd.DataFrame
+        DataFrame indexed by cell type and with columns as sample names.
+        Each cell contains a pd.Series with gene expression values (indexed by gene names).
     n_features : int, default 2000
-        Number of top HVFs to select (only used if the total feature count is > n_features).
+        Number of top HVFs to select.
     frac : float, default 0.3
-        Fraction parameter passed to LOESS. Controls the degree of smoothing.
-    
-    Returns:
-    --------
+        Fraction parameter for LOESS smoothing.
+    verbose : bool, default False
+        If True, prints progress information.
+
+    Returns
+    -------
     sample_df : pd.DataFrame
         Sample-by-feature matrix (rows = samples, columns = selected features).
     top_features : pd.Index
         Index of the selected features.
     """
     start_time = time.time() if verbose else None
-    cell_expr = pseudobulk
 
-    # Construct the sample-by-feature matrix
-    sample_df = pd.DataFrame({
-        sample: np.concatenate([cell_expr.loc[ct, sample] for ct in cell_expr.index])
-        for sample in cell_expr.columns
-    }).T
-    sample_df.index.name = 'sample'
-    sample_df.columns = [f"feature_{i}" for i in range(sample_df.shape[1])]
+    # Step 1: Flatten into sample-by-feature matrix with gene names
+    if verbose:
+        print("Constructing sample-by-feature matrix from pseudobulk...")
 
-    # Compute per-feature mean and variance
+    sample_dict = {}
+
+    for sample in pseudobulk.columns:
+        combined = []
+        for cell_type in pseudobulk.index:
+            s = pseudobulk.loc[cell_type, sample]
+            if isinstance(s, pd.Series):
+                combined.append(s)
+        if len(combined) > 0:
+            full_series = pd.concat(combined)
+            sample_dict[sample] = full_series
+
+    sample_df = pd.DataFrame(sample_dict).T
+    sample_df.index.name = "sample"
+
+    # Step 2: Compute per-feature mean and variance
     means = sample_df.mean(axis=0)
     variances = sample_df.var(axis=0)
 
-    # Fit LOESS of variance vs. mean
+    # Step 3: Fit LOESS of variance vs. mean
     loess_fit = lowess(variances, means, frac=frac)
 
-    # Interpolate to get the LOESS-fitted variance for each feature's mean
+    # Step 4: Predict LOESS-smoothed variance
     fitted_var = np.interp(means, loess_fit[:, 0], loess_fit[:, 1])
 
-    # Residual = observed variance - LOESS-fitted variance
+    # Step 5: Calculate residuals
     residuals = variances - fitted_var
 
-    # Select the top n_features by largest positive residual
+    # Step 6: Select top features by residuals
     if sample_df.shape[1] > n_features:
         top_features = residuals.nlargest(n_features).index
         sample_df = sample_df[top_features]
     else:
         top_features = sample_df.columns
-    
+
     if verbose:
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"\n\n[select top features after concatenation] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
     return sample_df, top_features
+
 
 def highly_variable_gene_selection(
     cell_expression_corrected_df: pd.DataFrame,
@@ -158,30 +174,9 @@ def highly_variable_gene_selection(
 ) -> pd.DataFrame:
     """
     Identify Highly Variable Genes (HVGs) for each cell type independently using LOESS regression
-    of log(variance) vs. log(mean). Then truncate the original expression vectors so that only
-    the HVGs are kept for each cell type.
-
-    Parameters
-    ----------
-    cell_expression_corrected_df : pd.DataFrame
-        DataFrame indexed by cell_type and columns by sample. Each cell is a vector (np.array)
-        of length n_genes, representing corrected expression values for that cell type in that sample.
-    n_top_genes : int, optional
-        If specified, retain the top N HVGs with the largest positive residuals. If None,
-        retain all genes that have a positive residual.
-    loess_span : float, optional
-        The span parameter used by LOESS for smoothing. Default is 0.3.
-    verbose : bool, optional
-        If True, print progress updates. Default is False.
-
-    Returns
-    -------
-    hvg_truncated_df : pd.DataFrame
-        A new DataFrame with the same shape (same cell_type index, same sample columns),
-        but each cell is a truncated vector containing only the HVG expression values.
+    of log(variance) vs. log(mean). Truncate each expression Series to only include HVGs.
     """
     start_time = time.time() if verbose else None
-
     hvg_truncated_df = cell_expression_corrected_df.copy(deep=True)
 
     if verbose:
@@ -191,18 +186,20 @@ def highly_variable_gene_selection(
         if verbose:
             print(f"\nProcessing cell type: {ctype}")
 
-        sample_vectors = [
+        # Collect sample expression Series for this cell type
+        sample_series = [
             hvg_truncated_df.loc[ctype, sample_id]
             for sample_id in hvg_truncated_df.columns
-            if (hvg_truncated_df.loc[ctype, sample_id] is not None
-                and len(hvg_truncated_df.loc[ctype, sample_id]) > 0)
+            if isinstance(hvg_truncated_df.loc[ctype, sample_id], pd.Series)
         ]
-        if len(sample_vectors) == 0:
+        if len(sample_series) == 0:
             if verbose:
                 print(f"Skipping {ctype} due to lack of data.")
             continue
 
-        expr_matrix = np.vstack(sample_vectors)
+        # Stack all Series into a matrix and get gene names
+        gene_names = sample_series[0].index
+        expr_matrix = np.vstack([s.loc[gene_names].values for s in sample_series])
         n_samples, n_genes = expr_matrix.shape
 
         if n_samples < 2:
@@ -249,18 +246,20 @@ def highly_variable_gene_selection(
             if verbose:
                 print(f"Selected {len(hvg_genes_idx)} HVGs for {ctype} (using positive residuals).")
 
+        selected_genes = gene_names[hvg_genes_idx]
+
         if verbose:
             print("Updating truncated expression matrix...")
 
         for sample_id in hvg_truncated_df.columns:
-            orig_vector = hvg_truncated_df.loc[ctype, sample_id]
-            if (orig_vector is not None) and (len(orig_vector) == n_genes):
-                hvg_truncated_df.loc[ctype, sample_id] = orig_vector[hvg_genes_idx]
+            orig_series = hvg_truncated_df.loc[ctype, sample_id]
+            if isinstance(orig_series, pd.Series):
+                hvg_truncated_df.loc[ctype, sample_id] = orig_series.loc[selected_genes]
 
     if verbose:
         print("\nHVG selection process completed.")
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"\n\n[HVG for each cell type]Total execution time: {elapsed_time:.2f} seconds\n\n")
+        print(f"\n\n[HVG for each cell type] Total execution time: {elapsed_time:.2f} seconds\n\n")
 
     return hvg_truncated_df
