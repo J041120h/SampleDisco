@@ -98,7 +98,7 @@ def main():
     # summary_sample_csv_path = "/dcs04/hongkai/data/HarryJ/harmony_after_combat/summary_sample.csv"
 
     # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
-    AnnData_cell = sc.read(AnnData_cell_path)
+    # AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
     # AnnData_cell = cell_types_linux(
     #         adata=AnnData_cell,

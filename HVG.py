@@ -165,7 +165,6 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
 
     return sample_df, top_features
 
-
 def highly_variable_gene_selection(
     cell_expression_corrected_df: pd.DataFrame,
     n_top_genes: int = None,
@@ -175,6 +174,7 @@ def highly_variable_gene_selection(
     """
     Identify Highly Variable Genes (HVGs) for each cell type independently using LOESS regression
     of log(variance) vs. log(mean). Truncate each expression Series to only include HVGs.
+    Gene names are prefixed with cell type at the end.
     """
     start_time = time.time() if verbose else None
     hvg_truncated_df = cell_expression_corrected_df.copy(deep=True)
@@ -197,15 +197,21 @@ def highly_variable_gene_selection(
                 print(f"Skipping {ctype} due to lack of data.")
             continue
 
-        # Stack all Series into a matrix and get gene names
+        # Extract gene names from the first sample
         gene_names = sample_series[0].index
-        expr_matrix = np.vstack([s.loc[gene_names].values for s in sample_series])
-        n_samples, n_genes = expr_matrix.shape
 
-        if n_samples < 2:
+        # Confirm all Series have the same index
+        sample_series = [
+            s for s in sample_series if s.index.equals(gene_names)
+        ]
+        if len(sample_series) < 2:
             if verbose:
-                print(f"Skipping {ctype} due to insufficient samples (n_samples={n_samples}).")
+                print(f"Skipping {ctype} due to inconsistent gene names or insufficient samples.")
             continue
+
+        # Stack expression vectors
+        expr_matrix = np.vstack([s.values for s in sample_series])
+        n_samples, n_genes = expr_matrix.shape
 
         if verbose:
             print(f"Computing mean and variance for {n_genes} genes across {n_samples} samples...")
@@ -247,14 +253,16 @@ def highly_variable_gene_selection(
                 print(f"Selected {len(hvg_genes_idx)} HVGs for {ctype} (using positive residuals).")
 
         selected_genes = gene_names[hvg_genes_idx]
+        prefixed_genes = [f"{ctype} - {g}" for g in selected_genes]
 
         if verbose:
-            print("Updating truncated expression matrix...")
+            print("Updating truncated expression matrix with prefixed gene names...")
 
         for sample_id in hvg_truncated_df.columns:
             orig_series = hvg_truncated_df.loc[ctype, sample_id]
             if isinstance(orig_series, pd.Series):
-                hvg_truncated_df.loc[ctype, sample_id] = orig_series.loc[selected_genes]
+                truncated_values = orig_series.loc[selected_genes].values
+                hvg_truncated_df.at[ctype, sample_id] = pd.Series(truncated_values, index=prefixed_genes)
 
     if verbose:
         print("\nHVG selection process completed.")
