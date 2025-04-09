@@ -91,6 +91,7 @@ import matplotlib.pyplot as plt
 
 from joblib import Parallel, delayed
 from anndata import AnnData
+import time
 
 def find_optimal_cell_resolution_parallel(
     AnnData_cell: AnnData,
@@ -115,6 +116,8 @@ def find_optimal_cell_resolution_parallel(
     # ----------------------------------------------------------------
     #                    First Pass (0.1 to 1.0 by 0.1)
     # ----------------------------------------------------------------
+    start_time = time.time()
+
     if verbose:
         print("---- First Pass: [0.1 .. 1.0] by 0.1 ----")
     coarse_resolutions = np.arange(0.1, 1.0 + 1e-9, 0.1)
@@ -204,5 +207,9 @@ def find_optimal_cell_resolution_parallel(
     if verbose:
         print(f"\nResolution vs. CCA Score plot saved at: {plot_path}")
         print(f"Resolution scores saved at: {csv_path}")
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"\n\n[Find Optimal Resolution] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
     return final_best_resolution

@@ -372,6 +372,22 @@ def wrapper(
             with open(status_file_path, 'w') as f:
                 json.dump(status_flags, f, indent=4)
             
+            if cca_pvalue:
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_proportion",
+                    first_component_score_proportion,
+                    cca_output_dir
+                )
+
+                cca_pvalue_test(
+                    AnnData_sample,
+                    sample_meta_path,
+                    "X_pca_expression",
+                    first_component_score_expression,
+                    cca_output_dir
+                )
             if cca_optimal_cell_resolution:
                 if linux_system:
                     find_optimal_cell_resolution_linux(
@@ -430,22 +446,6 @@ def wrapper(
                             AnnData_sample_path,
                             "X_pca_expression"
                         )
-            if cca_pvalue:
-                cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_proportion",
-                    first_component_score_proportion,
-                    cca_output_dir
-                )
-
-                cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_expression",
-                    first_component_score_expression,
-                    cca_output_dir
-                )
             status_flags["trajectory_analysis"] = True
             with open(status_file_path, 'w') as f:
                 json.dump(status_flags, f, indent=4)

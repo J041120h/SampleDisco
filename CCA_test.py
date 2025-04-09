@@ -25,6 +25,8 @@ def find_optimal_cell_resolution(
     from sklearn.cross_decomposition import CCA
     import os
 
+    start_time = time.time()
+    
     score_counter = dict()
     for resolution in np.arange(0.01, 1.01, 0.01):
         print(f"\n\nTesting resolution: {resolution}\n\n")
@@ -131,6 +133,10 @@ def find_optimal_cell_resolution(
     print(f"Resolution vs. CCA Score plot saved as '{plot_path}'.")
     print("Resolution scores saved as 'resolution_scores.csv'.")
     print("All data saved locally.")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"\n\n[Find Optimal Resolution] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
     return final_best_resolution
 
