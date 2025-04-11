@@ -11,7 +11,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=32              # CPU count
 #SBATCH --gpus=1                        # Request 1 GPU
-#SBATCH --time=1-00:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH --mem=400GB                     # Memory allocation
 #SBATCH --output=test.out
 #SBATCH --error=test.err
