@@ -180,13 +180,13 @@ def wrapper(
     # Add new function that if system dependent:
     if platform.system() == "Linux":
         print("Linux system detected.")
-
-        # Install dependencies for rapids-singlecell
-        subprocess.check_call([
-        sys.executable, "-m", "pip", "install",
-        "rapids-singlecell[rapids12]",
-        "--extra-index-url=https://pypi.nvidia.com"
-        ])
+        if initialization:
+            # Install dependencies for rapids-singlecell
+            subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            "rapids-singlecell[rapids12]",
+            "--extra-index-url=https://pypi.nvidia.com"
+            ])
         linux_system = True
         from linux.harmony_linux import harmony_linux
         from linux.CellType_linux import cell_types_linux
@@ -524,6 +524,10 @@ def wrapper(
         status_flags["visualize_data"] = True
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
+        
+        # status_flags["initialization"] = False
+        # with open(status_file_path, 'w') as f:
+        #     json.dump(status_flags, f, indent=4)
     print("End of Process\n")
 
 

@@ -74,7 +74,7 @@ def find_optimal_cell_resolution_linux(
     fine_score_counter = dict()
 
     for resolution in np.arange(max(0.1, best_resolution - 0.02), min(1.0, best_resolution + 0.02) + 0.01, 0.01):
-        cell_types(
+        cell_types_linux(
             AnnData_cell,
             cell_column='cell_type',
             Save=False,
@@ -87,10 +87,9 @@ def find_optimal_cell_resolution_linux(
             num_PCs=20,
             verbose=False
         )
-        cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
+        cell_type_assign_linux(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
         pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
         process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, verbose=False)
-
         pca_coords = AnnData_sample.uns[column]
         pca_coords_2d = pca_coords.iloc[:, :2].values
 

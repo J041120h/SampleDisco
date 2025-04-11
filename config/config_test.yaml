@@ -49,7 +49,7 @@ pca_verbose: true
 trajectory_supervised: true
 cca_output_dir: null
 sev_col_cca: "sev.level"
-cca_optimal_cell_resolution: true
+cca_optimal_cell_resolution: false
 cca_pvalue: true
 grouping_columns:
   - "sev.level"

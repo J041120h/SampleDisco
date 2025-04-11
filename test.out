@@ -1,0 +1,342 @@
+======================================
+ Job ID:            15963406
+ Job Name:          test
+ Partition:         gpu
+ Node List:         compute-123
+ CPUs per Task:     32
+ Memory Alloc:      409600
+ GPU Requested:     1
+ Start Time:        Thu Apr 10 10:00:11 PM EDT 2025
+======================================
+Checking GPU status...
+Thu Apr 10 22:00:12 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
+| N/A   48C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Starting main.py...
+Start of Process
+
+Initializing process status file.
+Linux system detected.
+
+
+Enabling managed memory for RMM...
+
+
+=== Reading input dataset ===
+Raw shape: 16572 cells × 19668 genes
+Before GPU conversion. Type of adata.X: <class 'numpy.ndarray'>
+adata.X dtype: int64
+adata.X is sparse: False
+Converting adata.X from int64 to float32
+Converted to GPU. Type of adata.X: <class 'cupy.ndarray'>
+filtered out 12834 genes that are detected in less than 500 cells
+filtered out 480 cells that have less than 500 genes expressed
+Processed shape: 16092 cells * 6834 genes
+[2025-04-10 22:00:26.865] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.24
+Detected doublet rate = 1.0%
+Estimated detectable doublet fraction = 36.4%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 2.6%
+[2025-04-10 22:00:27.536] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.33
+Detected doublet rate = 0.5%
+Estimated detectable doublet fraction = 13.8%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 3.8%
+[2025-04-10 22:00:28.052] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.41
+Detected doublet rate = 0.5%
+Estimated detectable doublet fraction = 13.0%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 3.5%
+[2025-04-10 22:00:28.442] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.28
+Detected doublet rate = 0.5%
+Estimated detectable doublet fraction = 20.2%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 2.4%
+[2025-04-10 22:00:28.781] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.28
+Detected doublet rate = 1.1%
+Estimated detectable doublet fraction = 26.1%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 4.2%
+[2025-04-10 22:00:29.246] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.23
+Detected doublet rate = 1.5%
+Estimated detectable doublet fraction = 53.6%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 2.8%
+[2025-04-10 22:00:29.607] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.25
+Detected doublet rate = 0.2%
+Estimated detectable doublet fraction = 34.3%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 0.6%
+[2025-04-10 22:00:30.023] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+Automatically set threshold at doublet score = 0.32
+Detected doublet rate = 0.9%
+Estimated detectable doublet fraction = 18.3%
+Overall doublet rate:
+	Expected   = 5.0%
+	Estimated  = 4.9%
+Preprocessing complete!
+=== [GPU] Processing data for clustering ===
+[2025-04-10 22:00:31.391] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+=== [GPU] Running Harmony integration ===
+Variables to regress: sample
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+	Completed 3 / 30 iteration(s).
+Reach convergence after 3 iteration(s).
+End of harmony for adata_cluster.
+=== [GPU] Processing data for sample differences ===
+[2025-04-10 22:00:38.826] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
+=== [GPU] Begin Harmony ===
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+	Completed 3 / 30 iteration(s).
+	Completed 4 / 30 iteration(s).
+	Completed 5 / 30 iteration(s).
+	Completed 6 / 30 iteration(s).
+	Completed 7 / 30 iteration(s).
+	Completed 8 / 30 iteration(s).
+	Completed 9 / 30 iteration(s).
+Reach convergence after 9 iteration(s).
+[2025-04-10 22:00:49.914] [CUML] [debug] n_neighbors=15
+[2025-04-10 22:00:49.914] [CUML] [debug] Calling knn graph run
+[2025-04-10 22:00:49.914] [CUML] [debug] Done. Calling fuzzy simplicial set
+[2025-04-10 22:00:49.932] [CUML] [debug] Done. Calling remove zeros
+Total runtime: 32.45 seconds
+[cell_types] No cell type annotation found. Performing clustering.
+[2025-04-10 22:00:54.907] [CUML] [debug] n_neighbors=15
+[2025-04-10 22:00:54.907] [CUML] [debug] Calling knn graph run
+[2025-04-10 22:00:54.907] [CUML] [debug] Done. Calling fuzzy simplicial set
+[2025-04-10 22:00:54.910] [CUML] [debug] Done. Calling remove zeros
+
+
+[rsc.neighbors] Total runtime: 0.05 seconds
+
+
+
+
+[Leiden] Total runtime: 1.30 seconds
+
+
+
+[cell_types] Found 16 clusters after Leiden clustering.
+
+[cell_types] Finished assigning cell types.
+saving the data to /users/hjiang/GenoDistance/Test/result
+[cell_types] Saved AnnData object to /users/hjiang/GenoDistance/Test/result/harmony/adata_cell.h5ad
+
+
+[cell_types] Total runtime: 2.00 seconds
+
+
+[cell_types] Saved AnnData object to /users/hjiang/GenoDistance/Test/result/harmony/adata_sample.h5ad
+
+
+
+
+No NaN, negative, or Inf values found in X_data.
+
+
+
+
+
+
+
+
+Successfully computed pseudobulk data.
+
+
+
+
+
+
+[pseudobulk] Total runtime: 1.79 seconds
+
+
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '9'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '11'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '4'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '14'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '12'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '8'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '5'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '2'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '7'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '3'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '10'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '1'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '16'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '15'.
+Found 2 batches.
+Adjusting for 0 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction applied for '6'.
+Deleting '13' due to insufficient batch diversity or small batch sizes: {'b': 2}.
+Removing 1 cell types that failed checks: {13}
+Drop '{13}'
+ComBat correction completed.
+[combat] Total runtime: 0.62 seconds
+[process_anndata_with_pca] Starting PCA computation...
+[process_anndata_with_pca] Using n_expression_pcs=8, n_proportion_pcs=8
+[run_pca_expression] PCA completed and stored in adata.uns['X_pca_expression'].
+Shape of PCA DataFrame: (8, 8)
+[run_pca_proportion] PCA on cell proportions completed.
+Stored results in adata.uns['X_pca_proportion'] with shape: (8, 8)
+[process_anndata_with_pca] Total runtime for PCA processing: 0.03 seconds
+
+
+The CCA score for X_pca_proportion is 0.9437832061608376
+
+
+Saved CCA direction plot to /users/hjiang/GenoDistance/Test/result/CCA/pca_2d_cca_proportion.pdf
+
+
+The CCA score for X_pca_expression is 0.7669249700604761
+
+
+Saved CCA direction plot to /users/hjiang/GenoDistance/Test/result/CCA/pca_2d_cca_expression.pdf
+P-value for observed correlation 0.9437832061608376: 0.023
+CCA p-value test on cell proportions completed.
+
+[CCA p-test] Total runtime processing: 1.39 seconds
+
+P-value for observed correlation 0.7669249700604761: 0.031
+CCA p-value test on cell proportions completed.
+
+[CCA p-test] Total runtime processing: 1.39 seconds
+
+P-value for observed correlation 0.9437832061608376: 0.031
+CCA p-value test on cell proportions completed.
+
+[CCA p-test] Total runtime processing: 1.38 seconds
+
+P-value for observed correlation 0.7669249700604761: 0.02
+CCA p-value test on cell proportions completed.
+
+[CCA p-test] Total runtime processing: 1.39 seconds
+
+End of Process
+
+Finished main.py.
+End Time: Thu Apr 10 10:01:27 PM EDT 2025
