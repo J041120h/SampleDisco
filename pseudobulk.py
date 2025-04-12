@@ -201,6 +201,11 @@ def compute_pseudobulk_dataframes(
 ):
     start_time = time.time() if verbose else None
 
+
+    if batch_col not in adata.obs.columns:
+        print(f"Column '{batch_col}' not found in adata.obs — assigning default value '1' to all rows.")
+        adata.obs[batch_col] = 1
+
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
 

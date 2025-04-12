@@ -12,6 +12,7 @@ import time
 def anndata_cluster(
     adata_cluster,
     output_dir,
+    sample_column = 'sample',
     cell_column='cell_type',
     cluster_resolution=0.8,
     markers=None,
@@ -38,7 +39,7 @@ def anndata_cluster(
     """
     if verbose:
         print('=== Processing data for clustering (mediating batch effects) ===')
-
+    
     # Keep a copy of raw
     adata_cluster.raw = adata_cluster.copy()
 
@@ -47,7 +48,7 @@ def anndata_cluster(
         adata_cluster,
         n_top_genes=num_features,
         flavor='seurat_v3',
-        batch_key='sample'
+        batch_key=sample_column
     )
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
 
@@ -79,6 +80,7 @@ def anndata_cluster(
 def anndata_sample(
     adata_sample_diff,
     output_dir,
+    batch_key,
     sample_column='sample',
     num_features=2000,
     num_PCs=20,
@@ -108,7 +110,7 @@ def anndata_sample(
     Z = harmonize(
         adata_sample_diff.obsm['X_pca'],
         adata_sample_diff.obs,
-        batch_key = ['batch'],
+        batch_key = [batch_key],
         max_iter_harmony=num_harmony,
         use_gpu = True
     )
@@ -126,8 +128,10 @@ def harmony(
     h5ad_path,
     sample_meta_path,
     output_dir,
+    sample_column = 'sample',
     cell_column='cell_type',
     cell_meta_path=None,
+    batch_key='batch',
     markers=None,
     cluster_resolution=0.8,
     num_PCs=20,
@@ -156,7 +160,6 @@ def harmony(
          (b) adata_sample_diff used for sample-level analysis (minimal batch correction).
       3. Returns both AnnData objects.
     """
-
     # Start timing
     start_time = time.time()
 
@@ -182,24 +185,37 @@ def harmony(
 
     # We want to regress "sample" plus anything else the user included
     vars_to_regress_for_harmony = vars_to_regress.copy()
-    if "sample" not in vars_to_regress_for_harmony:
-        vars_to_regress_for_harmony.append("sample")
+    if sample_column not in vars_to_regress_for_harmony:
+        vars_to_regress_for_harmony.append(sample_column)
 
     # Attach sample info
     if cell_meta_path is None:
-        # If no cell metadata provided, assume the obs_names "barcode" has "sample" in front
-        adata.obs['sample'] = adata.obs_names.str.split(':').str[0]
+        if sample_column not in adata.obs.columns: 
+            adata.obs[sample_column] = adata.obs_names.str.split(':').str[0]
     else:
         cell_meta = pd.read_csv(cell_meta_path)
         cell_meta.set_index('barcode', inplace=True)
         adata.obs = adata.obs.join(cell_meta, how='left')
 
-    sample_meta = pd.read_csv(sample_meta_path)
-    adata.obs = adata.obs.merge(sample_meta, on='sample', how='left')
+    # We allow user not to input sample_meta_path
+    if sample_meta_path is not None:
+        sample_meta = pd.read_csv(sample_meta_path)
+        adata.obs = adata.obs.merge(sample_meta, on=sample_column, how='left')
+    
+    # Error checking, to make sure that all required columns are present
+    all_required_columns = vars_to_regress + [batch_key]
+    missing_vars = [col for col in all_required_columns if col not in adata.obs.columns]
+    if missing_vars:
+        raise KeyError(f"The following variables are missing from adata.obs: {missing_vars}")
+    else:
+        if verbose:
+            print("All required columns are present in adata.obs.")
 
     # Basic filtering
-    sc.pp.filter_genes(adata, min_cells=min_cells)
     sc.pp.filter_cells(adata, min_genes=min_features)
+    sc.pp.filter_genes(adata, min_cells=min_cells)
+    if verbose:
+        print(f"After basic filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
 
     # Mito QC
     adata.var['mt'] = adata.var_names.str.startswith('MT-')
@@ -213,22 +229,33 @@ def harmony(
     else:
         genes_to_exclude = set(mt_genes)
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
+    if verbose:
+        print(f"After remove MT_gene and user input cell -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
 
-    # Only keep samples with enough cells
-    cell_counts_per_patient = adata.obs.groupby('sample').size()
+    cell_counts_per_patient = adata.obs.groupby(sample_column).size()
+    if verbose:
+        print("Sample counts BEFORE filtering:")
+        print(cell_counts_per_patient.sort_values(ascending=False))
     patients_to_keep = cell_counts_per_patient[cell_counts_per_patient >= min_cells].index
-    adata = adata[adata.obs['sample'].isin(patients_to_keep)].copy()
+    if verbose:
+        print(f"\nSamples retained (>= {min_cells} cells): {list(patients_to_keep)}")
+    adata = adata[adata.obs[sample_column].isin(patients_to_keep)].copy()
+    cell_counts_after = adata.obs[sample_column].value_counts()
+    if verbose:
+        print("\nSample counts AFTER filtering:")
+        print(cell_counts_after.sort_values(ascending=False))
+
 
     # Drop genes that are too rare in these final cells
     min_cells_for_gene = int(0.01 * adata.n_obs)  # e.g., gene must appear in 1% of cells
     sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
-
     if verbose:
-        print(f'Dimension of processed data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+        print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
+
 
     # Optional doublet detection
     if doublet:
-        sc.pp.scrublet(adata, batch_key="sample")
+        sc.pp.scrublet(adata, batch_key=sample_column)
 
     # Normalization & log transform
     sc.pp.normalize_total(adata, target_sum=1e4)
@@ -245,6 +272,7 @@ def harmony(
     adata_cluster = anndata_cluster(
         adata_cluster=adata_cluster,
         output_dir=output_dir,
+        sample_column = sample_column,
         cell_column=cell_column,
         cluster_resolution=cluster_resolution,
         markers=markers,
@@ -261,7 +289,8 @@ def harmony(
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
         output_dir=output_dir,
-        sample_column='sample',
+        batch_key = batch_key,
+        sample_column=sample_column,
         num_features=num_features,
         num_PCs=num_PCs,
         num_harmony=num_harmony,

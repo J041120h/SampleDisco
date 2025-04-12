@@ -323,8 +323,6 @@ def EMD_distances(
     adata: AnnData,
     output_dir: str,
     summary_csv_path: str,
-    proportion_weight: float = 1.0,
-    expression_weight: float = 1.0,
     cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
 ) -> pd.DataFrame:

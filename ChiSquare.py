@@ -291,4 +291,4 @@ def chi_square_distance(
     log_transform: bool = True
 ) -> pd.DataFrame:
     method = "Chi_Square"
-    calculate_sample_distances_cell_proportion_chi_square(adata, output_dir, summary_csv_path)
+    calculate_sample_distances_cell_proportion_chi_square(adata, output_dir, summary_csv_path, sample_column = sample_column)

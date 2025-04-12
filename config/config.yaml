@@ -2,8 +2,10 @@
 h5ad_path: "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
 sample_meta_path: "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
 output_dir: "/Users/harry/Desktop/GenoDistance/result"
+sample_col: "sample"
 cell_column: "cell_type"
 cell_meta_path: null
+batch_col: 'batch'
 markers: null
 cluster_resolution: 0.8
 num_PCs: 20
@@ -30,8 +32,6 @@ cell_type_save: true
 assign_save: true
 
 # ===== Pseudobulk Parameters =====
-batch_col: "batch"
-sample_col: "sample"
 celltype_col: "cell_type"
 pseudobulk_output_dir: null
 n_features: 2000
@@ -84,9 +84,9 @@ plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== Process Control Flags =====
 preprocessing: false
-cell_type_cluster: true
-sample_distance_calculation: false
+cell_type_cluster: false
+sample_distance_calculation: true
 DimensionalityReduction: true
 trajectory_analysis: true
-visualize_data: false
+visualize_data: true
 initialization: false

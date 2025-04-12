@@ -2,8 +2,10 @@
 h5ad_path: "/users/hjiang/GenoDistance/Test/test_count_data.h5ad"
 sample_meta_path: "/users/hjiang/GenoDistance/Test/test_sample_data.csv"
 output_dir: "/users/hjiang/GenoDistance/Test/result"
+sample_col: "sample"
 cell_column: "cell_type"
 cell_meta_path: null
+batch_col: ['batch']
 markers: null
 cluster_resolution: 0.8
 num_PCs: 20
@@ -30,7 +32,6 @@ cell_type_save: true
 assign_save: true
 
 # ===== Pseudobulk Parameters =====
-batch_col: "batch"
 sample_col: "sample"
 celltype_col: "cell_type"
 pseudobulk_output_dir: null

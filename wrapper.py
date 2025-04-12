@@ -29,8 +29,10 @@ def wrapper(
     h5ad_path,
     sample_meta_path,
     output_dir,
+    sample_col = 'sample',
     cell_column='cell_type',
     cell_meta_path=None,
+    batch_col=[],
     markers=None,
     cluster_resolution=0.8,
     num_PCs=20,
@@ -57,8 +59,6 @@ def wrapper(
     assign_save=True,
 
     # ===== Pseudobulk Parameters =====
-    batch_col='batch',
-    sample_col='sample',
     celltype_col='cell_type',
     pseudobulk_output_dir=None,
     n_features=2000,
@@ -118,7 +118,6 @@ def wrapper(
 ):
     ## ====== Preprocessing to add ungiven parameter======
     linux_system = False
-
     print("Start of Process\n")
     if vars_to_regress is None:
         vars_to_regress = []
@@ -211,8 +210,10 @@ def wrapper(
             h5ad_path=h5ad_path,
             sample_meta_path=sample_meta_path,
             output_dir=output_dir,
+            sample_column = sample_col,
             cell_column=cell_column,
             cell_meta_path=cell_meta_path,
+            batch_key = batch_col,
             markers=markers,
             cluster_resolution=cluster_resolution,
             num_PCs=num_PCs,
@@ -235,8 +236,10 @@ def wrapper(
                 h5ad_path=h5ad_path,
                 sample_meta_path=sample_meta_path,
                 output_dir=output_dir,
+                sample_column = sample_col,
                 cell_column=cell_column,
                 cell_meta_path=cell_meta_path,
+                batch_key = batch_col,
                 markers=markers,
                 cluster_resolution=cluster_resolution,
                 num_PCs=num_PCs,
@@ -334,6 +337,7 @@ def wrapper(
         process_anndata_with_pca(
             adata=AnnData_sample,
             pseudobulk=pseudobulk_df,
+            sample_col = sample_col,
             n_expression_pcs=n_expression_pcs,
             n_proportion_pcs=n_proportion_pcs,
             output_dir=pca_output_dir,
@@ -351,60 +355,52 @@ def wrapper(
         if trajectory_supervised:
             if sev_col_cca not in AnnData_sample.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
-            first_component_score_proportion, first_component_score_expression = CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sev_col = sev_col_cca)
+            first_component_score_proportion, first_component_score_expression = CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca)
             if cca_pvalue:
                 cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_proportion",
-                    first_component_score_proportion,
-                    cca_output_dir
+                    adata = AnnData_sample,
+                    summary_sample_csv_path = sample_meta_path,
+                    column = "X_pca_proportion",
+                    input_correlation = first_component_score_proportion,
+                    output_directory = cca_output_dir,
+                    num_simulations = 1000,
+                    sev_col = sev_col_cca,
+                    sample_col = sample_col,
+                    verbose = trajectory_verbose
                 )
 
                 cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_expression",
-                    first_component_score_expression,
-                    cca_output_dir
-                )
-            status_flags["trajectory_analysis"] = True
-            with open(status_file_path, 'w') as f:
-                json.dump(status_flags, f, indent=4)
-            
-            if cca_pvalue:
-                cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_proportion",
-                    first_component_score_proportion,
-                    cca_output_dir
-                )
-
-                cca_pvalue_test(
-                    AnnData_sample,
-                    sample_meta_path,
-                    "X_pca_expression",
-                    first_component_score_expression,
-                    cca_output_dir
+                    adata = AnnData_sample,
+                    summary_sample_csv_path = sample_meta_path,
+                    column = "X_pca_expression",
+                    input_correlation = first_component_score_proportion,
+                    output_directory = cca_output_dir,
+                    num_simulations = 1000,
+                    sev_col = sev_col_cca,
+                    sample_col = sample_col,
+                    verbose = trajectory_verbose
                 )
             if cca_optimal_cell_resolution:
                 if linux_system:
                     find_optimal_cell_resolution_linux(
-                        AnnData_cell,
-                        AnnData_sample,
-                        cca_output_dir,
-                        sample_meta_path,
-                        AnnData_sample_path,
-                        "X_pca_proportion"
+                        AnnData_cell = AnnData_cell,
+                        AnnData_sample = AnnData_sample,
+                        output_dir = cca_output_dir,
+                        summary_sample_csv_path = sample_meta_path,
+                        AnnData_sample_path = AnnData_sample_path,
+                        column = "X_pca_proportion",
+                        sev_col = sev_col_cca,
+                        sample_col = sample_col
                     )
                     find_optimal_cell_resolution_linux(
-                        AnnData_cell,
-                        AnnData_sample,
-                        cca_output_dir,
-                        sample_meta_path,
-                        AnnData_sample_path,
-                        "X_pca_expression"
+                        AnnData_cell = AnnData_cell,
+                        AnnData_sample = AnnData_sample,
+                        output_dir = cca_output_dir,
+                        summary_sample_csv_path = sample_meta_path,
+                        AnnData_sample_path = AnnData_sample_path,
+                        column = "X_pca_expression",
+                        sev_col = sev_col_cca,
+                        sample_col = sample_col
                     )
                 else:
                     try:
@@ -415,6 +411,7 @@ def wrapper(
                             summary_sample_csv_path = sample_meta_path,
                             column = "X_pca_proportion",
                             sev_col = sev_col_cca,
+                            sample_col = sample_col,
                             n_jobs = -1,
                             verbose = False
                         )
@@ -425,26 +422,29 @@ def wrapper(
                             summary_sample_csv_path = sample_meta_path,
                             column = "X_pca_expression",
                             sev_col = sev_col_cca,
+                            sample_col = sample_col,
                             n_jobs = -1,
                             verbose = False
                         )
                     except MemoryError:
                         print("MemoryError: Using the CPU version of the finding optimal resolution in parallel exceed memory")
                         find_optimal_cell_resolution(
-                            AnnData_cell,
-                            AnnData_sample,
-                            cca_output_dir,
-                            sample_meta_path,
-                            AnnData_sample_path,
-                            "X_pca_proportion"
+                            AnnData_cell = AnnData_cell,
+                            AnnData_sample = AnnData_sample,
+                            output_dir = cca_output_dir,
+                            summary_sample_csv_path = sample_meta_path,
+                            column = "X_pca_proportion",
+                            sev_col = sev_col_cca,
+                            sample_col = sample_col
                         )
                         find_optimal_cell_resolution(
-                            AnnData_cell,
-                            AnnData_sample,
-                            cca_output_dir,
-                            sample_meta_path,
-                            AnnData_sample_path,
-                            "X_pca_expression"
+                            AnnData_cell = AnnData_cell,
+                            AnnData_sample = AnnData_sample,
+                            output_dir = cca_output_dir,
+                            summary_sample_csv_path = sample_meta_path,
+                            column = "X_pca_expression",
+                            sev_col = sev_col_cca,
+                            sample_col = sample_col
                         )
             status_flags["trajectory_analysis"] = True
             with open(status_file_path, 'w') as f:
@@ -462,27 +462,38 @@ def wrapper(
             raise ValueError("Dimensionality reduction is required before sample distance calculation.")
         for md in sample_distance_methods:
             print(f"\nRunning sample distance: {md}\n")
-            sample_distance(AnnData_sample, os.path.join(output_dir, 'Sample'), f'{md}', summary_sample_csv_path, pseudobulk_df)
+            sample_distance(
+                adata = AnnData_sample,
+                output_dir = os.path.join(output_dir, 'Sample'),
+                method = f'{md}',
+                summary_csv_path = summary_sample_csv_path,
+                pseudobulk = pseudobulk_df,
+                sample_column = sample_col
+                )
         
         if "EMD" in sample_distance_methods:
             EMD_distances(
-                AnnData_sample,
-                os.path.join(output_dir, 'sample_level_EMD'),
-                summary_sample_csv_path
+                adata = AnnData_sample,
+                output_dir = os.path.join(output_dir, 'sample_level_EMD'),
+                summary_csv_path = summary_sample_csv_path,
+                cell_type_column = 'cell_type',
+                sample_column = sample_col,
             )
 
         if "chi_square" in sample_distance_methods:
             chi_square_distance(
-                AnnData_sample,
-                os.path.join(output_dir, 'Chi_square_sample'),
-                summary_sample_csv_path
+                adata = AnnData_sample,
+                output_dir = os.path.join(output_dir, 'Chi_square_sample'),
+                summary_csv_path = summary_sample_csv_path,
+                sample_column = sample_col,
             )
 
         if "jensen_shannon" in sample_distance_methods:
             jensen_shannon_distance(
-                AnnData_sample,
-                os.path.join(output_dir, 'jensen_shannon_sample'),
-                summary_sample_csv_path
+                adata = AnnData_sample,
+                output_dir = os.path.join(output_dir, 'jensen_shannon_sample'),
+                summary_csv_path = summary_sample_csv_path,
+                sample_column = sample_col,
             )
         status_flags["sample_distance_calculation"] = True
         with open(status_file_path, 'w') as f:
@@ -525,9 +536,9 @@ def wrapper(
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
         
-        # status_flags["initialization"] = False
-        # with open(status_file_path, 'w') as f:
-        #     json.dump(status_flags, f, indent=4)
+        status_flags["initialization"] = False
+        with open(status_file_path, 'w') as f:
+            json.dump(status_flags, f, indent=4)
     print("End of Process\n")
 
 

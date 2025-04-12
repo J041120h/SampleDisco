@@ -17,17 +17,19 @@ def find_optimal_cell_resolution(
     output_dir,
     summary_sample_csv_path,
     column,
-    sev_col: str = "sev.level"
+    sev_col: str = "sev.level",
+    sample_col: str = "sample"
 ):
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
     from sklearn.cross_decomposition import CCA
     import os
+    import time
 
     start_time = time.time()
-
     score_counter = dict()
+
     for resolution in np.arange(0.01, 1.01, 0.01):
         print(f"\n\nTesting resolution: {resolution}\n\n")
         cell_types(
@@ -44,15 +46,20 @@ def find_optimal_cell_resolution(
             verbose=False
         )
         cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
-        pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-        process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, verbose=False)
+        pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', sample_col, 'cell_type', output_dir)
+        process_anndata_with_pca(
+            adata=AnnData_sample,
+            pseudobulk=pseudobulk,
+            output_dir=output_dir,
+            sample_col=sample_col,
+            verbose=False
+        )
 
         pca_coords = AnnData_sample.uns[column]
         pca_coords_2d = pca_coords.iloc[:, :2].values
+        samples = AnnData_sample.obs[sample_col].unique()
 
-        samples = AnnData_sample.obs["sample"].values.unique()
-        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sev_col=sev_col)
-
+        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sample_col=sample_col, sev_col=sev_col)
         cca = CCA(n_components=1)
         cca.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca.transform(pca_coords_2d, sev_levels_2d)
@@ -60,10 +67,8 @@ def find_optimal_cell_resolution(
         print(first_component_score)
         score_counter[resolution] = first_component_score
 
-        if 'cell_type' in AnnData_cell.obs.columns:
-            del AnnData_cell.obs['cell_type']
-        if 'cell_type' in AnnData_sample.obs.columns:
-            del AnnData_sample.obs['cell_type']
+        AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+        AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
 
     best_resolution = max(score_counter, key=score_counter.get)
     print(f"Best resolution from first pass: {best_resolution}")
@@ -84,15 +89,20 @@ def find_optimal_cell_resolution(
             verbose=False
         )
         cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
-        pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir)
-        process_anndata_with_pca(adata=AnnData_sample, pseudobulk=pseudobulk, output_dir=output_dir, verbose=False)
+        pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', sample_col, 'cell_type', output_dir)
+        process_anndata_with_pca(
+            adata=AnnData_sample,
+            pseudobulk=pseudobulk,
+            output_dir=output_dir,
+            sample_col=sample_col,
+            verbose=False
+        )
 
         pca_coords = AnnData_sample.uns[column]
         pca_coords_2d = pca_coords.iloc[:, :2].values
+        samples = AnnData_sample.obs[sample_col].unique()
 
-        samples = AnnData_sample.obs["sample"].values.unique()
-        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sev_col=sev_col)
-
+        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sample_col=sample_col, sev_col=sev_col)
         cca = CCA(n_components=1)
         cca.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca.transform(pca_coords_2d, sev_levels_2d)
@@ -101,16 +111,14 @@ def find_optimal_cell_resolution(
         print(f"Fine-tuned Resolution {resolution:.2f}: Score {first_component_score}")
         fine_score_counter[resolution] = first_component_score
 
-        if 'cell_type' in AnnData_cell.obs.columns:
-            del AnnData_cell.obs['cell_type']
-        if 'cell_type' in AnnData_sample.obs.columns:
-            del AnnData_sample.obs['cell_type']
+        AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+        AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
 
     final_best_resolution = max(fine_score_counter, key=fine_score_counter.get)
     print(f"Final best resolution: {final_best_resolution}")
 
-    df_coarse = pd.DataFrame(list(score_counter.items()), columns=["resolution", "score"])
-    df_fine = pd.DataFrame(list(fine_score_counter.items()), columns=["resolution", "score"])
+    df_coarse = pd.DataFrame(score_counter.items(), columns=["resolution", "score"])
+    df_fine = pd.DataFrame(fine_score_counter.items(), columns=["resolution", "score"])
     df_results = pd.concat([df_coarse, df_fine], ignore_index=True)
 
     output_dir = os.path.join(output_dir, "CCA_test")
@@ -130,13 +138,10 @@ def find_optimal_cell_resolution(
     plt.savefig(plot_path, dpi=300)
     plt.close()
 
-    print(f"Resolution vs. CCA Score plot saved as '{plot_path}'.")
-    print(f"Resolution scores saved as 'resolution_scores.csv{column}'.")
-    print("All data saved locally.")
+    print(f"Plot saved to: {plot_path}")
+    print(f"Resolution scores saved to: {to_csv_path}")
 
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"\n\n[Find Optimal Resolution] Total runtime: {elapsed_time:.2f} seconds\n\n")
+    print(f"\n[Find Optimal Resolution] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
     return final_best_resolution
 
@@ -148,6 +153,7 @@ def cca_pvalue_test(
     output_directory: str,
     num_simulations: int = 1000,
     sev_col: str = "sev.level",
+    sample_col: str = "sample",
     verbose: bool = True
 ):
     import os
@@ -155,75 +161,61 @@ def cca_pvalue_test(
     import numpy as np
     import matplotlib.pyplot as plt
     from sklearn.cross_decomposition import CCA
-
+    
     start_time = time.time() if verbose else None
-
     output_directory = os.path.join(output_directory, "CCA_test")
     os.makedirs(output_directory, exist_ok=True)
-
+    
     pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
         raise ValueError("X_pca must have at least 2 components for 2D plotting.")
-    pca_coords = pca_coords.values
-    pca_coords_2d = pca_coords[:, :2]
-
-    if "sample" not in adata.obs.columns:
-        raise KeyError("adata.obs must have a 'sample' column to match the CSV severity data.")
-    samples = adata.obs["sample"].unique()
+    
+    pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, "iloc") else pca_coords[:, :2]
+    
+    if sample_col not in adata.obs.columns:
+        raise KeyError(f"adata.obs must have a '{sample_col}' column to match sample metadata.")
+    
+    # Convert unique samples to a pandas Series before processing
+    samples = pd.Series(adata.obs[sample_col].unique())
+    
     if len(samples) != pca_coords_2d.shape[0]:
-        raise ValueError("The number of PCA rows does not match the number of samples in adata.obs['sample'].")
-
-    # Updated to use the customizable severity column name
-    sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sev_col=sev_col)
+        raise ValueError("Mismatch between number of PCA rows and number of samples.")
+    
+    sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sample_col=sample_col, sev_col=sev_col)
     sev_levels_1d = sev_levels_2d.flatten()
-
+    
     simulated_scores = []
     for _ in range(num_simulations):
-        permuted_sev_levels = np.random.permutation(sev_levels_1d).reshape(sev_levels_2d.shape)
-
+        permuted = np.random.permutation(sev_levels_1d).reshape(-1, 1)
         cca = CCA(n_components=1)
-        cca.fit(pca_coords_2d, permuted_sev_levels)
-
-        U, V = cca.transform(pca_coords_2d, permuted_sev_levels)
-
+        cca.fit(pca_coords_2d, permuted)
+        U, V = cca.transform(pca_coords_2d, permuted)
         corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
         simulated_scores.append(corr)
-
+    
     simulated_scores = np.array(simulated_scores)
-
     p_value = np.mean(simulated_scores >= input_correlation)
-
-    # Plot the permutation distribution with p-value in legend
+    
+    # Plot the permutation distribution
     plt.figure(figsize=(8, 5))
     plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
-    plt.axvline(
-        input_correlation,
-        color='red',
-        linestyle='dashed',
-        linewidth=2,
-        label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})'
-    )
+    plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
+               label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
     plt.xlabel('Simulated Correlation Scores')
     plt.ylabel('Frequency')
     plt.title('Permutation Test: CCA Correlations')
     plt.legend()
-
     plot_path = os.path.join(output_directory, f"cca_pvalue_distribution_{column}.png")
     plt.savefig(plot_path, dpi=300)
     plt.close()
-
-    # Save the p-value result to a text file
-    p_value_path = os.path.join(output_directory, f"cca_pvalue_result_{column}.txt")
-    with open(p_value_path, "w") as f:
+    
+    with open(os.path.join(output_directory, f"cca_pvalue_result_{column}.txt"), "w") as f:
         f.write(f"Observed correlation: {input_correlation}\n")
         f.write(f"P-value: {p_value}\n")
-
+    
     print(f"P-value for observed correlation {input_correlation}: {p_value}")
-
+    
     if verbose:
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        print("CCA p-value test on cell proportions completed.")
-        print(f"\n[CCA p-test] Total runtime processing: {elapsed_time:.2f} seconds\n")
-
+        print(f"[CCA p-test] Runtime: {time.time() - start_time:.2f} seconds")
+    
     return p_value

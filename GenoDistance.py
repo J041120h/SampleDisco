@@ -13,7 +13,7 @@ def parse_args():
 
     # Simple mode args
     parser.add_argument("-c", "--count_data", type=str, help="Path to count data file")
-    parser.add_argument("-s", "--sample_meta_data", type=str, help="Path to sample metadata file")
+    parser.add_argument("-s", "--sample_meta_data", type=str, help="(Optional) Path to sample metadata file")
     parser.add_argument("-o", "--output_directory", type=str, help="Path to output directory")
 
     # Complex mode args
@@ -41,11 +41,15 @@ def main():
     args = parse_args()
 
     if args.mode == "simple":
-        if not args.count_data or not args.sample_meta_data or not args.output_directory:
-            print("Error: In 'simple' mode, -c, -s, and -o must all be provided.", file=sys.stderr)
+        if not args.count_data or not args.output_directory:
+            print("Error: In 'simple' mode, -c and -o must be provided.", file=sys.stderr)
             sys.exit(1)
 
-        wrapper(args.count_data, args.sample_meta_data, args.output_directory)
+        # Call wrapper with or without sample_meta_data
+        if args.sample_meta_data:
+            wrapper(args.count_data, args.sample_meta_data, args.output_directory)
+        else:
+            wrapper(args.count_data, output_directory=args.output_directory)
 
     elif args.mode == "complex":
         if not args.config:
