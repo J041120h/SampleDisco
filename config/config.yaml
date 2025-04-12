@@ -42,22 +42,22 @@ pseudobulk_verbose: true
 n_expression_pcs: 10
 n_proportion_pcs: 10
 pca_output_dir: null
-AnnData_sample_path: null
+AnnData_sample_path: "/Users/harry/Desktop/GenoDistance/result/harmony/adata_sample.h5ad"
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
-trajectory_supervised: false
+trajectory_supervised: true
 cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
-cca_pvalue: false
+cca_pvalue: true
 grouping_columns:
   - "sev.level"
 trajectory_verbose: true
 TSCAN_origin: null
 
 # ===== Paths for Skipping Preprocessing =====
-AnnData_cell_path: null
+AnnData_cell_path: "/Users/harry/Desktop/GenoDistance/result/harmony/adata_cell.h5ad"
 
 # ===== Sample Distance Parameters =====
 summary_sample_csv_path: null
@@ -83,10 +83,10 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== Process Control Flags =====
-preprocessing: true
+preprocessing: false
 cell_type_cluster: true
-sample_distance_calculation: true
+sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true
-visualize_data: true
+visualize_data: false
 initialization: false

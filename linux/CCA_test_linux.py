@@ -196,10 +196,16 @@ def cca_pvalue_test(
 
     p_value = np.mean(simulated_scores >= input_correlation)
 
+    # Plot the permutation distribution with p-value in legend
     plt.figure(figsize=(8, 5))
     plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
-    plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
-                label=f'Observed correlation: {input_correlation}')
+    plt.axvline(
+        input_correlation,
+        color='red',
+        linestyle='dashed',
+        linewidth=2,
+        label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})'
+    )
     plt.xlabel('Simulated Correlation Scores')
     plt.ylabel('Frequency')
     plt.title('Permutation Test: CCA Correlations')
@@ -209,6 +215,7 @@ def cca_pvalue_test(
     plt.savefig(plot_path, dpi=300)
     plt.close()
 
+    # Save the p-value result to a text file
     p_value_path = os.path.join(output_directory, f"cca_pvalue_result_{column}.txt")
     with open(p_value_path, "w") as f:
         f.write(f"Observed correlation: {input_correlation}\n")
