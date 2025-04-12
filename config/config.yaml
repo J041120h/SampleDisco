@@ -83,8 +83,8 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== Process Control Flags =====
-preprocessing: false
-cell_type_cluster: false
+preprocessing: true
+cell_type_cluster: true
 sample_distance_calculation: true
 DimensionalityReduction: true
 trajectory_analysis: true

@@ -273,6 +273,12 @@ def wrapper(
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
 
+    if sample_col != 'sample':
+        AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
+    if batch_col != 'batch':
+        AnnData_sample.obs.rename(columns={batch_col: 'batch'}, inplace=True)
+    sample_col = 'sample'
+    batch_col = 'batch'
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
         if linux_system:
@@ -511,9 +517,7 @@ def wrapper(
             if plot_pca_2d_flag or plot_pca_3d_flag or plot_3d_cells_flag or plot_cell_type_proportions_pca_flag or plot_cell_type_expression_pca_flag or plot_pseudobulk_batch_test_expression_flag or plot_pseudobulk_batch_test_proportion_flag:
                 raise ValueError("Dimensionality reduction is required before the required visualization.")
             raise ValueError("Dimensionality reduction is required before the required visualization.")
-        
-        if sample_col != 'sample':
-            AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
+
 
         visualization(
             adata_sample_diff = AnnData_sample,
