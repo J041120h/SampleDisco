@@ -512,6 +512,9 @@ def wrapper(
                 raise ValueError("Dimensionality reduction is required before the required visualization.")
             raise ValueError("Dimensionality reduction is required before the required visualization.")
         
+        if sample_col != 'sample':
+            AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
+
         visualization(
             adata_sample_diff = AnnData_sample,
             output_dir = output_dir,
