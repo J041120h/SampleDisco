@@ -361,7 +361,7 @@ def wrapper(
         if trajectory_supervised:
             if sev_col_cca not in AnnData_sample.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
-            first_component_score_proportion, first_component_score_expression = CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca)
+            first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
             if cca_pvalue:
                 cca_pvalue_test(
                     adata = AnnData_sample,
@@ -379,7 +379,7 @@ def wrapper(
                     adata = AnnData_sample,
                     summary_sample_csv_path = sample_meta_path,
                     column = "X_pca_expression",
-                    input_correlation = first_component_score_proportion,
+                    input_correlation = first_component_score_expression,
                     output_directory = cca_output_dir,
                     num_simulations = 1000,
                     sev_col = sev_col_cca,
