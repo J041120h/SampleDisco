@@ -56,6 +56,16 @@ grouping_columns:
 trajectory_verbose: true
 TSCAN_origin: null
 
+# ===== Trajectory Differential Gene Parameters =====
+fdr_threshold: 0.05
+effect_size_threshold: 1
+trajectory_diff_gene_covariate: None
+num_splines: 5
+spline_order: 3
+trajectory_diff_gene_output_dir: None
+trajectory_diff_gene_verbose: True
+top_gene_number: 30
+
 # ===== Paths for Skipping Preprocessing =====
 AnnData_cell_path: null
 
@@ -88,5 +98,6 @@ cell_type_cluster: true
 sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true
+trajectory_differential_gene: true
 visualize_data: false
 initialization: false

@@ -1,0 +1,756 @@
+import pandas as pd
+import numpy as np
+from typing import Dict, Optional, List, Tuple
+from pygam import LinearGAM, s, f
+from statsmodels.stats.multitest import multipletests
+import warnings
+import os
+import datetime
+
+def prepare_gam_input_data(
+    pseudobulk: dict,
+    sample_meta_path: str,
+    ptime_expression: Dict[str, float],
+    covariate_columns: Optional[List[str]] = None,
+    expression_key: str = "cell_expression_corrected",
+    verbose: bool = False
+) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
+    """
+    Prepares input matrices for GAM: covariates (z_s), pseudotime (t_s), and gene expressions (y_gs).
+
+    Parameters
+    ----------
+    pseudobulk : dict
+        Dictionary containing pseudobulk data with expression DataFrame under expression_key.
+    sample_meta_path : str
+        Path to the sample metadata CSV/TSV file. Must include a 'sample' column.
+    ptime_expression : dict
+        Dictionary mapping sample names to pseudotime values.
+    covariate_columns : list of str, optional
+        List of covariate columns to use. If None, use all columns except 'sample'.
+    expression_key : str
+        Key to use for accessing the expression DataFrame in pseudobulk.
+    verbose : bool
+        Whether to print progress messages.
+
+    Returns
+    -------
+    X : pd.DataFrame
+        Design matrix with pseudotime and encoded covariates.
+    Y : pd.DataFrame
+        Gene expression matrix (rows = samples, columns = genes).
+    gene_names : list of str
+        List of gene names (column names in Y).
+    """
+    if verbose:
+        print("Reading metadata file...")
+    
+    # Read metadata file (auto-detect CSV or TSV)
+    metadata = pd.read_csv(sample_meta_path, sep=None, engine="python")
+
+    if 'sample' not in metadata.columns:
+        raise ValueError("Metadata file must contain a 'sample' column.")
+    
+    # Convert sample names to lowercase for case-insensitive matching
+    metadata['sample_lower'] = metadata['sample'].str.lower()
+    metadata = metadata.set_index("sample_lower")
+
+    if verbose:
+        print(f"Loading expression matrix from key: {expression_key}")
+    
+    # Load expression matrix
+    expr_df = pseudobulk[expression_key]
+    expr_df = expr_df.copy()
+    
+    # Create a lowercase version of the sample index for matching
+    sample_name_map = {s.lower(): s for s in expr_df.index}
+    expr_df['sample_lower'] = [s.lower() for s in expr_df.index]
+    expr_df = expr_df.set_index('sample_lower')
+
+    if verbose:
+        print(f"Processing pseudotime data for {len(ptime_expression)} samples")
+    
+    # Create a lowercase version of the pseudotime dictionary keys
+    ptime_expression_lower = {k.lower(): v for k, v in ptime_expression.items()}
+    
+    # Add pseudotime as a column
+    pseudotime_df = pd.DataFrame.from_dict(ptime_expression_lower, orient='index', columns=['pseudotime'])
+    pseudotime_df.index.name = 'sample_lower'
+
+    # Merge metadata and pseudotime
+    meta = metadata.join(pseudotime_df, how="inner")
+
+    # Keep only samples that are in expression data
+    common_samples = meta.index.intersection(expr_df.index)
+    
+    if len(common_samples) == 0:
+        raise ValueError("No common samples found between metadata/pseudotime and expression data. Check sample name formatting.")
+    
+    if verbose:
+        print(f"Found {len(common_samples)} common samples between metadata and expression data")
+    
+    meta = meta.loc[common_samples]
+    expr_df = expr_df.loc[common_samples]
+
+    # Select covariates
+    if covariate_columns is None:
+        covariate_columns = [col for col in meta.columns if col != 'pseudotime' and col != 'sample']
+
+    covariates = meta[covariate_columns]
+
+    # One-hot encode categorical covariates
+    covariates_encoded = pd.get_dummies(covariates, drop_first=True)
+
+    # Build final design matrix
+    X = pd.concat([meta['pseudotime'], covariates_encoded], axis=1)
+
+    # Get original expression dataframe with original sample names
+    # and make sure it has the same order as the metadata
+    Y = pseudobulk[expression_key].loc[[sample_name_map[s] for s in common_samples]]
+    gene_names = list(Y.columns)
+
+    if verbose:
+        print(f"Prepared input data with {X.shape[0]} samples and {len(gene_names)} genes")
+    
+    return X, Y, gene_names
+
+def fit_gam_models_for_genes(
+    X: pd.DataFrame,
+    Y: pd.DataFrame,
+    gene_names: List[str],
+    spline_term: str = "pseudotime",
+    num_splines: int = 5,
+    spline_order: int = 3,
+    fdr_threshold: float = 0.05,
+    verbose: bool = False
+) -> Tuple[pd.DataFrame, Dict[str, LinearGAM]]:
+    """
+    Fits a GAM to each gene using pseudotime + covariates.
+    
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Design matrix with pseudotime and covariates (z_s).
+    Y : pd.DataFrame
+        Gene expression matrix, samples x genes.
+    gene_names : list of str
+        List of gene names (column names in Y).
+    spline_term : str
+        Name of the column in X to be modeled as a spline.
+    num_splines : int
+        Requested number of spline basis functions.
+    spline_order : int
+        Order of the spline (default cubic = 3).
+    fdr_threshold : float
+        Significance level for adjusted p-values.
+    verbose : bool
+        Whether to print progress.
+    
+    Returns
+    -------
+    results_df : pd.DataFrame
+        DataFrame with gene name, p-value, FDR, deviance explained, significance status.
+    gam_models : dict
+        Dictionary mapping gene names to fitted GAM models.
+    """
+    results = []
+    gam_models = {}
+    
+    # Ensure num_splines is greater than spline_order
+    if num_splines <= spline_order:
+        corrected_num_splines = spline_order + 1
+        warnings.warn(
+            f"num_splines must be > spline_order. Adjusted from {num_splines} to {corrected_num_splines}."
+        )
+        num_splines = corrected_num_splines
+    
+    spline_idx = list(X.columns).index(spline_term)
+    
+    # Build GAM terms: pseudotime as a spline + other covariates as linear terms
+    spline_term = s(spline_idx, n_splines=num_splines, spline_order=spline_order)
+    linear_terms = [f(i) for i in range(X.shape[1]) if i != spline_idx]
+    
+    # Combine terms properly
+    if linear_terms:
+        terms = spline_term
+        for term in linear_terms:
+            terms += term
+    else:
+        terms = spline_term
+    
+    total_genes = len(gene_names)
+    for i, gene in enumerate(gene_names):
+        if verbose and (i % 100 == 0 or i == total_genes - 1):
+            print(f"Fitting GAM model for gene {i+1}/{total_genes}: {gene}")
+            
+        y = Y[gene].values
+        try:
+            gam = LinearGAM(terms).fit(X.values, y)
+            pval = gam.statistics_['p_values'][spline_idx]  # p-value for pseudotime
+            dev_exp = gam.statistics_['pseudo_r2']['explained_deviance']
+            results.append((gene, pval, dev_exp))
+            gam_models[gene] = gam
+        except Exception as e:
+            if verbose:
+                print(f"Failed to fit GAM for {gene}: {e}")
+            results.append((gene, None, None))
+    
+    # Compile results
+    results_df = pd.DataFrame(results, columns=["gene", "pval", "dev_exp"]).dropna()
+    
+    # FDR correction
+    _, fdr, _, _ = multipletests(results_df["pval"], method="fdr_bh")
+    results_df["fdr"] = fdr
+    results_df["significant"] = results_df["fdr"] < fdr_threshold
+    
+    if verbose:
+        sig_count = results_df["significant"].sum()
+        print(f"Found {sig_count} statistically significant genes (FDR < {fdr_threshold})")
+    
+    return results_df.sort_values("fdr"), gam_models
+
+def calculate_effect_size(
+    X: pd.DataFrame,
+    Y: pd.DataFrame, 
+    gam_models: Dict[str, LinearGAM],
+    genes: List[str],
+    verbose: bool = False
+) -> pd.DataFrame:
+    """
+    Calculate the effect size (ES) for each gene based on GAM results.
+    
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Design matrix with pseudotime and covariates.
+    Y : pd.DataFrame
+        Gene expression matrix.
+    gam_models : dict
+        Dictionary mapping gene names to fitted GAM models.
+    genes : list
+        List of genes to calculate effect size for.
+    verbose : bool
+        Whether to print progress messages.
+        
+    Returns
+    -------
+    effect_sizes : pd.DataFrame
+        DataFrame with gene names and their effect sizes.
+    """
+    effect_sizes = []
+    
+    if verbose:
+        print(f"Calculating effect sizes for {len(genes)} genes")
+    
+    for gene in genes:
+        if gene not in gam_models:
+            continue
+            
+        gam = gam_models[gene]
+        
+        # Get predicted values (smoothed expression)
+        y_pred = gam.predict(X.values)
+        
+        # Calculate effect size: (max_s ŷ_gs - min_s ŷ_gs) / √(∑_s e²_gs/df_e)
+        # where ŷ is the GAM smoothed expression levels, e is the model residual
+        # and df_e is the residual degrees of freedom
+        
+        # Get residuals
+        y_true = Y[gene].values
+        residuals = y_true - y_pred
+        
+        # Get residual degrees of freedom
+        df_e = gam.statistics_['edof']
+        
+        # Calculate effect size
+        max_pred = np.max(y_pred)
+        min_pred = np.min(y_pred)
+        sum_squared_residuals = np.sum(residuals**2)
+        
+        # Avoid division by zero
+        if sum_squared_residuals > 0 and df_e > 0:
+            es = (max_pred - min_pred) / np.sqrt(sum_squared_residuals / df_e)
+            effect_sizes.append((gene, es))
+    
+    result_df = pd.DataFrame(effect_sizes, columns=["gene", "effect_size"])
+    
+    if verbose:
+        print(f"Calculated effect sizes for {len(result_df)} genes")
+    
+    return result_df
+
+def identify_pseudoDEGs(
+    X: pd.DataFrame = None,
+    Y: pd.DataFrame = None,
+    pseudobulk: dict = None,
+    sample_meta_path: str = None,
+    ptime_expression: Dict[str, float] = None,
+    fdr_threshold: float = 0.05,
+    effect_size_threshold: float = 1.0,
+    covariate_columns: Optional[List[str]] = None,
+    expression_key: str = "cell_expression_corrected",
+    num_splines: int = 5,
+    spline_order: int = 3,
+    output_dir: Optional[str] = None,
+    verbose: bool = False
+) -> pd.DataFrame:
+    """
+    Comprehensive function to identify pseudotemporal differentially expressed genes (pseudoDEGs)
+    combining statistical significance (FDR) and biological significance (effect size).
+    
+    Parameters
+    ----------
+    X : pd.DataFrame, optional
+        Pre-computed design matrix. If None, it will be generated from other parameters.
+    Y : pd.DataFrame, optional
+        Pre-computed expression matrix. If None, it will be generated from other parameters.
+    pseudobulk : dict, optional
+        Dictionary containing pseudobulk data with expression DataFrame under expression_key.
+    sample_meta_path : str, optional
+        Path to the sample metadata CSV/TSV file.
+    ptime_expression : dict, optional
+        Dictionary mapping sample names to pseudotime values.
+    fdr_threshold : float
+        FDR threshold for statistical significance (default: 0.05).
+    effect_size_threshold : float
+        Effect size threshold for biological significance (default: 1.0).
+    covariate_columns : list, optional
+        List of covariate columns to use from metadata.
+    expression_key : str
+        Key in pseudobulk dict for expression data.
+    num_splines : int
+        Number of spline basis functions for GAM.
+    spline_order : int
+        Order of splines for GAM.
+    output_dir : str, optional
+        Directory to save results. If None, results are not saved to disk.
+    verbose : bool
+        Whether to print progress information.
+        
+    Returns
+    -------
+    results : pd.DataFrame
+        DataFrame with gene names, p-values, FDR, effect sizes, and significance status.
+    """
+    # Step 1: Prepare input data if not provided
+    if X is None or Y is None:
+        if X is None and Y is None and (pseudobulk is None or sample_meta_path is None or ptime_expression is None):
+            raise ValueError("Either provide X and Y matrices or provide pseudobulk, sample_meta_path, and ptime_expression")
+            
+        if verbose:
+            print("Preparing input data for GAM...")
+        X, Y, gene_names = prepare_gam_input_data(
+            pseudobulk=pseudobulk,
+            sample_meta_path=sample_meta_path,
+            ptime_expression=ptime_expression,
+            covariate_columns=covariate_columns,
+            expression_key=expression_key,
+            verbose=verbose
+        )
+    else:
+        gene_names = list(Y.columns)
+    
+    # Step 2: Fit GAM models and get statistical significance
+    if verbose:
+        print(f"Fitting GAM models for {len(gene_names)} genes...")
+    
+    stat_results, gam_models = fit_gam_models_for_genes(
+        X=X,
+        Y=Y,
+        gene_names=gene_names,
+        spline_term="pseudotime",
+        num_splines=num_splines,
+        spline_order=spline_order,
+        fdr_threshold=fdr_threshold,
+        verbose=verbose
+    )
+    
+    # Get statistically significant genes
+    stat_sig_genes = stat_results[stat_results["fdr"] < fdr_threshold]["gene"].tolist()
+    
+    if verbose:
+        print(f"Found {len(stat_sig_genes)} statistically significant genes (FDR < {fdr_threshold}).")
+    
+    # Step 3: Calculate effect sizes for statistically significant genes
+    if verbose:
+        print("Calculating effect sizes for significant genes...")
+    
+    effect_sizes = calculate_effect_size(
+        X=X,
+        Y=Y,
+        gam_models=gam_models,
+        genes=stat_sig_genes,
+        verbose=verbose
+    )
+    
+    # Step 4: Combine statistical and biological significance
+    results = stat_results.merge(effect_sizes, on="gene", how="left")
+    
+    # Identify pseudoDEGs: genes with FDR < threshold and effect size > threshold
+    results["pseudoDEG"] = (
+        (results["fdr"] < fdr_threshold) & 
+        (results["effect_size"] > effect_size_threshold)
+    )
+    
+    pseudoDEGs = results[results["pseudoDEG"]].sort_values(["fdr", "effect_size"], ascending=[True, False])
+    
+    if verbose:
+        print(f"Identified {len(pseudoDEGs)} pseudoDEGs with FDR < {fdr_threshold} " +
+              f"and effect size > {effect_size_threshold}.")
+    
+    # Save results if output directory is provided
+    if output_dir is not None:
+        save_results(results, output_dir, fdr_threshold, effect_size_threshold, verbose)
+    
+    return results
+
+def save_results(
+    results_df: pd.DataFrame, 
+    output_dir: str, 
+    fdr_threshold: float,
+    effect_size_threshold: float,
+    verbose: bool = False
+) -> None:
+    """
+    Save analysis results to files in the specified directory.
+    
+    Parameters
+    ----------
+    results_df : pd.DataFrame
+        Results from identify_pseudoDEGs function.
+    output_dir : str
+        Directory to save the results.
+    fdr_threshold : float
+        FDR threshold used in the analysis.
+    effect_size_threshold : float
+        Effect size threshold used in the analysis.
+    verbose : bool
+        Whether to print progress information.
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Get timestamp for filenames
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Save all results
+    all_results_file = os.path.join(output_dir, f"gam_all_genes_{timestamp}.tsv")
+    results_df.to_csv(all_results_file, sep='\t', index=False)
+    
+    # Save statistically significant genes (FDR < threshold)
+    stat_sig_file = os.path.join(output_dir, f"gam_stat_sig_{timestamp}.tsv")
+    stat_sig_genes = results_df[results_df["fdr"] < fdr_threshold]
+    stat_sig_genes.to_csv(stat_sig_file, sep='\t', index=False)
+    
+    # Save pseudoDEGs (FDR < threshold AND effect size > threshold)
+    pseudoDEG_file = os.path.join(output_dir, f"gam_pseudoDEGs_{timestamp}.tsv")
+    pseudoDEGs = results_df[results_df["pseudoDEG"]]
+    pseudoDEGs.to_csv(pseudoDEG_file, sep='\t', index=False)
+    
+    # Save a summary text file
+    summary_file = os.path.join(output_dir, f"gam_summary_{timestamp}.txt")
+    
+    with open(summary_file, 'w') as f:
+        f.write("===== GAM PSEUDOTIME ANALYSIS SUMMARY =====\n\n")
+        f.write(f"Analysis performed: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        
+        f.write("Parameters:\n")
+        f.write(f"- FDR threshold: {fdr_threshold}\n")
+        f.write(f"- Effect size threshold: {effect_size_threshold}\n\n")
+        
+        f.write("Results:\n")
+        f.write(f"- Total genes analyzed: {len(results_df)}\n")
+        f.write(f"- Statistically significant genes (FDR < {fdr_threshold}): {len(stat_sig_genes)}\n")
+        f.write(f"- Biologically significant pseudoDEGs: {len(pseudoDEGs)}\n\n")
+        
+        if len(pseudoDEGs) > 0:
+            f.write("Top 20 pseudoDEGs:\n")
+            top_genes = pseudoDEGs.sort_values(["fdr", "effect_size"], ascending=[True, False]).head(20)
+            for i, (_, row) in enumerate(top_genes.iterrows(), 1):
+                f.write(f"{i}. {row['gene']}: FDR = {row['fdr']:.4e}, Effect Size = {row['effect_size']:.2f}\n")
+        
+        f.write("\nOutput files:\n")
+        f.write(f"- All genes: {os.path.basename(all_results_file)}\n")
+        f.write(f"- Statistically significant genes: {os.path.basename(stat_sig_file)}\n")
+        f.write(f"- PseudoDEGs: {os.path.basename(pseudoDEG_file)}\n")
+    
+    if verbose:
+        print(f"Results saved to directory: {output_dir}")
+        print(f"- All genes: {os.path.basename(all_results_file)}")
+        print(f"- Statistically significant genes: {os.path.basename(stat_sig_file)}")
+        print(f"- PseudoDEGs: {os.path.basename(pseudoDEG_file)}")
+        print(f"- Summary: {os.path.basename(summary_file)}")
+
+def summarize_results(
+    results: pd.DataFrame, 
+    top_n: int = 20, 
+    output_file: Optional[str] = None,
+    verbose: bool = True
+) -> None:
+    """
+    Summarize the results of the pseudoDEG analysis.
+    
+    Parameters
+    ----------
+    results_df : pd.DataFrame
+        Results from identify_pseudoDEGs function.
+    top_n : int
+        Number of top genes to display.
+    output_file : str, optional
+        Path to output file. If provided, summary will be written to this file.
+    verbose : bool
+        Whether to print summary to console.
+    """
+    total_genes = len(results)
+    stat_sig = results[results["fdr"] < 0.05].shape[0]
+    pseudoDEGs = results[results["pseudoDEG"]].shape[0]
+    
+    # Create the summary text
+    summary = []
+    summary.append("=== SUMMARY OF RESULTS ===")
+    summary.append(f"Total genes analyzed: {total_genes}")
+    summary.append(f"Statistically significant genes (FDR < 0.05): {stat_sig}")
+    summary.append(f"Pseudotemporal DEGs (biologically significant): {pseudoDEGs}")
+    
+    if pseudoDEGs > 0:
+        summary.append(f"\nTop {min(top_n, pseudoDEGs)} pseudoDEGs:")
+        top_genes = results[results["pseudoDEG"]].sort_values(["fdr", "effect_size"], ascending=[True, False]).head(top_n)
+        for i, (_, row) in enumerate(top_genes.iterrows(), 1):
+            summary.append(f"{i}. {row['gene']}: FDR = {row['fdr']:.4e}, Effect Size = {row['effect_size']:.2f}")
+    
+    # Join all lines
+    summary_text = "\n".join(summary)
+    
+    # Print to console if verbose
+    if verbose:
+        print(summary_text)
+    
+    # Write to file if output_file is provided
+    if output_file is not None:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
+        
+        with open(output_file, 'w') as f:
+            f.write(summary_text)
+        
+        if verbose:
+            print(f"\nSummary saved to: {output_file}")
+
+import os
+import pandas as pd
+import numpy as np
+
+def run_differential_analysis_for_all_paths(TSCAN_results, 
+                                           pseudobulk_df,
+                                           sample_meta_path,
+                                           fdr_threshold=0.05,
+                                           effect_size_threshold=1.0,
+                                           covariate_columns=None,
+                                           num_splines=3,
+                                           spline_order=3,
+                                           base_output_dir="trajectory_diff_gene_results",
+                                           top_gene_number=100,
+                                           verbose=True):
+    """
+    Run differential gene analysis for all paths (main path and branching paths) in TSCAN results
+    
+    Parameters:
+    -----------
+    TSCAN_results : dict
+        Results from TSCAN analysis containing pseudotime information
+    pseudobulk_df : DataFrame
+        Pseudobulk gene expression data
+    sample_meta_path : str
+        Path to sample metadata file
+    fdr_threshold : float
+        FDR threshold for significance
+    effect_size_threshold : float
+        Effect size threshold for significance
+    covariate_columns : list
+        List of covariate column names
+    num_splines : int
+        Number of splines for GAM model
+    spline_order : int
+        Order of splines for GAM model
+    base_output_dir : str
+        Base directory to save results
+    top_gene_number : int
+        Number of top genes to report in summary
+    verbose : bool
+        Whether to print verbose output
+        
+    Returns:
+    --------
+    dict
+        Dictionary of results for each path
+    """
+    # Create base output directory if it doesn't exist
+    os.makedirs(base_output_dir, exist_ok=True)
+    
+    all_results = {}
+    
+    # Process main path
+    print("Processing main path...")
+    main_path_output_dir = os.path.join(base_output_dir, "main_path")
+    os.makedirs(main_path_output_dir, exist_ok=True)
+    
+    # Run differential analysis for main path
+    main_path_results = identify_pseudoDEGs(
+        pseudobulk=pseudobulk_df,
+        sample_meta_path=sample_meta_path,
+        ptime_expression=TSCAN_results['pseudotime']['main_path'],
+        fdr_threshold=fdr_threshold,
+        effect_size_threshold=effect_size_threshold,
+        covariate_columns=covariate_columns,
+        num_splines=num_splines,
+        spline_order=spline_order,
+        output_dir=main_path_output_dir,
+        verbose=verbose
+    )
+    
+    # Summarize main path results
+    summarize_results(
+        results=main_path_results,
+        top_n=top_gene_number,
+        output_file=os.path.join(main_path_output_dir, "differential_gene_result.txt"),
+        verbose=verbose
+    )
+    
+    all_results["main_path"] = main_path_results
+    
+    # Process branching paths
+    if 'branching_paths' in TSCAN_results['pseudotime']:
+        branching_paths = TSCAN_results['pseudotime']['branching_paths']
+        for i, branch_path in enumerate(branching_paths):
+            branch_name = f"branch_{i+1}"
+            print(f"Processing {branch_name}...")
+            
+            branch_output_dir = os.path.join(base_output_dir, branch_name)
+            os.makedirs(branch_output_dir, exist_ok=True)
+            
+            # Run differential analysis for this branch
+            branch_results = identify_pseudoDEGs(
+                pseudobulk=pseudobulk_df,
+                sample_meta_path=sample_meta_path,
+                ptime_expression=branch_path,
+                fdr_threshold=fdr_threshold,
+                effect_size_threshold=effect_size_threshold,
+                covariate_columns=covariate_columns,
+                num_splines=num_splines,
+                spline_order=spline_order,
+                output_dir=branch_output_dir,
+                verbose=verbose
+            )
+            
+            # Summarize branch results
+            summarize_results(
+                results=branch_results,
+                top_n=top_gene_number,
+                output_file=os.path.join(branch_output_dir, "differential_gene_result.txt"),
+                verbose=verbose
+            )
+            
+            all_results[branch_name] = branch_results
+    
+    # Create a comparative analysis of the different paths
+    create_comparative_analysis(all_results, base_output_dir, top_gene_number)
+    
+    return all_results
+
+def create_comparative_analysis(all_results, base_output_dir, top_n):
+    """
+    Create a comparative analysis of differentially expressed genes across different paths
+    
+    Parameters:
+    -----------
+    all_results : dict
+        Dictionary of results for each path
+    base_output_dir : str
+        Base directory to save results
+    top_n : int
+        Number of top genes to include in comparison
+    """
+    print("Creating comparative analysis...")
+    
+    # Create a directory for comparative analysis
+    comparative_dir = os.path.join(base_output_dir, "comparative_analysis")
+    os.makedirs(comparative_dir, exist_ok=True)
+    
+    # Get top genes from each path
+    path_top_genes = {}
+    all_top_genes = set()
+    
+    for path_name, results in all_results.items():
+        if hasattr(results, 'diff_genes') and results.diff_genes is not None:
+            # Sort genes by significance and effect size
+            top_genes = results.diff_genes.sort_values(by=['fdr', 'effect_size'], 
+                                                      ascending=[True, False]).head(top_n)
+            path_top_genes[path_name] = top_genes
+            all_top_genes.update(top_genes.index)
+    
+    # Create a comparison matrix
+    comparison_df = pd.DataFrame(index=list(all_top_genes), columns=list(path_top_genes.keys()))
+    
+    for path_name, top_genes in path_top_genes.items():
+        for gene in comparison_df.index:
+            if gene in top_genes.index:
+                comparison_df.loc[gene, path_name] = top_genes.loc[gene, 'effect_size']
+            else:
+                comparison_df.loc[gene, path_name] = np.nan
+    
+    # Save comparison matrix
+    comparison_df.to_csv(os.path.join(comparative_dir, "path_comparison_matrix.csv"))
+    
+    # Create a Venn diagram or overlap analysis of top genes
+    create_gene_overlap_analysis(path_top_genes, comparative_dir)
+
+def create_gene_overlap_analysis(path_top_genes, output_dir):
+    """
+    Create an analysis of gene overlaps between different paths
+    
+    Parameters:
+    -----------
+    path_top_genes : dict
+        Dictionary of top genes for each path
+    output_dir : str
+        Directory to save results
+    """
+    # Create sets of genes for each path
+    gene_sets = {path: set(genes.index) for path, genes in path_top_genes.items()}
+    
+    # Calculate pairwise overlaps
+    paths = list(gene_sets.keys())
+    overlap_matrix = pd.DataFrame(index=paths, columns=paths)
+    
+    for i, path1 in enumerate(paths):
+        for path2 in paths:
+            if path1 == path2:
+                overlap_matrix.loc[path1, path2] = len(gene_sets[path1])
+            else:
+                overlap = len(gene_sets[path1].intersection(gene_sets[path2]))
+                overlap_matrix.loc[path1, path2] = overlap
+    
+    # Save overlap matrix
+    overlap_matrix.to_csv(os.path.join(output_dir, "gene_overlap_matrix.csv"))
+    
+    # Generate lists of shared and unique genes
+    shared_genes = set.intersection(*gene_sets.values()) if gene_sets else set()
+    
+    unique_genes = {}
+    for path, genes in gene_sets.items():
+        other_paths = set(paths) - {path}
+        other_genes = set.union(*[gene_sets[p] for p in other_paths]) if other_paths else set()
+        unique_genes[path] = genes - other_genes
+    
+    # Write shared genes to file
+    with open(os.path.join(output_dir, "shared_genes.txt"), "w") as f:
+        f.write("Genes shared across all paths:\n")
+        for gene in shared_genes:
+            f.write(f"{gene}\n")
+    
+    # Write unique genes to file
+    for path, genes in unique_genes.items():
+        with open(os.path.join(output_dir, f"unique_genes_{path}.txt"), "w") as f:
+            f.write(f"Genes unique to {path}:\n")
+            for gene in genes:
+                f.write(f"{gene}\n")
