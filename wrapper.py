@@ -480,6 +480,7 @@ def wrapper(
                     fdr_threshold= fdr_threshold,
                     effect_size_threshold= effect_size_threshold,
                     covariate_columns = trajectory_diff_gene_covariate,
+                    sample_col=sample_col,
                     num_splines = num_splines,
                     spline_order = spline_order,
                     output_dir=trajectory_diff_gene_output_dir,
@@ -493,9 +494,10 @@ def wrapper(
                 )
             else:
                 all_path_results = run_differential_analysis_for_all_paths(
-                    TSCAN_results=results,
-                    pseudobulk_df=pseudobulk_df,
+                    TSCAN_results=TSCAN_result_expression,
+                    pseudobulk_df=pseudobulk_df["cell_expression_corrected"],
                     sample_meta_path=sample_meta_path,
+                    sample_col= sample_col,
                     fdr_threshold=fdr_threshold,
                     effect_size_threshold=effect_size_threshold,
                     covariate_columns=trajectory_diff_gene_covariate,

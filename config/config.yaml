@@ -47,10 +47,10 @@ AnnData_sample_path: null
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
-trajectory_supervised: true
+trajectory_supervised: false
 cca_output_dir: null
 sev_col_cca: "sev.level"
-cca_optimal_cell_resolution: true
+cca_optimal_cell_resolution: false
 cca_pvalue: false
 grouping_columns:
   - "sev.level"
@@ -94,8 +94,8 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== Process Control Flags =====
-preprocessing: true
-cell_type_cluster: true
+preprocessing: false
+cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true

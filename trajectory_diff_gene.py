@@ -9,54 +9,31 @@ import datetime
 
 def prepare_gam_input_data(
     pseudobulk: dict,
-    sample_meta_path: str,
-    ptime_expression: Dict[str, float],
+    sample_meta_path: Optional[str] = None,
+    ptime_expression: Dict[str, float] = None,
     covariate_columns: Optional[List[str]] = None,
     expression_key: str = "cell_expression_corrected",
+    sample_col: str = "sample",
     verbose: bool = False
 ) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
-    """
-    Prepares input matrices for GAM: covariates (z_s), pseudotime (t_s), and gene expressions (y_gs).
-
-    Parameters
-    ----------
-    pseudobulk : dict
-        Dictionary containing pseudobulk data with expression DataFrame under expression_key.
-    sample_meta_path : str
-        Path to the sample metadata CSV/TSV file. Must include a 'sample' column.
-    ptime_expression : dict
-        Dictionary mapping sample names to pseudotime values.
-    covariate_columns : list of str, optional
-        List of covariate columns to use. If None, use all columns except 'sample'.
-    expression_key : str
-        Key to use for accessing the expression DataFrame in pseudobulk.
-    verbose : bool
-        Whether to print progress messages.
-
-    Returns
-    -------
-    X : pd.DataFrame
-        Design matrix with pseudotime and encoded covariates.
-    Y : pd.DataFrame
-        Gene expression matrix (rows = samples, columns = genes).
-    gene_names : list of str
-        List of gene names (column names in Y).
-    """
-    if verbose:
-        print("Reading metadata file...")
     
-    # Read metadata file (auto-detect CSV or TSV)
-    metadata = pd.read_csv(sample_meta_path, sep=None, engine="python")
-
-    if 'sample' not in metadata.columns:
-        raise ValueError("Metadata file must contain a 'sample' column.")
-    
-    # Convert sample names to lowercase for case-insensitive matching
-    metadata['sample_lower'] = metadata['sample'].str.lower()
-    metadata = metadata.set_index("sample_lower")
-
-    if verbose:
-        print(f"Loading expression matrix from key: {expression_key}")
+    metadata = None
+    if sample_meta_path is not None and os.path.exists(sample_meta_path):
+        if verbose:
+            print("Reading metadata file...")
+        try:
+            # Read metadata file (auto-detect CSV or TSV)
+            metadata = pd.read_csv(sample_meta_path, sep=None, engine="python")
+            if sample_col not in metadata.columns:
+                raise ValueError(f"Metadata file must contain a '{sample_col}' column.")
+            # Convert sample names to lowercase for case-insensitive matching
+            metadata[f'{sample_col}_lower'] = metadata[sample_col].str.lower()
+            metadata = metadata.set_index(f"{sample_col}_lower")
+        except Exception as e:
+            print(f"Warning: Could not properly load metadata file: {e}")
+            metadata = None
+    elif sample_meta_path is not None:
+        print(f"Warning: Metadata file {sample_meta_path} not found.")
     
     # Load expression matrix
     expr_df = pseudobulk[expression_key]
@@ -67,51 +44,67 @@ def prepare_gam_input_data(
     expr_df['sample_lower'] = [s.lower() for s in expr_df.index]
     expr_df = expr_df.set_index('sample_lower')
 
+    if ptime_expression is None or not ptime_expression:
+        raise ValueError("Pseudotime expression values must be provided.")
     if verbose:
         print(f"Processing pseudotime data for {len(ptime_expression)} samples")
     
     # Create a lowercase version of the pseudotime dictionary keys
     ptime_expression_lower = {k.lower(): v for k, v in ptime_expression.items()}
-    
     # Add pseudotime as a column
     pseudotime_df = pd.DataFrame.from_dict(ptime_expression_lower, orient='index', columns=['pseudotime'])
     pseudotime_df.index.name = 'sample_lower'
 
-    # Merge metadata and pseudotime
-    meta = metadata.join(pseudotime_df, how="inner")
+    if metadata is not None:
+        try:
+            meta = metadata.join(pseudotime_df, how="inner")
+            common_samples = meta.index.intersection(expr_df.index)
+            if len(common_samples) == 0:
+                raise ValueError("No common samples found between metadata/pseudotime and expression data. Check sample name formatting.")
+            if verbose:
+                print(f"Found {len(common_samples)} common samples between metadata and expression data")
+            meta = meta.loc[common_samples]
+            expr_df = expr_df.loc[common_samples]
+            if covariate_columns is None:
+                covariate_columns = [col for col in meta.columns 
+                                    if col != 'pseudotime' 
+                                    and col != sample_col 
+                                    and col != f'{sample_col}_lower']
 
-    # Keep only samples that are in expression data
-    common_samples = meta.index.intersection(expr_df.index)
+            # Ensure covariate_columns only includes columns that actually exist in meta
+            covariate_columns = [col for col in covariate_columns if col in meta.columns]
+            if not covariate_columns:
+                # No valid covariates, just use pseudotime
+                X = pd.DataFrame({'pseudotime': meta['pseudotime']})
+            else:
+                covariates = meta[covariate_columns]
+                covariates_encoded = pd.get_dummies(covariates, drop_first=True)
+                X = pd.concat([meta['pseudotime'], covariates_encoded], axis=1)
+                
+        except Exception as e:
+            print(f"Warning: Error processing metadata: {e}")
+            metadata = None
     
-    if len(common_samples) == 0:
-        raise ValueError("No common samples found between metadata/pseudotime and expression data. Check sample name formatting.")
+    if metadata is None:
+        # If no metadata or metadata processing failed, just use pseudotime
+        # Create a DataFrame with pseudotime values
+        X = pd.DataFrame(index=expr_df.index)
+        X['pseudotime'] = X.index.map(lambda s: ptime_expression_lower.get(s, np.nan))
+        # Remove rows with missing pseudotime
+        valid_samples = ~X['pseudotime'].isna()
+        X = X[valid_samples]
+        expr_df = expr_df[valid_samples]
+        if len(X) == 0:
+            raise ValueError("No samples with valid pseudotime values found.")
+        if verbose:
+            print(f"Using {len(X)} samples with valid pseudotime values")
     
-    if verbose:
-        print(f"Found {len(common_samples)} common samples between metadata and expression data")
-    
-    meta = meta.loc[common_samples]
-    expr_df = expr_df.loc[common_samples]
-
-    # Select covariates
-    if covariate_columns is None:
-        covariate_columns = [col for col in meta.columns if col != 'pseudotime' and col != 'sample']
-
-    covariates = meta[covariate_columns]
-
-    # One-hot encode categorical covariates
-    covariates_encoded = pd.get_dummies(covariates, drop_first=True)
-
-    # Build final design matrix
-    X = pd.concat([meta['pseudotime'], covariates_encoded], axis=1)
-
     # Get original expression dataframe with original sample names
-    # and make sure it has the same order as the metadata
-    Y = pseudobulk[expression_key].loc[[sample_name_map[s] for s in common_samples]]
+    # and make sure it has the same order as X
+    Y = pseudobulk[expression_key].loc[[sample_name_map[s] for s in expr_df.index]]
     gene_names = list(Y.columns)
-
     if verbose:
         print(f"Prepared input data with {X.shape[0]} samples and {len(gene_names)} genes")
-    
     return X, Y, gene_names
 
 def fit_gam_models_for_genes(
@@ -155,7 +148,6 @@ def fit_gam_models_for_genes(
     """
     results = []
     gam_models = {}
-    
     # Ensure num_splines is greater than spline_order
     if num_splines <= spline_order:
         corrected_num_splines = spline_order + 1
@@ -165,11 +157,9 @@ def fit_gam_models_for_genes(
         num_splines = corrected_num_splines
     
     spline_idx = list(X.columns).index(spline_term)
-    
     # Build GAM terms: pseudotime as a spline + other covariates as linear terms
     spline_term = s(spline_idx, n_splines=num_splines, spline_order=spline_order)
     linear_terms = [f(i) for i in range(X.shape[1]) if i != spline_idx]
-    
     # Combine terms properly
     if linear_terms:
         terms = spline_term
@@ -182,7 +172,6 @@ def fit_gam_models_for_genes(
     for i, gene in enumerate(gene_names):
         if verbose and (i % 100 == 0 or i == total_genes - 1):
             print(f"Fitting GAM model for gene {i+1}/{total_genes}: {gene}")
-            
         y = Y[gene].values
         try:
             gam = LinearGAM(terms).fit(X.values, y)
@@ -194,19 +183,16 @@ def fit_gam_models_for_genes(
             if verbose:
                 print(f"Failed to fit GAM for {gene}: {e}")
             results.append((gene, None, None))
-    
+
     # Compile results
     results_df = pd.DataFrame(results, columns=["gene", "pval", "dev_exp"]).dropna()
-    
     # FDR correction
     _, fdr, _, _ = multipletests(results_df["pval"], method="fdr_bh")
     results_df["fdr"] = fdr
     results_df["significant"] = results_df["fdr"] < fdr_threshold
-    
     if verbose:
         sig_count = results_df["significant"].sum()
         print(f"Found {sig_count} statistically significant genes (FDR < {fdr_threshold})")
-    
     return results_df.sort_values("fdr"), gam_models
 
 def calculate_effect_size(
@@ -247,48 +233,35 @@ def calculate_effect_size(
             continue
             
         gam = gam_models[gene]
-        
-        # Get predicted values (smoothed expression)
         y_pred = gam.predict(X.values)
-        
         # Calculate effect size: (max_s ŷ_gs - min_s ŷ_gs) / √(∑_s e²_gs/df_e)
         # where ŷ is the GAM smoothed expression levels, e is the model residual
         # and df_e is the residual degrees of freedom
-        
-        # Get residuals
         y_true = Y[gene].values
         residuals = y_true - y_pred
-        
-        # Get residual degrees of freedom
         df_e = gam.statistics_['edof']
-        
-        # Calculate effect size
         max_pred = np.max(y_pred)
         min_pred = np.min(y_pred)
         sum_squared_residuals = np.sum(residuals**2)
-        
-        # Avoid division by zero
         if sum_squared_residuals > 0 and df_e > 0:
             es = (max_pred - min_pred) / np.sqrt(sum_squared_residuals / df_e)
             effect_sizes.append((gene, es))
-    
     result_df = pd.DataFrame(effect_sizes, columns=["gene", "effect_size"])
-    
     if verbose:
         print(f"Calculated effect sizes for {len(result_df)} genes")
-    
     return result_df
 
 def identify_pseudoDEGs(
     X: pd.DataFrame = None,
     Y: pd.DataFrame = None,
     pseudobulk: dict = None,
-    sample_meta_path: str = None,
+    sample_meta_path: Optional[str] = None,
     ptime_expression: Dict[str, float] = None,
     fdr_threshold: float = 0.05,
     effect_size_threshold: float = 1.0,
     covariate_columns: Optional[List[str]] = None,
     expression_key: str = "cell_expression_corrected",
+    sample_col: str = "sample",
     num_splines: int = 5,
     spline_order: int = 3,
     output_dir: Optional[str] = None,
@@ -336,7 +309,6 @@ def identify_pseudoDEGs(
     if X is None or Y is None:
         if X is None and Y is None and (pseudobulk is None or sample_meta_path is None or ptime_expression is None):
             raise ValueError("Either provide X and Y matrices or provide pseudobulk, sample_meta_path, and ptime_expression")
-            
         if verbose:
             print("Preparing input data for GAM...")
         X, Y, gene_names = prepare_gam_input_data(
@@ -345,6 +317,7 @@ def identify_pseudoDEGs(
             ptime_expression=ptime_expression,
             covariate_columns=covariate_columns,
             expression_key=expression_key,
+            sample_col=sample_col,
             verbose=verbose
         )
     else:
@@ -364,17 +337,14 @@ def identify_pseudoDEGs(
         fdr_threshold=fdr_threshold,
         verbose=verbose
     )
-    
     # Get statistically significant genes
     stat_sig_genes = stat_results[stat_results["fdr"] < fdr_threshold]["gene"].tolist()
-    
     if verbose:
         print(f"Found {len(stat_sig_genes)} statistically significant genes (FDR < {fdr_threshold}).")
     
     # Step 3: Calculate effect sizes for statistically significant genes
     if verbose:
         print("Calculating effect sizes for significant genes...")
-    
     effect_sizes = calculate_effect_size(
         X=X,
         Y=Y,
@@ -384,25 +354,226 @@ def identify_pseudoDEGs(
     )
     
     # Step 4: Combine statistical and biological significance
-    results = stat_results.merge(effect_sizes, on="gene", how="left")
-    
     # Identify pseudoDEGs: genes with FDR < threshold and effect size > threshold
+    results = stat_results.merge(effect_sizes, on="gene", how="left")
     results["pseudoDEG"] = (
         (results["fdr"] < fdr_threshold) & 
         (results["effect_size"] > effect_size_threshold)
     )
-    
     pseudoDEGs = results[results["pseudoDEG"]].sort_values(["fdr", "effect_size"], ascending=[True, False])
-    
     if verbose:
         print(f"Identified {len(pseudoDEGs)} pseudoDEGs with FDR < {fdr_threshold} " +
               f"and effect size > {effect_size_threshold}.")
-    
     # Save results if output directory is provided
     if output_dir is not None:
         save_results(results, output_dir, fdr_threshold, effect_size_threshold, verbose)
     
     return results
+
+def run_differential_analysis_for_all_paths(TSCAN_results, 
+                                           pseudobulk_df,
+                                           sample_meta_path=None,
+                                           sample_col="sample",
+                                           fdr_threshold=0.05,
+                                           effect_size_threshold=1.0,
+                                           covariate_columns=None,
+                                           num_splines=3,
+                                           spline_order=3,
+                                           base_output_dir="trajectory_diff_gene_results",
+                                           top_gene_number=100,
+                                           verbose=True):
+    os.makedirs(base_output_dir, exist_ok=True)
+    all_results = {}
+    # Verify main path pseudotime exists
+    if ('pseudotime' not in TSCAN_results or 
+        'main_path' not in TSCAN_results['pseudotime'] or 
+        not TSCAN_results['pseudotime']['main_path']):
+        print("Error: No valid main path pseudotime found in TSCAN results.")
+        return all_results
+    
+    # Process main path
+    print("Processing main path...")
+    main_path_output_dir = os.path.join(base_output_dir, "main_path")
+    os.makedirs(main_path_output_dir, exist_ok=True)
+    
+    # Run differential analysis for main path
+    main_path_results = identify_pseudoDEGs(
+        pseudobulk={"cell_expression_corrected": pseudobulk_df},  # Ensure correct dictionary format
+        sample_meta_path=sample_meta_path,
+        ptime_expression=TSCAN_results['pseudotime']['main_path'],
+        fdr_threshold=fdr_threshold,
+        effect_size_threshold=effect_size_threshold,
+        covariate_columns=covariate_columns,
+        sample_col=sample_col,
+        num_splines=num_splines,
+        spline_order=spline_order,
+        output_dir=main_path_output_dir,
+        verbose=verbose
+    )
+    
+    # Summarize main path results
+    summarize_results(
+        results=main_path_results,
+        top_n=top_gene_number,
+        output_file=os.path.join(main_path_output_dir, "differential_gene_result.txt"),
+        verbose=verbose
+    )
+    
+    all_results["main_path"] = main_path_results
+
+    if ('pseudotime' in TSCAN_results and 
+        'branching_paths' in TSCAN_results['pseudotime'] and 
+        TSCAN_results['pseudotime']['branching_paths']):
+        
+        branching_paths = TSCAN_results['pseudotime']['branching_paths']
+        if isinstance(branching_paths, dict):
+            # Process each branch path by key
+            for branch_key, branch_path in branching_paths.items():
+                # Skip empty branch paths
+                if not branch_path:
+                    print(f"Warning: Branch {branch_key} has no pseudotime data. Skipping.")
+                    continue
+                    
+                branch_name = f"branch_{branch_key}"
+                print(f"Processing {branch_name}...")
+                
+                branch_output_dir = os.path.join(base_output_dir, branch_name)
+                os.makedirs(branch_output_dir, exist_ok=True)
+                
+                try:
+                    # Run differential analysis for this branch
+                    branch_results = identify_pseudoDEGs(
+                        pseudobulk={"cell_expression_corrected": pseudobulk_df},
+                        sample_meta_path=sample_meta_path,
+                        ptime_expression=branch_path,
+                        fdr_threshold=fdr_threshold,
+                        effect_size_threshold=effect_size_threshold,
+                        covariate_columns=covariate_columns,
+                        sample_col=sample_col,
+                        num_splines=num_splines,
+                        spline_order=spline_order,
+                        output_dir=branch_output_dir,
+                        verbose=verbose
+                    )
+                    
+                    # Summarize branch results
+                    summarize_results(
+                        results=branch_results,
+                        top_n=top_gene_number,
+                        output_file=os.path.join(branch_output_dir, "differential_gene_result.txt"),
+                        verbose=verbose
+                    )
+                    
+                    all_results[branch_name] = branch_results
+                except Exception as e:
+                    print(f"Error processing {branch_name}: {e}")
+        else:
+            print("Warning: 'branching_paths' is not a list. Expected a list of dictionaries with pseudotime values.")
+    else:
+        print("No branching paths found in TSCAN results.")
+    
+    # Create a comparative analysis if we have results from multiple paths
+    if len(all_results) > 1:
+        create_comparative_analysis(all_results, base_output_dir, top_gene_number)
+    
+    return all_results
+
+def create_comparative_analysis(all_results, base_output_dir, top_n):
+    """
+    Create a comparative analysis of differentially expressed genes across different paths
+    
+    Parameters:
+    -----------
+    all_results : dict
+        Dictionary of results for each path
+    base_output_dir : str
+        Base directory to save results
+    top_n : int
+        Number of top genes to include in comparison
+    """
+    print("Creating comparative analysis...")
+    
+    # Create a directory for comparative analysis
+    comparative_dir = os.path.join(base_output_dir, "comparative_analysis")
+    os.makedirs(comparative_dir, exist_ok=True)
+    
+    # Get top genes from each path
+    path_top_genes = {}
+    all_top_genes = set()
+    
+    for path_name, results in all_results.items():
+        if hasattr(results, 'diff_genes') and results.diff_genes is not None:
+            # Sort genes by significance and effect size
+            top_genes = results.diff_genes.sort_values(by=['fdr', 'effect_size'], 
+                                                      ascending=[True, False]).head(top_n)
+            path_top_genes[path_name] = top_genes
+            all_top_genes.update(top_genes.index)
+    
+    # Create a comparison matrix
+    comparison_df = pd.DataFrame(index=list(all_top_genes), columns=list(path_top_genes.keys()))
+    
+    for path_name, top_genes in path_top_genes.items():
+        for gene in comparison_df.index:
+            if gene in top_genes.index:
+                comparison_df.loc[gene, path_name] = top_genes.loc[gene, 'effect_size']
+            else:
+                comparison_df.loc[gene, path_name] = np.nan
+    
+    # Save comparison matrix
+    comparison_df.to_csv(os.path.join(comparative_dir, "path_comparison_matrix.csv"))
+    
+    # Create a Venn diagram or overlap analysis of top genes
+    create_gene_overlap_analysis(path_top_genes, comparative_dir)
+
+def create_gene_overlap_analysis(path_top_genes, output_dir):
+    """
+    Create an analysis of gene overlaps between different paths
+    
+    Parameters:
+    -----------
+    path_top_genes : dict
+        Dictionary of top genes for each path
+    output_dir : str
+        Directory to save results
+    """
+    # Create sets of genes for each path
+    gene_sets = {path: set(genes.index) for path, genes in path_top_genes.items()}
+    
+    # Calculate pairwise overlaps
+    paths = list(gene_sets.keys())
+    overlap_matrix = pd.DataFrame(index=paths, columns=paths)
+    
+    for i, path1 in enumerate(paths):
+        for path2 in paths:
+            if path1 == path2:
+                overlap_matrix.loc[path1, path2] = len(gene_sets[path1])
+            else:
+                overlap = len(gene_sets[path1].intersection(gene_sets[path2]))
+                overlap_matrix.loc[path1, path2] = overlap
+    
+    # Save overlap matrix
+    overlap_matrix.to_csv(os.path.join(output_dir, "gene_overlap_matrix.csv"))
+    
+    # Generate lists of shared and unique genes
+    shared_genes = set.intersection(*gene_sets.values()) if gene_sets else set()
+    
+    unique_genes = {}
+    for path, genes in gene_sets.items():
+        other_paths = set(paths) - {path}
+        other_genes = set.union(*[gene_sets[p] for p in other_paths]) if other_paths else set()
+        unique_genes[path] = genes - other_genes
+    
+    # Write shared genes to file
+    with open(os.path.join(output_dir, "shared_genes.txt"), "w") as f:
+        f.write("Genes shared across all paths:\n")
+        for gene in shared_genes:
+            f.write(f"{gene}\n")
+            
+    for path, genes in unique_genes.items():
+        with open(os.path.join(output_dir, f"unique_genes_{path}.txt"), "w") as f:
+            f.write(f"Genes unique to {path}:\n")
+            for gene in genes:
+                f.write(f"{gene}\n")
 
 def save_results(
     results_df: pd.DataFrame, 
@@ -535,222 +706,3 @@ def summarize_results(
         
         if verbose:
             print(f"\nSummary saved to: {output_file}")
-
-import os
-import pandas as pd
-import numpy as np
-
-def run_differential_analysis_for_all_paths(TSCAN_results, 
-                                           pseudobulk_df,
-                                           sample_meta_path,
-                                           fdr_threshold=0.05,
-                                           effect_size_threshold=1.0,
-                                           covariate_columns=None,
-                                           num_splines=3,
-                                           spline_order=3,
-                                           base_output_dir="trajectory_diff_gene_results",
-                                           top_gene_number=100,
-                                           verbose=True):
-    """
-    Run differential gene analysis for all paths (main path and branching paths) in TSCAN results
-    
-    Parameters:
-    -----------
-    TSCAN_results : dict
-        Results from TSCAN analysis containing pseudotime information
-    pseudobulk_df : DataFrame
-        Pseudobulk gene expression data
-    sample_meta_path : str
-        Path to sample metadata file
-    fdr_threshold : float
-        FDR threshold for significance
-    effect_size_threshold : float
-        Effect size threshold for significance
-    covariate_columns : list
-        List of covariate column names
-    num_splines : int
-        Number of splines for GAM model
-    spline_order : int
-        Order of splines for GAM model
-    base_output_dir : str
-        Base directory to save results
-    top_gene_number : int
-        Number of top genes to report in summary
-    verbose : bool
-        Whether to print verbose output
-        
-    Returns:
-    --------
-    dict
-        Dictionary of results for each path
-    """
-    # Create base output directory if it doesn't exist
-    os.makedirs(base_output_dir, exist_ok=True)
-    
-    all_results = {}
-    
-    # Process main path
-    print("Processing main path...")
-    main_path_output_dir = os.path.join(base_output_dir, "main_path")
-    os.makedirs(main_path_output_dir, exist_ok=True)
-    
-    # Run differential analysis for main path
-    main_path_results = identify_pseudoDEGs(
-        pseudobulk=pseudobulk_df,
-        sample_meta_path=sample_meta_path,
-        ptime_expression=TSCAN_results['pseudotime']['main_path'],
-        fdr_threshold=fdr_threshold,
-        effect_size_threshold=effect_size_threshold,
-        covariate_columns=covariate_columns,
-        num_splines=num_splines,
-        spline_order=spline_order,
-        output_dir=main_path_output_dir,
-        verbose=verbose
-    )
-    
-    # Summarize main path results
-    summarize_results(
-        results=main_path_results,
-        top_n=top_gene_number,
-        output_file=os.path.join(main_path_output_dir, "differential_gene_result.txt"),
-        verbose=verbose
-    )
-    
-    all_results["main_path"] = main_path_results
-    
-    # Process branching paths
-    if 'branching_paths' in TSCAN_results['pseudotime']:
-        branching_paths = TSCAN_results['pseudotime']['branching_paths']
-        for i, branch_path in enumerate(branching_paths):
-            branch_name = f"branch_{i+1}"
-            print(f"Processing {branch_name}...")
-            
-            branch_output_dir = os.path.join(base_output_dir, branch_name)
-            os.makedirs(branch_output_dir, exist_ok=True)
-            
-            # Run differential analysis for this branch
-            branch_results = identify_pseudoDEGs(
-                pseudobulk=pseudobulk_df,
-                sample_meta_path=sample_meta_path,
-                ptime_expression=branch_path,
-                fdr_threshold=fdr_threshold,
-                effect_size_threshold=effect_size_threshold,
-                covariate_columns=covariate_columns,
-                num_splines=num_splines,
-                spline_order=spline_order,
-                output_dir=branch_output_dir,
-                verbose=verbose
-            )
-            
-            # Summarize branch results
-            summarize_results(
-                results=branch_results,
-                top_n=top_gene_number,
-                output_file=os.path.join(branch_output_dir, "differential_gene_result.txt"),
-                verbose=verbose
-            )
-            
-            all_results[branch_name] = branch_results
-    
-    # Create a comparative analysis of the different paths
-    create_comparative_analysis(all_results, base_output_dir, top_gene_number)
-    
-    return all_results
-
-def create_comparative_analysis(all_results, base_output_dir, top_n):
-    """
-    Create a comparative analysis of differentially expressed genes across different paths
-    
-    Parameters:
-    -----------
-    all_results : dict
-        Dictionary of results for each path
-    base_output_dir : str
-        Base directory to save results
-    top_n : int
-        Number of top genes to include in comparison
-    """
-    print("Creating comparative analysis...")
-    
-    # Create a directory for comparative analysis
-    comparative_dir = os.path.join(base_output_dir, "comparative_analysis")
-    os.makedirs(comparative_dir, exist_ok=True)
-    
-    # Get top genes from each path
-    path_top_genes = {}
-    all_top_genes = set()
-    
-    for path_name, results in all_results.items():
-        if hasattr(results, 'diff_genes') and results.diff_genes is not None:
-            # Sort genes by significance and effect size
-            top_genes = results.diff_genes.sort_values(by=['fdr', 'effect_size'], 
-                                                      ascending=[True, False]).head(top_n)
-            path_top_genes[path_name] = top_genes
-            all_top_genes.update(top_genes.index)
-    
-    # Create a comparison matrix
-    comparison_df = pd.DataFrame(index=list(all_top_genes), columns=list(path_top_genes.keys()))
-    
-    for path_name, top_genes in path_top_genes.items():
-        for gene in comparison_df.index:
-            if gene in top_genes.index:
-                comparison_df.loc[gene, path_name] = top_genes.loc[gene, 'effect_size']
-            else:
-                comparison_df.loc[gene, path_name] = np.nan
-    
-    # Save comparison matrix
-    comparison_df.to_csv(os.path.join(comparative_dir, "path_comparison_matrix.csv"))
-    
-    # Create a Venn diagram or overlap analysis of top genes
-    create_gene_overlap_analysis(path_top_genes, comparative_dir)
-
-def create_gene_overlap_analysis(path_top_genes, output_dir):
-    """
-    Create an analysis of gene overlaps between different paths
-    
-    Parameters:
-    -----------
-    path_top_genes : dict
-        Dictionary of top genes for each path
-    output_dir : str
-        Directory to save results
-    """
-    # Create sets of genes for each path
-    gene_sets = {path: set(genes.index) for path, genes in path_top_genes.items()}
-    
-    # Calculate pairwise overlaps
-    paths = list(gene_sets.keys())
-    overlap_matrix = pd.DataFrame(index=paths, columns=paths)
-    
-    for i, path1 in enumerate(paths):
-        for path2 in paths:
-            if path1 == path2:
-                overlap_matrix.loc[path1, path2] = len(gene_sets[path1])
-            else:
-                overlap = len(gene_sets[path1].intersection(gene_sets[path2]))
-                overlap_matrix.loc[path1, path2] = overlap
-    
-    # Save overlap matrix
-    overlap_matrix.to_csv(os.path.join(output_dir, "gene_overlap_matrix.csv"))
-    
-    # Generate lists of shared and unique genes
-    shared_genes = set.intersection(*gene_sets.values()) if gene_sets else set()
-    
-    unique_genes = {}
-    for path, genes in gene_sets.items():
-        other_paths = set(paths) - {path}
-        other_genes = set.union(*[gene_sets[p] for p in other_paths]) if other_paths else set()
-        unique_genes[path] = genes - other_genes
-    
-    # Write shared genes to file
-    with open(os.path.join(output_dir, "shared_genes.txt"), "w") as f:
-        f.write("Genes shared across all paths:\n")
-        for gene in shared_genes:
-            f.write(f"{gene}\n")
-    
-    # Write unique genes to file
-    for path, genes in unique_genes.items():
-        with open(os.path.join(output_dir, f"unique_genes_{path}.txt"), "w") as f:
-            f.write(f"Genes unique to {path}:\n")
-            for gene in genes:
-                f.write(f"{gene}\n")
