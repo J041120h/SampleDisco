@@ -582,22 +582,6 @@ def save_results(
     effect_size_threshold: float,
     verbose: bool = False
 ) -> None:
-    """
-    Save analysis results to files in the specified directory.
-    
-    Parameters
-    ----------
-    results_df : pd.DataFrame
-        Results from identify_pseudoDEGs function.
-    output_dir : str
-        Directory to save the results.
-    fdr_threshold : float
-        FDR threshold used in the analysis.
-    effect_size_threshold : float
-        Effect size threshold used in the analysis.
-    verbose : bool
-        Whether to print progress information.
-    """
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -658,20 +642,6 @@ def summarize_results(
     output_file: Optional[str] = None,
     verbose: bool = True
 ) -> None:
-    """
-    Summarize the results of the pseudoDEG analysis.
-    
-    Parameters
-    ----------
-    results_df : pd.DataFrame
-        Results from identify_pseudoDEGs function.
-    top_n : int
-        Number of top genes to display.
-    output_file : str, optional
-        Path to output file. If provided, summary will be written to this file.
-    verbose : bool
-        Whether to print summary to console.
-    """
     total_genes = len(results)
     stat_sig = results[results["fdr"] < 0.05].shape[0]
     pseudoDEGs = results[results["pseudoDEG"]].shape[0]

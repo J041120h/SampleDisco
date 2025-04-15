@@ -1,4 +1,4 @@
 === SUMMARY OF RESULTS ===
 Total genes analyzed: 2000
-Statistically significant genes (FDR < 0.05): 0
+Statistically significant genes (FDR < 0.05): 1492
 Pseudotemporal DEGs (biologically significant): 0
