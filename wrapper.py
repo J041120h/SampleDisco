@@ -88,6 +88,7 @@ def wrapper(
     # ===== Trajectory Differential Gene Parameters =====
     fdr_threshold = 0.05,
     effect_size_threshold = 1,
+    top_n_genes = 100,
     trajectory_diff_gene_covariate = None,
     num_splines = 5,
     spline_order = 3,
@@ -480,6 +481,7 @@ def wrapper(
                     ptime_expression=ptime_expression,
                     fdr_threshold= fdr_threshold,
                     effect_size_threshold= effect_size_threshold,
+                    top_n_genes = top_n_genes,
                     covariate_columns = trajectory_diff_gene_covariate,
                     sample_col=sample_col,
                     num_splines = num_splines,
@@ -501,6 +503,7 @@ def wrapper(
                     sample_col= sample_col,
                     fdr_threshold=fdr_threshold,
                     effect_size_threshold=effect_size_threshold,
+                    top_n_genes = top_n_genes,
                     covariate_columns=trajectory_diff_gene_covariate,
                     num_splines=num_splines,
                     spline_order=spline_order,

@@ -259,6 +259,7 @@ def identify_pseudoDEGs(
     ptime_expression: Dict[str, float] = None,
     fdr_threshold: float = 0.05,
     effect_size_threshold: float = 1.0,
+    top_n_genes: Optional[int] = None,
     covariate_columns: Optional[List[str]] = None,
     expression_key: str = "cell_expression_corrected",
     sample_col: str = "sample",
@@ -287,6 +288,9 @@ def identify_pseudoDEGs(
         FDR threshold for statistical significance (default: 0.05).
     effect_size_threshold : float
         Effect size threshold for biological significance (default: 1.0).
+    top_n_genes : int, optional
+        If provided, select top N genes by effect size from statistically significant genes.
+        If None, use effect_size_threshold instead.
     covariate_columns : list, optional
         List of covariate columns to use from metadata.
     expression_key : str
@@ -354,19 +358,44 @@ def identify_pseudoDEGs(
     )
     
     # Step 4: Combine statistical and biological significance
-    # Identify pseudoDEGs: genes with FDR < threshold and effect size > threshold
     results = stat_results.merge(effect_sizes, on="gene", how="left")
-    results["pseudoDEG"] = (
-        (results["fdr"] < fdr_threshold) & 
-        (results["effect_size"] > effect_size_threshold)
-    )
-    pseudoDEGs = results[results["pseudoDEG"]].sort_values(["fdr", "effect_size"], ascending=[True, False])
-    if verbose:
-        print(f"Identified {len(pseudoDEGs)} pseudoDEGs with FDR < {fdr_threshold} " +
-              f"and effect size > {effect_size_threshold}.")
+    
+    # Step 5: Identify pseudoDEGs based on user preferences
+    # If top_n_genes is provided, select top N genes by effect size from statistically significant genes
+    if top_n_genes is not None:
+        # First identify genes that pass FDR threshold
+        stat_sig_df = results[results["fdr"] < fdr_threshold].copy()
+        
+        # If we have more statistically significant genes than requested top_n_genes,
+        # sort by effect size and take the top N
+        if len(stat_sig_df) > top_n_genes:
+            # Sort by effect size (descending) and take top N
+            pseudoDEGs = stat_sig_df.sort_values("effect_size", ascending=False).head(top_n_genes)
+            results["pseudoDEG"] = results["gene"].isin(pseudoDEGs["gene"])
+            if verbose:
+                print(f"Selected top {top_n_genes} genes by effect size from {len(stat_sig_df)} " +
+                      f"statistically significant genes (FDR < {fdr_threshold}).")
+        else:
+            # If we have fewer statistically significant genes than requested, take all of them
+            results["pseudoDEG"] = results["fdr"] < fdr_threshold
+            if verbose:
+                print(f"Found only {len(stat_sig_df)} statistically significant genes, " +
+                      f"which is fewer than requested top {top_n_genes}. " +
+                      f"Taking all genes with FDR < {fdr_threshold}.")
+    else:
+        # Use the original method: genes with FDR < threshold AND effect size > threshold
+        results["pseudoDEG"] = (
+            (results["fdr"] < fdr_threshold) & 
+            (results["effect_size"] > effect_size_threshold)
+        )
+        if verbose:
+            pseudoDEGs = results[results["pseudoDEG"]]
+            print(f"Identified {len(pseudoDEGs)} pseudoDEGs with FDR < {fdr_threshold} " +
+                  f"and effect size > {effect_size_threshold}.")
+    
     # Save results if output directory is provided
     if output_dir is not None:
-        save_results(results, output_dir, fdr_threshold, effect_size_threshold, verbose)
+        save_results(results, output_dir, fdr_threshold, effect_size_threshold, top_n_genes, verbose)
     
     return results
 
@@ -376,6 +405,7 @@ def run_differential_analysis_for_all_paths(TSCAN_results,
                                            sample_col="sample",
                                            fdr_threshold=0.05,
                                            effect_size_threshold=1.0,
+                                           top_n_genes = 100, 
                                            covariate_columns=None,
                                            num_splines=3,
                                            spline_order=3,
@@ -403,6 +433,7 @@ def run_differential_analysis_for_all_paths(TSCAN_results,
         ptime_expression=TSCAN_results['pseudotime']['main_path'],
         fdr_threshold=fdr_threshold,
         effect_size_threshold=effect_size_threshold,
+        top_n_genes = top_n_genes,
         covariate_columns=covariate_columns,
         sample_col=sample_col,
         num_splines=num_splines,
@@ -448,6 +479,7 @@ def run_differential_analysis_for_all_paths(TSCAN_results,
                         ptime_expression=branch_path,
                         fdr_threshold=fdr_threshold,
                         effect_size_threshold=effect_size_threshold,
+                        top_n_genes = top_n_genes,
                         covariate_columns=covariate_columns,
                         sample_col=sample_col,
                         num_splines=num_splines,
@@ -580,6 +612,7 @@ def save_results(
     output_dir: str, 
     fdr_threshold: float,
     effect_size_threshold: float,
+    top_n_genes: Optional[int] = None,
     verbose: bool = False
 ) -> None:
     # Create output directory if it doesn't exist
@@ -597,7 +630,7 @@ def save_results(
     stat_sig_genes = results_df[results_df["fdr"] < fdr_threshold]
     stat_sig_genes.to_csv(stat_sig_file, sep='\t', index=False)
     
-    # Save pseudoDEGs (FDR < threshold AND effect size > threshold)
+    # Save pseudoDEGs (based on pseudoDEG column)
     pseudoDEG_file = os.path.join(output_dir, f"gam_pseudoDEGs_{timestamp}.tsv")
     pseudoDEGs = results_df[results_df["pseudoDEG"]]
     pseudoDEGs.to_csv(pseudoDEG_file, sep='\t', index=False)
@@ -611,12 +644,18 @@ def save_results(
         
         f.write("Parameters:\n")
         f.write(f"- FDR threshold: {fdr_threshold}\n")
-        f.write(f"- Effect size threshold: {effect_size_threshold}\n\n")
+        
+        # Describe selection method based on whether top_n_genes was provided
+        if top_n_genes is not None:
+            f.write(f"- Selection method: Top {top_n_genes} genes by effect size from statistically significant genes\n\n")
+        else:
+            f.write(f"- Effect size threshold: {effect_size_threshold}\n")
+            f.write(f"- Selection method: Genes with FDR < {fdr_threshold} AND effect size > {effect_size_threshold}\n\n")
         
         f.write("Results:\n")
         f.write(f"- Total genes analyzed: {len(results_df)}\n")
         f.write(f"- Statistically significant genes (FDR < {fdr_threshold}): {len(stat_sig_genes)}\n")
-        f.write(f"- Biologically significant pseudoDEGs: {len(pseudoDEGs)}\n\n")
+        f.write(f"- Selected pseudoDEGs: {len(pseudoDEGs)}\n\n")
         
         if len(pseudoDEGs) > 0:
             f.write("Top 20 pseudoDEGs:\n")
@@ -638,20 +677,28 @@ def save_results(
 
 def summarize_results(
     results: pd.DataFrame, 
-    top_n: int = 20, 
+    top_n: int = 20,
+    fdr_threshold: float = 0.05,
+    effect_size_threshold: Optional[float] = None,
+    top_n_genes: Optional[int] = None,
     output_file: Optional[str] = None,
     verbose: bool = True
 ) -> None:
     total_genes = len(results)
-    stat_sig = results[results["fdr"] < 0.05].shape[0]
+    stat_sig = results[results["fdr"] < fdr_threshold].shape[0]
     pseudoDEGs = results[results["pseudoDEG"]].shape[0]
     
     # Create the summary text
     summary = []
     summary.append("=== SUMMARY OF RESULTS ===")
     summary.append(f"Total genes analyzed: {total_genes}")
-    summary.append(f"Statistically significant genes (FDR < 0.05): {stat_sig}")
-    summary.append(f"Pseudotemporal DEGs (biologically significant): {pseudoDEGs}")
+    summary.append(f"Statistically significant genes (FDR < {fdr_threshold}): {stat_sig}")
+    
+    # Describe selection method based on whether top_n_genes was provided
+    if top_n_genes is not None:
+        summary.append(f"Selected pseudoDEGs (top {top_n_genes} by effect size): {pseudoDEGs}")
+    else:
+        summary.append(f"Selected pseudoDEGs (FDR < {fdr_threshold} AND effect size > {effect_size_threshold}): {pseudoDEGs}")
     
     if pseudoDEGs > 0:
         summary.append(f"\nTop {min(top_n, pseudoDEGs)} pseudoDEGs:")

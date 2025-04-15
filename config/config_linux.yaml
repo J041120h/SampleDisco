@@ -60,6 +60,7 @@ TSCAN_origin: null
 # ===== Trajectory Differential Gene Parameters =====
 fdr_threshold: 0.05
 effect_size_threshold: 1
+top_n_genes: 100
 trajectory_diff_gene_covariate: None
 num_splines: 5
 spline_order: 3

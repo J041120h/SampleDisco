@@ -58,6 +58,7 @@ TSCAN_origin: null
 # ===== Trajectory Differential Gene Parameters =====
 fdr_threshold: 0.05
 effect_size_threshold: 1
+top_n_genes: 100
 trajectory_diff_gene_covariate: None
 num_splines: 5
 spline_order: 3
@@ -95,8 +96,9 @@ plot_pseudobulk_batch_test_proportion_flag: false
 preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
-DimensionalityReduction: false
-trajectory_analysis: false
-visualize_data: true
+DimensionalityReduction: true
+trajectory_analysis: true
+trajectory_differential_gene: true
+visualize_data: false
 initialization: false
 use_gpu: false
