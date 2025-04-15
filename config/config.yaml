@@ -90,3 +90,4 @@ DimensionalityReduction: true
 trajectory_analysis: true
 visualize_data: true
 initialization: false
+use_gpu: false

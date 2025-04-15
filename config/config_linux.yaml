@@ -1,6 +1,7 @@
 # ===== Harmony Preprocessing Parameters =====
 h5ad_path: "/users/hjiang/GenoDistance/Data/count_data.h5ad"
 sample_meta_path: "/users/hjiang/GenoDistance/Data/sample_data.csv"
+sample_col: "Sample"
 output_dir: "/users/hjiang/GenoDistance/result"
 cell_column: "cell_type"
 cell_meta_path: null
@@ -31,7 +32,6 @@ cell_type_save: true
 assign_save: true
 
 # ===== Pseudobulk Parameters =====
-sample_col: "sample"
 celltype_col: "cell_type"
 pseudobulk_output_dir: null
 n_features: 2000
@@ -90,3 +90,4 @@ DimensionalityReduction: true
 trajectory_analysis: true
 visualize_data: false
 initialization: false
+use_gpu: true

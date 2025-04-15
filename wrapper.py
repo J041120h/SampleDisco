@@ -114,7 +114,8 @@ def wrapper(
     DimensionalityReduction=True,
     trajectory_analysis=True,
     visualize_data = True,
-    initialization=True
+    initialization=True,
+    use_gpu= False
 ):
     ## ====== Preprocessing to add ungiven parameter======
     linux_system = False
@@ -177,7 +178,7 @@ def wrapper(
             json.dump(status_flags, f, indent=4)
 
     # Add new function that if system dependent:
-    if platform.system() == "Linux":
+    if platform.system() == "Linux" and use_gpu:
         print("Linux system detected.")
         if initialization:
             # Install dependencies for rapids-singlecell
@@ -518,7 +519,7 @@ def wrapper(
                 raise ValueError("Dimensionality reduction is required before the required visualization.")
             raise ValueError("Dimensionality reduction is required before the required visualization.")
 
-
+        
         visualization(
             adata_sample_diff = AnnData_sample,
             output_dir = output_dir,

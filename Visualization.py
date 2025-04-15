@@ -886,13 +886,14 @@ def visualization(
     Main function to handle all steps. Sub-functions are called conditionally based on flags.
     """
     # 1. Preprocessing
-    output_dir = _preprocessing(
-        adata_sample_diff,
-        output_dir,
-        grouping_columns,
-        age_bin_size,
-        verbose
-    )
+    if grouping_columns:
+        output_dir = _preprocessing(
+            adata_sample_diff,
+            output_dir,
+            grouping_columns,
+            age_bin_size,
+            verbose
+        )
 
     # 2. Dendrogram
     if plot_dendrogram_flag:
