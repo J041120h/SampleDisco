@@ -23,6 +23,7 @@ from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from resolution_parallel import find_optimal_cell_resolution_parallel
+from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -84,6 +85,16 @@ def wrapper(
     trajectory_verbose = True, 
     TSCAN_origin = None,
 
+    # ===== Trajectory Differential Gene Parameters =====
+    fdr_threshold = 0.05,
+    effect_size_threshold = 1,
+    trajectory_diff_gene_covariate = None,
+    num_splines = 5,
+    spline_order = 3,
+    trajectory_diff_gene_output_dir = None,
+    trajectory_diff_gene_verbose = True,
+    top_gene_number = 30,
+
     # ===== Paths for Skipping Preprocessing =====
     AnnData_cell_path=None,
     # ===== Distance Methods =====
@@ -113,6 +124,7 @@ def wrapper(
     sample_distance_calculation = True,
     DimensionalityReduction=True,
     trajectory_analysis=True,
+    trajectory_differential_gene = True,
     visualize_data = True,
     initialization=True,
     use_gpu= False
@@ -362,7 +374,7 @@ def wrapper(
         if trajectory_supervised:
             if sev_col_cca not in AnnData_sample.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
-            first_component_score_proportion, first_component_score_expression = CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca)
+            first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
             if cca_pvalue:
                 cca_pvalue_test(
                     adata = AnnData_sample,
@@ -380,7 +392,7 @@ def wrapper(
                     adata = AnnData_sample,
                     summary_sample_csv_path = sample_meta_path,
                     column = "X_pca_expression",
-                    input_correlation = first_component_score_proportion,
+                    input_correlation = first_component_score_expression,
                     output_directory = cca_output_dir,
                     num_simulations = 1000,
                     sev_col = sev_col_cca,
@@ -457,8 +469,45 @@ def wrapper(
             with open(status_file_path, 'w') as f:
                 json.dump(status_flags, f, indent=4)
         else:
-            TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
-            TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+            TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+            TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+
+        if trajectory_differential_gene:
+            if trajectory_supervised:
+                results = identify_pseudoDEGs(
+                    pseudobulk= pseudobulk_df,
+                    sample_meta_path=sample_meta_path,
+                    ptime_expression=ptime_expression,
+                    fdr_threshold= fdr_threshold,
+                    effect_size_threshold= effect_size_threshold,
+                    covariate_columns = trajectory_diff_gene_covariate,
+                    sample_col=sample_col,
+                    num_splines = num_splines,
+                    spline_order = spline_order,
+                    output_dir=trajectory_diff_gene_output_dir,
+                    verbose=trajectory_diff_gene_verbose
+                )
+                summarize_results(
+                    results = results, 
+                    top_n=top_gene_number, 
+                    output_file=os.path.join(trajectory_diff_gene_output_dir,"differential_gene_result.txt"),
+                    verbose=trajectory_diff_gene_verbose
+                )
+            else:
+                all_path_results = run_differential_analysis_for_all_paths(
+                    TSCAN_results=TSCAN_result_expression,
+                    pseudobulk_df=pseudobulk_df["cell_expression_corrected"],
+                    sample_meta_path=sample_meta_path,
+                    sample_col= sample_col,
+                    fdr_threshold=fdr_threshold,
+                    effect_size_threshold=effect_size_threshold,
+                    covariate_columns=trajectory_diff_gene_covariate,
+                    num_splines=num_splines,
+                    spline_order=spline_order,
+                    base_output_dir=trajectory_diff_gene_output_dir,
+                    top_gene_number=top_gene_number,
+                    verbose=trajectory_diff_gene_verbose
+                )
 
     if os.path.exists(summary_sample_csv_path):
             os.remove(summary_sample_csv_path)

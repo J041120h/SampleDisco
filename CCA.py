@@ -59,16 +59,21 @@ def run_cca_on_2d_pca_from_adata(
     if pca_coords.shape[1] < 2:
         raise ValueError("PCA must have at least 2 components for CCA.")
 
+    # Extract first two PCs
     pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, 'iloc') else pca_coords[:, :2]
 
+    # Ensure sample_col exists in adata.obs
     if sample_col not in adata.obs.columns:
         raise KeyError(f"'{sample_col}' column is missing in adata.obs.")
 
+    # Get the unique samples (lowercased, stripped) in the same order as pca_coords_2d
     samples = adata.obs[sample_col].astype(str).str.strip().str.lower().unique()
     
+    # Check dimension alignment
     if len(samples) != pca_coords_2d.shape[0]:
         raise ValueError("Mismatch between PCA rows and number of unique samples in adata.obs[sample_col].")
 
+    # Load severity levels aligned to these samples
     sev_levels_2d = load_severity_levels(sample_meta_path, samples, sample_col=sample_col, sev_col=sev_col)
     sev_levels = sev_levels_2d.flatten()
 
@@ -78,7 +83,7 @@ def run_cca_on_2d_pca_from_adata(
     first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
 
     print(f"\nThe CCA score for {column} is {first_component_score:.4f}\n")
-    return pca_coords_2d, sev_levels, cca, first_component_score
+    return pca_coords_2d, sev_levels, cca, first_component_score, samples
 
 
 def plot_cca_on_2d_pca(
@@ -132,12 +137,60 @@ def plot_cca_on_2d_pca(
         plt.show()
 
 
+def assign_pseudotime_from_cca(
+    pca_coords_2d: np.ndarray, 
+    cca: CCA, 
+    sample_labels: np.ndarray,
+    scale_to_unit: bool = True
+) -> dict:
+    """
+    Assign pseudotime to each sample based on its projection onto the CCA direction.
+
+    Parameters
+    ----------
+    pca_coords_2d : np.ndarray
+        The 2D PCA coordinates for each sample.
+    cca : sklearn.cross_decomposition.CCA
+        A fitted CCA model. We use cca.x_weights_ to get the direction in PCA space.
+    sample_labels : np.ndarray
+        An array of sample labels corresponding to each row in pca_coords_2d.
+    scale_to_unit : bool, default=True
+        Whether to scale the pseudotime to the [0, 1] range.
+
+    Returns
+    -------
+    dict
+        A dictionary mapping each sample label to its pseudotime.
+    """
+    # Extract the direction (the first CCA weight vector)
+    direction = cca.x_weights_[:, 0]
+
+    # Project each point onto the CCA direction (dot product)
+    # shape of pca_coords_2d: (n_samples, 2)
+    # shape of direction: (2,)
+    raw_projection = pca_coords_2d @ direction  # shape: (n_samples,)
+
+    if scale_to_unit:
+        min_proj, max_proj = np.min(raw_projection), np.max(raw_projection)
+        denom = max_proj - min_proj
+        # Avoid division by zero
+        if denom < 1e-16:
+            denom = 1e-16
+        # Scale the projection to [0, 1]
+        pseudotimes = (raw_projection - min_proj) / denom
+    else:
+        pseudotimes = raw_projection
+
+    # Build and return dictionary
+    return {sample_labels[i]: pseudotimes[i] for i in range(len(sample_labels))}
+
 def CCA_Call(
     adata: AnnData,
     sample_meta_path: str,
     output_dir: str = None,
     sample_col: str = "sample",
     sev_col: str = "sev.level",
+    ptime: bool = False,
     verbose: bool = False
 ):
     """
@@ -154,8 +207,15 @@ def CCA_Call(
     }
 
     results = {}
+    # We'll also hold onto the sample labels to generate pseudotime at the end
+    sample_dicts = {}
+
     for key in ["X_pca_proportion", "X_pca_expression"]:
-        pca_coords_2d, sev_levels, cca_model, score = run_cca_on_2d_pca_from_adata(
+        (pca_coords_2d, 
+         sev_levels, 
+         cca_model, 
+         score, 
+         samples) = run_cca_on_2d_pca_from_adata(
             adata=adata,
             sample_meta_path=sample_meta_path,
             column=key,
@@ -163,16 +223,26 @@ def CCA_Call(
             sev_col=sev_col
         )
 
+        # Plot and save
         plot_cca_on_2d_pca(
             pca_coords_2d=pca_coords_2d,
             sev_levels=sev_levels,
             cca=cca_model,
-            output_path=paths[key]
+            output_path=paths[key],
+            sample_labels=samples  # if you want text labels, else None
         )
+        # Save results
         results[key] = score
+
+        # Compute pseudotime for each sample (dictionary)
+        sample_dicts[key] = assign_pseudotime_from_cca(
+            pca_coords_2d=pca_coords_2d, 
+            cca=cca_model, 
+            sample_labels=samples
+        )
 
     if verbose:
         print("CCA completed.")
         print(f"\n[CCA] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
-    return results["X_pca_proportion"], results["X_pca_expression"]
+    return results["X_pca_proportion"], results["X_pca_expression"], sample_dicts["X_pca_proportion"], sample_dicts["X_pca_expression"]

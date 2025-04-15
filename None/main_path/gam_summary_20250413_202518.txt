@@ -1,0 +1,18 @@
+===== GAM PSEUDOTIME ANALYSIS SUMMARY =====
+
+Analysis performed: 2025-04-13 20:25:18
+
+Parameters:
+- FDR threshold: 0.05
+- Effect size threshold: 1
+
+Results:
+- Total genes analyzed: 2000
+- Statistically significant genes (FDR < 0.05): 0
+- Biologically significant pseudoDEGs: 0
+
+
+Output files:
+- All genes: gam_all_genes_20250413_202518.tsv
+- Statistically significant genes: gam_stat_sig_20250413_202518.tsv
+- PseudoDEGs: gam_pseudoDEGs_20250413_202518.tsv
