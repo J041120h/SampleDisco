@@ -153,6 +153,8 @@ def wrapper(
     if summary_sample_csv_path is None:
         summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
     
+    if trajectory_diff_gene_output_dir is None:
+        trajectory_diff_gene_output_dir = summary_sample_csv_path = os.path.join(output_dir, 'trajectoryDEG')
     #Check the status of previous processing, to ensure consistent data processing
     status_file_path = os.path.join(output_dir, "sys_log", "process_status.json")
     status_flags = {

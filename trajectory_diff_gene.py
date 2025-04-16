@@ -553,7 +553,6 @@ def create_comparative_analysis(all_results, base_output_dir, top_n):
     
     # Save comparison matrix
     comparison_df.to_csv(os.path.join(comparative_dir, "path_comparison_matrix.csv"))
-    
     # Create a Venn diagram or overlap analysis of top genes
     create_gene_overlap_analysis(path_top_genes, comparative_dir)
 
@@ -600,12 +599,6 @@ def create_gene_overlap_analysis(path_top_genes, output_dir):
         f.write("Genes shared across all paths:\n")
         for gene in shared_genes:
             f.write(f"{gene}\n")
-            
-    for path, genes in unique_genes.items():
-        with open(os.path.join(output_dir, f"unique_genes_{path}.txt"), "w") as f:
-            f.write(f"Genes unique to {path}:\n")
-            for gene in genes:
-                f.write(f"{gene}\n")
 
 def save_results(
     results_df: pd.DataFrame, 
