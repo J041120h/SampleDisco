@@ -1,4 +1,6 @@
 import os
+import contextlib
+import io
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -198,7 +200,9 @@ def harmony_linux(
         print(f'Processed shape: {adata.shape[0]} cells * {adata.shape[1]} genes')
 
     if doublet:
-        rsc.pp.scrublet(adata, batch_key=sample_column)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            rsc.pp.scrublet(adata, batch_key=sample_column)
 
     rsc.pp.normalize_total(adata, target_sum=1e4)
     rsc.pp.log1p(adata)

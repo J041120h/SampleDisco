@@ -1,4 +1,6 @@
 import os
+import contextlib
+import io
 import time
 import numpy as np
 import pandas as pd
@@ -141,12 +143,14 @@ def combat_correct_cell_expressions(
         
         if expr_df_t.isnull().values.any() and verbose:
             print(f"Warning: NaN values detected in expression data for '{ctype}' before ComBat.")
-        
-        corrected_df_sub = pycombat(
-            expr_df_t,
-            batch=batch_series,
-            parametric=parametric
-        )
+            
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            corrected_df_sub = pycombat(
+                expr_df_t,
+                batch=batch_series,
+                parametric=parametric
+            )
         corrected_values_sub = corrected_df_sub.values
         
         corrected_expr_matrix = expr_matrix.copy()

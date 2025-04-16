@@ -8,6 +8,8 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsTransformer
 from harmony import harmonize
 import time
+import contextlib
+import io
 
 def anndata_cluster(
     adata_cluster,
@@ -255,7 +257,9 @@ def harmony(
 
     # Optional doublet detection
     if doublet:
-        sc.pp.scrublet(adata, batch_key=sample_column)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            sc.pp.scrublet(adata, batch_key=sample_column)
 
     # Normalization & log transform
     sc.pp.normalize_total(adata, target_sum=1e4)

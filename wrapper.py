@@ -204,7 +204,7 @@ def wrapper(
             ])
         linux_system = True
         from linux.harmony_linux import harmony_linux
-        from linux.CellType_linux import cell_types_linux
+        from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
         from linux.CCA_test_linux import find_optimal_cell_resolution_linux
         # Enable `managed_memory`
         import rmm
@@ -285,7 +285,7 @@ def wrapper(
             if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
                 raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
             AnnData_cell_path = temp_cell_path
-            AnnData_sample_path = temp_sample_path
+            AnnData_sample_path = temp_sample_path    
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
 
@@ -313,6 +313,13 @@ def wrapper(
                 num_PCs=num_PCs,
                 verbose=verbose
             )
+            cell_type_assign_linux(
+                adata_cluster=AnnData_cell,
+                adata=AnnData_sample,
+                Save=assign_save,
+                output_dir=output_dir,
+                verbose=verbose
+            )
         else:
             AnnData_cell = cell_types(
                 adata=AnnData_cell,
@@ -330,13 +337,13 @@ def wrapper(
                 verbose=verbose
             )
 
-        cell_type_assign(
-            adata_cluster=AnnData_cell,
-            adata=AnnData_sample,
-            Save=assign_save,
-            output_dir=output_dir,
-            verbose=verbose
-        )
+            cell_type_assign(
+                adata_cluster=AnnData_cell,
+                adata=AnnData_sample,
+                Save=assign_save,
+                output_dir=output_dir,
+                verbose=verbose
+            )
         status_flags["cell_type_cluster"] = True
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
@@ -345,6 +352,7 @@ def wrapper(
     if DimensionalityReduction:
         if status_flags["cell_type_cluster"] == False:
             raise ValueError("Cell type clustering is required before dimension reduction.")
+
         pseudobulk_df = compute_pseudobulk_dataframes(
             adata=AnnData_sample,
             batch_col=batch_col,

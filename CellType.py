@@ -237,7 +237,9 @@ def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None,verbose =
     """
     if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
         adata_cluster.obs['cell_type'] = '1'
+
     adata.obs['cell_type'] = adata_cluster.obs['cell_type']
+    
     if Save and output_dir:
         output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_sample.h5ad')
