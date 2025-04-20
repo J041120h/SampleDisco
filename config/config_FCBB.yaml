@@ -3,6 +3,8 @@ h5ad_path: "/users/hjiang/SingleCell/count_data.h5ad"
 sample_meta_path: null
 output_dir: "/users/hjiang/GenoDistance/SingleCell/result"
 sample_col: "Sample"
+grouping_columns:
+  - "Group"
 cell_column: "cell_type"
 cell_meta_path: null
 batch_col: 'Batch'
@@ -51,7 +53,6 @@ cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
 cca_pvalue: false
-grouping_columns: null
 trajectory_verbose: true
 TSCAN_origin: null
 
@@ -95,10 +96,10 @@ plot_pseudobulk_batch_test_proportion_flag: false
 # ===== Process Control Flags =====
 preprocessing: false
 cell_type_cluster: false
-sample_distance_calculation: false
+sample_distance_calculation: true
 DimensionalityReduction: true
-trajectory_analysis: true
-trajectory_differential_gene: true
-visualize_data: false
+trajectory_analysis: false
+trajectory_differential_gene: false
+visualize_data: true
 initialization: false
 use_gpu: false

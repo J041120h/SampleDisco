@@ -3,6 +3,8 @@ h5ad_path: "/users/hjiang/GenoDistance/Test/count_data.h5ad"
 sample_meta_path: "/users/hjiang/GenoDistance/Test/sample_data.csv"
 output_dir: "/users/hjiang/GenoDistance/Test/result"
 sample_col: "sample"
+grouping_columns:
+  - "sev.level"
 cell_column: "cell_type"
 cell_meta_path: null
 batch_col: 'batch'
@@ -52,8 +54,6 @@ cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
 cca_pvalue: true
-grouping_columns:
-  - "sev.level"
 trajectory_verbose: true
 TSCAN_origin: null
 

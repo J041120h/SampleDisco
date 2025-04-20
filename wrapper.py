@@ -31,6 +31,7 @@ def wrapper(
     sample_meta_path,
     output_dir,
     sample_col = 'sample',
+    grouping_columns = ['sev.level'],
     cell_column='cell_type',
     cell_meta_path=None,
     batch_col=[],
@@ -80,8 +81,6 @@ def wrapper(
     sev_col_cca = "sev.level",
     cca_optimal_cell_resolution=False,
     cca_pvalue=False,
-
-    grouping_columns = ["sev.level"], 
     trajectory_verbose = True, 
     TSCAN_origin = None,
 
@@ -537,7 +536,8 @@ def wrapper(
                 method = f'{md}',
                 summary_csv_path = summary_sample_csv_path,
                 pseudobulk = pseudobulk_df,
-                sample_column = sample_col
+                sample_column = sample_col,
+                grouping_columns = grouping_columns,
                 )
         
         if "EMD" in sample_distance_methods:
@@ -565,16 +565,18 @@ def wrapper(
                 sample_column = sample_col,
             )
         status_flags["sample_distance_calculation"] = True
+        if verbose:
+            print(f"Sample distance calculation completed. Results saved in {os.path.join(output_dir, 'Sample')}")
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
         
     #Visualization
     if visualize_data:
-        if not status_flags["preprocessing"]:
-            if plot_cell_umap_by_plot_group_flag or plot_umap_by_cell_type_flag:
-                raise ValueError("Preprocessing is required before the required visualization.")
-        if not status_flags["cell_type_cluster"] and plot_cell_umap_by_plot_group_flag:
-            raise ValueError("Cell type clustering is required before the required visualization.")
+        # if not status_flags["preprocessing"]:
+        #     if plot_cell_umap_by_plot_group_flag or plot_umap_by_cell_type_flag:
+        #         raise ValueError("Preprocessing is required before the required visualization.")
+        # if not status_flags["cell_type_cluster"] and plot_cell_umap_by_plot_group_flag:
+        #     raise ValueError("Cell type clustering is required before the required visualization.")
         
         if not status_flags["DimensionalityReduction"]:
             if plot_pca_2d_flag or plot_pca_3d_flag or plot_3d_cells_flag or plot_cell_type_proportions_pca_flag or plot_cell_type_expression_pca_flag or plot_pseudobulk_batch_test_expression_flag or plot_pseudobulk_batch_test_proportion_flag:
@@ -584,7 +586,7 @@ def wrapper(
         
         visualization(
             adata_sample_diff = AnnData_sample,
-            output_dir = output_dir,
+            output_dir = os.path.join(output_dir, 'visualization'),
             grouping_columns = grouping_columns,
             age_bin_size = age_bin_size,
             verbose = verbose_Visualization,

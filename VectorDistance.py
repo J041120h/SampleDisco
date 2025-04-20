@@ -18,7 +18,8 @@ def calculate_sample_distances_cell_proportion(
     output_dir: str,
     method: str,
     summary_csv_path: str,
-    pseudobulk: dict
+    pseudobulk: dict,
+    grouping_columns: list
 ) -> pd.DataFrame:
     """
     Compute a sample distance matrix using cell proportions.
@@ -59,6 +60,7 @@ def calculate_sample_distances_cell_proportion(
         index=cell_proportions.index,
         columns=cell_proportions.index
     )
+    print("Correctly calculate raw distance")
 
     # Example post-processing: log1p transform & scale to [0, 1]
     distance_df = np.log1p(np.maximum(distance_df, 0))
@@ -69,14 +71,15 @@ def calculate_sample_distances_cell_proportion(
     distance_df.to_csv(distance_matrix_path)
 
     # If you have a custom distanceCheck function for logging
-    distanceCheck(distance_matrix_path, 'cell_proportion', method, summary_csv_path, adata)
+    distanceCheck(distance_matrix_path, 'cell_proportion', method, summary_csv_path, adata, grouping_columns = grouping_columns)
 
     # Visualizations
     visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf'))
     visualizeGroupRelationship(
         distance_df,
         outputDir=output_dir,
-        adata = adata
+        adata = adata,
+        grouping_columns = grouping_columns
     )
 
     print(f"Cell proportion-based sample distance matrix saved to: {distance_matrix_path}")
@@ -87,7 +90,8 @@ def calculate_sample_distances_pca(
     output_dir: str,
     method: str = 'euclidean',
     summary_csv_path: Optional[str] = None,
-    sample_column: str = 'sample'
+    sample_column: str = 'sample',
+    grouping_columns: Optional[list] = None
 ) -> pd.DataFrame:
     """
     Compute a sample distance matrix using PCA-transformed data.
@@ -124,7 +128,7 @@ def calculate_sample_distances_pca(
     # Save and visualize
     distance_matrix_path = os.path.join(output_dir, 'distance_matrix_gene_expression.csv')
     distance_df.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, 'pca_harmony', method, summary_csv_path, adata)
+    distanceCheck(distance_matrix_path, 'pca_harmony', method, summary_csv_path, adata, grouping_columns = grouping_columns)
     visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_pca_harmony_heatmap.pdf'))
     visualizeGroupRelationship(distance_df, outputDir=output_dir, adata = adata, heatmap_path=os.path.join(output_dir, 'sample_pca_harmony_relationship.pdf'))
 
@@ -138,7 +142,7 @@ def calculate_sample_distances_gene_pseudobulk(
     summary_csv_path: str,
     pseudobulk: dict,
     sample_column: str = 'sample',
-    celltype_column: str = 'cell_type'
+    grouping_columns: str = 'cell_type'
 ) -> pd.DataFrame:
     """
     Compute a distance matrix based on concatenated average gene expressions 
@@ -178,14 +182,15 @@ def calculate_sample_distances_gene_pseudobulk(
     distance_df.to_csv(distance_matrix_path)
 
     # If you have a custom distanceCheck function for logging
-    distanceCheck(distance_matrix_path, 'cell_expression', method, summary_csv_path, adata)
+    distanceCheck(distance_matrix_path, 'cell_expression', method, summary_csv_path, adata, grouping_columns = grouping_columns)
 
     # Visualizations
     visualizeDistanceMatrix(distance_df, os.path.join(output_dir, 'sample_distance_expression_heatmap.pdf'))
     visualizeGroupRelationship(
         distance_df,
         outputDir=output_dir,
-        adata = adata
+        adata = adata,
+        grouping_columns = grouping_columns
     )
 
     print(f"Cell expression-based sample distance matrix saved to: {distance_matrix_path}")
@@ -197,7 +202,8 @@ def sample_distance(
     method: str,
     summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
     pseudobulk: dict = None,
-    sample_column: str = 'sample'
+    sample_column: str = 'sample',
+    grouping_columns = ["sev.level"]
 ) -> None:
     """
     Compute and save sample distance matrices using different features.
@@ -217,9 +223,9 @@ def sample_distance(
     os.makedirs(output_dir, exist_ok=True)
 
     # Compute distances using different methods
-    calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path, pseudobulk)
+    calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path, pseudobulk, grouping_columns)
     # calculate_sample_distances_gene_expression(adata, output_dir, method, summary_csv_path, sample_column)
     # calculate_sample_distances_pca(adata, output_dir, method, summary_csv_path, sample_column)
-    calculate_sample_distances_gene_pseudobulk(adata, output_dir, method, summary_csv_path, pseudobulk, sample_column)
+    calculate_sample_distances_gene_pseudobulk(adata, output_dir, method, summary_csv_path, pseudobulk, sample_column, grouping_columns)
 
     print("Sample distance computations completed.")

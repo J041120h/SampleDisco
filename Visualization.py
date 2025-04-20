@@ -146,7 +146,7 @@ def plot_cell_type_expression_heatmap(
     plt.savefig(heatmap_path)
     plt.close()
     print(f"Cell type expression heatmap saved to {heatmap_path}")
-
+    
 def visualizeGroupRelationship(
     sample_distance_matrix,
     outputDir,
@@ -157,10 +157,11 @@ def visualizeGroupRelationship(
 ):
     """
     Generates 2D MDS and PCA plots from a sample distance matrix, coloring points
-    according to severity levels extracted from group assignments determined by
-    find_sample_grouping. A continuous color scale is used based on the observed
-    range of severity values.
-
+    according to values from the specified grouping columns.
+    
+    - For continuous numeric values: Uses a continuous color scale
+    - For categorical values: Uses discrete colors with a legend
+    
     Arguments:
     ----------
     sample_distance_matrix : pd.DataFrame
@@ -178,18 +179,30 @@ def visualizeGroupRelationship(
         If provided, the final figure will be saved to this path. Otherwise,
         filenames are derived automatically.
     """
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import re
+    from sklearn.decomposition import PCA
+    from sklearn.manifold import MDS
+    import pandas as pd
+    from matplotlib.colors import ListedColormap
+    
     os.makedirs(outputDir, exist_ok=True)
     samples = sample_distance_matrix.index.tolist()
     
+    # Create symmetric matrix
     sym_matrix = (sample_distance_matrix + sample_distance_matrix.T) / 2
     np.fill_diagonal(sym_matrix.values, 0)
-
+    
+    # Generate MDS and PCA coordinates
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
     points_mds = mds.fit_transform(sym_matrix)
-
+    
     pca = PCA(n_components=2)
     points_pca = pca.fit_transform(sym_matrix)
-
+    
+    # Get group mappings for samples
     group_mapping = find_sample_grouping(
         adata,
         samples,
@@ -198,40 +211,110 @@ def visualizeGroupRelationship(
     )
     
     group_labels = [group_mapping[sample] for sample in samples]
-    sev_levels = []
+    
+    # Determine if the grouping is numeric or categorical
+    is_numeric = True
+    numeric_values = []
+    
+    # Try to extract numeric values from labels
     for lbl in group_labels:
-        m = re.search(r'(\d+\.\d+)', lbl)
+        m = re.search(r'(\d+\.?\d*)', lbl)
         if m:
-            sev_levels.append(float(m.group(1)))
+            numeric_values.append(float(m.group(1)))
         else:
-            sev_levels.append(np.nan)
-    sev_levels = np.array(sev_levels)
-    if np.isnan(sev_levels).any():
-        raise ValueError("Some plot_group values could not be parsed for severity levels.")
-
-    sev_min, sev_max = sev_levels.min(), sev_levels.max()
-    norm_sev = (sev_levels - sev_min) / (sev_max - sev_min)
-    cmap = plt.cm.coolwarm
+            is_numeric = False
+            break
+    
+    # Setup visualization parameters based on data type
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-    for ax, method, points in zip(axes, ['MDS', 'PCA'], [points_mds, points_pca]):
-        sc = ax.scatter(
-            points[:, 0], points[:, 1],
-            s=100, c=norm_sev, cmap=cmap, alpha=0.8, edgecolors='k'
-        )
-        ax.set_xlabel(f"{method} Dimension 1")
-        ax.set_ylabel(f"{method} Dimension 2")
-        ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
-        ax.grid(True)
-    cbar = fig.colorbar(sc, ax=axes.ravel().tolist(), label="Severity Level")
-    if heatmap_path is None:
-        mds_path = os.path.join(outputDir, "sample_distance_matrix_MDS.png")
-        pca_path = os.path.join(outputDir, "sample_distance_matrix_PCA.png")
+    
+    if is_numeric:
+        # Handle numeric/continuous data with a color gradient
+        numeric_values = np.array(numeric_values)
+        value_min, value_max = numeric_values.min(), numeric_values.max()
+        norm_values = (numeric_values - value_min) / (value_max - value_min) if value_max > value_min else np.zeros_like(numeric_values)
+        
+        cmap = plt.cm.coolwarm
+        color_values = norm_values
+        
+        for ax, method, points in zip(axes, ['MDS', 'PCA'], [points_mds, points_pca]):
+            sc = ax.scatter(
+                points[:, 0], points[:, 1],
+                s=100, c=color_values, cmap=cmap, alpha=0.8, edgecolors='k'
+            )
+            ax.set_xlabel(f"{method} Dimension 1")
+            ax.set_ylabel(f"{method} Dimension 2")
+            ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
+            ax.grid(True)
+        
+        # Add a colorbar for continuous data
+        cbar = fig.colorbar(sc, ax=axes.ravel().tolist())
+        cbar.set_label(f"Value ({value_min:.2f} - {value_max:.2f})")
+    
     else:
-        mds_path = heatmap_path.replace(".png", "_MDS.png")
+        # Handle categorical data with discrete colors and a legend
+        unique_labels = sorted(set(group_labels))
+        color_map = plt.cm.get_cmap('tab20', len(unique_labels))
+        label_to_color = {label: color_map(i) for i, label in enumerate(unique_labels)}
+        
+        for ax, method, points in zip(axes, ['MDS', 'PCA'], [points_mds, points_pca]):
+            for label in unique_labels:
+                # Plot each category separately to build the legend
+                indices = [i for i, l in enumerate(group_labels) if l == label]
+                if indices:
+                    ax.scatter(
+                        points[indices, 0], points[indices, 1],
+                        s=100, c=[label_to_color[label]], alpha=0.8, edgecolors='k', 
+                        label=label
+                    )
+            
+            ax.set_xlabel(f"{method} Dimension 1")
+            ax.set_ylabel(f"{method} Dimension 2")
+            ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
+            ax.grid(True)
+            
+            # Add legend for categorical data
+            if method == 'MDS':  # Only add legend to one plot to avoid redundancy
+                ax.legend(title=grouping_columns[0], bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    # Save the plots
+    if heatmap_path is None:
+        mds_path = os.path.join(outputDir, f"sample_distance_matrix_MDS_{grouping_columns[0]}.png")
+        pca_path = os.path.join(outputDir, f"sample_distance_matrix_PCA_{grouping_columns[0]}.png")
+    else:
+        mds_path = heatmap_path.replace(".png", f"_MDS_{grouping_columns[0]}.png")
+        pca_path = heatmap_path.replace(".png", f"_PCA_{grouping_columns[0]}.png")
+    
     plt.tight_layout()
-    plt.savefig(mds_path)
-    plt.savefig(pca_path)
-    plt.close()
+    plt.savefig(mds_path, dpi=300, bbox_inches='tight')
+    
+    # Save PCA plot separately
+    plt.figure(figsize=(7, 6))
+    if is_numeric:
+        plt.scatter(
+            points_pca[:, 0], points_pca[:, 1],
+            s=100, c=color_values, cmap=cmap, alpha=0.8, edgecolors='k'
+        )
+        plt.colorbar(label=f"Value ({value_min:.2f} - {value_max:.2f})")
+    else:
+        for label in unique_labels:
+            indices = [i for i, l in enumerate(group_labels) if l == label]
+            if indices:
+                plt.scatter(
+                    points_pca[indices, 0], points_pca[indices, 1],
+                    s=100, c=[label_to_color[label]], alpha=0.8, edgecolors='k',
+                    label=label
+                )
+        plt.legend(title=grouping_columns[0], bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    plt.xlabel("PCA Dimension 1")
+    plt.ylabel("PCA Dimension 2")
+    plt.title("2D PCA Visualization of Sample Distance Matrix")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(pca_path, dpi=300, bbox_inches='tight')
+    
+    plt.close('all')
     print(f"MDS plot saved to {mds_path}")
     print(f"PCA plot saved to {pca_path}")
 

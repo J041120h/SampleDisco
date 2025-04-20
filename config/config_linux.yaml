@@ -3,11 +3,13 @@ h5ad_path: "/users/hjiang/GenoDistance/Data/count_data.h5ad"
 sample_meta_path: "/users/hjiang/GenoDistance/Data/sample_data.csv"
 output_dir: "/users/hjiang/GenoDistance/result"
 sample_col: "sample"
+grouping_columns:
+  - "sev.level"
 cell_column: "cell_type"
 cell_meta_path: null
 batch_col: 'batch'
 markers: null
-cluster_resolution: 0.62
+cluster_resolution: 0.92
 num_PCs: 20
 num_harmony: 30
 num_features: 2000
@@ -52,8 +54,6 @@ cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
 cca_pvalue: true
-grouping_columns:
-  - "sev.level"
 trajectory_verbose: true
 TSCAN_origin: null
 
@@ -83,7 +83,7 @@ age_bin_size: null
 dot_size: 3
 
 plot_dendrogram_flag: true
-plot_cell_umap_by_plot_group_flag: false
+plot_cell_umap_by_plot_group_flag: true
 plot_umap_by_cell_type_flag: true
 plot_pca_2d_flag: false
 plot_pca_3d_flag: false
