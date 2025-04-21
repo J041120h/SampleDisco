@@ -451,49 +451,6 @@ def run_differential_analysis_for_all_paths(
     top_n_heatmap=50,
     verbose=True
 ):
-    """
-    Run differential gene expression analysis for all trajectory paths
-    
-    Parameters
-    ----------
-    TSCAN_results : dict
-        Results from TSCAN analysis
-    pseudobulk_df : pd.DataFrame
-        Pseudobulk expression data
-    sample_meta_path : str, optional
-        Path to sample metadata file
-    sample_col : str
-        Column name for sample identifiers
-    fdr_threshold : float
-        FDR threshold for statistical significance
-    effect_size_threshold : float
-        Effect size threshold for biological significance
-    top_n_genes : int
-        Number of top genes to select
-    covariate_columns : list, optional
-        List of covariate columns to use from metadata
-    num_splines : int
-        Number of spline basis functions for GAM
-    spline_order : int
-        Order of splines for GAM
-    base_output_dir : str
-        Base directory to save results
-    top_gene_number : int
-        Number of top genes to include in summary
-    visualization_gene_list : list, optional
-        List of genes to visualize
-    visualize_all_deg : bool
-        If True, visualize all differentially expressed genes
-    top_n_heatmap : int
-        Number of top genes to include in heatmap
-    verbose : bool
-        Whether to print progress information
-        
-    Returns
-    -------
-    dict
-        Dictionary of results for each path
-    """
     os.makedirs(base_output_dir, exist_ok=True)
     all_results = {}
     # Verify main path pseudotime exists
@@ -510,7 +467,7 @@ def run_differential_analysis_for_all_paths(
     
     # Run differential analysis for main path
     main_path_results = identify_pseudoDEGs(
-        pseudobulk={"cell_expression_corrected": pseudobulk_df},
+        pseudobulk=pseudobulk_df,
         sample_meta_path=sample_meta_path,
         ptime_expression=TSCAN_results['pseudotime']['main_path'],
         fdr_threshold=fdr_threshold,
@@ -559,7 +516,7 @@ def run_differential_analysis_for_all_paths(
                 try:
                     # Run differential analysis for this branch
                     branch_results = identify_pseudoDEGs(
-                        pseudobulk={"cell_expression_corrected": pseudobulk_df},
+                        pseudobulk=pseudobulk_df,
                         sample_meta_path=sample_meta_path,
                         ptime_expression=branch_path,
                         fdr_threshold=fdr_threshold,
