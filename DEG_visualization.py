@@ -210,7 +210,10 @@ def generate_deg_heatmap(
     output_dir: str = None,
     figsize: tuple = (12, 10),
     dpi: int = 300,
-    verbose: bool = False
+    verbose: bool = False,
+    gene_label_size: int = 8,
+    max_gene_display: int = 50,
+    cluster_genes: bool = True
 ) -> str:
     """
     Generate a heatmap of top differentially expressed genes across pseudotime
@@ -233,6 +236,12 @@ def generate_deg_heatmap(
         Resolution of saved figure
     verbose : bool
         Whether to print progress
+    gene_label_size : int
+        Font size for gene labels
+    max_gene_display : int
+        Maximum number of genes to display labels for
+    cluster_genes : bool
+        Whether to cluster genes by expression pattern
         
     Returns
     -------
@@ -266,26 +275,92 @@ def generate_deg_heatmap(
     for i in range(expr_data_sorted.shape[1]):
         expr_data_norm[:, i] = zscore(expr_data_sorted[:, i])
     
+    # Transpose for easier clustering and plotting (genes are now rows)
+    expr_data_norm_T = expr_data_norm.T
+    
+    # Cluster genes if requested
+    gene_order = np.arange(len(genes))
+    if cluster_genes and len(genes) > 1:
+        from scipy.cluster.hierarchy import linkage, dendrogram
+        
+        # Cluster genes by expression pattern
+        gene_linkage = linkage(expr_data_norm_T, method='ward')
+        gene_dendro = dendrogram(gene_linkage, no_plot=True)
+        gene_order = gene_dendro['leaves']
+        
+        # Reorder genes based on clustering
+        expr_data_norm_T = expr_data_norm_T[gene_order]
+        genes = [genes[i] for i in gene_order]
+
+    # Dynamically adjust figure size based on number of genes
+    height_per_gene = 0.25
+    dynamic_figsize = (figsize[0], max(figsize[1], len(genes) * height_per_gene))
+    
     # Create the plot
-    plt.figure(figsize=figsize)
+    plt.figure(figsize=dynamic_figsize)
     
     # Create heatmap
     cmap = sns.diverging_palette(230, 20, as_cmap=True)
-    ax = sns.heatmap(expr_data_norm.T, cmap=cmap, center=0, 
-                     xticklabels=False, yticklabels=genes if len(genes) <= 30 else False)
     
-    # Add a secondary x-axis for pseudotime
+    # Decide whether to show gene labels based on number
+    show_gene_labels = len(genes) <= max_gene_display
+    
+    # Create the main heatmap
+    ax = sns.heatmap(
+        expr_data_norm_T, 
+        cmap=cmap, 
+        center=0,
+        xticklabels=False, 
+        yticklabels=genes if show_gene_labels else False,
+        cbar_kws={'label': 'Z-score'}
+    )
+    
+    # Adjust gene label text size if displayed
+    if show_gene_labels:
+        ax.tick_params(axis='y', labelsize=gene_label_size)
+    
+    # If we have many genes and want to show labels, add annotations
+    if len(genes) > max_gene_display:
+        # Create a separate axis for gene labels
+        ax_genes = plt.gca().twinx()
+        
+        # Adjust the number of genes to label to avoid overcrowding
+        interval = max(1, len(genes) // 40)
+        selected_indices = range(0, len(genes), interval)
+        selected_positions = [i + 0.5 for i in selected_indices]  # Center of heatmap cells
+        selected_genes = [genes[i] for i in selected_indices]
+        
+        # Set the positions and labels
+        ax_genes.set_yticks(selected_positions)
+        ax_genes.set_yticklabels(selected_genes, fontsize=gene_label_size)
+        ax_genes.set_ylim(ax.get_ylim())
+        ax_genes.tick_params(axis='y', labelsize=gene_label_size)
+        
+    # Add pseudotime as a secondary x-axis
     ax2 = ax.twiny()
     ax2.plot(np.arange(len(pseudotime_sorted)), pseudotime_sorted, alpha=0)
     ax2.set_xlabel("Pseudotime")
     
+    # Add pseudotime color bar at the top
+    norm = plt.Normalize(pseudotime_sorted.min(), pseudotime_sorted.max())
+    sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, norm=norm)
+    sm.set_array([])
+    
+    # Add a small colorbar above the plot for pseudotime
+    cbar_ax = plt.gcf().add_axes([0.15, 0.95, 0.7, 0.02])
+    cbar = plt.colorbar(sm, cax=cbar_ax, orientation='horizontal')
+    cbar.set_label('Pseudotime')
+    cbar_ax.xaxis.set_ticks_position('top')
+    cbar_ax.xaxis.set_label_position('top')
+    
     # Set titles and labels
-    plt.title(f"Top {len(genes)} Differentially Expressed Genes Across Pseudotime")
+    plt.suptitle(f"Top {len(genes)} Differentially Expressed Genes Across Pseudotime", 
+                y=0.98, fontsize=14)
     ax.set_ylabel("Genes")
     ax.set_xlabel("Samples (sorted by pseudotime)")
     
-    # Add colorbar label
-    plt.colorbar(ax.collections[0], label="Z-score")
+    # Adjust layout to make space for labels
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     
     # Save the figure
     os.makedirs(output_dir, exist_ok=True)
