@@ -120,20 +120,35 @@ def main():
     #     verbose=verbose
     # )
     # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
-    pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
-    process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
+    pseudobulk_df = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
+    process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk_df, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
     result = TSCAN(AnnData_sample, "X_pca_expression", 2, output_dir, grouping_columns = ["sev.level"], verbose = True, origin=None)
 
 
-    # first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=output_dir, sample_col = 'sample', sev_col = 'sev.level', ptime = True)
+    first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=output_dir, sample_col = 'sample', sev_col = 'sev.level', ptime = True)
     from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
-
+    # results = identify_pseudoDEGs(
+    #                 pseudobulk= pseudobulk_df,
+    #                 sample_meta_path=sample_meta_path,
+    #                 ptime_expression=ptime_expression,
+    #                 fdr_threshold= 0.1,
+    #                 effect_size_threshold= 0.1,
+    #                 top_n_genes = 100,
+    #                 sample_col='sample',
+    #                 visualize_all_deg = True,
+    #                 output_dir=os.path.join(output_dir, 'visualization'),
+    #                 verbose=True
+    #             )
+    
     all_path_results = run_differential_analysis_for_all_paths(
         TSCAN_results=result,
-        pseudobulk_df=pseudobulk,
+        pseudobulk_df=pseudobulk_df,
         sample_meta_path=sample_meta_path,
-        base_output_dir=output_dir,
-        top_gene_number=30
+        fdr_threshold=0.1,
+        effect_size_threshold=0.1,
+        visualize_all_deg =True,
+        top_gene_number=30,
+        base_output_dir=os.path.join(output_dir, 'TSCAN_DEF'),
     )
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.44774005254663607, output_dir)

@@ -6,6 +6,7 @@ from statsmodels.stats.multitest import multipletests
 import warnings
 import os
 import datetime
+from DEG_visualization import visualize_gene_expression, visualize_all_deg_genes, generate_deg_heatmap, generate_summary_trajectory_plot
 
 def prepare_gam_input_data(
     pseudobulk: dict,
@@ -35,9 +36,42 @@ def prepare_gam_input_data(
     elif sample_meta_path is not None:
         print(f"Warning: Metadata file {sample_meta_path} not found.")
     
-    # Load expression matrix
-    expr_df = pseudobulk[expression_key]
-    expr_df = expr_df.copy()
+    # Handle the expression data with more care
+    expr_data = pseudobulk[expression_key]
+    
+    # Check the type of expr_data and handle accordingly
+    if isinstance(expr_data, pd.DataFrame):
+        # Already a DataFrame, just make a copy
+        expr_df = expr_data.copy()
+    else:
+        # If it's not a DataFrame, we need to verify its structure before conversion
+        try:
+            # First, check if it's a simple dict that can be directly used as a DataFrame
+            expr_df = pd.DataFrame(expr_data)
+            
+            # If the above didn't work, try different orientations or debug the structure
+            if expr_df.empty and isinstance(expr_data, dict):
+                # Try to determine the structure of the dict
+                sample_keys = list(expr_data.keys())
+                if len(sample_keys) > 0:
+                    first_value = expr_data[sample_keys[0]]
+                    if isinstance(first_value, dict):
+                        # Convert nested dict to DataFrame
+                        expr_df = pd.DataFrame.from_dict(expr_data, orient='index')
+                    elif isinstance(first_value, (list, np.ndarray)):
+                        # If values are arrays, need to ensure same length
+                        # Create dict with gene names as keys first
+                        if verbose:
+                            print(f"Converting from list/array values with length {len(first_value)}")
+                        expr_df = pd.DataFrame(expr_data, index=sample_keys)
+        except Exception as e:
+            raise ValueError(f"Failed to convert expression data to DataFrame: {e}\n"
+                            f"Data type: {type(expr_data)}\n"
+                            f"Please check the structure of pseudobulk['{expression_key}']")
+    
+    if expr_df.empty:
+        raise ValueError(f"Expression data conversion resulted in an empty DataFrame. "
+                        f"Please check the structure of pseudobulk['{expression_key}']")
     
     # Create a lowercase version of the sample index for matching
     sample_name_map = {s.lower(): s for s in expr_df.index}
@@ -101,8 +135,15 @@ def prepare_gam_input_data(
     
     # Get original expression dataframe with original sample names
     # and make sure it has the same order as X
-    Y = pseudobulk[expression_key].loc[[sample_name_map[s] for s in expr_df.index]]
+    Y = expr_df.copy()  # Already filtered to have the same index as X
     gene_names = list(Y.columns)
+    
+    # Remove any non-data columns that might have been added
+    for col in ['sample_lower']:
+        if col in gene_names:
+            gene_names.remove(col)
+            Y = Y.drop(col, axis=1)
+    
     if verbose:
         print(f"Prepared input data with {X.shape[0]} samples and {len(gene_names)} genes")
     return X, Y, gene_names
@@ -252,82 +293,37 @@ def calculate_effect_size(
     return result_df
 
 def identify_pseudoDEGs(
-    X: pd.DataFrame = None,
-    Y: pd.DataFrame = None,
-    pseudobulk: dict = None,
-    sample_meta_path: Optional[str] = None,
-    ptime_expression: Dict[str, float] = None,
-    fdr_threshold: float = 0.05,
-    effect_size_threshold: float = 1.0,
-    top_n_genes: Optional[int] = None,
-    covariate_columns: Optional[List[str]] = None,
-    expression_key: str = "cell_expression_corrected",
-    sample_col: str = "sample",
-    num_splines: int = 5,
-    spline_order: int = 3,
-    output_dir: Optional[str] = None,
-    verbose: bool = False
-) -> pd.DataFrame:
-    """
-    Comprehensive function to identify pseudotemporal differentially expressed genes (pseudoDEGs)
-    combining statistical significance (FDR) and biological significance (effect size).
+    pseudobulk=None,
+    sample_meta_path=None,
+    ptime_expression=None,
+    fdr_threshold=0.05,
+    effect_size_threshold=1.0,
+    top_n_genes=None,
+    covariate_columns=None,
+    expression_key="cell_expression_corrected",
+    sample_col="sample",
+    num_splines=5,
+    spline_order=3,
+    visualization_gene_list=None,
+    visualize_all_deg=False,
+    top_n_heatmap=50,
+    output_dir=None,
+    verbose=False
+):
+    if pseudobulk is None or ptime_expression is None:
+        raise ValueError("Either provide X and Y matrices or provide pseudobulk and ptime_expression")
+    if verbose:
+        print("Preparing input data for GAM...")
+    X, Y, gene_names = prepare_gam_input_data(
+        pseudobulk=pseudobulk,
+        sample_meta_path=sample_meta_path,
+        ptime_expression=ptime_expression,
+        covariate_columns=covariate_columns,
+        expression_key=expression_key,
+        sample_col=sample_col,
+        verbose=verbose
+    )
     
-    Parameters
-    ----------
-    X : pd.DataFrame, optional
-        Pre-computed design matrix. If None, it will be generated from other parameters.
-    Y : pd.DataFrame, optional
-        Pre-computed expression matrix. If None, it will be generated from other parameters.
-    pseudobulk : dict, optional
-        Dictionary containing pseudobulk data with expression DataFrame under expression_key.
-    sample_meta_path : str, optional
-        Path to the sample metadata CSV/TSV file.
-    ptime_expression : dict, optional
-        Dictionary mapping sample names to pseudotime values.
-    fdr_threshold : float
-        FDR threshold for statistical significance (default: 0.05).
-    effect_size_threshold : float
-        Effect size threshold for biological significance (default: 1.0).
-    top_n_genes : int, optional
-        If provided, select top N genes by effect size from statistically significant genes.
-        If None, use effect_size_threshold instead.
-    covariate_columns : list, optional
-        List of covariate columns to use from metadata.
-    expression_key : str
-        Key in pseudobulk dict for expression data.
-    num_splines : int
-        Number of spline basis functions for GAM.
-    spline_order : int
-        Order of splines for GAM.
-    output_dir : str, optional
-        Directory to save results. If None, results are not saved to disk.
-    verbose : bool
-        Whether to print progress information.
-        
-    Returns
-    -------
-    results : pd.DataFrame
-        DataFrame with gene names, p-values, FDR, effect sizes, and significance status.
-    """
-    # Step 1: Prepare input data if not provided
-    if X is None or Y is None:
-        if X is None and Y is None and (pseudobulk is None or sample_meta_path is None or ptime_expression is None):
-            raise ValueError("Either provide X and Y matrices or provide pseudobulk, sample_meta_path, and ptime_expression")
-        if verbose:
-            print("Preparing input data for GAM...")
-        X, Y, gene_names = prepare_gam_input_data(
-            pseudobulk=pseudobulk,
-            sample_meta_path=sample_meta_path,
-            ptime_expression=ptime_expression,
-            covariate_columns=covariate_columns,
-            expression_key=expression_key,
-            sample_col=sample_col,
-            verbose=verbose
-        )
-    else:
-        gene_names = list(Y.columns)
-    
-    # Step 2: Fit GAM models and get statistical significance
     if verbose:
         print(f"Fitting GAM models for {len(gene_names)} genes...")
     
@@ -341,12 +337,11 @@ def identify_pseudoDEGs(
         fdr_threshold=fdr_threshold,
         verbose=verbose
     )
-    # Get statistically significant genes
+    
     stat_sig_genes = stat_results[stat_results["fdr"] < fdr_threshold]["gene"].tolist()
     if verbose:
         print(f"Found {len(stat_sig_genes)} statistically significant genes (FDR < {fdr_threshold}).")
     
-    # Step 3: Calculate effect sizes for statistically significant genes
     if verbose:
         print("Calculating effect sizes for significant genes...")
     effect_sizes = calculate_effect_size(
@@ -357,33 +352,24 @@ def identify_pseudoDEGs(
         verbose=verbose
     )
     
-    # Step 4: Combine statistical and biological significance
     results = stat_results.merge(effect_sizes, on="gene", how="left")
     
-    # Step 5: Identify pseudoDEGs based on user preferences
-    # If top_n_genes is provided, select top N genes by effect size from statistically significant genes
     if top_n_genes is not None:
-        # First identify genes that pass FDR threshold
         stat_sig_df = results[results["fdr"] < fdr_threshold].copy()
         
-        # If we have more statistically significant genes than requested top_n_genes,
-        # sort by effect size and take the top N
         if len(stat_sig_df) > top_n_genes:
-            # Sort by effect size (descending) and take top N
             pseudoDEGs = stat_sig_df.sort_values("effect_size", ascending=False).head(top_n_genes)
             results["pseudoDEG"] = results["gene"].isin(pseudoDEGs["gene"])
             if verbose:
                 print(f"Selected top {top_n_genes} genes by effect size from {len(stat_sig_df)} " +
                       f"statistically significant genes (FDR < {fdr_threshold}).")
         else:
-            # If we have fewer statistically significant genes than requested, take all of them
             results["pseudoDEG"] = results["fdr"] < fdr_threshold
             if verbose:
                 print(f"Found only {len(stat_sig_df)} statistically significant genes, " +
                       f"which is fewer than requested top {top_n_genes}. " +
                       f"Taking all genes with FDR < {fdr_threshold}.")
     else:
-        # Use the original method: genes with FDR < threshold AND effect size > threshold
         results["pseudoDEG"] = (
             (results["fdr"] < fdr_threshold) & 
             (results["effect_size"] > effect_size_threshold)
@@ -393,25 +379,121 @@ def identify_pseudoDEGs(
             print(f"Identified {len(pseudoDEGs)} pseudoDEGs with FDR < {fdr_threshold} " +
                   f"and effect size > {effect_size_threshold}.")
     
-    # Save results if output directory is provided
     if output_dir is not None:
         save_results(results, output_dir, fdr_threshold, effect_size_threshold, top_n_genes, verbose)
+        
+        if visualization_gene_list is not None and len(visualization_gene_list) > 0:
+            if verbose:
+                print(f"Generating visualizations for {len(visualization_gene_list)} specified genes...")
+            viz_dir = os.path.join(output_dir, "gene_visualizations")
+            os.makedirs(viz_dir, exist_ok=True)
+            
+            for gene in visualization_gene_list:
+                if gene in gam_models:
+                    try:
+                        visualize_gene_expression(
+                            gene=gene,
+                            X=X,
+                            Y=Y,
+                            gam_model=gam_models[gene],
+                            stats_df=results,
+                            output_dir=output_dir,
+                            gene_subfolder="gene_visualizations",
+                            verbose=verbose
+                        )
+                    except Exception as e:
+                        if verbose:
+                            print(f"Error visualizing gene {gene}: {e}")
+                elif verbose:
+                    print(f"Warning: Gene {gene} not found in fitted models.")
+        
+        if visualize_all_deg:
+            if verbose:
+                print("Generating visualizations for all differentially expressed genes...")
+            visualize_all_deg_genes(
+                X=X,
+                Y=Y,
+                gam_models=gam_models,
+                results_df=results,
+                output_dir=output_dir,
+                gene_subfolder="all_deg_visualizations",
+                top_n_heatmap=top_n_heatmap,
+                verbose=verbose
+            )
+            
+            generate_summary_trajectory_plot(
+                X=X,
+                Y=Y,
+                gam_models=gam_models,
+                results_df=results,
+                output_dir=output_dir,
+                top_n=min(10, results["pseudoDEG"].sum()),
+                verbose=verbose
+            )
     
     return results
 
-def run_differential_analysis_for_all_paths(TSCAN_results, 
-                                           pseudobulk_df,
-                                           sample_meta_path=None,
-                                           sample_col="sample",
-                                           fdr_threshold=0.05,
-                                           effect_size_threshold=1.0,
-                                           top_n_genes = 100, 
-                                           covariate_columns=None,
-                                           num_splines=3,
-                                           spline_order=3,
-                                           base_output_dir="trajectory_diff_gene_results",
-                                           top_gene_number=100,
-                                           verbose=True):
+def run_differential_analysis_for_all_paths(
+    TSCAN_results, 
+    pseudobulk_df,
+    sample_meta_path=None,
+    sample_col="sample",
+    fdr_threshold=0.05,
+    effect_size_threshold=1.0,
+    top_n_genes=100, 
+    covariate_columns=None,
+    num_splines=3,
+    spline_order=3,
+    base_output_dir="trajectory_diff_gene_results",
+    top_gene_number=100,
+    visualization_gene_list=None,
+    visualize_all_deg=False,
+    top_n_heatmap=50,
+    verbose=True
+):
+    """
+    Run differential gene expression analysis for all trajectory paths
+    
+    Parameters
+    ----------
+    TSCAN_results : dict
+        Results from TSCAN analysis
+    pseudobulk_df : pd.DataFrame
+        Pseudobulk expression data
+    sample_meta_path : str, optional
+        Path to sample metadata file
+    sample_col : str
+        Column name for sample identifiers
+    fdr_threshold : float
+        FDR threshold for statistical significance
+    effect_size_threshold : float
+        Effect size threshold for biological significance
+    top_n_genes : int
+        Number of top genes to select
+    covariate_columns : list, optional
+        List of covariate columns to use from metadata
+    num_splines : int
+        Number of spline basis functions for GAM
+    spline_order : int
+        Order of splines for GAM
+    base_output_dir : str
+        Base directory to save results
+    top_gene_number : int
+        Number of top genes to include in summary
+    visualization_gene_list : list, optional
+        List of genes to visualize
+    visualize_all_deg : bool
+        If True, visualize all differentially expressed genes
+    top_n_heatmap : int
+        Number of top genes to include in heatmap
+    verbose : bool
+        Whether to print progress information
+        
+    Returns
+    -------
+    dict
+        Dictionary of results for each path
+    """
     os.makedirs(base_output_dir, exist_ok=True)
     all_results = {}
     # Verify main path pseudotime exists
@@ -428,17 +510,20 @@ def run_differential_analysis_for_all_paths(TSCAN_results,
     
     # Run differential analysis for main path
     main_path_results = identify_pseudoDEGs(
-        pseudobulk={"cell_expression_corrected": pseudobulk_df},  # Ensure correct dictionary format
+        pseudobulk={"cell_expression_corrected": pseudobulk_df},
         sample_meta_path=sample_meta_path,
         ptime_expression=TSCAN_results['pseudotime']['main_path'],
         fdr_threshold=fdr_threshold,
         effect_size_threshold=effect_size_threshold,
-        top_n_genes = top_n_genes,
+        top_n_genes=top_n_genes,
         covariate_columns=covariate_columns,
         sample_col=sample_col,
         num_splines=num_splines,
         spline_order=spline_order,
         output_dir=main_path_output_dir,
+        visualization_gene_list=visualization_gene_list,
+        visualize_all_deg=visualize_all_deg,
+        top_n_heatmap=top_n_heatmap,
         verbose=verbose
     )
     
@@ -479,12 +564,15 @@ def run_differential_analysis_for_all_paths(TSCAN_results,
                         ptime_expression=branch_path,
                         fdr_threshold=fdr_threshold,
                         effect_size_threshold=effect_size_threshold,
-                        top_n_genes = top_n_genes,
+                        top_n_genes=top_n_genes,
                         covariate_columns=covariate_columns,
                         sample_col=sample_col,
                         num_splines=num_splines,
                         spline_order=spline_order,
                         output_dir=branch_output_dir,
+                        visualization_gene_list=visualization_gene_list,
+                        visualize_all_deg=visualize_all_deg,
+                        top_n_heatmap=top_n_heatmap,
                         verbose=verbose
                     )
                     
@@ -500,13 +588,9 @@ def run_differential_analysis_for_all_paths(TSCAN_results,
                 except Exception as e:
                     print(f"Error processing {branch_name}: {e}")
         else:
-            print("Warning: 'branching_paths' is not a list. Expected a list of dictionaries with pseudotime values.")
+            print("Warning: 'branching_paths' is not a dictionary. Expected a dictionary with branch keys and pseudotime values.")
     else:
         print("No branching paths found in TSCAN results.")
-    
-    # Create a comparative analysis if we have results from multiple paths
-    if len(all_results) > 1:
-        create_comparative_analysis(all_results, base_output_dir, top_gene_number)
     
     return all_results
 
