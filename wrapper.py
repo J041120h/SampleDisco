@@ -92,6 +92,9 @@ def wrapper(
     num_splines = 5,
     spline_order = 3,
     trajectory_diff_gene_output_dir = None,
+    visualization_gene_list = None,
+    visualize_all_deg = True,
+    top_n_heatmap = 50,
     trajectory_diff_gene_verbose = True,
     top_gene_number = 30,
 
@@ -495,6 +498,9 @@ def wrapper(
                     sample_col=sample_col,
                     num_splines = num_splines,
                     spline_order = spline_order,
+                    visualization_gene_list = visualization_gene_list,
+                    visualize_all_deg = visualize_all_deg,
+                    top_n_heatmap = top_n_heatmap,
                     output_dir=trajectory_diff_gene_output_dir,
                     verbose=trajectory_diff_gene_verbose
                 )
@@ -518,6 +524,9 @@ def wrapper(
                     spline_order=spline_order,
                     base_output_dir=trajectory_diff_gene_output_dir,
                     top_gene_number=top_gene_number,
+                    visualization_gene_list = visualization_gene_list,
+                    visualize_all_deg = visualize_all_deg,
+                    top_n_heatmap = top_n_heatmap,
                     verbose=trajectory_diff_gene_verbose
                 )
 

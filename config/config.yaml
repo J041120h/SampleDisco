@@ -65,6 +65,9 @@ trajectory_diff_gene_covariate: None
 num_splines: 5
 spline_order: 3
 trajectory_diff_gene_output_dir: None
+visualization_gene_list: null
+visualize_all_deg: True
+top_n_heatmap: 50
 trajectory_diff_gene_verbose: True
 top_gene_number: 30
 
