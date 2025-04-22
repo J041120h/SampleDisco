@@ -20,6 +20,8 @@ from TSCAN import TSCAN
 # from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 # from linux.CCA_test_linux import find_optimal_cell_resolution_linux
 from resolution_parallel import find_optimal_cell_resolution_parallel
+from sample_clustering.tree_clustering import cut_tree_by_group_count
+from sample_clustering.cluster_DEG_visualization import cluster_dge_visualization
 
 def main():
     output_dir = "/users/hjiang/GenoDistance/Test/result"
@@ -100,6 +102,10 @@ def main():
     # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
     # AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
+    tree_path = "/Users/harry/Desktop/GenoDistance/result/Tree/Combined/Consensus.nex"
+    desired_groups = 4
+    result = cut_tree_by_group_count(tree_path, desired_groups, format='nexus', verbose=True, tol=0)
+    cluster_dge_visualization(sample_to_clade = result, folder_path = output_dir)
     # AnnData_cell = cell_types_linux(
     #         adata=AnnData_cell,
     #         cell_column=cell_column,
@@ -120,13 +126,13 @@ def main():
     #     verbose=verbose
     # )
     # cell_type_assign(AnnData_cell, AnnData_sample, Save=True, output_dir=output_dir,verbose = True)  
-    pseudobulk_df = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
-    process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk_df, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
-    result = TSCAN(AnnData_sample, "X_pca_expression", 2, output_dir, grouping_columns = ["sev.level"], verbose = True, origin=None)
+    # pseudobulk_df = compute_pseudobulk_dataframes(AnnData_sample, 'batch', 'sample', 'cell_type', output_dir, verbose = True)
+    # process_anndata_with_pca(adata = AnnData_sample, pseudobulk = pseudobulk_df, output_dir = output_dir, adata_path=AnnData_sample_path, verbose = True)
+    # result = TSCAN(AnnData_sample, "X_pca_expression", 2, output_dir, grouping_columns = ["sev.level"], verbose = True, origin=None)
 
 
-    first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=output_dir, sample_col = 'sample', sev_col = 'sev.level', ptime = True)
-    from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
+    # first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=output_dir, sample_col = 'sample', sev_col = 'sev.level', ptime = True)
+    # from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
     # results = identify_pseudoDEGs(
     #                 pseudobulk= pseudobulk_df,
     #                 sample_meta_path=sample_meta_path,
@@ -140,16 +146,16 @@ def main():
     #                 verbose=True
     #             )
     
-    all_path_results = run_differential_analysis_for_all_paths(
-        TSCAN_results=result,
-        pseudobulk_df=pseudobulk_df,
-        sample_meta_path=sample_meta_path,
-        fdr_threshold=0.1,
-        effect_size_threshold=0.1,
-        visualize_all_deg =True,
-        top_gene_number=30,
-        base_output_dir=os.path.join(output_dir, 'TSCAN_DEF'),
-    )
+    # all_path_results = run_differential_analysis_for_all_paths(
+    #     TSCAN_results=result,
+    #     pseudobulk_df=pseudobulk_df,
+    #     sample_meta_path=sample_meta_path,
+    #     fdr_threshold=0.1,
+    #     effect_size_threshold=0.1,
+    #     visualize_all_deg =True,
+    #     top_gene_number=30,
+    #     base_output_dir=os.path.join(output_dir, 'TSCAN_DEF'),
+    # )
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_expression", 0.5807686668238389, output_dir)
     # cca_pvalue_test(AnnData_sample, sample_meta_path, "X_pca_proportion", 0.44774005254663607, output_dir)
 
