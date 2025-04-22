@@ -49,7 +49,7 @@ AnnData_sample_path: "/users/hjiang/GenoDistance/result/harmony/adata_sample.h5a
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
-trajectory_supervised: true
+trajectory_supervised: false
 cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
@@ -99,7 +99,7 @@ plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== Process Control Flags =====
 preprocessing: false
-cell_type_cluster: faslse
+cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true

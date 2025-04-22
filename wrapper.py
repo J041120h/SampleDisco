@@ -156,7 +156,7 @@ def wrapper(
         summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
     
     if trajectory_diff_gene_output_dir is None:
-        trajectory_diff_gene_output_dir = summary_sample_csv_path = os.path.join(output_dir, 'trajectoryDEG')
+        trajectory_diff_gene_output_dir = os.path.join(output_dir, 'trajectoryDEG')
     #Check the status of previous processing, to ensure consistent data processing
     status_file_path = os.path.join(output_dir, "sys_log", "process_status.json")
     status_flags = {
@@ -504,6 +504,8 @@ def wrapper(
                     output_dir=trajectory_diff_gene_output_dir,
                     verbose=trajectory_diff_gene_verbose
                 )
+                if trajectory_diff_gene_verbose:
+                    print("Finish finding DEG, summarizing results")
                 summarize_results(
                     results = results, 
                     top_n=top_gene_number, 
@@ -511,9 +513,10 @@ def wrapper(
                     verbose=trajectory_diff_gene_verbose
                 )
             else:
+                print("Running differential analysis for main path...")
                 all_path_results = run_differential_analysis_for_all_paths(
                     TSCAN_results=TSCAN_result_expression,
-                    pseudobulk_df=pseudobulk_df["cell_expression_corrected"],
+                    pseudobulk_df=pseudobulk_df,
                     sample_meta_path=sample_meta_path,
                     sample_col= sample_col,
                     fdr_threshold=fdr_threshold,

@@ -380,6 +380,7 @@ def identify_pseudoDEGs(
                   f"and effect size > {effect_size_threshold}.")
     
     if output_dir is not None:
+
         save_results(results, output_dir, fdr_threshold, effect_size_threshold, top_n_genes, verbose)
         
         if visualization_gene_list is not None and len(visualization_gene_list) > 0:
@@ -742,7 +743,6 @@ def summarize_results(
     
     # Join all lines
     summary_text = "\n".join(summary)
-    
     # Print to console if verbose
     if verbose:
         print(summary_text)

@@ -49,7 +49,7 @@ AnnData_sample_path: "/users/hjiang/GenoDistance/Test/result/harmony/adata_sampl
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
-trajectory_supervised: true
+trajectory_supervised: false
 cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
@@ -86,7 +86,7 @@ age_bin_size: null
 dot_size: 3
 
 plot_dendrogram_flag: true
-plot_cell_umap_by_plot_group_flag: false
+plot_cell_umap_by_plot_group_flag: true
 plot_umap_by_cell_type_flag: true
 plot_pca_2d_flag: false
 plot_pca_3d_flag: false
@@ -98,12 +98,12 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== Process Control Flags =====
-preprocessing: true
-cell_type_cluster: true
+preprocessing: false
+cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true
-trajectory_differential_gene: false
-visualize_data: true
+trajectory_differential_gene: true
+visualize_data: false
 initialization: false
-use_gpu: true
+use_gpu: false
