@@ -5,7 +5,7 @@ import scipy.cluster.hierarchy as sch
 from scipy.cluster.hierarchy import to_tree
 from dendropy import Tree as DendroPyTree
 from dendropy import TaxonNamespace
-import utils
+from sample_clustering.cluster_helper import *
 
 def readExpressionCsv(filePath):
     """Read expression data where rows are samples and columns are features."""
@@ -55,19 +55,20 @@ def saveTreesNexus(newickTrees, outputTreePath):
         nexusFile.write("END;\n")
     print(f"All trees saved to '{outputTreePath}' in NEXUS format.")
 
-def processExpressionData(filePath, outputDir):
+def processExpressionData(filePath, outputDir, custom_name=None):
     """
     Process one expression data file and return DendroPy tree and label.
 
     Parameters:
         filePath (str): Path to the expression CSV file
         outputDir (str): Base output directory
+        custom_name (str, optional): Custom name for output files
 
     Returns:
         (DendroPyTree, str): The tree and its label
     """
     baseName = os.path.basename(filePath)
-    treeLabel = os.path.splitext(baseName)[0]
+    treeLabel = custom_name if custom_name else os.path.splitext(baseName)[0]
     outputImagePath = os.path.join(outputDir, f"{treeLabel}.png")
 
     print(f"\nProcessing '{filePath}' with label '{treeLabel}'...")
@@ -75,19 +76,21 @@ def processExpressionData(filePath, outputDir):
     linkageMatrix = hraVectorClustering(expressionDf.values)
     labels = expressionDf.index.tolist()
 
-    utils.visualizeTree(linkageMatrix, outputImagePath, "HRA", labels)
+    visualizeTree(linkageMatrix, outputImagePath, "HRA", labels)
     newickStr = linkageToNewick(linkageMatrix, labels)
     dendroTree = DendroPyTree.get(data=newickStr, schema="newick", taxon_namespace=TaxonNamespace())
 
     return dendroTree, treeLabel
 
-def HRA_VEC(inputFilePath, generalOutputDir):
+def HRA_VEC(inputFilePath, generalOutputDir, custom_tree_name=None):
     """
     Run hierarchical clustering on input data and save results.
 
     Parameters:
         inputFilePath (str): Path to CSV input file
         generalOutputDir (str): Output folder to store .nex and .png files
+        custom_tree_name (str, optional): Custom name for the output tree file
+                                         (without extension, e.g., "expression")
     """
     if not os.path.exists(inputFilePath):
         print(f"Input file '{inputFilePath}' not found.")
@@ -97,7 +100,13 @@ def HRA_VEC(inputFilePath, generalOutputDir):
     newickTrees = []
 
     try:
-        dendroTree, treeLabel = processExpressionData(inputFilePath, generalOutputDir)
+        # Process the data to get the tree structure
+        dendroTree, treeLabel = processExpressionData(
+            filePath=inputFilePath, 
+            outputDir=generalOutputDir,
+            custom_name=custom_tree_name
+        )
+            
         newickStr = dendroTree.as_string(schema="newick").strip()
         newickTrees.append((newickStr, treeLabel))
         print(f"Completed processing for '{treeLabel}'.")
@@ -107,11 +116,6 @@ def HRA_VEC(inputFilePath, generalOutputDir):
     if newickTrees:
         outputTreePath = os.path.join(generalOutputDir, f"{treeLabel}.nex")
         saveTreesNexus(newickTrees, outputTreePath)
-        print("Tree generation complete.")
+        print(f"Tree saved as '{treeLabel}.nex'")
     else:
         print("No trees were successfully processed.")
-
-# if __name__ == "__main__":
-#     inputFilePath = "/Users/harry/Desktop/GenoDistance/result/Sample/cosine/cell_proportion/distance_matrix_proportion.csv"  # Replace with your file path
-#     generalOutputDir = "/Users/harry/Desktop/GenoDistance/result/Tree"  # Replace with your output directory
-#     HRA_VEC(inputFilePath, generalOutputDir)

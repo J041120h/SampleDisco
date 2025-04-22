@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from adjustText import adjust_text
 
-def cluster_dge_visualization(sample_to_clade: dict, folder_path: str):
+def cluster_dge_visualization(sample_to_clade: dict, folder_path: str, output_dir: str):
     """
     Perform pairwise differential expression analysis across all valid clade pairs.
     
@@ -16,9 +16,7 @@ def cluster_dge_visualization(sample_to_clade: dict, folder_path: str):
         sample_to_clade (dict): Mapping from sample name to clade ID.
         folder_path (str): Path to folder containing expression.csv. Outputs will go to folder_path/cluster_DEG.
     """
-    os.makedirs(os.path.join(folder_path, "cluster_DEG"), exist_ok=True)
-    output_dir = os.path.join(folder_path, "cluster_DEG")
-    expr_path = os.path.join(folder_path, "pseudobulk", "expression.csv")
+    expr_path = os.path.join(folder_path, "expression.csv")
 
     # Load expression and add clade column
     expr = pd.read_csv(expr_path, index_col=0)

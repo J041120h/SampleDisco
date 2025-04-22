@@ -20,7 +20,7 @@ from TSCAN import TSCAN
 # from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 # from linux.CCA_test_linux import find_optimal_cell_resolution_linux
 from resolution_parallel import find_optimal_cell_resolution_parallel
-from sample_clustering.tree_clustering import cut_tree_by_group_count
+from sample_clustering.tree_cut import cut_tree_by_group_count
 from sample_clustering.cluster_DEG_visualization import cluster_dge_visualization
 
 def main():

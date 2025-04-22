@@ -8,13 +8,13 @@ import re
 import logging
 import scipy.spatial.distance as ssd
 from scipy.cluster.hierarchy import linkage
-from utils import calculate_distance_matrix_from_tree, visualizeTree
+from sample_clustering.cluster_helper import *
 
 # Import the tree-building functions
-from NN import NN
-from UPGMA import UPGMA
-from HRA_VEC import HRA_VEC
-from HRC_VEC import HRC_VEC
+from sample_clustering.NN import NN
+from sample_clustering.UPGMA import UPGMA
+from sample_clustering.HRA_VEC import HRA_VEC
+from sample_clustering.HRC_VEC import HRC_VEC
 
 def convert_to_unweighted_newick(weighted_newick):
     """Convert a weighted Newick tree string to an unweighted version."""
