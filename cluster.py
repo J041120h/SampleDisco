@@ -9,7 +9,7 @@ from sample_clustering.UPGMA import *
 
 def cluster(
     Kmeans: bool = False,
-    methods: list = ['HRA_VEC', 'HRC_VEC', 'NN', 'tree', 'UPGMA'],
+    methods: list = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
     generalFolder: str = None,
     distance_method: str = "cosine",
     number_of_clusters: int = 5
@@ -48,14 +48,33 @@ def cluster(
         elif methods[0] == "UPGMA":
             UPGMA(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
             UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
+        expression_tree_path = os.path.join(generalFolder, "Tree", methods[0], "expression.nex")
+        proportion_tree_path = os.path.join(generalFolder, "Tree", methods[0], "proportion.nex")
     elif len(methods) > 1:
         buildConsensus(sample_distance_paths = sample_distance_path_expression, generalFolder = generalFolder, methods=methods, custom_tree_names="expression")
         buildConsensus(sample_distance_paths = sample_distance_path_proportion, generalFolder = generalFolder, methods=methods, custom_tree_names="proportion")
+        expression_tree_path = os.path.join(generalFolder, "Tree", "consensus", "expression.nex")
+        proportion_tree_path = os.path.join(generalFolder, "Tree", "consensus", "proportion.nex")
+    
+    # Cut the tree into groups
+    expr_results = cut_tree_by_group_count(expression_tree_path, desired_groups = number_of_clusters, format='nexus', verbose=True, tol=0)
+    prop_results = cut_tree_by_group_count(proportion_tree_path, desired_groups = number_of_clusters, format='nexus', verbose=True, tol=0)
+    # Define output directories
+    expr_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Tree_expression")
+    prop_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Tree_proporton")
+
+    # Make sure directories exist
+    os.makedirs(expr_output_dir, exist_ok=True)
+    os.makedirs(prop_output_dir, exist_ok=True)
+    # Call the visualization function
+    cluster_dge_visualization(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+    cluster_dge_visualization(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+
             
 if __name__ == "__main__":
     cluster(
         Kmeans=False,
-        methods=['UPGMA', 'NN'],
+        methods=['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
         generalFolder="/Users/harry/Desktop/GenoDistance/result/",
         number_of_clusters=4
     )

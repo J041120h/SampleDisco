@@ -93,8 +93,3 @@ def cut_tree_by_group_count(tree_path, desired_groups, format='nexus', verbose=F
         print("Returning closest match found.")
     return best_result
 
-# Example usage (not executed when imported):
-if __name__ == "__main__":
-    tree_path = "/Users/harry/Desktop/GenoDistance/result/Tree/Combined/Consensus.nex"
-    desired_groups = 4
-    cut_tree_by_group_count(tree_path, desired_groups, format='nexus', verbose=True, tol=0)
