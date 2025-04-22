@@ -9,7 +9,7 @@ from sample_clustering.UPGMA import *
 
 def cluster(
     Kmeans: bool = False,
-    methods: list = ['HRA', 'HRC', 'NN', 'tree', 'UPGMA'],
+    methods: list = ['HRA_VEC', 'HRC_VEC', 'NN', 'tree', 'UPGMA'],
     generalFolder: str = None,
     distance_method: str = "cosine",
     number_of_clusters: int = 5
@@ -36,10 +36,10 @@ def cluster(
 
     if len(methods) == 1:
         print(f"Running {methods[0]} for tree construction...")
-        if methods[0] == "HRA":
+        if methods[0] == "HRA_VEC":
             HRA_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
             HRA_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
-        elif methods[0] == "HRC":
+        elif methods[0] == "HRC_VEC":
             HRC_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
             HRC_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
         elif methods[0] == "NN":
@@ -48,11 +48,14 @@ def cluster(
         elif methods[0] == "UPGMA":
             UPGMA(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
             UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
+    elif len(methods) > 1:
+        buildConsensus(sample_distance_paths = sample_distance_path_expression, generalFolder = generalFolder, methods=methods, custom_tree_names="expression")
+        buildConsensus(sample_distance_paths = sample_distance_path_proportion, generalFolder = generalFolder, methods=methods, custom_tree_names="proportion")
             
 if __name__ == "__main__":
     cluster(
         Kmeans=False,
-        methods=['UPGMA'],
+        methods=['UPGMA', 'NN'],
         generalFolder="/Users/harry/Desktop/GenoDistance/result/",
         number_of_clusters=4
     )
