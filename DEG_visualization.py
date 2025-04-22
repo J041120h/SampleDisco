@@ -23,47 +23,6 @@ def visualize_gene_expression(
     dpi: int = 300,
     verbose: bool = False
 ) -> str:
-    """
-    Visualize the gene expression across pseudotime with GAM fit
-    
-    Parameters
-    ----------
-    gene : str
-        Gene name to visualize
-    X : pd.DataFrame
-        Design matrix with pseudotime and covariates
-    Y : pd.DataFrame
-        Gene expression matrix
-    gam_model : LinearGAM
-        Fitted GAM model for the gene
-    stats_df : pd.DataFrame
-        DataFrame with statistics including FDR and effect size
-    output_dir : str
-        Base directory to save the visualization
-    gene_subfolder : str
-        Subfolder name for gene plots
-    figsize : tuple
-        Figure size
-    title_prefix : str
-        Prefix for plot title
-    point_size : int
-        Size of data points
-    point_alpha : float
-        Alpha (transparency) for data points
-    line_width : int
-        Width of the GAM fit line
-    line_color : str
-        Color of the GAM fit line
-    dpi : int
-        Resolution of saved figure
-    verbose : bool
-        Whether to print progress
-        
-    Returns
-    -------
-    str
-        Path to the saved figure
-    """
     # Ensure the output directory exists
     plot_dir = os.path.join(output_dir, gene_subfolder)
     os.makedirs(plot_dir, exist_ok=True)

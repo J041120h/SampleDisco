@@ -9,7 +9,7 @@ cell_column: "cell_type"
 cell_meta_path: null
 batch_col: 'batch'
 markers: null
-cluster_resolution: 0.62
+cluster_resolution: 0.92
 num_PCs: 20
 num_harmony: 30
 num_features: 2000
