@@ -224,8 +224,3 @@ def buildConsensus(sample_distance_path, generalFolder, methods=None, run_method
         f.truncate()
         f.write(convert_to_unweighted_newick(weightedNewick))
         logging.info(f"Unweighted Newick tree written to {outputFileNwk}")
-
-# Example usage (not executed when imported):
-if __name__ == "__main__":
-    sample_distance_path = "/Users/harry/Desktop/GenoDistance/result/Sample/cosine/cell_proportion/distance_matrix_proportion.csv"
-    buildConsensus(sample_distance_path, "/Users/harry/Desktop/GenoDistance/result/Tree", run_methods=True)
