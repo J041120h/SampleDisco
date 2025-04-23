@@ -109,6 +109,7 @@ sample_distance_calculation: true
 DimensionalityReduction: true
 trajectory_analysis: false
 trajectory_differential_gene: false
+cluster_and_DGE: true
 visualize_data: true
 initialization: false
 use_gpu: false
