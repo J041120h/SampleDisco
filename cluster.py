@@ -33,42 +33,52 @@ def cluster(
         # Call the visualization function
         cluster_dge_visualization(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
         cluster_dge_visualization(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+        if len(expr_results) > 2:
+            print("Conduct multi clade DGE analysis")
+            multi_clade_dge_analysis(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+        if len(prop_results) > 2:
+            multi_clade_dge_analysis(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
 
-    if len(methods) == 1:
-        print(f"Running {methods[0]} for tree construction...")
-        if methods[0] == "HRA_VEC":
-            HRA_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
-            HRA_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
-        elif methods[0] == "HRC_VEC":
-            HRC_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
-            HRC_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
-        elif methods[0] == "NN":
-            NN(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
-            NN(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
-        elif methods[0] == "UPGMA":
-            UPGMA(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
-            UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
-        expression_tree_path = os.path.join(generalFolder, "Tree", methods[0], "expression.nex")
-        proportion_tree_path = os.path.join(generalFolder, "Tree", methods[0], "proportion.nex")
-    elif len(methods) > 1:
-        buildConsensus(sample_distance_paths = sample_distance_path_expression, generalFolder = generalFolder, methods=methods, custom_tree_names="expression")
-        buildConsensus(sample_distance_paths = sample_distance_path_proportion, generalFolder = generalFolder, methods=methods, custom_tree_names="proportion")
-        expression_tree_path = os.path.join(generalFolder, "Tree", "consensus", "expression.nex")
-        proportion_tree_path = os.path.join(generalFolder, "Tree", "consensus", "proportion.nex")
-    
-    # Cut the tree into groups
-    expr_results = cut_tree_by_group_count(expression_tree_path, desired_groups = number_of_clusters, format='nexus', verbose=True, tol=0)
-    prop_results = cut_tree_by_group_count(proportion_tree_path, desired_groups = number_of_clusters, format='nexus', verbose=True, tol=0)
-    # Define output directories
-    expr_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Tree_expression")
-    prop_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Tree_proporton")
-
-    # Make sure directories exist
-    os.makedirs(expr_output_dir, exist_ok=True)
-    os.makedirs(prop_output_dir, exist_ok=True)
-    # Call the visualization function
-    cluster_dge_visualization(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
-    cluster_dge_visualization(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+    if len(methods) > 0:
+        if len(methods) == 1:
+            print(f"Running {methods[0]} for tree construction...")
+            if methods[0] == "HRA_VEC":
+                HRA_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
+                HRA_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
+            elif methods[0] == "HRC_VEC":
+                HRC_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
+                HRC_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
+            elif methods[0] == "NN":
+                NN(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
+                NN(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
+            elif methods[0] == "UPGMA":
+                UPGMA(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "expression")
+                UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name = "proportion")
+            expression_tree_path = os.path.join(generalFolder, "Tree", methods[0], "expression.nex")
+            proportion_tree_path = os.path.join(generalFolder, "Tree", methods[0], "proportion.nex")
+        elif len(methods) > 1:
+            buildConsensus(sample_distance_paths = sample_distance_path_expression, generalFolder = generalFolder, methods=methods, custom_tree_names="expression")
+            buildConsensus(sample_distance_paths = sample_distance_path_proportion, generalFolder = generalFolder, methods=methods, custom_tree_names="proportion")
+            expression_tree_path = os.path.join(generalFolder, "Tree", "consensus", "expression.nex")
+            proportion_tree_path = os.path.join(generalFolder, "Tree", "consensus", "proportion.nex")
+        
+        # Cut the tree into groups
+        expr_results = cut_tree_by_group_count(expression_tree_path, desired_groups = number_of_clusters, format='nexus', verbose=True, tol=0)
+        prop_results = cut_tree_by_group_count(proportion_tree_path, desired_groups = number_of_clusters, format='nexus', verbose=True, tol=0)
+        # Define output directories
+        expr_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Tree_expression")
+        prop_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Tree_proporton")
+        # Make sure directories exist
+        os.makedirs(expr_output_dir, exist_ok=True)
+        os.makedirs(prop_output_dir, exist_ok=True)
+        # Call the visualization function
+        cluster_dge_visualization(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+        cluster_dge_visualization(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+        if len(expr_results) > 2:
+            print("Conduct multi clade DGE analysis")
+            multi_clade_dge_analysis(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+        if len(prop_results) > 2:
+            multi_clade_dge_analysis(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
 
             
 if __name__ == "__main__":
