@@ -77,6 +77,12 @@ AnnData_cell_path: "/users/hjiang/GenoDistance/SingleCell/result/harmony/adata_c
 summary_sample_csv_path: null
 sample_distance_methods: null
 
+# ===== Cluster Based DEG ===== 
+Kmeans_based_cluster_flag: false
+Tree_building_method: ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+cluster_distance_method: 'cosine'
+cluster_number: 4
+
 # ===== Visualization Parameters =====
 verbose_Visualization: true
 trajectory_visalization_label:

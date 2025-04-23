@@ -78,6 +78,12 @@ AnnData_cell_path: null
 summary_sample_csv_path: null
 sample_distance_methods: null
 
+# ===== Cluster Based DEG ===== 
+Kmeans_based_cluster_flag: false
+Tree_building_method: ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+cluster_distance_method: 'cosine'
+cluster_number: 4
+
 # ===== Visualization Parameters =====
 verbose_Visualization: true
 trajectory_visalization_label:
@@ -104,6 +110,7 @@ sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true
 trajectory_differential_gene: true
+cluster_and_DGE: true
 visualize_data: false
 initialization: false
 use_gpu: false

@@ -1,0 +1,4 @@
+=== SUMMARY OF RESULTS ===
+Total genes analyzed: 2000
+Statistically significant genes (FDR < 0.05): 0
+Selected pseudoDEGs (FDR < 0.05 AND effect size > None): 0

@@ -24,6 +24,7 @@ from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from resolution_parallel import find_optimal_cell_resolution_parallel
 from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
+from cluster import cluster
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -121,6 +122,12 @@ def wrapper(
     plot_cell_type_expression_pca_flag=True,
     plot_pseudobulk_batch_test_expression_flag=False,
     plot_pseudobulk_batch_test_proportion_flag=False,
+
+    # ===== Cluster Based DEG ===== 
+    Kmeans_based_cluster_flag = False,
+    Tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
+    cluster_distance_method = 'cosine',
+    cluster_number = 4,
     # ===== Process Control Flags =====
     preprocessing=True,
     cell_type_cluster=True,
@@ -128,6 +135,7 @@ def wrapper(
     DimensionalityReduction=True,
     trajectory_analysis=True,
     trajectory_differential_gene = True,
+    cluster_and_DGE = True,
     visualize_data = True,
     initialization=True,
     use_gpu= False
@@ -581,7 +589,17 @@ def wrapper(
             print(f"Sample distance calculation completed. Results saved in {os.path.join(output_dir, 'Sample')}")
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
-        
+    
+    if cluster_and_DGE:
+        if cluster_distance_method not in sample_distance_methods:
+            raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
+        cluster(
+            Kmeans = Kmeans_based_cluster_flag,
+            methods = Tree_building_method,
+            generalFolder = output_dir,
+            distance_method = cluster_distance_method,
+            number_of_clusters = cluster_number
+        )
     #Visualization
     if visualize_data:
         # if not status_flags["preprocessing"]:
