@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from Visualization import visualization
 from combat.pycombat import pycombat
+import warnings
+import contextlib
 from HVG import highly_variable_gene_selection, select_hvf_loess
 
 def check_nan_and_negative_in_lists(df: pd.DataFrame, verbose=False) -> bool:
@@ -278,8 +280,11 @@ def compute_pseudobulk_dataframes(
         elapsed_time = end_time - start_time
         print(f"\n\n[pseudobulk] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
-    cell_expression_corrected_df = combat_correct_cell_expressions(
-        adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, verbose=verbose
+    f = io.StringIO()
+    with warnings.catch_warnings(), contextlib.redirect_stdout(f):
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        cell_expression_corrected_df = combat_correct_cell_expressions(
+            adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, verbose=verbose
     )
 
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, 2000)
