@@ -81,6 +81,7 @@ sample_distance_methods: null
 # ===== Cluster Based DEG ===== 
 Kmeans_based_cluster_flag: false
 Tree_building_method: ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+prportion_test: true
 cluster_distance_method: 'cosine'
 cluster_number: 4
 

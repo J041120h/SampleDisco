@@ -6,10 +6,12 @@ from sample_clustering.Kmeans_cluster import *
 from sample_clustering.NN import *
 from sample_clustering.tree_cut import *
 from sample_clustering.UPGMA import *
+from sample_clustering.proportion_test import *
 
 def cluster(
     Kmeans: bool = False,
     methods: list = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
+    prportion_test: bool = False,
     generalFolder: str = None,
     distance_method: str = "cosine",
     number_of_clusters: int = 5
@@ -18,10 +20,10 @@ def cluster(
         raise ValueError("Please provide at least one clustering method or set Kmeans to True.")
     
     pseudobulk_folder_path = os.path.join(generalFolder, "pseudobulk")
-    sample_distance_path_proportion = os.path.join(generalFolder, "Sample", distance_method, "cell_expression", "distance_matrix_expression.csv")
-    sample_distance_path_expression = os.path.join(generalFolder, "Sample", distance_method, "cell_proportion", "distance_matrix_proportion.csv")
+    sample_distance_path_proportion = os.path.join(generalFolder, "Sample", distance_method, "cell_proportion", "distance_matrix_expression.csv")
+    sample_distance_path_expression = os.path.join(generalFolder, "Sample", distance_method, "cell_expression", "distance_matrix_proportion.csv")
     if Kmeans:
-        expr_results, prop_results = cluster_samples_from_folder(folder_path = pseudobulk_folder_path , n_clusters = number_of_clusters)
+        expr_results_Kmeans, prop_results_Kmeans = cluster_samples_from_folder(folder_path = pseudobulk_folder_path , n_clusters = number_of_clusters)
         # Define output directories
         expr_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Kmeans_expression")
         prop_output_dir = os.path.join(generalFolder, "Cluster_DEG", "Kmeans_proporton")
@@ -31,13 +33,13 @@ def cluster(
         os.makedirs(prop_output_dir, exist_ok=True)
 
         # Call the visualization function
-        cluster_dge_visualization(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
-        cluster_dge_visualization(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
-        if len(expr_results) > 2:
+        cluster_dge_visualization(sample_to_clade=expr_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+        cluster_dge_visualization(sample_to_clade=prop_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+        if len(expr_results_Kmeans) > 2:
             print("Conduct multi clade DGE analysis")
-            multi_clade_dge_analysis(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
-        if len(prop_results) > 2:
-            multi_clade_dge_analysis(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+            multi_clade_dge_analysis(sample_to_clade=expr_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+        if len(prop_results_Kmeans) > 2:
+            multi_clade_dge_analysis(sample_to_clade=prop_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
 
     if len(methods) > 0:
         if len(methods) == 1:
@@ -80,6 +82,12 @@ def cluster(
         if len(prop_results) > 2:
             multi_clade_dge_analysis(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
 
+        if prportion_test:
+            if Kmeans:
+                expr_results = expr_results_Kmeans
+                prop_results = prop_results_Kmeans
+            proportion_DGE_test(generalFolder, prop_results, sub_folder = "proportion", verbose=False)
+            proportion_DGE_test(generalFolder, expr_results, sub_folder = "expression",verbose=False)
             
 if __name__ == "__main__":
     cluster(

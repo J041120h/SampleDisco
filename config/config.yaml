@@ -79,8 +79,9 @@ summary_sample_csv_path: null
 sample_distance_methods: null
 
 # ===== Cluster Based DEG ===== 
-Kmeans_based_cluster_flag: false
+Kmeans_based_cluster_flag: true
 Tree_building_method: ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+prportion_test: true
 cluster_distance_method: 'cosine'
 cluster_number: 4
 
@@ -107,10 +108,10 @@ plot_pseudobulk_batch_test_proportion_flag: false
 preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
-DimensionalityReduction: true
+DimensionalityReduction: false
 trajectory_analysis: false
 trajectory_differential_gene: false
-cluster_and_DGE: false
+cluster_and_DGE: true
 visualize_data: false
 initialization: false
 use_gpu: false

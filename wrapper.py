@@ -126,6 +126,7 @@ def wrapper(
     # ===== Cluster Based DEG ===== 
     Kmeans_based_cluster_flag = False,
     Tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
+    prportion_test = False,
     cluster_distance_method = 'cosine',
     cluster_number = 4,
     # ===== Process Control Flags =====
@@ -596,6 +597,7 @@ def wrapper(
         cluster(
             Kmeans = Kmeans_based_cluster_flag,
             methods = Tree_building_method,
+            prportion_test = prportion_test,
             generalFolder = output_dir,
             distance_method = cluster_distance_method,
             number_of_clusters = cluster_number
