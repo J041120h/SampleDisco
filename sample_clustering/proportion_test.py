@@ -91,4 +91,96 @@ def proportion_DGE_test(folder_path, sample_to_clade, sub_folder, verbose=False)
     if verbose:
         print(f"All comparisons finished. Results saved to {output_dir}")
 
+    proportion_test_visualization(csv_path, output_dir, sample_to_clade, significance_level=0.05, verbose=verbose)
+
     return all_results
+
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def proportion_test_visualization(csv_path, output_dir, sample_to_clade, significance_level=0.05, verbose=False):
+    """
+    Visualize proportion test results.
+
+    Args:
+        folder_path (str): General folder path containing proportion.csv and result folder.
+        sample_to_clade (dict): Mapping from sample name to clade (group).
+        significance_level (float): Threshold for FDR significance.
+        verbose (bool): If True, print progress.
+    """
+
+    # Load proportion matrix
+    if verbose:
+        print(f"Reading proportion matrix from {csv_path}...")
+    prop = pd.read_csv(csv_path, index_col=0)
+
+    # Heatmap (all proportions)
+    if verbose:
+        print("Plotting heatmap...")
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(prop, cmap="viridis", annot=False, cbar=True)
+    plt.title("Cell Type Proportions Across Samples")
+    plt.xlabel("Samples")
+    plt.ylabel("Cell Types")
+    heatmap_path = os.path.join(output_dir, "proportion_heatmap.png")
+    plt.tight_layout()
+    plt.savefig(heatmap_path)
+    plt.close()
+    if verbose:
+        print(f"Heatmap saved to {heatmap_path}")
+
+    # Histograms (for significant cell types in each pairwise test)
+    comparison_files = [f for f in os.listdir(output_dir) if f.endswith('.csv')]
+
+    for comp_file in comparison_files:
+        if verbose:
+            print(f"Processing {comp_file} for histograms...")
+        
+        comp_path = os.path.join(output_dir, comp_file)
+        res_df = pd.read_csv(comp_path)
+
+        # Find significant cell types
+        sig_celltypes = res_df.loc[res_df['FDR'] < significance_level, 'celltype']
+
+        if len(sig_celltypes) == 0:
+            if verbose:
+                print(f"No significant cell types found in {comp_file}")
+            continue
+
+        # Figure out the two groups compared
+        comp_name = comp_file.replace("proportion_test_", "").replace(".csv", "")
+        clade1, clade2 = comp_name.split("_vs_")
+
+        # For each significant cell type, plot histogram
+        for cell_type in sig_celltypes:
+            plt.figure(figsize=(8, 5))
+
+            samples = list(sample_to_clade.keys())
+            groups = [sample_to_clade[sample] for sample in samples if sample in prop.columns]
+            data = prop.loc[cell_type, samples]
+
+            data_to_plot = pd.DataFrame({
+                'Proportion': data.values,
+                'Sample': data.index,
+                'Group': [sample_to_clade[sample] for sample in data.index]
+            })
+
+            # Filter for only clade1 and clade2
+            data_to_plot = data_to_plot[data_to_plot['Group'].isin([clade1, clade2])]
+
+            sns.histplot(data=data_to_plot, x="Proportion", hue="Group", element="step", stat="density", common_norm=False)
+            plt.title(f"{cell_type} - {clade1} vs {clade2}")
+            plt.xlabel("Proportion")
+            plt.ylabel("Density")
+            hist_path = os.path.join(output_dir, f"hist_{cell_type}_{comp_name}.png")
+            plt.tight_layout()
+            plt.savefig(hist_path)
+            plt.close()
+            if verbose:
+                print(f"Histogram for {cell_type} ({comp_name}) saved to {hist_path}")
+    
+    if verbose:
+        print("All plots finished.")
