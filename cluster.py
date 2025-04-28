@@ -13,6 +13,7 @@ def cluster(
     Kmeans: bool = False,
     methods: list = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
     prportion_test: bool = False,
+    RAISIN_analysis: bool = False,
     generalFolder: str = None,
     distance_method: str = "cosine",
     number_of_clusters: int = 5
@@ -58,7 +59,7 @@ def cluster(
     expr_results = None
     prop_results = None
     
-    if len(methods) > 0:
+    if methods is not None and len(methods) > 0:
         try:
             if len(methods) == 1:
                 print(f"Running {methods[0]} for tree construction...")
@@ -132,27 +133,28 @@ def cluster(
         except Exception as e:
             print(f"Error in proportion test: {e}")
     
-    try:
-        if expr_results is not None:
-            unique_expr_clades = len(set(expr_results.values()))
-            if unique_expr_clades <= 1:
-                print("Only one clade found in expression results. Skipping RAISIN analysis.")
+    if RAISIN_analysis:
+        try:
+            if expr_results is not None:
+                unique_expr_clades = len(set(expr_results.values()))
+                if unique_expr_clades <= 1:
+                    print("Only one clade found in expression results. Skipping RAISIN analysis.")
+                else:
+                    fit_results, test_results = RAISIN(generalFolder, expr_results)
+                    print(expr_results)
             else:
-                fit_results, test_results = RAISIN(generalFolder, expr_results)
-                print(expr_results)
-        else:
-            print("No expression results available. Skipping RAISIN analysis.")
-        if prop_results is not None:
-            unique_expr_clades = len(set(prop_results.values()))
-            if unique_expr_clades <= 1:
-                print("Only one clade found in expression results. Skipping RAISIN analysis.")
+                print("No expression results available. Skipping RAISIN analysis.")
+            if prop_results is not None:
+                unique_expr_clades = len(set(prop_results.values()))
+                if unique_expr_clades <= 1:
+                    print("Only one clade found in expression results. Skipping RAISIN analysis.")
+                else:
+                    fit_results, test_results = RAISIN(generalFolder, prop_results)
+                    print(prop_results)
             else:
-                fit_results, test_results = RAISIN(generalFolder, prop_results)
-                print(prop_results)
-        else:
-            print("No expression results available. Skipping RAISIN analysis.")
-    except Exception as e:
-        print(f"Error in RAISIN analysis: {e}")
+                print("No expression results available. Skipping RAISIN analysis.")
+        except Exception as e:
+            print(f"Error in RAISIN analysis: {e}")
     
 
 
