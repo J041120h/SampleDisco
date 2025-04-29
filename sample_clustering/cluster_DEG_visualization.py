@@ -187,135 +187,86 @@ def multi_clade_dge_analysis(sample_to_clade: dict, folder_path: str, output_dir
     if len(sig_df) > 0:
         create_expression_heatmap(sample_to_clade, folder_path, output_dir, gene_list=sig_df["gene"].tolist())
     else:
-        print("⚠️ No significant DEGs found. Creating heatmap with top variable genes instead.")
-        create_expression_heatmap(sample_to_clade, folder_path, output_dir)
+        print("⚠️ No significant DEGs found")
+
 import os
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import f_oneway, kruskal, zscore
+from statsmodels.stats.multitest import multipletests
 from matplotlib.colors import LinearSegmentedColormap
-from scipy.stats import zscore
 
-def create_expression_heatmap(sample_to_clade: dict, folder_path: str, output_dir: str, 
-                               gene_list=None, figsize=(12, 14), dpi=300):
-    """
-    Create an improved gene expression heatmap with samples grouped by clade.
-    
-    Parameters:
-        sample_to_clade (dict): Mapping from sample name to clade ID
-        folder_path (str): Path to folder containing expression.csv
-        output_dir (str): Directory to save the heatmap
-        gene_list (list, optional): List of genes to include in the heatmap
-        figsize (tuple): Figure size (width, height)
-        dpi (int): Resolution for saved figure
-    """
+# ---------------  create_expression_heatmap  --------------------------------
+def create_expression_heatmap(sample_to_clade: dict,
+                              folder_path: str,
+                              output_dir: str,
+                              gene_list=None,
+                              figsize=(12, 14),
+                              dpi=300):
+
     os.makedirs(output_dir, exist_ok=True)
-    
     expr_path = os.path.join(folder_path, "expression.csv")
     expr = pd.read_csv(expr_path, index_col=0)
-    
-    expr = expr.loc[expr.index.intersection(sample_to_clade)]
-    
+
+    # -------------------------------------------------------------------------
+    # 1. Be explicit about the index intersection.
+    # -------------------------------------------------------------------------
+    expr = expr.loc[expr.index.intersection(sample_to_clade.keys())]
+
+    if expr.empty:
+        raise ValueError("No samples in expression matrix match the sample_to_clade keys.")
+
     if gene_list is None:
         gene_var = expr.var(axis=0)
-        gene_list = gene_var.nlargest(100).index.tolist()
+        #  ⛑️ fallback if <100 genes exist
+        top_n = min(100, len(gene_var))
+        gene_list = gene_var.nlargest(top_n).index.tolist()
         print(f"Using top {len(gene_list)} variable genes for heatmap")
-    
+
     expr = expr[gene_list]
-    
-    sample_clades = pd.DataFrame({'clade': [sample_to_clade[s] for s in expr.index]}, index=expr.index)
-    unique_clades = sorted(set(sample_to_clade.values()))
-    num_clades = len(unique_clades)
-    
-    clade_to_color = {clade: i for i, clade in enumerate(unique_clades)}
-    clade_palette = sns.color_palette("husl", num_clades)
-    
+
+    # -------------------------------------------------------------------------
+    #  Make the clustermap (no clustering, no dendrograms).
+    # -------------------------------------------------------------------------
+    unique_clades = sorted(set(sample_to_clade[s] for s in expr.index))
+    palette = sns.color_palette("husl", len(unique_clades))
+    lut = dict(zip(unique_clades, palette))
+    sample_colors = pd.Series([lut[sample_to_clade[s]] for s in expr.index], index=expr.index)
+
     cmap = LinearSegmentedColormap.from_list("custom_cmap", ["#0000FF", "#FFFFFF", "#FF0000"])
-    
-    expr_transpose = expr.T
-    expr_zscore = pd.DataFrame(
-        data=zscore(expr_transpose.values, axis=1),
-        index=expr_transpose.index,
-        columns=expr_transpose.columns
-    )
-    
-    lut = dict(zip(unique_clades, clade_palette))
-    ordered_samples = []
-    for clade in unique_clades:
-        clade_samples = sample_clades[sample_clades['clade'] == clade].index.tolist()
-        ordered_samples.extend(clade_samples)
-    
-    expr_zscore = expr_zscore[ordered_samples]
-    sample_colors = pd.Series(sample_clades.loc[ordered_samples, 'clade']).map(lut)
 
-    # 🚀 Increase figure width to make space for legend
-    # If too many clades (>5), expand width slightly
-    extra_width = max(0, (num_clades - 5) * 1.5)
-    adjusted_figsize = (figsize[0] + extra_width, figsize[1])
-
-    # Create heatmap
     g = sns.clustermap(
-        expr_zscore,
+        zscore(expr.T, axis=1),        # rows = genes, cols = samples
         cmap=cmap,
         col_colors=sample_colors,
-        col_cluster=False,     # Don't cluster samples
-        row_cluster=False,     # ✅ Turn off gene clustering as you requested
-        z_score=None,
+        col_cluster=False,
+        row_cluster=False,
         xticklabels=False,
-        yticklabels=True if len(gene_list) <= 100 else False,
+        yticklabels=len(gene_list) <= 100,
         cbar_kws={"label": "Z-score"},
-        figsize=adjusted_figsize,
-        dendrogram_ratio=(0, 0),  # Completely remove dendrogram spaces
+        figsize=figsize,
+        dendrogram_ratio=0,            # no empty dendrogram axes!
         colors_ratio=0.02
     )
 
-    # Add legend nicely outside
-    handles = [plt.Rectangle((0,0), 1, 1, color=lut[clade]) for clade in unique_clades]
-    g.ax_col_dendrogram.legend(
-        handles,
-        [f"Clade {clade}" for clade in unique_clades],
-        title="Clades",
-        loc="center left",
-        bbox_to_anchor=(1.05, 0.5),
-        borderaxespad=0
-    )
+    # -------------------------------------------------------------------------
+    # Move legend outside, then save *via g.fig* WITHOUT tight bbox
+    # -------------------------------------------------------------------------
+    handles = [plt.Rectangle((0, 0), 1, 1, color=lut[c]) for c in unique_clades]
+    g.ax_col_dendrogram.legend(handles,
+                               [f"Clade {c}" for c in unique_clades],
+                               title="Clades",
+                               loc="center left",
+                               bbox_to_anchor=(1.05, 0.5),
+                               borderaxespad=0)
 
-    plt.suptitle("Gene Expression Heatmap by Clade", fontsize=16, y=1.02)
-    
+    plt.suptitle("Gene Expression Heatmap by Clade", y=1.02, fontsize=16)
+
     heatmap_path = os.path.join(output_dir, "expression_heatmap.png")
-    plt.savefig(heatmap_path, dpi=dpi, bbox_inches='tight')
-    plt.close()
-    
+    #  <—- this is the line that previously crashed
+    g.fig.savefig(heatmap_path, dpi=dpi)  # no bbox_inches='tight'
+    plt.close(g.fig)
+
     print(f"✅ Heatmap saved to: {heatmap_path}")
-    
-    # Optional: create a labeled version if few samples
-    if len(ordered_samples) <= 50:
-        g = sns.clustermap(
-            expr_zscore,
-            cmap=cmap,
-            col_colors=sample_colors,
-            col_cluster=False,
-            row_cluster=False,   # Keep consistent
-            z_score=None,
-            xticklabels=True,
-            yticklabels=True if len(gene_list) <= 100 else False,
-            cbar_kws={"label": "Z-score"},
-            figsize=adjusted_figsize,
-            dendrogram_ratio=(0, 0),
-            colors_ratio=0.02
-        )
-        g.ax_col_dendrogram.legend(
-            handles,
-            [f"Clade {clade}" for clade in unique_clades],
-            title="Clades",
-            loc="center left",
-            bbox_to_anchor=(1.05, 0.5),
-            borderaxespad=0
-        )
-        plt.suptitle("Gene Expression Heatmap by Clade (with sample labels)", fontsize=16, y=1.02)
-        labeled_heatmap_path = os.path.join(output_dir, "expression_heatmap_with_labels.png")
-        plt.savefig(labeled_heatmap_path, dpi=dpi, bbox_inches='tight')
-        plt.close()
-        
-        print(f"✅ Labeled heatmap saved to: {labeled_heatmap_path}")

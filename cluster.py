@@ -31,7 +31,7 @@ def cluster(
         os.makedirs(output_dir, exist_ok=True)
 
         cluster_dge_visualization(sample_to_clade=sample_to_clade_user, folder_path=pseudobulk_folder_path, output_dir=output_dir)
-
+        print("Pairwise DGE and visualization completed.")
         unique_user_clades = len(set(sample_to_clade_user.values()))
         if unique_user_clades <= 1:
             print("Only one clade found in user-provided clustering. Skipping multi-clade DGE analysis.")
