@@ -1,0 +1,68 @@
+======================================
+ Job ID:            16423844
+ Job Name:          plot
+ Partition:         shared
+ Node List:         compute-122
+ CPUs per Task:     16
+ Memory Alloc:      102400
+ GPU Requested:     None
+ Start Time:        Tue Apr 29 12:51:00 PM EDT 2025
+======================================
+Starting plot script...
+Start of Process
+
+Resuming process from previous progress:
+{
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "sample_distance_calculation": true,
+    "DimensionalityReduction": true,
+    "trajectory_analysis": true,
+    "visualize_data": true,
+    "initialization": false
+}
+nNon-Linux system detected.
+Conducting multi-clade DGE analysis for expression-based Kmeans clustering.
+✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
+✔️  [DEBUG-GENE] using top 100 variable genes
+✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
+✔️  [DEBUG-CLADE] ordered_samples: 405
+✔️  [DEBUG-CLADE] sample_colors: 405
+✔️  [DEBUG-SCALE] Z-score matrix shape: (100, 405)
+✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_all.png
+✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
+✔️  [DEBUG-GENE] using provided gene list (1360)
+✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
+✔️  [DEBUG-CLADE] ordered_samples: 405
+✔️  [DEBUG-CLADE] sample_colors: 405
+✔️  [DEBUG-SCALE] Z-score matrix shape: (1360, 405)
+✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_dge.png
+
+✅  Multi-clade DGE complete.
+🧬  Significant DEGs : 1360  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/significant_dge_summary.csv
+📊  Histograms saved →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/pairwise_visualization
+🗺️   Heat-maps saved  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_all.png  &  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_dge.png
+Conducting multi-clade DGE analysis for proportion-based Kmeans clustering.
+✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
+✔️  [DEBUG-GENE] using top 100 variable genes
+✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
+✔️  [DEBUG-CLADE] ordered_samples: 405
+✔️  [DEBUG-CLADE] sample_colors: 405
+✔️  [DEBUG-SCALE] Z-score matrix shape: (100, 405)
+✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_all.png
+✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
+✔️  [DEBUG-GENE] using provided gene list (399)
+✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
+✔️  [DEBUG-CLADE] ordered_samples: 405
+✔️  [DEBUG-CLADE] sample_colors: 405
+✔️  [DEBUG-SCALE] Z-score matrix shape: (399, 405)
+✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_dge.png
+
+✅  Multi-clade DGE complete.
+🧬  Significant DEGs : 399  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/significant_dge_summary.csv
+📊  Histograms saved →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/pairwise_visualization
+🗺️   Heat-maps saved  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_all.png  &  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_dge.png
+End of Process
+
+Finished plot script.
+End Time: Tue Apr 29 01:04:17 PM EDT 2025
