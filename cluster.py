@@ -16,18 +16,38 @@ def cluster(
     RAISIN_analysis: bool = False,
     generalFolder: str = None,
     distance_method: str = "cosine",
-    number_of_clusters: int = 5
+    number_of_clusters: int = 5,
+    sample_to_clade_user: dict = None,  # <-- NEW PARAMETER
 ):
-    if Kmeans == False and methods is None:
-        raise ValueError("Please provide at least one clustering method or set Kmeans to True.")
-    
+    if generalFolder is None:
+        raise ValueError("Please provide a generalFolder path.")
+
     pseudobulk_folder_path = os.path.join(generalFolder, "pseudobulk")
+
+    if sample_to_clade_user is not None:
+        # CASE 1: Use provided clustering directly
+        print("User-provided sample_to_clade detected. Skipping clustering, using user input.")
+        output_dir = os.path.join(generalFolder, "Cluster_DEG", "User_cluster")
+        os.makedirs(output_dir, exist_ok=True)
+
+        cluster_dge_visualization(sample_to_clade=sample_to_clade_user, folder_path=pseudobulk_folder_path, output_dir=output_dir)
+
+        unique_user_clades = len(set(sample_to_clade_user.values()))
+        if unique_user_clades <= 1:
+            print("Only one clade found in user-provided clustering. Skipping multi-clade DGE analysis.")
+        elif unique_user_clades > 2:
+            print("Conducting multi-clade DGE analysis for user-provided clustering.")
+            multi_clade_dge_analysis(sample_to_clade=sample_to_clade_user, folder_path=pseudobulk_folder_path, output_dir=output_dir)
+
+        return  # Important: Exit after handling user clustering
+
+    # CASE 2: No user clustering provided, proceed with clustering
     sample_distance_path_proportion = os.path.join(generalFolder, "Sample", distance_method, "cell_proportion", "distance_matrix_proportion.csv")
     sample_distance_path_expression = os.path.join(generalFolder, "Sample", distance_method, "cell_expression", "distance_matrix_expression.csv")
     
     expr_results_Kmeans = None
     prop_results_Kmeans = None
-    
+
     if Kmeans:
         try:
             expr_results_Kmeans, prop_results_Kmeans = cluster_samples_from_folder(folder_path=pseudobulk_folder_path, n_clusters=number_of_clusters)
@@ -44,14 +64,14 @@ def cluster(
             if unique_expr_clades <= 1:
                 print("Only one clade found in expression-based Kmeans clustering. Skipping multi-clade DGE analysis.")
             elif unique_expr_clades > 2:
-                print("Conduct multi clade DGE analysis for expression-based Kmeans clustering")
+                print("Conducting multi-clade DGE analysis for expression-based Kmeans clustering.")
                 multi_clade_dge_analysis(sample_to_clade=expr_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
-            
+
             unique_prop_clades = len(set(prop_results_Kmeans.values()))
             if unique_prop_clades <= 1:
                 print("Only one clade found in proportion-based Kmeans clustering. Skipping multi-clade DGE analysis.")
             elif unique_prop_clades > 2:
-                print("Conduct multi clade DGE analysis for proportion-based Kmeans clustering")
+                print("Conducting multi-clade DGE analysis for proportion-based Kmeans clustering.")
                 multi_clade_dge_analysis(sample_to_clade=prop_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
         except Exception as e:
             print(f"Error in Kmeans clustering: {e}")
@@ -99,18 +119,18 @@ def cluster(
             if unique_expr_clades <= 1:
                 print("Only one clade found in expression-based tree clustering. Skipping multi-clade DGE analysis.")
             elif unique_expr_clades > 2:
-                print("Conduct multi clade DGE analysis for expression-based tree clustering")
+                print("Conducting multi-clade DGE analysis for expression-based tree clustering.")
                 multi_clade_dge_analysis(sample_to_clade=expr_results, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
-            
+
             unique_prop_clades = len(set(prop_results.values()))
             if unique_prop_clades <= 1:
                 print("Only one clade found in proportion-based tree clustering. Skipping multi-clade DGE analysis.")
             elif unique_prop_clades > 2:
-                print("Conduct multi clade DGE analysis for proportion-based tree clustering")
+                print("Conducting multi-clade DGE analysis for proportion-based tree clustering.")
                 multi_clade_dge_analysis(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
         except Exception as e:
             print(f"Error in tree-based clustering: {e}")
-    
+
     if prportion_test:
         try:
             if Kmeans:
@@ -145,24 +165,13 @@ def cluster(
             else:
                 print("No expression results available. Skipping RAISIN analysis.")
             if prop_results is not None:
-                unique_expr_clades = len(set(prop_results.values()))
-                if unique_expr_clades <= 1:
-                    print("Only one clade found in expression results. Skipping RAISIN analysis.")
+                unique_prop_clades = len(set(prop_results.values()))
+                if unique_prop_clades <= 1:
+                    print("Only one clade found in proportion results. Skipping RAISIN analysis.")
                 else:
                     fit_results, test_results = RAISIN(generalFolder, prop_results)
                     print(prop_results)
             else:
-                print("No expression results available. Skipping RAISIN analysis.")
+                print("No proportion results available. Skipping RAISIN analysis.")
         except Exception as e:
             print(f"Error in RAISIN analysis: {e}")
-    
-
-
-if __name__ == "__main__":
-    cluster(
-        Kmeans=True,
-        methods=['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
-        prportion_test=False,
-        generalFolder="/Users/harry/Desktop/GenoDistance/result/",
-        number_of_clusters=2
-    )

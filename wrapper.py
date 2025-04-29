@@ -127,8 +127,11 @@ def wrapper(
     Kmeans_based_cluster_flag = False,
     Tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
     prportion_test = False,
+    RAISIN_analysis = False,
     cluster_distance_method = 'cosine',
     cluster_number = 4,
+    user_provided_sample_to_clade = None,
+    
     # ===== Process Control Flags =====
     preprocessing=True,
     cell_type_cluster=True,
@@ -595,12 +598,14 @@ def wrapper(
         if cluster_distance_method not in sample_distance_methods:
             raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
         cluster(
-            Kmeans = Kmeans_based_cluster_flag,
-            methods = Tree_building_method,
-            prportion_test = prportion_test,
-            generalFolder = output_dir,
-            distance_method = cluster_distance_method,
-            number_of_clusters = cluster_number
+            Kmeans=Kmeans_based_cluster_flag,
+            methods=Tree_building_method,
+            prportion_test=prportion_test,
+            RAISIN_analysis=RAISIN_analysis,
+            generalFolder=output_dir,
+            distance_method=cluster_distance_method,
+            number_of_clusters=cluster_number,
+            sample_to_clade_user=user_provided_sample_to_clade
         )
     #Visualization
     if visualize_data:

@@ -82,8 +82,10 @@ sample_distance_methods: null
 Kmeans_based_cluster_flag: true
 Tree_building_method: null
 prportion_test: true
+RAISIN_analysis: false
 cluster_distance_method: 'cosine'
 cluster_number: 4
+user_provided_sample_to_clade: null
 
 # ===== Visualization Parameters =====
 verbose_Visualization: true
