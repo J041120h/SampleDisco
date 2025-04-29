@@ -17,7 +17,7 @@ def cluster(
     generalFolder: str = None,
     distance_method: str = "cosine",
     number_of_clusters: int = 5,
-    sample_to_clade_user: dict = None,  # <-- NEW PARAMETER
+    sample_to_clade_user: dict = None,
 ):
     if generalFolder is None:
         raise ValueError("Please provide a generalFolder path.")
@@ -57,8 +57,8 @@ def cluster(
             os.makedirs(expr_output_dir, exist_ok=True)
             os.makedirs(prop_output_dir, exist_ok=True)
 
-            cluster_dge_visualization(sample_to_clade=expr_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
-            cluster_dge_visualization(sample_to_clade=prop_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+            # cluster_dge_visualization(sample_to_clade=expr_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+            # cluster_dge_visualization(sample_to_clade=prop_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
             
             unique_expr_clades = len(set(expr_results_Kmeans.values()))
             if unique_expr_clades <= 1:

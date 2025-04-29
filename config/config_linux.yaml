@@ -81,7 +81,7 @@ sample_distance_methods: null
 # ===== Cluster Based DEG ===== 
 Kmeans_based_cluster_flag: true
 Tree_building_method: null
-prportion_test: true
+prportion_test: false
 RAISIN_analysis: false
 cluster_distance_method: 'cosine'
 cluster_number: 4
