@@ -25,6 +25,7 @@ from TSCAN import TSCAN
 from resolution_parallel import find_optimal_cell_resolution_parallel
 from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
 from cluster import cluster
+from sample_clustering.RAISIN import *
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -597,7 +598,7 @@ def wrapper(
     if cluster_and_DGE:
         if cluster_distance_method not in sample_distance_methods:
             raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
-        cluster(
+        expr_results, prop_results = cluster(
             Kmeans=Kmeans_based_cluster_flag,
             methods=Tree_building_method,
             prportion_test=prportion_test,
@@ -607,7 +608,40 @@ def wrapper(
             number_of_clusters=cluster_number,
             sample_to_clade_user=user_provided_sample_to_clade
         )
-    #Visualization
+        
+        if RAISIN_analysis:
+            print("Running RAISIN analysis...")
+            if expr_results is not None:
+                unique_expr_clades = len(set(expr_results.values()))
+                if unique_expr_clades <= 1:
+                    print("Only one clade found in expression results. Skipping RAISIN analysis.")
+                else:
+                    raisinfit(
+                        adata_path = os.path.join(output_dir, 'harmony', 'adata_sample.h5ad'), 
+                        sample_col = sample_col, 
+                        batch_key = batch_col, 
+                        sample_to_clade=expr_results, 
+                        intercept=True, 
+                        n_jobs=-1,
+                        )
+            else:
+                print("No expression results available. Skipping RAISIN analysis.")
+            if prop_results is not None:
+                unique_prop_clades = len(set(prop_results.values()))
+                if unique_prop_clades <= 1:
+                    print("Only one clade found in proportion results. Skipping RAISIN analysis.")
+                else:
+                    raisinfit(
+                        adata_path = h5ad_path, 
+                        sample_col = sample_col, 
+                        batch_key = batch_col, 
+                        sample_to_clade=prop_results, 
+                        intercept=True, 
+                        n_jobs=-1,
+                        )
+            else:
+                print("No proportion results available. Skipping RAISIN analysis.")
+    
     if visualize_data:
         # if not status_flags["preprocessing"]:
         #     if plot_cell_umap_by_plot_group_flag or plot_umap_by_cell_type_flag:
