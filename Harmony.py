@@ -42,9 +42,6 @@ def anndata_cluster(
     if verbose:
         print('=== Processing data for clustering (mediating batch effects) ===')
     
-    # Keep a copy of raw
-    adata_cluster.raw = adata_cluster.copy()
-
     # Step A1: HVG selection
     sc.pp.highly_variable_genes(
         adata_cluster,
@@ -260,6 +257,8 @@ def harmony(
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             sc.pp.scrublet(adata, batch_key=sample_column)
+    
+    adata.raw = adata.copy()
 
     # Normalization & log transform
     sc.pp.normalize_total(adata, target_sum=1e4)

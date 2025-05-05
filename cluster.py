@@ -39,7 +39,7 @@ def cluster(
             print("Conducting multi-clade DGE analysis for user-provided clustering.")
             multi_clade_dge_analysis(sample_to_clade=sample_to_clade_user, folder_path=pseudobulk_folder_path, output_dir=output_dir)
 
-        return  # Important: Exit after handling user clustering
+        return  sample_to_clade_user, sample_to_clade_user
 
     # CASE 2: No user clustering provided, proceed with clustering
     sample_distance_path_proportion = os.path.join(generalFolder, "Sample", distance_method, "cell_proportion", "distance_matrix_proportion.csv")
@@ -153,25 +153,4 @@ def cluster(
         except Exception as e:
             print(f"Error in proportion test: {e}")
     
-    if RAISIN_analysis:
-        try:
-            if expr_results is not None:
-                unique_expr_clades = len(set(expr_results.values()))
-                if unique_expr_clades <= 1:
-                    print("Only one clade found in expression results. Skipping RAISIN analysis.")
-                else:
-                    fit_results, test_results = RAISIN(generalFolder, expr_results)
-                    print(expr_results)
-            else:
-                print("No expression results available. Skipping RAISIN analysis.")
-            if prop_results is not None:
-                unique_prop_clades = len(set(prop_results.values()))
-                if unique_prop_clades <= 1:
-                    print("Only one clade found in proportion results. Skipping RAISIN analysis.")
-                else:
-                    fit_results, test_results = RAISIN(generalFolder, prop_results)
-                    print(prop_results)
-            else:
-                print("No proportion results available. Skipping RAISIN analysis.")
-        except Exception as e:
-            print(f"Error in RAISIN analysis: {e}")
+    return expr_results, prop_results
