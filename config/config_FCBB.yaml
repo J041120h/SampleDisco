@@ -34,6 +34,7 @@ cell_type_save: true
 assign_save: true
 
 # ===== Pseudobulk Parameters =====
+sample_col: "sample"
 celltype_col: "cell_type"
 pseudobulk_output_dir: null
 n_features: 2000
@@ -44,7 +45,7 @@ pseudobulk_verbose: true
 n_expression_pcs: 10
 n_proportion_pcs: 10
 pca_output_dir: null
-AnnData_sample_path: "/users/hjiang/GenoDistance/SingleCell/result/harmony/adata_sample.h5ad"
+AnnData_sample_path: "/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad"
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
@@ -52,7 +53,7 @@ trajectory_supervised: false
 cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
-cca_pvalue: false
+cca_pvalue: true
 trajectory_verbose: true
 TSCAN_origin: null
 
@@ -60,10 +61,10 @@ TSCAN_origin: null
 fdr_threshold: 0.05
 effect_size_threshold: 1
 top_n_genes: 100
-trajectory_diff_gene_covariate: None
+trajectory_diff_gene_covariate: null
 num_splines: 5
 spline_order: 3
-trajectory_diff_gene_output_dir: None
+trajectory_diff_gene_output_dir: null
 visualization_gene_list: null
 visualize_all_deg: True
 top_n_heatmap: 50
@@ -71,27 +72,30 @@ trajectory_diff_gene_verbose: True
 top_gene_number: 30
 
 # ===== Paths for Skipping Preprocessing =====
-AnnData_cell_path: "/users/hjiang/GenoDistance/SingleCell/result/harmony/adata_cell.h5ad"
+AnnData_cell_path:  "/users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad"
 
 # ===== Sample Distance Parameters =====
 summary_sample_csv_path: null
 sample_distance_methods: null
 
 # ===== Cluster Based DEG ===== 
-Kmeans_based_cluster_flag: false
-Tree_building_method: ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+Kmeans_based_cluster_flag: true
+Tree_building_method: null
+prportion_test: false
+RAISIN_analysis: false
 cluster_distance_method: 'cosine'
 cluster_number: 4
+user_provided_sample_to_clade: null
 
 # ===== Visualization Parameters =====
 verbose_Visualization: true
 trajectory_visalization_label:
   - "sev.level"
 age_bin_size: null
-dot_size: 10
+dot_size: 3
 
 plot_dendrogram_flag: true
-plot_cell_umap_by_plot_group_flag: false
+plot_cell_umap_by_plot_group_flag: true
 plot_umap_by_cell_type_flag: true
 plot_pca_2d_flag: false
 plot_pca_3d_flag: false
@@ -103,13 +107,13 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== Process Control Flags =====
-preprocessing: false
+preprocessing: true
 cell_type_cluster: false
-sample_distance_calculation: true
-DimensionalityReduction: true
+sample_distance_calculation: false
+DimensionalityReduction: false
 trajectory_analysis: false
 trajectory_differential_gene: false
-cluster_and_DGE: true
-visualize_data: true
+cluster_and_DGE: false
+visualize_data: false
 initialization: false
-use_gpu: false
+use_gpu: true
