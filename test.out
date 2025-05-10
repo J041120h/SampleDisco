@@ -1,15 +1,15 @@
 ======================================
- Job ID:            16414817
+ Job ID:            16475963
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
  CPUs per Task:     32
  Memory Alloc:      409600
  GPU Requested:     1
- Start Time:        Tue Apr 29 01:57:09 AM EDT 2025
+ Start Time:        Mon May  5 05:56:00 PM EDT 2025
 ======================================
 Checking GPU status...
-Tue Apr 29 01:57:10 2025       
+Mon May  5 17:56:01 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Tue Apr 29 01:57:10 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   46C    P0             40W /  250W |       1MiB /  32768MiB |      0%      Default |
+| N/A   51C    P0             42W /  250W |       1MiB /  32768MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -38,32 +38,26 @@ Resuming process from previous progress:
     "cell_type_cluster": true,
     "sample_distance_calculation": true,
     "DimensionalityReduction": true,
-    "trajectory_analysis": true,
+    "trajectory_analysis": false,
     "visualize_data": true,
     "initialization": false
 }
-nNon-Linux system detected.
-Conducting multi-clade DGE analysis for expression-based Kmeans clustering.
+Linux system detected.
 
-✅ Multi-clade DGE complete.
-🧬 Significant DEGs: 1360 saved to: /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/significant_dge_summary.csv
-📊 Histogram plots saved to: /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/pairwise_visualization
-📊 Using 405 samples for heatmap
-📊 Found 4 unique clades
-❌ Error during clustermap creation: 'bboxes' cannot be empty
-⚠️ Falling back to basic heatmap
-✅ Fallback heatmap saved to: /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_fallback.png
-Conducting multi-clade DGE analysis for proportion-based Kmeans clustering.
 
-✅ Multi-clade DGE complete.
-🧬 Significant DEGs: 399 saved to: /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/significant_dge_summary.csv
-📊 Histogram plots saved to: /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/pairwise_visualization
-📊 Using 405 samples for heatmap
-📊 Found 4 unique clades
-❌ Error during clustermap creation: 'bboxes' cannot be empty
-⚠️ Falling back to basic heatmap
-✅ Fallback heatmap saved to: /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_fallback.png
-End of Process
+Enabling managed memory for RMM...
 
+
+=== Reading input dataset ===
+Raw shape: 197896 cells × 21772 genes
+All required columns are present in adata.obs.
+Before GPU conversion. Type of adata.X: <class 'scipy.sparse._csc.csc_matrix'>
+adata.X dtype: float64
+adata.X is sparse: True
+Converting adata.X from float64 to float32
+Converted to GPU. Type of adata.X: <class 'cupyx.scipy.sparse._csc.csc_matrix'>
+filtered out 6848 genes that are detected in less than 500 cells
+filtered out 6000 cells that have less than 500 genes expressed
+Processed shape: 0 cells * 14924 genes
 Finished main.py.
-End Time: Tue Apr 29 02:12:12 AM EDT 2025
+End Time: Mon May  5 05:56:40 PM EDT 2025

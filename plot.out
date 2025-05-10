@@ -1,13 +1,31 @@
 ======================================
- Job ID:            16474840
+ Job ID:            16475955
  Job Name:          plot
  Partition:         shared
- Node List:         compute-100
+ Node List:         compute-145
  CPUs per Task:     16
  Memory Alloc:      102400
  GPU Requested:     None
- Start Time:        Mon May  5 01:37:03 PM EDT 2025
+ Start Time:        Mon May  5 03:28:43 PM EDT 2025
 ======================================
 Starting plot script...
+Start of Process
+
+Resuming process from previous progress:
+{
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "sample_distance_calculation": true,
+    "DimensionalityReduction": true,
+    "trajectory_analysis": false,
+    "visualize_data": true,
+    "initialization": false
+}
+Linux system detected.
+
+
+Enabling managed memory for RMM...
+
+
 Finished plot script.
-End Time: Mon May  5 01:37:21 PM EDT 2025
+End Time: Mon May  5 03:28:55 PM EDT 2025

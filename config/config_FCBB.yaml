@@ -34,7 +34,6 @@ cell_type_save: true
 assign_save: true
 
 # ===== Pseudobulk Parameters =====
-sample_col: "sample"
 celltype_col: "cell_type"
 pseudobulk_output_dir: null
 n_features: 2000

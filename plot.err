@@ -1,1 +1,26 @@
-Error: Missing required parameter in config: 'prportion_test'
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/cudf/utils/_ptxcompiler.py:64: UserWarning: Error getting driver and runtime versions:
+
+stdout:
+
+
+
+stderr:
+
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/numba_cuda/numba/cuda/cudadrv/driver.py", line 314, in __getattr__
+    raise CudaSupportError("Error at driver init: \n%s:" %
+numba.cuda.cudadrv.error.CudaSupportError: Error at driver init: 
+
+CUDA driver library cannot be found.
+If you are sure that a CUDA driver is installed,
+try setting environment variable NUMBA_CUDA_DRIVER
+with the file path of the CUDA driver shared library.
+:
+
+
+Not patching Numba
+  warnings.warn(msg, UserWarning)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/cudf/utils/gpu_utils.py:62: UserWarning: Failed to dlopen libcuda.so.1
+  warnings.warn(str(e))
+Error: Function "cuInit" not found

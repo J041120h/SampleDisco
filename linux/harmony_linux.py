@@ -60,7 +60,6 @@ def anndata_cluster(
 
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_cluster)
-    adata_cluster.raw = None
     sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
     return adata_cluster
 
@@ -100,10 +99,8 @@ def anndata_sample(
 
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_sample_diff)
-    adata_sample_diff.raw = None
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_sample_diff
-
 
 def harmony_linux(
     h5ad_path,
@@ -131,7 +128,6 @@ def harmony_linux(
     verbose=True
 ):
     start_time = time.time()
-
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
@@ -180,30 +176,49 @@ def harmony_linux(
     rsc.get.anndata_to_GPU(adata)
     print("Converted to GPU. Type of adata.X:", type(adata.X))
 
+    # Filter genes and cells
     rsc.pp.filter_genes(adata, min_cells=min_cells)
     rsc.pp.filter_cells(adata, min_genes=min_features)
+    if verbose:
+        print(f'After initial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
+
+    # Calculate mitochondrial gene percentage
     adata.var['mt'] = adata.var_names.str.startswith('MT-')
     rsc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], log1p=False)
+    
+    # Filter based on mitochondrial percentage
     adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
+    if verbose:
+        print(f'After mitochondrial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
+    # Filter MT genes and excluded genes
     mt_genes = adata.var_names[adata.var_names.str.startswith('MT-')]
     genes_to_exclude = set(mt_genes) | set(exclude_genes or [])
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
+    if verbose:
+        print(f'After gene exclusion filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
+    # Filter samples with too few cells
     cell_counts = adata.obs.groupby(sample_column).size()
     keep = cell_counts[cell_counts >= min_cells].index
     adata = adata[adata.obs[sample_column].isin(keep)].copy()
+    if verbose:
+        print(f'After sample filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
+        print(f'Number of samples remaining: {len(keep)}')
 
+    # Additional gene filtering based on cell percentage
     rsc.pp.filter_genes(adata, min_cells=int(0.01 * adata.n_obs))
+    if verbose:
+        print(f'After final gene filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
     if verbose:
-        print(f'Processed shape: {adata.shape[0]} cells * {adata.shape[1]} genes')
+        print(f'Processed shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
     if doublet:
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             rsc.pp.scrublet(adata, batch_key=sample_column)
-
+    adata.raw = adata.copy()
     rsc.pp.normalize_total(adata, target_sum=1e4)
     rsc.pp.log1p(adata)
 
