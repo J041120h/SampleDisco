@@ -10,15 +10,17 @@ from scipy import linalg
 from scipy.optimize import root_scalar
 from scipy.special import digamma, gamma, polygamma
 import warnings
-from multiprocessing import cpu_count         # still used for the core count
+from multiprocessing import cpu_count
 from functools import partial
 import traceback
-from joblib import Parallel, delayed          # NEW — joblib for safer parallelism
+from joblib import Parallel, delayed
 
 # ---------------------------------------------------------------------
 #  Debug helper
 # ---------------------------------------------------------------------
-def debug_print(label, variable, show_type=True, show_shape=True):
+def debug_print(label, variable, show_type=True, show_shape=True, verbose=True):
+    if not verbose:
+        return
     print(f"DEBUG - {label}:", end=" ")
     if show_type:
         print(f"Type: {type(variable)}", end=" ")
@@ -75,12 +77,30 @@ def trigamma_inverse(x):
 # ---------------------------------------------------------------------
 #  Laguerre–Gauss nodes/weights
 # ---------------------------------------------------------------------
-def laguerre_quadrature(n=1000):
-    """Gauss–Laguerre quadrature rule."""
+def laguerre_quadrature(n=500, verbose=True):
+    """Gauss–Laguerre quadrature rule with fallback for high n values."""
+    import warnings
     from numpy.polynomial.laguerre import laggauss
-    nodes, weights = laggauss(n)
-    debug_print("Laguerre nodes", nodes, show_shape=True)
-    debug_print("Laguerre weights", weights, show_shape=True)
+    
+    # Try with the requested number of points
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error")
+            nodes, weights = laggauss(n)
+    except (RuntimeWarning, ValueError, OverflowError) as e:
+        # If overflow occurs, try with fewer points
+        if verbose:
+            print(f"Warning: Overflow in Laguerre quadrature with n={n}, trying with n=100")
+        try:
+            nodes, weights = laggauss(100)
+        except (RuntimeWarning, ValueError, OverflowError):
+            # Final fallback
+            if verbose:
+                print("Warning: Using n=50 for Laguerre quadrature")
+            nodes, weights = laggauss(50)
+    
+    debug_print("Laguerre nodes", nodes, show_shape=True, verbose=verbose)
+    debug_print("Laguerre weights", weights, show_shape=True, verbose=verbose)
     return nodes, weights
 
 
@@ -91,6 +111,7 @@ def raisinfit(adata_path,
               sample_col,
               batch_key=None,
               sample_to_clade=None,
+              verbose=True,
               intercept=True,
               n_jobs=None):
     """
@@ -98,21 +119,34 @@ def raisinfit(adata_path,
     """
 
     try:
-        print("\n===== Starting RAISIN fitting =====")
+        if verbose:
+            print("\n===== Starting RAISIN fitting =====")
 
         # -----------------------------------------------------------------
         #  Thread count
         # -----------------------------------------------------------------
         if n_jobs in (None, -1):
             n_jobs = cpu_count()
-        print(f"Using {n_jobs} CPU cores")
+        if verbose:
+            print(f"Using {n_jobs} CPU cores")
 
         # -----------------------------------------------------------------
         #  Load data
         # -----------------------------------------------------------------
-        print(f"Loading AnnData from {adata_path}")
+        if verbose:
+            print(f"Loading AnnData from {adata_path}")
         adata = sc.read(adata_path)
-        debug_print("AnnData", adata, show_shape=False)
+        debug_print("AnnData", adata, show_shape=False, verbose=verbose)
+        
+        # Print available columns to help users select the correct sample_col
+        if verbose:
+            print("Available columns in adata.obs:", list(adata.obs.columns))
+            
+        # Check if sample_col exists in adata.obs
+        if sample_col not in adata.obs.columns:
+            available_cols = list(adata.obs.columns)
+            error_msg = f"Error: Column '{sample_col}' not found in adata.obs. Available columns are: {available_cols}"
+            raise KeyError(error_msg)
 
         # -----------------------------------------------------------------
         #  Expression matrix
@@ -120,25 +154,28 @@ def raisinfit(adata_path,
         if adata.raw is not None and adata.raw.X is not None:
             expr = adata.raw.X.toarray() if hasattr(adata.raw.X, "toarray") else adata.raw.X
             gene_names = adata.raw.var_names
-            print("Using raw counts from adata.raw.X")
+            if verbose:
+                print("Using raw counts from adata.raw.X")
         else:
             expr = adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X
             gene_names = adata.var_names
-            print("Using counts from adata.X")
+            if verbose:
+                print("Using counts from adata.X")
 
-        debug_print("Expression matrix", expr)
-        debug_print("Gene names", gene_names)
+        debug_print("Expression matrix", expr, verbose=verbose)
+        debug_print("Gene names", gene_names, verbose=verbose)
 
         # transpose to genes x cells
         expr = expr.T
-        debug_print("Transposed expr", expr)
+        debug_print("Transposed expr", expr, verbose=verbose)
 
         sample = adata.obs[sample_col].values
-        debug_print("Sample assignments", sample)
+        debug_print("Sample assignments", sample, verbose=verbose)
 
         # deduplicate genes
         if len(gene_names) != len(set(gene_names)):
-            print("Removing duplicated gene names")
+            if verbose:
+                print("Removing duplicated gene names")
             _, keep_idx = np.unique(gene_names, return_index=True)
             expr = expr[keep_idx, :]
             gene_names = gene_names[keep_idx]
@@ -204,7 +241,7 @@ def raisinfit(adata_path,
         # -----------------------------------------------------------------
         #  Quadrature nodes
         # -----------------------------------------------------------------
-        node, weight = laguerre_quadrature(1000)
+        node, weight = laguerre_quadrature(500, verbose=verbose)  # Reduced from 1000 to 500
         pos = weight > 0
         node, weight = node[pos], weight[pos]
         log_node, log_weight = np.log(node), np.log(weight)
@@ -276,6 +313,11 @@ def raisinfit(adata_path,
                 warnings.warn(f"No data for variance of group {current_group}")
                 return np.zeros(G)
 
+            # Check dimensions for debugging
+            if verbose:
+                print(f"Debug dimensions - Zl shape: {Zl.shape}, Z[lid] shape: {Z[lid].shape}")
+                print(f"Debug dimensions - lid size: {lid.size}, mask_curr sum: {mask_curr.sum()}")
+
             # reduce rank of Xl
             R = np.linalg.qr(Xl[lid], mode="r")
             rank = (np.abs(np.diag(R)) > 1e-10).sum()
@@ -286,25 +328,56 @@ def raisinfit(adata_path,
             if p == 0:
                 warnings.warn(f"Unable to estimate variance for group {current_group}")
                 return np.zeros(G)
+            
+            if verbose:
+                print(f"Debug dimensions - n: {n}, p: {p}, rank: {rank}")
 
             K = np.random.normal(size=(n, p)).astype(np.float64)
             Xl = Xl.astype(np.float64)
             for i in range(p):
                 b = Xl if i == 0 else np.hstack([Xl, K[:, :i]])
-                solve = np.linalg.lstsq(b.T @ b, b.T @ K[:, i], rcond=None)[0]
-                K[:, i] -= b @ solve
+                b_transpose = b.T
+                solve = np.linalg.lstsq(np.matmul(b_transpose, b), np.matmul(b_transpose, K[:, i]), rcond=None)[0]
+                K[:, i] -= np.matmul(b, solve)
             K /= np.linalg.norm(K, axis=0, keepdims=True)
-            K = K.T
+            K = K.T  # K shape becomes (p x n)
+            
+            if verbose:
+                print(f"Debug dimensions - K shape: {K.shape}")
 
-            pl = K @ means[:, lid].T                   # (p x G)
-            qlm = K @ Zl @ Zl.T @ K.T                  # (p x p)
-            ql = np.diag(qlm)                          # (p,)
-            rl = w[:, lid] @ (K ** 2).T               # (G x p)
+            # Get subset of Zl that matches the dimensions in lid
+            Zl_lid = Z[lid][:, mask_curr]  # This should have shape (n x num_curr_samples)
+            
+            if verbose:
+                print(f"Debug dimensions - Zl_lid shape: {Zl_lid.shape}")
+
+            pl = np.matmul(K, means[:, lid].T)                   # (p x G)
+            
+            # Compute qlm in steps to avoid dimension mismatch
+            K_Zl = np.matmul(K, Zl_lid)                         # (p x num_curr_samples)
+            Zl_T_K_T = np.matmul(Zl_lid.T, K.T)                # (num_curr_samples x p)
+            qlm = np.matmul(K_Zl, Zl_T_K_T)                   # (p x p)
+            
+            if verbose:
+                print(f"Debug dimensions - K_Zl shape: {K_Zl.shape}")
+                print(f"Debug dimensions - Zl_T_K_T shape: {Zl_T_K_T.shape}")
+                print(f"Debug dimensions - qlm shape: {qlm.shape}")
+            
+            ql = np.diag(qlm)                                    # (p,)
+            rl = np.matmul(w[:, lid], (K ** 2).T)              # (G x p)
 
             # already-pooled groups
             for sg in done_groups:
                 mask = group == sg
-                KZ = K @ Z[lid][:, mask] @ Z[lid][:, mask].T @ K.T
+                # Get subset of Z that corresponds to lid and mask
+                Z_lid_mask = Z[lid][:, group_names == sg]
+                Z_lid_mask_T = Z_lid_mask.T
+                
+                # Perform matrix multiplications in steps to avoid dimension errors
+                KZ_temp = np.matmul(K, Z_lid_mask)
+                Z_lid_mask_KT = np.matmul(Z_lid_mask_T, K.T)
+                KZ = np.matmul(KZ_temp, Z_lid_mask_KT)
+                
                 for g in range(G):
                     rl[g] += sigma2.loc[g, sg] * np.diag(KZ)
 
@@ -326,8 +399,21 @@ def raisinfit(adata_path,
                 # ----------------------------------------------------------
                 def process_gene(g):
                     x_mat = np.outer(pl[:, g], pl[:, g])
-                    w_g = w[g, lid]
-                    t2 = K.T @ (w_g * K)
+                    w_g = w[g, lid]  # Shape (lid.size,) or (n,)
+                    
+                    # Fix the broadcasting issue
+                    # Ensure w_g is correctly shaped for broadcasting with K
+                    # K has shape (p, n) and w_g has shape (n,)
+                    
+                    # Method 1: Use einsum for clarity
+                    # t2 = np.einsum('ij,j->ij', K, w_g)  # Apply weights to each column of K
+                    # t2 = np.matmul(t2, K.T)  # Then multiply by K.T
+                    
+                    # Method 2: Reshape w_g for broadcasting
+                    w_g_reshaped = w_g.reshape(1, -1)  # Shape (1, n)
+                    K_weighted = K * w_g_reshaped  # Broadcasting works now: (p, n) * (1, n) -> (p, n)
+                    t2 = np.matmul(K_weighted, K.T)  # Then multiply by K.T
+                    
                     res = np.zeros_like(node)
                     for i, gn in enumerate(node):
                         cm = gn * qlm + t2
@@ -339,7 +425,7 @@ def raisinfit(adata_path,
                             eig = np.linalg.eigvalsh(cm)
                             logdet = np.log(eig).sum()
                             inv_cm = np.linalg.inv(cm)
-                        res[i] = -logdet - (x_mat * inv_cm).sum()
+                        res[i] = -logdet - np.sum(x_mat * inv_cm)
                     tmp = log_weight + node + res / 2 + (alpha - 1) * log_node - gamma_ * node
                     num = np.exp(tmp + log_node)
                     den = np.exp(tmp)
@@ -362,7 +448,8 @@ def raisinfit(adata_path,
                 # -----------------------------------------------------------------
                 #  Fallback: method-of-moments root-finding
                 # -----------------------------------------------------------------
-                print(f"Error in variance estimation ({current_group}): {e}\nProceeding without EB pooling")
+                if verbose:
+                    print(f"Error in variance estimation ({current_group}): {e}\nProceeding without EB pooling")
 
                 def root_func(g, s2):
                     return np.sum((s2 * ql ** 2 + ql * rl[g] - pl2[:, g] * ql) /
@@ -397,7 +484,8 @@ def raisinfit(adata_path,
         done_groups = []
         n_para = {ug: (Z[:, group_names == ug] != 0).sum() for ug in unique_groups}
         for ug in sorted(unique_groups, key=lambda u: n_para[u], reverse=True):
-            print(f"\n===== Estimating variance component for: {ug} =====")
+            if verbose:
+                print(f"\n===== Estimating variance component for: {ug} =====")
             sigma2[ug] = sigma2_func(
                 ug,
                 [g for g in control_groups if g != ug],
@@ -419,7 +507,8 @@ def raisinfit(adata_path,
             "Z":      pd.DataFrame(Z,      index=sample_names),
             "group":  pd.Series(group_names, index=sample_names),
         }
-        print("\n===== Model fitting complete =====")
+        if verbose:
+            print("\n===== Model fitting complete =====")
         return result
 
     except Exception as e:

@@ -602,7 +602,6 @@ def wrapper(
             Kmeans=Kmeans_based_cluster_flag,
             methods=Tree_building_method,
             prportion_test=prportion_test,
-            RAISIN_analysis=RAISIN_analysis,
             generalFolder=output_dir,
             distance_method=cluster_distance_method,
             number_of_clusters=cluster_number,
@@ -621,6 +620,7 @@ def wrapper(
                         sample_col = sample_col, 
                         batch_key = batch_col, 
                         sample_to_clade=expr_results, 
+                        verbose = verbose,
                         intercept=True, 
                         n_jobs=-1,
                         )

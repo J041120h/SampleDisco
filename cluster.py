@@ -13,7 +13,6 @@ def cluster(
     Kmeans: bool = False,
     methods: list = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
     prportion_test: bool = False,
-    RAISIN_analysis: bool = False,
     generalFolder: str = None,
     distance_method: str = "cosine",
     number_of_clusters: int = 5,
