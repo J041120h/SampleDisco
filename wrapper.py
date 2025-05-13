@@ -26,6 +26,7 @@ from resolution_parallel import find_optimal_cell_resolution_parallel
 from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
 from cluster import cluster
 from sample_clustering.RAISIN import *
+from sample_clustering.RAISIN_TEST import *
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -615,7 +616,7 @@ def wrapper(
                 if unique_expr_clades <= 1:
                     print("Only one clade found in expression results. Skipping RAISIN analysis.")
                 else:
-                    raisinfit(
+                    fit = raisinfit(
                         adata_path = os.path.join(output_dir, 'harmony', 'adata_sample.h5ad'), 
                         sample_col = sample_col, 
                         batch_key = batch_col, 
@@ -624,6 +625,15 @@ def wrapper(
                         intercept=True, 
                         n_jobs=-1,
                         )
+                    run_pairwise_raisin_analysis(
+                        fit=fit,
+                        output_dir='./raisin_results',
+                        min_samples=2,
+                        fdrmethod='fdr_bh',
+                        n_permutations=10,
+                        fdr_threshold=0.05,
+                        verbose=True
+                    )
             else:
                 print("No expression results available. Skipping RAISIN analysis.")
             if prop_results is not None:

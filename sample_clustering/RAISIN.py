@@ -515,12 +515,3 @@ def raisinfit(adata_path,
         print(f"ERROR in raisinfit: {e}")
         traceback.print_exc()
         raise
-
-
-# ---------------------------------------------------------------------
-#  Stand-alone execution (safe on Windows)
-# ---------------------------------------------------------------------
-if __name__ == "__main__":
-    # Example usage – adjust paths/columns as needed
-    # res = raisinfit("data/my_adata.h5ad", sample_col="sample_id", n_jobs=8)
-    pass
