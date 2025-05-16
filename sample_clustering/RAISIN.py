@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# RAISIN.py – updated 2025-05-01
-
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -14,24 +11,6 @@ from multiprocessing import cpu_count
 from functools import partial
 import traceback
 from joblib import Parallel, delayed
-
-# ---------------------------------------------------------------------
-#  Debug helper
-# ---------------------------------------------------------------------
-def debug_print(label, variable, show_type=True, show_shape=True, verbose=True):
-    if not verbose:
-        return
-    print(f"DEBUG - {label}:", end=" ")
-    if show_type:
-        print(f"Type: {type(variable)}", end=" ")
-    if show_shape and hasattr(variable, 'shape'):
-        print(f"Shape: {variable.shape}", end=" ")
-    if isinstance(variable, pd.DataFrame):
-        print(f"Columns: {list(variable.columns)}")
-    elif isinstance(variable, pd.Series):
-        print(f"Name: {variable.name}")
-    else:
-        print()
 
 
 # ---------------------------------------------------------------------
@@ -99,8 +78,6 @@ def laguerre_quadrature(n=500, verbose=True):
                 print("Warning: Using n=50 for Laguerre quadrature")
             nodes, weights = laggauss(50)
     
-    debug_print("Laguerre nodes", nodes, show_shape=True, verbose=verbose)
-    debug_print("Laguerre weights", weights, show_shape=True, verbose=verbose)
     return nodes, weights
 
 
@@ -136,7 +113,6 @@ def raisinfit(adata_path,
         if verbose:
             print(f"Loading AnnData from {adata_path}")
         adata = sc.read(adata_path)
-        debug_print("AnnData", adata, show_shape=False, verbose=verbose)
         
         # Print available columns to help users select the correct sample_col
         if verbose:
@@ -162,15 +138,10 @@ def raisinfit(adata_path,
             if verbose:
                 print("Using counts from adata.X")
 
-        debug_print("Expression matrix", expr, verbose=verbose)
-        debug_print("Gene names", gene_names, verbose=verbose)
-
         # transpose to genes x cells
         expr = expr.T
-        debug_print("Transposed expr", expr, verbose=verbose)
 
         sample = adata.obs[sample_col].values
-        debug_print("Sample assignments", sample, verbose=verbose)
 
         # deduplicate genes
         if len(gene_names) != len(set(gene_names)):
@@ -313,11 +284,6 @@ def raisinfit(adata_path,
                 warnings.warn(f"No data for variance of group {current_group}")
                 return np.zeros(G)
 
-            # Check dimensions for debugging
-            if verbose:
-                print(f"Debug dimensions - Zl shape: {Zl.shape}, Z[lid] shape: {Z[lid].shape}")
-                print(f"Debug dimensions - lid size: {lid.size}, mask_curr sum: {mask_curr.sum()}")
-
             # reduce rank of Xl
             R = np.linalg.qr(Xl[lid], mode="r")
             rank = (np.abs(np.diag(R)) > 1e-10).sum()
@@ -328,9 +294,6 @@ def raisinfit(adata_path,
             if p == 0:
                 warnings.warn(f"Unable to estimate variance for group {current_group}")
                 return np.zeros(G)
-            
-            if verbose:
-                print(f"Debug dimensions - n: {n}, p: {p}, rank: {rank}")
 
             K = np.random.normal(size=(n, p)).astype(np.float64)
             Xl = Xl.astype(np.float64)
@@ -341,15 +304,9 @@ def raisinfit(adata_path,
                 K[:, i] -= np.matmul(b, solve)
             K /= np.linalg.norm(K, axis=0, keepdims=True)
             K = K.T  # K shape becomes (p x n)
-            
-            if verbose:
-                print(f"Debug dimensions - K shape: {K.shape}")
 
             # Get subset of Zl that matches the dimensions in lid
             Zl_lid = Z[lid][:, mask_curr]  # This should have shape (n x num_curr_samples)
-            
-            if verbose:
-                print(f"Debug dimensions - Zl_lid shape: {Zl_lid.shape}")
 
             pl = np.matmul(K, means[:, lid].T)                   # (p x G)
             
@@ -357,11 +314,6 @@ def raisinfit(adata_path,
             K_Zl = np.matmul(K, Zl_lid)                         # (p x num_curr_samples)
             Zl_T_K_T = np.matmul(Zl_lid.T, K.T)                # (num_curr_samples x p)
             qlm = np.matmul(K_Zl, Zl_T_K_T)                   # (p x p)
-            
-            if verbose:
-                print(f"Debug dimensions - K_Zl shape: {K_Zl.shape}")
-                print(f"Debug dimensions - Zl_T_K_T shape: {Zl_T_K_T.shape}")
-                print(f"Debug dimensions - qlm shape: {qlm.shape}")
             
             ql = np.diag(qlm)                                    # (p,)
             rl = np.matmul(w[:, lid], (K ** 2).T)              # (G x p)
@@ -404,10 +356,6 @@ def raisinfit(adata_path,
                     # Fix the broadcasting issue
                     # Ensure w_g is correctly shaped for broadcasting with K
                     # K has shape (p, n) and w_g has shape (n,)
-                    
-                    # Method 1: Use einsum for clarity
-                    # t2 = np.einsum('ij,j->ij', K, w_g)  # Apply weights to each column of K
-                    # t2 = np.matmul(t2, K.T)  # Then multiply by K.T
                     
                     # Method 2: Reshape w_g for broadcasting
                     w_g_reshaped = w_g.reshape(1, -1)  # Shape (1, n)
