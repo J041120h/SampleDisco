@@ -641,7 +641,7 @@ def wrapper(
                 if unique_prop_clades <= 1:
                     print("Only one clade found in proportion results. Skipping RAISIN analysis.")
                 else:
-                    raisinfit(
+                    fit = raisinfit(
                         adata_path = os.path.join(output_dir, 'harmony', 'adata_sample.h5ad'), 
                         sample_col = sample_col, 
                         batch_key = batch_col, 
