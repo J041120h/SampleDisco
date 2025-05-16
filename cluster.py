@@ -23,6 +23,9 @@ def cluster(
 
     pseudobulk_folder_path = os.path.join(generalFolder, "pseudobulk")
 
+    if Kmeans == False and methods is None:
+        raise ValueError("Please provide at least one clustering method (Kmeans or methods).")
+    
     if sample_to_clade_user is not None:
         # CASE 1: Use provided clustering directly
         print("User-provided sample_to_clade detected. Skipping clustering, using user input.")
@@ -56,8 +59,8 @@ def cluster(
             os.makedirs(expr_output_dir, exist_ok=True)
             os.makedirs(prop_output_dir, exist_ok=True)
 
-            # cluster_dge_visualization(sample_to_clade=expr_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
-            # cluster_dge_visualization(sample_to_clade=prop_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
+            cluster_dge_visualization(sample_to_clade=expr_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=expr_output_dir)
+            cluster_dge_visualization(sample_to_clade=prop_results_Kmeans, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
             
             unique_expr_clades = len(set(expr_results_Kmeans.values()))
             if unique_expr_clades <= 1:
@@ -129,13 +132,13 @@ def cluster(
                 multi_clade_dge_analysis(sample_to_clade=prop_results, folder_path=pseudobulk_folder_path, output_dir=prop_output_dir)
         except Exception as e:
             print(f"Error in tree-based clustering: {e}")
+            
+    if Kmeans:
+            expr_results = expr_results_Kmeans
+            prop_results = prop_results_Kmeans
 
     if prportion_test:
-        try:
-            if Kmeans:
-                expr_results = expr_results_Kmeans
-                prop_results = prop_results_Kmeans
-                
+        try:    
             if expr_results is not None:
                 unique_expr_clades = len(set(expr_results.values()))
                 if unique_expr_clades <= 1:
