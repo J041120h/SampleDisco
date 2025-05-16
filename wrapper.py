@@ -627,7 +627,7 @@ def wrapper(
                         )
                     run_pairwise_raisin_analysis(
                         fit=fit,
-                        output_dir='./raisin_results',
+                        output_dir= os.path.join(output_dir, 'raisin_results_expression'),
                         min_samples=2,
                         fdrmethod='fdr_bh',
                         n_permutations=10,
@@ -649,6 +649,15 @@ def wrapper(
                         intercept=True, 
                         n_jobs=-1,
                         )
+                    run_pairwise_raisin_analysis(
+                        fit=fit,
+                        output_dir= os.path.join(output_dir, 'raisin_results_proportion'),
+                        min_samples=2,
+                        fdrmethod='fdr_bh',
+                        n_permutations=10,
+                        fdr_threshold=0.05,
+                        verbose=True
+                    )
             else:
                 print("No proportion results available. Skipping RAISIN analysis.")
     
