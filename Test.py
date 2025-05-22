@@ -1,188 +1,122 @@
 #!/usr/bin/env python
-"""
-Script to explore and provide an overview of an scATAC-seq h5ad file
-This example examines SRR14466459.h5ad
-"""
+# Script to merge multiple h5ad files into one large h5ad file
 
 import os
 import scanpy as sc
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import anndata
+from tqdm import tqdm
+import glob
 
-def explore_h5ad(file_path):
+def merge_h5ad_files():
     """
-    Explore and analyze a single h5ad file to provide an overview
-    
-    Parameters:
-    -----------
-    file_path : str
-        Path to the h5ad file to analyze
+    Merge specific h5ad files into a test h5ad file.
     """
-    # Set up figure aesthetics
-    sc.settings.set_figure_params(dpi=100, facecolor='white')
-    sc.settings.verbosity = 1  # Verbosity: errors (0), warnings (1), info (2), hints (3)
+    # Set paths
+    input_dir = "/users/hjiang/GenoDistance/Data/h5ad_files/"
+    output_file = "/users/hjiang/GenoDistance/Data/h5ad_files/test_ATAC.h5ad"
     
-    print(f"Reading file: {file_path}")
+    # Specify the exact files to merge
+    target_files = [
+        "re_SRR14466469.h5ad",
+        "SRR14466469.h5ad", 
+        "re_SRR14466471.h5ad",
+        "SRR14466471.h5ad"
+    ]
     
-    # Load the h5ad file
-    adata = sc.read_h5ad(file_path)
+    # Get full paths for the target files
+    h5ad_files = []
+    for filename in target_files:
+        full_path = os.path.join(input_dir, filename)
+        if os.path.exists(full_path):
+            h5ad_files.append(full_path)
+        else:
+            print(f"Warning: File {filename} not found in {input_dir}")
     
-    # Basic information about the dataset
-    print("\n=== BASIC DATASET INFORMATION ===")
-    print(f"AnnData object: {adata.shape[0]} features × {adata.shape[1]} cells")
+    if len(h5ad_files) == 0:
+        print("No target files found. Available files:")
+        available_files = glob.glob(os.path.join(input_dir, "*.h5ad"))
+        for f in available_files:
+            print(f"  {os.path.basename(f)}")
+        return
     
-    # Sample information
-    if 'sample' in adata.obs.columns:
-        print(f"Sample ID: {adata.obs['sample'].unique()[0]}")
+    print(f"Found {len(h5ad_files)} target files to merge:")
+    for f in h5ad_files:
+        print(f"  {os.path.basename(f)}")
     
-    # Examine the observation (cell) metadata
-    print("\n=== CELL METADATA OVERVIEW ===")
-    print(f"Number of cells: {adata.n_obs}")
-    print(f"Cell metadata fields: {list(adata.obs.columns)}")
+    if len(h5ad_files) == 0:
+        print("No target files found to merge. Exiting.")
+        return
     
-    # Display first few rows of cell metadata
-    print("\nSample of cell metadata:")
-    print(adata.obs.head())
+    # Load the first file to get started
+    print(f"Loading first file: {os.path.basename(h5ad_files[0])}")
+    combined_adata = sc.read_h5ad(h5ad_files[0])
     
-    # Examine the variable (feature/peak) metadata
-    print("\n=== FEATURE/PEAK METADATA OVERVIEW ===")
-    print(f"Number of features: {adata.n_vars}")
-    if adata.var.shape[1] > 0:
-        print(f"Feature metadata fields: {list(adata.var.columns)}")
-        
-        # Display first few rows of feature metadata
-        print("\nSample of feature metadata:")
-        print(adata.var.head())
-    else:
-        print("No feature metadata available")
+    # Add file origin to obs if not present
+    sample_id = os.path.splitext(os.path.basename(h5ad_files[0]))[0]
+    if 'sample' not in combined_adata.obs.columns:
+        combined_adata.obs['sample'] = sample_id
     
-    # Check feature names to understand the peak format
-    print("\n=== PEAK FORMAT ===")
-    print("First 5 peak names:")
-    print(list(adata.var_names[:5]))
+    # Always add sample prefix to cell names for the first file too
+    print(f"Adding sample prefix '{sample_id}_' to all cells from the first file")
+    combined_adata.obs_names = [f"{sample_id}_{cell}" for cell in combined_adata.obs_names]
     
-    # Examine the count matrix
-    print("\n=== COUNT MATRIX PROPERTIES ===")
-    print(f"Count matrix shape: {adata.X.shape}")
-    print(f"Count matrix type: {type(adata.X)}")
-    print(f"Count matrix sparsity: {adata.X.nnz / (adata.X.shape[0] * adata.X.shape[1]):.4f} (fraction of non-zero values)")
+    # Process remaining files
+    for file_path in tqdm(h5ad_files[1:], desc="Merging files"):
+        try:
+            # Load the current file
+            current_adata = sc.read_h5ad(file_path)
+            sample_id = os.path.splitext(os.path.basename(file_path))[0]
+            
+            # Add file origin to obs if not present
+            if 'sample' not in current_adata.obs.columns:
+                current_adata.obs['sample'] = sample_id
+                
+            # Always add sample_id prefix to all cells to ensure uniqueness
+            # This handles cases where the same sample was processed twice
+            print(f"Adding sample prefix '{sample_id}_' to all cells from this file")
+            current_adata.obs_names = [f"{sample_id}_{cell}" for cell in current_adata.obs_names]
+            
+            # Handle potentially different feature sets
+            if not np.array_equal(current_adata.var_names, combined_adata.var_names):
+                print(f"Note: {sample_id} has different features. Finding common features...")
+                # Find common features
+                common_features = current_adata.var_names.intersection(combined_adata.var_names)
+                
+                if len(common_features) == 0:
+                    print(f"Warning: No common features with {sample_id}. Skipping this file.")
+                    continue
+                    
+                print(f"Found {len(common_features)} common features")
+                
+                # Subset both objects to common features
+                current_adata = current_adata[:, common_features]
+                combined_adata = combined_adata[:, common_features]
+            
+            # Concatenate the data
+            combined_adata = anndata.concat(
+                [combined_adata, current_adata],
+                join='outer',  # Use outer join to keep all features
+                merge='first',  # For conflicting elements in .uns, .varm, .obsm, keep info from first object
+                index_unique=None  # We already made sure cell names are unique
+            )
+            
+            print(f"Added {current_adata.shape[0]} cells from {sample_id}. "
+                  f"Combined shape: {combined_adata.shape}")
+            
+        except Exception as e:
+            print(f"Error processing {file_path}: {str(e)}")
     
-    # Summary statistics of counts
-    if hasattr(adata.X, 'toarray'):
-        counts_per_cell = adata.X.sum(axis=1).A1
-        counts_per_gene = adata.X.sum(axis=0).A1
-    else:
-        counts_per_cell = adata.X.sum(axis=1)
-        counts_per_gene = adata.X.sum(axis=0)
+    # Save the merged object
+    print(f"\nSaving merged data to {output_file}")
+    combined_adata.write_h5ad(output_file, compression='gzip')
     
-    print(f"\nMean counts per cell: {np.mean(counts_per_cell):.2f}")
-    print(f"Median counts per cell: {np.median(counts_per_cell):.2f}")
-    print(f"Min counts per cell: {np.min(counts_per_cell):.2f}")
-    print(f"Max counts per cell: {np.max(counts_per_cell):.2f}")
-    
-    print(f"\nMean counts per peak: {np.mean(counts_per_gene):.2f}")
-    print(f"Median counts per peak: {np.median(counts_per_gene):.2f}")
-    print(f"Min counts per peak: {np.min(counts_per_gene):.2f}")
-    print(f"Max counts per peak: {np.max(counts_per_gene):.2f}")
-    
-    # Check for layers (e.g., normalized data)
-    print("\n=== AVAILABLE LAYERS ===")
-    if adata.layers:
-        print(f"Available layers: {list(adata.layers.keys())}")
-        for layer_name, layer in adata.layers.items():
-            print(f"  Layer '{layer_name}': {layer.shape}, type: {type(layer)}")
-    else:
-        print("No additional layers found")
-    
-    # Check for existing dimensionality reduction results
-    print("\n=== DIMENSIONALITY REDUCTIONS ===")
-    if adata.obsm:
-        print(f"Available dimensionality reductions: {list(adata.obsm.keys())}")
-        for key, value in adata.obsm.items():
-            print(f"  {key}: {value.shape}")
-    else:
-        print("No dimensionality reductions found")
-    
-    # Check for existing cluster assignments
-    print("\n=== CLUSTER ASSIGNMENTS ===")
-    cluster_columns = [col for col in adata.obs.columns if 'cluster' in col.lower() or 'leiden' in col.lower() or 'louvain' in col.lower()]
-    if cluster_columns:
-        print(f"Potential cluster assignments: {cluster_columns}")
-        for col in cluster_columns:
-            print(f"  {col} values: {adata.obs[col].unique()}")
-    else:
-        print("No obvious cluster assignments found")
-    
-    # Generate diagnostic plots
-    print("\n=== GENERATING DIAGNOSTIC PLOTS ===")
-    
-    # Create a figure directory
-    output_dir = os.path.dirname(file_path)
-    plot_dir = os.path.join(output_dir, "plots")
-    os.makedirs(plot_dir, exist_ok=True)
-    
-    # 1. Histogram of counts per cell
-    plt.figure(figsize=(8, 6))
-    plt.hist(counts_per_cell, bins=100, log=True)
-    plt.xlabel('Counts per cell')
-    plt.ylabel('Number of cells')
-    plt.title('Distribution of counts per cell')
-    plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, 'counts_per_cell_hist.png'))
-    plt.close()
-    
-    # 2. Histogram of counts per peak
-    plt.figure(figsize=(8, 6))
-    plt.hist(counts_per_gene[counts_per_gene > 0], bins=100, log=True)
-    plt.xlabel('Counts per peak')
-    plt.ylabel('Number of peaks')
-    plt.title('Distribution of counts per peak')
-    plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, 'counts_per_peak_hist.png'))
-    plt.close()
-    
-    # 3. Scatter plot of counts vs features
-    plt.figure(figsize=(8, 6))
-    plt.scatter(counts_per_cell, np.sum(adata.X > 0, axis=1), alpha=0.1, s=1)
-    plt.xlabel('Total counts per cell')
-    plt.ylabel('Number of peaks detected per cell')
-    plt.title('Counts vs. Features')
-    plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, 'counts_vs_features.png'))
-    plt.close()
-    
-    print(f"Diagnostic plots saved to: {plot_dir}")
-    
-    # Check if any preprocessed data is available (e.g., PCA, UMAP)
-    if 'X_pca' in adata.obsm and 'X_umap' in adata.obsm:
-        print("\nGenerating PCA and UMAP plots...")
-        
-        sc.pl.pca(adata, color='sample', title='PCA colored by sample')
-        plt.savefig(os.path.join(plot_dir, 'pca_plot.png'))
-        
-        sc.pl.umap(adata, color='sample', title='UMAP colored by sample')
-        plt.savefig(os.path.join(plot_dir, 'umap_plot.png'))
-    else:
-        print("\nNo PCA/UMAP found. Would need to run preprocessing to generate these.")
-    
-    print("\nData exploration complete!")
-    
-    return adata
+    print("\nMerging complete!")
+    print(f"Test dataset saved to: {output_file}")
+    print(f"Final dataset dimensions: {combined_adata.shape[0]} cells × {combined_adata.shape[1]} features")
+    print(f"Sample distribution:")
+    print(combined_adata.obs['sample'].value_counts())
 
 if __name__ == "__main__":
-    # Use the path that matches the output from the R script
-    file_path = "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
-    adata = explore_h5ad(file_path)
-    
-    # After exploration, you can perform additional analysis if needed
-    print("\nData is now available in the 'adata' variable for further analysis")
-    print("Example commands for further analysis:")
-    print("  sc.pp.normalize_total(adata)")
-    print("  sc.pp.log1p(adata)")
-    print("  sc.pp.highly_variable_genes(adata)")
-    print("  sc.tl.pca(adata)")
-    print("  sc.pp.neighbors(adata)")
-    print("  sc.tl.umap(adata)")
-    print("  sc.tl.leiden(adata)")
+    merge_h5ad_files()
