@@ -135,6 +135,99 @@ def calculate_sample_distances_pca(
     print(f"PCA-based distance matrix saved to: {output_dir}")
     return distance_df
 
+def calculate_sample_distances_DR(
+    adata: AnnData,
+    DR: pd.DataFrame,
+    output_dir: str,
+    method: str = 'euclidean',
+    summary_csv_path: Optional[str] = None,
+    sample_column: str = 'sample',
+    grouping_columns: Optional[list] = None,
+    dr_name: str = 'DR'
+) -> pd.DataFrame:
+    """
+    Compute a sample distance matrix using dimensionality reduction-transformed data.
+    
+    Parameters:
+    - adata: AnnData object containing sample metadata.
+    - DR: pd.DataFrame with dimensionality reduction data (cells x components).
+           Index should match adata.obs_names or be positionally aligned.
+    - output_dir: Directory for output files.
+    - method: Distance metric for pdist (default: 'euclidean').
+    - summary_csv_path: Path for logging.
+    - sample_column: Column in adata.obs indicating sample IDs.
+    - grouping_columns: Optional list of columns for grouping analysis.
+    - dr_name: Name of the dimensionality reduction method for file naming.
+    
+    Returns:
+    - distance_df: Sample distance matrix (samples x samples).
+    """
+    
+    # Validate inputs
+    if DR is None or DR.empty:
+        raise ValueError("DR DataFrame is empty or None.")
+    
+    if sample_column not in adata.obs.columns:
+        raise KeyError(f"Sample column '{sample_column}' not found in adata.obs.")
+    
+    # Get unique samples from adata
+    unique_samples = adata.obs[sample_column].unique()
+    
+    # Validate that DR contains data for the samples we have
+    if not all(sample in DR.index for sample in unique_samples):
+        missing_samples = [s for s in unique_samples if s not in DR.index]
+        raise ValueError(f"DR DataFrame missing data for samples: {missing_samples}")
+    
+    # Create output directory
+    output_dir = os.path.join(output_dir, f'{dr_name}_distance')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Use DR data directly (it should already be averaged per sample)
+    average_dr = DR.loc[unique_samples].fillna(0)
+    
+    # Save DR data
+    average_dr.to_csv(os.path.join(output_dir, f'average_{dr_name}_per_sample.csv'))
+    
+    # Compute distances
+    distance_matrix = pdist(average_dr.values, metric=method)
+    distance_df = pd.DataFrame(
+        squareform(distance_matrix), 
+        index=average_dr.index, 
+        columns=average_dr.index
+    )
+    
+    # Apply log transformation and normalization
+    distance_df = np.log1p(np.maximum(distance_df, 0)) / distance_df.max().max()
+    
+    # Save distance matrix
+    distance_matrix_path = os.path.join(output_dir, f'distance_matrix_{dr_name}.csv')
+    distance_df.to_csv(distance_matrix_path)
+    
+    # Perform quality checks and visualizations
+    distanceCheck(
+        distance_matrix_path, 
+        dr_name, 
+        method, 
+        summary_csv_path, 
+        adata, 
+        grouping_columns=grouping_columns
+    )
+    
+    visualizeDistanceMatrix(
+        distance_df, 
+        os.path.join(output_dir, f'sample_distance_{dr_name}_heatmap.pdf')
+    )
+    
+    visualizeGroupRelationship(
+        distance_df, 
+        outputDir=output_dir, 
+        adata=adata, 
+        heatmap_path=os.path.join(output_dir, f'sample_{dr_name}_relationship.pdf')
+    )
+    
+    print(f"{dr_name}-based distance matrix saved to: {output_dir}")
+    return distance_df
+
 def calculate_sample_distances_gene_pseudobulk(
     adata: AnnData,
     output_dir: str,

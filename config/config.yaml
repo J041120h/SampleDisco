@@ -119,10 +119,10 @@ plot_pseudobulk_batch_test_proportion_flag: false
 preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
-DimensionalityReduction: false
+DimensionalityReduction: true
 trajectory_analysis: false
 trajectory_differential_gene: false
-cluster_and_DGE: true
+cluster_and_DGE: false
 visualize_data: false
 initialization: false
 use_gpu: false

@@ -384,10 +384,10 @@ def wrapper(
             adata=AnnData_sample,
             pseudobulk=pseudobulk_df,
             sample_col = sample_col,
+            grouping_columns = [batch_col],
             n_expression_pcs=n_expression_pcs,
             n_proportion_pcs=n_proportion_pcs,
             output_dir=pca_output_dir,
-            adata_path=AnnData_sample_path,
             verbose=pca_verbose
         )
         status_flags["DimensionalityReduction"] = True

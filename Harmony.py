@@ -50,6 +50,8 @@ def anndata_cluster(
         batch_key=sample_column
     )
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
+    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
+    sc.pp.log1p(adata_cluster)
 
     # Step A2: PCA
     sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
@@ -100,6 +102,8 @@ def anndata_sample(
     if verbose:
         print('=== Processing data for sample differences (without batch effect correction) ===')
 
+    sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
+    sc.pp.log1p(adata_sample_diff)
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
     # # Step B2: Harmony on 'batch'
@@ -259,11 +263,6 @@ def harmony(
             sc.pp.scrublet(adata, batch_key=sample_column)
     
     adata.raw = adata.copy()
-
-    # Normalization & log transform
-    sc.pp.normalize_total(adata, target_sum=1e4)
-    sc.pp.log1p(adata)
-
     if verbose:
         print("Preprocessing complete!")
 

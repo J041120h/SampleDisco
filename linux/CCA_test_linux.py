@@ -59,6 +59,7 @@ def find_optimal_cell_resolution_linux(
             pseudobulk=pseudobulk,
             output_dir=output_dir,
             sample_col=sample_col,
+            not_save=True,
             verbose=False
         )
 
@@ -107,6 +108,7 @@ def find_optimal_cell_resolution_linux(
             pseudobulk=pseudobulk,
             output_dir=output_dir,
             sample_col=sample_col,
+            not_save=True,
             verbose=False
         )
 

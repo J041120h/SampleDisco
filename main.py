@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from pseudobulk import compute_pseudobulk_dataframes
 from Harmony import harmony
 from EMD import EMD_distances
-from VectorDistance import sample_distance
+from VectorDistance import *
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from PCA import process_anndata_with_pca
@@ -102,10 +102,12 @@ def main():
     # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
     # AnnData_cell = sc.read(AnnData_cell_path)
     AnnData_sample = sc.read(AnnData_sample_path)
-    tree_path = "/Users/harry/Desktop/GenoDistance/result/Tree/Combined/Consensus.nex"
-    desired_groups = 4
-    result = cut_tree_by_group_count(tree_path, desired_groups, format='nexus', verbose=True, tol=0)
-    cluster_dge_visualization(sample_to_clade = result, folder_path = output_dir)
+    calculate_sample_distances_DR(
+        AnnData_sample,
+        AnnData_sample.uns["X_pca_expression"],
+        output_dir
+    )
+    
     # AnnData_cell = cell_types_linux(
     #         adata=AnnData_cell,
     #         cell_column=cell_column,

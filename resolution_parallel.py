@@ -59,6 +59,7 @@ def _test_resolution(
         pseudobulk=pseudobulk,
         output_dir=output_dir,
         sample_col=sample_col,
+        not_save=True,
         verbose=verbose
     )
 
