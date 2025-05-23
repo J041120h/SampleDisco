@@ -150,8 +150,8 @@ def calculate_sample_distances_DR(
     
     Parameters:
     - adata: AnnData object containing sample metadata.
-    - DR: pd.DataFrame with dimensionality reduction data (cells x components).
-           Index should match adata.obs_names or be positionally aligned.
+    - DR: pd.DataFrame with dimensionality reduction data (samples x components).
+           Index should match sample names in adata.obs[sample_column].
     - output_dir: Directory for output files.
     - method: Distance metric for pdist (default: 'euclidean').
     - summary_csv_path: Path for logging.
@@ -173,17 +173,52 @@ def calculate_sample_distances_DR(
     # Get unique samples from adata
     unique_samples = adata.obs[sample_column].unique()
     
-    # Validate that DR contains data for the samples we have
-    if not all(sample in DR.index for sample in unique_samples):
-        missing_samples = [s for s in unique_samples if s not in DR.index]
-        raise ValueError(f"DR DataFrame missing data for samples: {missing_samples}")
+    # Handle case sensitivity issues between DR index and sample names
+    # Check if samples exist in DR index (exact match first)
+    missing_samples = [s for s in unique_samples if s not in DR.index]
+    
+    # If we have missing samples, try case-insensitive matching
+    if missing_samples:
+        # Create mapping from lowercase DR index to original DR index
+        dr_index_lower_to_original = {idx.lower(): idx for idx in DR.index}
+        
+        # Create mapping from original samples to their lowercase versions
+        sample_to_lower = {sample: sample.lower() for sample in unique_samples}
+        
+        # Check if all samples exist in lowercase in DR index
+        missing_after_case_check = []
+        for sample in unique_samples:
+            if sample_to_lower[sample] not in dr_index_lower_to_original:
+                missing_after_case_check.append(sample)
+        
+        if missing_after_case_check:
+            raise ValueError(f"DR DataFrame missing data for samples: {missing_after_case_check}")
+        
+        # Create a mapping from original sample names to DR index names
+        sample_to_dr_index = {}
+        for sample in unique_samples:
+            lowercase_sample = sample_to_lower[sample]
+            if lowercase_sample in dr_index_lower_to_original:
+                sample_to_dr_index[sample] = dr_index_lower_to_original[lowercase_sample]
+            else:
+                sample_to_dr_index[sample] = sample  # fallback to original
+        
+        # Get the corresponding DR index names for our samples
+        dr_sample_names = [sample_to_dr_index[sample] for sample in unique_samples]
+    else:
+        # No missing samples, use original sample names
+        dr_sample_names = unique_samples
     
     # Create output directory
-    output_dir = os.path.join(output_dir, f'{dr_name}_distance')
+    output_dir = os.path.join(output_dir, "Sample", f'{dr_name}_distance')
     os.makedirs(output_dir, exist_ok=True)
     
     # Use DR data directly (it should already be averaged per sample)
-    average_dr = DR.loc[unique_samples].fillna(0)
+    average_dr = DR.loc[dr_sample_names].fillna(0)
+    
+    # Rename the index back to original sample names for consistency
+    if missing_samples:  # Only if we had case issues
+        average_dr.index = unique_samples
     
     # Save DR data
     average_dr.to_csv(os.path.join(output_dir, f'average_{dr_name}_per_sample.csv'))
@@ -204,14 +239,15 @@ def calculate_sample_distances_DR(
     distance_df.to_csv(distance_matrix_path)
     
     # Perform quality checks and visualizations
-    distanceCheck(
-        distance_matrix_path, 
-        dr_name, 
-        method, 
-        summary_csv_path, 
-        adata, 
-        grouping_columns=grouping_columns
-    )
+    if summary_csv_path is not None:
+        distanceCheck(
+            distance_matrix_path, 
+            dr_name, 
+            method, 
+            summary_csv_path, 
+            adata, 
+            grouping_columns=grouping_columns
+        )
     
     visualizeDistanceMatrix(
         distance_df, 
