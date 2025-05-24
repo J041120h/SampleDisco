@@ -263,6 +263,7 @@ def harmony(
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             sc.pp.scrublet(adata, batch_key=sample_column)
+            adata = adata[~adata.obs['predicted_doublet']].copy()
     
     adata.raw = adata.copy()
     if verbose:

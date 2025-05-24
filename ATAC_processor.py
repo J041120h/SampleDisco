@@ -13,7 +13,8 @@ Improvements:
 
 import os, time, warnings
 from   datetime import datetime
-
+import contextlib
+import io
 import numpy  as np
 import pandas as pd
 import scanpy as sc
@@ -21,6 +22,7 @@ import matplotlib.pyplot as plt
 from harmony import harmonize
 import muon as mu
 from muon import atac as ac
+import scipy.sparse as sp
 
 warnings.filterwarnings("ignore")
 
@@ -53,6 +55,7 @@ def snapatac2_dimensionality_reduction(
     adata,
     n_components=50,
     num_features=50000,
+    doublet=True,
     verbose=True
 ):
     """
@@ -73,7 +76,6 @@ def snapatac2_dimensionality_reduction(
     except ImportError:
         raise ImportError("snapATAC2 is required for this processing method. "
                          "Install it with: pip install snapatac2")
-    
     log(f"Running snapATAC2 SVD with {n_components} components", verbose=verbose)
     
     # Convert data to float32 to avoid dtype issues
@@ -83,6 +85,18 @@ def snapatac2_dimensionality_reduction(
     
     # Run feature selection
     snap.pp.select_features(adata, n_features=num_features)
+
+    if doublet:
+        log("Filtering doublets using snapATAC2", verbose=verbose)
+        try:
+            snap.pp.scrublet(adata)
+            snap.pp.filter_doublets(adata)
+        except (AttributeError, TypeError) as e:
+            if "'Series' object has no attribute 'nonzero'" in str(e) or "nonzero" in str(e):
+                log("snapATAC2 scrublet compatibility issue detected. Skipping doublet detection.", verbose=verbose)
+                log("Consider using LSI mode with doublet=True for doublet detection via scanpy.", verbose=verbose)
+            else:
+                raise e
     
     # Save highly variable features in consistent column name
     if 'selected' in adata.var.columns:
@@ -96,7 +110,6 @@ def snapatac2_dimensionality_reduction(
         if "Cannot convert CsrMatrix" in str(e):
             log("Data type conversion issue detected. Trying alternative approach...", verbose=verbose)
             # Alternative: ensure the matrix is in the right format
-            import scipy.sparse as sp
             if sp.issparse(adata.X):
                 adata.X = adata.X.astype(np.float32)
             else:
@@ -115,6 +128,7 @@ def run_scatac_pipeline(
     filepath,
     output_dir,
     metadata_path=None,
+    sample_column="sample",
     batch_key=None,
     verbose=True,
     use_snapatac2_dimred=False,
@@ -122,6 +136,8 @@ def run_scatac_pipeline(
     min_cells=1,
     min_genes=2000,
     max_genes=15000,
+    # Doublet detection
+    doublet=True,
     # TF-IDF parameters
     tfidf_scale_factor=1e4,
     # Highly variable genes parameters
@@ -167,18 +183,38 @@ def run_scatac_pipeline(
 
     # 2. Optional sample-level metadata merge  -------------------------------
     if metadata_path:
-        atac = merge_sample_metadata(atac, metadata_path, verbose=verbose)
+        atac = merge_sample_metadata(atac, metadata_path, sample_column=sample_column, verbose=verbose)
 
     # 3. QC + filtering  ------------------------------------------------------
     log("Performing QC and filtering", verbose=verbose)
     sc.pp.calculate_qc_metrics(atac, percent_top=None, log1p=False, inplace=True)
     mu.pp.filter_var(atac, 'n_cells_by_counts', lambda x: x >= min_cells)
     mu.pp.filter_obs(atac, 'n_genes_by_counts', lambda x: (x >= min_genes) & (x <= max_genes))
+    if not use_snapatac2_dimred and doublet:
+        # Check if we have enough features for scrublet PCA
+        min_features_for_scrublet = 50  # Minimum features needed for reliable scrublet
+        if atac.n_vars < min_features_for_scrublet:
+            log(f"Skipping doublet detection: only {atac.n_vars} features available, need at least {min_features_for_scrublet} for reliable scrublet analysis", verbose=verbose)
+        else:
+            try:
+                f = io.StringIO()
+                with contextlib.redirect_stdout(f):
+                    # Calculate appropriate n_prin_comps based on available features
+                    n_prin_comps = min(30, atac.n_vars - 1, atac.n_obs - 1)
+                    sc.pp.scrublet(atac, batch_key=sample_column, n_prin_comps=n_prin_comps)
+                    atac = atac[~atac.obs['predicted_doublet']].copy()
+                log("Doublet detection completed successfully", verbose=verbose)
+            except (ValueError, RuntimeError) as e:
+                log(f"Doublet detection failed: {str(e)}. Continuing without doublet removal.", verbose=verbose)
+
     log(f"After filtering: {atac.n_obs} cells and {atac.n_vars} features", verbose=verbose)
 
     # 4. TF-IDF normalization  -----------------------------------------------
     log("Performing TF-IDF normalization", verbose=verbose)
     ac.pp.tfidf(atac, scale_factor=tfidf_scale_factor)
+
+    log("Saving cluster results", verbose=verbose)
+    sc.write(os.path.join(output_dir,"ATAC_sample.h5ad"), atac)
     
     # 6. Dimensionality reduction: LSI or snapATAC2  -------------------------
     if use_snapatac2_dimred:
@@ -187,6 +223,7 @@ def run_scatac_pipeline(
             atac,
             n_components=n_lsi_components,
             num_features=num_features,
+            doublet=doublet,
             verbose=verbose
         )
         dimred_key = 'X_spectral'
@@ -280,8 +317,8 @@ def run_scatac_pipeline(
             plt.close()
 
     # 10. Save  ---------------------------------------------------------------
-    log("Saving results", verbose=verbose)
-    sc.write(os.path.join(output_dir,"ATAC.h5ad"), atac)
+    log("Saving cluster results", verbose=verbose)
+    sc.write(os.path.join(output_dir,"ATAC_cluster.h5ad"), atac)
     
     # Summary information
     log("=" * 60, verbose)
@@ -305,7 +342,8 @@ if __name__ == "__main__":
         filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
         output_dir  = "/Users/harry/Desktop/GenoDistance/result",
         metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
+        sample_column= "sample",
         batch_key    = 'Donor',
-        leiden_resolution = 0.6,
+        leiden_resolution = 0.8,
         use_snapatac2_dimred = True  # Use snapATAC2 for dim reduction
     )

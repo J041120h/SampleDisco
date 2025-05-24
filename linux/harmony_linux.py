@@ -37,6 +37,8 @@ def anndata_cluster(
         batch_key=sample_column
     )
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
+    rsc.pp.normalize_total(adata_cluster, target_sum=1e4)
+    rsc.pp.log1p(adata_cluster)
 
     # Step A2: GPU PCA
     rsc.pp.pca(adata_cluster, n_comps=num_PCs)
@@ -77,7 +79,8 @@ def anndata_sample(
     if verbose:
         print('=== [GPU] Processing data for sample differences ===')
     rsc.get.anndata_to_GPU(adata_sample_diff)
-    # GPU PCA
+    rsc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
+    rsc.pp.log1p(adata_sample_diff)
     rsc.pp.pca(adata_sample_diff, n_comps=num_PCs)
 
     if verbose:
@@ -218,10 +221,9 @@ def harmony_linux(
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             rsc.pp.scrublet(adata, batch_key=sample_column)
-    adata.raw = adata.copy()
-    rsc.pp.normalize_total(adata, target_sum=1e4)
-    rsc.pp.log1p(adata)
+            adata[~adata.obs['predicted_doublet']].copy()
 
+    adata.raw = adata.copy()
     if verbose:
         print("Preprocessing complete!")
 
