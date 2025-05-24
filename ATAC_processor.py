@@ -153,7 +153,7 @@ def save_processed(adata, path, verbose=True):
 # --------------------------------------------------------------------------- #
 def run_scatac_pipeline(
     filepath,
-    output_path="processed_atac.h5ad",
+    output_dir,
     metadata_path=None,
     batch_key=None,
     verbose=True,
@@ -167,6 +167,11 @@ def run_scatac_pipeline(
 ):
     t0 = time.time()
     log("=" * 60 + "\nStarting scATAC-seq pipeline\n" + "=" * 60, verbose)
+    output_dir = os.path.join(output_dir, 'atac_harmony')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        if verbose:
+            print("Automatically generating harmony subdirectory")
 
     # 1. Load data  -----------------------------------------------------------
     atac = sc.read_h5ad(filepath)
@@ -207,11 +212,26 @@ def run_scatac_pipeline(
     # 7. Neighbours → UMAP → Leiden  ------------------------------------------
     sc.pp.neighbors(atac, n_neighbors=10, n_pcs=30)
     sc.tl.leiden(atac, resolution=.5)
-    sc.tl.umap(atac, spread=1.5, min_dist=.5, random_state=20)
-    sc.pl.umap(atac, color=["leiden", "n_genes_by_counts"], legend_loc="on data")
+    sc.tl.umap(atac)
+    sc.pl.umap(
+        atac,
+        legend_loc="on data",
+        show=False
+    )
+    plt.savefig(os.path.join(output_dir,"umap_leiden.png"), dpi=300)
+    plt.close()
+
+    sc.pl.umap(
+        atac,
+        color=["leiden", "n_genes_by_counts"],
+        legend_loc="on data",
+        show=False
+    )
+    plt.savefig(os.path.join(output_dir,"umap_n_genes_by_counts.png"), dpi=300)
+    plt.close()
 
     # 9. Save  ---------------------------------------------------------------
-    sc.write(filepath, atac)
+    sc.write(os.path.join(output_dir,"ATAC.h5ad"), atac)
     log(f"Pipeline finished in {(time.time() - t0) / 60:.1f} min", verbose)
     return atac
 
@@ -223,7 +243,7 @@ def run_scatac_pipeline(
 if __name__ == "__main__":
     run_scatac_pipeline(
         filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
-        output_path  = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC_processed.h5ad",
+        output_dir  = "/Users/harry/Desktop/GenoDistance/result",
         metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
         batch_key    = 'Donor',          # e.g. "batch" if you have one
         leiden_resolution = 0.6       # **single resolution only**
