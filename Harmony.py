@@ -110,6 +110,8 @@ def anndata_sample(
     if verbose:
         print('=== Begin Harmony ===')
     
+    if batch_key not in adata_sample_diff.obs.columns:
+        raise KeyError(f"Batch key '{batch_key}' not found in adata_sample_diff.obs. Please ensure it is present.")
     Z = harmonize(
         adata_sample_diff.obsm['X_pca'],
         adata_sample_diff.obs,

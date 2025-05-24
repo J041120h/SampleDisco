@@ -237,7 +237,7 @@ def wrapper(
     
     # Step 1: Harmony Preprocessing
     if preprocessing:
-        if linux_system:
+        if linux_system and use_gpu:
             AnnData_cell, AnnData_sample = harmony_linux(
             h5ad_path=h5ad_path,
             sample_meta_path=sample_meta_path,

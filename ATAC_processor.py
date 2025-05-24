@@ -12,9 +12,11 @@ import numpy  as np
 import pandas as pd
 import scanpy as sc
 import matplotlib.pyplot as plt
+from harmony import harmonize
 from   sklearn.decomposition import TruncatedSVD
 from   scipy.sparse import issparse, csr_matrix
 import muon as mu
+from muon import atac as ac
 
 warnings.filterwarnings("ignore")
 
@@ -167,38 +169,49 @@ def run_scatac_pipeline(
     log("=" * 60 + "\nStarting scATAC-seq pipeline\n" + "=" * 60, verbose)
 
     # 1. Load data  -----------------------------------------------------------
-    atac = load_atac_data(filepath, verbose)
+    atac = sc.read_h5ad(filepath)
 
     # 2. Optional sample-level metadata merge  -------------------------------
     if metadata_path:
         atac = merge_sample_metadata(atac, metadata_path, verbose=verbose)
 
     # 3. QC + filtering  ------------------------------------------------------
-    atac = sc.pp.calculate_qc_metrics(atac, percent_top=None, log1p=False, inplace=True)
+    sc.pp.calculate_qc_metrics(atac, percent_top=None, log1p=False, inplace=True)
     mu.pp.filter_var(atac, 'n_cells_by_counts', lambda x: x >= min_cells)
     mu.pp.filter_obs(atac, 'n_genes_by_counts', lambda x: (x >= min_genes) & (x <= max_genes))
 
     # 4. TF-IDF  --------------------------------------------------------------
-    atac = tfidf_normalization(atac, verbose)
+    ac.pp.tfidf(atac, scale_factor=1e4)
+    sc.pp.highly_variable_genes(atac, min_mean=0.05, max_mean=1.5, min_disp=.5)
+    atac.raw = atac.copy()
 
     # 5. LSI  -----------------------------------------------------------------
-    atac = perform_lsi(atac, n_components, verbose)
+    ac.tl.lsi(atac)
+    atac.obsm['X_lsi'] = atac.obsm['X_lsi'][:,1:]
+    atac.varm["LSI"] = atac.varm["LSI"][:,1:]
+    atac.uns["lsi"]["stdev"] = atac.uns["lsi"]["stdev"][1:]
 
-    # 6. Optional Harmony  ----------------------------------------------------
-    if batch_key:
-        atac = run_harmony(atac, batch_key, verbose)
+    # 6. Harmony  ----------------------------------------------------
+    vars_to_harmonize = batch_key if isinstance(batch_key, list) else [batch_key]
+    if vars_to_harmonize is None:
+        vars_to_harmonize.append("sample")  # default to sample if no batch key provided
+    Z = harmonize(
+        atac.obsm['X_lsi'],
+        atac.obs,
+        batch_key = vars_to_harmonize,
+        max_iter_harmony=30,
+        use_gpu = True
+    )
+    atac.obsm['X_lsi_harmony'] = Z
 
     # 7. Neighbours → UMAP → Leiden  ------------------------------------------
-    atac = build_neighbors(atac, n_neighbors, "auto", verbose)
-    atac = compute_umap(atac, umap_min_dist, 1.0, verbose)
-    atac = perform_leiden(atac, leiden_resolution, 0, verbose)
-
-    # 8. Quick visual check (optional)  ---------------------------------------
-    if verbose:
-        sc.pl.umap(atac, color=["leiden"], legend_loc="on data")
+    sc.pp.neighbors(atac, n_neighbors=10, n_pcs=30)
+    sc.tl.leiden(atac, resolution=.5)
+    sc.tl.umap(atac, spread=1.5, min_dist=.5, random_state=20)
+    sc.pl.umap(atac, color=["leiden", "n_genes_by_counts"], legend_loc="on data")
 
     # 9. Save  ---------------------------------------------------------------
-    save_processed(atac, output_path, verbose)
+    sc.write(filepath, atac)
     log(f"Pipeline finished in {(time.time() - t0) / 60:.1f} min", verbose)
     return atac
 
@@ -212,7 +225,7 @@ if __name__ == "__main__":
         filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
         output_path  = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC_processed.h5ad",
         metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-        batch_key    = None,          # e.g. "batch" if you have one
+        batch_key    = 'Donor',          # e.g. "batch" if you have one
         leiden_resolution = 0.6       # **single resolution only**
 
     )
