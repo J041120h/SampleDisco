@@ -2,7 +2,13 @@
 """
 Minimal scATAC-seq processing pipeline (single-resolution clustering)
 
-▪ QC  ▪ TF-IDF  ▪ LSI  ▪ optional Harmony  ▪ kNN/UMAP  ▪ Leiden clustering
+▪ QC  ▪ TF-IDF  ▪ LSI/snapATAC2  ▪ optional Harmony  ▪ kNN/UMAP  ▪ Leiden clustering
+▪ Option to use snapATAC2 only for dimensionality reduction
+
+Improvements:
+- Final dimensionality reduction always saved in 'X_DM_harmony'
+- Highly variable features always saved in 'HVF' column
+- Output always saved in 'output_dir/harmony' subdirectory
 """
 
 import os, time, warnings
@@ -13,8 +19,6 @@ import pandas as pd
 import scanpy as sc
 import matplotlib.pyplot as plt
 from harmony import harmonize
-from   sklearn.decomposition import TruncatedSVD
-from   scipy.sparse import issparse, csr_matrix
 import muon as mu
 from muon import atac as ac
 
@@ -30,106 +34,6 @@ def log(msg, level="INFO", verbose=True):
         print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {level}: {msg}")
 
 # --------------------------------------------------------------------------- #
-#                          Core processing functions                          #
-# --------------------------------------------------------------------------- #
-
-def load_atac_data(path, verbose=True):
-    log(f"Loading h5ad: {path}", verbose=verbose)
-    adata = sc.read_h5ad(path)
-    log(f"Loaded {adata.n_obs:,} cells × {adata.n_vars:,} peaks", verbose=verbose)
-    return adata
-
-def calculate_qc_metrics(adata, verbose=True):
-    """Adds n_features_by_counts / total_counts to .obs (Scanpy ≥1.9)."""
-    sc.pp.calculate_qc_metrics(adata, inplace=True)
-    if verbose:
-        qc = adata.obs[['n_features_by_counts', 'total_counts']].describe().loc[
-            ['mean','50%','min','max']]
-        print("\nQC summary (peaks per cell / total counts):")
-        print(qc.rename(index={'50%':'median'}))
-    return adata
-
-def plot_qc_metrics(adata):
-    sc.pl.violin(
-        adata, ["n_features_by_counts", "total_counts"],
-        jitter=0.4, multi_panel=True, rotation=45
-    )
-
-def filter_peaks(adata, min_cells_pct=0.01, verbose=True):
-    min_cells = int(min_cells_pct * adata.n_obs)
-    log(f"Filtering peaks present in < {min_cells} cells "
-        f"({min_cells_pct*100:.1f} %)", verbose)
-    before = adata.n_vars
-    sc.pp.filter_genes(adata, min_cells=min_cells)  # peaks are treated as genes
-    log(f"Removed {before-adata.n_vars:,} peaks; kept {adata.n_vars:,}", verbose)
-    return adata
-
-def tfidf_normalization(adata, verbose=True):
-    log("Running TF-IDF normalisation", verbose)
-    # Binarise
-    X = adata.X
-    if not issparse(X):        # ensure sparse for memory/speed
-        X = csr_matrix(X)
-    X_bin = (X > 0).astype(np.float32)
-
-    # term frequency
-    tf = X_bin.multiply(1.0 / X_bin.sum(axis=1))
-
-    # inverse document frequency
-    idf = np.log1p(adata.n_obs / (X_bin.sum(axis=0).A1 + 1))
-    tfidf = tf.multiply(idf)
-
-    adata.layers["tfidf"] = tfidf
-    adata.X = tfidf
-    if verbose:
-        nz = tfidf.nnz / (tfidf.shape[0] * tfidf.shape[1]) * 100
-        print(f"TF-IDF matrix density: {nz:.2f} %")
-    return adata
-
-def perform_lsi(adata, n_components=50, verbose=True):
-    log(f"Computing LSI with {n_components} components", verbose)
-    svd  = TruncatedSVD(n_components=n_components, random_state=0)
-    X_lsi = svd.fit_transform(adata.X)
-
-    adata.obsm["X_lsi"]           = X_lsi
-    adata.obsm["X_lsi_corrected"] = X_lsi[:, 1:]   # drop depth component
-    adata.uns["lsi"] = dict(
-        explained_variance_ratio = svd.explained_variance_ratio_,
-        components               = svd.components_
-    )
-    if verbose:
-        var = svd.explained_variance_ratio_
-        print(f"Variance explained (first 10 comps): {var[:10].sum()*100:.1f} %")
-    return adata
-
-def run_harmony(adata, batch_key, verbose=True):
-    """Optional Harmony batch correction on LSI components."""
-    import harmonypy as hm
-    log(f"Running Harmony on '{batch_key}'", verbose)
-    ho = hm.run_harmony(adata.obsm["X_lsi_corrected"], adata.obs, batch_key)
-    adata.obsm["X_lsi_harmony"] = ho.Z_corr.T
-    return adata
-
-def build_neighbors(adata, n_neighbors=30, use_rep="auto", verbose=True):
-    if use_rep == "auto":
-        use_rep = "X_lsi_harmony" if "X_lsi_harmony" in adata.obsm else "X_lsi_corrected"
-    log(f"Building kNN graph (k={n_neighbors}, rep={use_rep})", verbose)
-    sc.pp.neighbors(adata, n_neighbors=n_neighbors, use_rep=use_rep)
-    return adata
-
-def compute_umap(adata, min_dist=0.3, spread=1.0, verbose=True):
-    log("Computing UMAP", verbose)
-    sc.tl.umap(adata, min_dist=min_dist, spread=spread, random_state=0)
-    return adata
-
-def perform_leiden(adata, resolution=0.5, random_state=0, verbose=True):
-    log(f"Leiden clustering (resolution={resolution})", verbose)
-    sc.tl.leiden(adata, resolution=resolution, key_added="leiden", random_state=random_state)
-    n = adata.obs["leiden"].nunique()
-    log(f"Identified {n} clusters", verbose)
-    return adata
-
-# --------------------------------------------------------------------------- #
 #                          Metadata / I/O convenience                         #
 # --------------------------------------------------------------------------- #
 
@@ -142,11 +46,67 @@ def merge_sample_metadata(
         print(f"Merged {meta.shape[1]} sample-level columns")
     return adata
 
-def save_processed(adata, path, verbose=True):
-    log(f"Saving processed data → {path}", verbose)
-    adata.write(path)
-    if verbose:
-        print(f"File size: {os.path.getsize(path)/1e6:.1f} MB")
+# --------------------------------------------------------------------------- #
+#                          snapATAC2 Dimensionality Reduction                 #
+# --------------------------------------------------------------------------- #
+def snapatac2_dimensionality_reduction(
+    adata,
+    n_components=50,
+    num_features=50000,
+    verbose=True
+):
+    """
+    Use snapATAC2 only for dimensionality reduction (SVD/spectral decomposition).
+    Assumes data has already been processed with TF-IDF and feature selection.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        AnnData object that has been processed with TF-IDF
+    n_components : int
+        Number of components for dimensionality reduction
+    verbose : bool
+        Whether to print progress messages
+    """
+    try:
+        import snapatac2 as snap
+    except ImportError:
+        raise ImportError("snapATAC2 is required for this processing method. "
+                         "Install it with: pip install snapatac2")
+    
+    log(f"Running snapATAC2 SVD with {n_components} components", verbose=verbose)
+    
+    # Convert data to float32 to avoid dtype issues
+    if adata.X.dtype != np.float32:
+        log("Converting data matrix to float32 for snapATAC2 compatibility", verbose=verbose)
+        adata.X = adata.X.astype(np.float32)
+    
+    # Run feature selection
+    snap.pp.select_features(adata, n_features=num_features)
+    
+    # Save highly variable features in consistent column name
+    if 'selected' in adata.var.columns:
+        adata.var['HVF'] = adata.var['selected']
+        log("Saved highly variable features in 'HVF' column", verbose=verbose)
+    
+    # Run spectral decomposition with proper error handling
+    try:
+        snap.tl.spectral(adata, n_comps=n_components)
+    except RuntimeError as e:
+        if "Cannot convert CsrMatrix" in str(e):
+            log("Data type conversion issue detected. Trying alternative approach...", verbose=verbose)
+            # Alternative: ensure the matrix is in the right format
+            import scipy.sparse as sp
+            if sp.issparse(adata.X):
+                adata.X = adata.X.astype(np.float32)
+            else:
+                adata.X = sp.csr_matrix(adata.X.astype(np.float32))
+            snap.tl.spectral(adata, n_comps=n_components)
+        else:
+            raise e
+    
+    log("snapATAC2 dimensionality reduction complete", verbose=verbose)
+    return adata
 
 # --------------------------------------------------------------------------- #
 #                             Orchestrating runner                            #
@@ -157,68 +117,144 @@ def run_scatac_pipeline(
     metadata_path=None,
     batch_key=None,
     verbose=True,
+    use_snapatac2_dimred=False,
+    # QC and filtering parameters
     min_cells=1,
     min_genes=2000,
     max_genes=15000,
-    n_components=50,
-    n_neighbors=30,
+    # TF-IDF parameters
+    tfidf_scale_factor=1e4,
+    # Highly variable genes parameters
+    num_features=50000,
+    # LSI/dimensionality reduction parameters
+    n_lsi_components=50,
+    drop_first_lsi=True,
+    # Harmony parameters
+    harmony_max_iter=30,
+    harmony_use_gpu=True,
+    # Neighbors parameters
+    n_neighbors=10,
+    n_pcs=30,
+    # Leiden clustering parameters
+    leiden_resolution=0.5,
+    leiden_random_state=0,
+    # UMAP parameters
     umap_min_dist=0.3,
-    leiden_resolution=0.5
+    umap_spread=1.0,
+    umap_random_state=0,
+    # Output parameters
+    output_subdirectory='harmony',  # Always use 'harmony' subdirectory
+    plot_dpi=300
 ):
     t0 = time.time()
     log("=" * 60 + "\nStarting scATAC-seq pipeline\n" + "=" * 60, verbose)
-    output_dir = os.path.join(output_dir, 'atac_harmony')
+    
+    if use_snapatac2_dimred:
+        log("Using snapATAC2 for dimensionality reduction", verbose=verbose)
+    else:
+        log("Using LSI for dimensionality reduction", verbose=verbose)
+    
+    # Always use 'harmony' subdirectory regardless of method
+    output_dir = os.path.join(output_dir, "ATAC", output_subdirectory)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
-            print("Automatically generating harmony subdirectory")
+            print(f"Automatically generating '{output_subdirectory}' subdirectory")
 
     # 1. Load data  -----------------------------------------------------------
     atac = sc.read_h5ad(filepath)
+    log(f"Loaded data with {atac.n_obs} cells and {atac.n_vars} features", verbose=verbose)
 
     # 2. Optional sample-level metadata merge  -------------------------------
     if metadata_path:
         atac = merge_sample_metadata(atac, metadata_path, verbose=verbose)
 
     # 3. QC + filtering  ------------------------------------------------------
+    log("Performing QC and filtering", verbose=verbose)
     sc.pp.calculate_qc_metrics(atac, percent_top=None, log1p=False, inplace=True)
     mu.pp.filter_var(atac, 'n_cells_by_counts', lambda x: x >= min_cells)
     mu.pp.filter_obs(atac, 'n_genes_by_counts', lambda x: (x >= min_genes) & (x <= max_genes))
+    log(f"After filtering: {atac.n_obs} cells and {atac.n_vars} features", verbose=verbose)
 
-    # 4. TF-IDF  --------------------------------------------------------------
-    ac.pp.tfidf(atac, scale_factor=1e4)
-    sc.pp.highly_variable_genes(atac, min_mean=0.05, max_mean=1.5, min_disp=.5)
-    atac.raw = atac.copy()
+    # 4. TF-IDF normalization  -----------------------------------------------
+    log("Performing TF-IDF normalization", verbose=verbose)
+    ac.pp.tfidf(atac, scale_factor=tfidf_scale_factor)
+    
+    # 6. Dimensionality reduction: LSI or snapATAC2  -------------------------
+    if use_snapatac2_dimred:
+        # Use snapATAC2 for dimensionality reduction only
+        atac = snapatac2_dimensionality_reduction(
+            atac,
+            n_components=n_lsi_components,
+            num_features=num_features,
+            verbose=verbose
+        )
+        dimred_key = 'X_spectral'
+    else:
+        # Standard LSI with scanpy
+        # 5. Feature selection (highly variable genes)  --------------------------
+        log("Selecting highly variable features", verbose=verbose)
+        sc.pp.highly_variable_genes(
+            atac,
+            n_top_genes=num_features,
+            flavor='seurat_v3',
+            batch_key=batch_key
+        )
+        
+        # Save highly variable features in consistent column name
+        atac.var['HVF'] = atac.var['highly_variable']
+        log("Saved highly variable features in 'HVF' column", verbose=verbose)
+        
+        atac.raw = atac.copy()
+        log("Performing LSI dimensionality reduction", verbose=verbose)
+        ac.tl.lsi(atac, n_comps=n_lsi_components)
+        if drop_first_lsi:
+            atac.obsm['X_lsi'] = atac.obsm['X_lsi'][:,1:]
+            atac.varm["LSI"] = atac.varm["LSI"][:,1:]
+            atac.uns["lsi"]["stdev"] = atac.uns["lsi"]["stdev"][1:]
+        dimred_key = 'X_lsi'
 
-    # 5. LSI  -----------------------------------------------------------------
-    ac.tl.lsi(atac)
-    atac.obsm['X_lsi'] = atac.obsm['X_lsi'][:,1:]
-    atac.varm["LSI"] = atac.varm["LSI"][:,1:]
-    atac.uns["lsi"]["stdev"] = atac.uns["lsi"]["stdev"][1:]
+    # 7. Harmony batch correction (optional) and final naming  ----------------
+    if batch_key is not None:
+        log(f"Applying Harmony batch correction on {dimred_key}", verbose=verbose)
+        vars_to_harmonize = batch_key if isinstance(batch_key, list) else [batch_key]
+        Z = harmonize(
+            atac.obsm[dimred_key],
+            atac.obs,
+            batch_key = vars_to_harmonize,
+            max_iter_harmony=harmony_max_iter,
+            use_gpu = harmony_use_gpu
+        )
+        # Store harmonized results with consistent key name
+        atac.obsm['X_DM_harmony'] = Z
+        use_rep = 'X_DM_harmony'
+    else:
+        # Even without harmony, save the final dimensionality reduction with consistent name
+        atac.obsm['X_DM_harmony'] = atac.obsm[dimred_key].copy()
+        use_rep = 'X_DM_harmony'
+    
+    log(f"Final dimensionality reduction saved in 'X_DM_harmony'", verbose=verbose)
 
-    # 6. Harmony  ----------------------------------------------------
-    vars_to_harmonize = batch_key if isinstance(batch_key, list) else [batch_key]
-    if vars_to_harmonize is None:
-        vars_to_harmonize.append("sample")  # default to sample if no batch key provided
-    Z = harmonize(
-        atac.obsm['X_lsi'],
-        atac.obs,
-        batch_key = vars_to_harmonize,
-        max_iter_harmony=30,
-        use_gpu = True
-    )
-    atac.obsm['X_lsi_harmony'] = Z
-
-    # 7. Neighbours → UMAP → Leiden  ------------------------------------------
-    sc.pp.neighbors(atac, n_neighbors=10, n_pcs=30)
-    sc.tl.leiden(atac, resolution=.5)
-    sc.tl.umap(atac)
+    # 8. Neighbours → UMAP → Leiden  ------------------------------------------
+    log("Computing neighbors", verbose=verbose)
+    sc.pp.neighbors(atac, n_neighbors=n_neighbors, n_pcs=n_pcs, use_rep=use_rep)
+    
+    log("Running Leiden clustering", verbose=verbose)
+    sc.tl.leiden(atac, resolution=leiden_resolution, random_state=leiden_random_state)
+    
+    log("Computing UMAP embedding", verbose=verbose)
+    sc.tl.umap(atac, min_dist=umap_min_dist, spread=umap_spread, random_state=umap_random_state)
+    
+    # 9. Plotting  ------------------------------------------------------------
+    log("Generating plots", verbose=verbose)
+    
     sc.pl.umap(
         atac,
+        color='leiden',
         legend_loc="on data",
         show=False
     )
-    plt.savefig(os.path.join(output_dir,"umap_leiden.png"), dpi=300)
+    plt.savefig(os.path.join(output_dir,"umap_leiden.png"), dpi=plot_dpi)
     plt.close()
 
     sc.pl.umap(
@@ -227,12 +263,35 @@ def run_scatac_pipeline(
         legend_loc="on data",
         show=False
     )
-    plt.savefig(os.path.join(output_dir,"umap_n_genes_by_counts.png"), dpi=300)
+    plt.savefig(os.path.join(output_dir,"umap_n_genes_by_counts.png"), dpi=plot_dpi)
     plt.close()
+    
+    # Additional plot for batch effect if batch_key is provided
+    if batch_key:
+        batch_keys = batch_key if isinstance(batch_key, list) else [batch_key]
+        for key in batch_keys:
+            sc.pl.umap(
+                atac,
+                color=key,
+                legend_loc="on data",
+                show=False
+            )
+            plt.savefig(os.path.join(output_dir,f"umap_{key}.png"), dpi=plot_dpi)
+            plt.close()
 
-    # 9. Save  ---------------------------------------------------------------
+    # 10. Save  ---------------------------------------------------------------
+    log("Saving results", verbose=verbose)
     sc.write(os.path.join(output_dir,"ATAC.h5ad"), atac)
+    
+    # Summary information
+    log("=" * 60, verbose)
     log(f"Pipeline finished in {(time.time() - t0) / 60:.1f} min", verbose)
+    log(f"Dimensionality reduction method: {'snapATAC2' if use_snapatac2_dimred else 'LSI'}", verbose)
+    log(f"Final representation saved in: X_DM_harmony", verbose)
+    log(f"Highly variable features saved in: var['HVF']", verbose)
+    log(f"Batch correction applied: {'Yes' if batch_key else 'No'}", verbose)
+    log("=" * 60, verbose)
+    
     return atac
 
 
@@ -241,11 +300,12 @@ def run_scatac_pipeline(
 # --------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
+    # Example 1: Standard usage (scanpy LSI)
     run_scatac_pipeline(
         filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
         output_dir  = "/Users/harry/Desktop/GenoDistance/result",
         metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-        batch_key    = 'Donor',          # e.g. "batch" if you have one
-        leiden_resolution = 0.6       # **single resolution only**
-
+        batch_key    = 'Donor',
+        leiden_resolution = 0.6,
+        use_snapatac2_dimred = True  # Use snapATAC2 for dim reduction
     )
