@@ -205,27 +205,32 @@ def compute_pseudobulk_dataframes(
     verbose: bool = False
 ):
     start_time = time.time() if verbose else None
-
-    # MOVED THIS CHECK TO THE BEGINNING - BEFORE calling combat_correct_cell_expressions
-    if batch_col is None or batch_col not in adata.obs.columns or adata.obs[batch_col].isnull().any():
+    batch_correction = True
+    
+    # Check if batch correction should be applied
+    if batch_col is None or batch_col not in adata.obs.columns:
         if verbose:
-            print(f"Column '{batch_col}' not found or is None — assigning default batch label '1' to all cells.")
-        adata.obs['__batch'] = '1'
-        batch_col = '__batch'  # Use a temporary fallback batch column
-
+            print(f"Column '{batch_col}' not found or is None — skipping batch correction.")
+        batch_correction = False
+    elif adata.obs[batch_col].isnull().all():
+        if verbose:
+            print(f"Column '{batch_col}' contains only null values — skipping batch correction.")
+        batch_correction = False
 
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
 
-    if adata.obs[batch_col].isnull().any():
-        if verbose:
-            print("\n\n\n\nWarning: Missing batch labels found. Filling missing values with 'Unknown'.\n\n\n\n")
-        adata.obs[batch_col].fillna("Unknown", inplace=True)
+    # Only process batch column if batch correction is enabled
+    if batch_correction:
+        if adata.obs[batch_col].isnull().any():
+            if verbose:
+                print("\n\n\n\nWarning: Missing batch labels found. Filling missing values with 'Unknown'.\n\n\n\n")
+            adata.obs[batch_col].fillna("Unknown", inplace=True)
 
-    batch_counts = adata.obs[batch_col].value_counts()
-    small_batches = batch_counts[batch_counts < 5]
-    if not small_batches.empty and verbose:
-        print(f"\n\n\n\nWarning: The following batches have fewer than 5 samples: {small_batches.to_dict()}. Consider merging these batches.\n\n\n\n")
+        batch_counts = adata.obs[batch_col].value_counts()
+        small_batches = batch_counts[batch_counts < 5]
+        if not small_batches.empty and verbose:
+            print(f"\n\n\n\nWarning: The following batches have fewer than 5 samples: {small_batches.to_dict()}. Consider merging these batches.\n\n\n\n")
 
     X_data = adata.X.toarray() if not isinstance(adata.X, np.ndarray) else adata.X
 
@@ -268,7 +273,7 @@ def compute_pseudobulk_dataframes(
             expr_values = X_data[ctype_mask, :].mean(axis=0) if num_cells > 0 else np.zeros(len(gene_names))
             proportion = num_cells / total_cells if total_cells > 0 else 0.0
 
-            # Prepend cell type to each gene name
+            # Create expression series
             expr_series = pd.Series(expr_values, index=gene_names)
 
             cell_expression_df.at[ctype, sample] = expr_series
@@ -283,23 +288,28 @@ def compute_pseudobulk_dataframes(
         print(f"\n\n[pseudobulk] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
     f = io.StringIO()
-    if verbose:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
-            cell_expression_corrected_df = combat_correct_cell_expressions(
-                adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
-                batch_col=batch_col, sample_col=sample_col, verbose=verbose
-            )
-        print("\nComBat correction completed successfully.\n")
+    if batch_correction:
+        if verbose:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=RuntimeWarning)
+                cell_expression_corrected_df = combat_correct_cell_expressions(
+                    adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
+                    batch_col=batch_col, sample_col=sample_col, verbose=verbose
+                )
+            print("\nComBat correction completed successfully.\n")
+        else:
+            # Suppress warnings and redirect output to a StringIO object
+            with warnings.catch_warnings(), contextlib.redirect_stdout(f):
+                warnings.filterwarnings("ignore", category=RuntimeWarning)
+                cell_expression_corrected_df = combat_correct_cell_expressions(
+                    adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
+                    batch_col=batch_col, sample_col=sample_col, verbose=verbose
+                )
+            print("\nComBat correction completed successfully.\n")
     else:
-    # Suppress warnings and redirect output to a StringIO object
-        with warnings.catch_warnings(), contextlib.redirect_stdout(f):
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
-            cell_expression_corrected_df = combat_correct_cell_expressions(
-                adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
-                batch_col=batch_col, sample_col=sample_col, verbose=verbose
-            )
-        print("\nComBat correction completed successfully.\n")
+        if verbose:
+            print("\nSkipping ComBat correction as batch_col is None or not found.\n")
+        cell_expression_corrected_df = cell_expression_df.copy(deep=True)
 
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, n_features)
     cell_expression_corrected_df, top_features = select_hvf_loess(
