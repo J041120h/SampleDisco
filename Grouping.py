@@ -7,50 +7,35 @@ def find_sample_grouping(
     adata,
     samples,
     grouping_columns=None,
-    age_bin_size=None
+    age_bin_size=None,
+    sample_column='sample'
 ):
-    """
-    Returns a dictionary that maps each sample to a group label based on
-    the requested grouping columns in `adata.obs`.
-    
-    Parameters
-    ----------
-    adata : anndata.AnnData or None
-        The AnnData object containing per-cell metadata in adata.obs.
-    samples : list of str
-        The samples of interest (must match entries in `adata.obs['sample']` if adata is provided).
-    grouping_columns : list of str, optional
-        Which columns in `adata.obs` to use for grouping.
-        If None or if adata is None, fallback to first two letters of sample name.
-    age_bin_size : int or None
-        If one of the grouping columns is 'age', this integer determines
-        the bin width. For example, if age_bin_size = 10, then ages will be
-        grouped in intervals of 10 years, starting from the min age.
-        
-    Returns
-    -------
-    dict
-        A dictionary mapping {sample: group_label}.
-    """
-
-    # If adata is None or grouping_columns not provided, fallback to first-two-letter grouping
     if adata is None or not grouping_columns:
+        print("[INFO] No adata or grouping columns provided. Using default prefix grouping.")
         return {sample: sample[:2] for sample in samples}
 
-    # We will need the 'sample' column in adata.obs
-    if 'sample' not in adata.obs.columns:
-        raise KeyError("'sample' column is missing in adata.obs. Cannot build groups by sample.")
+    if sample_column not in adata.obs.columns:
+        raise KeyError(f"[ERROR] '{sample_column}' column is missing in adata.obs. Cannot group by sample.")
 
-    # If 'age' is one of the grouping columns, precompute the minimum age for binning
+    # Normalize sample column in adata to lowercase for matching
+    adata.obs[sample_column] = adata.obs[sample_column].astype(str).str.lower()
+    # Create lowercase version of samples for matching, but keep original mapping
+    sample_map = {s.lower(): s for s in samples}
+    samples_lower = list(sample_map.keys())
+
+    # Validate that all grouping columns exist in adata.obs
+    for col in grouping_columns:
+        if col not in adata.obs.columns:
+            raise KeyError(f"[ERROR] Grouping column '{col}' is missing in adata.obs.")
+
     if 'age' in grouping_columns:
         if 'age' not in adata.obs.columns:
-            raise KeyError("'age' column is specified but not present in adata.obs.")
+            raise KeyError("[ERROR] 'age' column is specified but not present in adata.obs.")
         min_age = adata.obs['age'].min()
 
     groups = {}
 
     def get_column_value_for_sample(column, sample_df):
-        # Extract the data for this column (all cells that match the sample)
         values = sample_df[column].dropna()
 
         if column == 'age':
@@ -66,40 +51,35 @@ def find_sample_grouping(
                 bin_index = int((avg_age - min_age) // age_bin_size)
                 return f"ageBin_{bin_index}"
         else:
-            # Check if numeric or categorical
             if is_numeric_dtype(values):
                 if len(values) == 0:
-                    # No numeric values
                     return f"{column}_NoData"
                 return f"{column}_{values.mean():.2f}"
             else:
-                # Categorical/string -> use mode
                 if len(values) == 0:
-                    return f"{column}_NoData"  # or some other fallback
-                modes = values.mode()  # could be multiple, just take first
+                    return f"{column}_NoData"
+                modes = values.mode()
                 if len(modes) == 0:
                     return f"{column}_NoMode"
                 return f"{column}_{modes.iloc[0]}"
 
-    # Build the mapping for each sample
-    for sample in samples:
-        # Extract the sub-dataframe for this sample
-        mask = (adata.obs['sample'] == sample)
+    for sample_lower in samples_lower:
+        original_sample = sample_map[sample_lower]
+        mask = (adata.obs[sample_column] == sample_lower)
+
         if not mask.any():
-            # If no cells for this sample in adata, you can skip or define a fallback:
-            groups[sample] = "Unknown"
+            print(f"[WARNING] No cells found for sample '{original_sample}' in adata.obs['{sample_column}'].")
+            print(f"           Existing unique values in '{sample_column}': {adata.obs[sample_column].unique().tolist()}")
+            groups[original_sample] = "Unknown"
             continue
 
         sample_df = adata.obs.loc[mask, grouping_columns]
-
-        # Compute grouping label as combination of each column's value
         col_values = []
         for col in grouping_columns:
             col_val = get_column_value_for_sample(col, sample_df)
             col_values.append(col_val)
 
-        # Join them into a single group label
         group_label = "_".join(col_values)
-        groups[sample] = group_label
+        groups[original_sample] = group_label
 
     return groups
