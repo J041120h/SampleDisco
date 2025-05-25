@@ -34,7 +34,6 @@ cell_type_save: true
 assign_save: true
 
 # ===== Pseudobulk Parameters =====
-sample_col: "sample"
 celltype_col: "cell_type"
 pseudobulk_output_dir: null
 n_features: 2000
@@ -81,7 +80,7 @@ sample_distance_methods: null
 # ===== Cluster Based DEG ===== 
 Kmeans_based_cluster_flag: true
 Tree_building_method: null
-prportion_test: true
+proportion_test: true
 RAISIN_analysis: true
 cluster_distance_method: 'cosine'
 cluster_number: 4
@@ -95,34 +94,67 @@ user_provided_sample_to_clade:
   Se-181.1-Su: 2
   Se-137.1-Su: 0
 
-
 # ===== Visualization Parameters =====
 verbose_Visualization: true
-trajectory_visalization_label:
-  - "sev.level"
+trajectory_visalization_label: "sev.level"
+
 age_bin_size: null
 dot_size: 3
-
 plot_dendrogram_flag: true
 plot_cell_umap_by_plot_group_flag: true
 plot_umap_by_cell_type_flag: true
 plot_pca_2d_flag: true
 plot_pca_3d_flag: true
 plot_3d_cells_flag: true
-
 plot_cell_type_proportions_pca_flag: true
 plot_cell_type_expression_pca_flag: true
 plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
+# ===== ATAC-seq Pipeline Parameters =====
+atac_file_path: "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
+atac_output_dir: null
+atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
+atac_pseudobulk_output_dir: null
+atac_pca_output_dir: null
+atac_sample_col: "sample"
+atac_batch_col: 'Donor'
+atac_cell_type_column: "cell_type"
+atac_pipeline_verbose: true
+use_snapatac2_dimred: True
+atac_min_cells: 3
+atac_min_genes: 2000
+atac_max_genes: 15000
+atac_doublet: true
+atac_tfidf_scale_factor: 10000
+atac_num_features: 2000
+atac_n_lsi_components: 30
+atac_drop_first_lsi: true
+atac_harmony_max_iter: 30
+atac_n_neighbors: 15
+atac_n_pcs: 30
+atac_leiden_resolution: 0.8
+atac_leiden_random_state: 42
+atac_umap_min_dist: 0.3
+atac_umap_spread: 1.0
+atac_umap_random_state: 42
+atac_plot_dpi: 300
+atac_pseudobulk_n_features: 2000
+atac_pseudobulk_frac: 0.8
+atac_pseudobulk_verbose: true
+atac_pca_n_expression_pcs: 30
+atac_pca_n_proportion_pcs: 30
+atac_pca_verbose: true
+
 # ===== Process Control Flags =====
-preprocessing: true
+preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: false
 trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
+ATAC_data: true
 visualize_data: false
 initialization: false
 use_gpu: false

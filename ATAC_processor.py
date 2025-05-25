@@ -28,7 +28,6 @@ from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
 from ATAC_general_pipeline import *
-from snapATAC import *
 
 if __name__ == "__main__":
 
