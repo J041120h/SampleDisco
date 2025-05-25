@@ -96,7 +96,7 @@ user_provided_sample_to_clade:
 
 # ===== Visualization Parameters =====
 verbose_Visualization: true
-trajectory_visalization_label: "sev.level"
+trajectory_visualization_label: "sev.level"
 
 age_bin_size: null
 dot_size: 3

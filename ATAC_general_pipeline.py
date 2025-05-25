@@ -170,7 +170,7 @@ def run_scatac_pipeline(
     else:
         log("Using LSI for dimensionality reduction", verbose=verbose)
     
-    output_dir = os.path.join(output_dir, "ATAC", output_subdirectory)
+    output_dir = os.path.join(output_dir, output_subdirectory)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:

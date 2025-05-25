@@ -110,7 +110,7 @@ def wrapper(
 
     # ===== Distance Methods =====
     verbose_Visualization = True,
-    trajectory_visalization_label=['sev.level'],
+    trajectory_visualization_label=['sev.level'],
     age_bin_size=None,
     dot_size=3,
 
@@ -563,8 +563,8 @@ def wrapper(
             with open(status_file_path, 'w') as f:
                 json.dump(status_flags, f, indent=4)
         else:
-            TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
-            TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visalization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+            TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+            TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
 
         if trajectory_differential_gene:
             if trajectory_supervised:

@@ -85,15 +85,7 @@ proportion_test: false
 RAISIN_analysis: true
 cluster_distance_method: 'cosine'
 cluster_number: 4
-user_provided_sample_to_clade:
-  HD-17-Su: 0
-  HD-19-Su: 1
-  HD-23-Su: 1
-  HD-30-Su: 1
-  Se-178.1-Su: 2
-  Se-180.1-Su: 2
-  Se-181.1-Su: 2
-  Se-137.1-Su: 0
+user_provided_sample_to_clade: null
 
 # ===== Visualization Parameters =====
 verbose_Visualization: true
@@ -114,9 +106,9 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_file_path: "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
+atac_file_path: "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
 atac_output_dir: null
-atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
+atac_metadata_path: "/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv"
 atac_pseudobulk_output_dir: null
 atac_pca_output_dir: null
 atac_sample_col: "sample"
@@ -127,7 +119,7 @@ use_snapatac2_dimred: True
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
-atac_min_cells_per_sample : 1
+atac_min_cells_per_sample : 100
 atac_doublet: true
 atac_tfidf_scale_factor: 10000
 atac_num_features: 2000
@@ -156,8 +148,8 @@ sample_distance_calculation: false
 DimensionalityReduction: false
 trajectory_analysis: false
 trajectory_differential_gene: false
-cluster_and_DGE: true
+cluster_and_DGE: false
 ATAC_data: true
 visualize_data: false
 initialization: false
-use_gpu: false
+use_gpu: true

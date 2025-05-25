@@ -207,10 +207,12 @@ def compute_pseudobulk_dataframes(
     start_time = time.time() if verbose else None
 
     # MOVED THIS CHECK TO THE BEGINNING - BEFORE calling combat_correct_cell_expressions
-    if batch_col not in adata.obs.columns:
+    if batch_col is None or batch_col not in adata.obs.columns or adata.obs[batch_col].isnull().any():
         if verbose:
-            print(f"Column '{batch_col}' not found in adata.obs — assigning default value '1' to all rows.")
-        adata.obs[batch_col] = 1
+            print(f"Column '{batch_col}' not found or is None — assigning default batch label '1' to all cells.")
+        adata.obs['__batch'] = '1'
+        batch_col = '__batch'  # Use a temporary fallback batch column
+
 
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
