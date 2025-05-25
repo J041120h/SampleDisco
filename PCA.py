@@ -242,7 +242,7 @@ def process_anndata_with_pca(
     # Save data unless not_save is True
     if not not_save:
         if atac:
-            adata_path = os.path.join(output_dir, 'atac_sample.h5ad')
+            adata_path = os.path.join(output_dir, 'ATAC_sample.h5ad')
         else:
             adata_path = os.path.join(output_dir, 'adata_sample.h5ad')
         

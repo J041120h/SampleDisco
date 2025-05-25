@@ -734,7 +734,7 @@ def wrapper(
         if atac_pseudobulk_output_dir is None:
             atac_pseudobulk_output_dir = os.path.join(atac_output_dir, 'pseudobulk')
         if atac_pca_output_dir is None:
-            atac_pca_output_dir = os.path.join(atac_output_dir, 'pca')
+            atac_pca_output_dir = atac_output_dir
         os.makedirs(atac_output_dir, exist_ok=True)
         os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
         os.makedirs(atac_pca_output_dir, exist_ok=True)
