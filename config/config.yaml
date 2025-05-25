@@ -125,6 +125,7 @@ use_snapatac2_dimred: True
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
+atac_min_cells_per_sample : 1
 atac_doublet: true
 atac_tfidf_scale_factor: 10000
 atac_num_features: 2000

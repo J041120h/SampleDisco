@@ -121,9 +121,6 @@ def snapatac2_dimensionality_reduction(
     log("snapATAC2 dimensionality reduction complete", verbose=verbose)
     return adata
 
-# --------------------------------------------------------------------------- #
-#                             Orchestrating runner                            #
-# --------------------------------------------------------------------------- #
 def run_scatac_pipeline(
     filepath,
     output_dir,
@@ -136,6 +133,7 @@ def run_scatac_pipeline(
     min_cells=1,
     min_genes=2000,
     max_genes=15000,
+    min_cells_per_sample=1,  # <<< NEW PARAMETER
     # Doublet detection
     doublet=True,
     # TF-IDF parameters
@@ -161,7 +159,7 @@ def run_scatac_pipeline(
     # Output parameters
     output_subdirectory='harmony',  # Always use 'harmony' subdirectory
     plot_dpi=300,
-    # Additional parameters can be added as needed
+    # Additional parameters
     cell_type_column='cell_type'
 ):
     t0 = time.time()
@@ -172,36 +170,35 @@ def run_scatac_pipeline(
     else:
         log("Using LSI for dimensionality reduction", verbose=verbose)
     
-    # Always use 'harmony' subdirectory regardless of method
     output_dir = os.path.join(output_dir, "ATAC", output_subdirectory)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
             print(f"Automatically generating '{output_subdirectory}' subdirectory")
 
-    # 1. Load data  -----------------------------------------------------------
+    # 1. Load data
     atac = sc.read_h5ad(filepath)
     log(f"Loaded data with {atac.n_obs} cells and {atac.n_vars} features", verbose=verbose)
 
-    # 2. Optional sample-level metadata merge  -------------------------------
+    # 2. Merge metadata
     if metadata_path:
         atac = merge_sample_metadata(atac, metadata_path, sample_column=sample_column, verbose=verbose)
 
-    # 3. QC + filtering  ------------------------------------------------------
+    # 3. QC filtering
     log("Performing QC and filtering", verbose=verbose)
     sc.pp.calculate_qc_metrics(atac, percent_top=None, log1p=False, inplace=True)
     mu.pp.filter_var(atac, 'n_cells_by_counts', lambda x: x >= min_cells)
     mu.pp.filter_obs(atac, 'n_genes_by_counts', lambda x: (x >= min_genes) & (x <= max_genes))
+
+    # 3b. Doublet detection
     if not use_snapatac2_dimred and doublet:
-        # Check if we have enough features for scrublet PCA
-        min_features_for_scrublet = 50  # Minimum features needed for reliable scrublet
+        min_features_for_scrublet = 50
         if atac.n_vars < min_features_for_scrublet:
-            log(f"Skipping doublet detection: only {atac.n_vars} features available, need at least {min_features_for_scrublet} for reliable scrublet analysis", verbose=verbose)
+            log(f"Skipping doublet detection: only {atac.n_vars} features available", verbose=verbose)
         else:
             try:
                 f = io.StringIO()
                 with contextlib.redirect_stdout(f):
-                    # Calculate appropriate n_prin_comps based on available features
                     n_prin_comps = min(30, atac.n_vars - 1, atac.n_obs - 1)
                     sc.pp.scrublet(atac, batch_key=sample_column, n_prin_comps=n_prin_comps)
                     atac = atac[~atac.obs['predicted_doublet']].copy()
@@ -211,14 +208,22 @@ def run_scatac_pipeline(
 
     log(f"After filtering: {atac.n_obs} cells and {atac.n_vars} features", verbose=verbose)
 
-    # 4. TF-IDF normalization  -----------------------------------------------
+    # 3c. Sample-level filtering
+    log(f"Filtering samples with fewer than {min_cells_per_sample} cells", verbose=verbose)
+    sample_counts = atac.obs[sample_column].value_counts()
+    valid_samples = sample_counts[sample_counts >= min_cells_per_sample].index
+    initial_cells = atac.n_obs
+    atac = atac[atac.obs[sample_column].isin(valid_samples)].copy()
+    log(f"Removed {initial_cells - atac.n_obs} cells from low-count samples", verbose=verbose)
+    log(f"Remaining samples: {len(valid_samples)}, cells: {atac.n_obs}", verbose=verbose)
+
+    # 4. TF-IDF normalization
     log("Performing TF-IDF normalization", verbose=verbose)
     ac.pp.tfidf(atac, scale_factor=tfidf_scale_factor)
     atac_sample = atac.copy()
 
-    # 6. Dimensionality reduction: LSI or snapATAC2  -------------------------
+    # 5. Feature selection and dimensionality reduction
     if use_snapatac2_dimred:
-        # Use snapATAC2 for dimensionality reduction only
         atac = snapatac2_dimensionality_reduction(
             atac,
             n_components=n_lsi_components,
@@ -228,8 +233,6 @@ def run_scatac_pipeline(
         )
         dimred_key = 'X_spectral'
     else:
-        # Standard LSI with scanpy
-        # 5. Feature selection (highly variable genes)  --------------------------
         log("Selecting highly variable features", verbose=verbose)
         sc.pp.highly_variable_genes(
             atac,
@@ -237,96 +240,70 @@ def run_scatac_pipeline(
             flavor='seurat_v3',
             batch_key=batch_key
         )
-        
-        # Save highly variable features in consistent column name
         atac.var['HVF'] = atac.var['highly_variable']
         log("Saved highly variable features in 'HVF' column", verbose=verbose)
-        
         atac.raw = atac.copy()
         log("Performing LSI dimensionality reduction", verbose=verbose)
         ac.tl.lsi(atac, n_comps=n_lsi_components)
         if drop_first_lsi:
-            atac.obsm['X_lsi'] = atac.obsm['X_lsi'][:,1:]
-            atac.varm["LSI"] = atac.varm["LSI"][:,1:]
+            atac.obsm['X_lsi'] = atac.obsm['X_lsi'][:, 1:]
+            atac.varm["LSI"] = atac.varm["LSI"][:, 1:]
             atac.uns["lsi"]["stdev"] = atac.uns["lsi"]["stdev"][1:]
         dimred_key = 'X_lsi'
 
-    # 7. Harmony batch correction (optional) and final naming  ----------------
+    # 6. Harmony integration
     if batch_key is not None:
         log(f"Applying Harmony batch correction on {dimred_key}", verbose=verbose)
         vars_to_harmonize = batch_key if isinstance(batch_key, list) else [batch_key]
         Z = harmonize(
             atac.obsm[dimred_key],
             atac.obs,
-            batch_key = vars_to_harmonize,
+            batch_key=vars_to_harmonize,
             max_iter_harmony=harmony_max_iter,
-            use_gpu = harmony_use_gpu
+            use_gpu=harmony_use_gpu
         )
-        # Store harmonized results with consistent key name
         atac.obsm['X_DM_harmony'] = Z
         use_rep = 'X_DM_harmony'
     else:
-        # Even without harmony, save the final dimensionality reduction with consistent name
         atac.obsm['X_DM_harmony'] = atac.obsm[dimred_key].copy()
         use_rep = 'X_DM_harmony'
-    
-    log(f"Final dimensionality reduction saved in 'X_DM_harmony'", verbose=verbose)
 
-    # 8. Neighbours → UMAP → Leiden  ------------------------------------------
+    log("Final dimensionality reduction saved in 'X_DM_harmony'", verbose=verbose)
+
+    # 7. Neighbors, clustering, and UMAP
     log("Computing neighbors", verbose=verbose)
     sc.pp.neighbors(atac, n_neighbors=n_neighbors, n_pcs=n_pcs, use_rep=use_rep)
-    
     log("Running Leiden clustering", verbose=verbose)
     sc.tl.leiden(atac, resolution=leiden_resolution, random_state=leiden_random_state)
-    
     log("Computing UMAP embedding", verbose=verbose)
     sc.tl.umap(atac, min_dist=umap_min_dist, spread=umap_spread, random_state=umap_random_state)
-    
-    # 9. Plotting  ------------------------------------------------------------
+
+    # 8. Plotting
     log("Generating plots", verbose=verbose)
-    
-    sc.pl.umap(
-        atac,
-        color='leiden',
-        legend_loc="on data",
-        show=False
-    )
-    plt.savefig(os.path.join(output_dir,"umap_leiden.png"), dpi=plot_dpi)
+    sc.pl.umap(atac, color='leiden', legend_loc="on data", show=False)
+    plt.savefig(os.path.join(output_dir, "umap_leiden.png"), dpi=plot_dpi)
     plt.close()
 
-    sc.pl.umap(
-        atac,
-        color=["leiden", "n_genes_by_counts"],
-        legend_loc="on data",
-        show=False
-    )
-    plt.savefig(os.path.join(output_dir,"umap_n_genes_by_counts.png"), dpi=plot_dpi)
+    sc.pl.umap(atac, color=["leiden", "n_genes_by_counts"], legend_loc="on data", show=False)
+    plt.savefig(os.path.join(output_dir, "umap_n_genes_by_counts.png"), dpi=plot_dpi)
     plt.close()
-    
-    # Additional plot for batch effect if batch_key is provided
+
     if batch_key:
         batch_keys = batch_key if isinstance(batch_key, list) else [batch_key]
         for key in batch_keys:
-            sc.pl.umap(
-                atac,
-                color=key,
-                legend_loc="on data",
-                show=False
-            )
-            plt.savefig(os.path.join(output_dir,f"umap_{key}.png"), dpi=plot_dpi)
+            sc.pl.umap(atac, color=key, legend_loc="on data", show=False)
+            plt.savefig(os.path.join(output_dir, f"umap_{key}.png"), dpi=plot_dpi)
             plt.close()
 
-    # standardize the column for saving cell type
+    # 9. Save results
     atac.obs[cell_type_column] = atac.obs['leiden'].copy()
     atac_sample.obs[cell_type_column] = atac.obs['leiden'].copy()
 
-    # 10. Save  ---------------------------------------------------------------
     log("Saving cluster results", verbose=verbose)
-    sc.write(os.path.join(output_dir,"ATAC_cluster.h5ad"), atac)
-    log("Saving cluster results", verbose=verbose)
-    sc.write(os.path.join(output_dir,"ATAC_sample.h5ad"), atac_sample)
-    
-    # Summary information
+    sc.write(os.path.join(output_dir, "ATAC_cluster.h5ad"), atac)
+    sc.write(os.path.join(output_dir, "ATAC_sample.h5ad"), atac_sample)
+
+    # 10. Summary
     log("=" * 60, verbose)
     log(f"Pipeline finished in {(time.time() - t0) / 60:.1f} min", verbose)
     log(f"Dimensionality reduction method: {'snapATAC2' if use_snapatac2_dimred else 'LSI'}", verbose)
@@ -334,22 +311,5 @@ def run_scatac_pipeline(
     log(f"Highly variable features saved in: var['HVF']", verbose)
     log(f"Batch correction applied: {'Yes' if batch_key else 'No'}", verbose)
     log("=" * 60, verbose)
-    
+
     return atac_sample, atac
-
-
-# --------------------------------------------------------------------------- #
-#                                   CLI demo                                  #
-# --------------------------------------------------------------------------- #
-
-if __name__ == "__main__":
-    # Example 1: Standard usage (scanpy LSI)
-    run_scatac_pipeline(
-        filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
-        output_dir  = "/Users/harry/Desktop/GenoDistance/result",
-        metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-        sample_column= "sample",
-        batch_key    = 'Donor',
-        leiden_resolution = 0.8,
-        use_snapatac2_dimred = True  # Use snapATAC2 for dim reduction
-    )

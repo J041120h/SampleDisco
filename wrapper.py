@@ -156,6 +156,7 @@ def wrapper(
     atac_min_cells = 3,
     atac_min_genes = 2000,
     atac_max_genes = 15000,
+    atac_min_cells_per_sample = 10,
 
     # Doublet detection
     atac_doublet = True,
@@ -749,6 +750,7 @@ def wrapper(
             min_cells=atac_min_cells,
             min_genes=atac_min_genes,
             max_genes=atac_max_genes,
+            min_cells_per_sample = atac_min_cells_per_sample,
             # Doublet detection
             doublet=atac_doublet,
             # TF-IDF parameters
