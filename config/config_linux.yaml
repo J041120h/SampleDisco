@@ -106,6 +106,10 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
+atac_preprocessing: True
+atac_pseudobulk_dimensionality_reduction: True
+atac_visualization_processing: True
+
 atac_file_path: "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
 atac_output_dir: null
 atac_metadata_path: "/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv"
@@ -140,6 +144,12 @@ atac_pseudobulk_verbose: true
 atac_pca_n_expression_pcs: 30
 atac_pca_n_proportion_pcs: 30
 atac_pca_verbose: true
+atac_figsize: [10, 8]  
+atac_point_size: 50
+atac_visualization_grouping_columns:
+  - current_severity
+  - Donor
+atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
 preprocessing: false

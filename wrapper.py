@@ -28,6 +28,7 @@ from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
 from ATAC_general_pipeline import *
+from ATAC_visualization import *
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -136,6 +137,10 @@ def wrapper(
     user_provided_sample_to_clade = None,
 
     # ATAC-seq Pipeline Parameters with Default Values
+    atac_preprocessing = True,
+    atac_pseudobulk_dimensionality_reduction = True,
+    atac_visualization_processing = True,
+
     # File paths and directories
     atac_file_path = "data/atac_data.h5ad",
     atac_output_dir = None,
@@ -199,7 +204,12 @@ def wrapper(
     atac_pca_n_expression_pcs = 30,
     atac_pca_n_proportion_pcs = 30,
     atac_pca_verbose = True,
-    
+
+    #visualization parameters
+    atac_figsize=(10, 8),
+    atac_point_size=50, 
+    atac_visualization_grouping_columns=['current_severity'], 
+    atac_visualization_age_size=None,
     # ===== Process Control Flags =====
     preprocessing=True,
     cell_type_cluster=True,
@@ -738,68 +748,88 @@ def wrapper(
         os.makedirs(atac_output_dir, exist_ok=True)
         os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
         os.makedirs(atac_pca_output_dir, exist_ok=True)
-        atac_sample, atac_cluster = run_scatac_pipeline(
-            filepath=atac_file_path,
-            output_dir=atac_output_dir,
-            metadata_path=atac_metadata_path,
-            sample_column=atac_sample_col,
-            batch_key=atac_batch_col,
-            verbose=atac_pipeline_verbose,
-            use_snapatac2_dimred=use_snapatac2_dimred,
-            # QC and filtering parameters
-            min_cells=atac_min_cells,
-            min_genes=atac_min_genes,
-            max_genes=atac_max_genes,
-            min_cells_per_sample = atac_min_cells_per_sample,
-            # Doublet detection
-            doublet=atac_doublet,
-            # TF-IDF parameters
-            tfidf_scale_factor=atac_tfidf_scale_factor,
-            # Highly variable genes parameters
-            num_features=atac_num_features,
-            # LSI/dimensionality reduction parameters
-            n_lsi_components=atac_n_lsi_components,
-            drop_first_lsi=atac_drop_first_lsi,
-            # Harmony parameters
-            harmony_max_iter=atac_harmony_max_iter,
-            harmony_use_gpu=use_gpu,
-            # Neighbors parameters
-            n_neighbors=atac_n_neighbors,
-            n_pcs=atac_n_pcs,  
-            # Leiden clustering parameters
-            leiden_resolution=atac_leiden_resolution,
-            leiden_random_state=atac_leiden_random_state,
-            # UMAP parameters
-            umap_min_dist=atac_umap_min_dist,
-            umap_spread=atac_umap_spread,
-            umap_random_state=atac_umap_random_state,
-            # Output parameters
-            plot_dpi=atac_plot_dpi,
-            # Additional parameters can be added as needed
-            cell_type_column=atac_cell_type_column
-        )
 
-        atac_pseudobulk_df = compute_pseudobulk_dataframes(
-            adata=atac_sample,
-            batch_col=atac_batch_col,
-            sample_col=atac_sample_col,
-            celltype_col=atac_cell_type_column,
-            output_dir=atac_pseudobulk_output_dir,
-            n_features=atac_pseudobulk_n_features,
-            frac=atac_pseudobulk_frac,
-            verbose=atac_pseudobulk_verbose
-        )
+        if atac_preprocessing:
+            atac_sample, atac_cluster = run_scatac_pipeline(
+                filepath=atac_file_path,
+                output_dir=atac_output_dir,
+                metadata_path=atac_metadata_path,
+                sample_column=atac_sample_col,
+                batch_key=atac_batch_col,
+                verbose=atac_pipeline_verbose,
+                use_snapatac2_dimred=use_snapatac2_dimred,
+                # QC and filtering parameters
+                min_cells=atac_min_cells,
+                min_genes=atac_min_genes,
+                max_genes=atac_max_genes,
+                min_cells_per_sample = atac_min_cells_per_sample,
+                # Doublet detection
+                doublet=atac_doublet,
+                # TF-IDF parameters
+                tfidf_scale_factor=atac_tfidf_scale_factor,
+                # Highly variable genes parameters
+                num_features=atac_num_features,
+                # LSI/dimensionality reduction parameters
+                n_lsi_components=atac_n_lsi_components,
+                drop_first_lsi=atac_drop_first_lsi,
+                # Harmony parameters
+                harmony_max_iter=atac_harmony_max_iter,
+                harmony_use_gpu=use_gpu,
+                # Neighbors parameters
+                n_neighbors=atac_n_neighbors,
+                n_pcs=atac_n_pcs,  
+                # Leiden clustering parameters
+                leiden_resolution=atac_leiden_resolution,
+                leiden_random_state=atac_leiden_random_state,
+                # UMAP parameters
+                umap_min_dist=atac_umap_min_dist,
+                umap_spread=atac_umap_spread,
+                umap_random_state=atac_umap_random_state,
+                # Output parameters
+                plot_dpi=atac_plot_dpi,
+                # Additional parameters can be added as needed
+                cell_type_column=atac_cell_type_column
+            )
+        else:
+            if os.path.isfile(os.path.join(atac_file_path, "harmony", "adata_sample.h5ad")):
+                atac_sample = sc.read(os.path.join(atac_file_path, "harmony", "adata_sample.h5ad"))
+            else:
+                raise FileNotFoundError(f"Preprocessed ATAC data not found at {os.path.join(atac_file_path, 'harmony', 'adata_sample.h5ad')}. Please run the preprocessing step first.")
 
-        process_anndata_with_pca(
-            adata = atac_sample,
-            pseudobulk=atac_pseudobulk_df,
-            sample_col=atac_sample_col,
-            grouping_columns=[atac_batch_col],
-            n_expression_pcs=atac_pca_n_expression_pcs,
-            n_proportion_pcs=atac_pca_n_proportion_pcs,
-            output_dir=atac_pca_output_dir,
-            verbose=atac_pca_verbose
-        )
+        if atac_pseudobulk_dimensionality_reduction:
+            atac_pseudobulk_df = compute_pseudobulk_dataframes(
+                adata=atac_sample,
+                batch_col=atac_batch_col,
+                sample_col=atac_sample_col,
+                celltype_col=atac_cell_type_column,
+                output_dir=atac_pseudobulk_output_dir,
+                n_features=atac_pseudobulk_n_features,
+                frac=atac_pseudobulk_frac,
+                verbose=atac_pseudobulk_verbose
+            )
+
+            process_anndata_with_pca(
+                adata = atac_sample,
+                pseudobulk=atac_pseudobulk_df,
+                sample_col=atac_sample_col,
+                grouping_columns=[atac_batch_col],
+                n_expression_pcs=atac_pca_n_expression_pcs,
+                n_proportion_pcs=atac_pca_n_proportion_pcs,
+                output_dir=atac_pca_output_dir,
+                verbose=atac_pca_verbose
+            )
+
+        if atac_visualization_processing:
+            ATAC_visualization_both(
+                atac_sample, 
+                figsize=atac_figsize, 
+                point_size=atac_point_size, 
+                alpha=0.7, 
+                output_dir=os.path.join(atac_output_dir, "visualization"), 
+                grouping_columns=atac_visualization_grouping_columns,
+                age_bin_size=atac_visualization_age_size, 
+                sample_col=atac_sample_col
+            )
 
 
 
