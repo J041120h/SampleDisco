@@ -258,6 +258,7 @@ def calculate_sample_distances_DR(
         distance_df, 
         outputDir=output_dir, 
         adata=adata, 
+        grouping_columns = grouping_columns,
         heatmap_path=os.path.join(output_dir, f'sample_{dr_name}_relationship.pdf')
     )
     

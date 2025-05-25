@@ -13,7 +13,7 @@ import shutil
 from pseudobulk import compute_pseudobulk_dataframes
 from Harmony import harmony
 from EMD import EMD_distances
-from VectorDistance import sample_distance
+from VectorDistance import *
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Visualization import visualization
@@ -28,18 +28,19 @@ from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
 from ATAC_general_pipeline import *
+from snapATAC import *
 
 if __name__ == "__main__":
-    # Example 1: Standard usage (scanpy LSI)
-    # atac_sample, atac_cluster = run_scatac_pipeline(
-    #     filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
-    #     output_dir  = "/Users/harry/Desktop/GenoDistance/result",
-    #     metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-    #     sample_column= "sample",
-    #     batch_key    = 'Donor',
-    #     leiden_resolution = 0.8,
-    #     use_snapatac2_dimred = True  # Use snapATAC2 for dim reduction
-    # )
+
+    atac_sample, atac_cluster = run_scatac_pipeline(
+        filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
+        output_dir  = "/Users/harry/Desktop/GenoDistance/result",
+        metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
+        sample_column= "sample",
+        batch_key    = 'Donor',
+        leiden_resolution = 0.8,
+        use_snapatac2_dimred = True  # Use snapATAC2 for dim reduction
+    )
 
     atac_sample = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad")
     pseudobulk_df = compute_pseudobulk_dataframes(
@@ -53,14 +54,23 @@ if __name__ == "__main__":
             verbose=True
         )
     
+    process_anndata_with_pca(
+        adata=atac_sample,
+        pseudobulk=pseudobulk_df,
+        sample_col = "sample",
+        grouping_columns = ['Donor'],
+        n_expression_pcs=30,
+        n_proportion_pcs=30,
+        output_dir="/Users/harry/Desktop/GenoDistance/result/ATAC",
+        atac=True,
+        verbose=True
+    )
+
+    calculate_sample_distances_DR(
+        atac_sample,
+        atac_sample.uns["X_pca_expression"],
+        "/Users/harry/Desktop/GenoDistance/result/ATAC",
+        grouping_columns = ['current_severity']
+    )
+
     print("end of process")
-        # process_anndata_with_pca(
-        #     adata=AnnData_sample,
-        #     pseudobulk=pseudobulk_df,
-        #     sample_col = sample_col,
-        #     grouping_columns = [batch_col],
-        #     n_expression_pcs=n_expression_pcs,
-        #     n_proportion_pcs=n_proportion_pcs,
-        #     output_dir=pca_output_dir,
-        #     verbose=pca_verbose
-        # )

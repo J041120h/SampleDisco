@@ -104,6 +104,7 @@ def process_anndata_with_pca(
     n_proportion_pcs: int = 10, 
     output_dir: str = "./", 
     not_save: bool = False,
+    atac: bool = False,
     verbose: bool = True
 ) -> None:
     """
@@ -145,7 +146,10 @@ def process_anndata_with_pca(
     
     # Save data unless not_save is True
     if not not_save:
-        adata_path = os.path.join(output_dir, 'adata_sample.h5ad')
+        if atac:
+            adata_path = os.path.join(output_dir, 'atac_sample.h5ad')
+        else:
+            adata_path = os.path.join(output_dir, 'adata_sample.h5ad')
         sc.write(adata_path, adata)
         if verbose:
             print(f"[process_anndata_with_pca] AnnData with PCA results saved to: {adata_path}")
