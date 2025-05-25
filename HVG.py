@@ -219,16 +219,66 @@ def highly_variable_gene_selection(
         gene_means = expr_matrix.mean(axis=0)
         gene_vars = expr_matrix.var(axis=0)
 
+        # Check for problematic data before LOESS fitting
+        if n_genes < 3:
+            if verbose:
+                print(f"Skipping {ctype}: insufficient genes ({n_genes}) for LOESS fitting.")
+            continue
+
+        # Remove genes with zero variance or zero mean
+        valid_mask = (gene_vars > 0) & (gene_means > 0) & np.isfinite(gene_vars) & np.isfinite(gene_means)
+        
+        if np.sum(valid_mask) < 3:
+            if verbose:
+                print(f"Skipping {ctype}: insufficient valid genes ({np.sum(valid_mask)}) for LOESS fitting.")
+            continue
+
+        valid_means = gene_means[valid_mask]
+        valid_vars = gene_vars[valid_mask]
+        valid_gene_names = gene_names[valid_mask]
+
         epsilon = 1e-8
-        log_means = np.log(gene_means + epsilon)
-        log_vars = np.log(gene_vars + epsilon)
+        log_means = np.log(valid_means + epsilon)
+        log_vars = np.log(valid_vars + epsilon)
+
+        # Additional check for variance in log values
+        if np.var(log_means) == 0 or np.var(log_vars) == 0:
+            if verbose:
+                print(f"Skipping {ctype}: no variance in log-transformed values.")
+            continue
 
         if verbose:
-            print(f"Fitting LOESS model with span={loess_span}...")
+            print(f"Fitting LOESS model with span={loess_span} on {len(valid_means)} valid genes...")
 
-        loess_model = loess(x=log_means, y=log_vars, span=loess_span, degree=2)
-        loess_model.fit()
-        fitted_vals = loess_model.outputs.fitted_values
+        try:
+            loess_model = loess(x=log_means, y=log_vars, span=loess_span, degree=2)
+            loess_model.fit()
+            fitted_vals = loess_model.outputs.fitted_values
+        except Exception as e:
+            if verbose:
+                print(f"LOESS fitting failed for {ctype}: {e}. Using variance-based selection instead.")
+            # Fallback: select genes with highest variance
+            if n_top_genes is not None:
+                n_select = min(n_top_genes, len(valid_gene_names))
+                hvg_indices = np.argsort(valid_vars)[-n_select:]
+            else:
+                # Select top 50% by variance as fallback
+                n_select = max(1, len(valid_gene_names) // 2)
+                hvg_indices = np.argsort(valid_vars)[-n_select:]
+            
+            selected_genes = valid_gene_names[hvg_indices]
+            prefixed_genes = [f"{ctype} - {g}" for g in selected_genes]
+
+            if verbose:
+                print(f"Selected {len(selected_genes)} genes using variance-based fallback for {ctype}.")
+
+            # Update the dataframe with fallback selection
+            for sample_id in hvg_truncated_df.columns:
+                orig_series = hvg_truncated_df.loc[ctype, sample_id]
+                if isinstance(orig_series, pd.Series):
+                    truncated_values = orig_series.loc[selected_genes].values
+                    hvg_truncated_df.at[ctype, sample_id] = pd.Series(truncated_values, index=prefixed_genes)
+            continue
 
         residuals = log_vars - fitted_vals
 
@@ -239,9 +289,11 @@ def highly_variable_gene_selection(
             positive_mask = residuals > 0
             candidate_genes_idx = np.where(positive_mask)[0]
             if len(candidate_genes_idx) == 0:
-                hvg_genes_idx = []
+                # If no positive residuals, select top genes by variance
                 if verbose:
-                    print(f"No HVGs found for {ctype}.")
+                    print(f"No positive residuals for {ctype}, using variance-based selection.")
+                n_select = min(n_top_genes, len(valid_gene_names))
+                hvg_genes_idx = np.argsort(valid_vars)[-n_select:]
             else:
                 candidate_sorted = candidate_genes_idx[np.argsort(residuals[candidate_genes_idx])[::-1]]
                 hvg_genes_idx = candidate_sorted[:n_top_genes]
@@ -249,10 +301,17 @@ def highly_variable_gene_selection(
                     print(f"Selected top {len(hvg_genes_idx)} HVGs for {ctype}.")
         else:
             hvg_genes_idx = np.where(residuals > 0)[0]
-            if verbose:
-                print(f"Selected {len(hvg_genes_idx)} HVGs for {ctype} (using positive residuals).")
+            if len(hvg_genes_idx) == 0:
+                # Fallback: select top 50% by variance
+                n_select = max(1, len(valid_gene_names) // 2)
+                hvg_genes_idx = np.argsort(valid_vars)[-n_select:]
+                if verbose:
+                    print(f"No positive residuals for {ctype}, selected top {len(hvg_genes_idx)} by variance.")
+            else:
+                if verbose:
+                    print(f"Selected {len(hvg_genes_idx)} HVGs for {ctype} (using positive residuals).")
 
-        selected_genes = gene_names[hvg_genes_idx]
+        selected_genes = valid_gene_names[hvg_genes_idx]
         prefixed_genes = [f"{ctype} - {g}" for g in selected_genes]
 
         if verbose:

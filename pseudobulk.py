@@ -192,7 +192,6 @@ def combat_correct_cell_expressions(
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"[combat] Total runtime: {elapsed_time:.2f} seconds")
-    
     return corrected_df
 
 def compute_pseudobulk_dataframes(
@@ -207,9 +206,10 @@ def compute_pseudobulk_dataframes(
 ):
     start_time = time.time() if verbose else None
 
-
+    # MOVED THIS CHECK TO THE BEGINNING - BEFORE calling combat_correct_cell_expressions
     if batch_col not in adata.obs.columns:
-        print(f"Column '{batch_col}' not found in adata.obs — assigning default value '1' to all rows.")
+        if verbose:
+            print(f"Column '{batch_col}' not found in adata.obs — assigning default value '1' to all rows.")
         adata.obs[batch_col] = 1
 
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
@@ -281,13 +281,25 @@ def compute_pseudobulk_dataframes(
         print(f"\n\n[pseudobulk] Total runtime: {elapsed_time:.2f} seconds\n\n")
 
     f = io.StringIO()
-    with warnings.catch_warnings(), contextlib.redirect_stdout(f):
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-        cell_expression_corrected_df = combat_correct_cell_expressions(
-            adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, verbose=verbose
-    )
+    if verbose:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            cell_expression_corrected_df = combat_correct_cell_expressions(
+                adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
+                batch_col=batch_col, sample_col=sample_col, verbose=verbose
+            )
+        print("\nComBat correction completed successfully.\n")
+    else:
+    # Suppress warnings and redirect output to a StringIO object
+        with warnings.catch_warnings(), contextlib.redirect_stdout(f):
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            cell_expression_corrected_df = combat_correct_cell_expressions(
+                adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
+                batch_col=batch_col, sample_col=sample_col, verbose=verbose
+            )
+        print("\nComBat correction completed successfully.\n")
 
-    cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, 2000)
+    cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, n_features)
     cell_expression_corrected_df, top_features = select_hvf_loess(
         cell_expression_corrected_df, n_features=n_features, frac=frac
     )
