@@ -61,15 +61,6 @@ def snapatac2_dimensionality_reduction(
     """
     Use snapATAC2 only for dimensionality reduction (SVD/spectral decomposition).
     Assumes data has already been processed with TF-IDF and feature selection.
-    
-    Parameters:
-    -----------
-    adata : AnnData
-        AnnData object that has been processed with TF-IDF
-    n_components : int
-        Number of components for dimensionality reduction
-    verbose : bool
-        Whether to print progress messages
     """
     try:
         import snapatac2 as snap
@@ -269,6 +260,16 @@ def run_scatac_pipeline(
         use_rep = 'X_DM_harmony'
 
     log("Final dimensionality reduction saved in 'X_DM_harmony'", verbose=verbose)
+
+    # ------------------------------------------------------------------- #
+    # 6½. Guarantee n_pcs ≤ available components in the chosen representation
+    # ------------------------------------------------------------------- #
+    max_pcs = atac.obsm[use_rep].shape[1]
+    if n_pcs > max_pcs:
+        log(f"n_pcs ({n_pcs}) > available dims in {use_rep} ({max_pcs}); "
+            f"setting n_pcs = {max_pcs}", verbose=verbose)
+        n_pcs = max_pcs
+    # ------------------------------------------------------------------- #
 
     # 7. Neighbors, clustering, and UMAP
     log("Computing neighbors", verbose=verbose)

@@ -118,5 +118,29 @@ def merge_h5ad_files():
     print(f"Sample distribution:")
     print(combined_adata.obs['sample'].value_counts())
 
+
+import scanpy as sc
+
+def print_anndata_columns(h5ad_path):
+    """
+    Load an AnnData object from an .h5ad file and print the column names of .obs and .var.
+    
+    Parameters
+    ----------
+    h5ad_path : str
+        Path to the AnnData .h5ad file
+    """
+    # Load the AnnData object
+    adata = sc.read_h5ad(h5ad_path)
+    
+    # Print .obs and .var column names
+    print("obs columns:")
+    print(adata.obs.columns.tolist())
+    
+    print("\nvar columns:")
+    print(adata.var.columns.tolist())
+
+# Example usage
 if __name__ == "__main__":
-    merge_h5ad_files()
+    h5ad_file = "/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad"
+    print_anndata_columns(h5ad_file)

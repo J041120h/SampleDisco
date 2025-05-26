@@ -125,7 +125,7 @@ atac_sample_col: "sample"
 atac_batch_col: 'Donor'
 atac_cell_type_column: "cell_type"
 atac_pipeline_verbose: true
-use_snapatac2_dimred: True
+use_snapatac2_dimred: false
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
