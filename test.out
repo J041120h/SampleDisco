@@ -55,3 +55,89 @@ Starting scATAC-seq pipeline
 [2025-05-26 01:11:52] INFO: Loaded data with 88985 cells and 230356 features
 Merged 28 sample-level columns
 [2025-05-26 01:11:52] INFO: Performing QC and filtering
+[2025-05-26 01:16:01] INFO: Doublet detection failed: n_components=30 must be between 1 and min(n_samples, n_features)=17 with svd_solver='arpack'. Continuing without doublet removal.
+[2025-05-26 01:16:01] INFO: After filtering: 79906 cells and 230356 features
+[2025-05-26 01:16:01] INFO: Filtering samples with fewer than 100 cells
+[2025-05-26 01:16:07] INFO: Removed 17 cells from low-count samples
+[2025-05-26 01:16:07] INFO: Remaining samples: 26, cells: 79889
+[2025-05-26 01:16:07] INFO: Performing TF-IDF normalization
+[2025-05-26 01:16:40] INFO: Selecting highly variable features
+[2025-05-26 01:16:59] INFO: Saved highly variable features in 'HVF' column
+[2025-05-26 01:17:02] INFO: Performing LSI dimensionality reduction
+[2025-05-26 01:21:52] INFO: Final dimensionality reduction saved in 'X_DM_harmony'
+[2025-05-26 01:21:52] INFO: n_pcs (30) > available dims in X_DM_harmony (29); setting n_pcs = 29
+[2025-05-26 01:21:52] INFO: Computing neighbors
+[2025-05-26 01:22:05] INFO: Running Leiden clustering
+[2025-05-26 01:23:40] INFO: Computing UMAP embedding
+[2025-05-26 01:24:38] INFO: Generating plots
+[2025-05-26 01:24:40] INFO: Saving cluster results
+[2025-05-26 01:35:13] True: ============================================================
+[2025-05-26 01:35:13] True: Pipeline finished in 23.8 min
+[2025-05-26 01:35:13] True: Dimensionality reduction method: LSI
+[2025-05-26 01:35:13] True: Final representation saved in: X_DM_harmony
+[2025-05-26 01:35:13] True: Highly variable features saved in: var['HVF']
+[2025-05-26 01:35:13] True: Batch correction applied: No
+[2025-05-26 01:35:13] True: ============================================================
+Column 'None' not found or is None — skipping batch correction.
+
+
+
+
+No NaN, negative, or Inf values found in X_data.
+
+
+
+
+
+
+
+
+Successfully computed pseudobulk data.
+
+
+
+
+
+
+[pseudobulk] Total runtime: 1196.02 seconds
+
+
+
+Skipping ComBat correction as batch_col is None or not found.
+
+[process_anndata_with_pca] Starting PCA computation...
+Using grouping columns: [None]
+[process_anndata_with_pca] Using n_expression_pcs=26, n_proportion_pcs=26
+[run_pca_expression] Warning: Grouping columns [None] not found in adata.obs. Skipping grouping.
+[run_pca_expression] PCA completed and stored in adata.uns['X_pca_expression'].
+Shape of PCA DataFrame: (26, 26)
+[run_pca_proportion] PCA on cell proportions completed.
+Stored results in adata.uns['X_pca_proportion'] with shape: (26, 26)
+[process_anndata_with_pca] AnnData with PCA results saved to: /users/hjiang/GenoDistance/result/ATAC/harmony/adata_sample.h5ad
+[process_anndata_with_pca] Total runtime for PCA processing: 260.68 seconds
+Generating Expression PCA plot...
+Sample-labeled plot saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/expression_pca_samples.png
+Group-colored plot (current_severity) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/expression_pca_grouped_by_current_severity.png
+Generated plot for grouping column 'current_severity' with groups: ['current_severity_5.00', 'current_severity_4.00', 'current_severity_2.00', 'current_severity_0.00', 'current_severity_6.00', 'current_severity_7.00']
+Group-colored plot (Donor) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/expression_pca_grouped_by_Donor.png
+Generated plot for grouping column 'Donor' with groups: ['Donor_55650-0066d0', 'Donor_28205-0555d2', 'Donor_55650-0132d0', 'Donor_28205-0564d0', 'Donor_55650-0057', 'Donor_HIP044', 'Donor_28205-0556', 'Donor_55650-0066d7', 'Donor_55650-0067', 'Donor_55650-0086', 'Donor_HIP015', 'Donor_HIP023', 'Donor_HIP002', 'Donor_28205-0555d0', 'Donor_55650-0052', 'Donor_55650-0083', 'Donor_28205-0564d2', 'Donor_28205-0557', 'Donor_28205-0558', 'Donor_55650-0055', 'Donor_HIP043', 'Donor_EV08', 'Donor_HIP045', 'Donor_28205-0560', 'Donor_28205-0559']
+Total plots generated: 3
+Saved plots:
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/expression_pca_samples.png
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/expression_pca_grouped_by_current_severity.png
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/expression_pca_grouped_by_Donor.png
+Generating Proportion PCA plot...
+Sample-labeled plot saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/proportion_pca_samples.png
+Group-colored plot (current_severity) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/proportion_pca_grouped_by_current_severity.png
+Generated plot for grouping column 'current_severity' with groups: ['current_severity_5.00', 'current_severity_4.00', 'current_severity_2.00', 'current_severity_0.00', 'current_severity_6.00', 'current_severity_7.00']
+Group-colored plot (Donor) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/proportion_pca_grouped_by_Donor.png
+Generated plot for grouping column 'Donor' with groups: ['Donor_55650-0066d0', 'Donor_28205-0555d2', 'Donor_55650-0132d0', 'Donor_28205-0564d0', 'Donor_55650-0057', 'Donor_HIP044', 'Donor_28205-0556', 'Donor_55650-0066d7', 'Donor_55650-0067', 'Donor_55650-0086', 'Donor_HIP015', 'Donor_HIP023', 'Donor_HIP002', 'Donor_28205-0555d0', 'Donor_55650-0052', 'Donor_55650-0083', 'Donor_28205-0564d2', 'Donor_28205-0557', 'Donor_28205-0558', 'Donor_55650-0055', 'Donor_HIP043', 'Donor_EV08', 'Donor_HIP045', 'Donor_28205-0560', 'Donor_28205-0559']
+Total plots generated: 3
+Saved plots:
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/proportion_pca_samples.png
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/proportion_pca_grouped_by_current_severity.png
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/proportion_pca_grouped_by_Donor.png
+End of Process
+
+Finished main.py.
+End Time: Mon May 26 02:01:56 AM EDT 2025

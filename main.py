@@ -101,12 +101,28 @@ def main():
 
     # AnnData_cell,AnnData_sample = harmony_linux(h5ad_path, sample_meta_path, output_dir, cell_column, vars_to_regress = vars_to_regress)
     # AnnData_cell = sc.read(AnnData_cell_path)
-    AnnData_sample = sc.read(AnnData_sample_path)
-    calculate_sample_distances_DR(
-        AnnData_sample,
-        AnnData_sample.uns["X_pca_expression"],
-        output_dir
-    )
+
+    print("Beginning to merge h5ad files...")
+    h5ad_file = "/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad"
+    # ---- Load the AnnData object ----
+    adata = sc.read_h5ad(h5ad_file)
+
+    # ---- Check if 'sample' column exists and count cells per sample ----
+    if 'sample' not in adata.obs.columns:
+        raise ValueError("The 'sample' column is not present in adata.obs")
+
+    cell_counts = adata.obs['sample'].value_counts().sort_index()
+
+    # ---- Display the result ----
+    print("Number of cells per sample:")
+    print(cell_counts)
+
+    # AnnData_sample = sc.read(AnnData_sample_path)
+    # calculate_sample_distances_DR(
+    #     AnnData_sample,
+    #     AnnData_sample.uns["X_pca_expression"],
+    #     output_dir
+    # )
     
     # AnnData_cell = cell_types_linux(
     #         adata=AnnData_cell,
