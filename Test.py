@@ -140,13 +140,55 @@ def print_anndata_columns(h5ad_path):
     print("\nvar columns:")
     print(adata.var.columns.tolist())
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scanpy as sc
+
+def plot_tss_enrichment(adata, enrichment_key='TSS.enrichment', groupby=None, figsize=(8, 6), save_path=None):
+    """
+    Generate a violin plot of TSS enrichment values from an AnnData object.
+    
+    Parameters:
+    - adata: AnnData object with TSS enrichment data in `obs`.
+    - enrichment_key: The column in `adata.obs` that contains TSS enrichment values.
+    - groupby: Optional. Column in `adata.obs` to group the violin plot by.
+    - figsize: Tuple for figure size.
+    - save_path: Optional. Path to save the figure (e.g., 'tss_enrichment.png').
+    """
+
+    print("Available `adata.obs` columns:")
+    print(list(adata.obs.columns))
+    print("\nAvailable `adata.var` columns:")
+    print(list(adata.var.columns))
+
+    if enrichment_key not in adata.obs.columns:
+        raise ValueError(f"'{enrichment_key}' not found in adata.obs. Please provide valid enrichment_key.")
+    
+    plt.figure(figsize=figsize)
+    if groupby and groupby in adata.obs.columns:
+        sns.violinplot(data=adata.obs, x=groupby, y=enrichment_key, inner='box')
+        plt.title(f"TSS Enrichment by {groupby}")
+    else:
+        sns.violinplot(data=adata.obs, y=enrichment_key, inner='box')
+        plt.title("TSS Enrichment")
+    
+    plt.ylabel("TSS Enrichment Score")
+    plt.xlabel(groupby if groupby else "")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+    plt.show()
+
 # Example usage
 if __name__ == "__main__":
     print("Beginning to merge h5ad files...")
     h5ad_file = "/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad"
+
     # ---- Load the AnnData object ----
     adata = sc.read_h5ad(h5ad_file)
-
+    plot_tss_enrichment(adata)
     # ---- Check if 'sample' column exists and count cells per sample ----
     if 'sample' not in adata.obs.columns:
         raise ValueError("The 'sample' column is not present in adata.obs")

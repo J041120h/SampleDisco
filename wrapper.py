@@ -196,7 +196,7 @@ def wrapper(
     atac_plot_dpi = 300,
 
     # Pseudobulk parameters
-    atac_pseudobulk_n_features = 2000,
+    atac_pseudobulk_n_features = 50000,
     atac_pseudobulk_frac = 0.8,
     atac_pseudobulk_verbose = True,
 
