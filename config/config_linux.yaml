@@ -106,9 +106,9 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_preprocessing: True
-atac_pseudobulk_dimensionality_reduction: True
-atac_visualization_processing: True
+atac_preprocessing: true
+atac_pseudobulk_dimensionality_reduction: true
+atac_visualization_processing: true
 
 atac_file_path: "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
 atac_output_dir: null
@@ -119,7 +119,7 @@ atac_sample_col: "sample"
 atac_batch_col: null
 atac_cell_type_column: "cell_type"
 atac_pipeline_verbose: true
-use_snapatac2_dimred: True
+use_snapatac2_dimred: false
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000

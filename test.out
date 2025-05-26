@@ -1,15 +1,15 @@
 ======================================
- Job ID:            16595138
+ Job ID:            16769658
  Job Name:          test
  Partition:         gpu
- Node List:         compute-170
+ Node List:         compute-123
  CPUs per Task:     16
  Memory Alloc:      409600
  GPU Requested:     1
- Start Time:        Wed May 14 01:46:54 PM EDT 2025
+ Start Time:        Mon May 26 01:09:24 AM EDT 2025
 ======================================
 Checking GPU status...
-Wed May 14 13:46:57 2025       
+Mon May 26 01:09:25 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -17,9 +17,9 @@ Wed May 14 13:46:57 2025
 | Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
-|   0  NVIDIA H100 NVL                Off |   00000000:D1:00.0 Off |                    0 |
-| N/A   39C    P0             88W /  400W |       1MiB /  95830MiB |      3%      Default |
-|                                         |                        |             Disabled |
+|   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
+| N/A   51C    P0             42W /  250W |       1MiB /  32768MiB |      0%      Default |
+|                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
 +-----------------------------------------------------------------------------------------+
@@ -48,110 +48,10 @@ Linux system detected.
 Enabling managed memory for RMM...
 
 
-=== Reading input dataset ===
-Raw shape: 898489 cells × 14881 genes
-All required columns are present in adata.obs.
-Before GPU conversion. Type of adata.X: <class 'scipy.sparse._csc.csc_matrix'>
-adata.X dtype: float64
-adata.X is sparse: True
-Converting adata.X from float64 to float32
-Converted to GPU. Type of adata.X: <class 'cupyx.scipy.sparse._csc.csc_matrix'>
-filtered out 1043 genes that are detected in less than 500 cells
-filtered out 107 cells that have less than 500 genes expressed
-After initial filtering: 898382 cells × 13838 genes
-After mitochondrial filtering: 898305 cells × 13838 genes
-After gene exclusion filtering: 898305 cells × 13825 genes
-After sample filtering: 898305 cells × 13825 genes
-Number of samples remaining: 405
-filtered out 3669 genes that are detected in less than 8983 cells
-After final gene filtering: 898305 cells × 10156 genes
-Processed shape: 898305 cells × 10156 genes
-Preprocessing complete!
-=== [GPU] Processing data for clustering ===
-=== [GPU] Running Harmony integration ===
-Variables to regress: sample
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-	Completed 9 / 30 iteration(s).
-	Completed 10 / 30 iteration(s).
-	Completed 11 / 30 iteration(s).
-	Completed 12 / 30 iteration(s).
-	Completed 13 / 30 iteration(s).
-	Completed 14 / 30 iteration(s).
-	Completed 15 / 30 iteration(s).
-	Completed 16 / 30 iteration(s).
-	Completed 17 / 30 iteration(s).
-Reach convergence after 17 iteration(s).
-End of harmony for adata_cluster.
-=== [GPU] Processing data for sample differences ===
-=== [GPU] Begin Harmony ===
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-Reach convergence after 7 iteration(s).
-[2025-05-14 14:04:24.326] [CUML] [debug] n_neighbors=15
-[2025-05-14 14:04:24.326] [CUML] [debug] Calling knn graph run
-[2025-05-14 14:04:24.326] [CUML] [debug] Done. Calling fuzzy simplicial set
-[2025-05-14 14:04:24.405] [CUML] [debug] Done. Calling remove zeros
-Total runtime: 1344.19 seconds
-Conducting multi-clade DGE analysis for expression-based Kmeans clustering.
-✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
-✔️  [DEBUG-GENE] using top 100 variable genes
-✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
-✔️  [DEBUG-CLADE] ordered_samples: 405
-✔️  [DEBUG-CLADE] sample_colors: 405
-✔️  [DEBUG-SCALE] Z-score matrix shape: (100, 405)
-✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_all.png
-✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
-✔️  [DEBUG-GENE] using provided gene list (1360)
-✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
-✔️  [DEBUG-CLADE] ordered_samples: 405
-✔️  [DEBUG-CLADE] sample_colors: 405
-✔️  [DEBUG-SCALE] Z-score matrix shape: (1360, 405)
-✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_dge.png
-
-✅  Multi-clade DGE complete.
-🧬  Significant DEGs : 1360  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/significant_dge_summary.csv
-📊  Histograms saved →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/pairwise_visualization
-🗺️   Heat-maps saved  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_all.png  &  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_expression/expression_heatmap_dge.png
-Conducting multi-clade DGE analysis for proportion-based Kmeans clustering.
-✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
-✔️  [DEBUG-GENE] using top 100 variable genes
-✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
-✔️  [DEBUG-CLADE] ordered_samples: 405
-✔️  [DEBUG-CLADE] sample_colors: 405
-✔️  [DEBUG-SCALE] Z-score matrix shape: (100, 405)
-✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_all.png
-✔️  [DEBUG-I/O] expression matrix shape after filter: (405, 2000)
-✔️  [DEBUG-GENE] using provided gene list (399)
-✔️  [DEBUG-CLADE] clades: [0, 1, 2, 3]
-✔️  [DEBUG-CLADE] ordered_samples: 405
-✔️  [DEBUG-CLADE] sample_colors: 405
-✔️  [DEBUG-SCALE] Z-score matrix shape: (399, 405)
-✅  heat-map saved → /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_dge.png
-
-✅  Multi-clade DGE complete.
-🧬  Significant DEGs : 399  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/significant_dge_summary.csv
-📊  Histograms saved →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/pairwise_visualization
-🗺️   Heat-maps saved  →  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_all.png  &  /users/hjiang/GenoDistance/result/Cluster_DEG/Kmeans_proportion/expression_heatmap_dge.png
-Running RAISIN analysis...
-No expression results available. Skipping RAISIN analysis.
-No proportion results available. Skipping RAISIN analysis.
-End of Process
-
-Finished main.py.
-End Time: Wed May 14 02:18:37 PM EDT 2025
+[2025-05-26 01:11:24] True: ============================================================
+Starting scATAC-seq pipeline
+============================================================
+[2025-05-26 01:11:24] INFO: Using LSI for dimensionality reduction
+[2025-05-26 01:11:52] INFO: Loaded data with 88985 cells and 230356 features
+Merged 28 sample-level columns
+[2025-05-26 01:11:52] INFO: Performing QC and filtering

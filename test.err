@@ -1,2 +1,0 @@
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/preprocessing/_hvg.py:542: UserWarning: `flavor='seurat_v3'` expects raw count data, but non-integers were found.
-  warnings.warn(

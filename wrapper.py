@@ -791,10 +791,10 @@ def wrapper(
                 cell_type_column=atac_cell_type_column
             )
         else:
-            if os.path.isfile(os.path.join(atac_file_path, "harmony", "adata_sample.h5ad")):
-                atac_sample = sc.read(os.path.join(atac_file_path, "harmony", "adata_sample.h5ad"))
+            if os.path.isfile(os.path.join(atac_output_dir, "harmony", "ATAC_sample.h5ad")):
+                atac_sample = sc.read(os.path.join(atac_output_dir, "harmony", "ATAC_sample.h5ad"))
             else:
-                raise FileNotFoundError(f"Preprocessed ATAC data not found at {os.path.join(atac_file_path, 'harmony', 'adata_sample.h5ad')}. Please run the preprocessing step first.")
+                raise FileNotFoundError(f"Preprocessed ATAC data not found at {os.path.join(atac_output_dir, 'harmony', 'ATAC_sample.h5ad')}. Please run the preprocessing step first.")
 
         if atac_pseudobulk_dimensionality_reduction:
             atac_pseudobulk_df = compute_pseudobulk_dataframes(
