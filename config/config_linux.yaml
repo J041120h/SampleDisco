@@ -123,10 +123,10 @@ use_snapatac2_dimred: false
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
-atac_min_cells_per_sample : 100
+atac_min_cells_per_sample : 500
 atac_doublet: true
 atac_tfidf_scale_factor: 10000
-atac_num_features: 2000
+atac_num_features: 40000
 atac_n_lsi_components: 30
 atac_drop_first_lsi: true
 atac_harmony_max_iter: 30
@@ -138,7 +138,7 @@ atac_umap_min_dist: 0.3
 atac_umap_spread: 1.0
 atac_umap_random_state: 42
 atac_plot_dpi: 300
-atac_pseudobulk_n_features: 2000
+atac_pseudobulk_n_features: 40000
 atac_pseudobulk_frac: 0.8
 atac_pseudobulk_verbose: true
 atac_pca_n_expression_pcs: 30

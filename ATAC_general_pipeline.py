@@ -9,6 +9,7 @@ Improvements:
 - Final dimensionality reduction always saved in 'X_DM_harmony'
 - Highly variable features always saved in 'HVF' column
 - Output always saved in 'output_dir/harmony' subdirectory
+- Detailed filtering statistics reported at each step
 """
 
 import os, time, warnings
@@ -34,6 +35,30 @@ def log(msg, level="INFO", verbose=True):
     """Timestamped logger."""
     if verbose:
         print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {level}: {msg}")
+
+def report_filtering_stats(adata_before, adata_after, filter_type, verbose=True):
+    """Report detailed filtering statistics."""
+    if not verbose:
+        return
+    
+    cells_before = adata_before.n_obs
+    cells_after = adata_after.n_obs
+    peaks_before = adata_before.n_vars
+    peaks_after = adata_after.n_vars
+    
+    cells_removed = cells_before - cells_after
+    peaks_removed = peaks_before - peaks_after
+    
+    log(f"{filter_type} filtering results:", verbose=verbose)
+    if cells_removed > 0:
+        log(f"  Cells: {cells_before:,} → {cells_after:,} ({cells_removed:,} removed, {cells_removed/cells_before*100:.1f}%)", verbose=verbose)
+    else:
+        log(f"  Cells: {cells_after:,} (no cells removed)", verbose=verbose)
+    
+    if peaks_removed > 0:
+        log(f"  Peaks: {peaks_before:,} → {peaks_after:,} ({peaks_removed:,} removed, {peaks_removed/peaks_before*100:.1f}%)", verbose=verbose)
+    else:
+        log(f"  Peaks: {peaks_after:,} (no peaks removed)", verbose=verbose)
 
 # --------------------------------------------------------------------------- #
 #                          Metadata / I/O convenience                         #
@@ -75,13 +100,17 @@ def snapatac2_dimensionality_reduction(
         adata.X = adata.X.astype(np.float32)
     
     # Run feature selection
+    adata_before_features = adata.copy()
     snap.pp.select_features(adata, n_features=num_features)
+    report_filtering_stats(adata_before_features, adata, "snapATAC2 feature selection", verbose)
 
     if doublet:
         log("Filtering doublets using snapATAC2", verbose=verbose)
         try:
+            adata_before_doublets = adata.copy()
             snap.pp.scrublet(adata)
             snap.pp.filter_doublets(adata)
+            report_filtering_stats(adata_before_doublets, adata, "snapATAC2 doublet", verbose)
         except (AttributeError, TypeError) as e:
             if "'Series' object has no attribute 'nonzero'" in str(e) or "nonzero" in str(e):
                 log("snapATAC2 scrublet compatibility issue detected. Skipping doublet detection.", verbose=verbose)
@@ -169,7 +198,7 @@ def run_scatac_pipeline(
 
     # 1. Load data
     atac = sc.read_h5ad(filepath)
-    log(f"Loaded data with {atac.n_obs} cells and {atac.n_vars} features", verbose=verbose)
+    log(f"Loaded data with {atac.n_obs:,} cells and {atac.n_vars:,} features", verbose=verbose)
 
     # 2. Merge metadata
     if metadata_path:
@@ -178,35 +207,52 @@ def run_scatac_pipeline(
     # 3. QC filtering
     log("Performing QC and filtering", verbose=verbose)
     sc.pp.calculate_qc_metrics(atac, percent_top=None, log1p=False, inplace=True)
+    
+    # 3a. Filter peaks by minimum cells
+    atac_before_peak_filter = atac.copy()
     mu.pp.filter_var(atac, 'n_cells_by_counts', lambda x: x >= min_cells)
+    report_filtering_stats(atac_before_peak_filter, atac, "Peak (min_cells)", verbose)
+    
+    # 3b. Filter cells by gene counts
+    atac_before_cell_filter = atac.copy()
     mu.pp.filter_obs(atac, 'n_genes_by_counts', lambda x: (x >= min_genes) & (x <= max_genes))
+    report_filtering_stats(atac_before_cell_filter, atac, "Cell QC (gene counts)", verbose)
 
-    # 3b. Doublet detection
+    # 3c. Doublet detection
     if not use_snapatac2_dimred and doublet:
         min_features_for_scrublet = 50
         if atac.n_vars < min_features_for_scrublet:
             log(f"Skipping doublet detection: only {atac.n_vars} features available", verbose=verbose)
         else:
             try:
+                atac_before_doublets = atac.copy()
                 f = io.StringIO()
                 with contextlib.redirect_stdout(f):
                     n_prin_comps = min(30, atac.n_vars - 1, atac.n_obs - 1)
                     sc.pp.scrublet(atac, batch_key=sample_column, n_prin_comps=n_prin_comps)
                     atac = atac[~atac.obs['predicted_doublet']].copy()
+                report_filtering_stats(atac_before_doublets, atac, "Doublet detection", verbose)
                 log("Doublet detection completed successfully", verbose=verbose)
             except (ValueError, RuntimeError) as e:
                 log(f"Doublet detection failed: {str(e)}. Continuing without doublet removal.", verbose=verbose)
 
-    log(f"After filtering: {atac.n_obs} cells and {atac.n_vars} features", verbose=verbose)
-
-    # 3c. Sample-level filtering
+    # 3d. Sample-level filtering
     log(f"Filtering samples with fewer than {min_cells_per_sample} cells", verbose=verbose)
     sample_counts = atac.obs[sample_column].value_counts()
     valid_samples = sample_counts[sample_counts >= min_cells_per_sample].index
-    initial_cells = atac.n_obs
+    invalid_samples = sample_counts[sample_counts < min_cells_per_sample]
+    
+    if len(invalid_samples) > 0:
+        log(f"Samples being removed (< {min_cells_per_sample} cells):", verbose=verbose)
+        for sample, count in invalid_samples.items():
+            log(f"  {sample}: {count} cells", verbose=verbose)
+    
+    atac_before_sample_filter = atac.copy()
     atac = atac[atac.obs[sample_column].isin(valid_samples)].copy()
-    log(f"Removed {initial_cells - atac.n_obs} cells from low-count samples", verbose=verbose)
-    log(f"Remaining samples: {len(valid_samples)}, cells: {atac.n_obs}", verbose=verbose)
+    report_filtering_stats(atac_before_sample_filter, atac, "Sample-level", verbose)
+    
+    if verbose:
+        log(f"Retained samples: {len(valid_samples)} out of {len(sample_counts)}", verbose=verbose)
 
     # 4. TF-IDF normalization
     log("Performing TF-IDF normalization", verbose=verbose)
@@ -225,6 +271,7 @@ def run_scatac_pipeline(
         dimred_key = 'X_spectral'
     else:
         log("Selecting highly variable features", verbose=verbose)
+        atac_before_hvg = atac.copy()
         sc.pp.highly_variable_genes(
             atac,
             n_top_genes=num_features,
@@ -233,6 +280,11 @@ def run_scatac_pipeline(
         )
         atac.var['HVF'] = atac.var['highly_variable']
         log("Saved highly variable features in 'HVF' column", verbose=verbose)
+        
+        # Report HVG selection stats
+        hvg_count = atac.var['highly_variable'].sum()
+        log(f"Selected {hvg_count:,} highly variable features out of {atac.n_vars:,} total features ({hvg_count/atac.n_vars*100:.1f}%)", verbose=verbose)
+        
         atac.raw = atac.copy()
         log("Performing LSI dimensionality reduction", verbose=verbose)
         ac.tl.lsi(atac, n_comps=n_lsi_components)
