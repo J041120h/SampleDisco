@@ -106,7 +106,7 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_preprocessing: true
+atac_preprocessing: false
 atac_pseudobulk_dimensionality_reduction: true
 atac_visualization_processing: true
 

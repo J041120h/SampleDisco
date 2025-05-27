@@ -206,6 +206,7 @@ def compute_pseudobulk_dataframes(
 ):
     start_time = time.time() if verbose else None
     batch_correction = True
+    print("DEBUG: Function started")
     
     # Check if batch correction should be applied
     if batch_col is None or batch_col not in adata.obs.columns:
@@ -216,9 +217,11 @@ def compute_pseudobulk_dataframes(
         if verbose:
             print(f"Column '{batch_col}' contains only null values — skipping batch correction.")
         batch_correction = False
+    print("DEBUG: Batch correction check completed")
 
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
+    print("DEBUG: Output directory created")
 
     # Only process batch column if batch correction is enabled
     if batch_correction:
@@ -231,8 +234,10 @@ def compute_pseudobulk_dataframes(
         small_batches = batch_counts[batch_counts < 5]
         if not small_batches.empty and verbose:
             print(f"\n\n\n\nWarning: The following batches have fewer than 5 samples: {small_batches.to_dict()}. Consider merging these batches.\n\n\n\n")
+    print("DEBUG: Batch processing completed")
 
     X_data = adata.X.toarray() if not isinstance(adata.X, np.ndarray) else adata.X
+    print("DEBUG: X_data conversion completed")
 
     if np.isnan(X_data).any() or (X_data < 0).any() or np.isinf(X_data).any():
         if verbose:
@@ -247,6 +252,7 @@ def compute_pseudobulk_dataframes(
     else:
         if verbose:
             print("\n\n\n\nNo NaN, negative, or Inf values found in X_data.\n\n\n\n")
+    print("DEBUG: X_data validation and cleaning completed")
 
     gene_variances = np.var(X_data, axis=0)
     nonzero_variance_mask = gene_variances > 0
@@ -255,12 +261,15 @@ def compute_pseudobulk_dataframes(
 
     gene_names = adata.var_names[nonzero_variance_mask]
     X_data = X_data[:, nonzero_variance_mask]
+    print("DEBUG: Gene variance filtering completed")
 
     samples = adata.obs[sample_col].unique()
     cell_types = adata.obs[celltype_col].unique()
+    print(f"DEBUG: Found {len(samples)} samples and {len(cell_types)} cell types")
 
     cell_expression_df = pd.DataFrame(index=cell_types, columns=samples, dtype=object)
     cell_proportion_df = pd.DataFrame(index=cell_types, columns=samples, dtype=float)
+    print("DEBUG: DataFrames initialization completed")
 
     for sample in samples:
         sample_mask = adata.obs[sample_col] == sample
@@ -278,6 +287,7 @@ def compute_pseudobulk_dataframes(
 
             cell_expression_df.at[ctype, sample] = expr_series
             cell_proportion_df.loc[ctype, sample] = proportion
+    print("DEBUG: Pseudobulk computation loop completed")
 
     if verbose:
         print("\n\n\n\nSuccessfully computed pseudobulk data.\n\n\n\n")
@@ -289,6 +299,7 @@ def compute_pseudobulk_dataframes(
 
     f = io.StringIO()
     if batch_correction:
+        print("DEBUG: Starting ComBat correction")
         if verbose:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -306,24 +317,36 @@ def compute_pseudobulk_dataframes(
                     batch_col=batch_col, sample_col=sample_col, verbose=verbose
                 )
             print("\nComBat correction completed successfully.\n")
+        print("DEBUG: ComBat correction completed")
     else:
         if verbose:
             print("\nSkipping ComBat correction as batch_col is None or not found.\n")
         cell_expression_corrected_df = cell_expression_df.copy(deep=True)
+        print("DEBUG: Skipped ComBat correction, copied original data")
 
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, n_features)
+    print("DEBUG: Highly variable gene selection completed")
+    
     cell_expression_corrected_df, top_features = select_hvf_loess(
         cell_expression_corrected_df, n_features=n_features, frac=frac
     )
+    print("DEBUG: LOESS-based feature selection completed")
+    
     proportion_df = cell_proportion_df.T
+    print("DEBUG: Proportion dataframe transpose completed")
 
     pseudobulk = {
         "cell_expression": cell_expression_df,
         "cell_proportion": proportion_df,
         "cell_expression_corrected": cell_expression_corrected_df
     }
+    print("DEBUG: Pseudobulk dictionary creation completed")
 
     save_dataframe_as_strings(cell_expression_corrected_df, pseudobulk_dir, "expression.csv")
+    print("DEBUG: Expression dataframe saved")
+    
     save_dataframe_as_strings(cell_proportion_df, pseudobulk_dir, "proportion.csv")
-
+    print("DEBUG: Proportion dataframe saved")
+    
+    print("DEBUG: Function completed successfully")
     return pseudobulk
