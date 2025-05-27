@@ -90,15 +90,18 @@ def find_hvgs(
             return hvgs_df
     return None
 
-import numpy as np
 import pandas as pd
+import numpy as np
+import scanpy as sc
+import anndata as ad
 from scipy import sparse
-from statsmodels.nonparametric.smoothers_lowess import lowess
 import time
 
-def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
+
+def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3, 
+                     min_disp=0.5, verbose=False):
     """
-    Select highly variable features (HVFs) from pseudobulk data using LOESS with sparse matrix optimization.
+    Select highly variable features (HVFs) from pseudobulk data using Scanpy.
     
     Parameters
     ----------
@@ -107,17 +110,24 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
         Each cell contains a pd.Series with gene expression values (indexed by gene names).
     n_features : int, default 2000
         Number of top HVFs to select.
-    frac : float, default 0.3
-        Fraction parameter for LOESS smoothing.
+    min_mean : float, default 0.0125
+        Minimum mean expression for gene filtering.
+    max_mean : float, default 3
+        Maximum mean expression for gene filtering.
+    min_disp : float, default 0.5
+        Minimum dispersion for gene filtering.
     verbose : bool, default False
         If True, prints progress information.
         
     Returns
     -------
-    sample_df : pd.DataFrame
-        Sample-by-feature matrix (rows = samples, columns = selected features).
-    top_features : pd.Index
-        Index of the selected features.
+    adata : anndata.AnnData
+        AnnData object with samples as observations and genes as variables.
+        Contains HVG information in .var dataframe.
+    expression_df : pd.DataFrame
+        Sample-by-gene expression matrix as a DataFrame (all genes).
+    hvg_expression_df : pd.DataFrame
+        Sample-by-gene expression matrix for only the selected HVGs.
     """
     start_time = time.time() if verbose else None
     
@@ -168,75 +178,68 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
         sparsity = 1 - (sparse_matrix.nnz / (n_samples * n_genes))
         print(f"Sparse matrix: {sparse_matrix.shape}, sparsity: {sparsity:.3f}")
     
-    # Step 3: Compute statistics using optimized sparse operations
-    means = np.array(sparse_matrix.mean(axis=0)).flatten()
+    # Step 3: Create AnnData object
+    if verbose:
+        print("Creating AnnData object...")
     
-    # Efficient variance calculation: Var = E[X²] - E[X]²
-    sparse_matrix.data = sparse_matrix.data ** 2  # In-place squaring
-    mean_squared = np.array(sparse_matrix.mean(axis=0)).flatten()
-    variances = np.maximum(mean_squared - means ** 2, 0)  # Handle precision issues
+    # Create observation (sample) metadata
+    obs_df = pd.DataFrame(index=pseudobulk.columns)
+    obs_df.index.name = 'sample'
     
-    # Step 4: Filter genes with meaningful signal
-    valid_mask = (variances > 0) & (means > 0)
-    if not valid_mask.any():
-        raise ValueError("No genes with positive variance found")
+    # Create variable (gene) metadata
+    var_df = pd.DataFrame(index=gene_index)
+    var_df.index.name = 'gene'
     
-    valid_means = means[valid_mask]
-    valid_variances = variances[valid_mask]
-    valid_gene_indices = np.where(valid_mask)[0]
+    # Create AnnData object with sparse matrix
+    adata = ad.AnnData(X=sparse_matrix, obs=obs_df, var=var_df)
     
     if verbose:
-        print(f"Analyzing {len(valid_means)} genes with positive variance")
+        print(f"Created AnnData object: {adata}")
     
-    # Step 5: LOESS fitting
-    loess_fit = lowess(valid_variances, valid_means, frac=frac)
-    fitted_var = np.interp(valid_means, loess_fit[:, 0], loess_fit[:, 1])
-    residuals = valid_variances - fitted_var
+    # Step 4: Use Scanpy to identify highly variable genes
+    if verbose:
+        print("Identifying highly variable genes using Scanpy...")
     
-    # Step 6: Select top features using argpartition (O(n) vs O(n log n))
-    n_features_actual = min(n_features, len(residuals))
+    # Store raw counts
+    adata.raw = adata
     
-    if n_features_actual == len(residuals):
-        top_indices = np.arange(len(residuals))
-    else:
-        top_indices = np.argpartition(residuals, -n_features_actual)[-n_features_actual:]
-    
-    # Sort selected features by residual value (highest first)
-    top_indices = top_indices[np.argsort(residuals[top_indices])[::-1]]
-    selected_gene_indices = valid_gene_indices[top_indices]
-    top_features = gene_index[selected_gene_indices]
-    
-    # Step 7: Reconstruct original matrix for selected features only
-    # This is more memory efficient than extracting from the squared matrix
-    final_data = []
-    
-    for sample_idx, sample in enumerate(pseudobulk.columns):
-        sample_row = np.zeros(len(top_features))
-        
-        for cell_type in pseudobulk.index:
-            s = pseudobulk.loc[cell_type, sample]
-            if isinstance(s, pd.Series) and len(s) > 0:
-                # Find intersection with selected features
-                common_features = s.index.intersection(top_features)
-                if len(common_features) > 0:
-                    feature_positions = top_features.get_indexer(common_features)
-                    sample_row[feature_positions] += s[common_features].values
-        
-        final_data.append(sample_row)
-    
-    sample_df = pd.DataFrame(
-        final_data,
-        index=pseudobulk.columns,
-        columns=top_features
+    # Identify highly variable genes
+    sc.pp.highly_variable_genes(
+        adata,
+        n_top_genes=n_features,
+        min_mean=min_mean,
+        max_mean=max_mean,
+        min_disp=min_disp,
+        subset=False  # Don't subset, just mark HVGs
     )
-    sample_df.index.name = "sample"
+    
+    if verbose:
+        n_hvgs = adata.var['highly_variable'].sum()
+        print(f"Identified {n_hvgs} highly variable genes")
+    
+    # Step 5: Create expression DataFrames
+    if verbose:
+        print("Creating expression DataFrames...")
+    
+    # Full expression matrix as DataFrame
+    expression_df = pd.DataFrame(
+        adata.X.toarray() if sparse.issparse(adata.X) else adata.X,
+        index=adata.obs.index,
+        columns=adata.var.index
+    )
+    
+    # HVG-only expression matrix
+    hvg_mask = adata.var['highly_variable']
+    hvg_expression_df = expression_df.loc[:, hvg_mask]
     
     if verbose:
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"\n[select_hvf_loess] Selected {len(top_features)} features in {elapsed_time:.2f} seconds\n")
+        print(f"\n[select_hvf_loess] Completed in {elapsed_time:.2f} seconds")
+        print(f"Full expression matrix shape: {expression_df.shape}")
+        print(f"HVG expression matrix shape: {hvg_expression_df.shape}")
     
-    return sample_df, top_features
+    return hvg_expression_df, adata
 
 def highly_variable_gene_selection(
     cell_expression_corrected_df: pd.DataFrame,

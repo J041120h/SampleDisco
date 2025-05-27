@@ -438,7 +438,7 @@ def compute_pseudobulk_dataframes(
     print("DEBUG: Highly variable gene selection completed")
     
     cell_expression_corrected_df, top_features = select_hvf_loess(
-        cell_expression_corrected_df, n_features=n_features, frac=frac
+        cell_expression_corrected_df, n_features=n_features
     )
     print("DEBUG: LOESS-based feature selection completed")
     

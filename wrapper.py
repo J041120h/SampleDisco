@@ -832,7 +832,6 @@ def wrapper(
             )
 
 
-
     if visualize_data:
         # if not status_flags["preprocessing"]:
         #     if plot_cell_umap_by_plot_group_flag or plot_umap_by_cell_type_flag:

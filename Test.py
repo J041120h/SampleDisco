@@ -135,10 +135,8 @@ def print_anndata_columns(h5ad_path):
     
     # Print .obs and .var column names
     print("obs columns:")
-    print(adata.obs.columns.tolist())
+    print(adata.uns.columns.keys())
     
-    print("\nvar columns:")
-    print(adata.var.columns.tolist())
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -184,17 +182,8 @@ def plot_tss_enrichment(adata, enrichment_key='TSS.enrichment', groupby=None, fi
 # Example usage
 if __name__ == "__main__":
     print("Beginning to merge h5ad files...")
-    h5ad_file = "/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad"
+    h5ad_file ="/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad"
 
     # ---- Load the AnnData object ----
     adata = sc.read_h5ad(h5ad_file)
-    plot_tss_enrichment(adata)
-    # ---- Check if 'sample' column exists and count cells per sample ----
-    if 'sample' not in adata.obs.columns:
-        raise ValueError("The 'sample' column is not present in adata.obs")
-
-    cell_counts = adata.obs['sample'].value_counts().sort_index()
-
-    # ---- Display the result ----
-    print("Number of cells per sample:")
-    print(cell_counts)
+    print_anndata_columns(adata)
