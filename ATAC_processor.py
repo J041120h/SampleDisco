@@ -32,15 +32,15 @@ from ATAC_visualization import *
 
 if __name__ == "__main__":
 
-    # atac_sample, atac_cluster = run_scatac_pipeline(
-    #     filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
-    #     output_dir  = "/Users/harry/Desktop/GenoDistance/result",
-    #     metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-    #     sample_column= "sample",
-    #     batch_key    = 'Donor',
-    #     leiden_resolution = 0.8,
-    #     use_snapatac2_dimred = True  # Use snapATAC2 for dim reduction
-    # )
+    atac_sample, atac_cluster = run_scatac_pipeline(
+        filepath     = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
+        output_dir  = "/Users/harry/Desktop/GenoDistance/result",
+        metadata_path= "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
+        sample_column= "sample",
+        batch_key    = 'Donor',
+        leiden_resolution = 0.8,
+        use_snapatac2_dimred = True  # Use snapATAC2 for dim reduction
+    )
 
     # atac_sample = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad")
     # pseudobulk_df = compute_pseudobulk_dataframes(
@@ -73,9 +73,9 @@ if __name__ == "__main__":
     #     grouping_columns = ['current_severity']
     # )
 
-    atac_sample = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad")
-    ATAC_visualization_both(atac_sample, figsize=(10, 8), point_size=50, 
-                          alpha=0.7, grouping_columns = ['current_severity', 'Donor'], output_dir="/Users/harry/Desktop/GenoDistance/result/ATAC")
+    # atac_sample = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad")
+    # ATAC_visualization_both(atac_sample, figsize=(10, 8), point_size=50, 
+    #                       alpha=0.7, grouping_columns = ['current_severity', 'Donor'], output_dir="/Users/harry/Desktop/GenoDistance/result/ATAC")
 
 
     print("end of process")
