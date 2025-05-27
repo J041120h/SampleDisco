@@ -13,6 +13,7 @@ from combat.pycombat import pycombat
 import warnings
 import contextlib
 from HVG import highly_variable_gene_selection, select_hvf_loess
+from scipy.sparse import issparse, csr_matrix, vstack
 
 def check_nan_and_negative_in_lists(df: pd.DataFrame, verbose=False) -> bool:
     found_nan = False
@@ -194,6 +195,79 @@ def combat_correct_cell_expressions(
         print(f"[combat] Total runtime: {elapsed_time:.2f} seconds")
     return corrected_df
 
+def compute_sparse_mean(X_sparse, indices):
+    """Compute mean of sparse matrix for given indices efficiently."""
+    if len(indices) == 0:
+        return np.zeros(X_sparse.shape[1])
+    
+    # Subset the sparse matrix
+    subset = X_sparse[indices, :]
+    
+    # Compute mean efficiently
+    if issparse(subset):
+        # For sparse matrices, sum and divide
+        sum_vec = np.asarray(subset.sum(axis=0)).flatten()
+        return sum_vec / len(indices)
+    else:
+        # For dense arrays
+        return subset.mean(axis=0)
+
+def validate_sparse_data(X_sparse, verbose=False):
+    """Validate sparse matrix data for NaN, Inf, and negative values."""
+    if issparse(X_sparse):
+        # Check the data attribute of sparse matrix
+        data = X_sparse.data
+        
+        has_nan = np.isnan(data).any()
+        has_inf = np.isinf(data).any()
+        has_neg = (data < 0).any()
+        
+        if has_nan or has_inf or has_neg:
+            if verbose:
+                if has_nan:
+                    print("\n\n\n\nWarning: Sparse matrix contains NaN values.\n\n\n\n")
+                if has_inf:
+                    print("\n\n\n\nWarning: Sparse matrix contains Inf values.\n\n\n\n")
+                if has_neg:
+                    print("\n\n\n\nWarning: Sparse matrix contains negative values.\n\n\n\n")
+                print("\n\n\n\nWarning: Found invalid values in sparse matrix. Cleaning data.\n\n\n\n")
+            
+            # Clean the data
+            data = np.nan_to_num(data, nan=0, posinf=0, neginf=0)
+            data[data < 0] = 0  # Set negative values to 0
+            
+            # Create new sparse matrix with cleaned data
+            X_sparse = csr_matrix((data, X_sparse.indices, X_sparse.indptr), shape=X_sparse.shape)
+        else:
+            if verbose:
+                print("\n\n\n\nNo NaN, negative, or Inf values found in sparse matrix.\n\n\n\n")
+    
+    return X_sparse
+
+def compute_gene_variance_sparse(X_sparse):
+    """Compute variance for each gene (column) in a sparse matrix efficiently."""
+    if issparse(X_sparse):
+        n_cells = X_sparse.shape[0]
+        
+        # Compute mean for each gene
+        mean_vec = np.asarray(X_sparse.mean(axis=0)).flatten()
+        
+        # Compute E[X^2] - (E[X])^2
+        # For sparse matrix, we can compute sum of squares efficiently
+        X_squared = X_sparse.copy()
+        X_squared.data **= 2
+        mean_squared = np.asarray(X_squared.mean(axis=0)).flatten()
+        
+        # Variance = E[X^2] - (E[X])^2
+        variance = mean_squared - (mean_vec ** 2)
+        
+        # Handle numerical errors
+        variance[variance < 0] = 0
+        
+        return variance
+    else:
+        return np.var(X_sparse, axis=0)
+
 def compute_pseudobulk_dataframes(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -236,31 +310,50 @@ def compute_pseudobulk_dataframes(
             print(f"\n\n\n\nWarning: The following batches have fewer than 5 samples: {small_batches.to_dict()}. Consider merging these batches.\n\n\n\n")
     print("DEBUG: Batch processing completed")
 
-    X_data = adata.X.toarray() if not isinstance(adata.X, np.ndarray) else adata.X
-    print("DEBUG: X_data conversion completed")
-
-    if np.isnan(X_data).any() or (X_data < 0).any() or np.isinf(X_data).any():
-        if verbose:
-            if np.isnan(X_data).any():
-                print("\n\n\n\nWarning: X_data contains NaN values.\n\n\n\n")
-            if (X_data < 0).any():
-                print("\n\n\n\nWarning: X_data contains negative values.\n\n\n\n")
-            if np.isinf(X_data).any():
-                print("\n\n\n\nWarning: X_data contains Inf values.\n\n\n\n")
-            print("\n\n\n\nWarning: Found NaN or Inf values in expression data. Replacing with zeros.\n\n\n\n")
-        X_data = np.nan_to_num(X_data, nan=0, posinf=0, neginf=0)
+    # Keep data as sparse if possible
+    X_data = adata.X
+    is_sparse = issparse(X_data)
+    
+    if is_sparse:
+        print("DEBUG: Working with sparse matrix")
+        # Validate and clean sparse matrix
+        X_data = validate_sparse_data(X_data, verbose=verbose)
+        
+        # Compute variance for sparse matrix
+        gene_variances = compute_gene_variance_sparse(X_data)
     else:
-        if verbose:
-            print("\n\n\n\nNo NaN, negative, or Inf values found in X_data.\n\n\n\n")
-    print("DEBUG: X_data validation and cleaning completed")
+        print("DEBUG: Working with dense matrix")
+        # Handle dense matrix as before
+        if np.isnan(X_data).any() or (X_data < 0).any() or np.isinf(X_data).any():
+            if verbose:
+                if np.isnan(X_data).any():
+                    print("\n\n\n\nWarning: X_data contains NaN values.\n\n\n\n")
+                if (X_data < 0).any():
+                    print("\n\n\n\nWarning: X_data contains negative values.\n\n\n\n")
+                if np.isinf(X_data).any():
+                    print("\n\n\n\nWarning: X_data contains Inf values.\n\n\n\n")
+                print("\n\n\n\nWarning: Found NaN or Inf values in expression data. Replacing with zeros.\n\n\n\n")
+            X_data = np.nan_to_num(X_data, nan=0, posinf=0, neginf=0)
+        else:
+            if verbose:
+                print("\n\n\n\nNo NaN, negative, or Inf values found in X_data.\n\n\n\n")
+        
+        gene_variances = np.var(X_data, axis=0)
+    
+    print("DEBUG: Data validation and cleaning completed")
 
-    gene_variances = np.var(X_data, axis=0)
     nonzero_variance_mask = gene_variances > 0
     if not np.all(nonzero_variance_mask) and verbose:
         print("\n\n\n\nWarning: Found genes with zero variance. Excluding these genes from analysis.\n\n\n\n")
 
     gene_names = adata.var_names[nonzero_variance_mask]
-    X_data = X_data[:, nonzero_variance_mask]
+    
+    # Subset data efficiently
+    if is_sparse:
+        X_data = X_data[:, nonzero_variance_mask]
+    else:
+        X_data = X_data[:, nonzero_variance_mask]
+    
     print("DEBUG: Gene variance filtering completed")
 
     samples = adata.obs[sample_col].unique()
@@ -271,15 +364,31 @@ def compute_pseudobulk_dataframes(
     cell_proportion_df = pd.DataFrame(index=cell_types, columns=samples, dtype=float)
     print("DEBUG: DataFrames initialization completed")
 
+    # Create boolean masks for efficient indexing
+    sample_masks = {}
     for sample in samples:
-        sample_mask = adata.obs[sample_col] == sample
-        total_cells = np.sum(sample_mask)
+        sample_masks[sample] = adata.obs[sample_col] == sample
+
+    for sample in samples:
+        sample_mask = sample_masks[sample]
+        sample_indices = np.where(sample_mask)[0]
+        total_cells = len(sample_indices)
 
         for ctype in cell_types:
+            # Get indices for this cell type within the sample
             ctype_mask = sample_mask & (adata.obs[celltype_col] == ctype)
-            num_cells = np.sum(ctype_mask)
+            ctype_indices = np.where(ctype_mask)[0]
+            num_cells = len(ctype_indices)
 
-            expr_values = X_data[ctype_mask, :].mean(axis=0) if num_cells > 0 else np.zeros(len(gene_names))
+            if num_cells > 0:
+                # Compute mean expression efficiently
+                if is_sparse:
+                    expr_values = compute_sparse_mean(X_data, ctype_indices)
+                else:
+                    expr_values = X_data[ctype_indices, :].mean(axis=0)
+            else:
+                expr_values = np.zeros(len(gene_names))
+            
             proportion = num_cells / total_cells if total_cells > 0 else 0.0
 
             # Create expression series
@@ -287,6 +396,7 @@ def compute_pseudobulk_dataframes(
 
             cell_expression_df.at[ctype, sample] = expr_series
             cell_proportion_df.loc[ctype, sample] = proportion
+    
     print("DEBUG: Pseudobulk computation loop completed")
 
     if verbose:
