@@ -92,12 +92,14 @@ def find_hvgs(
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
 from statsmodels.nonparametric.smoothers_lowess import lowess
+import time
 
 def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
     """
-    Select highly variable features (HVFs) from pseudobulk data using LOESS.
-
+    Select highly variable features (HVFs) from pseudobulk data using LOESS with sparse matrix optimization.
+    
     Parameters
     ----------
     pseudobulk : pd.DataFrame
@@ -109,7 +111,7 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
         Fraction parameter for LOESS smoothing.
     verbose : bool, default False
         If True, prints progress information.
-
+        
     Returns
     -------
     sample_df : pd.DataFrame
@@ -118,51 +120,122 @@ def select_hvf_loess(pseudobulk, n_features=2000, frac=0.3, verbose=False):
         Index of the selected features.
     """
     start_time = time.time() if verbose else None
-
-    # Step 1: Flatten into sample-by-feature matrix with gene names
+    
     if verbose:
-        print("Constructing sample-by-feature matrix from pseudobulk...")
-
-    sample_dict = {}
-
+        print("Constructing sparse sample-by-feature matrix from pseudobulk...")
+    
+    # Step 1: Build unified gene index efficiently
+    all_genes = set()
     for sample in pseudobulk.columns:
-        combined = []
         for cell_type in pseudobulk.index:
             s = pseudobulk.loc[cell_type, sample]
-            if isinstance(s, pd.Series):
-                combined.append(s)
-        if len(combined) > 0:
-            full_series = pd.concat(combined)
-            sample_dict[sample] = full_series
-
-    sample_df = pd.DataFrame(sample_dict).T
-    sample_df.index.name = "sample"
-
-    # Step 2: Compute per-feature mean and variance
-    means = sample_df.mean(axis=0)
-    variances = sample_df.var(axis=0)
-
-    # Step 3: Fit LOESS of variance vs. mean
-    loess_fit = lowess(variances, means, frac=frac)
-
-    # Step 4: Predict LOESS-smoothed variance
-    fitted_var = np.interp(means, loess_fit[:, 0], loess_fit[:, 1])
-
-    # Step 5: Calculate residuals
-    residuals = variances - fitted_var
-
-    # Step 6: Select top features by residuals
-    if sample_df.shape[1] > n_features:
-        top_features = residuals.nlargest(n_features).index
-        sample_df = sample_df[top_features]
+            if isinstance(s, pd.Series) and len(s) > 0:
+                all_genes.update(s.index)
+    
+    gene_index = pd.Index(sorted(all_genes))
+    n_genes = len(gene_index)
+    n_samples = len(pseudobulk.columns)
+    
+    if verbose:
+        print(f"Found {n_genes} unique genes across {n_samples} samples")
+    
+    # Step 2: Build sparse matrix using COO format for efficient construction
+    row_indices = []
+    col_indices = []
+    data_values = []
+    
+    for sample_idx, sample in enumerate(pseudobulk.columns):
+        for cell_type in pseudobulk.index:
+            s = pseudobulk.loc[cell_type, sample]
+            if isinstance(s, pd.Series) and len(s) > 0:
+                # Use get_indexer for batch lookup - much faster than individual lookups
+                gene_positions = gene_index.get_indexer(s.index)
+                valid_mask = gene_positions >= 0
+                
+                if valid_mask.any():
+                    n_valid = valid_mask.sum()
+                    row_indices.extend([sample_idx] * n_valid)
+                    col_indices.extend(gene_positions[valid_mask])
+                    data_values.extend(s.values[valid_mask])
+    
+    # Convert to CSR for efficient arithmetic operations
+    sparse_matrix = sparse.coo_matrix(
+        (data_values, (row_indices, col_indices)), 
+        shape=(n_samples, n_genes)
+    ).tocsr()
+    
+    if verbose:
+        sparsity = 1 - (sparse_matrix.nnz / (n_samples * n_genes))
+        print(f"Sparse matrix: {sparse_matrix.shape}, sparsity: {sparsity:.3f}")
+    
+    # Step 3: Compute statistics using optimized sparse operations
+    means = np.array(sparse_matrix.mean(axis=0)).flatten()
+    
+    # Efficient variance calculation: Var = E[X²] - E[X]²
+    sparse_matrix.data = sparse_matrix.data ** 2  # In-place squaring
+    mean_squared = np.array(sparse_matrix.mean(axis=0)).flatten()
+    variances = np.maximum(mean_squared - means ** 2, 0)  # Handle precision issues
+    
+    # Step 4: Filter genes with meaningful signal
+    valid_mask = (variances > 0) & (means > 0)
+    if not valid_mask.any():
+        raise ValueError("No genes with positive variance found")
+    
+    valid_means = means[valid_mask]
+    valid_variances = variances[valid_mask]
+    valid_gene_indices = np.where(valid_mask)[0]
+    
+    if verbose:
+        print(f"Analyzing {len(valid_means)} genes with positive variance")
+    
+    # Step 5: LOESS fitting
+    loess_fit = lowess(valid_variances, valid_means, frac=frac)
+    fitted_var = np.interp(valid_means, loess_fit[:, 0], loess_fit[:, 1])
+    residuals = valid_variances - fitted_var
+    
+    # Step 6: Select top features using argpartition (O(n) vs O(n log n))
+    n_features_actual = min(n_features, len(residuals))
+    
+    if n_features_actual == len(residuals):
+        top_indices = np.arange(len(residuals))
     else:
-        top_features = sample_df.columns
-
+        top_indices = np.argpartition(residuals, -n_features_actual)[-n_features_actual:]
+    
+    # Sort selected features by residual value (highest first)
+    top_indices = top_indices[np.argsort(residuals[top_indices])[::-1]]
+    selected_gene_indices = valid_gene_indices[top_indices]
+    top_features = gene_index[selected_gene_indices]
+    
+    # Step 7: Reconstruct original matrix for selected features only
+    # This is more memory efficient than extracting from the squared matrix
+    final_data = []
+    
+    for sample_idx, sample in enumerate(pseudobulk.columns):
+        sample_row = np.zeros(len(top_features))
+        
+        for cell_type in pseudobulk.index:
+            s = pseudobulk.loc[cell_type, sample]
+            if isinstance(s, pd.Series) and len(s) > 0:
+                # Find intersection with selected features
+                common_features = s.index.intersection(top_features)
+                if len(common_features) > 0:
+                    feature_positions = top_features.get_indexer(common_features)
+                    sample_row[feature_positions] += s[common_features].values
+        
+        final_data.append(sample_row)
+    
+    sample_df = pd.DataFrame(
+        final_data,
+        index=pseudobulk.columns,
+        columns=top_features
+    )
+    sample_df.index.name = "sample"
+    
     if verbose:
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"\n\n[select top features after concatenation] Total runtime: {elapsed_time:.2f} seconds\n\n")
-
+        print(f"\n[select_hvf_loess] Selected {len(top_features)} features in {elapsed_time:.2f} seconds\n")
+    
     return sample_df, top_features
 
 def highly_variable_gene_selection(
