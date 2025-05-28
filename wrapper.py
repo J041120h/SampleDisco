@@ -460,8 +460,8 @@ def wrapper(
         process_anndata_with_pca(
             adata=AnnData_sample,
             pseudobulk=pseudobulk_df,
+            pseudobulk_anndata = pseudobulk_adata,
             sample_col = sample_col,
-            grouping_columns = [batch_col],
             n_expression_pcs=n_expression_pcs,
             n_proportion_pcs=n_proportion_pcs,
             output_dir=pca_output_dir,
@@ -810,14 +810,15 @@ def wrapper(
             )
 
             process_anndata_with_pca(
-                adata = atac_sample,
-                pseudobulk=atac_pseudobulk_df,
-                sample_col=atac_sample_col,
-                grouping_columns=[atac_batch_col],
-                n_expression_pcs=atac_pca_n_expression_pcs,
-                n_proportion_pcs=atac_pca_n_proportion_pcs,
-                output_dir=atac_pca_output_dir,
-                verbose=atac_pca_verbose
+                adata=AnnData_sample,
+                pseudobulk=pseudobulk_df,
+                pseudobulk_anndata = pseudobulk_adata,
+                sample_col = sample_col,
+                n_expression_pcs=n_expression_pcs,
+                n_proportion_pcs=n_proportion_pcs,
+                output_dir=pca_output_dir,
+                atac = True,
+                verbose=pca_verbose
             )
 
         if atac_visualization_processing:

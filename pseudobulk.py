@@ -267,7 +267,7 @@ def compute_gene_variance_sparse(X_sparse):
         return variance
     else:
         return np.var(X_sparse, axis=0)
-
+    
 def compute_pseudobulk_dataframes(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -459,4 +459,5 @@ def compute_pseudobulk_dataframes(
     print("DEBUG: Proportion dataframe saved")
     
     print("DEBUG: Function completed successfully")
-    return pseudobulk,pseudobulk_adata
+    sc.write(os.path.join(pseudobulk_dir, "pseudobulk_adata.h5ad"), pseudobulk_adata)
+    return pseudobulk, pseudobulk_adata
