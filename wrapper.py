@@ -446,7 +446,7 @@ def wrapper(
         if status_flags["cell_type_cluster"] == False:
             raise ValueError("Cell type clustering is required before dimension reduction.")
 
-        pseudobulk_df = compute_pseudobulk_dataframes(
+        pseudobulk_df,pseudobulk_adata = compute_pseudobulk_dataframes(
             adata=AnnData_sample,
             batch_col=batch_col,
             sample_col=sample_col,
@@ -467,6 +467,7 @@ def wrapper(
             output_dir=pca_output_dir,
             verbose=pca_verbose
         )
+
         status_flags["DimensionalityReduction"] = True
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
@@ -797,7 +798,7 @@ def wrapper(
                 raise FileNotFoundError(f"Preprocessed ATAC data not found at {os.path.join(atac_output_dir, 'harmony', 'ATAC_sample.h5ad')}. Please run the preprocessing step first.")
 
         if atac_pseudobulk_dimensionality_reduction:
-            atac_pseudobulk_df = compute_pseudobulk_dataframes(
+            atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_dataframes(
                 adata=atac_sample,
                 batch_col=atac_batch_col,
                 sample_col=atac_sample_col,

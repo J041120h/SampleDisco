@@ -157,8 +157,8 @@ atac_visualization_grouping_columns:
 atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
-preprocessing: true
-cell_type_cluster: true
+preprocessing: false
+cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: false

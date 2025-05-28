@@ -437,7 +437,7 @@ def compute_pseudobulk_dataframes(
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, n_features)
     print("DEBUG: Highly variable gene selection completed")
     
-    cell_expression_corrected_df, top_features = select_hvf_loess(
+    cell_expression_corrected_df, pseudobulk_adata = select_hvf_loess(
         cell_expression_corrected_df, n_features=n_features
     )
     print("DEBUG: LOESS-based feature selection completed")
@@ -459,4 +459,4 @@ def compute_pseudobulk_dataframes(
     print("DEBUG: Proportion dataframe saved")
     
     print("DEBUG: Function completed successfully")
-    return pseudobulk
+    return pseudobulk,pseudobulk_adata

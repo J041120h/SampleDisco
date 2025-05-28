@@ -217,6 +217,11 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
         n_hvgs = adata.var['highly_variable'].sum()
         print(f"Identified {n_hvgs} highly variable genes")
     
+    if verbose:
+        print("normalizing and log-transforming data...")
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+
     # Step 5: Create expression DataFrames
     if verbose:
         print("Creating expression DataFrames...")
