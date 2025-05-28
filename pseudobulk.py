@@ -267,7 +267,7 @@ def compute_gene_variance_sparse(X_sparse):
         return variance
     else:
         return np.var(X_sparse, axis=0)
-    
+
 def compute_pseudobulk_dataframes(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -277,11 +277,10 @@ def compute_pseudobulk_dataframes(
     n_features: int = 2000,
     frac: float = 0.3,
     verbose: bool = False
-):
+    ):
     start_time = time.time() if verbose else None
     batch_correction = True
-    print("DEBUG: Function started")
-    
+
     # Check if batch correction should be applied
     if batch_col is None or batch_col not in adata.obs.columns:
         if verbose:
@@ -291,78 +290,74 @@ def compute_pseudobulk_dataframes(
         if verbose:
             print(f"Column '{batch_col}' contains only null values — skipping batch correction.")
         batch_correction = False
-    print("DEBUG: Batch correction check completed")
 
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
-    print("DEBUG: Output directory created")
+    
+    # Allow overwriting to prevent issues with existing files
+    keys_to_remove = ['X_DR_expression', 'X_pca_expression', 'X_pca_proportion']
+    for key in keys_to_remove:
+        if key in adata.uns:
+            del adata.uns[key]
+            print(f"Removed key '{key}' from adata.uns to prevent overwriting issues.") if verbose else None
 
     # Only process batch column if batch correction is enabled
     if batch_correction:
         if adata.obs[batch_col].isnull().any():
             if verbose:
-                print("\n\n\n\nWarning: Missing batch labels found. Filling missing values with 'Unknown'.\n\n\n\n")
+                print("Warning: Missing batch labels found. Filling missing values with 'Unknown'.")
             adata.obs[batch_col].fillna("Unknown", inplace=True)
 
         batch_counts = adata.obs[batch_col].value_counts()
         small_batches = batch_counts[batch_counts < 5]
         if not small_batches.empty and verbose:
-            print(f"\n\n\n\nWarning: The following batches have fewer than 5 samples: {small_batches.to_dict()}. Consider merging these batches.\n\n\n\n")
-    print("DEBUG: Batch processing completed")
+            print(f"Warning: The following batches have fewer than 5 samples: {small_batches.to_dict()}. Consider merging these batches.")
 
     # Keep data as sparse if possible
     X_data = adata.X
     is_sparse = issparse(X_data)
-    
+
     if is_sparse:
-        print("DEBUG: Working with sparse matrix")
         # Validate and clean sparse matrix
         X_data = validate_sparse_data(X_data, verbose=verbose)
         
         # Compute variance for sparse matrix
         gene_variances = compute_gene_variance_sparse(X_data)
     else:
-        print("DEBUG: Working with dense matrix")
         # Handle dense matrix as before
         if np.isnan(X_data).any() or (X_data < 0).any() or np.isinf(X_data).any():
             if verbose:
                 if np.isnan(X_data).any():
-                    print("\n\n\n\nWarning: X_data contains NaN values.\n\n\n\n")
+                    print("Warning: X_data contains NaN values.")
                 if (X_data < 0).any():
-                    print("\n\n\n\nWarning: X_data contains negative values.\n\n\n\n")
+                    print("Warning: X_data contains negative values.")
                 if np.isinf(X_data).any():
-                    print("\n\n\n\nWarning: X_data contains Inf values.\n\n\n\n")
-                print("\n\n\n\nWarning: Found NaN or Inf values in expression data. Replacing with zeros.\n\n\n\n")
+                    print("Warning: X_data contains Inf values.")
+                print("Warning: Found NaN or Inf values in expression data. Replacing with zeros.")
             X_data = np.nan_to_num(X_data, nan=0, posinf=0, neginf=0)
         else:
             if verbose:
-                print("\n\n\n\nNo NaN, negative, or Inf values found in X_data.\n\n\n\n")
+                print("No NaN, negative, or Inf values found in X_data.")
         
         gene_variances = np.var(X_data, axis=0)
-    
-    print("DEBUG: Data validation and cleaning completed")
 
     nonzero_variance_mask = gene_variances > 0
     if not np.all(nonzero_variance_mask) and verbose:
-        print("\n\n\n\nWarning: Found genes with zero variance. Excluding these genes from analysis.\n\n\n\n")
+        print("Warning: Found genes with zero variance. Excluding these genes from analysis.")
 
     gene_names = adata.var_names[nonzero_variance_mask]
-    
+
     # Subset data efficiently
     if is_sparse:
         X_data = X_data[:, nonzero_variance_mask]
     else:
         X_data = X_data[:, nonzero_variance_mask]
-    
-    print("DEBUG: Gene variance filtering completed")
 
     samples = adata.obs[sample_col].unique()
     cell_types = adata.obs[celltype_col].unique()
-    print(f"DEBUG: Found {len(samples)} samples and {len(cell_types)} cell types")
 
     cell_expression_df = pd.DataFrame(index=cell_types, columns=samples, dtype=object)
     cell_proportion_df = pd.DataFrame(index=cell_types, columns=samples, dtype=float)
-    print("DEBUG: DataFrames initialization completed")
 
     # Create boolean masks for efficient indexing
     sample_masks = {}
@@ -396,20 +391,17 @@ def compute_pseudobulk_dataframes(
 
             cell_expression_df.at[ctype, sample] = expr_series
             cell_proportion_df.loc[ctype, sample] = proportion
-    
-    print("DEBUG: Pseudobulk computation loop completed")
 
     if verbose:
-        print("\n\n\n\nSuccessfully computed pseudobulk data.\n\n\n\n")
+        print("Successfully computed pseudobulk data.")
 
     if verbose:
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"\n\n[pseudobulk] Total runtime: {elapsed_time:.2f} seconds\n\n")
+        print(f"[pseudobulk] Total runtime: {elapsed_time:.2f} seconds")
 
     f = io.StringIO()
     if batch_correction:
-        print("DEBUG: Starting ComBat correction")
         if verbose:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -417,7 +409,7 @@ def compute_pseudobulk_dataframes(
                     adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
                     batch_col=batch_col, sample_col=sample_col, verbose=verbose
                 )
-            print("\nComBat correction completed successfully.\n")
+            print("ComBat correction completed successfully.")
         else:
             # Suppress warnings and redirect output to a StringIO object
             with warnings.catch_warnings(), contextlib.redirect_stdout(f):
@@ -426,38 +418,28 @@ def compute_pseudobulk_dataframes(
                     adata, cell_expression_df, cell_proportion_df, pseudobulk_dir, 
                     batch_col=batch_col, sample_col=sample_col, verbose=verbose
                 )
-            print("\nComBat correction completed successfully.\n")
-        print("DEBUG: ComBat correction completed")
+            print("ComBat correction completed successfully.")
     else:
         if verbose:
-            print("\nSkipping ComBat correction as batch_col is None or not found.\n")
+            print("Skipping ComBat correction as batch_col is None or not found.")
         cell_expression_corrected_df = cell_expression_df.copy(deep=True)
-        print("DEBUG: Skipped ComBat correction, copied original data")
 
     cell_expression_corrected_df = highly_variable_gene_selection(cell_expression_corrected_df, n_features)
-    print("DEBUG: Highly variable gene selection completed")
-    
+
     cell_expression_corrected_df, pseudobulk_adata = select_hvf_loess(
         cell_expression_corrected_df, n_features=n_features, verbose=verbose
     )
-    print("DEBUG: LOESS-based feature selection completed")
-    
+
     proportion_df = cell_proportion_df.T
-    print("DEBUG: Proportion dataframe transpose completed")
 
     pseudobulk = {
         "cell_expression": cell_expression_df,
         "cell_proportion": proportion_df,
         "cell_expression_corrected": cell_expression_corrected_df
     }
-    print("DEBUG: Pseudobulk dictionary creation completed")
 
     save_dataframe_as_strings(cell_expression_corrected_df, pseudobulk_dir, "expression.csv")
-    print("DEBUG: Expression dataframe saved")
-    
     save_dataframe_as_strings(cell_proportion_df, pseudobulk_dir, "proportion.csv")
-    print("DEBUG: Proportion dataframe saved")
-    
-    print("DEBUG: Function completed successfully")
+
     sc.write(os.path.join(pseudobulk_dir, "pseudobulk_adata.h5ad"), pseudobulk_adata)
     return pseudobulk, pseudobulk_adata

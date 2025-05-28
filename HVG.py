@@ -122,11 +122,9 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
     -------
     adata : anndata.AnnData
         AnnData object with samples as observations and genes as variables.
-        Contains HVG information in .var dataframe.
+        Contains only HVG after subsetting.
     expression_df : pd.DataFrame
-        Sample-by-gene expression matrix as a DataFrame (all genes).
-    hvg_expression_df : pd.DataFrame
-        Sample-by-gene expression matrix for only the selected HVGs.
+        Sample-by-gene expression matrix as a DataFrame (only HVGs).
     """
     start_time = time.time() if verbose else None
     
@@ -173,10 +171,6 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
         shape=(n_samples, n_genes)
     ).tocsr()
     
-    if verbose:
-        sparsity = 1 - (sparse_matrix.nnz / (n_samples * n_genes))
-        print(f"Sparse matrix: {sparse_matrix.shape}, sparsity: {sparsity:.3f}")
-    
     # Step 3: Create AnnData object
     if verbose:
         print("Creating AnnData object...")
@@ -202,19 +196,18 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
     # Store raw counts
     adata.raw = adata
     
-    # Identify highly variable genes
+    # Identify highly variable genes and subset the data
     sc.pp.highly_variable_genes(
         adata,
         n_top_genes=n_features,
         min_mean=min_mean,
         max_mean=max_mean,
         min_disp=min_disp,
-        subset=False  # Don't subset, just mark HVGs
+        subset=True  # Subset to keep only HVGs
     )
     
     if verbose:
-        n_hvgs = adata.var['highly_variable'].sum()
-        print(f"Identified {n_hvgs} highly variable genes")
+        print(f"Subsetted to {adata.n_vars} highly variable genes")
     
     if verbose:
         print("Normalizing and log-transforming data...")
@@ -245,29 +238,24 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
         if verbose:
             print("No NaN values found in the data.")
 
-    # Step 5: Create expression DataFrames
+    # Step 5: Create expression DataFrame
     if verbose:
-        print("Creating expression DataFrames...")
+        print("Creating expression DataFrame...")
     
-    # Full expression matrix as DataFrame
+    # Expression matrix as DataFrame (already contains only HVGs)
     expression_df = pd.DataFrame(
         adata.X.toarray() if sparse.issparse(adata.X) else adata.X,
         index=adata.obs.index,
         columns=adata.var.index
     )
     
-    # HVG-only expression matrix
-    hvg_mask = adata.var['highly_variable']
-    hvg_expression_df = expression_df.loc[:, hvg_mask]
-    
     if verbose:
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"\n[select_hvf_loess] Completed in {elapsed_time:.2f} seconds")
-        print(f"Full expression matrix shape: {expression_df.shape}")
-        print(f"HVG expression matrix shape: {hvg_expression_df.shape}")
+        print(f"HVG expression matrix shape: {expression_df.shape}")
     
-    return hvg_expression_df, adata
+    return expression_df, adata
 
 def highly_variable_gene_selection(
     cell_expression_corrected_df: pd.DataFrame,
