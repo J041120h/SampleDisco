@@ -810,13 +810,13 @@ def wrapper(
             )
 
             process_anndata_with_pca(
-                adata=AnnData_sample,
-                pseudobulk=pseudobulk_df,
+                adata=atac_sample,
+                pseudobulk=atac_pseudobulk_df,
                 pseudobulk_anndata = pseudobulk_adata,
                 sample_col = sample_col,
                 n_expression_pcs=n_expression_pcs,
                 n_proportion_pcs=n_proportion_pcs,
-                output_dir=pca_output_dir,
+                output_dir=atac_pca_output_dir,
                 atac = True,
                 verbose=pca_verbose
             )

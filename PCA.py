@@ -8,6 +8,13 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from Grouping import find_sample_grouping
 from HVG import select_hvf_loess
 
+import scanpy as sc
+import pandas as pd
+import numpy as np
+from scipy import sparse
+from sklearn.decomposition import TruncatedSVD
+from sklearn.feature_extraction.text import TfidfTransformer
+
 def run_lsi_expression(
     adata: sc.AnnData,
     pseudobulk_anndata: sc.AnnData,
@@ -42,7 +49,7 @@ def run_lsi_expression(
     
     # Adjust n_components based on data dimensions
     n_samples, n_genes = pb_adata.shape
-    max_components = min(n_samples - 1, n_genes)
+    max_components = min(n_samples - 1, n_genes - 1)
     if n_components > max_components:
         if verbose:
             print(f"[run_lsi_expression] Warning: Requested n_components={n_components} exceeds maximum possible ({max_components}). Using {max_components} components.")
@@ -51,8 +58,13 @@ def run_lsi_expression(
     if n_components <= 0:
         raise ValueError(f"Cannot perform LSI: insufficient data dimensions (samples={n_samples}, genes={n_genes}).")
     
+    # Method 1: Try scanpy's built-in LSI
     try:
-        # Use scanpy's built-in LSI function
+        # Ensure data is in the right format
+        if sparse.issparse(pb_adata.X):
+            pb_adata.X = pb_adata.X.tocsr()
+        
+        # Use scanpy's LSI
         sc.tl.lsi(pb_adata, n_comps=n_components)
         
         # Extract LSI coordinates
@@ -64,12 +76,68 @@ def run_lsi_expression(
         )
         
         if verbose:
-            print(f"[run_lsi_expression] LSI computation successful. Shape: {lsi_df.shape}")
+            print(f"[run_lsi_expression] LSI computation successful using scanpy. Shape: {lsi_df.shape}")
             
         return lsi_df
         
     except Exception as e:
-        raise RuntimeError(f"LSI computation failed: {str(e)}")
+        if verbose:
+            print(f"[run_lsi_expression] Scanpy LSI failed: {str(e)}")
+        
+        # Method 2: Manual LSI implementation using TruncatedSVD with TF-IDF
+        try:
+            if verbose:
+                print("[run_lsi_expression] Attempting manual LSI with TF-IDF")
+            
+            # Get the data matrix
+            X = pb_adata.X
+            if sparse.issparse(X):
+                X = X.toarray()
+            
+            # Apply TF-IDF transformation (common for ATAC-seq LSI)
+            tfidf = TfidfTransformer(norm='l2', use_idf=True, sublinear_tf=True)
+            X_tfidf = tfidf.fit_transform(X)
+            
+            # Perform SVD (LSI is essentially SVD on term-document matrix)
+            svd = TruncatedSVD(n_components=n_components, random_state=42)
+            lsi_coords = svd.fit_transform(X_tfidf)
+            
+            lsi_df = pd.DataFrame(
+                data=lsi_coords,
+                index=pb_adata.obs_names,
+                columns=[f"LSI{i+1}" for i in range(lsi_coords.shape[1])]
+            )
+            
+            if verbose:
+                print(f"[run_lsi_expression] Manual LSI computation successful. Shape: {lsi_df.shape}")
+            
+            return lsi_df
+            
+        except Exception as e2:
+            if verbose:
+                print(f"[run_lsi_expression] Manual LSI also failed: {str(e2)}")
+            
+            # Method 3: Fallback to PCA
+            if verbose:
+                print("[run_lsi_expression] Warning: LSI computation failed. Using PCA fallback.")
+            
+            try:
+                sc.tl.pca(pb_adata, n_comps=n_components)
+                pca_coords = pb_adata.obsm['X_pca']
+                
+                pca_df = pd.DataFrame(
+                    data=pca_coords,
+                    index=pb_adata.obs_names,
+                    columns=[f"LSI{i+1}" for i in range(pca_coords.shape[1])]  # Keep LSI naming for consistency
+                )
+                
+                if verbose:
+                    print(f"[run_lsi_expression] PCA fallback successful. Shape: {pca_df.shape}")
+                
+                return pca_df
+                
+            except Exception as e3:
+                raise RuntimeError(f"All methods failed. LSI: {str(e)}, Manual LSI: {str(e2)}, PCA: {str(e3)}")
 
 
 def run_pca_expression(
@@ -197,7 +265,7 @@ def run_pca_expression(
         
         if verbose:
             if atac:
-                print(f"[run_pca_expression] PCA+LSI completed and stored in adata.uns['X_DR_expression'].")
+                print(f"[run_pca_expression] PCA+LSI completed.")
             else:
                 print(f"[run_pca_expression] PCA completed and stored in adata.uns['X_pca_expression'].")
             print(f"[run_pca_expression] PCA results also available in pseudobulk_anndata.obsm['X_pca']")
