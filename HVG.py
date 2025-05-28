@@ -97,7 +97,6 @@ import anndata as ad
 from scipy import sparse
 import time
 
-
 def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3, 
                      min_disp=0.5, verbose=False):
     """
@@ -218,9 +217,33 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
         print(f"Identified {n_hvgs} highly variable genes")
     
     if verbose:
-        print("normalizing and log-transforming data...")
+        print("Normalizing and log-transforming data...")
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
+    
+    # Check for NaN values and remove samples with NaNs
+    if verbose:
+        print("Checking for NaN values after normalization and log transformation...")
+    
+    # Convert to dense array if sparse for NaN checking
+    X_dense = adata.X.toarray() if sparse.issparse(adata.X) else adata.X
+    
+    # Check for NaN values per sample (row)
+    nan_mask = np.isnan(X_dense).any(axis=1)
+    n_nan_samples = nan_mask.sum()
+    
+    if n_nan_samples > 0:
+        if verbose:
+            print(f"Found {n_nan_samples} samples with NaN values. Removing these samples...")
+        
+        # Remove samples with NaN values
+        adata = adata[~nan_mask, :].copy()
+        
+        if verbose:
+            print(f"Remaining samples after NaN removal: {adata.n_obs}")
+    else:
+        if verbose:
+            print("No NaN values found in the data.")
 
     # Step 5: Create expression DataFrames
     if verbose:

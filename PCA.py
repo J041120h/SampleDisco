@@ -3,23 +3,90 @@ import time
 import numpy as np
 import pandas as pd
 import scanpy as sc
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.feature_extraction.text import TfidfTransformer
 from Grouping import find_sample_grouping
 from HVG import select_hvf_loess
+
+def run_lsi_expression(
+    adata: sc.AnnData,
+    pseudobulk_anndata: sc.AnnData,
+    n_components: int = 10,
+    verbose: bool = False
+) -> pd.DataFrame:
+    """
+    Performs LSI (Latent Semantic Indexing) on pseudobulk expression data for ATAC-seq using scanpy.
+    
+    Parameters:
+    -----------
+    adata : sc.AnnData
+        Original AnnData object
+    pseudobulk_anndata : sc.AnnData
+        AnnData object with samples as observations and genes as variables (sample * gene)
+    n_components : int, default 10
+        Number of LSI components to compute
+    verbose : bool, default False
+        Whether to print verbose output
+        
+    Returns:
+    --------
+    pd.DataFrame
+        LSI coordinates with samples as rows and LSI components as columns
+    """
+    if verbose:
+        print(f"[run_lsi_expression] Input pseudobulk_anndata shape: {pseudobulk_anndata.shape}")
+        print(f"[run_lsi_expression] Computing LSI with {n_components} components")
+    
+    # Create a copy to avoid modifying the original
+    pb_adata = pseudobulk_anndata.copy()
+    
+    # Adjust n_components based on data dimensions
+    n_samples, n_genes = pb_adata.shape
+    max_components = min(n_samples - 1, n_genes)
+    if n_components > max_components:
+        if verbose:
+            print(f"[run_lsi_expression] Warning: Requested n_components={n_components} exceeds maximum possible ({max_components}). Using {max_components} components.")
+        n_components = max_components
+    
+    if n_components <= 0:
+        raise ValueError(f"Cannot perform LSI: insufficient data dimensions (samples={n_samples}, genes={n_genes}).")
+    
+    try:
+        # Use scanpy's built-in LSI function
+        sc.tl.lsi(pb_adata, n_comps=n_components)
+        
+        # Extract LSI coordinates
+        lsi_coords = pb_adata.obsm['X_lsi']
+        lsi_df = pd.DataFrame(
+            data=lsi_coords,
+            index=pb_adata.obs_names,
+            columns=[f"LSI{i+1}" for i in range(lsi_coords.shape[1])]
+        )
+        
+        if verbose:
+            print(f"[run_lsi_expression] LSI computation successful. Shape: {lsi_df.shape}")
+            
+        return lsi_df
+        
+    except Exception as e:
+        raise RuntimeError(f"LSI computation failed: {str(e)}")
+
 
 def run_pca_expression(
     adata: sc.AnnData, 
     pseudobulk: dict, 
-    pseudobulk_anndata: sc.AnnData,  # New parameter: sample * gene AnnData object
+    pseudobulk_anndata: sc.AnnData,
     sample_col: str = 'sample',
     n_components: int = 10, 
     n_features: int = 2000, 
     frac: float = 0.3, 
+    atac: bool = False,
     verbose: bool = False
 ) -> None:
     """
     Performs PCA on pseudobulk-corrected expression data using scanpy and stores the principal components 
     in both the pseudobulk_anndata and original adata objects.
+    For ATAC data (atac=True), also computes LSI and stores combined results in X_DR_expression.
     
     Parameters:
     -----------
@@ -35,6 +102,8 @@ def run_pca_expression(
         Number of principal components to compute
     n_features : int, default 2000
         Number of highly variable features to use (if feature selection is needed)
+    atac : bool, default False
+        If True, also compute LSI and store combined results in X_DR_expression
     verbose : bool, default False
         Whether to print verbose output
     """
@@ -81,22 +150,56 @@ def run_pca_expression(
         
         if verbose:
             print(f"[run_pca_expression] PCA computation successful. Shape: {pca_df.shape}")
-            
-        # Store results in original adata
-        adata.uns["X_pca_expression"] = pca_df
         
+        # For ATAC data, also compute LSI and combine results
+        if atac:
+            if verbose:
+                print("[run_pca_expression] ATAC mode: Computing LSI in addition to PCA")
+            
+            try:
+                # Compute LSI on the original (non-log-transformed) data
+                lsi_df = run_lsi_expression(
+                    adata=adata,
+                    pseudobulk_anndata=pseudobulk_anndata,  # Use original, not log-transformed
+                    n_components=n_components,
+                    verbose=verbose
+                )
+                
+                # Store combined results in X_DR_expression
+                adata.uns["X_pca_expression"] = pca_df
+                adata.uns["X_DR_expression"] = lsi_df
+                
+                if verbose:
+                    print(f"[run_pca_expression] Combined PCA+LSI stored in adata.uns['X_DR_expression'] with shape: {combined_df.shape}")
+                
+            except Exception as e:
+                if verbose:
+                    print(f"[run_pca_expression] Warning: LSI computation failed ({str(e)}). Using PCA only.")
+                # Fall back to PCA only
+                adata.uns["X_pca_expression"] = pca_df
+        else:
+            # For non-ATAC data, store PCA results in the original location
+            adata.uns["X_pca_expression"] = pca_df
+            
         # Store additional PCA information from scanpy
         if 'pca' in pb_adata.uns:
-            adata.uns["X_pca_expression_variance"] = pb_adata.uns['pca']['variance']
-            adata.uns["X_pca_expression_variance_ratio"] = pb_adata.uns['pca']['variance_ratio']
+            if atac:
+                adata.uns["X_DR_expression_pca_variance"] = pb_adata.uns['pca']['variance']
+                adata.uns["X_DR_expression_pca_variance_ratio"] = pb_adata.uns['pca']['variance_ratio']
+            else:
+                adata.uns["X_pca_expression_variance"] = pb_adata.uns['pca']['variance']
+                adata.uns["X_pca_expression_variance_ratio"] = pb_adata.uns['pca']['variance_ratio']
             
             if verbose:
                 var_explained = pb_adata.uns['pca']['variance_ratio']
                 n_show = min(5, len(var_explained))
-                print(f"[run_pca_expression] Variance explained by first {n_show} PCs: {var_explained[:n_show]}")
+                print(f"[run_pca_expression] PCA variance explained by first {n_show} PCs: {var_explained[:n_show]}")
         
         if verbose:
-            print(f"[run_pca_expression] PCA completed and stored in adata.uns['X_pca_expression'].")
+            if atac:
+                print(f"[run_pca_expression] PCA+LSI completed and stored in adata.uns['X_DR_expression'].")
+            else:
+                print(f"[run_pca_expression] PCA completed and stored in adata.uns['X_pca_expression'].")
             print(f"[run_pca_expression] PCA results also available in pseudobulk_anndata.obsm['X_pca']")
             
     except Exception as e:
@@ -152,7 +255,7 @@ def run_pca_proportion(
 def process_anndata_with_pca(
     adata: sc.AnnData, 
     pseudobulk: dict, 
-    pseudobulk_anndata: sc.AnnData,  # New parameter
+    pseudobulk_anndata: sc.AnnData,
     sample_col: str = 'sample',
     n_expression_pcs: int = 10, 
     n_proportion_pcs: int = 10, 
@@ -163,6 +266,7 @@ def process_anndata_with_pca(
 ) -> None:
     """
     Computes PCA for both cell expression and cell proportion data and stores the results in an AnnData object.
+    For ATAC data (atac=True), also computes LSI for expression data and stores combined results.
     
     Parameters:
     -----------
@@ -175,7 +279,7 @@ def process_anndata_with_pca(
     sample_col : str, default 'sample'
         Column name for sample identification
     n_expression_pcs : int, default 10
-        Number of principal components for expression PCA
+        Number of principal components for expression PCA (and LSI if atac=True)
     n_proportion_pcs : int, default 10
         Number of principal components for proportion PCA
     output_dir : str, default "./"
@@ -183,7 +287,7 @@ def process_anndata_with_pca(
     not_save : bool, default False
         If True, skip saving files
     atac : bool, default False
-        If True, use ATAC-seq naming convention for output files
+        If True, use ATAC-seq naming convention and compute both PCA+LSI for expression data
     verbose : bool, default True
         Whether to print verbose output
     """
@@ -197,6 +301,8 @@ def process_anndata_with_pca(
     
     if verbose:
         print("[process_anndata_with_pca] Starting PCA computation...")
+        if atac:
+            print("[process_anndata_with_pca] ATAC mode: Will compute both PCA and LSI for expression data")
     
     # Create output directory
     if not os.path.exists(output_dir):
@@ -216,19 +322,20 @@ def process_anndata_with_pca(
     if verbose:
         print(f"[process_anndata_with_pca] Using n_expression_pcs={n_expression_pcs}, n_proportion_pcs={n_proportion_pcs}")
     
-    # Run PCA on expression data
+    # Run PCA (and LSI if ATAC) on expression data
     try:
         run_pca_expression(
             adata=adata, 
             pseudobulk=pseudobulk, 
             pseudobulk_anndata=pseudobulk_anndata,
             sample_col=sample_col,
-            n_components=n_expression_pcs, 
+            n_components=n_expression_pcs,
+            atac=atac,  # Pass the atac parameter
             verbose=verbose
         )
     except Exception as e:
         if verbose:
-            print(f"[process_anndata_with_pca] Warning: Expression PCA failed ({str(e)}). Continuing with proportion PCA.")
+            print(f"[process_anndata_with_pca] Warning: Expression PCA/LSI failed ({str(e)}). Continuing with proportion PCA.")
     
     # Run PCA on proportion data
     try:
