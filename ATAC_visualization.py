@@ -7,19 +7,21 @@ import numpy as np
 from Grouping import find_sample_grouping
 from pandas.api.types import is_numeric_dtype
 
-def ATAC_visualization(adata, pca_type='expression', figsize=(10, 8), 
+def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsize=(10, 8), 
                       point_size=50, alpha=0.7, save_path=None, 
                       title=None, grouping_columns=None, age_bin_size=None,
                       sample_col='sample', output_dir=None):
     """
-    Visualize samples using first and second principal components from PCA or LSI analysis.
-    Prioritizes LSI (X_DR_expression) over PCA when available.
+    Visualize samples using first and second principal components from PCA, LSI, or Spectral analysis.
+    Now supports separate visualization of each analysis type when available.
     Always generates a plot labeled by sample names, plus additional plots colored by grouping columns.
     
     Parameters:
     -----------
     adata : sc.AnnData
-        AnnData object containing PCA/LSI results
+        AnnData object containing analysis results
+    analysis_type : str, default 'pca'
+        Type of analysis to visualize ('pca', 'lsi', or 'spectral')
     pca_type : str, default 'expression'
         Type of analysis to visualize ('expression' or 'proportion')
     figsize : tuple, default (10, 8)
@@ -42,33 +44,51 @@ def ATAC_visualization(adata, pca_type='expression', figsize=(10, 8),
         Directory to save the figure (overrides save_path if provided)
     """
     
-    # Determine which analysis results to use (prioritize LSI over PCA)
+    # Determine which analysis results to use based on analysis_type
     if pca_type == 'expression':
-        # Check for LSI first, then PCA
-        if 'X_DR_expression' in adata.uns:
-            print("Using LSI analysis for expression data")
-            analysis_key = 'X_DR_expression'
-            analysis_type = 'LSI'
-            default_title = 'LSI - Expression Data'
-            component_names = ('LSI1', 'LSI2')
-            legend_prefix = 'LSI Groups'
-        elif 'X_pca_expression' in adata.uns:
-            analysis_key = 'X_pca_expression'
-            analysis_type = 'PCA'
-            default_title = 'PCA - Expression Data'
-            component_names = ('PC1', 'PC2')
-            legend_prefix = 'PCA Groups'
+        if analysis_type == 'spectral':
+            if 'X_spectral_expression' in adata.uns:
+                analysis_key = 'X_spectral_expression'
+                method_name = 'Spectral'
+                default_title = 'Spectral Analysis - Expression Data'
+                component_names = ('Spectral1', 'Spectral2')
+                legend_prefix = 'Spectral Groups'
+            else:
+                raise KeyError("Spectral analysis results not found in adata.uns['X_spectral_expression']. "
+                              "Please run spectral analysis first.")
+        elif analysis_type == 'lsi':
+            if 'X_DR_expression' in adata.uns:
+                analysis_key = 'X_DR_expression'
+                method_name = 'LSI'
+                default_title = 'LSI - Expression Data'
+                component_names = ('LSI1', 'LSI2')
+                legend_prefix = 'LSI Groups'
+            else:
+                raise KeyError("LSI analysis results not found in adata.uns['X_DR_expression']. "
+                              "Please run LSI analysis first.")
+        elif analysis_type == 'pca':
+            if 'X_pca_expression' in adata.uns:
+                analysis_key = 'X_pca_expression'
+                method_name = 'PCA'
+                default_title = 'PCA - Expression Data'
+                component_names = ('PC1', 'PC2')
+                legend_prefix = 'PCA Groups'
+            else:
+                raise KeyError("PCA results not found in adata.uns['X_pca_expression']. "
+                              "Please run PCA analysis first.")
         else:
-            raise KeyError("Neither LSI (X_DR_expression) nor PCA (X_pca_expression) results found. "
-                          "Please run dimensionality reduction analysis first.")
+            raise ValueError("analysis_type must be 'pca', 'lsi', or 'spectral'")
         
         group_key = 'X_pca_expression_groups'  # Groups are still stored under PCA key
         
     elif pca_type == 'proportion':
-        # For proportion, only check PCA (LSI not typically used for proportions)
+        # For proportion, only PCA is typically used
+        if analysis_type != 'pca':
+            raise ValueError("For proportion data, only 'pca' analysis_type is supported")
+        
         if 'X_pca_proportion' in adata.uns:
             analysis_key = 'X_pca_proportion'
-            analysis_type = 'PCA'
+            method_name = 'PCA'
             default_title = 'PCA - Cell Proportion Data'
             component_names = ('PC1', 'PC2')
             legend_prefix = 'PCA Groups'
@@ -118,7 +138,7 @@ def ATAC_visualization(adata, pca_type='expression', figsize=(10, 8),
     # Save sample-labeled plot
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
-        sample_filename = f"{analysis_type.lower()}_{pca_type}_samples.png"
+        sample_filename = f"{method_name.lower()}_{pca_type}_samples.png"
         sample_save_path = os.path.join(output_dir, sample_filename)
         plt.savefig(sample_save_path, dpi=300, bbox_inches='tight')
         print(f"Sample-labeled plot saved to: {sample_save_path}")
@@ -184,7 +204,7 @@ def ATAC_visualization(adata, pca_type='expression', figsize=(10, 8),
                 
                 # Save group-colored plot
                 if output_dir:
-                    group_filename = f"{analysis_type.lower()}_{pca_type}_grouped_by_{grouping_col}.png"
+                    group_filename = f"{method_name.lower()}_{pca_type}_grouped_by_{grouping_col}.png"
                     group_save_path = os.path.join(output_dir, group_filename)
                     plt.savefig(group_save_path, dpi=300, bbox_inches='tight')
                     print(f"Group-colored plot ({grouping_col}) saved to: {group_save_path}")
@@ -198,20 +218,49 @@ def ATAC_visualization(adata, pca_type='expression', figsize=(10, 8),
                 print(f"Warning: Could not generate plot for grouping column '{grouping_col}': {str(e)}")
     
     # Print summary
-    print(f"Used {analysis_type} for visualization")
+    print(f"Used {method_name} for visualization")
     print(f"Total plots generated: {len(plots_generated)}")
     if plots_generated:
         print("Saved plots:")
         for plot_path in plots_generated:
             print(f"  - {plot_path}")
 
-def ATAC_visualization_both(adata, figsize=(10, 8), point_size=50, 
+def get_available_analyses(adata, pca_type='expression'):
+    """
+    Detect which analysis types are available for the given data type.
+    
+    Parameters:
+    -----------
+    adata : sc.AnnData
+        AnnData object containing analysis results
+    pca_type : str, default 'expression'
+        Type of analysis to check ('expression' or 'proportion')
+    
+    Returns:
+    --------
+    list : Available analysis types
+    """
+    available = []
+    
+    if pca_type == 'expression':
+        if 'X_spectral_expression' in adata.uns:
+            available.append('spectral')
+        if 'X_DR_expression' in adata.uns:
+            available.append('lsi')
+        if 'X_pca_expression' in adata.uns:
+            available.append('pca')
+    elif pca_type == 'proportion':
+        if 'X_pca_proportion' in adata.uns:
+            available.append('pca')
+    
+    return available
+
+def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50, 
                           alpha=0.7, output_dir=None, grouping_columns=None, 
                           age_bin_size=None, sample_col='sample'):
     """
-    Generate separate plots for both expression and proportion analysis.
-    For expression: prioritizes LSI (X_DR_expression) over PCA (X_pca_expression)
-    For proportion: uses PCA (X_pca_proportion) only
+    Generate separate plots for all available analysis types (Spectral, LSI, PCA) 
+    for both expression and proportion data when available.
     
     Parameters:
     -----------
@@ -232,25 +281,46 @@ def ATAC_visualization_both(adata, figsize=(10, 8), point_size=50,
     sample_col : str, default 'sample'
         Column name for sample identification
     """
-    # Plot expression analysis (LSI preferred, fallback to PCA)
-    has_lsi = 'X_DR_expression' in adata.uns
-    has_pca_expr = 'X_pca_expression' in adata.uns
-    if has_lsi or has_pca_expr:
-        analysis_type = "LSI" if has_lsi else "PCA"
-        print(f"Generating Expression {analysis_type} plot...")
-        ATAC_visualization(adata, pca_type='expression', figsize=figsize,
-                         point_size=point_size, alpha=alpha, grouping_columns=grouping_columns,
-                         age_bin_size=age_bin_size, sample_col=sample_col,
-                         output_dir=output_dir)
-    else:
-        print("Neither LSI (X_DR_expression) nor PCA (X_pca_expression) results found")
+    print("=== ATAC Visualization - All Available Analyses ===")
     
-    # Plot proportion PCA
-    if 'X_pca_proportion' in adata.uns:
-        print("Generating Proportion PCA plot...")
-        ATAC_visualization(adata, pca_type='proportion', figsize=figsize,
-                         point_size=point_size, alpha=alpha, grouping_columns=grouping_columns,
-                         age_bin_size=age_bin_size, sample_col=sample_col,
-                         output_dir=output_dir)
-    else:
-        print("Proportion PCA results not found in adata.uns")
+    # Check expression analyses
+    expression_analyses = get_available_analyses(adata, 'expression')
+    print(f"Available expression analyses: {expression_analyses}")
+    
+    for analysis_type in expression_analyses:
+        print(f"\n--- Generating {analysis_type.upper()} Expression plots ---")
+        try:
+            ATAC_visualization(adata, analysis_type=analysis_type, pca_type='expression', 
+                             figsize=figsize, point_size=point_size, alpha=alpha, 
+                             grouping_columns=grouping_columns, age_bin_size=age_bin_size, 
+                             sample_col=sample_col, output_dir=output_dir)
+        except Exception as e:
+            print(f"Error generating {analysis_type} expression plots: {str(e)}")
+    
+    # Check proportion analyses
+    proportion_analyses = get_available_analyses(adata, 'proportion')
+    print(f"\nAvailable proportion analyses: {proportion_analyses}")
+    
+    for analysis_type in proportion_analyses:
+        print(f"\n--- Generating {analysis_type.upper()} Proportion plots ---")
+        try:
+            ATAC_visualization(adata, analysis_type=analysis_type, pca_type='proportion', 
+                             figsize=figsize, point_size=point_size, alpha=alpha, 
+                             grouping_columns=grouping_columns, age_bin_size=age_bin_size, 
+                             sample_col=sample_col, output_dir=output_dir)
+        except Exception as e:
+            print(f"Error generating {analysis_type} proportion plots: {str(e)}")
+    
+    print("\n=== Visualization Complete ===")
+
+# Keep the old function name for backward compatibility
+def ATAC_visualization_both(adata, figsize=(10, 8), point_size=50, 
+                          alpha=0.7, output_dir=None, grouping_columns=None, 
+                          age_bin_size=None, sample_col='sample'):
+    """
+    Backward compatibility wrapper - now calls ATAC_visualization_all.
+    """
+    print("Note: ATAC_visualization_both is deprecated. Use ATAC_visualization_all for all analysis types.")
+    ATAC_visualization_all(adata, figsize=figsize, point_size=point_size, 
+                          alpha=alpha, output_dir=output_dir, grouping_columns=grouping_columns, 
+                          age_bin_size=age_bin_size, sample_col=sample_col)
