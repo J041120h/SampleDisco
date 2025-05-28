@@ -139,7 +139,6 @@ def run_lsi_expression(
             except Exception as e3:
                 raise RuntimeError(f"All methods failed. LSI: {str(e)}, Manual LSI: {str(e2)}, PCA: {str(e3)}")
 
-
 def run_pca_expression(
     adata: sc.AnnData, 
     pseudobulk: dict, 
@@ -233,18 +232,20 @@ def run_pca_expression(
                     verbose=verbose
                 )
                 
-                # Store combined results in X_DR_expression
+                # Store both PCA and LSI results separately
                 adata.uns["X_pca_expression"] = pca_df
-                adata.uns["X_DR_expression"] = lsi_df
+                adata.uns["X_DR_expression"] = lsi_df  # LSI is stored as the main DR result for ATAC
                 
                 if verbose:
-                    print(f"[run_pca_expression] Combined PCA+LSI stored in adata.uns['X_DR_expression'] with shape: {combined_df.shape}")
+                    print(f"[run_pca_expression] PCA stored in adata.uns['X_pca_expression'] with shape: {pca_df.shape}")
+                    print(f"[run_pca_expression] LSI stored in adata.uns['X_DR_expression'] with shape: {lsi_df.shape}")
                 
             except Exception as e:
                 if verbose:
                     print(f"[run_pca_expression] Warning: LSI computation failed ({str(e)}). Using PCA only.")
                 # Fall back to PCA only
                 adata.uns["X_pca_expression"] = pca_df
+                adata.uns["X_DR_expression"] = pca_df  # Use PCA as fallback for DR
         else:
             # For non-ATAC data, store PCA results in the original location
             adata.uns["X_pca_expression"] = pca_df
