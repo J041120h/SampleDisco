@@ -9,27 +9,23 @@ from Grouping import find_sample_grouping
 from HVG import select_hvf_loess
 import scipy.sparse as sparse
 from muon import atac as ac
+import snapatac2 as snap
 
 def run_lsi_expression(
-    adata: sc.AnnData,
     pseudobulk_anndata: sc.AnnData,
     n_components: int = 10,
     verbose: bool = False
 ) -> pd.DataFrame:
     """
     Performs LSI (Latent Semantic Indexing) on pseudobulk expression data for ATAC-seq using scanpy.
-    
     Parameters:
     -----------
-    adata : sc.AnnData
-        Original AnnData object
     pseudobulk_anndata : sc.AnnData
         AnnData object with samples as observations and genes as variables (sample * gene)
     n_components : int, default 10
         Number of LSI components to compute
     verbose : bool, default False
         Whether to print verbose output
-        
     Returns:
     --------
     pd.DataFrame
@@ -39,12 +35,11 @@ def run_lsi_expression(
         print(f"[LSI] Computing LSI with {n_components} components on {pseudobulk_anndata.shape} data")
     
     pb_adata = pseudobulk_anndata.copy()
-    
     n_samples, n_genes = pb_adata.shape
     max_components = min(n_samples - 1, n_genes - 1)
+    
     if n_components > max_components:
         n_components = max_components
-    
     if n_components <= 0:
         raise ValueError(f"Cannot perform LSI: insufficient data dimensions (samples={n_samples}, genes={n_genes}).")
     
@@ -54,8 +49,8 @@ def run_lsi_expression(
         
         ac.pp.tfidf(pb_adata, scale_factor=1e4)
         sc.tl.lsi(pb_adata, n_comps=n_components)
-
         lsi_coords = pb_adata.obsm['X_lsi']
+        
         lsi_df = pd.DataFrame(
             data=lsi_coords,
             index=pb_adata.obs_names,
@@ -64,12 +59,132 @@ def run_lsi_expression(
         
         if verbose:
             print(f"[LSI] Success. Shape: {lsi_df.shape}")
-            
         return lsi_df
         
     except Exception as e:
         if verbose:
-            print(f"[LSI] Failed: {str(e)}")
+            print(f"[run_lsi_expression] Scanpy LSI failed: {str(e)}")
+        
+        # Method 2: Manual LSI implementation using TruncatedSVD with TF-IDF
+        try:
+            if verbose:
+                print("[run_lsi_expression] Attempting manual LSI with TF-IDF")
+            
+            # Get the data matrix
+            X = pb_adata.X
+            if sparse.issparse(X):
+                X = X.toarray()
+            
+            # Check for NaN values in genes (columns) and drop them
+            if verbose:
+                print(f"[run_lsi_expression] Original shape: {X.shape}")
+            
+            # Check for NaN values in each gene (column)
+            nan_genes = np.isnan(X).any(axis=0)
+            n_nan_genes = np.sum(nan_genes)
+            
+            if n_nan_genes > 0:
+                if verbose:
+                    print(f"[run_lsi_expression] Found {n_nan_genes} genes with NaN values, dropping them")
+                
+                # Keep only genes without NaN values
+                X = X[:, ~nan_genes]
+                
+                # Update the AnnData object to reflect dropped genes
+                pb_adata = pb_adata[:, ~nan_genes].copy()
+                
+                if verbose:
+                    print(f"[run_lsi_expression] Shape after dropping NaN genes: {X.shape}")
+                
+                # Update max_components after potentially reducing gene count
+                n_samples, n_genes = X.shape
+                max_components = min(n_samples - 1, n_genes - 1)
+                
+                if n_components > max_components:
+                    n_components = max_components
+                    if verbose:
+                        print(f"[run_lsi_expression] Reduced n_components to {n_components} due to data dimensions")
+                
+                if n_components <= 0:
+                    if verbose:
+                        print("[run_lsi_expression] Insufficient data dimensions after dropping NaN genes")
+                    return None
+            
+            # Apply TF-IDF transformation (common for ATAC-seq LSI)
+            tfidf = TfidfTransformer(norm='l2', use_idf=True, sublinear_tf=True)
+            X_tfidf = tfidf.fit_transform(X)
+            
+            # Perform SVD (LSI is essentially SVD on term-document matrix)
+            svd = TruncatedSVD(n_components=n_components, random_state=42)
+            lsi_coords = svd.fit_transform(X_tfidf)
+            
+            lsi_df = pd.DataFrame(
+                data=lsi_coords,
+                index=pb_adata.obs_names,
+                columns=[f"LSI{i+1}" for i in range(lsi_coords.shape[1])]
+            )
+            
+            if verbose:
+                print(f"[run_lsi_expression] Manual LSI computation successful. Shape: {lsi_df.shape}")
+            
+            return lsi_df
+            
+        except Exception as e2:
+            if verbose:
+                print(f"[run_lsi_expression] Manual LSI also failed: {str(e2)}")
+            return None
+
+def run_snapatac2_spectral(
+    pseudobulk_anndata: sc.AnnData,
+    n_components: int = 10,
+    verbose: bool = False
+) -> pd.DataFrame:
+    """
+    Performs snapATAC2 spectral embedding on pseudobulk ATAC-seq data.
+    
+    Parameters:
+    -----------
+    pseudobulk_anndata : sc.AnnData
+        AnnData object with samples as observations and genes as variables (sample * gene)
+    n_components : int, default 10
+        Number of spectral components to compute
+    verbose : bool, default False
+        Whether to print verbose output
+        
+    Returns:
+    --------
+    pd.DataFrame
+        Spectral embedding coordinates with samples as rows and components as columns
+    """
+    if verbose:
+        print(f"[snapATAC2] Computing spectral embedding with {n_components} components on {pseudobulk_anndata.shape} data")
+    
+    pb_adata = pseudobulk_anndata.copy()
+    
+    try:
+        # Select features (keeping all since they're already filtered)
+        n_features_to_select = min(50000, pb_adata.shape[1])
+        snap.pp.select_features(pb_adata, n_features=n_features_to_select)
+        
+        # Compute spectral embedding
+        snap.tl.spectral(pb_adata, n_comps=n_components)
+        
+        # Extract spectral coordinates
+        spectral_coords = pb_adata.obsm['X_spectral']
+        spectral_df = pd.DataFrame(
+            data=spectral_coords,
+            index=pb_adata.obs_names,
+            columns=[f"Spectral{i+1}" for i in range(spectral_coords.shape[1])]
+        )
+        
+        if verbose:
+            print(f"[snapATAC2] Success. Shape: {spectral_df.shape}")
+            
+        return spectral_df
+        
+    except Exception as e:
+        if verbose:
+            print(f"[snapATAC2] Failed: {str(e)}")
         return None
 
 def run_pca_expression(
@@ -81,12 +196,14 @@ def run_pca_expression(
     n_features: int = 2000, 
     frac: float = 0.3, 
     atac: bool = False,
+    use_snapatac2_dimred: bool = False,
     verbose: bool = False
 ) -> None:
     """
     Performs PCA on pseudobulk-corrected expression data using scanpy and stores the principal components 
     in both the pseudobulk_anndata and original adata objects.
     For ATAC data (atac=True), also computes LSI and stores combined results in X_DR_expression.
+    If use_snapatac2_dimred=True and atac=True, also computes snapATAC2 spectral embedding.
     
     Parameters:
     -----------
@@ -104,6 +221,8 @@ def run_pca_expression(
         Number of highly variable features to use (if feature selection is needed)
     atac : bool, default False
         If True, also compute LSI and store combined results in X_DR_expression
+    use_snapatac2_dimred : bool, default False
+        If True and atac=True, also compute snapATAC2 spectral embedding
     verbose : bool, default False
         Whether to print verbose output
     """
@@ -145,7 +264,6 @@ def run_pca_expression(
                 print("[PCA] ATAC mode: Computing LSI")
             
             lsi_df = run_lsi_expression(
-                adata=adata,
                 pseudobulk_anndata=pseudobulk_anndata,
                 n_components=n_components,
                 verbose=verbose
@@ -160,6 +278,31 @@ def run_pca_expression(
             else:
                 if verbose:
                     print(f"[PCA] LSI failed, X_DR_expression not stored")
+            
+            # Compute snapATAC2 spectral embedding if requested
+            if use_snapatac2_dimred:
+                if verbose:
+                    print("[PCA] Computing snapATAC2 spectral embedding")
+                
+                spectral_df = run_snapatac2_spectral(
+                    pseudobulk_anndata=pseudobulk_anndata,
+                    n_components=n_components,
+                    verbose=verbose
+                )
+                
+                if spectral_df is not None:
+                    # Store in both pseudobulk_anndata and original adata
+                    pseudobulk_anndata.uns["X_spectral_expression"] = spectral_df
+                    adata.uns["X_spectral_expression"] = spectral_df
+                    
+                    # Also store the spectral embedding in obsm for the pseudobulk_anndata
+                    pseudobulk_anndata.obsm['X_spectral_expression'] = spectral_df.values
+                    
+                    if verbose:
+                        print(f"[PCA] snapATAC2 spectral embedding stored in X_spectral_expression")
+                else:
+                    if verbose:
+                        print(f"[PCA] snapATAC2 spectral embedding failed")
         else:
             adata.uns["X_pca_expression"] = pca_df
         
@@ -234,6 +377,7 @@ def process_anndata_with_pca(
     output_dir: str = "./", 
     not_save: bool = False,
     atac: bool = False,
+    use_snapatac2_dimred: bool = False,
     verbose: bool = True
 ) -> None:
     """
@@ -303,6 +447,7 @@ def process_anndata_with_pca(
             sample_col=sample_col,
             n_components=n_expression_pcs,
             atac=atac,  # Pass the atac parameter
+            use_snapatac2_dimred =use_snapatac2_dimred,
             verbose=verbose
         )
     except Exception as e:

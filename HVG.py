@@ -227,7 +227,7 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
     
     if n_nan_samples > 0:
         if verbose:
-            print(f"Found {n_nan_samples} samples with NaN values. Removing these samples...")
+            print(f"Found {n_nan_samples} genes with NaN values. Removing these samples...")
         
         # Remove samples with NaN values
         adata = adata[~nan_mask, :].copy()

@@ -818,6 +818,7 @@ def wrapper(
                 n_proportion_pcs=n_proportion_pcs,
                 output_dir=atac_pca_output_dir,
                 atac = True,
+                use_snapatac2_dimred = use_snapatac2_dimred,
                 verbose=pca_verbose
             )
 
