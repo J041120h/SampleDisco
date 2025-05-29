@@ -221,23 +221,19 @@ def select_hvf_loess(pseudobulk, n_features=2000, min_mean=0.0125, max_mean=3,
     # Convert to dense array if sparse for NaN checking
     X_dense = adata.X.toarray() if sparse.issparse(adata.X) else adata.X
     
-    # Identify genes (variables) that contain any NaN values
-    nan_mask = np.any(np.isnan(adata.X), axis=0)  # True for genes with any NaNs
-    n_nan_genes = np.sum(nan_mask)
-
+    # Check for NaN values per gene (column)
+    nan_mask = np.isnan(X_dense).any(axis=0)
+    n_nan_genes = nan_mask.sum()
     if n_nan_genes > 0:
         if verbose:
             print(f"Found {n_nan_genes} genes with NaN values. Removing these genes...")
-        
         # Remove genes with NaN values
         adata = adata[:, ~nan_mask].copy()
-        
         if verbose:
             print(f"Remaining genes after NaN removal: {adata.n_vars}")
     else:
         if verbose:
-            print("No NaN values found in the genes.")
-
+            print("No NaN values found in the data.")
 
     # Step 5: Create expression DataFrame
     if verbose:
