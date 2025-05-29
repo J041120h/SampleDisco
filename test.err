@@ -1,0 +1,42 @@
+2025-05-28 17:18:37 - INFO - Selected 40000 features.
+... storing 'sample' as categorical
+... storing 'disease severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+... storing 'sample' as categorical
+... storing 'disease severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+2025-05-28 17:32:24 - INFO - Selected 39600 features.

@@ -1,15 +1,15 @@
 ======================================
- Job ID:            16826874
+ Job ID:            16841785
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
  CPUs per Task:     16
  Memory Alloc:      409600
  GPU Requested:     1
- Start Time:        Wed May 28 01:46:41 AM EDT 2025
+ Start Time:        Wed May 28 05:14:50 PM EDT 2025
 ======================================
 Checking GPU status...
-Wed May 28 01:46:42 2025       
+Wed May 28 17:14:51 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -17,8 +17,8 @@ Wed May 28 01:46:42 2025
 | Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
-|   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   50C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
+|   0  Tesla V100S-PCIE-32GB          Off |   00000000:86:00.0 Off |                    0 |
+| N/A   37C    P0             38W /  250W |       1MiB /  32768MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -43,45 +43,41 @@ Resuming process from previous progress:
     "initialization": false
 }
 nNon-Linux system detected.
-[2025-05-28 01:48:40] True: ============================================================
+[2025-05-28 17:16:57] True: ============================================================
 Starting scATAC-seq pipeline
 ============================================================
-[2025-05-28 01:48:40] INFO: Using LSI for dimensionality reduction
-[2025-05-28 01:48:40] INFO: Standard Leiden clustering mode
-Automatically generating 'harmony' subdirectory
-[2025-05-28 01:49:11] INFO: Loaded data with 88985 cells and 230356 features
+[2025-05-28 17:16:57] INFO: Using snapATAC2 for dimensionality reduction
+[2025-05-28 17:16:57] INFO: Standard Leiden clustering mode
+[2025-05-28 17:17:25] INFO: Loaded data with 88985 cells and 230356 features
 Merged 28 sample-level columns
-[2025-05-28 01:49:11] INFO: Performing QC and filtering
-[2025-05-28 01:53:02] INFO: Doublet detection failed: n_components=30 must be between 1 and min(n_samples, n_features)=17 with svd_solver='arpack'. Continuing without doublet removal.
-[2025-05-28 01:53:02] INFO: After filtering: 79906 cells and 230356 features
-[2025-05-28 01:53:02] INFO: Filtering samples with fewer than 500 cells
-[2025-05-28 01:53:08] INFO: Removed 632 cells from low-count samples
-[2025-05-28 01:53:08] INFO: Remaining samples: 24, cells: 79274
-[2025-05-28 01:53:08] INFO: Performing TF-IDF normalization
-[2025-05-28 01:53:41] INFO: Selecting highly variable features
-[2025-05-28 01:54:00] INFO: Saved highly variable features in 'HVF' column
-[2025-05-28 01:54:03] INFO: Performing LSI dimensionality reduction
-[2025-05-28 01:58:52] INFO: Final dimensionality reduction saved in 'X_DM_harmony'
-[2025-05-28 01:58:52] INFO: n_pcs (30) > available dims in X_DM_harmony (29); setting n_pcs = 29
-[2025-05-28 01:58:52] INFO: Computing neighbors
-[2025-05-28 01:59:05] INFO: Computing UMAP embedding
-[2025-05-28 02:00:01] INFO: Running Leiden clustering
-[2025-05-28 02:01:04] INFO: Generating plots
-[2025-05-28 02:01:07] INFO: Saving results
-[2025-05-28 02:11:37] True: ============================================================
-[2025-05-28 02:11:37] True: Pipeline finished in 23.0 min
-[2025-05-28 02:11:37] True: Dimensionality reduction method: LSI
-[2025-05-28 02:11:37] True: Cell type assignment: Leiden clustering
-[2025-05-28 02:11:37] True: Final representation saved in: X_DM_harmony
-[2025-05-28 02:11:37] True: Highly variable features saved in: var['HVF']
-[2025-05-28 02:11:37] True: Batch correction applied: No
-[2025-05-28 02:11:37] True: ============================================================
-DEBUG: Function started
+[2025-05-28 17:17:25] INFO: Performing QC and filtering
+[2025-05-28 17:17:49] INFO: After filtering: 79906 cells and 230356 features
+[2025-05-28 17:17:49] INFO: Filtering samples with fewer than 500 cells
+[2025-05-28 17:17:55] INFO: Removed 632 cells from low-count samples
+[2025-05-28 17:17:55] INFO: Remaining samples: 24, cells: 79274
+[2025-05-28 17:17:55] INFO: Performing TF-IDF normalization
+[2025-05-28 17:18:28] INFO: Running snapATAC2 SVD with 30 components
+[2025-05-28 17:18:28] INFO: Converting data matrix to float32 for snapATAC2 compatibility
+[2025-05-28 17:18:37] INFO: Filtering doublets using snapATAC2
+[2025-05-28 17:18:37] INFO: snapATAC2 scrublet compatibility issue detected. Skipping doublet detection.
+[2025-05-28 17:18:37] INFO: Consider using LSI mode with doublet=True for doublet detection via scanpy.
+[2025-05-28 17:18:37] INFO: Saved highly variable features in 'HVF' column
+[2025-05-28 17:20:39] INFO: snapATAC2 dimensionality reduction complete
+[2025-05-28 17:20:39] INFO: Final dimensionality reduction saved in 'X_DM_harmony'
+[2025-05-28 17:20:39] INFO: Computing neighbors
+[2025-05-28 17:21:16] INFO: Computing UMAP embedding
+[2025-05-28 17:22:13] INFO: Running Leiden clustering
+[2025-05-28 17:23:23] INFO: Generating plots
+[2025-05-28 17:23:25] INFO: Saving results
+[2025-05-28 17:31:14] True: ============================================================
+[2025-05-28 17:31:14] True: Pipeline finished in 14.3 min
+[2025-05-28 17:31:14] True: Dimensionality reduction method: snapATAC2
+[2025-05-28 17:31:14] True: Cell type assignment: Leiden clustering
+[2025-05-28 17:31:14] True: Final representation saved in: X_DM_harmony
+[2025-05-28 17:31:14] True: Highly variable features saved in: var['HVF']
+[2025-05-28 17:31:14] True: Batch correction applied: No
+[2025-05-28 17:31:14] True: ============================================================
 Column 'None' not found or is None — skipping batch correction.
-DEBUG: Batch correction check completed
-DEBUG: Output directory created
-DEBUG: Batch processing completed
-DEBUG: Working with sparse matrix
 
 
 
@@ -91,99 +87,94 @@ No NaN, negative, or Inf values found in sparse matrix.
 
 
 
-DEBUG: Data validation and cleaning completed
-DEBUG: Gene variance filtering completed
-DEBUG: Found 24 samples and 29 cell types
-DEBUG: DataFrames initialization completed
-DEBUG: Pseudobulk computation loop completed
-
-
-
-
 Successfully computed pseudobulk data.
-
-
-
-
-
-
-[pseudobulk] Total runtime: 21.19 seconds
-
-
-
+[pseudobulk] Total runtime: 21.06 seconds
 Skipping ComBat correction as batch_col is None or not found.
-
-DEBUG: Skipped ComBat correction, copied original data
-DEBUG: Highly variable gene selection completed
 Constructing sparse sample-by-feature matrix from pseudobulk...
-Found 1160000 unique genes across 24 samples
-Sparse matrix: (24, 1160000), sparsity: 0.000
+Found 1000000 unique genes across 24 samples
 Creating AnnData object...
-Created AnnData object: AnnData object with n_obs × n_vars = 24 × 1160000
+Created AnnData object: AnnData object with n_obs × n_vars = 24 × 1000000
 Identifying highly variable genes using Scanpy...
-Identified 40000 highly variable genes
+Subsetted to 40000 highly variable genes
 Normalizing and log-transforming data...
 Checking for NaN values after normalization and log transformation...
 No NaN values found in the data.
-Creating expression DataFrames...
+Creating expression DataFrame...
 
-[select_hvf_loess] Completed in 25.60 seconds
-Full expression matrix shape: (24, 1160000)
+[select_hvf_loess] Completed in 21.13 seconds
 HVG expression matrix shape: (24, 40000)
-DEBUG: LOESS-based feature selection completed
-DEBUG: Proportion dataframe transpose completed
-DEBUG: Pseudobulk dictionary creation completed
-DEBUG: Expression dataframe saved
-DEBUG: Proportion dataframe saved
-DEBUG: Function completed successfully
 [process_anndata_with_pca] Starting PCA computation...
 [process_anndata_with_pca] ATAC mode: Will compute both PCA and LSI for expression data
 [process_anndata_with_pca] Using n_expression_pcs=10, n_proportion_pcs=10
-[run_pca_expression] Input pseudobulk_anndata shape: (24, 1160000)
-[run_pca_expression] Computing PCA with 10 components
-[run_pca_expression] PCA computation successful. Shape: (24, 10)
-[run_pca_expression] ATAC mode: Computing LSI in addition to PCA
-[run_lsi_expression] Input pseudobulk_anndata shape: (24, 1160000)
-[run_lsi_expression] Computing LSI with 10 components
+[PCA] Computing PCA with 10 components on (24, 40000) data
+[PCA] Success. Shape: (24, 10)
+[PCA] ATAC mode: Computing LSI
+[LSI] Computing LSI with 10 components on (24, 40000) data
 [run_lsi_expression] Scanpy LSI failed: lsi
 [run_lsi_expression] Attempting manual LSI with TF-IDF
+[run_lsi_expression] Original shape: (24, 40000)
 [run_lsi_expression] Manual LSI computation successful. Shape: (24, 10)
-[run_pca_expression] PCA stored in adata.uns['X_pca_expression'] with shape: (24, 10)
-[run_pca_expression] LSI stored in adata.uns['X_DR_expression'] with shape: (24, 10)
-[run_pca_expression] PCA variance explained by first 5 PCs: [0.08132927 0.07174302 0.05959565 0.05838411 0.0559438 ]
-[run_pca_expression] PCA+LSI completed.
-[run_pca_expression] PCA results also available in pseudobulk_anndata.obsm['X_pca']
+[PCA] LSI stored in X_DR_expression
+[PCA] Computing snapATAC2 spectral embedding
+[snapATAC2] Computing spectral embedding with 10 components on (24, 40000) data
+[snapATAC2] Success. Shape: (24, 1)
+[PCA] snapATAC2 spectral embedding stored in X_spectral_expression
+[PCA] Completed
 [run_pca_proportion] PCA on cell proportions completed.
 Stored results in adata.uns['X_pca_proportion'] with shape: (24, 10)
 [process_anndata_with_pca] AnnData with PCA results saved to: /users/hjiang/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad
 [process_anndata_with_pca] Pseudobulk AnnData saved to: /users/hjiang/GenoDistance/result/ATAC/harmony/ATAC_pseudobulk_sample.h5ad
-[process_anndata_with_pca] Total runtime for PCA processing: 285.66 seconds
-Generating Expression LSI plot...
-Using LSI analysis for expression data
+[process_anndata_with_pca] Total runtime for PCA processing: 268.02 seconds
+Note: ATAC_visualization_both is deprecated. Use ATAC_visualization_all for all analysis types.
+=== ATAC Visualization - All Available Analyses ===
+Available expression analyses: ['spectral', 'lsi', 'pca']
+
+--- Generating SPECTRAL Expression plots ---
+Error generating spectral expression plots: Need at least 2 components for visualization (found 1)
+
+--- Generating LSI Expression plots ---
 Sample-labeled plot saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/lsi_expression_samples.png
 Group-colored plot (current_severity) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/lsi_expression_grouped_by_current_severity.png
-Generated plot for grouping column 'current_severity' with groups: ['current_severity_2.00', 'current_severity_0.00', 'current_severity_4.00', 'current_severity_6.00', 'current_severity_7.00', 'current_severity_5.00']
+Generated plot for grouping column 'current_severity' with groups: ['current_severity_0.00', 'current_severity_4.00', 'current_severity_2.00', 'current_severity_7.00', 'current_severity_5.00', 'current_severity_6.00']
 Group-colored plot (Donor) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/lsi_expression_grouped_by_Donor.png
-Generated plot for grouping column 'Donor' with groups: ['Donor_28205-0559', 'Donor_HIP015', 'Donor_55650-0083', 'Donor_HIP045', 'Donor_HIP043', 'Donor_HIP044', 'Donor_55650-0066d7', 'Donor_28205-0556', 'Donor_28205-0558', 'Donor_HIP002', 'Donor_28205-0555d0', 'Donor_55650-0132d0', 'Donor_55650-0067', 'Donor_55650-0086', 'Donor_EV08', 'Donor_55650-0057', 'Donor_28205-0564d2', 'Donor_28205-0555d2', 'Donor_28205-0557', 'Donor_55650-0055', 'Donor_55650-0066d0', 'Donor_55650-0052', 'Donor_HIP023', 'Donor_28205-0564d0']
+Generated plot for grouping column 'Donor' with groups: ['Donor_55650-0086', 'Donor_55650-0067', 'Donor_28205-0555d0', 'Donor_28205-0558', 'Donor_55650-0066d7', 'Donor_55650-0055', 'Donor_HIP023', 'Donor_HIP015', 'Donor_HIP043', 'Donor_28205-0555d2', 'Donor_28205-0564d2', 'Donor_28205-0557', 'Donor_28205-0556', 'Donor_55650-0052', 'Donor_55650-0132d0', 'Donor_28205-0564d0', 'Donor_HIP044', 'Donor_28205-0559', 'Donor_55650-0083', 'Donor_HIP045', 'Donor_EV08', 'Donor_55650-0057', 'Donor_55650-0066d0', 'Donor_HIP002']
 Used LSI for visualization
 Total plots generated: 3
 Saved plots:
   - /users/hjiang/GenoDistance/result/ATAC/visualization/lsi_expression_samples.png
   - /users/hjiang/GenoDistance/result/ATAC/visualization/lsi_expression_grouped_by_current_severity.png
   - /users/hjiang/GenoDistance/result/ATAC/visualization/lsi_expression_grouped_by_Donor.png
-Generating Proportion PCA plot...
+
+--- Generating PCA Expression plots ---
+Sample-labeled plot saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/pca_expression_samples.png
+Group-colored plot (current_severity) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/pca_expression_grouped_by_current_severity.png
+Generated plot for grouping column 'current_severity' with groups: ['current_severity_0.00', 'current_severity_4.00', 'current_severity_2.00', 'current_severity_7.00', 'current_severity_5.00', 'current_severity_6.00']
+Group-colored plot (Donor) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/pca_expression_grouped_by_Donor.png
+Generated plot for grouping column 'Donor' with groups: ['Donor_55650-0086', 'Donor_55650-0067', 'Donor_28205-0555d0', 'Donor_28205-0558', 'Donor_55650-0066d7', 'Donor_55650-0055', 'Donor_HIP023', 'Donor_HIP015', 'Donor_HIP043', 'Donor_28205-0555d2', 'Donor_28205-0564d2', 'Donor_28205-0557', 'Donor_28205-0556', 'Donor_55650-0052', 'Donor_55650-0132d0', 'Donor_28205-0564d0', 'Donor_HIP044', 'Donor_28205-0559', 'Donor_55650-0083', 'Donor_HIP045', 'Donor_EV08', 'Donor_55650-0057', 'Donor_55650-0066d0', 'Donor_HIP002']
+Used PCA for visualization
+Total plots generated: 3
+Saved plots:
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/pca_expression_samples.png
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/pca_expression_grouped_by_current_severity.png
+  - /users/hjiang/GenoDistance/result/ATAC/visualization/pca_expression_grouped_by_Donor.png
+
+Available proportion analyses: ['pca']
+
+--- Generating PCA Proportion plots ---
 Sample-labeled plot saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/pca_proportion_samples.png
 Group-colored plot (current_severity) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/pca_proportion_grouped_by_current_severity.png
-Generated plot for grouping column 'current_severity' with groups: ['current_severity_2.00', 'current_severity_0.00', 'current_severity_4.00', 'current_severity_6.00', 'current_severity_7.00', 'current_severity_5.00']
+Generated plot for grouping column 'current_severity' with groups: ['current_severity_0.00', 'current_severity_4.00', 'current_severity_2.00', 'current_severity_7.00', 'current_severity_5.00', 'current_severity_6.00']
 Group-colored plot (Donor) saved to: /users/hjiang/GenoDistance/result/ATAC/visualization/pca_proportion_grouped_by_Donor.png
-Generated plot for grouping column 'Donor' with groups: ['Donor_28205-0559', 'Donor_HIP015', 'Donor_55650-0083', 'Donor_HIP045', 'Donor_HIP043', 'Donor_HIP044', 'Donor_55650-0066d7', 'Donor_28205-0556', 'Donor_28205-0558', 'Donor_HIP002', 'Donor_28205-0555d0', 'Donor_55650-0132d0', 'Donor_55650-0067', 'Donor_55650-0086', 'Donor_EV08', 'Donor_55650-0057', 'Donor_28205-0564d2', 'Donor_28205-0555d2', 'Donor_28205-0557', 'Donor_55650-0055', 'Donor_55650-0066d0', 'Donor_55650-0052', 'Donor_HIP023', 'Donor_28205-0564d0']
+Generated plot for grouping column 'Donor' with groups: ['Donor_55650-0086', 'Donor_55650-0067', 'Donor_28205-0555d0', 'Donor_28205-0558', 'Donor_55650-0066d7', 'Donor_55650-0055', 'Donor_HIP023', 'Donor_HIP015', 'Donor_HIP043', 'Donor_28205-0555d2', 'Donor_28205-0564d2', 'Donor_28205-0557', 'Donor_28205-0556', 'Donor_55650-0052', 'Donor_55650-0132d0', 'Donor_28205-0564d0', 'Donor_HIP044', 'Donor_28205-0559', 'Donor_55650-0083', 'Donor_HIP045', 'Donor_EV08', 'Donor_55650-0057', 'Donor_55650-0066d0', 'Donor_HIP002']
 Used PCA for visualization
 Total plots generated: 3
 Saved plots:
   - /users/hjiang/GenoDistance/result/ATAC/visualization/pca_proportion_samples.png
   - /users/hjiang/GenoDistance/result/ATAC/visualization/pca_proportion_grouped_by_current_severity.png
   - /users/hjiang/GenoDistance/result/ATAC/visualization/pca_proportion_grouped_by_Donor.png
+
+=== Visualization Complete ===
 End of Process
 
 Finished main.py.
-End Time: Wed May 28 02:17:56 AM EDT 2025
+End Time: Wed May 28 05:37:03 PM EDT 2025
