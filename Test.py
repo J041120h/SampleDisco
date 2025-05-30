@@ -179,11 +179,116 @@ def plot_tss_enrichment(adata, enrichment_key='TSS.enrichment', groupby=None, fi
         plt.savefig(save_path, dpi=300)
     plt.show()
 
+
+import pandas as pd
+import anndata as ad
+import scanpy as sc
+import sys
+
+def process_anndata(file_path):
+    """
+    Load AnnData object, print obs columns, and convert disease severity to numeric values.
+    Overwrites the original file with converted data.
+    
+    Args:
+        file_path (str): Path to the AnnData object file (.h5ad)
+    
+    Returns:
+        anndata.AnnData: The modified AnnData object
+    """
+    try:
+        # Load the AnnData object
+        print(f"Loading AnnData object from: {file_path}")
+        adata = ad.read_h5ad(file_path)
+        
+        # Print all obs column names
+        print("\nAll obs columns:")
+        print("-" * 40)
+        for i, col in enumerate(adata.obs.columns, 1):
+            print(f"{i:2d}. {col}")
+        
+        # Check if 'disease severity' column exists (case-insensitive search)
+        disease_col = None
+        for col in adata.obs.columns:
+            if 'disease' in col.lower() and 'severity' in col.lower():
+                disease_col = col
+                break
+        
+        if disease_col is None:
+            print("\nWarning: No column containing 'disease severity' found!")
+            print("Available columns:", list(adata.obs.columns))
+            return adata
+        
+        print(f"\nFound disease severity column: '{disease_col}'")
+        
+        # Print unique values in the disease severity column
+        unique_values = adata.obs[disease_col].unique()
+        print(f"Unique values in '{disease_col}': {unique_values}")
+        
+        # Define the mapping
+        severity_mapping = {
+            'Healthy': 1,
+            'Mild': 2,
+            'Moderate': 3,
+            'Severe': 4,
+            'Fatal': 5
+        }
+        
+        # Convert the categorical values to numeric
+        print(f"\nConverting '{disease_col}' using mapping:")
+        for key, value in severity_mapping.items():
+            print(f"  {key} -> {value}")
+        
+        # Store original values for comparison
+        original_values = adata.obs[disease_col].copy()
+        
+        # Apply the mapping (replace the original column)
+        adata.obs[disease_col] = adata.obs[disease_col].map(severity_mapping)
+        
+        # Handle any unmapped values
+        unmapped_mask = adata.obs[disease_col].isna()
+        if unmapped_mask.any():
+            unmapped = original_values[unmapped_mask].unique()
+            print(f"\nWarning: Some values could not be mapped: {unmapped}")
+        
+        # Print the converted column
+        print(f"\nConverted column '{disease_col}' (original -> numeric):")
+        print("-" * 50)
+        comparison_df = pd.DataFrame({
+            'original': original_values,
+            'converted': adata.obs[disease_col]
+        })
+        print(comparison_df.value_counts().sort_index())
+        
+        # Print summary statistics
+        print(f"\nSummary of converted values:")
+        print(adata.obs[disease_col].value_counts().sort_index())
+        
+        # Overwrite the original file
+        print(f"\nOverwriting original file: {file_path}")
+        adata.write(file_path)
+        print("File successfully overwritten with converted data!")
+        
+        return adata
+        
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found.")
+        return None
+    except Exception as e:
+        print(f"Error processing file: {str(e)}")
+        return None
+
 # Example usage
 if __name__ == "__main__":
-    print("Beginning to merge h5ad files...")
-    h5ad_file ="/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad"
-
-    # ---- Load the AnnData object ----
-    adata = sc.read_h5ad(h5ad_file)
-    print_anndata_columns(adata)
+    print("Beginning to process h5ad file...")
+    file_path = "/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad"
+    
+    # Process and overwrite the file
+    adata = process_anndata(file_path)
+    
+    # Verify the conversion worked
+    if adata is not None:
+        print(f"\nVerification - unique values after conversion:")
+        print(adata.obs['disease severity'].unique())
+    else:
+        print("Processing failed!")
