@@ -6,6 +6,83 @@ import os
 import numpy as np
 from Grouping import find_sample_grouping
 from pandas.api.types import is_numeric_dtype
+from matplotlib.colors import ListedColormap
+
+def create_quantitative_colormap(values, colormap='viridis'):
+    """
+    Create a color mapping for quantitative/ordinal values using proportional spacing.
+    This ensures consistent colors regardless of the actual range (0-3, 0-7, 0-10, etc.)
+    
+    Parameters:
+    -----------
+    values : array-like
+        Quantitative values to map
+    colormap : str, default 'viridis'
+        Matplotlib colormap name
+        
+    Returns:
+    --------
+    dict : Mapping from value to color
+    """
+    unique_values = sorted(set(values))
+    
+    if len(unique_values) == 1:
+        # Single value case
+        base_cmap = plt.cm.get_cmap(colormap)
+        return {unique_values[0]: base_cmap(0.5)}
+    
+    # Map values proportionally to 0-1 range
+    min_val, max_val = min(unique_values), max(unique_values)
+    base_cmap = plt.cm.get_cmap(colormap)
+    
+    color_map = {}
+    for val in unique_values:
+        # Normalize to 0-1
+        normalized = (val - min_val) / (max_val - min_val)
+        color_map[val] = base_cmap(normalized)
+    
+    return color_map
+
+def is_quantitative_column(values, threshold_unique_ratio=0.5):
+    """
+    Determine if a column should be treated as quantitative.
+    
+    Parameters:
+    -----------
+    values : array-like
+        Column values to check
+    threshold_unique_ratio : float, default 0.5
+        If unique_values/total_values > threshold, treat as quantitative
+        
+    Returns:
+    --------
+    bool : True if should be treated as quantitative
+    """
+    # Remove NaN values for analysis
+    clean_values = [v for v in values if pd.notna(v)]
+    
+    if not clean_values:
+        return False
+    
+    # Check if all values are numeric
+    try:
+        numeric_values = [float(v) for v in clean_values]
+        
+        # Check if values look like discrete stages/categories
+        # (e.g., 0,1,2,3,4 or 0,2,4,6,8)
+        unique_vals = sorted(set(numeric_values))
+        
+        # If few unique values and they're integers, likely ordinal/categorical
+        if len(unique_vals) <= 10 and all(v == int(v) for v in unique_vals):
+            return True
+            
+        # If many unique values relative to total, likely continuous
+        unique_ratio = len(unique_vals) / len(clean_values)
+        return unique_ratio > threshold_unique_ratio
+        
+    except (ValueError, TypeError):
+        # Non-numeric values
+        return False
 
 def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsize=(10, 8), 
                       point_size=50, alpha=0.7, save_path=None, 
@@ -15,6 +92,10 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
     Visualize samples using first and second principal components from PCA, LSI, or Spectral analysis.
     Now supports separate visualization of each analysis type when available.
     Always generates a plot labeled by sample names, plus additional plots colored by grouping columns.
+    
+    Handles both categorical and quantitative grouping columns:
+    - Categorical: Uses discrete colors with legend
+    - Quantitative: Uses proportional color mapping with colorbar
     
     Parameters:
     -----------
@@ -164,24 +245,95 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                     sample_column=sample_col
                 )
                 
+                # Align groups with sample names
+                sample_groups = [groups.get(sample, np.nan) for sample in sample_names]
+                
+                # Remove NaN values for analysis
+                valid_groups = [g for g in sample_groups if pd.notna(g)]
+                
+                if not valid_groups:
+                    print(f"Warning: No valid values found for grouping column '{grouping_col}'")
+                    continue
+                
+                # Determine if this is a quantitative column
+                is_quantitative = is_quantitative_column(valid_groups)
+                
                 # Create new figure for this grouping
                 plt.figure(figsize=figsize)
                 
-                # Align groups with sample names
-                sample_groups = [groups.get(sample, 'Unknown') for sample in sample_names]
-                unique_groups = list(set(sample_groups))
-                
-                # Create color map
-                colors = plt.cm.Set1(np.linspace(0, 1, len(unique_groups)))
-                group_colors = {group: colors[i] for i, group in enumerate(unique_groups)}
-                
-                # Plot each group
-                for group in unique_groups:
-                    mask = [g == group for g in sample_groups]
-                    plt.scatter(comp1[mask], comp2[mask], 
-                               c=[group_colors[group]], 
-                               s=point_size, alpha=alpha, 
-                               label=group, edgecolors='black', linewidth=0.5)
+                if is_quantitative:
+                    # Handle quantitative data with proportional color mapping
+                    print(f"Treating '{grouping_col}' as quantitative variable")
+                    
+                    # Convert to numeric, handling NaN
+                    numeric_groups = []
+                    for g in sample_groups:
+                        try:
+                            numeric_groups.append(float(g) if pd.notna(g) else np.nan)
+                        except (ValueError, TypeError):
+                            numeric_groups.append(np.nan)
+                    
+                    # Create color mapping for non-NaN values
+                    valid_numeric = [g for g in numeric_groups if pd.notna(g)]
+                    color_map = create_quantitative_colormap(valid_numeric, 'viridis')
+                    
+                    # Create colors array
+                    colors = []
+                    for g in numeric_groups:
+                        if pd.notna(g):
+                            colors.append(color_map[g])
+                        else:
+                            colors.append('lightgray')  # Color for missing values
+                    
+                    # Create scatter plot
+                    scatter = plt.scatter(comp1, comp2, c=colors, s=point_size, alpha=alpha, 
+                                        edgecolors='black', linewidth=0.5)
+                    
+                    # Create custom colorbar for quantitative data
+                    unique_values = sorted([g for g in set(valid_numeric)])
+                    if len(unique_values) > 1:
+                        # Create a mappable for colorbar
+                        from matplotlib.cm import ScalarMappable
+                        from matplotlib.colors import Normalize
+                        
+                        norm = Normalize(vmin=min(unique_values), vmax=max(unique_values))
+                        sm = ScalarMappable(norm=norm, cmap='viridis')
+                        
+                        # Create colorbar with discrete ticks
+                        cbar = plt.colorbar(sm, shrink=0.8)
+                        cbar.set_ticks(unique_values)
+                        cbar.set_ticklabels([f'{v:.0f}' if v == int(v) else f'{v:.2f}' for v in unique_values])
+                        cbar.set_label(f'{grouping_col} (Quantitative)', rotation=270, labelpad=20)
+                    
+                else:
+                    # Handle categorical data with discrete colors
+                    print(f"Treating '{grouping_col}' as categorical variable")
+                    
+                    unique_groups = list(set([g for g in sample_groups if pd.notna(g)]))
+                    
+                    # Create color map for categorical data
+                    colors = plt.cm.Set1(np.linspace(0, 1, len(unique_groups)))
+                    group_colors = {group: colors[i] for i, group in enumerate(unique_groups)}
+                    group_colors[np.nan] = 'lightgray'  # Color for missing values
+                    
+                    # Plot each group
+                    for group in unique_groups:
+                        mask = [g == group for g in sample_groups]
+                        plt.scatter(comp1[mask], comp2[mask], 
+                                   c=[group_colors[group]], 
+                                   s=point_size, alpha=alpha, 
+                                   label=str(group), edgecolors='black', linewidth=0.5)
+                    
+                    # Handle missing values if any
+                    nan_mask = [pd.isna(g) for g in sample_groups]
+                    if any(nan_mask):
+                        plt.scatter(comp1[nan_mask], comp2[nan_mask], 
+                                   c='lightgray', s=point_size, alpha=alpha,
+                                   label='Missing', edgecolors='black', linewidth=0.5)
+                    
+                    # Add legend for categorical data
+                    legend_title = f'{legend_prefix} ({grouping_col})'
+                    plt.legend(title=legend_title, bbox_to_anchor=(1.05, 1), loc='upper left')
                 
                 # Add sample labels
                 for i, sample in enumerate(sample_names):
@@ -196,9 +348,6 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                 group_title = title if title else f'{default_title} - Grouped by {grouping_col}'
                 plt.title(group_title)
                 
-                # Use analysis-specific legend title
-                legend_title = f'{legend_prefix} ({grouping_col})'
-                plt.legend(title=legend_title, bbox_to_anchor=(1.05, 1), loc='upper left')
                 plt.grid(True, alpha=0.3)
                 plt.tight_layout()
                 
@@ -212,7 +361,10 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                 
                 plt.close()  # Close the figure instead of showing it
                 
-                print(f"Generated plot for grouping column '{grouping_col}' with groups: {unique_groups}")
+                if is_quantitative:
+                    print(f"Generated quantitative plot for '{grouping_col}' with values: {unique_values}")
+                else:
+                    print(f"Generated categorical plot for '{grouping_col}' with groups: {unique_groups}")
                 
             except Exception as e:
                 print(f"Warning: Could not generate plot for grouping column '{grouping_col}': {str(e)}")
