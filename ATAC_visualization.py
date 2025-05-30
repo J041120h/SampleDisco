@@ -87,7 +87,8 @@ def is_quantitative_column(values, threshold_unique_ratio=0.5):
 def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsize=(10, 8), 
                       point_size=50, alpha=0.7, save_path=None, 
                       title=None, grouping_columns=None, age_bin_size=None,
-                      sample_col='sample', output_dir=None):
+                      sample_col='sample', output_dir=None, show_sample_names=False, 
+                      verbose=True):
     """
     Visualize samples using first and second principal components from PCA, LSI, or Spectral analysis.
     Now supports separate visualization of each analysis type when available.
@@ -123,6 +124,12 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
         Column name for sample identification
     output_dir : str, optional
         Directory to save the figure (overrides save_path if provided)
+    show_sample_names : bool, default False
+        Whether to show sample names as annotations on the plots
+    verbose : bool, default True
+        Whether to print detailed information about data type detection and visualization choices
+    verbose : bool, default True
+        Whether to print detailed information about data type detection and visualization choices
     """
     
     # Determine which analysis results to use based on analysis_type
@@ -201,11 +208,12 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
     plt.scatter(comp1, comp2, s=point_size, alpha=alpha, 
                c='skyblue', edgecolors='black', linewidth=0.5)
     
-    # Add sample labels
-    for i, sample in enumerate(sample_names):
-        plt.annotate(sample, (comp1.iloc[i], comp2.iloc[i]), 
-                    xytext=(5, 5), textcoords='offset points',
-                    fontsize=8, alpha=0.8)
+    # Add sample labels only if requested
+    if show_sample_names:
+        for i, sample in enumerate(sample_names):
+            plt.annotate(sample, (comp1.iloc[i], comp2.iloc[i]), 
+                        xytext=(5, 5), textcoords='offset points',
+                        fontsize=8, alpha=0.8)
     
     # Set labels and title using component names
     plt.xlabel(f'{component_names[0]} ({analysis_df.columns[0]})')
@@ -263,7 +271,10 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                 
                 if is_quantitative:
                     # Handle quantitative data with proportional color mapping
-                    print(f"Treating '{grouping_col}' as quantitative variable")
+                    if verbose:
+                        print(f"✓ Detected quantitative data for '{grouping_col}'")
+                        print(f"  → Using graduated color scale (viridis) for visualization")
+                        print(f"  → Values range: {min(valid_groups)} to {max(valid_groups)}")
                     
                     # Convert to numeric, handling NaN
                     numeric_groups = []
@@ -292,22 +303,26 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                     # Create custom colorbar for quantitative data
                     unique_values = sorted([g for g in set(valid_numeric)])
                     if len(unique_values) > 1:
-                        # Create a mappable for colorbar
+                        # Create a mappable for colorbar using the actual scatter plot
                         from matplotlib.cm import ScalarMappable
                         from matplotlib.colors import Normalize
                         
                         norm = Normalize(vmin=min(unique_values), vmax=max(unique_values))
                         sm = ScalarMappable(norm=norm, cmap='viridis')
+                        sm.set_array([])  # Required for ScalarMappable
                         
-                        # Create colorbar with discrete ticks
-                        cbar = plt.colorbar(sm, shrink=0.8)
+                        # Create colorbar with discrete ticks, linked to current axes
+                        cbar = plt.colorbar(sm, ax=plt.gca(), shrink=0.8)
                         cbar.set_ticks(unique_values)
                         cbar.set_ticklabels([f'{v:.0f}' if v == int(v) else f'{v:.2f}' for v in unique_values])
                         cbar.set_label(f'{grouping_col} (Quantitative)', rotation=270, labelpad=20)
                     
                 else:
                     # Handle categorical data with discrete colors
-                    print(f"Treating '{grouping_col}' as categorical variable")
+                    if verbose:
+                        print(f"✓ Detected categorical data for '{grouping_col}'")
+                        print(f"  → Using discrete color mapping for visualization")
+                        print(f"  → Categories: {sorted(list(set([g for g in sample_groups if pd.notna(g)])))}")
                     
                     unique_groups = list(set([g for g in sample_groups if pd.notna(g)]))
                     
@@ -335,11 +350,12 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                     legend_title = f'{legend_prefix} ({grouping_col})'
                     plt.legend(title=legend_title, bbox_to_anchor=(1.05, 1), loc='upper left')
                 
-                # Add sample labels
-                for i, sample in enumerate(sample_names):
-                    plt.annotate(sample, (comp1.iloc[i], comp2.iloc[i]), 
-                                xytext=(5, 5), textcoords='offset points',
-                                fontsize=8, alpha=0.8)
+                # Add sample labels only if requested
+                if show_sample_names:
+                    for i, sample in enumerate(sample_names):
+                        plt.annotate(sample, (comp1.iloc[i], comp2.iloc[i]), 
+                                    xytext=(5, 5), textcoords='offset points',
+                                    fontsize=8, alpha=0.8)
                 
                 # Set labels and title using component names
                 plt.xlabel(f'{component_names[0]} ({analysis_df.columns[0]})')
@@ -362,20 +378,25 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                 plt.close()  # Close the figure instead of showing it
                 
                 if is_quantitative:
-                    print(f"Generated quantitative plot for '{grouping_col}' with values: {unique_values}")
+                    if verbose:
+                        print(f"Generated quantitative plot for '{grouping_col}' with graduated color scale")
+                        print(f"  → Color range: {min(unique_values):.2f} (dark) to {max(unique_values):.2f} (bright)")
                 else:
-                    print(f"Generated categorical plot for '{grouping_col}' with groups: {unique_groups}")
+                    if verbose:
+                        print(f"Generated categorical plot for '{grouping_col}' with discrete colors")
+                        print(f"  → {len(unique_groups)} distinct categories: {unique_groups}")
                 
             except Exception as e:
                 print(f"Warning: Could not generate plot for grouping column '{grouping_col}': {str(e)}")
     
     # Print summary
-    print(f"Used {method_name} for visualization")
-    print(f"Total plots generated: {len(plots_generated)}")
-    if plots_generated:
-        print("Saved plots:")
-        for plot_path in plots_generated:
-            print(f"  - {plot_path}")
+    if verbose:
+        print(f"Used {method_name} for visualization")
+        print(f"Total plots generated: {len(plots_generated)}")
+        if plots_generated:
+            print("Saved plots:")
+            for plot_path in plots_generated:
+                print(f"  - {plot_path}")
 
 def get_available_analyses(adata, pca_type='expression'):
     """
@@ -409,7 +430,8 @@ def get_available_analyses(adata, pca_type='expression'):
 
 def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50, 
                           alpha=0.7, output_dir=None, grouping_columns=None, 
-                          age_bin_size=None, sample_col='sample'):
+                          age_bin_size=None, sample_col='sample', show_sample_names=False, 
+                          verbose=True):
     """
     Generate separate plots for all available analysis types (Spectral, LSI, PCA) 
     for both expression and proportion data when available.
@@ -432,6 +454,8 @@ def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50,
         Bin size for age grouping if 'age' is in grouping_columns
     sample_col : str, default 'sample'
         Column name for sample identification
+    show_sample_names : bool, default False
+        Whether to show sample names as annotations on the plots
     """
     print("=== ATAC Visualization - All Available Analyses ===")
     
@@ -445,7 +469,8 @@ def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50,
             ATAC_visualization(adata, analysis_type=analysis_type, pca_type='expression', 
                              figsize=figsize, point_size=point_size, alpha=alpha, 
                              grouping_columns=grouping_columns, age_bin_size=age_bin_size, 
-                             sample_col=sample_col, output_dir=output_dir)
+                             sample_col=sample_col, output_dir=output_dir, 
+                             show_sample_names=show_sample_names, verbose=verbose)
         except Exception as e:
             print(f"Error generating {analysis_type} expression plots: {str(e)}")
     
@@ -459,7 +484,8 @@ def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50,
             ATAC_visualization(adata, analysis_type=analysis_type, pca_type='proportion', 
                              figsize=figsize, point_size=point_size, alpha=alpha, 
                              grouping_columns=grouping_columns, age_bin_size=age_bin_size, 
-                             sample_col=sample_col, output_dir=output_dir)
+                             sample_col=sample_col, output_dir=output_dir, 
+                             show_sample_names=show_sample_names, verbose=verbose)
         except Exception as e:
             print(f"Error generating {analysis_type} proportion plots: {str(e)}")
     
@@ -468,11 +494,13 @@ def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50,
 # Keep the old function name for backward compatibility
 def ATAC_visualization_both(adata, figsize=(10, 8), point_size=50, 
                           alpha=0.7, output_dir=None, grouping_columns=None, 
-                          age_bin_size=None, sample_col='sample'):
+                          age_bin_size=None, sample_col='sample', show_sample_names=False, 
+                          verbose=True):
     """
     Backward compatibility wrapper - now calls ATAC_visualization_all.
     """
     print("Note: ATAC_visualization_both is deprecated. Use ATAC_visualization_all for all analysis types.")
     ATAC_visualization_all(adata, figsize=figsize, point_size=point_size, 
                           alpha=alpha, output_dir=output_dir, grouping_columns=grouping_columns, 
-                          age_bin_size=age_bin_size, sample_col=sample_col)
+                          age_bin_size=age_bin_size, sample_col=sample_col, 
+                          show_sample_names=show_sample_names, verbose=verbose)
