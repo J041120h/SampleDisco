@@ -11,6 +11,7 @@ Improvements:
 - Highly variable features always saved in 'HVF' column
 - Output always saved in 'output_dir/harmony' subdirectory
 - Cell type transfer from RNA reference using nearest neighbors
+- Marker genes/peaks saved locally for each cluster
 """
 
 import os, time, warnings
@@ -52,133 +53,142 @@ def merge_sample_metadata(
     return adata
 
 # --------------------------------------------------------------------------- #
-#                          Cell Type Transfer Function                         #
+#                          Marker Gene/Peak Saving Functions                  #
 # --------------------------------------------------------------------------- #
 
-def transfer_cell_types_from_rna(
-    atac_adata,
-    rna_adata_path,
-    rna_cell_type_column='cell_type',
-    atac_use_rep='X_DM_harmony',
-    rna_use_rep='X_pca_harmony',
-    n_neighbors=5,
-    metric='cosine',
-    verbose=True
-):
+def save_marker_genes_all_formats(adata, output_dir, groupby='leiden', 
+                                  top_n_markers=50, verbose=True):
     """
-    Transfer cell types from RNA-seq reference to ATAC-seq data using nearest neighbors.
-    
-    Parameters:
-    -----------
-    atac_adata : AnnData
-        ATAC-seq data with computed embeddings
-    rna_adata_path : str
-        Path to RNA-seq reference AnnData file
-    rna_cell_type_column : str
-        Column name in RNA data containing cell type annotations
-    atac_use_rep : str
-        Representation to use from ATAC data (default: 'X_DM_harmony')
-    rna_use_rep : str
-        Representation to use from RNA data (default: 'X_pca')
-    n_neighbors : int
-        Number of nearest neighbors to consider for transfer
-    metric : str
-        Distance metric for nearest neighbor search
-    verbose : bool
-        Whether to print progress messages
-    
-    Returns:
-    --------
-    atac_adata : AnnData
-        ATAC data with transferred cell types in obs['transferred_cell_type']
+    Save marker genes/peaks in multiple formats:
+    1. Combined Excel file with all clusters
+    2. Individual CSV files per cluster
+    3. Summary statistics file
     """
+    log("Saving marker genes/peaks to local files", verbose=verbose)
     
-    log("Starting cell type transfer from RNA reference", verbose=verbose)
+    # Create markers subdirectory
+    markers_dir = os.path.join(output_dir, "markers")
+    os.makedirs(markers_dir, exist_ok=True)
     
-    # Load RNA reference data
-    log(f"Loading RNA reference data from {rna_adata_path}", verbose=verbose)
-    rna_adata = sc.read_h5ad(rna_adata_path)
-    log(f"RNA reference: {rna_adata.n_obs} cells, {rna_adata.n_vars} genes", verbose=verbose)
+    # Extract results from rank_genes_groups
+    result = adata.uns['rank_genes_groups']
+    groups = result['names'].dtype.names
     
-    # Check if required representations exist
-    if atac_use_rep not in atac_adata.obsm:
-        raise ValueError(f"Representation '{atac_use_rep}' not found in ATAC data. "
-                        f"Available: {list(atac_adata.obsm.keys())}")
+    # Create comprehensive dataframe
+    all_markers = []
+    cluster_summaries = []
     
-    if rna_use_rep not in rna_adata.obsm:
-        raise ValueError(f"Representation '{rna_use_rep}' not found in RNA data. "
-                        f"Available: {list(rna_adata.obsm.keys())}")
-    
-    if rna_cell_type_column not in rna_adata.obs.columns:
-        raise ValueError(f"Cell type column '{rna_cell_type_column}' not found in RNA data. "
-                        f"Available: {list(rna_adata.obs.columns)}")
-    
-    # Get embeddings
-    atac_embedding = atac_adata.obsm[atac_use_rep]
-    rna_embedding = rna_adata.obsm[rna_use_rep]
-    
-    log(f"ATAC embedding shape: {atac_embedding.shape}", verbose=verbose)
-    log(f"RNA embedding shape: {rna_embedding.shape}", verbose=verbose)
-    
-    # Match dimensions if needed
-    min_dims = min(atac_embedding.shape[1], rna_embedding.shape[1])
-    if atac_embedding.shape[1] != rna_embedding.shape[1]:
-        log(f"Dimension mismatch detected. Using first {min_dims} dimensions from both datasets", 
-            verbose=verbose)
-        atac_embedding = atac_embedding[:, :min_dims]
-        rna_embedding = rna_embedding[:, :min_dims]
-    
-    # Fit nearest neighbors on RNA data
-    log(f"Fitting nearest neighbors with {n_neighbors} neighbors using {metric} metric", 
-        verbose=verbose)
-    nn_model = NearestNeighbors(
-        n_neighbors=n_neighbors, 
-        metric=metric, 
-        n_jobs=-1
-    ).fit(rna_embedding)
-    
-    # Find nearest neighbors for each ATAC cell
-    log("Finding nearest neighbors for ATAC cells", verbose=verbose)
-    distances, indices = nn_model.kneighbors(atac_embedding)
-    
-    # Transfer cell types using majority voting
-    log("Transferring cell types using majority voting", verbose=verbose)
-    rna_cell_types = rna_adata.obs[rna_cell_type_column].values
-    transferred_cell_types = []
-    transfer_confidence = []
-    
-    for i in range(len(indices)):
-        # Get cell types of nearest neighbors
-        neighbor_cell_types = rna_cell_types[indices[i]]
+    for group in groups:
+        # Extract data for this cluster
+        cluster_data = pd.DataFrame({
+            'peak_name': result['names'][group][:top_n_markers],
+            'gene_symbol': result['genes'][group][:top_n_markers] if 'genes' in result else [''] * top_n_markers,
+            'pval': result['pvals'][group][:top_n_markers],
+            'pval_adj': result['pvals_adj'][group][:top_n_markers] if 'pvals_adj' in result else [1.0] * top_n_markers,
+            'logfoldchange': result['logfoldchanges'][group][:top_n_markers] if 'logfoldchanges' in result else [0.0] * top_n_markers,
+            'score': result['scores'][group][:top_n_markers] if 'scores' in result else [0.0] * top_n_markers,
+            'cluster': group,
+            'rank': range(1, top_n_markers + 1)
+        })
         
-        # Count occurrences of each cell type
-        unique_types, counts = np.unique(neighbor_cell_types, return_counts=True)
+        all_markers.append(cluster_data)
         
-        # Assign most frequent cell type
-        most_frequent_idx = np.argmax(counts)
-        assigned_cell_type = unique_types[most_frequent_idx]
-        confidence = counts[most_frequent_idx] / n_neighbors
+        # Calculate summary statistics for this cluster
+        n_cells = sum(adata.obs[groupby] == group)
+        n_significant = sum(cluster_data['pval'] < 0.05)
+        avg_logfc = cluster_data['logfoldchange'].mean()
         
-        transferred_cell_types.append(assigned_cell_type)
-        transfer_confidence.append(confidence)
+        cluster_summaries.append({
+            'cluster': group,
+            'n_cells': n_cells,
+            'n_significant_markers': n_significant,
+            'avg_logfoldchange': avg_logfc,
+            'top_marker': cluster_data.iloc[0]['peak_name'],
+            'top_marker_pval': cluster_data.iloc[0]['pval']
+        })
+        
+        # Save individual cluster file
+        cluster_file = os.path.join(markers_dir, f"cluster_{group}_markers.csv")
+        cluster_data.to_csv(cluster_file, index=False)
+        log(f"Saved markers for cluster {group} to {cluster_file}", verbose=verbose)
     
-    # Add results to ATAC data
-    atac_adata.obs['transferred_cell_type'] = transferred_cell_types
-    atac_adata.obs['transfer_confidence'] = transfer_confidence
+    # Combine all markers
+    all_markers_df = pd.concat(all_markers, ignore_index=True)
     
-    # Summary statistics
-    unique_transferred = np.unique(transferred_cell_types)
-    log(f"Transferred {len(unique_transferred)} unique cell types", verbose=verbose)
-    log(f"Cell type distribution:", verbose=verbose)
-    if verbose:
-        transfer_counts = pd.Series(transferred_cell_types).value_counts()
-        for cell_type, count in transfer_counts.items():
-            print(f"  {cell_type}: {count} cells")
+    # Save combined Excel file with multiple sheets
+    excel_file = os.path.join(markers_dir, "all_clusters_markers.xlsx")
+    with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
+        # All markers in one sheet
+        all_markers_df.to_excel(writer, sheet_name='All_Markers', index=False)
+        
+        # Individual sheets per cluster
+        for group in groups:
+            cluster_data = all_markers_df[all_markers_df['cluster'] == group]
+            cluster_data.to_excel(writer, sheet_name=f'Cluster_{group}', index=False)
+        
+        # Summary sheet
+        summary_df = pd.DataFrame(cluster_summaries)
+        summary_df.to_excel(writer, sheet_name='Summary', index=False)
     
-    avg_confidence = np.mean(transfer_confidence)
-    log(f"Average transfer confidence: {avg_confidence:.3f}", verbose=verbose)
+    log(f"Saved comprehensive Excel file to {excel_file}", verbose=verbose)
     
-    return atac_adata
+    # Save summary CSV
+    summary_file = os.path.join(markers_dir, "cluster_summary.csv")
+    pd.DataFrame(cluster_summaries).to_csv(summary_file, index=False)
+    
+    # Save all markers as single CSV
+    all_markers_file = os.path.join(markers_dir, "all_markers.csv")
+    all_markers_df.to_csv(all_markers_file, index=False)
+    
+    log(f"Marker gene analysis complete. Files saved in: {markers_dir}", verbose=verbose)
+    log(f"- Individual cluster files: cluster_X_markers.csv", verbose=verbose)
+    log(f"- Combined Excel file: all_clusters_markers.xlsx", verbose=verbose)
+    log(f"- Summary statistics: cluster_summary.csv", verbose=verbose)
+    log(f"- All markers CSV: all_markers.csv", verbose=verbose)
+    
+    return all_markers_df, pd.DataFrame(cluster_summaries)
+
+def save_top_markers_summary(adata, output_dir, groupby='leiden', 
+                           top_n=10, verbose=True):
+    """
+    Save a quick summary of top N markers per cluster in a readable format
+    """
+    log(f"Creating top {top_n} markers summary", verbose=verbose)
+    
+    result = adata.uns['rank_genes_groups']
+    groups = result['names'].dtype.names
+    
+    # Create a readable summary
+    summary_lines = []
+    summary_lines.append(f"Top {top_n} Marker Genes/Peaks per Cluster")
+    summary_lines.append("=" * 60)
+    summary_lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    summary_lines.append(f"Total clusters: {len(groups)}")
+    summary_lines.append("")
+    
+    for group in groups:
+        n_cells = sum(adata.obs[groupby] == group)
+        summary_lines.append(f"CLUSTER {group} ({n_cells} cells)")
+        summary_lines.append("-" * 30)
+        
+        for i in range(min(top_n, len(result['names'][group]))):
+            peak = result['names'][group][i]
+            pval = result['pvals'][group][i]
+            gene = result['genes'][group][i] if 'genes' in result else ''
+            
+            if gene and gene != '':
+                summary_lines.append(f"{i+1:2d}. {peak} ({gene}) - p={pval:.2e}")
+            else:
+                summary_lines.append(f"{i+1:2d}. {peak} - p={pval:.2e}")
+        
+        summary_lines.append("")
+    
+    # Save summary file
+    summary_file = os.path.join(output_dir, "markers", "top_markers_summary.txt")
+    with open(summary_file, 'w') as f:
+        f.write('\n'.join(summary_lines))
+    
+    log(f"Top markers summary saved to: {summary_file}", verbose=verbose)
 
 # --------------------------------------------------------------------------- #
 #                          snapATAC2 Dimensionality Reduction                 #
@@ -252,8 +262,6 @@ def run_scatac_pipeline(
     batch_key=None,
     verbose=True,
     use_snapatac2_dimred=False,
-    # Cell type transfer parameters
-    transfer_cell_type=False,
     rna_adata_path=None,
     rna_cell_type_column='cell_type',
     transfer_n_neighbors=5,
@@ -267,6 +275,8 @@ def run_scatac_pipeline(
     doublet=True,
     # TF-IDF parameters
     tfidf_scale_factor=1e4,
+    # Log transformation parameters
+    log_transform=True,
     # Highly variable genes parameters
     num_features=50000,
     # LSI/dimensionality reduction parameters
@@ -289,7 +299,11 @@ def run_scatac_pipeline(
     output_subdirectory='harmony',  # Always use 'harmony' subdirectory
     plot_dpi=300,
     # Additional parameters
-    cell_type_column='cell_type'
+    cell_type_column='cell_type',
+    # NEW: Marker gene parameters
+    save_markers=True,
+    top_n_markers=50,
+    top_n_summary=10
 ):
     t0 = time.time()
     log("=" * 60 + "\nStarting scATAC-seq pipeline\n" + "=" * 60, verbose)
@@ -299,12 +313,7 @@ def run_scatac_pipeline(
     else:
         log("Using LSI for dimensionality reduction", verbose=verbose)
     
-    if transfer_cell_type:
-        log("Cell type transfer mode enabled", verbose=verbose)
-        if not rna_adata_path:
-            raise ValueError("rna_adata_path must be provided when transfer_cell_type=True")
-    else:
-        log("Standard Leiden clustering mode", verbose=verbose)
+    log("Standard Leiden clustering mode", verbose=verbose)
     
     output_dir = os.path.join(output_dir, output_subdirectory)
     if not os.path.exists(output_dir):
@@ -356,6 +365,12 @@ def run_scatac_pipeline(
     # 4. TF-IDF normalization
     log("Performing TF-IDF normalization", verbose=verbose)
     ac.pp.tfidf(atac, scale_factor=tfidf_scale_factor)
+    
+    # 4b. Log transformation (log1p)
+    if log_transform:
+        log("Applying log1p transformation", verbose=verbose)
+        sc.pp.log1p(atac)
+    
     atac_sample = atac.copy()
 
     # 5. Feature selection and dimensionality reduction
@@ -422,27 +437,37 @@ def run_scatac_pipeline(
     log("Computing UMAP embedding", verbose=verbose)
     sc.tl.umap(atac, min_dist=umap_min_dist, spread=umap_spread, random_state=umap_random_state)
 
-    # 8. Cell type assignment
-    if transfer_cell_type:
-        # Transfer cell types from RNA reference
-        atac = transfer_cell_types_from_rna(
-            atac,
-            rna_adata_path=rna_adata_path,
-            rna_cell_type_column=rna_cell_type_column,
-            atac_use_rep=use_rep,
-            n_neighbors=transfer_n_neighbors,
-            metric=transfer_metric,
-            verbose=verbose
+    # 8. Standard Leiden clustering
+    log("Running Leiden clustering", verbose=verbose)
+    sc.tl.leiden(atac, resolution=leiden_resolution, random_state=leiden_random_state)
+    atac.obs[cell_type_column] = atac.obs['leiden'].copy()
+    cell_type_key = 'leiden'
+    
+    # 8b. Differential peak analysis
+    log("Finding marker genes/peaks for each cluster", verbose=verbose)
+    ac.tl.rank_peaks_groups(atac, 'leiden', method='t-test')
+    
+    # Display quick preview of results
+    result = atac.uns['rank_genes_groups']
+    groups = result['names'].dtype.names
+    pd.set_option("max_columns", 50)
+    preview_df = pd.DataFrame(
+        {group + '_' + key[:1]: result[key][group]
+        for group in groups for key in ['names', 'genes', 'pvals']}).head(10)
+    log("Preview of top marker peaks:", verbose=verbose)
+    if verbose:
+        print(preview_df)
+
+    # 8c. Save marker genes/peaks locally
+    if save_markers:
+        all_markers_df, summary_df = save_marker_genes_all_formats(
+            atac, output_dir, groupby='leiden', 
+            top_n_markers=top_n_markers, verbose=verbose
         )
-        # Use transferred cell types
-        atac.obs[cell_type_column] = atac.obs['transferred_cell_type'].copy()
-        cell_type_key = 'transferred_cell_type'
-    else:
-        # Standard Leiden clustering
-        log("Running Leiden clustering", verbose=verbose)
-        sc.tl.leiden(atac, resolution=leiden_resolution, random_state=leiden_random_state)
-        atac.obs[cell_type_column] = atac.obs['leiden'].copy()
-        cell_type_key = 'leiden'
+        save_top_markers_summary(
+            atac, output_dir, groupby='leiden', 
+            top_n=top_n_summary, verbose=verbose
+        )
 
     # 9. Plotting
     log("Generating plots", verbose=verbose)
@@ -453,12 +478,6 @@ def run_scatac_pipeline(
     sc.pl.umap(atac, color=[cell_type_key, "n_genes_by_counts"], legend_loc="on data", show=False)
     plt.savefig(os.path.join(output_dir, "umap_n_genes_by_counts.png"), dpi=plot_dpi)
     plt.close()
-
-    # Additional plot for transferred cell types showing confidence
-    if transfer_cell_type:
-        sc.pl.umap(atac, color='transfer_confidence', show=False)
-        plt.savefig(os.path.join(output_dir, "umap_transfer_confidence.png"), dpi=plot_dpi)
-        plt.close()
 
     if batch_key:
         batch_keys = batch_key if isinstance(batch_key, list) else [batch_key]
@@ -478,13 +497,15 @@ def run_scatac_pipeline(
     log("=" * 60, verbose)
     log(f"Pipeline finished in {(time.time() - t0) / 60:.1f} min", verbose)
     log(f"Dimensionality reduction method: {'snapATAC2' if use_snapatac2_dimred else 'LSI'}", verbose)
-    log(f"Cell type assignment: {'Transfer from RNA' if transfer_cell_type else 'Leiden clustering'}", verbose)
-    if transfer_cell_type:
-        avg_conf = np.mean(atac.obs['transfer_confidence'])
-        log(f"Average transfer confidence: {avg_conf:.3f}", verbose)
+    log(f"Cell type assignment: Leiden clustering", verbose)
+    log(f"TF-IDF normalization applied: Yes", verbose)
+    log(f"Log transformation applied: {'Yes' if log_transform else 'No'}", verbose)
     log(f"Final representation saved in: X_DM_harmony", verbose)
     log(f"Highly variable features saved in: var['HVF']", verbose)
     log(f"Batch correction applied: {'Yes' if batch_key else 'No'}", verbose)
+    if save_markers:
+        log(f"Marker genes/peaks saved: Yes (top {top_n_markers} per cluster)", verbose)
+        log(f"Marker files location: {output_dir}/markers/", verbose)
     log("=" * 60, verbose)
 
     return atac_sample, atac

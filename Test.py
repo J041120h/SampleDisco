@@ -284,11 +284,7 @@ if __name__ == "__main__":
     file_path = "/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad"
     
     # Process and overwrite the file
-    adata = process_anndata(file_path)
+    adata = sc.read_h5ad(file_path)
     
-    # Verify the conversion worked
-    if adata is not None:
-        print(f"\nVerification - unique values after conversion:")
-        print(adata.obs['disease severity'].unique())
-    else:
-        print("Processing failed!")
+    print(adata.obs.columns)
+    print(adata.var.columns)
