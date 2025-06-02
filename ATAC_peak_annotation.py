@@ -127,15 +127,17 @@ def annotate_atac_peaks(atac_file_path, ensembl_release=110, window_size=100000,
             'closest_gene': group_sorted.iloc[0]['gene_name'],
             'closest_distance': int(group_sorted.iloc[0]['distance_to_tss'])
         }
-
-    adata.uns["peak2gene"] = peak_annotation
+    
+    if "atac" not in adata.uns:
+        adata.uns["atac"] = {}
+    adata.uns["atac"]["peak2gene"] = peak_annotation
     
     # Add summary statistics
     total_peaks = len(adata.var_names)
     annotated_peaks = len(peak_annotation)
     coverage = (annotated_peaks / total_peaks) * 100
     
-    adata.uns["annotation_stats"] = {
+    adata.uns["atac"]["annotation_stats"] = {
         "total_peaks": total_peaks,
         "annotated_peaks": annotated_peaks,
         "coverage_percent": coverage,
