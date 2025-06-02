@@ -1,11 +1,65 @@
 import numpy as np
 import pandas as pd
 import scanpy as sc
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import csr_matrix, lil_matrix, issparse
 from collections import defaultdict
 import anndata as ad
 import os
 from pathlib import Path
+
+def brief_gene_activity_overview(adata):
+    """
+    Brief overview of gene activity AnnData object.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Gene activity AnnData object
+    """
+    
+    print(f"Gene Activity Data Overview")
+    print(f"=" * 30)
+    print(f"Shape: {adata.shape[0]:,} cells × {adata.shape[1]:,} genes")
+    print(f"Matrix type: {'Sparse' if issparse(adata.X) else 'Dense'}")
+    
+    # Count stats
+    if issparse(adata.X):
+        total_counts = adata.X.sum()
+        non_zero_pct = (adata.X.nnz / adata.X.size) * 100
+    else:
+        total_counts = adata.X.sum()
+        non_zero_pct = (np.count_nonzero(adata.X) / adata.X.size) * 100
+    
+    print(f"Total counts: {total_counts:,.0f}")
+    print(f"Non-zero values: {non_zero_pct:.1f}%")
+    
+    # Metadata
+    print(f"Cell metadata columns: {adata.obs.shape[1]}")
+    print(f"Gene metadata columns: {adata.var.shape[1]}")
+    
+    # Gene activity specific
+    if 'n_peaks' in adata.var.columns:
+        peak_counts = adata.var['n_peaks']
+        print(f"Peaks per gene: {peak_counts.mean():.1f} (range: {peak_counts.min()}-{peak_counts.max()})")
+    
+    if 'peak_to_gene_conversion' in adata.uns:
+        method = adata.uns['peak_to_gene_conversion'].get('method', 'unknown')
+        normalization = adata.uns['peak_to_gene_conversion'].get('normalization', 'unknown')
+        print(f"Conversion: {method}, normalized by {normalization}")
+    
+    # Count matrix example (3 genes × 3 cells)
+    print(f"\nCount matrix (first 3 genes × 3 cells):")
+    if issparse(adata.X):
+        sample_matrix = adata.X[:3, :3].toarray().T  # Transpose to get genes × cells
+    else:
+        sample_matrix = adata.X[:3, :3].T
+    
+    sample_df = pd.DataFrame(
+        sample_matrix,
+        index=adata.var_names[:3],  # genes as rows
+        columns=adata.obs_names[:3]  # cells as columns
+    )
+    print(sample_df.round(4))
 
 def peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=None, 
                          distance_threshold=None, use_closest_only=False, verbose=False):
@@ -148,8 +202,36 @@ def peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=Non
     else:
         raise ValueError("peak2gene must be a dict or DataFrame")
     
-    # Get all unique genes
+    # Get all unique genes and filter out invalid ones
     genes = sorted(list(gene2peaks.keys()))
+    original_count = len(genes)
+    
+    # Debug: check for problematic gene names
+    if verbose:
+        print(f"Original gene count: {original_count}")
+        print(f"First 10 genes: {genes[:10]}")
+        empty_genes = [i for i, g in enumerate(genes) if not g or not str(g).strip()]
+        if empty_genes:
+            print(f"Found empty genes at indices: {empty_genes}")
+    
+    # Remove empty, whitespace-only, or NaN gene names
+    valid_genes = []
+    for g in genes:
+        if g and str(g).strip() and str(g).lower() != 'nan' and str(g) != 'None':
+            valid_genes.append(g)
+        elif verbose:
+            print(f"Filtering out invalid gene: '{g}' (type: {type(g)})")
+    
+    genes = sorted(valid_genes)
+    
+    if len(genes) < original_count:
+        filtered_count = original_count - len(genes)
+        print(f"Filtered out {filtered_count} invalid gene names")
+        
+        # Update gene2peaks to only include valid genes
+        gene2peaks = {g: peaks for g, peaks in gene2peaks.items() 
+                     if g and str(g).strip() and str(g).lower() != 'nan' and str(g) != 'None'}
+    
     n_genes = len(genes)
     n_cells = atac.n_obs
     
@@ -296,7 +378,8 @@ def peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=Non
         'layer_used': layer if layer is not None else 'X',
         'distance_threshold': distance_threshold,
         'use_closest_only': use_closest_only,
-        'annotation_stats': peak_stats
+        'annotation_stats': peak_stats,
+        'filtered_invalid_genes': original_count - len(genes)
     }
     
     # Save to output directory
@@ -320,48 +403,10 @@ def peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=Non
     
     return adata_gene
 
-
-def create_peak2gene_simple_mapping(atac, distance_threshold=50000, use_closest_only=True):
-    """
-    Create a simplified peak-to-gene mapping from the detailed annotation.
-    Useful for compatibility with other tools.
-    
-    Parameters:
-    -----------
-    atac : AnnData
-        ATAC data with annotation from annotate_atac_peaks
-    distance_threshold : int
-        Maximum distance from TSS (default: 50kb)
-    use_closest_only : bool
-        Use only closest gene per peak
-    
-    Returns:
-    --------
-    dict : Simple {peak: gene} or {peak: [genes]} mapping
-    """
-    
-    if 'atac' not in atac.uns or 'peak2gene' not in atac.uns['atac']:
-        raise ValueError("No peak annotation found. Run annotate_atac_peaks first.")
-    
-    peak2gene = atac.uns['atac']['peak2gene']
-    simple_mapping = {}
-    
-    for peak, annotation in peak2gene.items():
-        if use_closest_only:
-            closest_gene = annotation.get('closest_gene')
-            closest_distance = annotation.get('closest_distance', 0)
-            if closest_distance <= distance_threshold:
-                simple_mapping[peak] = closest_gene
-        else:
-            genes = annotation.get('genes', [])
-            distances = annotation.get('distances', [])
-            valid_genes = [gene for gene, dist in zip(genes, distances) if dist <= distance_threshold]
-            if valid_genes:
-                simple_mapping[peak] = valid_genes if len(valid_genes) > 1 else valid_genes[0]
-    
-    return simple_mapping
-
 if __name__ == "__main__":
     atac = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad")
     output_dir = "/Users/harry/Desktop/GenoDistance/result/gene_activity"
-    peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=None, verbose=True)
+    adata = peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=None, verbose=True)
+    # adata = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/result/gene_activity/gene_activity.h5ad")
+    # adata = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad")
+    brief_gene_activity_overview(adata)
