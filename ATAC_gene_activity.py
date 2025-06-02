@@ -364,4 +364,4 @@ def create_peak2gene_simple_mapping(atac, distance_threshold=50000, use_closest_
 if __name__ == "__main__":
     atac = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad")
     output_dir = "/Users/harry/Desktop/GenoDistance/result/gene_activity"
-    peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=None, verbose=False)
+    peak_to_gene_activity(atac, output_dir, peak2gene_key='peak2gene', layer=None, verbose=True)
