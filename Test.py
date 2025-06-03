@@ -277,14 +277,34 @@ def process_anndata(file_path):
     except Exception as e:
         print(f"Error processing file: {str(e)}")
         return None
+    
+def remove_atac_uns_entry(h5ad_path: str):
+    """
+    Load an AnnData object from the specified .h5ad file, remove `uns['atac']` if it exists,
+    and overwrite the original file.
+
+    Parameters:
+    -----------
+    h5ad_path : str
+        Path to the .h5ad file.
+    """
+    # Load AnnData object
+    adata = ad.read_h5ad(h5ad_path)
+
+    # Remove uns['atac'] if it exists
+    if 'atac' in adata.uns:
+        print("Removing uns['atac'] from AnnData.")
+        del adata.uns['atac']
+    else:
+        print("uns['atac'] not found in AnnData.")
+
+    # Overwrite the original file
+    adata.write_h5ad(h5ad_path)
+    print(f"Updated AnnData object saved to: {h5ad_path}")
 
 # Example usage
 if __name__ == "__main__":
     print("Beginning to process h5ad file...")
-    file_path = "/Users/harry/Desktop/GenoDistance/result/ATAC/harmony/ATAC_sample.h5ad"
+    file_path = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
     
-    # Process and overwrite the file
-    adata = sc.read_h5ad(file_path)
-    
-    print(adata.obs.columns)
-    print(adata.var.columns)
+    remove_atac_uns_entry(file_path)

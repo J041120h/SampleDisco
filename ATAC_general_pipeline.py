@@ -10,7 +10,7 @@ import muon as mu
 from muon import atac as ac
 import scipy.sparse as sp           # used for re-sparsifying
 from sklearn.neighbors import NearestNeighbors
-from CellType import *
+from ATAC_cell_type import *
 warnings.filterwarnings("ignore")
 
 # --------------------------------------------------------------------------- #
@@ -119,10 +119,6 @@ def run_scatac_pipeline(
     batch_key=None,
     verbose=True,
     use_snapatac2_dimred=False,
-    rna_adata_path=None,
-    rna_cell_type_column='cell_type',
-    transfer_n_neighbors=5,
-    transfer_metric='cosine',
     # QC and filtering parameters
     min_cells=1,
     min_genes=2000,
@@ -145,9 +141,10 @@ def run_scatac_pipeline(
     # Neighbours
     n_neighbors=10,
     n_pcs=30,
-    # Leiden
-    leiden_resolution=0.5,
-    leiden_random_state=0,
+    #Cell type clustering
+    existing_cell_types = False,
+    n_target_clusters = 3,
+    cluster_resolution= 0.8,
     # UMAP
     umap_min_dist=0.3,
     umap_spread=1.0,
@@ -156,10 +153,7 @@ def run_scatac_pipeline(
     output_subdirectory='harmony',
     plot_dpi=300,
     # Additional
-    cell_type_column='cell_type',
-    save_markers=True,
-    top_n_markers=50,
-    top_n_summary=10
+    cell_type_column='cell_type'
 ):
     t0 = time.time()
     log("="*60 + "\nStarting scATAC-seq pipeline\n" + "="*60, verbose)
@@ -257,10 +251,20 @@ def run_scatac_pipeline(
                random_state=umap_random_state)
 
     # 8. Leiden clustering
-    sc.tl.leiden(atac, resolution=leiden_resolution,
-                 random_state=leiden_random_state)
-    atac.obs[cell_type_column] = atac.obs['leiden']
-    cell_type_key = 'leiden'
+    atac = cell_types_atac(
+        atac,
+        cell_column=cell_type_column, 
+        existing_cell_types=existing_cell_types,
+        n_target_clusters=n_target_clusters,
+        cluster_resolution=cluster_resolution,
+        use_rep='X_DM_harmony',
+        method='average', 
+        metric='euclidean', 
+        distance_mode='centroid',
+        num_DMs=n_lsi_components, 
+        verbose=verbose
+    )
+    cell_type_key = 'cell_type'
 
     # 9. Plots
     sc.pl.umap(atac, color=cell_type_key, legend_loc="on data",

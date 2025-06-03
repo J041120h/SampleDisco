@@ -140,7 +140,8 @@ atac_harmony_max_iter: 30
 atac_n_neighbors: 15
 atac_n_pcs: 30
 atac_leiden_resolution: 0.8
-atac_leiden_random_state: 42
+atac_existing_cell_types: False
+atac_n_target_cell_clusters: 3
 atac_umap_min_dist: 0.3
 atac_umap_spread: 1.0
 atac_umap_random_state: 42
@@ -159,13 +160,13 @@ atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
 preprocessing: false
-cell_type_cluster: true
+cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: false
 trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
-ATAC_data: false
-visualize_data: true
+ATAC_data: true
+visualize_data: false
 initialization: false
 use_gpu: false

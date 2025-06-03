@@ -186,7 +186,8 @@ def wrapper(
 
     # Leiden clustering parameters
     atac_leiden_resolution = 0.8,
-    atac_leiden_random_state = 42,
+    atac_existing_cell_types = False,
+    atac_n_target_cell_clusters = 3 ,
 
     # UMAP parameters
     atac_umap_min_dist = 0.3,
@@ -761,38 +762,49 @@ def wrapper(
                 batch_key=atac_batch_col,
                 verbose=atac_pipeline_verbose,
                 use_snapatac2_dimred=use_snapatac2_dimred,
+                
                 # QC and filtering parameters
                 min_cells=atac_min_cells,
                 min_genes=atac_min_genes,
                 max_genes=atac_max_genes,
-                min_cells_per_sample = atac_min_cells_per_sample,
+                min_cells_per_sample=atac_min_cells_per_sample,
+                
                 # Doublet detection
                 doublet=atac_doublet,
+                
                 # TF-IDF parameters
                 tfidf_scale_factor=atac_tfidf_scale_factor,
-                # Highly variable genes parameters
+                
+                # Highly variable features
                 num_features=atac_num_features,
-                # LSI/dimensionality reduction parameters
+                
+                # LSI / dimensionality reduction
                 n_lsi_components=atac_n_lsi_components,
                 drop_first_lsi=atac_drop_first_lsi,
-                # Harmony parameters
+                
+                # Harmony integration
                 harmony_max_iter=atac_harmony_max_iter,
                 harmony_use_gpu=use_gpu,
-                # Neighbors parameters
+                
+                # Nearest neighbors
                 n_neighbors=atac_n_neighbors,
-                n_pcs=atac_n_pcs,  
-                # Leiden clustering parameters
-                leiden_resolution=atac_leiden_resolution,
-                leiden_random_state=atac_leiden_random_state,
-                # UMAP parameters
+                n_pcs=atac_n_pcs,
+                
+                # Clustering
+                cluster_resolution=atac_leiden_resolution,
+                cell_type_column=atac_cell_type_column,
+                existing_cell_types=atac_existing_cell_types,
+                n_target_clusters = atac_n_target_cell_clusters,
+                
+                # UMAP visualization
                 umap_min_dist=atac_umap_min_dist,
                 umap_spread=atac_umap_spread,
                 umap_random_state=atac_umap_random_state,
-                # Output parameters
+                
+                # Output
                 plot_dpi=atac_plot_dpi,
-                # Additional parameters can be added as needed
-                cell_type_column=atac_cell_type_column
             )
+
         else:
             if os.path.isfile(os.path.join(atac_output_dir, "harmony", "ATAC_sample.h5ad")):
                 atac_sample = sc.read(os.path.join(atac_output_dir, "harmony", "ATAC_sample.h5ad"))
@@ -816,12 +828,12 @@ def wrapper(
                 pseudobulk=atac_pseudobulk_df,
                 pseudobulk_anndata = pseudobulk_adata,
                 sample_col = sample_col,
-                n_expression_pcs=n_expression_pcs,
-                n_proportion_pcs=n_proportion_pcs,
+                n_expression_pcs=atac_pca_n_expression_pcs,
+                n_proportion_pcs=atac_pca_n_proportion_pcs,
                 output_dir=atac_pca_output_dir,
                 atac = True,
                 use_snapatac2_dimred = use_snapatac2_dimred,
-                verbose=pca_verbose
+                verbose=atac_pca_verbose
             )
 
         if atac_visualization_processing:
