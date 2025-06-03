@@ -285,9 +285,8 @@ def run_scatac_pipeline(
 
     # 10. Save
     log("Writing H5AD …", verbose)
-    # sc.write(os.path.join(output_dir, "ATAC_cluster.h5ad"), atac,
-    #          compression="gzip", compression_opts=1)
     atac_sample.obs[cell_type_column] = atac.obs[cell_type_column].copy()
+
     sc.write(os.path.join(output_dir, "ATAC_sample.h5ad"), atac_sample)
 
     # 11. Summary

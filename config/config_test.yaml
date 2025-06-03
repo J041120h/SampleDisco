@@ -35,7 +35,6 @@ cell_type_save: true
 assign_save: true
 
 # ===== Pseudobulk Parameters =====
-sample_col: "sample"
 celltype_col: "cell_type"
 pseudobulk_output_dir: null
 n_features: 2000
@@ -73,7 +72,7 @@ trajectory_diff_gene_verbose: True
 top_gene_number: 30
 
 # ===== Paths for Skipping Preprocessing =====
-AnnData_cell_path:  "/users/hjiang/GenoDistance/Test/result/harmony/adata_cell.h5ad"
+AnnData_cell_path: "/users/hjiang/GenoDistance/Test/result/harmony/adata_cell.h5ad"
 
 # ===== Sample Distance Parameters =====
 summary_sample_csv_path: null
@@ -82,15 +81,15 @@ sample_distance_methods: null
 # ===== Cluster Based DEG ===== 
 Kmeans_based_cluster_flag: true
 Tree_building_method: null
-prportion_test: true
-RAISIN_analysis: false
+proportion_test: false
+RAISIN_analysis: true
 cluster_distance_method: 'cosine'
 cluster_number: 4
 user_provided_sample_to_clade: null
 
 # ===== Visualization Parameters =====
 verbose_Visualization: true
-trajectory_visalization_label: "sev.level"
+trajectory_visualization_label: "sev.level"
 age_bin_size: null
 dot_size: 3
 
@@ -105,7 +104,6 @@ plot_cell_type_proportions_pca_flag: false
 plot_cell_type_expression_pca_flag: false
 plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
-
 
 # ===== ATAC-seq Pipeline Parameters =====
 atac_preprocessing: true

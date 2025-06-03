@@ -8,6 +8,59 @@ import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
 
+def standardize_cell_type_column(adata, verbose=True):
+    """
+    Standardize cell_type column to string categorical format.
+    Only performs necessary conversions without redundancy.
+    """
+    if 'cell_type' not in adata.obs.columns:
+        # This shouldn't happen in your workflow, but safety check
+        adata.obs['cell_type'] = '1'
+        if verbose:
+            print("[standardize] Created missing cell_type column with default value '1'")
+    
+    current_dtype = adata.obs['cell_type'].dtype
+    
+    # Case 1: Integer types (from Leiden clustering) - most common
+    if pd.api.types.is_integer_dtype(current_dtype):
+        # Convert 0-based to 1-based and then to string
+        adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype(str)
+        if verbose:
+            print("[standardize] Converted integer clusters to 1-based string format")
+    
+    # Case 2: Already string or object type
+    elif current_dtype == 'object' or pd.api.types.is_string_dtype(current_dtype):
+        # Ensure consistent string format (handles NaN, mixed types)
+        adata.obs['cell_type'] = adata.obs['cell_type'].astype(str)
+        if verbose:
+            print("[standardize] Ensured consistent string format")
+    
+    # Case 3: Already categorical but need to check base type
+    elif pd.api.types.is_categorical_dtype(current_dtype):
+        if pd.api.types.is_integer_dtype(adata.obs['cell_type'].cat.categories.dtype):
+            # Categorical with integer categories (convert to 1-based strings)
+            adata.obs['cell_type'] = (adata.obs['cell_type'].cat.codes + 1).astype(str)
+            if verbose:
+                print("[standardize] Converted categorical integer to 1-based string format")
+        else:
+            # Already categorical with string categories - just ensure string type
+            adata.obs['cell_type'] = adata.obs['cell_type'].astype(str)
+            if verbose:
+                print("[standardize] Converted categorical to string format")
+    
+    # Case 4: Any other data type (shouldn't happen, but safety)
+    else:
+        adata.obs['cell_type'] = adata.obs['cell_type'].astype(str)
+        if verbose:
+            print(f"[standardize] Converted {current_dtype} to string format")
+    
+    # Final step: Convert to categorical for memory efficiency
+    adata.obs['cell_type'] = adata.obs['cell_type'].astype('category')
+    
+    if verbose:
+        unique_types = adata.obs['cell_type'].nunique()
+        print(f"[standardize] Final cell types (n={unique_types}): {sorted(adata.obs['cell_type'].cat.categories.tolist())}")
+
 def cell_types_atac(
     adata, 
     cell_column='cell_type', 
@@ -280,6 +333,8 @@ def cell_types_atac(
             sc.tl.umap(adata, min_dist=0.5)
         
         # Save results if requested
+        standardize_cell_type_column(adata, verbose=verbose)
+        
         if Save and output_dir:
             output_dir = os.path.join(output_dir, 'harmony')
             os.makedirs(output_dir, exist_ok=True)
@@ -295,7 +350,6 @@ def cell_types_atac(
             print(f"[cell_types_atac] Total runtime: {elapsed_time:.2f} seconds")
 
     return adata
-
 
 def cell_type_dendrogram_atac(
     adata,

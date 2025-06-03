@@ -1,15 +1,15 @@
 ======================================
- Job ID:            16920782
+ Job ID:            16927179
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
  CPUs per Task:     16
  Memory Alloc:      409600
  GPU Requested:     1
- Start Time:        Tue Jun  3 01:16:09 AM EDT 2025
+ Start Time:        Tue Jun  3 12:45:59 PM EDT 2025
 ======================================
 Checking GPU status...
-Tue Jun  3 01:16:10 2025       
+Tue Jun  3 12:46:00 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Tue Jun  3 01:16:10 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   49C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
+| N/A   50C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -30,73 +30,5 @@ Tue Jun  3 01:16:10 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
-Start of Process
-
-Resuming process from previous progress:
-{
-    "preprocessing": true,
-    "cell_type_cluster": true,
-    "sample_distance_calculation": true,
-    "DimensionalityReduction": true,
-    "trajectory_analysis": true,
-    "visualize_data": true,
-    "initialization": false
-}
-nNon-Linux system detected.
-[2025-06-03 01:17:35] True: ============================================================
-Starting scATAC-seq pipeline
-============================================================
-[2025-06-03 01:23:26] True: Loaded 88985 cells × 230356 features
-Merged 28 sample-level columns
-[2025-06-03 01:23:26] True: QC filtering
-[2025-06-03 01:23:50] True: Filtering samples with <500 cells
-[2025-06-03 01:24:00] True: Remaining cells: 79274
-[2025-06-03 01:24:00] True: TF-IDF normalisation
-[2025-06-03 01:24:31] True: Log1p transform
-[2025-06-03 01:24:38] INFO: Running snapATAC2 SVD with 30 components
-[2025-06-03 01:24:38] INFO: Converting data matrix to float32
-[2025-06-03 01:24:47] INFO: Filtering doublets (snapATAC2-Scrublet)
-[2025-06-03 01:24:47] INFO: snapATAC2-Scrublet compatibility issue – skipping.
-[2025-06-03 01:26:48] INFO: snapATAC2 dimensionality reduction complete
-[cell_types_atac] No cell type annotation found. Performing clustering.
-[cell_types_atac] Building neighborhood graph...
-[cell_types_atac] Target: 3 clusters. Trying resolution: 0.8
-[cell_types_atac] Leiden clustering produced 27 clusters.
-[cell_types_atac] Got 27 clusters (>= target). Recursing with existing_cell_types=True...
-  [cell_types_atac] Current number of cell types: 27
-  [cell_types_atac] Aggregating 27 cell types into 3 clusters using dendrogram.
-  [cell_types_atac] Using dimension reduction (X_DM_harmony) for dendrogram construction...
-=== Preparing data for dendrogram (using X_DM_harmony) ===
-Using first 30 components from X_DM_harmony
-=== Computing centroids of cell types in X_DM_harmony space ===
-Calculated centroids for 27 cell types.
-Centroid shape: (27, 30)
-=== Computing distance matrix between centroids using cosine distance ===
-=== Performing hierarchical clustering on X_DM_harmony centroids ===
-Linkage method: average, Distance metric: cosine
-=== Aggregating cell types into 3 clusters ===
-Successfully created 3 clusters
-
-=== Cluster Composition ===
-Cluster 1: 10, 11, 12, 13, 14, 15, 20, 22, 24, 26, 27, 8
-Cluster 2: 1, 16, 17, 18, 2, 25, 3, 4, 5, 6, 7, 9
-Cluster 3: 19, 21, 23
-
-=== Cluster Quality Metrics ===
-Cluster 1: Average within-cluster distance = 0.0701
-Cluster 2: Average within-cluster distance = 0.0788
-Cluster 3: Average within-cluster distance = 0.1486
-
-Function execution time: 0.03 seconds
-  [cell_types_atac] Successfully aggregated to 3 cell types.
-[cell_types_atac] Finding differential peaks between cell types...
-[cell_types_atac] Successfully computed differential peaks.
-[cell_types_atac] Finished assigning cell types.
-[cell_types_atac] Total runtime: 2933.93 seconds
-[2025-06-03 02:17:20] True: Writing H5AD …
-[2025-06-03 02:43:56] True: ============================================================
-[2025-06-03 02:43:56] True: Finished in 86.4 min
-End of Process
-
 Finished main.py.
-End Time: Tue Jun  3 02:43:59 AM EDT 2025
+End Time: Tue Jun  3 12:46:14 PM EDT 2025

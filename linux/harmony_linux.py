@@ -65,7 +65,6 @@ def anndata_cluster(
     sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
     return adata_cluster
 
-
 import os
 import scanpy as sc
 import rapids_singlecell as rsc
