@@ -66,6 +66,11 @@ def anndata_cluster(
     return adata_cluster
 
 
+import os
+import scanpy as sc
+import rapids_singlecell as rsc
+from harmony import harmonize
+
 def anndata_sample(
     adata_sample_diff,
     output_dir,
@@ -78,6 +83,11 @@ def anndata_sample(
 ):
     if verbose:
         print('=== [GPU] Processing data for sample differences ===')
+
+    # Store original counts
+    adata_sample_diff.layers["counts"] = adata_sample_diff.X.copy()
+
+    # Move to GPU and preprocess
     rsc.get.anndata_to_GPU(adata_sample_diff)
     rsc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
     rsc.pp.log1p(adata_sample_diff)
@@ -86,7 +96,7 @@ def anndata_sample(
     if verbose:
         print('=== [GPU] Begin Harmony ===')
 
-    # Harmony
+    # Harmony batch correction on GPU
     Z = harmonize(
         adata_sample_diff.obsm['X_pca'],
         adata_sample_diff.obs,
@@ -96,14 +106,18 @@ def anndata_sample(
     )
     adata_sample_diff.obsm['X_pca_harmony'] = Z
 
-    # GPU neighbors and UMAP
+    # Neighbors and UMAP using Harmony representation
     rsc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_neighbors=15, metric='cosine')
     rsc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
 
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_sample_diff)
+    adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
+    del adata_sample_diff.layers["counts"]
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
+
     return adata_sample_diff
+
 
 def harmony_linux(
     h5ad_path,
