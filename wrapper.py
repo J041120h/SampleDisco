@@ -820,6 +820,7 @@ def wrapper(
                 output_dir=atac_pseudobulk_output_dir,
                 n_features=atac_pseudobulk_n_features,
                 frac=atac_pseudobulk_frac,
+                atac = True,
                 verbose=atac_pseudobulk_verbose
             )
 

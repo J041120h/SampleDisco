@@ -15,6 +15,104 @@ import contextlib
 from HVG import highly_variable_gene_selection, select_hvf_loess
 from scipy.sparse import issparse, csr_matrix, vstack
 
+
+def _normalize_and_log(vec: np.ndarray, target_sum: float = 1e4) -> np.ndarray:
+    """Library-size normalisation followed by log1p."""
+    tot = vec.sum()
+    if tot > 0:
+        vec = vec / tot * target_sum
+    return np.log1p(vec)
+
+def _tfidf_normalize(vec: np.ndarray, idf_weights: np.ndarray = None) -> np.ndarray:
+    """
+    Apply TF-IDF normalization to a vector.
+    
+    TF (Term Frequency) = count / total_counts
+    IDF (Inverse Document Frequency) should be pre-computed across all samples
+    
+    Parameters:
+    -----------
+    vec : np.ndarray
+        Raw count vector for a single sample
+    idf_weights : np.ndarray
+        Pre-computed IDF weights for each feature (gene/peak)
+    
+    Returns:
+    --------
+    np.ndarray
+        TF-IDF normalized vector
+    """
+    # Compute TF (term frequency)
+    total_counts = vec.sum()
+    if total_counts > 0:
+        tf = vec / total_counts
+    else:
+        tf = vec
+    
+    # Apply IDF weights if provided
+    if idf_weights is not None:
+        tfidf = tf * idf_weights
+    else:
+        tfidf = tf
+    
+    return tfidf
+
+
+def compute_idf_weights(cell_expression_df: pd.DataFrame, verbose: bool = False) -> pd.Series:
+    """
+    Compute IDF weights across all samples for TF-IDF normalization.
+    
+    IDF = log(1 + N / (1 + df)) where:
+    - N is the total number of samples
+    - df is the number of samples containing the feature
+    
+    Parameters:
+    -----------
+    cell_expression_df : pd.DataFrame
+        DataFrame with cell types as rows and samples as columns
+        Each cell contains a Series of gene/peak expression values
+    
+    Returns:
+    --------
+    pd.Series
+        IDF weights for each gene/peak
+    """
+    # Get gene names from the first non-empty cell
+    gene_names = None
+    for row in cell_expression_df.index:
+        for col in cell_expression_df.columns:
+            expr_series = cell_expression_df.at[row, col]
+            if expr_series is not None and len(expr_series) > 0:
+                gene_names = expr_series.index
+                break
+        if gene_names is not None:
+            break
+    
+    if gene_names is None:
+        raise ValueError("No valid expression data found in cell_expression_df")
+    
+    # Count document frequency for each gene/peak
+    n_samples = 0
+    doc_freq = np.zeros(len(gene_names))
+    
+    for row in cell_expression_df.index:
+        for col in cell_expression_df.columns:
+            expr_series = cell_expression_df.at[row, col]
+            if expr_series is not None and len(expr_series) > 0:
+                n_samples += 1
+                # Count non-zero features
+                doc_freq += (expr_series.values > 0).astype(int)
+    
+    # Compute IDF weights
+    # Adding 1 to avoid division by zero and log(0)
+    idf_weights = np.log(1 + n_samples / (1 + doc_freq))
+    
+    if verbose:
+        print(f"Computed IDF weights for {len(gene_names)} features across {n_samples} samples")
+        print(f"IDF weight range: [{idf_weights.min():.3f}, {idf_weights.max():.3f}]")
+    
+    return pd.Series(idf_weights, index=gene_names)
+
 def check_nan_and_negative_in_lists(df: pd.DataFrame, verbose=False) -> bool:
     found_nan = False
     found_negative = False
@@ -276,6 +374,9 @@ def compute_pseudobulk_dataframes(
     output_dir: str = './',
     n_features: int = 2000,
     frac: float = 0.3,
+    normalize: bool = True,
+    target_sum: float = 1e4,
+    atac: bool = False,
     verbose: bool = False
     ):
     start_time = time.time() if verbose else None
@@ -364,6 +465,7 @@ def compute_pseudobulk_dataframes(
     for sample in samples:
         sample_masks[sample] = adata.obs[sample_col] == sample
 
+    # First pass: compute raw expression values
     for sample in samples:
         sample_mask = sample_masks[sample]
         sample_indices = np.where(sample_mask)[0]
@@ -386,14 +488,58 @@ def compute_pseudobulk_dataframes(
             
             proportion = num_cells / total_cells if total_cells > 0 else 0.0
 
-            # Create expression series
+            # Create expression series (raw values for now)
             expr_series = pd.Series(expr_values, index=gene_names)
 
             cell_expression_df.at[ctype, sample] = expr_series
             cell_proportion_df.loc[ctype, sample] = proportion
 
+    # Apply normalization
+    if normalize:
+        if atac:
+            # For ATAC-seq: compute IDF weights and apply TF-IDF normalization
+            if verbose:
+                print("Computing TF-IDF normalization for ATAC-seq data...")
+            
+            # Compute IDF weights across all samples
+            idf_weights = compute_idf_weights(cell_expression_df, verbose=verbose)
+            
+            # Apply TF-IDF normalization to each sample
+            for sample in samples:
+                for ctype in cell_types:
+                    expr_series = cell_expression_df.at[ctype, sample]
+                    if expr_series is not None and len(expr_series) > 0:
+                        # Apply TF-IDF normalization
+                        tfidf_values = _tfidf_normalize(expr_series.values, idf_weights.values)
+                        # Apply log1p transformation after TF-IDF
+                        tfidf_values = np.log1p(tfidf_values)
+                        cell_expression_df.at[ctype, sample] = pd.Series(tfidf_values, index=expr_series.index)
+            
+            if verbose:
+                print("TF-IDF normalization and log1p transformation completed.")
+        else:
+            # For RNA-seq: apply standard normalization and log1p
+            if verbose:
+                print(f"Applying standard normalization (target_sum={target_sum}) and log1p transformation...")
+            
+            for sample in samples:
+                for ctype in cell_types:
+                    expr_series = cell_expression_df.at[ctype, sample]
+                    if expr_series is not None and len(expr_series) > 0:
+                        # Apply standard normalization and log1p
+                        norm_values = _normalize_and_log(expr_series.values, target_sum=target_sum)
+                        cell_expression_df.at[ctype, sample] = pd.Series(norm_values, index=expr_series.index)
+            
+            if verbose:
+                print("Standard normalization and log1p transformation completed.")
+
     if verbose:
         print("Successfully computed pseudobulk data.")
+
+    # Save raw normalized expression data before batch correction
+    if normalize:
+        norm_type = "tfidf" if atac else "standard"
+        save_dataframe_as_strings(cell_expression_df, pseudobulk_dir, f"{norm_type}_normalized_expression_raw.csv", verbose=verbose)
 
     if verbose:
         end_time = time.time()
@@ -435,7 +581,10 @@ def compute_pseudobulk_dataframes(
     pseudobulk = {
         "cell_expression": cell_expression_df,
         "cell_proportion": proportion_df,
-        "cell_expression_corrected": cell_expression_corrected_df
+        "cell_expression_corrected": cell_expression_corrected_df,
+        "normalized": normalize,
+        "normalization_type": "tfidf" if (normalize and atac) else "standard" if normalize else None,
+        "target_sum": target_sum if (normalize and not atac) else None
     }
 
     save_dataframe_as_strings(cell_expression_corrected_df, pseudobulk_dir, "expression.csv")

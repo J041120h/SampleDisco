@@ -8,6 +8,7 @@ import rapids_singlecell as rsc
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
+
 def cell_type_dendrogram_linux(
     adata,
     resolution,
