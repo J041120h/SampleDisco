@@ -397,6 +397,7 @@ def wrapper(
                 adata=AnnData_cell,
                 cell_column=cell_column,
                 existing_cell_types=existing_cell_types,
+                n_target_clusters = n_target_cell_clusters,
                 umap=umap,
                 Save=cell_type_save,
                 output_dir=output_dir,
