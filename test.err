@@ -1,4 +1,4 @@
-2025-05-28 17:18:37 - INFO - Selected 40000 features.
+2025-06-03 01:24:47 - INFO - Selected 40000 features.
 ... storing 'sample' as categorical
 ... storing 'disease severity' as categorical
 ... storing 'Donor' as categorical
@@ -19,6 +19,8 @@
 ... storing 'abx_prior' as categorical
 ... storing 'remdesivir_prior' as categorical
 ... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+... storing 'cell_type_original' as categorical
+WARNING: It seems you use rank_genes_groups on the raw count data. Please logarithmize your data before calling rank_genes_groups.
 ... storing 'sample' as categorical
 ... storing 'disease severity' as categorical
 ... storing 'Donor' as categorical
@@ -39,4 +41,3 @@
 ... storing 'abx_prior' as categorical
 ... storing 'remdesivir_prior' as categorical
 ... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
-2025-05-28 17:32:24 - INFO - Selected 39600 features.

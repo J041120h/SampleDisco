@@ -90,8 +90,7 @@ user_provided_sample_to_clade: null
 
 # ===== Visualization Parameters =====
 verbose_Visualization: true
-trajectory_visalization_label:
-  - "sev.level"
+trajectory_visalization_label: "sev.level"
 age_bin_size: null
 dot_size: 3
 
@@ -107,6 +106,54 @@ plot_cell_type_expression_pca_flag: false
 plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
+
+# ===== ATAC-seq Pipeline Parameters =====
+atac_preprocessing: true
+atac_pseudobulk_dimensionality_reduction: false
+atac_visualization_processing: false
+
+atac_file_path: "/users/hjiang/GenoDistance/Data/test_ATAC.h5ad"
+atac_output_dir: null
+atac_metadata_path: "/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv"
+atac_pseudobulk_output_dir: null
+atac_pca_output_dir: null
+atac_sample_col: "sample"
+atac_batch_col: null
+atac_cell_type_column: "cell_type"
+atac_pipeline_verbose: true
+use_snapatac2_dimred: true
+atac_min_cells: 3
+atac_min_genes: 2000
+atac_max_genes: 15000
+atac_min_cells_per_sample : 500
+atac_doublet: true
+atac_tfidf_scale_factor: 10000
+atac_num_features: 40000
+atac_n_lsi_components: 30
+atac_drop_first_lsi: true
+atac_harmony_max_iter: 30
+atac_n_neighbors: 15
+atac_n_pcs: 30
+atac_leiden_resolution: 0.8
+atac_existing_cell_types: False
+atac_n_target_cell_clusters: 3
+atac_umap_min_dist: 0.3
+atac_umap_spread: 1.0
+atac_umap_random_state: 42
+atac_plot_dpi: 300
+atac_pseudobulk_n_features: 40000
+atac_pseudobulk_frac: 0.1
+atac_pseudobulk_verbose: true
+atac_pca_n_expression_pcs: 30
+atac_pca_n_proportion_pcs: 30
+atac_pca_verbose: true
+atac_figsize: [10, 8]  
+atac_point_size: 50
+atac_visualization_grouping_columns:
+  - current_severity
+  - Donor
+atac_visualization_age_size: null
+
 # ===== Process Control Flags =====
 preprocessing: false
 cell_type_cluster: false
@@ -114,7 +161,8 @@ sample_distance_calculation: false
 DimensionalityReduction: false
 trajectory_analysis: false
 trajectory_differential_gene: false
-cluster_and_DGE: true
+cluster_and_DGE: false
+ATAC_data: true
 visualize_data: false
 initialization: false
 use_gpu: false
