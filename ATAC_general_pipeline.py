@@ -259,7 +259,7 @@ def run_scatac_pipeline(
         cluster_resolution=cluster_resolution,
         use_rep='X_DM_harmony',
         method='average', 
-        metric='euclidean', 
+        metric='cosine', 
         distance_mode='centroid',
         num_DMs=n_lsi_components, 
         verbose=verbose

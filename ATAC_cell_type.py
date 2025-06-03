@@ -119,7 +119,7 @@ def cell_types_atac(
             if verbose:
                 print("[cell_types_atac] Building neighborhood graph...")
             # For ATAC data, we don't use n_pcs parameter since we're using diffusion maps
-            sc.pp.neighbors(adata, use_rep=use_rep)
+            sc.pp.neighbors(adata, use_rep=use_rep, metric='cosine')
 
     # ============================================================================
     # DE NOVO CLUSTERING (NO EXISTING ANNOTATIONS) - RECURSIVE STRATEGY
