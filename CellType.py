@@ -31,6 +31,8 @@ def cell_types(
     """
     Assigns cell types based on existing annotations or performs Leiden clustering if no annotation exists.
     Uses recursive strategy to adaptively find optimal clustering resolution when target clusters specified.
+    
+    IMPROVED: Now uses dimension reduction (X_pca_harmony) for dendrogram construction instead of marker genes.
 
     Parameters:
     - adata: AnnData object
@@ -87,22 +89,9 @@ def cell_types(
             if verbose:
                 prefix = "  " * _recursion_depth
                 print(f"{prefix}[cell_types] Aggregating {current_n_types} cell types into {n_target_clusters} clusters using dendrogram.")
+                print(f"{prefix}[cell_types] Using dimension reduction ({use_rep}) for dendrogram construction...")
             
-            # Find marker genes for dendrogram construction
-            if verbose:
-                print(f"{prefix}[cell_types] Finding marker genes for dendrogram construction...")
-            
-            sc.tl.rank_genes_groups(adata, groupby='cell_type', method='logreg', n_genes=100)
-            rank_results = adata.uns['rank_genes_groups']
-            groups = rank_results['names'].dtype.names
-            all_marker_genes = set()
-            for group in groups:
-                all_marker_genes.update(rank_results['names'][group])
-
-            if verbose:
-                print(f"{prefix}[cell_types] Found {len(all_marker_genes)} marker genes for dendrogram.")
-
-            # Apply dendrogram clustering
+            # Apply dendrogram clustering using dimension reduction
             adata = cell_type_dendrogram(
                 adata=adata,
                 n_clusters=n_target_clusters,
@@ -110,7 +99,8 @@ def cell_types(
                 method=method,
                 metric=metric,
                 distance_mode=distance_mode,
-                marker_genes=list(all_marker_genes),
+                use_rep=use_rep,
+                num_PCs=num_PCs,
                 verbose=verbose
             )
             
@@ -123,11 +113,6 @@ def cell_types(
                 if verbose:
                     prefix = "  " * _recursion_depth
                     print(f"{prefix}[cell_types] Current cell types ({current_n_types}) <= target clusters ({n_target_clusters}). Using as-is.")
-            
-            # Find marker genes for downstream analysis even if not using dendrogram
-            if verbose and _recursion_depth == 0:
-                print("[cell_types] Finding marker genes for existing cell types...")
-            sc.tl.rank_genes_groups(adata, groupby='cell_type', method='logreg', n_genes=100)
 
         # Build neighborhood graph for existing annotations (only on first call)
         if _recursion_depth == 0:
@@ -195,6 +180,7 @@ def cell_types(
                         method=method,
                         metric=metric,
                         distance_mode=distance_mode,
+                        use_rep=use_rep,
                         num_PCs=num_PCs,
                         _recursion_depth=_recursion_depth + 1,
                         verbose=verbose
@@ -305,12 +291,15 @@ def cell_type_dendrogram(
     method='average',
     metric='euclidean',
     distance_mode='centroid',
-    marker_genes=None,
+    use_rep='X_pca_harmony',
+    num_PCs=20,
     verbose=True
 ):
     """
-    Constructs a dendrogram of cell types based on selected marker genes and aggregates them 
-    into a specified number of clusters.
+    Constructs a dendrogram of cell types based on dimension reduction results (e.g., X_pca_harmony)
+    and aggregates them into a specified number of clusters.
+    
+    IMPROVED: Now uses dimension reduction space instead of marker genes for more stable clustering.
     """
     start_time = time.time()
     
@@ -321,52 +310,60 @@ def cell_type_dendrogram(
         raise ValueError("n_clusters must be >= 1")
     
     if verbose:
-        print('=== Preparing data for dendrogram (using marker genes) ===')
+        print(f'=== Preparing data for dendrogram (using {use_rep}) ===')
 
     if groupby not in adata.obs.columns:
         raise ValueError(f"The groupby key '{groupby}' is not present in adata.obs.")
 
-    if marker_genes is None or len(marker_genes) == 0:
-        raise ValueError("No marker genes provided. Please supply a non-empty list of marker genes.")
-
-    marker_genes = [g for g in marker_genes if g in adata.var_names]
-    if len(marker_genes) == 0:
-        raise ValueError("None of the provided marker genes are found in adata.var_names.")
+    if use_rep not in adata.obsm:
+        raise ValueError(f"The representation '{use_rep}' is not present in adata.obsm.")
 
     # ============================================================================
-    # DATA PREPARATION AND MARKER GENE EXTRACTION
+    # DATA PREPARATION USING DIMENSION REDUCTION
     # ============================================================================
-    marker_data = adata[:, marker_genes].X
-    df_markers = pd.DataFrame(
-        marker_data.toarray() if hasattr(marker_data, 'toarray') else marker_data,
+    # Get the dimension reduction data
+    if num_PCs is not None and use_rep.startswith('X_pca'):
+        # Use only the first num_PCs components if specified
+        dim_data = adata.obsm[use_rep][:, :num_PCs]
+        if verbose:
+            print(f'Using first {num_PCs} components from {use_rep}')
+    else:
+        dim_data = adata.obsm[use_rep]
+        if verbose:
+            print(f'Using all {dim_data.shape[1]} components from {use_rep}')
+    
+    # Create DataFrame with dimension reduction data and cell types
+    df_dims = pd.DataFrame(
+        dim_data,
         index=adata.obs_names,
-        columns=marker_genes
+        columns=[f'PC{i+1}' for i in range(dim_data.shape[1])]
     )
-    df_markers[groupby] = adata.obs[groupby].values
+    df_dims[groupby] = adata.obs[groupby].values
 
     # ============================================================================
     # CENTROID COMPUTATION AND DISTANCE MATRIX CALCULATION
     # ============================================================================
     if distance_mode == 'centroid':
         if verbose:
-            print('=== Computing centroids of cell types in marker gene space ===')
-        centroids = df_markers.groupby(groupby).mean()
+            print(f'=== Computing centroids of cell types in {use_rep} space ===')
+        centroids = df_dims.groupby(groupby).mean()
         original_n_types = centroids.shape[0]
         
         if verbose:
             print(f'Calculated centroids for {original_n_types} cell types.')
+            print(f'Centroid shape: {centroids.shape}')
             print(f'=== Computing distance matrix between centroids using {metric} distance ===')
         
         dist_matrix = pdist(centroids.values, metric=metric)
         labels = centroids.index.tolist()
     else:
-        raise ValueError(f"Unsupported distance_mode '{distance_mode}' for marker gene approach.")
+        raise ValueError(f"Unsupported distance_mode '{distance_mode}' for dimension reduction approach.")
 
     # ============================================================================
     # HIERARCHICAL CLUSTERING
     # ============================================================================
     if verbose:
-        print('=== Performing hierarchical clustering on marker gene centroids ===')
+        print(f'=== Performing hierarchical clustering on {use_rep} centroids ===')
         print(f'Linkage method: {method}, Distance metric: {metric}')
     
     Z = sch.linkage(dist_matrix, method=method)
@@ -414,8 +411,21 @@ def cell_type_dendrogram(
     # ============================================================================
     if verbose:
         print('\n=== Cluster Composition ===')
-        for cluster_id, original_types in cluster_mapping.items():
-            print(f'Cluster {cluster_id}: {", ".join(map(str, original_types))}')
+        for cluster_id, original_types in sorted(cluster_mapping.items()):
+            print(f'Cluster {cluster_id}: {", ".join(map(str, sorted(original_types)))}')
+        
+        # Compute and report average within-cluster distances
+        print('\n=== Cluster Quality Metrics ===')
+        for cluster_id in sorted(cluster_mapping.keys()):
+            cluster_types = cluster_mapping[cluster_id]
+            if len(cluster_types) > 1:
+                # Get centroids of types in this cluster
+                cluster_centroids = centroids.loc[cluster_types]
+                # Compute pairwise distances
+                if cluster_centroids.shape[0] > 1:
+                    within_cluster_dist = pdist(cluster_centroids.values, metric=metric)
+                    avg_dist = np.mean(within_cluster_dist)
+                    print(f'Cluster {cluster_id}: Average within-cluster distance = {avg_dist:.4f}')
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -423,6 +433,7 @@ def cell_type_dendrogram(
         print(f"\nFunction execution time: {elapsed_time:.2f} seconds")
 
     return adata
+
 
 def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None, verbose=True):
     """

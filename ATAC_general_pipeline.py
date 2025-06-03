@@ -1,22 +1,3 @@
-#!/usr/bin/env python3
-"""
-Minimal scATAC-seq processing pipeline (single-resolution clustering)
-
-▪ QC  ▪ TF-IDF  ▪ LSI/snapATAC2  ▪ optional Harmony  ▪ kNN/UMAP  ▪ Leiden clustering OR cell-type transfer
-▪ Option to use snapATAC2 only for dimensionality reduction
-▪ Option to transfer cell types from RNA-seq reference
-
-Improvements in this version
-----------------------------
-* Final dimensionality reduction always saved in 'X_DM_harmony'
-* Highly variable features always saved in 'HVF' column
-* Output always saved in 'output_dir/harmony' subdirectory
-* Cell-type transfer from RNA reference using nearest neighbours
-* Marker genes/peaks saved locally for each cluster
-* **No deep copy to .raw (saves RAM/IO)**
-* **Matrix converted back to sparse after snapATAC2 (saves RAM/IO)**
-"""
-
 import os, time, warnings
 from   datetime import datetime
 import contextlib, io
@@ -29,7 +10,7 @@ import muon as mu
 from muon import atac as ac
 import scipy.sparse as sp           # used for re-sparsifying
 from sklearn.neighbors import NearestNeighbors
-
+from CellType import *
 warnings.filterwarnings("ignore")
 
 # --------------------------------------------------------------------------- #
