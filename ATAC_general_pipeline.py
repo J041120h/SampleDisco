@@ -286,7 +286,6 @@ def run_scatac_pipeline(
     # 10. Save
     log("Writing H5AD …", verbose)
     atac_sample.obs[cell_type_column] = atac.obs[cell_type_column].copy()
-
     sc.write(os.path.join(output_dir, "ATAC_sample.h5ad"), atac_sample)
 
     # 11. Summary
