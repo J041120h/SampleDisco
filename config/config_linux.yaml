@@ -27,7 +27,8 @@ verbose: true
 
 # ===== Cell Type Clustering Parameters =====
 existing_cell_types: false
-umap: false
+n_target_cell_clusters: 5
+umap: true
 cell_type_save: true
 
 # ===== Cell Type Assignment Parameters =====

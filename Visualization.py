@@ -776,15 +776,16 @@ def _plot_umap_by_plot_group(adata_sample_diff, output_dir, dot_size, verbose):
     plt.savefig(os.path.join(output_dir, 'sample_umap_by_plot_group.pdf'), bbox_inches='tight')
     plt.close()
 
-
 def _plot_umap_by_cell_type(adata_sample_diff, output_dir, dot_size, verbose):
     """
-    UMAP colored by 'cell_type'.
+    UMAP colored by 'cell_type' with cell type labels on cluster centroids.
     """
     if verbose:
-        print("[_plot_umap_by_cell_type] UMAP colored by 'cell_type'.")
+        print("[plot_umap_by_cell_type] UMAP colored by 'cell_type'.")
     
     plt.figure(figsize=(12, 10))
+    
+    # Create the UMAP plot
     sc.pl.umap(
         adata_sample_diff,
         color='cell_type',
@@ -793,6 +794,40 @@ def _plot_umap_by_cell_type(adata_sample_diff, output_dir, dot_size, verbose):
         size=dot_size,
         show=False
     )
+    
+    # Get UMAP coordinates
+    umap_coords = adata_sample_diff.obsm['X_umap']
+    
+    # Get cell type labels
+    cell_types = adata_sample_diff.obs['cell_type']
+    
+    # Calculate centroids for each cell type and add labels
+    unique_cell_types = cell_types.unique()
+    
+    for cell_type in unique_cell_types:
+        # Get indices for this cell type
+        mask = cell_types == cell_type
+        
+        # Calculate centroid coordinates
+        centroid_x = umap_coords[mask, 0].mean()
+        centroid_y = umap_coords[mask, 1].mean()
+        
+        # Add text label at centroid
+        plt.text(
+            centroid_x, centroid_y, 
+            str(cell_type),
+            fontsize=12,
+            fontweight='bold',
+            ha='center',
+            va='center',
+            bbox=dict(
+                boxstyle='round,pad=0.3',
+                facecolor='white',
+                edgecolor='black',
+                alpha=0.8
+            )
+        )
+    
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'sample_umap_by_cell_type.pdf'), bbox_inches='tight')
     plt.close()
