@@ -42,6 +42,8 @@ def anndata_cluster(
     if verbose:
         print('=== Processing data for clustering (mediating batch effects) ===')
     
+    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
+    sc.pp.log1p(adata_cluster)
     # Step A1: HVG selection
     sc.pp.highly_variable_genes(
         adata_cluster,
@@ -50,8 +52,6 @@ def anndata_cluster(
         batch_key=sample_column
     )
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
-    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
-    sc.pp.log1p(adata_cluster)
 
     # Step A2: PCA
     sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')

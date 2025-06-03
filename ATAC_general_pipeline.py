@@ -195,6 +195,8 @@ def run_scatac_pipeline(
     atac = atac[counts.loc[atac.obs[sample_column]].values >= min_cells_per_sample].copy()
     log(f"Remaining cells: {atac.n_obs}", verbose)
 
+    atac_sample = atac.copy()
+    
     # 4. TF-IDF
     log("TF-IDF normalisation", verbose)
     ac.pp.tfidf(atac, scale_factor=tfidf_scale_factor)
@@ -202,8 +204,6 @@ def run_scatac_pipeline(
     if log_transform:
         log("Log1p transform", verbose)
         sc.pp.log1p(atac)
-
-    atac_sample = atac.copy()     # a lightweight copy for obs-level results
 
     # 5. Dimensionality reduction
     if use_snapatac2_dimred:
