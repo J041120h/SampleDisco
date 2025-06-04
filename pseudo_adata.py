@@ -6,6 +6,7 @@ import pandas as pd
 import scanpy as sc
 from scipy.sparse import issparse
 from typing import Tuple, Dict
+from tf_idf import tfidf_memory_efficient
 import contextlib
 import io
 
@@ -112,22 +113,79 @@ def compute_pseudobulk_layers(
             
             # Apply normalization
             if normalize:
-                sc.pp.normalize_total(temp_adata, target_sum=target_sum)
-                sc.pp.log1p(temp_adata)
+                if atac:
+                    tfidf_memory_efficient(temp_adata, scale_factor=target_sum)
+                else:
+                    sc.pp.normalize_total(temp_adata, target_sum=target_sum)
+                    sc.pp.log1p(temp_adata)
+            
+            # Check for NaN values and filter before any processing
+            if issparse(temp_adata.X):
+                nan_genes = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+            else:
+                nan_genes = np.isnan(temp_adata.X).any(axis=0)
+            
+            if nan_genes.any():
+                if verbose:
+                    print(f"  Found {nan_genes.sum()} genes with NaN values, removing them")
+                temp_adata = temp_adata[:, ~nan_genes].copy()
             
             # Apply batch correction if needed
             if batch_correction and len(temp_adata.obs[batch_col].unique()) > 1:
                 # Check if we have enough samples per batch
                 min_batch_size = temp_adata.obs[batch_col].value_counts().min()
                 if min_batch_size >= 2:
-                    if verbose:
-                        print(f"  Applying batch correction")
+                    try:
+                        if verbose:
+                            print(f"  Checking gene variance before batch correction...")
+                        
+                        if temp_adata.n_vars == 0:
+                            if verbose:
+                                print(f"  No genes with sufficient variance remain, skipping batch correction")
+                        else:
+                            if verbose:
+                                print(f"  Applying batch correction on {temp_adata.n_vars} genes")
+                            
+                            # Suppress Combat output
+                            with contextlib.redirect_stdout(io.StringIO()), \
+                                 warnings.catch_warnings():
+                                warnings.filterwarnings("ignore")
+                                sc.pp.combat(temp_adata, key=batch_col)
+                            
+                            # Check for NaN values after Combat
+                            if issparse(temp_adata.X):
+                                has_nan = np.any(np.isnan(temp_adata.X.data))
+                                if has_nan:
+                                    nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+                            else:
+                                nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                                has_nan = nan_genes_post.any()
+                            
+                            if has_nan:
+                                if verbose:
+                                    print(f"  Found {nan_genes_post.sum()} genes with NaN after Combat, removing them")
+                                    print(f"current gene count: {temp_adata.n_vars}")
+                                
+                                # Remove genes with NaN values
+                                temp_adata = temp_adata[:, ~nan_genes_post].copy()
+                                
+                                # Final check
+                                if issparse(temp_adata.X):
+                                    still_has_nan = np.any(np.isnan(temp_adata.X.data))
+                                else:
+                                    still_has_nan = np.any(np.isnan(temp_adata.X))
+                                
+                                if still_has_nan:
+                                    raise ValueError("NaN values persist after gene removal")
+                            
+                            if verbose:
+                                print(f"  Combat completed successfully, {temp_adata.n_vars} genes remaining")
                     
-                    # Suppress Combat output
-                    with contextlib.redirect_stdout(io.StringIO()), \
-                         warnings.catch_warnings():
-                        warnings.filterwarnings("ignore")
-                        sc.pp.combat(temp_adata, key=batch_col)
+                    except Exception as e:
+                        if verbose:
+                            print(f"  Combat failed for {cell_type}: {str(e)}")
+                            print(f"  Proceeding without batch correction for this cell type")
+                        # Continue without batch correction
 
             # Select highly variable genes
             if verbose:
