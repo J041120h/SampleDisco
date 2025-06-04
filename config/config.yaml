@@ -27,7 +27,7 @@ verbose: true
 
 # ===== Cell Type Clustering Parameters =====
 existing_cell_types: false
-n_target_cell_clusters: 3
+n_target_cell_clusters: 8
 umap: true
 cell_type_save: true
 
@@ -160,13 +160,13 @@ atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
 preprocessing: false
-cell_type_cluster: false
+cell_type_cluster: true
 sample_distance_calculation: false
-DimensionalityReduction: false
+DimensionalityReduction: true
 trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
-ATAC_data: true
-visualize_data: false
+ATAC_data: false
+visualize_data: true
 initialization: false
 use_gpu: false
