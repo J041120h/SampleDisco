@@ -11,6 +11,7 @@ import sys
 import platform
 import shutil
 from pseudobulk import compute_pseudobulk_dataframes
+from pseudo_adata import compute_pseudobulk_adata
 from Harmony import harmony
 from EMD import EMD_distances
 from VectorDistance import sample_distance
@@ -450,14 +451,13 @@ def wrapper(
         if status_flags["cell_type_cluster"] == False:
             raise ValueError("Cell type clustering is required before dimension reduction.")
 
-        pseudobulk_df,pseudobulk_adata = compute_pseudobulk_dataframes(
+        pseudobulk_df,pseudobulk_adata = compute_pseudobulk_adata(
             adata=AnnData_sample,
             batch_col=batch_col,
             sample_col=sample_col,
             celltype_col=celltype_col,
             output_dir=pseudobulk_output_dir,
             n_features=n_features,
-            frac=frac,
             verbose=pseudobulk_verbose
         )
 
@@ -813,14 +813,13 @@ def wrapper(
                 raise FileNotFoundError(f"Preprocessed ATAC data not found at {os.path.join(atac_output_dir, 'harmony', 'ATAC_sample.h5ad')}. Please run the preprocessing step first.")
 
         if atac_pseudobulk_dimensionality_reduction:
-            atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_dataframes(
+            atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=atac_sample,
                 batch_col=atac_batch_col,
                 sample_col=atac_sample_col,
                 celltype_col=atac_cell_type_column,
                 output_dir=atac_pseudobulk_output_dir,
                 n_features=atac_pseudobulk_n_features,
-                frac=atac_pseudobulk_frac,
                 atac = True,
                 verbose=atac_pseudobulk_verbose
             )
