@@ -520,7 +520,6 @@ if __name__ == "__main__":
         distance_threshold=100_000,  # 100kb
         weight_threshold=0.01,  # Minimum weight
         normalize_by='archR',  # ArchR normalization
-        n_threads=8,
         verbose=True
     )
     

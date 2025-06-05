@@ -5,6 +5,8 @@ Parallel ATAC-seq peak-to-gene annotation
 *Only change from the previous version*:  
 ➜ Added the **output_dir** parameter (default: `"."`) so every result file
   is written inside that directory.  
+➜ Modified overlap detection to use interval overlaps (like ArchR/GenomicRanges findOverlaps)
+  instead of just checking peak centers.
   No other logic or behaviour was altered.
 """
 
@@ -36,6 +38,11 @@ def parse_peak(peak_str):
         return chrom, int(parts[1]), int(parts[2])
     except Exception:
         return None
+
+
+def intervals_overlap(start1, end1, start2, end2):
+    """Check if two intervals [start1, end1] and [start2, end2] overlap."""
+    return start1 <= end2 and start2 <= end1
 
 
 def process_chromosome_batch(args):
@@ -73,7 +80,16 @@ def process_chromosome_batch(args):
                 )
                 in_gene_body = False
 
-            in_promoter = gene["promoter_start"] <= peak["center"] <= gene["promoter_end"]
+            # Use interval overlap for gene body and promoter detection
+            in_gene_body_overlap = intervals_overlap(
+                peak["start"], peak["end"], 
+                gene["gene_start"], gene["gene_end"]
+            )
+            
+            in_promoter_overlap = intervals_overlap(
+                peak["start"], peak["end"],
+                gene["promoter_start"], gene["promoter_end"]
+            )
 
             # strand-aware relative position
             relative_pos = (
@@ -82,8 +98,8 @@ def process_chromosome_batch(args):
 
             # weighting -------------------------------------------------------
             tss_weight = np.exp(-0.5 * (dist_to_tss / sigma) ** 2)
-            gene_body_weight = 0.5 if in_gene_body else 0
-            promoter_weight = promoter_weight_factor if in_promoter else 0
+            gene_body_weight = 0.5 if in_gene_body_overlap else 0
+            promoter_weight = promoter_weight_factor if in_promoter_overlap else 0
             directional_weight = 1.0 if relative_pos < 0 else 0.8
 
             combined_weight = (tss_weight + gene_body_weight + promoter_weight) * directional_weight
@@ -96,8 +112,8 @@ def process_chromosome_batch(args):
                     "gene_id": gene["gene_id"],
                     "distance_to_tss": dist_to_tss,
                     "distance_to_gene": dist_to_gene,
-                    "in_promoter": in_promoter,
-                    "in_gene_body": in_gene_body,
+                    "in_promoter": in_promoter_overlap,
+                    "in_gene_body": in_gene_body_overlap,
                     "relative_position": relative_pos,
                     "tss_weight": tss_weight,
                     "gene_body_weight": gene_body_weight,
@@ -115,7 +131,7 @@ def process_chromosome_batch(args):
 def annotate_atac_peaks_parallel(
     atac_file_path,
     *,
-    ensembl_release=110,
+    ensembl_release=114,
     extend_upstream=100_000,
     extend_downstream=100_000,
     use_gene_bounds=True,
@@ -452,7 +468,6 @@ if __name__ == "__main__":
         promoter_weight_factor=5.0,
         distance_weight_sigma=50_000,
         min_peak_accessibility=0.01,
-        n_threads=8,
         output_prefix="atac_annotation",
         output_dir="/Users/harry/Desktop/GenoDistance/result/peak_annotation",   # write everything here
     )
