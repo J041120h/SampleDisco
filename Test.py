@@ -302,9 +302,13 @@ def remove_atac_uns_entry(h5ad_path: str):
     adata.write_h5ad(h5ad_path)
     print(f"Updated AnnData object saved to: {h5ad_path}")
 
-# Example usage
 if __name__ == "__main__":
     print("Beginning to process h5ad file...")
-    file_path = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
+    file_path = "/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad"
+    adata = ad.read_h5ad(file_path)
     
-    remove_atac_uns_entry(file_path)
+    print("First few rows of adata.var:")
+    print(adata.var.head())
+    
+    print("\nFirst few rows of adata.obs:")
+    print(adata.obs.head())

@@ -108,8 +108,8 @@ plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
 atac_preprocessing: true
-atac_pseudobulk_dimensionality_reduction: false
-atac_visualization_processing: false
+atac_pseudobulk_dimensionality_reduction: true
+atac_visualization_processing: true
 
 atac_file_path: "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
 atac_output_dir: null
@@ -164,4 +164,4 @@ cluster_and_DGE: false
 ATAC_data: true
 visualize_data: false
 initialization: false
-use_gpu: false
+use_gpu: true
