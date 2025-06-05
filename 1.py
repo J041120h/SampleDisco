@@ -25,5 +25,5 @@ for gene in utp4_genes:
     print(f"Start         : {gene.start}")
     print(f"End           : {gene.end}")
     print(f"Strand        : {'+' if gene.strand == 1 else '-'}")
-    print(f"Transcript IDs: {gene.transcript_ids}")
     print("-" * 40)
+
