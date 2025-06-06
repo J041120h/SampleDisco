@@ -17,6 +17,8 @@ from scipy.sparse import csr_matrix
 from scipy.spatial.distance import pdist, squareform
 from scipy.stats import mannwhitneyu
 import warnings
+from CellType import *
+from ATAC_RNA_integration_test import *
 
 def combine_rna_and_activity_data(
     rna_h5ad_path,
@@ -461,13 +463,16 @@ def combined_harmony_analysis(
 
 # Example usage:
 if __name__ == "__main__":
-    adata_integrated = combined_harmony_analysis(
-        rna_h5ad_path="/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad",
-        activity_h5ad_path="/Users/harry/Desktop/GenoDistance/result/gene_activity/gene_activity_weighted.h5ad",
-        rna_cell_meta_path=None,
-        activity_cell_meta_path=None,
-        rna_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/sample_data.csv",
-        activity_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-        output_dir="/Users/harry/Desktop/GenoDistance/result",
-        verbose=True
-    )
+    # adata_integrated = combined_harmony_analysis(
+    #     rna_h5ad_path="/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad",
+    #     activity_h5ad_path="/Users/harry/Desktop/GenoDistance/result/gene_activity/gene_activity_weighted.h5ad",
+    #     rna_cell_meta_path=None,
+    #     activity_cell_meta_path=None,
+    #     rna_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/sample_data.csv",
+    #     activity_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
+    #     output_dir="/Users/harry/Desktop/GenoDistance/result",
+    #     verbose=True
+    # )
+    adata_integrated = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/combined_harmony/adata_combined.h5ad")
+    cell_types(adata_integrated)
+    visualize_rna_atac_integration(adata_integrated, "/Users/harry/Desktop/GenoDistance/result", quantitative_measures=False, verbose=True)
