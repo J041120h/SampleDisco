@@ -274,314 +274,6 @@ def clean_obs_for_writing(adata):
     return adata
 
 
-def visualize_rna_atac_integration(adata_combined, output_dir, verbose=True):
-    """
-    Create comprehensive visualizations to assess RNA and ATAC integration quality.
-    
-    Parameters:
-    -----------
-    adata_combined : AnnData
-        Combined and processed AnnData object
-    output_dir : str
-        Directory to save plots
-    verbose : bool
-        Print progress messages
-    """
-    
-    if verbose:
-        print("=== Creating Integration Quality Visualizations ===")
-    
-    # Create plots directory
-    plots_dir = os.path.join(output_dir, 'integration_plots')
-    if not os.path.exists(plots_dir):
-        os.makedirs(plots_dir)
-    
-    # Set up the plotting style
-    plt.style.use('default')
-    sns.set_palette("husl")
-    
-    # After integration (Harmony)
-    sc.pl.umap(adata_combined, color='data_type',
-              show=False,
-              title='Harmony')
-    
-    # Clustering
-    sc.pl.umap(adata_combined, color='leiden',show=False,
-              title='Leiden Clusters', legend_loc='right margin')
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'umap_integration_overview.png'), 
-                dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # 2. Mixing metrics visualization
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    fig.suptitle('Integration Quality Metrics', fontsize=16, fontweight='bold')
-    
-    # Calculate mixing metrics
-    def calculate_mixing_metrics(adata, use_rep='X_pca_harmony'):
-        """Calculate various mixing metrics"""
-        embedding = adata.obsm[use_rep]
-        data_types = adata.obs['data_type'].values
-        samples = adata.obs['sample'].values
-        
-        # k-NN mixing score
-        def knn_mixing_score(embedding, labels, k=50):
-            nbrs = NearestNeighbors(n_neighbors=k+1).fit(embedding)
-            _, indices = nbrs.kneighbors(embedding)
-            
-            mixing_scores = []
-            for i, cell_label in enumerate(labels):
-                neighbors = labels[indices[i][1:]]  # Exclude self
-                mixing_score = np.mean(neighbors != cell_label)
-                mixing_scores.append(mixing_score)
-            return np.array(mixing_scores)
-        
-        # Local mixing entropy
-        def local_mixing_entropy(embedding, labels, k=50):
-            nbrs = NearestNeighbors(n_neighbors=k+1).fit(embedding)
-            _, indices = nbrs.kneighbors(embedding)
-            
-            entropies = []
-            for i in range(len(labels)):
-                neighbors = labels[indices[i][1:]]  # Exclude self
-                unique, counts = np.unique(neighbors, return_counts=True)
-                probs = counts / len(neighbors)
-                entropy = -np.sum(probs * np.log2(probs + 1e-10))
-                entropies.append(entropy)
-            return np.array(entropies)
-        
-        # Calculate metrics
-        data_type_mixing = knn_mixing_score(embedding, data_types)
-        sample_mixing = knn_mixing_score(embedding, samples)
-        data_type_entropy = local_mixing_entropy(embedding, data_types)
-        
-        return {
-            'data_type_mixing': data_type_mixing,
-            'sample_mixing': sample_mixing,
-            'data_type_entropy': data_type_entropy
-        }
-    
-    # Before and after metrics
-    if 'X_pca' in adata_combined.obsm:
-        metrics_before = calculate_mixing_metrics(adata_combined, 'X_pca')
-    else:
-        metrics_before = None
-    metrics_after = calculate_mixing_metrics(adata_combined, 'X_pca_harmony')
-    
-    # Plot data type mixing scores
-    if metrics_before:
-        axes[0,0].hist(metrics_before['data_type_mixing'], bins=50, alpha=0.6, 
-                      label='Before (PCA)', color='lightcoral')
-    axes[0,0].hist(metrics_after['data_type_mixing'], bins=50, alpha=0.6,
-                  label='After (Harmony)', color='skyblue')
-    axes[0,0].set_xlabel('Data Type Mixing Score')
-    axes[0,0].set_ylabel('Number of Cells')
-    axes[0,0].set_title('Data Type Mixing\n(Higher = Better Mixing)')
-    axes[0,0].legend()
-    
-    # Plot sample mixing scores
-    if metrics_before:
-        axes[0,1].hist(metrics_before['sample_mixing'], bins=50, alpha=0.6,
-                      label='Before (PCA)', color='lightcoral')
-    axes[0,1].hist(metrics_after['sample_mixing'], bins=50, alpha=0.6,
-                  label='After (Harmony)', color='skyblue')
-    axes[0,1].set_xlabel('Sample Mixing Score')
-    axes[0,1].set_ylabel('Number of Cells')
-    axes[0,1].set_title('Sample Mixing\n(Higher = Better Mixing)')
-    axes[0,1].legend()
-    
-    # Plot entropy
-    axes[0,2].hist(metrics_after['data_type_entropy'], bins=50, alpha=0.7, color='green')
-    axes[0,2].set_xlabel('Local Mixing Entropy')
-    axes[0,2].set_ylabel('Number of Cells')
-    axes[0,2].set_title('Local Data Type Entropy\n(Higher = Better Mixing)')
-    
-    # 3. Distance-based analysis
-    def plot_distance_analysis(adata, ax_within, ax_between, use_rep='X_pca_harmony'):
-        """Plot within vs between group distances"""
-        embedding = adata.obsm[use_rep]
-        data_types = adata.obs['data_type'].values
-        
-        # Sample cells for faster computation
-        n_sample = min(2000, len(adata))
-        idx = np.random.choice(len(adata), n_sample, replace=False)
-        embedding_sample = embedding[idx]
-        data_types_sample = data_types[idx]
-        
-        # Calculate pairwise distances
-        distances = pdist(embedding_sample, metric='euclidean')
-        dist_matrix = squareform(distances)
-        
-        within_rna = []
-        within_atac = []
-        between = []
-        
-        for i in range(len(data_types_sample)):
-            for j in range(i+1, len(data_types_sample)):
-                dist = dist_matrix[i, j]
-                if data_types_sample[i] == data_types_sample[j]:
-                    if data_types_sample[i] == 'RNA':
-                        within_rna.append(dist)
-                    else:
-                        within_atac.append(dist)
-                else:
-                    between.append(dist)
-        
-        # Plot distributions
-        ax_within.hist(within_rna, bins=50, alpha=0.6, label='Within RNA', density=True)
-        ax_within.hist(within_atac, bins=50, alpha=0.6, label='Within ATAC', density=True)
-        ax_within.set_xlabel('Distance')
-        ax_within.set_ylabel('Density')
-        ax_within.set_title('Within Data Type Distances')
-        ax_within.legend()
-        
-        ax_between.hist(between, bins=50, alpha=0.7, color='purple', density=True)
-        ax_between.set_xlabel('Distance')
-        ax_between.set_ylabel('Density')
-        ax_between.set_title('Between Data Type Distances')
-        
-        return np.mean(within_rna + within_atac), np.mean(between)
-    
-    # Distance analysis
-    if 'X_pca' in adata_combined.obsm:
-        within_before, between_before = plot_distance_analysis(adata_combined, axes[1,0], axes[1,1], 'X_pca')
-    within_after, between_after = plot_distance_analysis(adata_combined, axes[1,0], axes[1,1], 'X_pca_harmony')
-    
-    # Integration score
-    integration_score = between_after / (within_after + 1e-10)
-    axes[1,2].bar(['Integration\nScore'], [integration_score], color='orange')
-    axes[1,2].set_ylabel('Score')
-    axes[1,2].set_title(f'Integration Score\n(Lower = Better)\nScore: {integration_score:.3f}')
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'mixing_metrics.png'), 
-                dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # 4. Cluster composition analysis
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle('Cluster Composition Analysis', fontsize=16, fontweight='bold')
-    
-    # Create cluster composition matrix
-    cluster_composition = pd.crosstab(adata_combined.obs['leiden'], 
-                                     adata_combined.obs['data_type'], 
-                                     normalize='index')
-    
-    # Heatmap of cluster composition
-    sns.heatmap(cluster_composition, annot=True, cmap='RdYlBu_r', 
-                ax=axes[0], cbar_kws={'label': 'Proportion'})
-    axes[0].set_title('Cluster Composition\n(Row-normalized)')
-    axes[0].set_xlabel('Data Type')
-    axes[0].set_ylabel('Leiden Cluster')
-    
-    # Stacked bar chart
-    cluster_composition.plot(kind='bar', stacked=True, ax=axes[1], 
-                           color=['lightcoral', 'skyblue'])
-    axes[1].set_title('Cluster Composition\n(Stacked)')
-    axes[1].set_xlabel('Leiden Cluster')
-    axes[1].set_ylabel('Proportion')
-    axes[1].legend(title='Data Type')
-    plt.setp(axes[1].xaxis.get_majorticklabels(), rotation=45)
-    
-    # Balance score per cluster
-    balance_scores = []
-    for cluster in cluster_composition.index:
-        rna_prop = cluster_composition.loc[cluster, 'RNA']
-        atac_prop = cluster_composition.loc[cluster, 'Gene_Activity']
-        balance = 1 - abs(rna_prop - atac_prop)  # 1 = perfect balance, 0 = completely imbalanced
-        balance_scores.append(balance)
-    
-    axes[2].bar(range(len(balance_scores)), balance_scores, color='green', alpha=0.7)
-    axes[2].set_xlabel('Leiden Cluster')
-    axes[2].set_ylabel('Balance Score')
-    axes[2].set_title('Cluster Balance Score\n(1.0 = Perfect Balance)')
-    axes[2].set_xticks(range(len(balance_scores)))
-    axes[2].set_xticklabels(cluster_composition.index, rotation=45)
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'cluster_composition.png'), 
-                dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # 5. Quality control comparison
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    fig.suptitle('Quality Control Metrics by Data Type', fontsize=16, fontweight='bold')
-    
-    # QC metrics to compare
-    qc_metrics = ['total_counts', 'n_genes_by_counts', 'pct_counts_mt']
-    
-    for i, metric in enumerate(qc_metrics):
-        if metric in adata_combined.obs.columns:
-            # Box plot
-            data_for_plot = [adata_combined.obs[adata_combined.obs['data_type'] == 'RNA'][metric].values,
-                           adata_combined.obs[adata_combined.obs['data_type'] == 'Gene_Activity'][metric].values]
-            
-            axes[0, i].boxplot(data_for_plot, labels=['RNA', 'Gene Activity'])
-            axes[0, i].set_title(f'{metric}')
-            axes[0, i].set_ylabel(metric.replace('_', ' ').title())
-            
-            # Violin plot
-            sns.violinplot(data=adata_combined.obs, x='data_type', y=metric, ax=axes[1, i])
-            axes[1, i].set_title(f'{metric} Distribution')
-            axes[1, i].set_xlabel('Data Type')
-            plt.setp(axes[1, i].xaxis.get_majorticklabels(), rotation=45)
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'qc_comparison.png'), 
-                dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # 6. Summary statistics
-    if verbose:
-        print("\n=== Integration Quality Summary ===")
-        
-        # Overall statistics
-        total_cells = len(adata_combined)
-        rna_cells = sum(adata_combined.obs['data_type'] == 'RNA')
-        atac_cells = sum(adata_combined.obs['data_type'] == 'Gene_Activity')
-        
-        print(f"Total cells: {total_cells}")
-        print(f"RNA cells: {rna_cells} ({rna_cells/total_cells*100:.1f}%)")
-        print(f"ATAC cells: {atac_cells} ({atac_cells/total_cells*100:.1f}%)")
-        print(f"Number of clusters: {len(adata_combined.obs['leiden'].unique())}")
-        print(f"Number of samples: {len(adata_combined.obs['sample'].unique())}")
-        
-        # Mixing statistics
-        avg_data_mixing = np.mean(metrics_after['data_type_mixing'])
-        avg_sample_mixing = np.mean(metrics_after['sample_mixing'])
-        avg_entropy = np.mean(metrics_after['data_type_entropy'])
-        avg_balance = np.mean(balance_scores)
-        
-        print(f"\nMixing Quality Metrics:")
-        print(f"Average data type mixing score: {avg_data_mixing:.3f}")
-        print(f"Average sample mixing score: {avg_sample_mixing:.3f}")
-        print(f"Average local entropy: {avg_entropy:.3f}")
-        print(f"Average cluster balance: {avg_balance:.3f}")
-        print(f"Integration distance ratio: {integration_score:.3f}")
-        
-        # Save summary to file
-        summary_stats = {
-            'total_cells': total_cells,
-            'rna_cells': rna_cells,
-            'atac_cells': atac_cells,
-            'n_clusters': len(adata_combined.obs['leiden'].unique()),
-            'n_samples': len(adata_combined.obs['sample'].unique()),
-            'avg_data_type_mixing': avg_data_mixing,
-            'avg_sample_mixing': avg_sample_mixing,
-            'avg_entropy': avg_entropy,
-            'avg_cluster_balance': avg_balance,
-            'integration_score': integration_score
-        }
-        
-        summary_df = pd.DataFrame([summary_stats])
-        summary_df.to_csv(os.path.join(plots_dir, 'integration_summary.csv'), index=False)
-        
-        print(f"\nAll plots saved to: {plots_dir}")
-        print(f"Summary statistics saved to: {os.path.join(plots_dir, 'integration_summary.csv')}")
-    
-    return summary_stats
-
 
 def combined_harmony_analysis(
     rna_h5ad_path,
@@ -597,11 +289,8 @@ def combined_harmony_analysis(
     rna_batch_key='batch',
     activity_batch_key='batch',
     unified_batch_key='batch',
-    cell_column='cell_type',
     rna_prefix='RNA',
     activity_prefix='ATAC',
-    markers=None,
-    cluster_resolution=0.8,
     num_PCs=20,
     num_harmony=30,
     num_features=2000,
@@ -610,59 +299,9 @@ def combined_harmony_analysis(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    method='average',
-    metric='euclidean',
-    distance_mode='centroid',
     vars_to_regress=[],
     verbose=True
 ):
-    """
-    Complete pipeline for combining RNA and gene activity data and performing Harmony integration.
-    
-    Parameters:
-    -----------
-    rna_h5ad_path : str
-        Path to RNA H5AD file
-    activity_h5ad_path : str
-        Path to gene activity H5AD file
-    rna_cell_meta_path : str, optional
-        Path to RNA cell metadata CSV (if None, will extract from obs_names)
-    activity_cell_meta_path : str, optional
-        Path to gene activity cell metadata CSV (if None, will extract from obs_names)
-    rna_sample_meta_path : str, optional
-        Path to RNA sample metadata CSV (if None, no additional sample metadata)
-    activity_sample_meta_path : str, optional
-        Path to gene activity sample metadata CSV (if None, no additional sample metadata)
-    output_dir : str, optional
-        Output directory for results (if None, will not save files)
-    rna_sample_column : str
-        Column name for sample identification in RNA data
-    activity_sample_column : str
-        Column name for sample identification in gene activity data
-    unified_sample_column : str
-        Column name for sample identification in combined data
-    rna_batch_key : str
-        Column name for batch identification in RNA data
-    activity_batch_key : str
-        Column name for batch identification in gene activity data
-    unified_batch_key : str
-        Column name for batch identification in combined data
-    cell_column : str
-        Column name for cell type
-    rna_prefix : str
-        Prefix for RNA cell barcodes
-    activity_prefix : str
-        Prefix for gene activity cell barcodes
-    Other parameters: same as original harmony function
-    
-    Returns:
-    --------
-    adata_final : AnnData
-        Final processed AnnData object with cell type annotations
-    integration_stats : dict (optional)
-        Integration quality statistics (only if output_dir is provided)
-    """
-    
     start_time = time.time()
     
     # Create output directories (optional)
@@ -697,7 +336,7 @@ def combined_harmony_analysis(
         verbose=verbose
     )
     
-    # Add 'data_type' to vars_to_regress if not already present
+    # Prepare vars_to_regress for harmony - automatically add data_type and sample
     vars_to_regress_for_harmony = vars_to_regress.copy()
     if unified_sample_column not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append(unified_sample_column)
@@ -762,7 +401,7 @@ def combined_harmony_analysis(
             print("=== Running Doublet Detection ===")
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
-            sc.pp.scrublet(adata_combined)  # Removed batch_key parameter
+            sc.pp.scrublet(adata_combined)
         adata_combined = adata_combined[~adata_combined.obs['predicted_doublet']].copy()
         if verbose:
             print(f"After doublet removal -- Cells: {adata_combined.n_obs}")
@@ -770,9 +409,9 @@ def combined_harmony_analysis(
     # Save raw data
     adata_combined.raw = adata_combined.copy()
     
-    # Step 2: Run the clustering pipeline (modified anndata_cluster)
+    # Step 2: Preprocessing and Harmony integration
     if verbose:
-        print('=== Processing Combined Data for Clustering ===')
+        print('=== Processing Combined Data for Integration ===')
     
     # Normalization and log transformation
     sc.pp.normalize_total(adata_combined, target_sum=1e4)
@@ -793,7 +432,6 @@ def combined_harmony_analysis(
     if verbose:
         print('=== Running Harmony Integration ===')
         print(f'Variables to regress: {", ".join(vars_to_regress_for_harmony)}')
-        print(f'Cluster resolution: {cluster_resolution}')
     
     # Harmony integration
     Z = harmonize(
@@ -805,48 +443,12 @@ def combined_harmony_analysis(
     )
     adata_combined.obsm['X_pca_harmony'] = Z
     
-    # Clustering and UMAP
+    # Neighbors and UMAP (always compute these)
     if verbose:
-        print('=== Clustering and Visualization ===')
-    
-    sc.pp.neighbors(adata_combined, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
-    sc.tl.leiden(adata_combined, resolution=cluster_resolution, key_added='leiden')
-    sc.tl.umap(adata_combined, min_dist=0.3, spread=1.0)
-    
-    # Marker gene analysis
-    if verbose:
-        print('=== Finding Marker Genes ===')
-    sc.tl.rank_genes_groups(adata_combined, 'leiden', method='wilcoxon')
-    
-    # Save final result
-    if output_dir is not None:
-        # Clean obs dataframe before saving
-        adata_combined = clean_obs_for_writing(adata_combined)
-        
-        try:
-            sc.write(os.path.join(output_dir, 'adata_combined_final.h5ad'), adata_combined)
-            if verbose:
-                print(f"Results saved to: {output_dir}")
-        except Exception as e:
-            if verbose:
-                print(f"Warning: Could not save H5AD file due to: {e}")
-                print("Attempting alternative save method...")
-            
-            # Alternative: save as pickle if H5AD fails
-            import pickle
-            pickle_path = os.path.join(output_dir, 'adata_combined_final.pkl')
-            with open(pickle_path, 'wb') as f:
-                pickle.dump(adata_combined, f)
-            if verbose:
-                print(f"Results saved as pickle to: {pickle_path}")
-    
-    # Create integration quality visualizations (optional)
-    integration_stats = None
-    if output_dir is not None:
-        if verbose:
-            print('=== Creating Integration Quality Visualizations ===')
-        integration_stats = visualize_rna_atac_integration(adata_combined, output_dir, verbose)
-    
+        print('=== Computing Neighbors and UMAP ===')
+
+    clean_obs_for_writing(adata_combined)
+    sc.write(os.path.join(output_dir, 'adata_combined.h5ad'), adata_combined)
     # Print summary
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -855,19 +457,11 @@ def combined_harmony_analysis(
         print(f"\n=== Analysis Complete ===")
         print(f"Execution time: {elapsed_time:.2f} seconds")
         print(f"Final data shape: {adata_combined.shape}")
-        print(f"Number of clusters: {len(adata_combined.obs['leiden'].unique())}")
-        print(f"Data types: {adata_combined.obs['data_type'].value_counts().to_dict()}")
-    
-    if integration_stats is not None:
-        return adata_combined, integration_stats
-    else:
-        return adata_combined
 
 
 # Example usage:
 if __name__ == "__main__":
-    # Example parameters
-    adata_final, integration_stats = combined_harmony_analysis(
+    adata_integrated = combined_harmony_analysis(
         rna_h5ad_path="/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad",
         activity_h5ad_path="/Users/harry/Desktop/GenoDistance/result/gene_activity/gene_activity_weighted.h5ad",
         rna_cell_meta_path=None,
@@ -875,15 +469,5 @@ if __name__ == "__main__":
         rna_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/sample_data.csv",
         activity_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
         output_dir="/Users/harry/Desktop/GenoDistance/result",
-        rna_sample_column='sample',  # Different sample column names
-        activity_sample_column='sample',
-        unified_sample_column='sample',
-        rna_batch_key='batch',  # Different batch column names
-        activity_batch_key='batch',
-        unified_batch_key='batch',
-        cluster_resolution=0.8,
-        num_PCs=20,
-        num_harmony=30,
-        num_features=2000,
         verbose=True
     )
