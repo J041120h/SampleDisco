@@ -13,7 +13,7 @@ def cell_types(
     cell_column='cell_type', 
     existing_cell_types=False,
     n_target_clusters=None,
-    umap=False,
+    umap=True,
     Save=False,
     output_dir=None,
     cluster_resolution=0.8,

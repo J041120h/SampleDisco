@@ -462,7 +462,7 @@ if __name__ == "__main__":
     atac_path = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
     results = annotate_atac_peaks_parallel(
         atac_path,
-        ensembl_release=110,
+        ensembl_release=98,
         extend_upstream=100_000,
         extend_downstream=100_000,
         promoter_weight_factor=5.0,

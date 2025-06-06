@@ -474,5 +474,5 @@ if __name__ == "__main__":
     #     verbose=True
     # )
     adata_integrated = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/combined_harmony/adata_combined.h5ad")
-    cell_types(adata_integrated)
+    cell_types(adata_integrated, Save = True, output_dir="/Users/harry/Desktop/GenoDistance/result", verbose=True)
     visualize_rna_atac_integration(adata_integrated, "/Users/harry/Desktop/GenoDistance/result", quantitative_measures=False, verbose=True)
