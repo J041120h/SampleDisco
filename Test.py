@@ -1,15 +1,7 @@
 #!/usr/bin/env python
 # Script to merge multiple h5ad files into one large h5ad file
 
-import os
-import scanpy as sc
-import pandas as pd
-import numpy as np
-import anndata
-from tqdm import tqdm
-import glob
-
-def merge_h5ad_files():
+def merge_test_h5ad_files():
     """
     Merge specific h5ad files into a test h5ad file.
     """
@@ -114,6 +106,102 @@ def merge_h5ad_files():
     
     print("\nMerging complete!")
     print(f"Test dataset saved to: {output_file}")
+    print(f"Final dataset dimensions: {combined_adata.shape[0]} cells × {combined_adata.shape[1]} features")
+    print(f"Sample distribution:")
+    print(combined_adata.obs['sample'].value_counts())
+
+import os
+import scanpy as sc
+import pandas as pd
+import numpy as np
+import anndata
+from tqdm import tqdm
+import glob
+
+def merge_h5ad_files():
+    """
+    Merge all h5ad files in the directory into a single h5ad file.
+    """
+    # Set paths
+    input_dir = "/users/hjiang/GenoDistance/Data/h5ad_files/"
+    output_file = "/users/hjiang/GenoDistance/Data/h5ad_files/ATAC.h5ad"
+    
+    # Get all h5ad files in the directory
+    h5ad_files = glob.glob(os.path.join(input_dir, "*.h5ad"))
+    
+    if len(h5ad_files) == 0:
+        print(f"No h5ad files found in {input_dir}")
+        return
+    
+    print(f"Found {len(h5ad_files)} h5ad files to merge:")
+    for f in h5ad_files:
+        print(f"  {os.path.basename(f)}")
+    
+    # Load the first file to get started
+    print(f"Loading first file: {os.path.basename(h5ad_files[0])}")
+    combined_adata = sc.read_h5ad(h5ad_files[0])
+    
+    # Add file origin to obs if not present
+    sample_id = os.path.splitext(os.path.basename(h5ad_files[0]))[0]
+    if 'sample' not in combined_adata.obs.columns:
+        combined_adata.obs['sample'] = sample_id
+    
+    # Always add sample prefix to cell names for the first file too
+    print(f"Adding sample prefix '{sample_id}_' to all cells from the first file")
+    combined_adata.obs_names = [f"{sample_id}_{cell}" for cell in combined_adata.obs_names]
+    
+    # Process remaining files
+    for file_path in tqdm(h5ad_files[1:], desc="Merging files"):
+        try:
+            # Load the current file
+            current_adata = sc.read_h5ad(file_path)
+            sample_id = os.path.splitext(os.path.basename(file_path))[0]
+            
+            # Add file origin to obs if not present
+            if 'sample' not in current_adata.obs.columns:
+                current_adata.obs['sample'] = sample_id
+                
+            # Always add sample_id prefix to all cells to ensure uniqueness
+            # This handles cases where the same sample was processed twice
+            print(f"Adding sample prefix '{sample_id}_' to all cells from this file")
+            current_adata.obs_names = [f"{sample_id}_{cell}" for cell in current_adata.obs_names]
+            
+            # Handle potentially different feature sets
+            if not np.array_equal(current_adata.var_names, combined_adata.var_names):
+                print(f"Note: {sample_id} has different features. Finding common features...")
+                # Find common features
+                common_features = current_adata.var_names.intersection(combined_adata.var_names)
+                
+                if len(common_features) == 0:
+                    print(f"Warning: No common features with {sample_id}. Skipping this file.")
+                    continue
+                    
+                print(f"Found {len(common_features)} common features")
+                
+                # Subset both objects to common features
+                current_adata = current_adata[:, common_features]
+                combined_adata = combined_adata[:, common_features]
+            
+            # Concatenate the data
+            combined_adata = anndata.concat(
+                [combined_adata, current_adata],
+                join='outer',  # Use outer join to keep all features
+                merge='first',  # For conflicting elements in .uns, .varm, .obsm, keep info from first object
+                index_unique=None  # We already made sure cell names are unique
+            )
+            
+            print(f"Added {current_adata.shape[0]} cells from {sample_id}. "
+                  f"Combined shape: {combined_adata.shape}")
+            
+        except Exception as e:
+            print(f"Error processing {file_path}: {str(e)}")
+    
+    # Save the merged object
+    print(f"\nSaving merged data to {output_file}")
+    combined_adata.write_h5ad(output_file, compression='gzip')
+    
+    print("\nMerging complete!")
+    print(f"Dataset saved to: {output_file}")
     print(f"Final dataset dimensions: {combined_adata.shape[0]} cells × {combined_adata.shape[1]} features")
     print(f"Sample distribution:")
     print(combined_adata.obs['sample'].value_counts())
@@ -303,12 +391,13 @@ def remove_atac_uns_entry(h5ad_path: str):
     print(f"Updated AnnData object saved to: {h5ad_path}")
 
 if __name__ == "__main__":
-    print("Beginning to process h5ad file...")
-    file_path = "/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad"
-    adata = ad.read_h5ad(file_path)
+    # print("Beginning to process h5ad file...")
+    # file_path = "/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad"
+    # adata = ad.read_h5ad(file_path)
     
-    print("First few rows of adata.var:")
-    print(adata.var.head())
+    # print("First few rows of adata.var:")
+    # print(adata.var.head())
     
-    print("\nFirst few rows of adata.obs:")
-    print(adata.obs.head())
+    # print("\nFirst few rows of adata.obs:")
+    # print(adata.obs.head())
+    merge_h5ad_files()
