@@ -2,16 +2,14 @@
 """
 Parallel ATAC-seq peak-to-gene annotation
 
-*Only change from the previous version*:  
-➜ Added the **output_dir** parameter (default: `"."`) so every result file
-  is written inside that directory.  
-➜ Modified overlap detection to use interval overlaps (like ArchR/GenomicRanges findOverlaps)
-  instead of just checking peak centers.
-  No other logic or behaviour was altered.
+*Modified to use gene IDs as primary identifiers*:  
+➜ Changed all grouping, indexing, and primary references to use gene_id instead of gene_name
+➜ Gene names are still included for human readability but gene_id is the unique key
+➜ This ensures no conflicts from duplicate/similar gene names
 """
 
 # ────────────────────────────── imports ──────────────────────────────
-import os                                # NEW
+import os
 import json
 import pickle
 import warnings
@@ -108,8 +106,8 @@ def process_chromosome_batch(args):
                 {
                     "peak": peak["peak"],
                     "peak_idx": peak["peak_idx"],
-                    "gene_name": gene["gene_name"],
-                    "gene_id": gene["gene_id"],
+                    "gene_id": gene["gene_id"],        # Primary identifier
+                    "gene_name": gene["gene_name"],    # For readability
                     "distance_to_tss": dist_to_tss,
                     "distance_to_gene": dist_to_gene,
                     "in_promoter": in_promoter_overlap,
@@ -142,10 +140,11 @@ def annotate_atac_peaks_parallel(
     min_peak_accessibility=0.01,
     n_threads=None,
     output_prefix="atac_annotation",
-    output_dir=".",          # NEW
+    output_dir=".",
 ):
     """
     Annotate ATAC peaks to nearby genes in parallel.
+    Uses gene IDs as primary unique identifiers.
 
     The *output_dir* argument specifies where all result files are written.
     """
@@ -219,8 +218,8 @@ def annotate_atac_peaks_parallel(
 
             gene_windows.append(
                 {
-                    "gene_name": gene.gene_name,
-                    "gene_id": gene.gene_id,
+                    "gene_id": gene.gene_id,           # Primary identifier
+                    "gene_name": gene.gene_name,       # For readability
                     "chromosome": gene.contig.replace("chr", ""),
                     "tss": tss,
                     "gene_start": gene.start,
@@ -318,14 +317,15 @@ def annotate_atac_peaks_parallel(
     for peak_name, grp in tqdm(annotation_df.groupby("peak"), desc="Building annotations"):
         sorted_grp = grp.sort_values("combined_weight", ascending=False)
         peak_annotation[peak_name] = {
-            "genes": sorted_grp["gene_name"].tolist(),
-            "gene_ids": sorted_grp["gene_id"].tolist(),
+            "gene_ids": sorted_grp["gene_id"].tolist(),      # Primary list (unique IDs)
+            "gene_names": sorted_grp["gene_name"].tolist(),  # For readability
             "distances": sorted_grp["distance_to_tss"].tolist(),
             "weights": sorted_grp["combined_weight"].tolist(),
             "tss_weights": sorted_grp["tss_weight"].tolist(),
             "in_promoter": sorted_grp["in_promoter"].tolist(),
             "in_gene_body": sorted_grp["in_gene_body"].tolist(),
-            "best_gene": sorted_grp.iloc[0]["gene_name"],
+            "best_gene_id": sorted_grp.iloc[0]["gene_id"],      # Primary best gene
+            "best_gene_name": sorted_grp.iloc[0]["gene_name"],  # For readability
             "best_weight": float(sorted_grp.iloc[0]["combined_weight"]),
         }
 
@@ -335,9 +335,9 @@ def annotate_atac_peaks_parallel(
         "annotated_peaks": len(peak_annotation),
         "coverage_percent": 100 * len(peak_annotation) / len(peaks_df),
         "mean_genes_per_peak": annotation_df.groupby("peak").size().mean(),
-        "mean_peaks_per_gene": annotation_df.groupby("gene_name").size().mean(),
+        "mean_peaks_per_gene": annotation_df.groupby("gene_id").size().mean(),  # Use gene_id
         "total_associations": len(annotation_df),
-        "n_unique_genes": annotation_df["gene_name"].nunique(),
+        "n_unique_genes": annotation_df["gene_id"].nunique(),  # Use gene_id
     }
 
     parameters = {
@@ -386,18 +386,18 @@ def annotate_atac_peaks_parallel(
     output_files["parameters"] = params_file
     print(f"  • Parameters       : {params_file}")
 
-    # 5) per-gene summary CSV
+    # 5) per-gene summary CSV (now indexed by gene_id)
     gene_summary = (
-        annotation_df.groupby("gene_name").agg(
+        annotation_df.groupby(["gene_id", "gene_name"]).agg(  # Group by both for completeness
             n_peaks=("peak", "count"),
             n_promoter_peaks=("in_promoter", "sum"),
             n_gene_body_peaks=("in_gene_body", "sum"),
             mean_tss_distance=("distance_to_tss", "mean"),
             total_weight=("combined_weight", "sum"),
-        )
+        ).reset_index()
     )
     gene_summary_file = _path(f"{output_prefix}_gene_summary.csv")
-    gene_summary.to_csv(gene_summary_file)
+    gene_summary.to_csv(gene_summary_file, index=False)
     output_files["gene_summary"] = gene_summary_file
     print(f"  • Gene summary     : {gene_summary_file}")
 
@@ -445,7 +445,7 @@ def load_annotations(*, output_prefix="atac_annotation", output_dir="."):
     with open(_path(f"{output_prefix}_parameters.json"), "r") as f:
         parameters = json.load(f)
 
-    gene_summary = pd.read_csv(_path(f"{output_prefix}_gene_summary.csv"), index_col=0)
+    gene_summary = pd.read_csv(_path(f"{output_prefix}_gene_summary.csv"))
 
     return {
         "peak2gene": peak2gene,
@@ -469,7 +469,7 @@ if __name__ == "__main__":
         distance_weight_sigma=50_000,
         min_peak_accessibility=0.01,
         output_prefix="atac_annotation",
-        output_dir="/Users/harry/Desktop/GenoDistance/result/peak_annotation",   # write everything here
+        output_dir="/Users/harry/Desktop/GenoDistance/result/peak_annotation",
     )
 
     print("\nOutput files:")

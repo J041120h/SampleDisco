@@ -2,16 +2,11 @@
 """
 Enhanced Peak-to-Gene Activity Matrix Generator
 
-Improvements over previous version:
-1. Uses weighted aggregation from the new peak annotation format
-2. Implements parallel processing for efficiency
-3. Aligns with ArchR methodology:
-   - Distance-weighted aggregation
-   - Exponential decay weighting
-   - Gene body and promoter considerations
-   - Proper normalization strategies
-4. Supports multiple aggregation methods
-5. Saves results as AnnData with comprehensive metadata
+*Modified to use gene IDs as primary identifiers*:
+➜ Changed to use gene_ids instead of gene_names as primary keys
+➜ Output matrix is structured as cells × gene_ids
+➜ Gene names included for readability but gene_id is the unique identifier
+➜ All grouping and indexing now uses gene_id for consistency
 """
 
 import os
@@ -43,10 +38,11 @@ def process_gene_batch(args):
     batch_activity = lil_matrix((n_cells, n_genes))
     batch_stats = []
     
-    for gene_idx, gene in enumerate(gene_batch):
-        if gene not in gene2peaks_weighted:
+    for gene_idx, gene_id in enumerate(gene_batch):
+        if gene_id not in gene2peaks_weighted:
             batch_stats.append({
-                'gene': gene,
+                'gene_id': gene_id,
+                'gene_name': gene2peaks_weighted.get(gene_id, {}).get('gene_name', 'Unknown'),
                 'n_peaks': 0,
                 'total_weight': 0,
                 'mean_distance': np.nan,
@@ -55,7 +51,7 @@ def process_gene_batch(args):
             })
             continue
         
-        peak_data = gene2peaks_weighted[gene]
+        peak_data = gene2peaks_weighted[gene_id]
         peak_indices = []
         weights = []
         distances = []
@@ -112,8 +108,16 @@ def process_gene_batch(args):
             
             batch_activity[:, gene_idx] = gene_activity_values.reshape(-1, 1)
         
+        # Get gene name for this gene_id (first occurrence in the data)
+        gene_name = "Unknown"
+        for peak_info in peak_data:
+            if 'gene_name' in peak_info:
+                gene_name = peak_info['gene_name']
+                break
+        
         batch_stats.append({
-            'gene': gene,
+            'gene_id': gene_id,
+            'gene_name': gene_name,
             'n_peaks': len(peak_indices),
             'total_weight': weights.sum() if len(weights) > 0 else 0,
             'mean_distance': np.mean(distances) if len(distances) > 0 else np.nan,
@@ -140,7 +144,7 @@ def peak_to_gene_activity_weighted(
 ):
     """
     Convert ATAC-seq peak counts to gene activity scores using weighted aggregation.
-    Follows ArchR methodology with improvements.
+    Uses gene IDs as primary identifiers for robust mapping.
     
     Parameters:
     -----------
@@ -181,7 +185,7 @@ def peak_to_gene_activity_weighted(
     Returns:
     --------
     AnnData
-        Gene activity matrix saved to output_dir/gene_activity_weighted.h5ad
+        Gene activity matrix (cells × gene_ids) saved to output_dir/gene_activity_weighted.h5ad
     """
     
     # Setup
@@ -195,6 +199,7 @@ def peak_to_gene_activity_weighted(
         print(f"Creating gene activity matrix using {n_threads} threads")
         print(f"Aggregation method: {aggregation_method}")
         print(f"Normalization: {normalize_by}")
+        print(f"Output format: cells × gene_ids")
     
     # Load annotation results
     if isinstance(annotation_results, (str, Path)):
@@ -222,6 +227,7 @@ def peak_to_gene_activity_weighted(
         X = X.tocsr()
     
     # Build gene-to-peaks mapping with weights and filtering
+    # Now using gene_id as the primary key
     gene2peaks_weighted = defaultdict(list)
     peak_stats = {
         'total_annotated': 0,
@@ -236,7 +242,9 @@ def peak_to_gene_activity_weighted(
         if not isinstance(annotation, dict):
             continue
             
-        genes = annotation.get('genes', [])
+        # Use gene_ids as primary identifiers
+        gene_ids = annotation.get('gene_ids', [])
+        gene_names = annotation.get('gene_names', [])  # For readability
         weights = annotation.get('weights', [])
         distances = annotation.get('distances', [])
         in_promoter = annotation.get('in_promoter', [])
@@ -245,10 +253,11 @@ def peak_to_gene_activity_weighted(
         
         # Process each gene annotation for this peak
         peak_used = False
-        for i, gene in enumerate(genes):
+        for i, gene_id in enumerate(gene_ids):
             # Get values with bounds checking
             weight = weights[i] if i < len(weights) else 0
             distance = distances[i] if i < len(distances) else float('inf')
+            gene_name = gene_names[i] if i < len(gene_names) else "Unknown"
             
             # Apply filters
             if weight_threshold is not None and weight < weight_threshold:
@@ -259,9 +268,11 @@ def peak_to_gene_activity_weighted(
                 peak_stats['filtered_by_distance'] += 1
                 continue
             
-            # Store peak info for this gene
+            # Store peak info for this gene_id
             peak_info = {
                 'peak': peak,
+                'gene_id': gene_id,
+                'gene_name': gene_name,
                 'combined_weight': weight,
                 'distance_to_tss': distance,
                 'in_promoter': in_promoter[i] if i < len(in_promoter) else False,
@@ -269,16 +280,16 @@ def peak_to_gene_activity_weighted(
                 'tss_weight': tss_weights[i] if i < len(tss_weights) else weight
             }
             
-            gene2peaks_weighted[gene].append(peak_info)
+            gene2peaks_weighted[gene_id].append(peak_info)
             peak_used = True
         
         if peak_used:
             peak_stats['used_after_filtering'] += 1
     
-    # Get valid genes
-    genes = sorted(list(gene2peaks_weighted.keys()))
-    genes = [g for g in genes if g and str(g).strip() and str(g).lower() != 'nan']
-    n_genes = len(genes)
+    # Get valid gene IDs (primary identifiers)
+    gene_ids = sorted(list(gene2peaks_weighted.keys()))
+    gene_ids = [g for g in gene_ids if g and str(g).strip() and str(g).lower() != 'nan']
+    n_genes = len(gene_ids)
     n_cells = atac.n_obs
     
     if verbose:
@@ -289,18 +300,18 @@ def peak_to_gene_activity_weighted(
             print(f"  Filtered by weight (<{weight_threshold}): {peak_stats['filtered_by_weight']:,}")
         if distance_threshold:
             print(f"  Filtered by distance (>{distance_threshold:,} bp): {peak_stats['filtered_by_distance']:,}")
-        print(f"\nProcessing {n_genes:,} genes from {atac.n_vars:,} peaks")
+        print(f"\nProcessing {n_genes:,} genes (by gene_id) from {atac.n_vars:,} peaks")
     
     # Create peak name to index mapping
     peak_to_idx = {peak: i for i, peak in enumerate(atac.var_names)}
     
     # Prepare gene batches for parallel processing
     batch_size = max(1, n_genes // (n_threads * 4))  # 4 batches per thread
-    gene_batches = [genes[i:i + batch_size] for i in range(0, n_genes, batch_size)]
+    gene_batches = [gene_ids[i:i + batch_size] for i in range(0, n_genes, batch_size)]
     
     # Prepare arguments for parallel processing
     decay_params = {
-        'sigma': peak2gene.get('parameters', {}).get('distance_weight_sigma', 50000)
+        'sigma': 50000  # Default value
     }
     
     process_args = [
@@ -338,22 +349,22 @@ def peak_to_gene_activity_weighted(
     for stats_list in gene_stats_lists:
         all_gene_stats.extend(stats_list)
     
-    gene_stats_df = pd.DataFrame(all_gene_stats).set_index('gene')
+    gene_stats_df = pd.DataFrame(all_gene_stats).set_index('gene_id')
     
     # Apply normalization
     if normalize_by == 'n_peaks':
         if verbose:
             print("Normalizing by number of peaks per gene...")
-        for i, gene in enumerate(genes):
-            n_peaks = gene_stats_df.loc[gene, 'n_peaks']
+        for i, gene_id in enumerate(gene_ids):
+            n_peaks = gene_stats_df.loc[gene_id, 'n_peaks']
             if n_peaks > 0:
                 gene_activity[:, i] = gene_activity[:, i] / n_peaks
                 
     elif normalize_by == 'total_weight':
         if verbose:
             print("Normalizing by total weight per gene...")
-        for i, gene in enumerate(genes):
-            total_weight = gene_stats_df.loc[gene, 'total_weight']
+        for i, gene_id in enumerate(gene_ids):
+            total_weight = gene_stats_df.loc[gene_id, 'total_weight']
             if total_weight > 0:
                 gene_activity[:, i] = gene_activity[:, i] / total_weight
                 
@@ -376,15 +387,20 @@ def peak_to_gene_activity_weighted(
             mask = atac.obs['cell_type'] == cell_type if 'cell_type' in atac.obs else []
             gene_activity[mask, :] = gene_activity[mask, :] * factor
     
-    # Create AnnData object
+    # Create AnnData object with gene_ids as var_names
     adata_gene = ad.AnnData(
         X=gene_activity,
         obs=atac.obs.copy(),
-        var=gene_stats_df.loc[genes].copy()
+        var=gene_stats_df.loc[gene_ids].copy()
     )
     
-    # Add metadata
-    adata_gene.var['gene_name'] = adata_gene.var.index
+    # Set gene_ids as the index/var_names (primary identifiers)
+    adata_gene.var_names = gene_ids
+    adata_gene.var_names.name = 'gene_id'
+    
+    # Ensure gene_name is available for readability
+    if 'gene_name' not in adata_gene.var.columns:
+        adata_gene.var['gene_name'] = adata_gene.var.index  # Fallback
     
     # Copy relevant uns data
     for key in ['sample_name', 'genome', 'species']:
@@ -393,7 +409,7 @@ def peak_to_gene_activity_weighted(
     
     # Add processing metadata
     adata_gene.uns['gene_activity_params'] = {
-        'method': 'weighted_aggregation',
+        'method': 'weighted_aggregation_gene_id',
         'aggregation': aggregation_method,
         'normalization': normalize_by,
         'source_peaks': atac.n_vars,
@@ -402,18 +418,20 @@ def peak_to_gene_activity_weighted(
         'weight_threshold': weight_threshold,
         'log_transformed': log_transform or normalize_by == 'archR',
         'n_threads': n_threads,
-        'filtering_stats': peak_stats
+        'filtering_stats': peak_stats,
+        'identifier_type': 'gene_id'
     }
     
     # Add ArchR-compatible metadata
     adata_gene.uns['GeneScoreMatrix'] = {
-        'method': 'ArchR-compatible weighted aggregation',
+        'method': 'ArchR-compatible weighted aggregation (gene_id indexed)',
         'date': pd.Timestamp.now().isoformat(),
         'parameters': {
             'aggregation': aggregation_method,
             'normalization': normalize_by,
             'distance_threshold': distance_threshold,
-            'weight_threshold': weight_threshold
+            'weight_threshold': weight_threshold,
+            'identifier': 'gene_id'
         }
     }
     
@@ -423,6 +441,7 @@ def peak_to_gene_activity_weighted(
     
     if verbose:
         print(f"\nGene activity matrix created: {n_cells:,} cells × {n_genes:,} genes")
+        print(f"Matrix structure: cells × gene_ids")
         print(f"Results saved to: {output_path}")
         
         # Summary statistics
@@ -443,18 +462,26 @@ def peak_to_gene_activity_weighted(
         valid_distances = adata_gene.var['mean_distance'].dropna()
         if len(valid_distances) > 0:
             print(f"  Mean TSS distance: {valid_distances.mean():.0f} bp")
+        
+        # Show example gene IDs vs names
+        print(f"\nExample gene ID → name mapping:")
+        for i in range(min(5, len(adata_gene.var))):
+            gene_id = adata_gene.var_names[i]
+            gene_name = adata_gene.var.iloc[i]['gene_name']
+            print(f"  {gene_id} → {gene_name}")
     
     return adata_gene
 
 
 def brief_gene_activity_overview(adata):
     """
-    Enhanced overview of gene activity AnnData object.
+    Enhanced overview of gene activity AnnData object with gene ID focus.
     """
     print(f"Gene Activity Matrix Overview")
     print(f"=" * 50)
     print(f"Shape: {adata.shape[0]:,} cells × {adata.shape[1]:,} genes")
     print(f"Matrix type: {'Sparse' if issparse(adata.X) else 'Dense'}")
+    print(f"Gene identifiers: {adata.var_names.name or 'gene_id'}")
     
     # Matrix statistics
     if issparse(adata.X):
@@ -475,6 +502,7 @@ def brief_gene_activity_overview(adata):
         print(f"  Normalization: {params.get('normalization', 'unknown')}")
         print(f"  Distance threshold: {params.get('distance_threshold', 'None')}")
         print(f"  Weight threshold: {params.get('weight_threshold', 'None')}")
+        print(f"  Identifier type: {params.get('identifier_type', 'unknown')}")
     
     # Gene statistics
     if 'n_peaks' in adata.var.columns:
@@ -486,6 +514,14 @@ def brief_gene_activity_overview(adata):
     
     if 'n_gene_body_peaks' in adata.var.columns:
         print(f"  Gene body peaks: {adata.var['n_gene_body_peaks'].sum():,} total")
+    
+    # Gene ID and name mapping
+    if 'gene_name' in adata.var.columns:
+        print(f"\nGene ID → Name examples:")
+        for i in range(min(3, len(adata.var))):
+            gene_id = adata.var_names[i]
+            gene_name = adata.var.iloc[i]['gene_name']
+            print(f"  {gene_id} → {gene_name}")
     
     # Sample of the matrix
     print(f"\nCount matrix sample (first 3 genes × 3 cells):")
@@ -507,11 +543,11 @@ if __name__ == "__main__":
     # Load ATAC data
     atac = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad")
     
-    # Load annotation results (from the new annotation function)
+    # Load annotation results (from the new gene_id-based annotation function)
     with open("/Users/harry/Desktop/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
         annotation_results = pickle.load(f)
     
-    # Create gene activity matrix with weighted aggregation
+    # Create gene activity matrix with gene IDs as primary identifiers
     adata_gene = peak_to_gene_activity_weighted(
         atac=atac,
         annotation_results=annotation_results,

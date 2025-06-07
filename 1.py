@@ -1,29 +1,18 @@
-from pyensembl import EnsemblRelease
+import anndata as ad
 
-# Load Ensembl reference (GRCh38 default with release 110 unless you set differently)
-ensembl_release = 110  # Change if needed
-ensembl = EnsemblRelease(release=ensembl_release, species="homo_sapiens")
+def print_first_ten_genes(adata_path):
+    # Load the AnnData object
+    adata = ad.read_h5ad(adata_path)
+    
+    # Try to access gene names from common locations
+    if 'gene_name' in adata.var.columns:
+        genes = adata.var['gene_name']
+    else:
+        genes = adata.var.index  # fallback to index if gene_name column doesn't exist
 
-# Download and index if not already available
-try:
-    genes = ensembl.genes()
-except Exception:
-    print("Downloading Ensembl data (first time only)…")
-    ensembl.download()
-    ensembl.index()
-    genes = ensembl.genes()
+    print("First 10 gene names:")
+    print(genes[:10].tolist())
 
-# Query for UTP4
-gene_name = "UTP4"
-utp4_genes = ensembl.genes_by_name(gene_name)
+if __name__ == "__main__":
 
-# Print all available information
-for gene in utp4_genes:
-    print(f"Gene ID       : {gene.gene_id}")
-    print(f"Gene Name     : {gene.gene_name}")
-    print(f"Chromosome    : {gene.contig}")
-    print(f"Start         : {gene.start}")
-    print(f"End           : {gene.end}")
-    print(f"Strand        : {'+' if gene.strand == 1 else '-'}")
-    print("-" * 40)
-
+    print_first_ten_genes("/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad")
