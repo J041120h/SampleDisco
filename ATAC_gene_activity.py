@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Enhanced Peak-to-Gene Activity Matrix Generator
+Enhanced Peak-to-Gene Activity Matrix Generator with Consistent Filtering
 
-*Modified to use gene IDs as primary identifiers*:
+*Modified to use gene IDs as primary identifiers and apply consistent peak filtering*:
 ➜ Changed to use gene_ids instead of gene_names as primary keys
 ➜ Output matrix is structured as cells × gene_ids
 ➜ Gene names included for readability but gene_id is the unique identifier
 ➜ All grouping and indexing now uses gene_id for consistency
+➜ Applies same accessibility filtering used during annotation
 """
 
 import os
@@ -136,6 +137,7 @@ def peak_to_gene_activity_weighted(
     aggregation_method='weighted_sum',
     distance_threshold=None,
     weight_threshold=0.01,
+    min_peak_accessibility=0.01,  # NEW: Add this parameter to match annotation
     n_threads=None,
     normalize_by='none',
     log_transform=False,
@@ -145,6 +147,7 @@ def peak_to_gene_activity_weighted(
     """
     Convert ATAC-seq peak counts to gene activity scores using weighted aggregation.
     Uses gene IDs as primary identifiers for robust mapping.
+    Now applies the same accessibility filtering used during annotation.
     
     Parameters:
     -----------
@@ -167,6 +170,8 @@ def peak_to_gene_activity_weighted(
         Maximum TSS distance to include peaks (bp)
     weight_threshold : float
         Minimum weight to include a peak (default: 0.01)
+    min_peak_accessibility : float
+        Minimum peak accessibility to include (should match annotation parameter)
     n_threads : int or None
         Number of threads for parallel processing
     normalize_by : str
@@ -199,6 +204,7 @@ def peak_to_gene_activity_weighted(
         print(f"Creating gene activity matrix using {n_threads} threads")
         print(f"Aggregation method: {aggregation_method}")
         print(f"Normalization: {normalize_by}")
+        print(f"Min peak accessibility: {min_peak_accessibility}")
         print(f"Output format: cells × gene_ids")
     
     # Load annotation results
@@ -226,18 +232,61 @@ def peak_to_gene_activity_weighted(
     else:
         X = X.tocsr()
     
+    # NEW: Apply the same peak filtering used during annotation
+    if min_peak_accessibility is not None and min_peak_accessibility > 0:
+        if hasattr(X, "toarray"):  # sparse
+            peak_means = np.asarray(X.mean(axis=0)).ravel()
+        else:  # dense
+            peak_means = np.asarray(X.mean(axis=0)).ravel()
+        
+        valid_peak_mask = peak_means >= min_peak_accessibility
+        
+        # Filter peaks to only those that were annotated
+        valid_peak_names = [peak for i, peak in enumerate(atac.var_names) 
+                           if valid_peak_mask[i]]
+        
+        if verbose:
+            print(f"Applying accessibility filter: {len(valid_peak_names)}/{len(atac.var_names)} peaks pass threshold")
+            print(f"  Filtered out: {len(atac.var_names) - len(valid_peak_names)} peaks below {min_peak_accessibility} accessibility")
+    else:
+        valid_peak_names = list(atac.var_names)
+        if verbose:
+            print(f"No accessibility filtering applied - using all {len(valid_peak_names)} peaks")
+    
+    # Create peak name to index mapping (only for valid peaks)
+    peak_to_idx = {peak: i for i, peak in enumerate(atac.var_names) 
+                   if peak in valid_peak_names}
+    
     # Build gene-to-peaks mapping with weights and filtering
     # Now using gene_id as the primary key
     gene2peaks_weighted = defaultdict(list)
     peak_stats = {
         'total_annotated': 0,
+        'peaks_in_atac_data': 0,
+        'peaks_pass_accessibility': 0,
         'used_after_filtering': 0,
+        'filtered_by_accessibility': 0,
         'filtered_by_distance': 0,
-        'filtered_by_weight': 0
+        'filtered_by_weight': 0,
+        'not_in_atac_data': 0
     }
     
     for peak, annotation in peak2gene.items():
         peak_stats['total_annotated'] += 1
+        
+        # Check if peak exists in ATAC data
+        if peak not in atac.var_names:
+            peak_stats['not_in_atac_data'] += 1
+            continue
+        
+        peak_stats['peaks_in_atac_data'] += 1
+        
+        # Check if peak passes accessibility filter
+        if peak not in valid_peak_names:
+            peak_stats['filtered_by_accessibility'] += 1
+            continue
+        
+        peak_stats['peaks_pass_accessibility'] += 1
         
         if not isinstance(annotation, dict):
             continue
@@ -295,15 +344,18 @@ def peak_to_gene_activity_weighted(
     if verbose:
         print(f"\nPeak filtering statistics:")
         print(f"  Total annotated peaks: {peak_stats['total_annotated']:,}")
-        print(f"  Used after filtering: {peak_stats['used_after_filtering']:,}")
+        print(f"  Peaks in ATAC data: {peak_stats['peaks_in_atac_data']:,}")
+        print(f"  Peaks pass accessibility filter: {peak_stats['peaks_pass_accessibility']:,}")
+        print(f"  Used after all filtering: {peak_stats['used_after_filtering']:,}")
+        print(f"  Filtered by accessibility: {peak_stats['filtered_by_accessibility']:,}")
         if weight_threshold:
             print(f"  Filtered by weight (<{weight_threshold}): {peak_stats['filtered_by_weight']:,}")
         if distance_threshold:
             print(f"  Filtered by distance (>{distance_threshold:,} bp): {peak_stats['filtered_by_distance']:,}")
-        print(f"\nProcessing {n_genes:,} genes (by gene_id) from {atac.n_vars:,} peaks")
-    
-    # Create peak name to index mapping
-    peak_to_idx = {peak: i for i, peak in enumerate(atac.var_names)}
+        if peak_stats['not_in_atac_data'] > 0:
+            print(f"  Not found in ATAC data: {peak_stats['not_in_atac_data']:,}")
+        print(f"\nProcessing {n_genes:,} genes (by gene_id) from {atac.n_vars:,} total peaks")
+        print(f"Using {len(valid_peak_names):,} accessibility-filtered peaks")
     
     # Prepare gene batches for parallel processing
     batch_size = max(1, n_genes // (n_threads * 4))  # 4 batches per thread
@@ -409,13 +461,14 @@ def peak_to_gene_activity_weighted(
     
     # Add processing metadata
     adata_gene.uns['gene_activity_params'] = {
-        'method': 'weighted_aggregation_gene_id',
+        'method': 'weighted_aggregation_gene_id_consistent_filtering',
         'aggregation': aggregation_method,
         'normalization': normalize_by,
         'source_peaks': atac.n_vars,
         'target_genes': n_genes,
         'distance_threshold': distance_threshold,
         'weight_threshold': weight_threshold,
+        'min_peak_accessibility': min_peak_accessibility,
         'log_transformed': log_transform or normalize_by == 'archR',
         'n_threads': n_threads,
         'filtering_stats': peak_stats,
@@ -424,13 +477,14 @@ def peak_to_gene_activity_weighted(
     
     # Add ArchR-compatible metadata
     adata_gene.uns['GeneScoreMatrix'] = {
-        'method': 'ArchR-compatible weighted aggregation (gene_id indexed)',
+        'method': 'ArchR-compatible weighted aggregation (gene_id indexed, consistent filtering)',
         'date': pd.Timestamp.now().isoformat(),
         'parameters': {
             'aggregation': aggregation_method,
             'normalization': normalize_by,
             'distance_threshold': distance_threshold,
             'weight_threshold': weight_threshold,
+            'min_peak_accessibility': min_peak_accessibility,
             'identifier': 'gene_id'
         }
     }
@@ -502,7 +556,17 @@ def brief_gene_activity_overview(adata):
         print(f"  Normalization: {params.get('normalization', 'unknown')}")
         print(f"  Distance threshold: {params.get('distance_threshold', 'None')}")
         print(f"  Weight threshold: {params.get('weight_threshold', 'None')}")
+        print(f"  Min peak accessibility: {params.get('min_peak_accessibility', 'None')}")
         print(f"  Identifier type: {params.get('identifier_type', 'unknown')}")
+        
+        # Show filtering stats
+        if 'filtering_stats' in params:
+            stats = params['filtering_stats']
+            print(f"\nFiltering statistics:")
+            print(f"  Total annotated peaks: {stats.get('total_annotated', 'N/A'):,}")
+            print(f"  Peaks in ATAC data: {stats.get('peaks_in_atac_data', 'N/A'):,}")
+            print(f"  Peaks pass accessibility: {stats.get('peaks_pass_accessibility', 'N/A'):,}")
+            print(f"  Used after filtering: {stats.get('used_after_filtering', 'N/A'):,}")
     
     # Gene statistics
     if 'n_peaks' in adata.var.columns:
@@ -541,20 +605,21 @@ def brief_gene_activity_overview(adata):
 # Example usage
 if __name__ == "__main__":
     # Load ATAC data
-    atac = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad")
+    atac = ad.read_h5ad("/users/hjiang/GenoDistance/Data/ATAC.h5ad")
     
-    # Load annotation results (from the new gene_id-based annotation function)
-    with open("/Users/harry/Desktop/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
+    # Load annotation results (from the gene_id-based annotation function)
+    with open("/users/hjiang/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
         annotation_results = pickle.load(f)
     
-    # Create gene activity matrix with gene IDs as primary identifiers
+    # Create gene activity matrix with consistent filtering
     adata_gene = peak_to_gene_activity_weighted(
         atac=atac,
         annotation_results=annotation_results,
-        output_dir="/Users/harry/Desktop/GenoDistance/result/gene_activity/",
+        output_dir="/users/hjiang/GenoDistance/result/gene_activity/",
         aggregation_method='weighted_sum',  # ArchR-style
         distance_threshold=100_000,  # 100kb
         weight_threshold=0.01,  # Minimum weight
+        min_peak_accessibility=0.01,  # SAME AS ANNOTATION SCRIPT
         normalize_by='archR',  # ArchR normalization
         verbose=True
     )

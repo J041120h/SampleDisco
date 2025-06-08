@@ -265,6 +265,12 @@ if __name__ == "__main__":
     #     species="homo_sapiens",
     #     output_dir="/Users/harry/Desktop/GenoDistance/result/glue"
     # )
+    rna, atac, guidance = glue_preprocess_pipeline(
+        rna_file="/users/hjiang/GenoDistance/Data/test_rna.h5ad",
+        atac_file="/users/hjiang/GenoDistance/Data/test_ATAC.h5ad", 
+        ensembl_release=98,  # Latest human Ensembl release
+        species="homo_sapiens",
+        output_dir="/users/hjiang/GenoDistance/result/glue"
+    )
     glue_train( preprocess_output_dir = "/Users/harry/Desktop/GenoDistance/result/glue", 
                save_prefix="glue", consistency_threshold=0.05)
-    

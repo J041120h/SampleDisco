@@ -1,26 +1,19 @@
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/cudf/utils/_ptxcompiler.py:64: UserWarning: Error getting driver and runtime versions:
-
-stdout:
-
-
-
-stderr:
-
 Traceback (most recent call last):
-  File "<string>", line 4, in <module>
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/numba_cuda/numba/cuda/cudadrv/driver.py", line 314, in __getattr__
-    raise CudaSupportError("Error at driver init: \n%s:" %
-numba.cuda.cudadrv.error.CudaSupportError: Error at driver init: 
-
-CUDA driver library cannot be found.
-If you are sure that a CUDA driver is installed,
-try setting environment variable NUMBA_CUDA_DRIVER
-with the file path of the CUDA driver shared library.
-:
-
-
-Not patching Numba
-  warnings.warn(msg, UserWarning)
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/cudf/utils/gpu_utils.py:62: UserWarning: Failed to dlopen libcuda.so.1
-  warnings.warn(str(e))
-Error: Function "cuInit" not found
+  File "/users/hjiang/GenoDistance/code/ATAC_RNA_harmony.py", line 468, in <module>
+    adata_activity = sc.read("/users/hjiang/GenoDistance/result/gene_activity/gene_activity.h5ad")
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py", line 82, in fn_compatible
+    return fn(*args_all, **kw)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scanpy/readwrite.py", line 145, in read
+    return _read(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scanpy/readwrite.py", line 773, in _read
+    return read_h5ad(filename, backed=backed)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/h5ad.py", line 234, in read_h5ad
+    with h5py.File(filename, "r") as f:
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/files.py", line 564, in __init__
+    fid = make_fid(name, mode, userblock_size, fapl, fcpl, swmr=swmr)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/files.py", line 238, in make_fid
+    fid = h5f.open(name, flags, fapl=fapl)
+  File "h5py/_objects.pyx", line 54, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
+  File "h5py/h5f.pyx", line 102, in h5py.h5f.open
+FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = '/users/hjiang/GenoDistance/result/gene_activity/gene_activity.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)

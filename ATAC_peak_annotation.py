@@ -459,7 +459,20 @@ def load_annotations(*, output_prefix="atac_annotation", output_dir="."):
 # ────────────────────────────── CLI demo ──────────────────────────────
 if __name__ == "__main__":
     # Example usage
-    atac_path = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
+    # atac_path = "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
+    # results = annotate_atac_peaks_parallel(
+    #     atac_path,
+    #     ensembl_release=98,
+    #     extend_upstream=100_000,
+    #     extend_downstream=100_000,
+    #     promoter_weight_factor=5.0,
+    #     distance_weight_sigma=50_000,
+    #     min_peak_accessibility=0.01,
+    #     output_prefix="atac_annotation",
+    #     output_dir="/Users/harry/Desktop/GenoDistance/result/peak_annotation",
+    # )
+
+    atac_path = "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
     results = annotate_atac_peaks_parallel(
         atac_path,
         ensembl_release=98,
@@ -469,9 +482,8 @@ if __name__ == "__main__":
         distance_weight_sigma=50_000,
         min_peak_accessibility=0.01,
         output_prefix="atac_annotation",
-        output_dir="/Users/harry/Desktop/GenoDistance/result/peak_annotation",
+        output_dir="/users/hjiang/GenoDistance/result/peak_annotation",
     )
-
     print("\nOutput files:")
     for k, v in results.items():
         print(f"  {k:<15} : {v}")

@@ -458,24 +458,24 @@ def combined_harmony_analysis(
 # Example usage:
 if __name__ == "__main__":
     adata_rna = convert_rna_to_gene_ids(
-        adata_path="/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad",
+        adata_path="/users/hjiang/GenoDistance/Data/count_data.h5ad",
         ensembl_release=98,
         species="homo_sapiens",
         handle_duplicates='first',
         min_mapping_rate=0.7,
         verbose=True
     )
-    adata_activity = sc.read("/Users/harry/Desktop/GenoDistance/result/gene_activity/gene_activity.h5ad")
+    adata_activity = sc.read("/users/hjiang/GenoDistance/result/gene_activity/gene_activity.h5ad")
     adata_integrated = combined_harmony_analysis(
         adata_rna,
         adata_activity,
         rna_cell_meta_path=None,
         activity_cell_meta_path=None,
-        rna_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/sample_data.csv",
-        activity_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-        output_dir="/Users/harry/Desktop/GenoDistance/result",
+        rna_sample_meta_path="/users/hjiang/GenoDistance/Data/sample_data.csv",
+        activity_sample_meta_path="/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv",
+        output_dir="/users/hjiang/GenoDistance/result",
         verbose=True
     )
-    adata_integrated = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/combined_harmony/adata_combined.h5ad")
-    cell_types(adata_integrated, Save = True, output_dir="/Users/harry/Desktop/GenoDistance/result", verbose=True)
-    visualize_rna_atac_integration(adata_integrated, "/Users/harry/Desktop/GenoDistance/result", quantitative_measures=False, verbose=True)
+    # adata_integrated = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/combined_harmony/adata_combined.h5ad")
+    cell_types(adata_integrated, Save = True, output_dir="/users/hjiang/GenoDistance/result", verbose=True)
+    visualize_rna_atac_integration(adata_integrated, "/users/hjiang/GenoDistance/result", quantitative_measures=False, verbose=True)

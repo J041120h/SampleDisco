@@ -1,15 +1,15 @@
 ======================================
- Job ID:            16927179
+ Job ID:            17067246
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
  CPUs per Task:     16
  Memory Alloc:      409600
  GPU Requested:     1
- Start Time:        Tue Jun  3 12:45:59 PM EDT 2025
+ Start Time:        Sun Jun  8 01:07:37 AM EDT 2025
 ======================================
 Checking GPU status...
-Tue Jun  3 12:46:00 2025       
+Sun Jun  8 01:07:38 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Tue Jun  3 12:46:00 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   50C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
+| N/A   47C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -30,5 +30,35 @@ Tue Jun  3 12:46:00 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
-Finished main.py.
-End Time: Tue Jun  3 12:46:14 PM EDT 2025
+Start of Process
+
+Resuming process from previous progress:
+{
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "sample_distance_calculation": true,
+    "DimensionalityReduction": true,
+    "trajectory_analysis": true,
+    "visualize_data": true,
+    "initialization": false
+}
+Linux system detected.
+
+
+Enabling managed memory for RMM...
+
+
+[2025-06-08 01:09:32] True: ============================================================
+Starting scATAC-seq pipeline
+============================================================
+[2025-06-08 01:10:00] True: Loaded 88985 cells × 230356 features
+Merged 28 sample-level columns
+[2025-06-08 01:10:00] True: QC filtering
+[2025-06-08 01:10:14] True: Filtering samples with <500 cells
+[2025-06-08 01:10:20] True: Remaining cells: 79274
+[2025-06-08 01:10:24] True: TF-IDF normalisation
+[2025-06-08 01:10:59] True: Log1p transform
+[2025-06-08 01:11:00] INFO: Running snapATAC2 SVD with 30 components
+[2025-06-08 01:11:00] INFO: Converting data matrix to float32
+[2025-06-08 01:11:14] INFO: Filtering doublets (snapATAC2-Scrublet)
+[2025-06-08 01:11:14] INFO: snapATAC2-Scrublet compatibility issue – skipping.

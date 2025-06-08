@@ -1,31 +1,42 @@
 ======================================
- Job ID:            16475955
+ Job ID:            17067245
  Job Name:          plot
  Partition:         shared
- Node List:         compute-145
+ Node List:         compute-127
  CPUs per Task:     16
  Memory Alloc:      102400
  GPU Requested:     None
- Start Time:        Mon May  5 03:28:43 PM EDT 2025
+ Start Time:        Sun Jun  8 01:06:00 AM EDT 2025
 ======================================
 Starting plot script...
-Start of Process
+Loading RNA data from: /users/hjiang/GenoDistance/Data/count_data.h5ad
+Original data shape: 898,489 cells × 14,881 genes
+Detected gene identifier type: gene_name
+Sample genes: ['A1BG', 'A1BG-AS1', 'A2M', 'A2M-AS1', 'A4GALT']
+Converting gene names to gene IDs using Ensembl release 98...
+Creating gene mappings from Ensembl release 98...
+Created mappings for 59,412 gene names → 60,623 gene IDs
+Warning: 69 gene names map to multiple IDs (kept first occurrence)
 
-Resuming process from previous progress:
-{
-    "preprocessing": true,
-    "cell_type_cluster": true,
-    "sample_distance_calculation": true,
-    "DimensionalityReduction": true,
-    "trajectory_analysis": false,
-    "visualize_data": true,
-    "initialization": false
-}
-Linux system detected.
+Conversion results:
+  Successfully mapped: 14,743 (99.07%)
+  Unmapped genes: 138
+  Duplicate gene names: 0
+  Genes retained: 14,743
+Filtered data shape: 898,489 cells × 14,743 genes
+Detailed mapping statistics saved to: /users/hjiang/GenoDistance/Data/count_data_gene_conversion_stats.json
+Converted RNA data saved to: /users/hjiang/GenoDistance/Data/count_data_gene_ids.h5ad
 
+Final data structure:
+  Shape: 898,489 cells × 14,743 genes
+  Gene identifiers: gene_ids (var_names)
+  Gene names: available in var['gene_name']
 
-Enabling managed memory for RMM...
-
-
+Example gene ID → name mapping:
+  ENSG00000121410 → A1BG
+  ENSG00000268895 → A1BG-AS1
+  ENSG00000175899 → A2M
+  ENSG00000245105 → A2M-AS1
+  ENSG00000128274 → A4GALT
 Finished plot script.
-End Time: Mon May  5 03:28:55 PM EDT 2025
+End Time: Sun Jun  8 01:07:29 AM EDT 2025
