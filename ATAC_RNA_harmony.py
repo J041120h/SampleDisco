@@ -20,7 +20,8 @@ import warnings
 from CellType import *
 from ATAC_RNA_integration_test import *
 from RNA_name_convertor import *
-from linux.CellType_linux import cell_types_linux
+# from linux.CellType_linux import cell_types_linux
+
 def combine_rna_and_activity_data(
     adata_rna,
     adata_activity,
@@ -461,24 +462,45 @@ def combined_harmony_analysis(
 # Example usage:
 if __name__ == "__main__":
     adata_rna = convert_rna_to_gene_ids(
-        adata_path="/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
+        adata_path="/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad",
         ensembl_release=98,
         species="homo_sapiens",
         handle_duplicates='first',
         min_mapping_rate=0.7,
         verbose=True
     )
-    adata_activity = sc.read("/users/hjiang/GenoDistance/result/gene_activity/gene_activity_weighted.h5ad")
+    adata_activity = sc.read("/Users/harry/Desktop/GenoDistance/result/gene_activity_matrix.h5ad")
     adata_integrated = combined_harmony_analysis(
         adata_rna,
         adata_activity,
         rna_cell_meta_path=None,
         activity_cell_meta_path=None,
-        rna_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
-        activity_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
-        output_dir="/users/hjiang/GenoDistance/result",
+        rna_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/sample_data.csv",
+        activity_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
+        output_dir="/Users/harry/Desktop/GenoDistance/result/",
         verbose=True
     )
+    cell_types(adata_integrated, Save = True, output_dir="/Users/harry/Desktop/GenoDistance/result/", verbose=True)
+    visualize_rna_atac_integration(adata_integrated, "/Users/harry/Desktop/GenoDistance/result/", quantitative_measures=False, verbose=True)
+    # adata_rna = convert_rna_to_gene_ids(
+    #     adata_path="/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
+    #     ensembl_release=98,
+    #     species="homo_sapiens",
+    #     handle_duplicates='first',
+    #     min_mapping_rate=0.7,
+    #     verbose=True
+    # )
+    # adata_activity = sc.read("/users/hjiang/GenoDistance/result/gene_activity/gene_activity_weighted.h5ad")
+    # adata_integrated = combined_harmony_analysis(
+    #     adata_rna,
+    #     adata_activity,
+    #     rna_cell_meta_path=None,
+    #     activity_cell_meta_path=None,
+    #     rna_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
+    #     activity_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
+    #     output_dir="/users/hjiang/GenoDistance/result",
+    #     verbose=True
+    # )
     # adata_integrated = sc.read_h5ad("/users/hjiang/GenoDistance/result/combined_harmony/adata_combined.h5ad")
     # import subprocess
     # import sys
