@@ -604,18 +604,29 @@ def brief_gene_activity_overview(adata):
 
 # Example usage
 if __name__ == "__main__":
-    # Load ATAC data
-    atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad")
-    
-    # Load annotation results (from the gene_id-based annotation function)
-    with open("/users/hjiang/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
+    # atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad")
+    # with open("/users/hjiang/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
+    #     annotation_results = pickle.load(f)
+    # adata_gene = peak_to_gene_activity_weighted(
+    #     atac=atac,
+    #     annotation_results=annotation_results,
+    #     output_dir="/users/hjiang/GenoDistance/result/gene_activity/",
+    #     aggregation_method='weighted_sum',  # ArchR-style
+    #     distance_threshold=100_000,  # 100kb
+    #     weight_threshold=0.01,  # Minimum weight
+    #     min_peak_accessibility=0.01,  # SAME AS ANNOTATION SCRIPT
+    #     normalize_by='archR',  # ArchR normalization
+    #     verbose=True
+    # )
+    # brief_gene_activity_overview(adata_gene)
+
+    atac = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad")
+    with open("/Users/harry/Desktop/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
         annotation_results = pickle.load(f)
-    
-    # Create gene activity matrix with consistent filtering
     adata_gene = peak_to_gene_activity_weighted(
         atac=atac,
         annotation_results=annotation_results,
-        output_dir="/users/hjiang/GenoDistance/result/gene_activity/",
+        output_dir="/Users/harry/Desktop/GenoDistance/result/gene_activity/",
         aggregation_method='weighted_sum',  # ArchR-style
         distance_threshold=100_000,  # 100kb
         weight_threshold=0.01,  # Minimum weight
@@ -623,6 +634,4 @@ if __name__ == "__main__":
         normalize_by='archR',  # ArchR normalization
         verbose=True
     )
-    
-    # Show overview
     brief_gene_activity_overview(adata_gene)
