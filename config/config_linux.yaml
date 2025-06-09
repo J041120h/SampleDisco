@@ -1,6 +1,6 @@
 # ===== Harmony Preprocessing Parameters =====
-h5ad_path: "/users/hjiang/GenoDistance/Data/count_data.h5ad"
-sample_meta_path: "/users/hjiang/GenoDistance/Data/sample_data.csv"
+h5ad_path: "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad"
+sample_meta_path: "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv"
 output_dir: "/users/hjiang/GenoDistance/result"
 sample_col: "sample"
 grouping_columns:
@@ -111,16 +111,16 @@ atac_preprocessing: true
 atac_pseudobulk_dimensionality_reduction: true
 atac_visualization_processing: true
 
-atac_file_path: "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
+atac_file_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
 atac_output_dir: null
-atac_metadata_path: "/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv"
+atac_metadata_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
 atac_pseudobulk_output_dir: null
 atac_pca_output_dir: null
 atac_sample_col: "sample"
 atac_batch_col: null
 atac_cell_type_column: "cell_type"
 atac_pipeline_verbose: true
-use_snapatac2_dimred: true
+use_snapatac2_dimred: false
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000

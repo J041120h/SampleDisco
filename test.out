@@ -62,3 +62,36 @@ Merged 28 sample-level columns
 [2025-06-08 01:11:00] INFO: Converting data matrix to float32
 [2025-06-08 01:11:14] INFO: Filtering doublets (snapATAC2-Scrublet)
 [2025-06-08 01:11:14] INFO: snapATAC2-Scrublet compatibility issue – skipping.
+[2025-06-08 01:13:15] INFO: snapATAC2 dimensionality reduction complete
+[cell_types_atac] No cell type annotation found. Performing clustering.
+[cell_types_atac] Building neighborhood graph...
+[cell_types_atac] Target: 3 clusters. Trying resolution: 0.8
+[cell_types_atac] Leiden clustering produced 27 clusters.
+[cell_types_atac] Got 27 clusters (>= target). Recursing with existing_cell_types=True...
+  [cell_types_atac] Current number of cell types: 27
+  [cell_types_atac] Aggregating 27 cell types into 3 clusters using dendrogram.
+  [cell_types_atac] Using dimension reduction (X_DM_harmony) for dendrogram construction...
+=== Preparing data for dendrogram (using X_DM_harmony) ===
+Using first 30 components from X_DM_harmony
+=== Computing centroids of cell types in X_DM_harmony space ===
+Calculated centroids for 27 cell types.
+Centroid shape: (27, 30)
+=== Computing distance matrix between centroids using cosine distance ===
+=== Performing hierarchical clustering on X_DM_harmony centroids ===
+Linkage method: average, Distance metric: cosine
+=== Aggregating cell types into 3 clusters ===
+Successfully created 3 clusters
+
+=== Cluster Composition ===
+Cluster 1: 10, 11, 12, 13, 14, 15, 20, 22, 24, 26, 27, 8
+Cluster 2: 1, 16, 17, 18, 2, 25, 3, 4, 5, 6, 7, 9
+Cluster 3: 19, 21, 23
+
+=== Cluster Quality Metrics ===
+Cluster 1: Average within-cluster distance = 0.0701
+Cluster 2: Average within-cluster distance = 0.0788
+Cluster 3: Average within-cluster distance = 0.1486
+
+Function execution time: 0.03 seconds
+  [cell_types_atac] Successfully aggregated to 3 cell types.
+[cell_types_atac] Finding differential peaks between cell types...

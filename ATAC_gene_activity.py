@@ -605,7 +605,7 @@ def brief_gene_activity_overview(adata):
 # Example usage
 if __name__ == "__main__":
     # Load ATAC data
-    atac = ad.read_h5ad("/users/hjiang/GenoDistance/Data/ATAC.h5ad")
+    atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad")
     
     # Load annotation results (from the gene_id-based annotation function)
     with open("/users/hjiang/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:

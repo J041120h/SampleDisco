@@ -366,7 +366,7 @@ def convert_rna_to_gene_ids(
     
     # Save converted data
     if output_path is None:
-        output_path = adata_path.parent / f"{adata_path.stem}_gene_ids.h5ad"
+        output_path = adata_path.parent / f"{adata_path.stem}.h5ad"
     else:
         output_path = Path(output_path)
     

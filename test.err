@@ -10,3 +10,26 @@ W0000 00:00:1749359270.825383 3818208 computation_placer.cc:177] computation pla
 2025-06-08 01:07:50.830005: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 2025-06-08 01:11:14 - INFO - Selected 40000 features.
+... storing 'sample' as categorical
+... storing 'disease severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+... storing 'cell_type_original' as categorical
+WARNING: It seems you use rank_genes_groups on the raw count data. Please logarithmize your data before calling rank_genes_groups.
+slurmstepd: error: *** JOB 17067246 ON compute-123 CANCELLED AT 2025-06-08T01:17:05 ***

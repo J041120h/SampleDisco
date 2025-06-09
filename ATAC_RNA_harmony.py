@@ -20,6 +20,7 @@ import warnings
 from CellType import *
 from ATAC_RNA_integration_test import *
 from RNA_name_convertor import *
+from linux.CellType_linux import cell_types_linux
 def combine_rna_and_activity_data(
     adata_rna,
     adata_activity,
@@ -293,7 +294,7 @@ def combined_harmony_analysis(
     min_features=500,
     pct_mito_cutoff=20,
     exclude_genes=None,
-    doublet=True,
+    doublet=False,
     vars_to_regress=[],
     verbose=True
 ):
@@ -370,18 +371,18 @@ def combined_harmony_analysis(
         print(f"After MT filtering -- Cells: {adata_combined.n_obs}, Genes: {adata_combined.n_vars}")
     
     # Sample filtering
-    # cell_counts_per_sample = adata_combined.obs.groupby(unified_sample_column).size()
-    # if verbose:
-    #     print("Sample counts before filtering:")
-    #     print(cell_counts_per_sample.sort_values(ascending=False))
+    cell_counts_per_sample = adata_combined.obs.groupby(unified_sample_column).size()
+    if verbose:
+        print("Sample counts before filtering:")
+        print(cell_counts_per_sample.sort_values(ascending=False))
     
-    # samples_to_keep = cell_counts_per_sample[cell_counts_per_sample >= min_cells].index
-    # adata_combined = adata_combined[adata_combined.obs[unified_sample_column].isin(samples_to_keep)].copy()
+    samples_to_keep = cell_counts_per_sample[cell_counts_per_sample >= min_cells].index
+    adata_combined = adata_combined[adata_combined.obs[unified_sample_column].isin(samples_to_keep)].copy()
     
-    # if verbose:
-    #     print(f"Samples retained: {list(samples_to_keep)}")
-    #     print("Sample counts after filtering:")
-    #     print(adata_combined.obs[unified_sample_column].value_counts().sort_values(ascending=False))
+    if verbose:
+        print(f"Samples retained: {list(samples_to_keep)}")
+        print("Sample counts after filtering:")
+        print(adata_combined.obs[unified_sample_column].value_counts().sort_values(ascending=False))
     
     # Final gene filtering
     min_cells_for_gene = int(0.01 * adata_combined.n_obs)
@@ -453,29 +454,48 @@ def combined_harmony_analysis(
         print(f"\n=== Analysis Complete ===")
         print(f"Execution time: {elapsed_time:.2f} seconds")
         print(f"Final data shape: {adata_combined.shape}")
+        
+    return adata_combined
 
 
 # Example usage:
 if __name__ == "__main__":
     adata_rna = convert_rna_to_gene_ids(
-        adata_path="/users/hjiang/GenoDistance/Data/count_data.h5ad",
+        adata_path="/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
         ensembl_release=98,
         species="homo_sapiens",
         handle_duplicates='first',
         min_mapping_rate=0.7,
         verbose=True
     )
-    adata_activity = sc.read("/users/hjiang/GenoDistance/result/gene_activity/gene_activity.h5ad")
+    adata_activity = sc.read("/users/hjiang/GenoDistance/result/gene_activity/gene_activity_weighted.h5ad")
     adata_integrated = combined_harmony_analysis(
         adata_rna,
         adata_activity,
         rna_cell_meta_path=None,
         activity_cell_meta_path=None,
-        rna_sample_meta_path="/users/hjiang/GenoDistance/Data/sample_data.csv",
-        activity_sample_meta_path="/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv",
+        rna_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
+        activity_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
         output_dir="/users/hjiang/GenoDistance/result",
         verbose=True
     )
-    # adata_integrated = sc.read_h5ad("/Users/harry/Desktop/GenoDistance/result/combined_harmony/adata_combined.h5ad")
-    cell_types(adata_integrated, Save = True, output_dir="/users/hjiang/GenoDistance/result", verbose=True)
-    visualize_rna_atac_integration(adata_integrated, "/users/hjiang/GenoDistance/result", quantitative_measures=False, verbose=True)
+    # adata_integrated = sc.read_h5ad("/users/hjiang/GenoDistance/result/combined_harmony/adata_combined.h5ad")
+    # import subprocess
+    # import sys
+    # subprocess.check_call([
+    #         sys.executable, "-m", "pip", "install",
+    #         "rapids-singlecell[rapids12]",
+    #         "--extra-index-url=https://pypi.nvidia.com"
+    #         ])
+    # import rmm
+    # from rmm.allocators.cupy import rmm_cupy_allocator
+    # import cupy as cp
+
+    # print("\n\nEnabling managed memory for RMM...\n\n")
+    # rmm.reinitialize(
+    #     managed_memory=True,
+    #     pool_allocator=False,
+    # )
+    # cp.cuda.set_allocator(rmm_cupy_allocator)
+    # cell_types_linux(adata_integrated, Save = True, output_dir="/users/hjiang/GenoDistance/result", verbose=True)
+    # visualize_rna_atac_integration(adata_integrated, "/users/hjiang/GenoDistance/result", quantitative_measures=False, verbose=True)

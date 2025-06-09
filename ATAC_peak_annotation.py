@@ -472,7 +472,7 @@ if __name__ == "__main__":
     #     output_dir="/Users/harry/Desktop/GenoDistance/result/peak_annotation",
     # )
 
-    atac_path = "/users/hjiang/GenoDistance/Data/ATAC.h5ad"
+    atac_path = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
     results = annotate_atac_peaks_parallel(
         atac_path,
         ensembl_release=98,
