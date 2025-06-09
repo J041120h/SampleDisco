@@ -427,22 +427,15 @@ def glue_visualize(rna_path, atac_path, output_dir=None):
     print("\nVisualization complete!")
 
 if __name__ == "__main__":
-    # rna, atac, guidance = glue_preprocess_pipeline(
-    #     rna_file="/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad",
-    #     atac_file="/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad", 
-    #     ensembl_release=98,  # Latest human Ensembl release
-    #     species="homo_sapiens",
-    #     output_dir="/Users/harry/Desktop/GenoDistance/result/glue"
-    # )
-    # rna, atac, guidance = glue_preprocess_pipeline(
-    #     rna_file="/users/hjiang/GenoDistance/Data/test_rna.h5ad",
-    #     atac_file="/users/hjiang/GenoDistance/Data/test_ATAC.h5ad",
-    #     rna_sample_meta_file="/users/hjiang/GenoDistance/Data/sample_data.csv",  # Optional
-    #     atac_sample_meta_file="/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv",  # Optional
-    #     ensembl_release=98,
-    #     species="homo_sapiens",
-    #     output_dir="/users/hjiang/GenoDistance/result/glue"
-    # )
-    glue_train( preprocess_output_dir = "/users/hjiang/GenoDistance/result/glue", 
-               save_prefix="glue", consistency_threshold=0.05)
-    glue_visualize("/users/hjiang/GenoDistance/result/glue/glue-rna-emb.h5ad", "/users/hjiang/GenoDistance/result/glue/glue-atac-emb.h5ad", "/users/hjiang/GenoDistance/result/glue")
+    rna, atac, guidance = glue_preprocess_pipeline(
+        rna_file="/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad",
+        atac_file="/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad",
+        rna_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",  # Optional
+        atac_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",  # Optional
+        ensembl_release=98,
+        species="homo_sapiens",
+        output_dir="/users/hjiang/GenoDistance/result/glue"
+    )
+    # glue_train( preprocess_output_dir = "/users/hjiang/GenoDistance/result/glue", 
+    #            save_prefix="glue", consistency_threshold=0.05)
+    # glue_visualize("/users/hjiang/GenoDistance/result/glue/glue-rna-emb.h5ad", "/users/hjiang/GenoDistance/result/glue/glue-atac-emb.h5ad", "/users/hjiang/GenoDistance/result/glue")
