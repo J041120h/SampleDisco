@@ -6,6 +6,133 @@ import numpy as np
 from typing import Optional, Tuple
 from pathlib import Path
 import pyensembl
+from linux.CellType_linux import *
+from CellType import *
+
+def clean_anndata_for_saving(adata, verbose=True):
+    """
+    Clean AnnData object to ensure it can be saved to HDF5 format.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        AnnData object to clean
+    verbose : bool
+        Whether to print cleaning statistics
+    
+    Returns:
+    --------
+    adata : AnnData
+        Cleaned AnnData object
+    """
+    import pandas as pd
+    import numpy as np
+    
+    if verbose:
+        print("🧹 Cleaning AnnData object for HDF5 compatibility...")
+    
+    # Clean obs dataframe
+    for col in adata.obs.columns:
+        if verbose:
+            print(f"   Processing column: {col}")
+        
+        # Convert object columns to string, handling NaN values
+        if adata.obs[col].dtype == 'object':
+            # Fill NaN values with 'Unknown' or appropriate default
+            adata.obs[col] = adata.obs[col].fillna('Unknown')
+            # Convert to string
+            adata.obs[col] = adata.obs[col].astype(str)
+            # Convert to category for memory efficiency
+            adata.obs[col] = adata.obs[col].astype('category')
+        
+        # Handle numeric columns with NaN
+        elif adata.obs[col].dtype in ['float64', 'float32']:
+            # Fill NaN values with appropriate defaults
+            if adata.obs[col].isna().any():
+                adata.obs[col] = adata.obs[col].fillna(0.0)
+        
+        # Handle integer columns
+        elif adata.obs[col].dtype in ['int64', 'int32']:
+            # Ensure no NaN values in integer columns
+            if adata.obs[col].isna().any():
+                adata.obs[col] = adata.obs[col].fillna(0).astype('int64')
+    
+    # Clean var dataframe
+    for col in adata.var.columns:
+        if adata.var[col].dtype == 'object':
+            # Fill NaN values and convert to string
+            adata.var[col] = adata.var[col].fillna('Unknown').astype(str)
+            # Convert to category for memory efficiency
+            adata.var[col] = adata.var[col].astype('category')
+        elif adata.var[col].dtype in ['float64', 'float32']:
+            if adata.var[col].isna().any():
+                adata.var[col] = adata.var[col].fillna(0.0)
+        elif adata.var[col].dtype in ['int64', 'int32']:
+            if adata.var[col].isna().any():
+                adata.var[col] = adata.var[col].fillna(0).astype('int64')
+    
+    if verbose:
+        print("✅ AnnData cleaning complete")
+    
+    return adata
+
+
+def merge_sample_metadata(
+    adata, 
+    metadata_path, 
+    sample_column="sample", 
+    sep=",", 
+    verbose=True
+):
+    """
+    Merge sample-level metadata with AnnData object.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Annotated data object
+    metadata_path : str
+        Path to metadata CSV file
+    sample_column : str
+        Column name to use as index for merging
+    sep : str
+        Separator for CSV file
+    verbose : bool
+        Whether to print merge statistics
+    
+    Returns:
+    --------
+    adata : AnnData
+        AnnData object with merged metadata
+    """
+    import pandas as pd
+    
+    meta = pd.read_csv(metadata_path, sep=sep).set_index(sample_column)
+    
+    # Store original column count for comparison
+    original_cols = adata.obs.shape[1]
+    
+    # Clean metadata before merging
+    for col in meta.columns:
+        if meta[col].dtype == 'object':
+            meta[col] = meta[col].fillna('Unknown').astype(str)
+    
+    # Perform the merge
+    adata.obs = adata.obs.join(meta, on=sample_column, how='left')
+    
+    # Calculate merge statistics
+    new_cols = adata.obs.shape[1] - original_cols
+    matched_samples = adata.obs[meta.columns].notna().any(axis=1).sum()
+    total_samples = adata.obs.shape[0]
+    
+    if verbose:
+        print(f"Merged {new_cols} sample-level columns")
+        print(f"Matched metadata for {matched_samples}/{total_samples} samples")
+        if matched_samples < total_samples:
+            print(f"⚠️ Warning: {total_samples - matched_samples} samples have no metadata")
+    
+    return adata
+
 
 def glue_preprocess_pipeline(
     rna_file: str,
@@ -15,6 +142,7 @@ def glue_preprocess_pipeline(
     ensembl_release: int = 98,
     species: str = "homo_sapiens",
     output_dir: str = "./",
+    use_highly_variable: bool = True,  # NEW PARAMETER
     n_top_genes: int = 2000,
     n_pca_comps: int = 100,
     n_lsi_comps: int = 100,
@@ -23,93 +151,208 @@ def glue_preprocess_pipeline(
     flavor: str = "seurat_v3",
     generate_umap: bool = False,
     compression: str = "gzip",
-    random_state: int = 42
+    random_state: int = 42,
+    metadata_sep: str = ",",
+    rna_sample_column: str = "sample",
+    atac_sample_column: str = "sample"
 ) -> Tuple[ad.AnnData, ad.AnnData, nx.MultiDiGraph]:
     """
     Complete GLUE preprocessing pipeline for scRNA-seq and scATAC-seq data integration.
-    """
     
-    print("\n\n\n🚀 Starting GLUE preprocessing pipeline...\n\n\n")
+    Parameters:
+    -----------
+    rna_file : str
+        Path to RNA h5ad file
+    atac_file : str
+        Path to ATAC h5ad file
+    rna_sample_meta_file : str, optional
+        Path to RNA sample metadata CSV
+    atac_sample_meta_file : str, optional
+        Path to ATAC sample metadata CSV
+    ensembl_release : int
+        Ensembl database release version
+    species : str
+        Species name for Ensembl
+    output_dir : str
+        Output directory path
+    use_highly_variable : bool
+        Whether to use highly variable features (True) or all features (False)
+    n_top_genes : int
+        Number of highly variable genes to select (only used if use_highly_variable=True)
+    n_pca_comps : int
+        Number of PCA components
+    n_lsi_comps : int
+        Number of LSI components for ATAC
+    lsi_n_iter : int
+        Number of LSI iterations
+    gtf_by : str
+        Gene annotation method
+    flavor : str
+        Method for highly variable gene selection
+    generate_umap : bool
+        Whether to generate UMAP embeddings
+    compression : str
+        Compression method for output files
+    random_state : int
+        Random seed for reproducibility
+    metadata_sep : str
+        Separator for metadata CSV files
+    rna_sample_column : str
+        Column name for RNA sample IDs in metadata
+    atac_sample_column : str
+        Column name for ATAC sample IDs in metadata
+    
+    Returns:
+    --------
+    Tuple[ad.AnnData, ad.AnnData, nx.MultiDiGraph]
+        Preprocessed RNA data, ATAC data, and guidance graph
+    """
+    import anndata as ad
+    import scanpy as sc
+    import scglue
+    import pyensembl
+    import networkx as nx
+    from pathlib import Path
+    from typing import Optional, Tuple
+    
+    print("\n🚀 Starting GLUE preprocessing pipeline...\n")
+    print(f"   Feature selection mode: {'Highly Variable' if use_highly_variable else 'All Features'}\n")
     
     # Create output directory
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
     # Load data
-    print(f"\n\n\n📊 Loading data files...\nRNA: {rna_file}\nATAC: {atac_file}\n\n\n")
+    print(f"📊 Loading data files...")
+    print(f"   RNA: {rna_file}")
+    print(f"   ATAC: {atac_file}")
+    
     rna = ad.read_h5ad(rna_file)
     atac = ad.read_h5ad(atac_file)
-    print(f"\n\n\nData loaded - RNA shape: {rna.shape}, ATAC shape: {atac.shape}\n\n\n")
     
-    # Load and integrate sample metadata
+    print(f"✅ Data loaded successfully")
+    print(f"   RNA shape: {rna.shape}")
+    print(f"   ATAC shape: {atac.shape}\n")
+    
+    # Load and integrate sample metadata using improved function
     if rna_sample_meta_file or atac_sample_meta_file:
-        print(f"\n\n\n📋 Loading sample metadata...\n\n\n")
+        print("📋 Loading and merging sample metadata...")
         
         if rna_sample_meta_file:
-            print(f"Loading RNA metadata: {rna_sample_meta_file}")
-            import pandas as pd
-            rna_meta = pd.read_csv(rna_sample_meta_file, index_col=0)
-            
-            # Match metadata to RNA obs
-            common_samples = rna.obs.index.intersection(rna_meta.index)
-            if len(common_samples) == 0:
-                print("⚠️ Warning: No matching sample IDs between RNA data and metadata")
-            else:
-                print(f"Matched {len(common_samples)} RNA samples with metadata")
-                # Add metadata columns to RNA obs
-                for col in rna_meta.columns:
-                    rna.obs[col] = rna_meta.loc[rna.obs.index, col] if col not in rna.obs.columns else rna.obs[col]
+            print(f"   Processing RNA metadata: {rna_sample_meta_file}")
+            rna = merge_sample_metadata(
+                rna, 
+                rna_sample_meta_file, 
+                sample_column=rna_sample_column,
+                sep=metadata_sep,
+                verbose=True
+            )
         
         if atac_sample_meta_file:
-            print(f"Loading ATAC metadata: {atac_sample_meta_file}")
-            atac_meta = pd.read_csv(atac_sample_meta_file, index_col=0)
-            
-            # Match metadata to ATAC obs
-            common_samples = atac.obs.index.intersection(atac_meta.index)
-            if len(common_samples) == 0:
-                print("⚠️ Warning: No matching sample IDs between ATAC data and metadata")
-            else:
-                print(f"Matched {len(common_samples)} ATAC samples with metadata")
-                # Add metadata columns to ATAC obs
-                for col in atac_meta.columns:
-                    atac.obs[col] = atac_meta.loc[atac.obs.index, col] if col not in atac.obs.columns else atac.obs[col]
+            print(f"   Processing ATAC metadata: {atac_sample_meta_file}")
+            atac = merge_sample_metadata(
+                atac, 
+                atac_sample_meta_file, 
+                sample_column=atac_sample_column,
+                sep=metadata_sep,
+                verbose=True
+            )
         
-        print(f"\n\n\nMetadata integration complete\nRNA obs columns: {list(rna.obs.columns)}\nATAC obs columns: {list(atac.obs.columns)}\n\n\n")
+        print(f"\n✅ Metadata integration complete")
+        print(f"   RNA obs columns: {list(rna.obs.columns)}")
+        print(f"   ATAC obs columns: {list(atac.obs.columns)}\n")
     
     # Download and setup Ensembl annotation
-    print(f"\n\n\n🧬 Setting up Ensembl annotation (release: {ensembl_release}, species: {species})\n\n\n")
+    print(f"🧬 Setting up Ensembl annotation...")
+    print(f"   Release: {ensembl_release}")
+    print(f"   Species: {species}")
+    
     ensembl = pyensembl.EnsemblRelease(release=ensembl_release, species=species)
     ensembl.download()
     ensembl.index()
+    print("✅ Ensembl annotation ready\n")
     
     # Set random seed
     sc.settings.seed = random_state
     
     # Preprocess scRNA-seq data
-    print(f"\n\n\n🧬 Preprocessing scRNA-seq data (n_top_genes={n_top_genes})...\n\n\n")
+    print(f"🧬 Preprocessing scRNA-seq data...")
+    
+    # Store counts
     rna.layers["counts"] = rna.X.copy()
-    sc.pp.highly_variable_genes(rna, n_top_genes=n_top_genes, flavor=flavor)
+    
+    # Process based on feature selection strategy
+    if use_highly_variable:
+        print(f"   Selecting {n_top_genes} highly variable genes")
+        sc.pp.highly_variable_genes(rna, n_top_genes=n_top_genes, flavor=flavor)
+    else:
+        print(f"   Using all {rna.n_vars} genes")
+        # Mark all genes as highly variable for compatibility
+        rna.var['highly_variable'] = True
+        rna.var['highly_variable_rank'] = range(1, rna.n_vars + 1)
+        rna.var['means'] = np.array(rna.X.mean(axis=0)).flatten()
+        rna.var['dispersions'] = np.array(rna.X.var(axis=0)).flatten()
+        rna.var['dispersions_norm'] = rna.var['dispersions'] / rna.var['means']
+    
+    print(f"   Computing {n_pca_comps} PCA components")
     sc.pp.normalize_total(rna)
     sc.pp.log1p(rna)
     sc.pp.scale(rna)
     sc.tl.pca(rna, n_comps=n_pca_comps, svd_solver="auto")
     
     if generate_umap:
+        print("   Computing UMAP embedding...")
         sc.pp.neighbors(rna, metric="cosine")
         sc.tl.umap(rna)
     
+    print("✅ RNA preprocessing complete\n")
+    
     # Preprocess scATAC-seq data
-    print(f"\n\n\n🧬 Preprocessing scATAC-seq data (LSI components={n_lsi_comps})...\n\n\n")
+    print(f"🏔️ Preprocessing scATAC-seq data...")
+    
+    # Process based on feature selection strategy
+    if use_highly_variable:
+        print(f"   Computing feature statistics for peak selection")
+        # Calculate peak statistics for highly variable selection
+        peak_counts = np.array(atac.X.sum(axis=0)).flatten()
+        peak_cells = np.array((atac.X > 0).sum(axis=0)).flatten()
+        
+        # Select top peaks based on coverage
+        n_top_peaks = min(50000, atac.n_vars)  # Default to top 50k peaks or all if less
+        top_peak_indices = np.argsort(peak_counts)[-n_top_peaks:]
+        
+        # Mark highly variable peaks
+        atac.var['highly_variable'] = False
+        atac.var.iloc[top_peak_indices, atac.var.columns.get_loc('highly_variable')] = True
+        atac.var['n_cells'] = peak_cells
+        atac.var['n_counts'] = peak_counts
+        
+        print(f"   Selected {n_top_peaks} highly accessible peaks")
+    else:
+        print(f"   Using all {atac.n_vars} peaks")
+        # Mark all peaks as highly variable for compatibility
+        atac.var['highly_variable'] = True
+        peak_counts = np.array(atac.X.sum(axis=0)).flatten()
+        peak_cells = np.array((atac.X > 0).sum(axis=0)).flatten()
+        atac.var['n_cells'] = peak_cells
+        atac.var['n_counts'] = peak_counts
+    
+    print(f"   Computing {n_lsi_comps} LSI components ({lsi_n_iter} iterations)")
     scglue.data.lsi(atac, n_components=n_lsi_comps, n_iter=lsi_n_iter)
     
     if generate_umap:
+        print("   Computing UMAP embedding...")
         sc.pp.neighbors(atac, use_rep="X_lsi", metric="cosine")
         sc.tl.umap(atac)
     
+    print("✅ ATAC preprocessing complete\n")
+    
     # Get gene coordinates from Ensembl
     def get_gene_coordinates(gene_names, ensembl_db):
-        """Extract gene coordinates from pyensembl database"""
+        """Extract gene coordinates from pyensembl database with improved error handling"""
         coords = []
+        failed_genes = []
+        
         for gene_name in gene_names:
             try:
                 genes = ensembl_db.genes_by_name(gene_name)
@@ -125,12 +368,22 @@ def glue_preprocess_pipeline(
                     })
                 else:
                     coords.append({'chrom': None, 'chromStart': None, 'chromEnd': None, 'strand': None})
-            except:
+                    failed_genes.append(gene_name)
+            except Exception as e:
                 coords.append({'chrom': None, 'chromStart': None, 'chromEnd': None, 'strand': None})
+                failed_genes.append(gene_name)
+        
+        if failed_genes and len(failed_genes) <= 10:
+            print(f"   ⚠️ Could not find coordinates for genes: {', '.join(failed_genes[:10])}")
+        elif failed_genes:
+            print(f"   ⚠️ Could not find coordinates for {len(failed_genes)} genes")
+        
         return coords
     
     # Add gene coordinates to RNA data
-    print(f"\n\n\n🗺️ Processing gene coordinates ({len(rna.var_names)} genes)...\n\n\n")
+    print(f"🗺️ Processing gene coordinates...")
+    print(f"   Processing {len(rna.var_names)} genes...")
+    
     gene_coords = get_gene_coordinates(rna.var_names, ensembl)
     rna.var['chrom'] = [c['chrom'] for c in gene_coords]
     rna.var['chromStart'] = [c['chromStart'] for c in gene_coords]
@@ -141,43 +394,105 @@ def glue_preprocess_pipeline(
     valid_genes = rna.var['chrom'].notna()
     n_valid = valid_genes.sum()
     n_invalid = (~valid_genes).sum()
-    rna = rna[:, valid_genes].copy()
-    print(f"\n\n\nGene filtering complete - {n_valid} genes kept, {n_invalid} removed\nFinal RNA shape: {rna.shape}\n\n\n")
+    
+    if n_invalid > 0:
+        rna = rna[:, valid_genes].copy()
+        print(f"   Filtered out {n_invalid} genes without coordinates")
+    
+    print(f"✅ Gene coordinate processing complete")
+    print(f"   {n_valid} genes retained")
+    print(f"   Final RNA shape: {rna.shape}\n")
     
     # Extract ATAC peak coordinates
-    print(f"\n\n\n🏔️ Processing ATAC peak coordinates ({len(atac.var_names)} peaks)...\n\n\n")
-    split = atac.var_names.str.split(r"[:-]")
-    atac.var["chrom"] = split.map(lambda x: x[0])
-    atac.var["chromStart"] = split.map(lambda x: x[1]).astype(int)
-    atac.var["chromEnd"] = split.map(lambda x: x[2]).astype(int)
+    print(f"🏔️ Processing ATAC peak coordinates...")
+    print(f"   Processing {len(atac.var_names)} peaks...")
+    
+    try:
+        split = atac.var_names.str.split(r"[:-]")
+        atac.var["chrom"] = split.map(lambda x: x[0])
+        atac.var["chromStart"] = split.map(lambda x: x[1]).astype(int)
+        atac.var["chromEnd"] = split.map(lambda x: x[2]).astype(int)
+        print("✅ ATAC peak coordinates extracted successfully\n")
+    except Exception as e:
+        print(f"❌ Error processing ATAC peak coordinates: {e}")
+        raise
     
     # Construct guidance graph
-    print(f"\n\n\n🕸️ Constructing guidance graph...\n\n\n")
-    guidance = scglue.genomics.rna_anchored_guidance_graph(rna, atac)
-    n_nodes = guidance.number_of_nodes()
-    n_edges = guidance.number_of_edges()
+    print(f"🕸️ Constructing guidance graph...")
+    print(f"   Using {'highly variable' if use_highly_variable else 'all'} features for graph construction")
     
-    # Validate guidance graph
-    scglue.graph.check_graph(guidance, [rna, atac])
-    print(f"\n\n\nGuidance graph created - {n_nodes} nodes, {n_edges} edges\n\n\n")
+    try:
+        guidance = scglue.genomics.rna_anchored_guidance_graph(rna, atac)
+        n_nodes = guidance.number_of_nodes()
+        n_edges = guidance.number_of_edges()
+        
+        # Validate guidance graph
+        scglue.graph.check_graph(guidance, [rna, atac])
+        
+        print(f"✅ Guidance graph constructed successfully")
+        print(f"   Nodes: {n_nodes:,}")
+        print(f"   Edges: {n_edges:,}\n")
+        
+    except Exception as e:
+        print(f"❌ Error constructing guidance graph: {e}")
+        raise
+    
+    # Clean data before saving
+    print(f"🧹 Preparing data for saving...")
+    rna = clean_anndata_for_saving(rna, verbose=True)
+    atac = clean_anndata_for_saving(atac, verbose=True)
     
     # Save preprocessed data
-    print(f"\n\n\n💾 Saving preprocessed data to {output_dir}...\n\n\n")
+    print(f"💾 Saving preprocessed data...")
+    print(f"   Output directory: {output_dir}")
+    
     rna_path = str(output_path / "rna-pp.h5ad")
     atac_path = str(output_path / "atac-pp.h5ad")
     guidance_path = str(output_path / "guidance.graphml.gz")
     
-    rna.write(rna_path, compression=compression)
-    atac.write(atac_path, compression=compression)
-    nx.write_graphml(guidance, guidance_path)
+    try:
+        print("   Saving RNA data...")
+        rna.write(rna_path, compression=compression)
+        print("   Saving ATAC data...")
+        atac.write(atac_path, compression=compression)
+        print("   Saving guidance graph...")
+        nx.write_graphml(guidance, guidance_path)
+        
+        print(f"✅ Files saved successfully:")
+        print(f"   RNA: {rna_path}")
+        print(f"   ATAC: {atac_path}")
+        print(f"   Guidance: {guidance_path}")
+        
+    except Exception as e:
+        print(f"❌ Error saving files: {e}")
+        print("Debug info:")
+        print(f"   RNA obs dtypes: {rna.obs.dtypes}")
+        print(f"   RNA var dtypes: {rna.var.dtypes}")
+        print(f"   ATAC obs dtypes: {atac.obs.dtypes}")
+        print(f"   ATAC var dtypes: {atac.var.dtypes}")
+        raise
     
-    print("\n\n\n🎉 Preprocessing pipeline completed successfully!\n\n\n")
+    print("\n🎉 GLUE preprocessing pipeline completed successfully!\n")
     return rna, atac, guidance
 
-def glue_train(preprocess_output_dir, train_output_dir="glue", 
-               save_prefix="glue", consistency_threshold=0.05):
+def glue_train(preprocess_output_dir, output_dir="glue_output", 
+               save_prefix="glue", consistency_threshold=0.05,
+               use_highly_variable=True):
     """
     Train SCGLUE model for single-cell multi-omics integration.
+    
+    Parameters:
+    -----------
+    preprocess_output_dir : str
+        Directory containing preprocessed data
+    output_dir : str
+        Output directory for saving all training results
+    save_prefix : str
+        Prefix for saved files
+    consistency_threshold : float
+        Threshold for integration consistency
+    use_highly_variable : bool
+        Whether to use only highly variable features or all features
     """
     import anndata as ad
     import networkx as nx
@@ -188,6 +503,11 @@ def glue_train(preprocess_output_dir, train_output_dir="glue",
     from itertools import chain
     
     print("\n\n\n🚀 Starting GLUE training pipeline...\n\n\n")
+    print(f"   Feature mode: {'Highly Variable Only' if use_highly_variable else 'All Features'}")
+    print(f"   Output directory: {output_dir}\n")
+    
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
     
     # 1. Load preprocessed data from preprocessing output directory
     rna_path = os.path.join(preprocess_output_dir, "rna-pp.h5ad")
@@ -208,25 +528,35 @@ def glue_train(preprocess_output_dir, train_output_dir="glue",
     # 2. Configure datasets with negative binomial distribution
     print("\n\n\n⚙️ Configuring datasets...\n\n\n")
     scglue.models.configure_dataset(
-        rna, "NB", use_highly_variable=True, 
-        use_layer="counts", use_rep="X_pca"
+        rna, "NB", use_highly_variable=use_highly_variable, 
+        use_layer="counts", use_rep="X_pca", use_batch='sample'
     )
     scglue.models.configure_dataset(
-        atac, "NB", use_highly_variable=True, 
-        use_rep="X_lsi"
+        atac, "NB", use_highly_variable=use_highly_variable, 
+        use_rep="X_lsi", use_batch='sample'
     )
     
-    # 3. Extract subgraph for highly variable features
-    rna_hvf = rna.var.query("highly_variable").index
-    atac_hvf = atac.var.query("highly_variable").index
-    guidance_hvf = guidance.subgraph(chain(rna_hvf, atac_hvf)).copy()
-    print(f"\n\n\nHVF subgraph extracted - RNA HVF: {len(rna_hvf)}, ATAC HVF: {len(atac_hvf)}\nHVF graph: {guidance_hvf.number_of_nodes()} nodes, {guidance_hvf.number_of_edges()} edges\n\n\n")
+    # 3. Extract subgraph based on feature selection strategy
+    if use_highly_variable:
+        print("\n\n\n🔍 Extracting highly variable feature subgraph...\n\n\n")
+        rna_hvf = rna.var.query("highly_variable").index
+        atac_hvf = atac.var.query("highly_variable").index
+        guidance_hvf = guidance.subgraph(chain(rna_hvf, atac_hvf)).copy()
+        print(f"HVF subgraph extracted - RNA HVF: {len(rna_hvf)}, ATAC HVF: {len(atac_hvf)}")
+        print(f"HVF graph: {guidance_hvf.number_of_nodes()} nodes, {guidance_hvf.number_of_edges()} edges\n\n\n")
+    else:
+        print("\n\n\n🔍 Using full feature graph...\n\n\n")
+        guidance_hvf = guidance
+        print(f"Full graph: {guidance_hvf.number_of_nodes()} nodes, {guidance_hvf.number_of_edges()} edges\n\n\n")
     
-    # 4. Train GLUE model
+    # 4. Train GLUE model (create training subdirectory)
+    train_dir = os.path.join(output_dir, "training")
+    os.makedirs(train_dir, exist_ok=True)
+    
     print(f"\n\n\n🤖 Training GLUE model...\n\n\n")
     glue = scglue.models.fit_SCGLUE(
         {"rna": rna, "atac": atac}, guidance_hvf,
-        fit_kws={"directory": train_output_dir}
+        fit_kws={"directory": train_dir}
     )
     
     # 5. Check integration consistency
@@ -248,43 +578,384 @@ def glue_train(preprocess_output_dir, train_output_dir="glue",
     rna.varm["X_glue"] = feature_embeddings.reindex(rna.var_names).to_numpy()
     atac.varm["X_glue"] = feature_embeddings.reindex(atac.var_names).to_numpy()
     
-    # 7. Save results
-    print(f"\n\n\n💾 Saving results...\n\n\n")
-    model_path = f"{save_prefix}.dill"
-    rna_emb_path = f"{save_prefix}-rna-emb.h5ad"
-    atac_emb_path = f"{save_prefix}-atac-emb.h5ad"
-    guidance_hvf_path = f"{save_prefix}-guidance-hvf.graphml.gz"
+    # 7. Save results to output directory
+    print(f"\n\n\n💾 Saving results to {output_dir}...\n\n\n")
+    model_path = os.path.join(output_dir, f"{save_prefix}.dill")
+    rna_emb_path = os.path.join(output_dir, f"{save_prefix}-rna-emb.h5ad")
+    atac_emb_path = os.path.join(output_dir, f"{save_prefix}-atac-emb.h5ad")
+    guidance_hvf_path = os.path.join(output_dir, f"{save_prefix}-guidance-hvf.graphml.gz")
     
     glue.save(model_path)
     rna.write(rna_emb_path, compression="gzip")
     atac.write(atac_emb_path, compression="gzip")
     nx.write_graphml(guidance_hvf, guidance_hvf_path)
+    os.remove(rna_path)
+    os.remove(atac_path)
     
     # Check if integration is reliable
     is_reliable = min_consistency > consistency_threshold
     status = "✅ RELIABLE" if is_reliable else "❌ UNRELIABLE"
-    print(f"\n\n\n📈 Integration Assessment:\nConsistency threshold: {consistency_threshold}\nMinimum consistency: {min_consistency:.4f}\nStatus: {status}\n\n\n")
+    print(f"\n\n\n📈 Integration Assessment:")
+    print(f"Feature mode: {'Highly Variable' if use_highly_variable else 'All Features'}")
+    print(f"Consistency threshold: {consistency_threshold}")
+    print(f"Minimum consistency: {min_consistency:.4f}")
+    print(f"Status: {status}\n\n\n")
     
     if not is_reliable:
         print("\n\n\n⚠️ Low consistency detected. Consider adjusting parameters or checking data quality.\n\n\n")
     
-    print("\n\n\n🎉 GLUE training pipeline completed successfully!\n\n\n")
+    print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n")
+
+def compute_gene_activity_from_knn_with_celltype(
+    glue_dir: str,
+    output_path: str,
+    k_neighbors: int = 50,
+    use_rep: str = "X_glue",
+    metric: str = "cosine",
+    use_gpu: bool = True,
+    verbose: bool = True,
+    # Cell type assignment parameters
+    existing_cell_types: bool = False,
+    n_target_clusters: int = 3,
+    cluster_resolution: float = 0.8,
+    use_rep_celltype: str = "X_glue",
+    markers: list = None,
+    method: str = 'average',
+    metric_celltype: str = 'euclidean',
+    distance_mode: str = 'centroid',
+    num_PCs: int = 20,
+    generate_umap: bool = True,
+) -> ad.AnnData:
+    """
+    Compute gene activity for ATAC cells using weighted k-nearest neighbors from RNA cells,
+    merge with RNA data, assign cell types, and generate UMAP visualizations.
     
-    return {
-        'model': glue,
-        'consistency_scores': consistency_scores,
-        'is_reliable': is_reliable,
-        'min_consistency': min_consistency,
-        'rna_embedded': rna,
-        'atac_embedded': atac,
-        'guidance_hvf': guidance_hvf,
-        'files': {
-            'model': model_path,
-            'rna_embeddings': rna_emb_path,
-            'atac_embeddings': atac_emb_path,
-            'guidance_graph': guidance_hvf_path
+    This enhanced function:
+    1. Computes gene activity for ATAC cells using k-NN from RNA cells
+    2. Merges the gene activity data with original RNA data
+    3. Assigns cell types using the provided cell_types_linux function
+    4. Generates UMAP visualizations
+    5. Saves the final merged dataset
+    Returns:
+    --------
+    merged_adata : ad.AnnData
+        Merged AnnData object with gene activity, RNA data, cell types, and visualizations
+    """
+    import anndata as ad
+    import numpy as np
+    import pandas as pd
+    import time
+    from pathlib import Path
+    import os
+    import scanpy as sc
+    import matplotlib.pyplot as plt
+    
+    # Construct file paths
+    rna_path = os.path.join(glue_dir, "glue-rna-emb.h5ad")
+    atac_path = os.path.join(glue_dir, "glue-atac-emb.h5ad")
+    
+    # Check if files exist
+    if not os.path.exists(rna_path):
+        raise FileNotFoundError(f"RNA embedding file not found: {rna_path}")
+    if not os.path.exists(atac_path):
+        raise FileNotFoundError(f"ATAC embedding file not found: {atac_path}")
+    
+    gpu_available = False
+    if use_gpu:
+        try:
+            import cupy as cp
+            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+            gpu_available = True
+            if verbose:
+                print("🚀 GPU acceleration enabled (cuML/CuPy detected)")
+        except ImportError:
+            if verbose:
+                print("⚠️  GPU libraries not found, falling back to CPU")
+            from sklearn.neighbors import NearestNeighbors
+            from sklearn.preprocessing import normalize
+    else:
+        from sklearn.neighbors import NearestNeighbors
+        from sklearn.preprocessing import normalize
+
+    if verbose:
+        print(f"\n🧬 Computing gene activity and merging with RNA data...")
+        print(f"   k_neighbors: {k_neighbors}")
+        print(f"   metric: {metric}")
+    
+    rna = ad.read_h5ad(rna_path)
+    atac = ad.read_h5ad(atac_path)
+    
+    if verbose:
+        print(f"   RNA shape: {rna.shape}")
+        print(f"   ATAC shape: {atac.shape}")
+    
+    # Check if embeddings exist
+    if use_rep not in rna.obsm:
+        raise ValueError(f"Embedding '{use_rep}' not found in RNA data. Available: {list(rna.obsm.keys())}")
+    if use_rep not in atac.obsm:
+        raise ValueError(f"Embedding '{use_rep}' not found in ATAC data. Available: {list(atac.obsm.keys())}")
+    
+    # Get embeddings
+    rna_embedding = rna.obsm[use_rep]
+    atac_embedding = atac.obsm[use_rep]
+    
+    if verbose:
+        print(f"   RNA embedding shape: {rna_embedding.shape}")
+        print(f"   ATAC embedding shape: {atac_embedding.shape}\n")
+    
+    rna_expression = rna.X
+    
+    # Ensure we're working with dense arrays
+    if hasattr(rna_expression, 'toarray'):
+        rna_expression = rna_expression.toarray()
+    
+    # Find k-nearest neighbors
+    if verbose:
+        print("🔍 Finding k-nearest RNA neighbors for each ATAC cell...")
+        start_time = time.time()
+    
+    if gpu_available:
+        # GPU implementation
+        rna_embedding_gpu = cp.asarray(rna_embedding)
+        atac_embedding_gpu = cp.asarray(atac_embedding)
+        
+        if metric == "cosine":
+            rna_embedding_norm = rna_embedding_gpu / cp.linalg.norm(rna_embedding_gpu, axis=1, keepdims=True)
+            atac_embedding_norm = atac_embedding_gpu / cp.linalg.norm(atac_embedding_gpu, axis=1, keepdims=True)
+            
+            nn = cuNearestNeighbors(n_neighbors=k_neighbors, metric='euclidean')
+            nn.fit(rna_embedding_norm)
+            distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_norm)
+            
+            similarities_gpu = 1 - (distances_gpu ** 2) / 2
+        else:
+            nn = cuNearestNeighbors(n_neighbors=k_neighbors, metric=metric)
+            nn.fit(rna_embedding_gpu)
+            distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_gpu)
+            
+            similarities_gpu = 1 / (distances_gpu + 1e-8)
+        
+        indices = cp.asnumpy(indices_gpu)
+        similarities = cp.asnumpy(similarities_gpu)
+        
+    else:
+        # CPU implementation
+        if metric == "cosine":
+            rna_embedding_norm = normalize(rna_embedding, norm='l2', axis=1)
+            atac_embedding_norm = normalize(atac_embedding, norm='l2', axis=1)
+            
+            nn = NearestNeighbors(n_neighbors=k_neighbors, metric='euclidean')
+            nn.fit(rna_embedding_norm)
+            distances, indices = nn.kneighbors(atac_embedding_norm)
+            
+            similarities = 1 - (distances ** 2) / 2
+        else:
+            nn = NearestNeighbors(n_neighbors=k_neighbors, metric=metric)
+            nn.fit(rna_embedding)
+            distances, indices = nn.kneighbors(atac_embedding)
+            
+            similarities = 1 / (distances + 1e-8)
+    
+    if verbose:
+        elapsed = time.time() - start_time
+        print(f"   k-NN search completed in {elapsed:.2f} seconds\n")
+    
+    # Normalize similarities to create weights
+    weights = similarities / similarities.sum(axis=1, keepdims=True)
+    
+    # Compute weighted gene activity
+    if verbose:
+        print("🧮 Computing weighted gene activity...")
+        print(f"   Computing activity for {rna.n_vars} genes across {atac.n_obs} ATAC cells")
+        start_time = time.time()
+    
+    if gpu_available:
+        # GPU-accelerated computation
+        rna_expression_gpu = cp.asarray(rna_expression, dtype=cp.float32)
+        weights_gpu = cp.asarray(weights, dtype=cp.float32)
+        
+        gene_activity_gpu = cp.zeros((atac.n_obs, rna.n_vars), dtype=cp.float32)
+        
+        batch_size = 5000
+        n_batches = (atac.n_obs + batch_size - 1) // batch_size
+        
+        for batch_idx in range(n_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, atac.n_obs)
+            
+            batch_indices = indices[start_idx:end_idx]
+            batch_weights = weights_gpu[start_idx:end_idx]
+            
+            for i in range(end_idx - start_idx):
+                cell_indices = batch_indices[i]
+                neighbor_expression = rna_expression_gpu[cell_indices]
+                gene_activity_gpu[start_idx + i] = cp.sum(
+                    neighbor_expression * batch_weights[i][:, cp.newaxis], axis=0
+                )
+            
+            if verbose and (batch_idx + 1) % 5 == 0:
+                progress = (batch_idx + 1) / n_batches * 100
+                print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
+        
+        gene_activity_matrix = cp.asnumpy(gene_activity_gpu)
+        
+    else:
+        # CPU implementation
+        gene_activity_matrix = np.zeros((atac.n_obs, rna.n_vars), dtype=np.float32)
+        
+        batch_size = 1000
+        n_batches = (atac.n_obs + batch_size - 1) // batch_size
+        
+        for batch_idx in range(n_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, atac.n_obs)
+            
+            batch_indices = indices[start_idx:end_idx]
+            batch_weights = weights[start_idx:end_idx]
+            
+            for i, (cell_indices, cell_weights) in enumerate(zip(batch_indices, batch_weights)):
+                neighbor_expression = rna_expression[cell_indices]
+                gene_activity_matrix[start_idx + i] = np.sum(
+                    neighbor_expression * cell_weights[:, np.newaxis], axis=0
+                )
+            
+            if verbose and (batch_idx + 1) % 10 == 0:
+                progress = (batch_idx + 1) / n_batches * 100
+                print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
+    
+    if verbose:
+        elapsed = time.time() - start_time
+        print(f"   Gene activity computation completed in {elapsed:.2f} seconds\n")
+    
+    # Create gene activity AnnData object
+    if verbose:
+        print("📦 Creating gene activity AnnData object...")
+    
+    gene_activity = ad.AnnData(
+        X=gene_activity_matrix,
+        obs=atac.obs.copy(),
+        var=rna.var.copy()
+    )
+    
+    # Copy embeddings and other obsm data
+    if use_rep in atac.obsm:
+        gene_activity.obsm[use_rep] = atac.obsm[use_rep].copy()
+    if 'X_umap' in atac.obsm:
+        gene_activity.obsm['X_umap'] = atac.obsm['X_umap'].copy()
+    
+    gene_activity.layers['gene_activity'] = gene_activity.X.copy()
+    
+    # Add modality labels
+    gene_activity.obs['modality'] = 'ATAC'
+    rna.obs['modality'] = 'RNA'
+    
+    # Merge with RNA data
+    if verbose:
+        print("🔗 Merging gene activity data with RNA data...")
+    
+    # Concatenate the datasets
+    merged_adata = ad.concat([rna, gene_activity], axis=0, join='outer', merge='same')
+    
+    # Copy embeddings to merged object
+    merged_embeddings = np.vstack([rna.obsm[use_rep], gene_activity.obsm[use_rep]])
+    merged_adata.obsm[use_rep] = merged_embeddings
+    
+    if verbose:
+        print(f"   Merged shape: {merged_adata.shape}")
+        print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
+        print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}\n")
+    
+    # Assign cell types using the cell_types_linux function
+    if verbose:
+        print("🏷️  Assigning cell types...")
+    
+    # Create output directory for intermediate files
+    output_dir = Path(output_path).parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Apply cell type assignment
+    if gpu_available:
+        merged_adata = cell_types_linux(
+            merged_adata,
+            cell_column='cell_type',
+            existing_cell_types=existing_cell_types,
+            n_target_clusters=n_target_clusters,
+            umap=False,  # We'll handle UMAP separately
+            Save=False,  # We'll save the final result
+            output_dir=str(output_dir),
+            cluster_resolution=cluster_resolution,
+            use_rep=use_rep_celltype,
+            markers=markers,
+            method=method,
+            metric=metric_celltype,
+            distance_mode=distance_mode,
+            num_PCs=num_PCs,
+            verbose=verbose
+        )
+    else:
+        merged_adata = cell_types(
+            merged_adata,
+            cell_column='cell_type',
+            existing_cell_types=existing_cell_types,
+            n_target_clusters=n_target_clusters,
+            umap=False,  # We'll handle UMAP separately
+            Save=False,  # We'll save the final result
+            output_dir=str(output_dir),
+            cluster_resolution=cluster_resolution,
+            use_rep=use_rep_celltype,
+            markers=markers,
+            method=method,
+            metric=metric_celltype,
+            distance_mode=distance_mode,
+            num_PCs=num_PCs,
+            verbose=verbose
+        )
+    
+    
+    # Add metadata about the processing
+    merged_adata.uns['gene_activity_params'] = {
+        'k_neighbors': k_neighbors,
+        'metric': metric,
+        'embedding': use_rep,
+        'n_rna_cells': rna.n_obs,
+        'n_atac_cells': atac.n_obs,
+        'n_genes': rna.n_vars,
+        'rna_source': rna_path,
+        'atac_source': atac_path,
+        'gpu_used': gpu_available,
+        'cell_type_assignment': {
+            'existing_cell_types': existing_cell_types,
+            'n_target_clusters': n_target_clusters,
+            'cluster_resolution': cluster_resolution,
+            'use_rep': use_rep_celltype
         }
     }
+    
+    # Clean the object for saving
+    merged_adata = clean_anndata_for_saving(merged_adata, verbose=False)
+    merged_adata.write(os.path.join(output_path, "atac_rna_integrated.h5ad"), compression='gzip')
+    
+    if verbose:
+        print(f"✅ Gene activity computation and merging complete!")
+        print(f"\n📊 Final Summary:")
+        print(f"   Merged dataset shape: {merged_adata.shape}")
+        print(f"   Total cells: {merged_adata.n_obs}")
+        print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
+        print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
+        print(f"   Genes: {merged_adata.n_vars}")
+        print(f"   Cell types identified: {merged_adata.obs['cell_type'].nunique()}")
+        print(f"   GPU acceleration: {'Yes' if gpu_available else 'No'}")
+        print(f"   UMAP visualizations: {'Generated' if generate_umap else 'Skipped'}")
+        
+        # Show cell type distribution
+        print(f"\n   Cell type distribution:")
+        cell_type_counts = merged_adata.obs['cell_type'].value_counts()
+        for cell_type, count in cell_type_counts.head(10).items():
+            print(f"      {cell_type}: {count} cells")
+        if len(cell_type_counts) > 10:
+            print(f"      ... and {len(cell_type_counts) - 10} more cell types")
+
+
 
 import os
 import sys
@@ -293,47 +964,37 @@ import scanpy as sc
 import anndata as ad
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend to prevent figure warnings
 
-def glue_visualize(rna_path, atac_path, output_dir=None):
+def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
     """
-    Load processed RNA and ATAC data, create joint UMAP visualization
+    Load integrated RNA-ATAC data and create joint UMAP visualization
     
     Parameters:
     -----------
-    rna_path : str
-        Path to processed RNA h5ad file
-    atac_path : str
-        Path to processed ATAC h5ad file
+    integrated_path : str
+        Path to integrated h5ad file (e.g., atac_rna_integrated.h5ad)
     output_dir : str, optional
-        Output directory. If None, uses directory of RNA file
+        Output directory. If None, uses directory of integrated file
+    plot_columns : list, optional
+        List of column names to plot. If None, defaults to ['modality', 'cell_type']
     """
     
-    # Load the processed data
-    print("Loading RNA data...")
-    rna = ad.read_h5ad(rna_path)
-    
-    print("Loading ATAC data...")
-    atac = ad.read_h5ad(atac_path)
+    # Load the integrated data
+    print("Loading integrated RNA-ATAC data...")
+    combined = ad.read_h5ad(integrated_path)
     
     # Set output directory
     if output_dir is None:
-        output_dir = os.path.dirname(rna_path)
+        output_dir = os.path.dirname(integrated_path)
     
     # Check if scGLUE embeddings exist
-    if "X_glue" not in rna.obsm:
-        print("Error: X_glue embeddings not found in RNA data. Run scGLUE integration first.")
+    if "X_glue" not in combined.obsm:
+        print("Error: X_glue embeddings not found in integrated data. Run scGLUE integration first.")
         return
-    
-    if "X_glue" not in atac.obsm:
-        print("Error: X_glue embeddings not found in ATAC data. Run scGLUE integration first.")
-        return
-    
-    print("Creating combined dataset...")
-    # Combine the datasets for joint visualization
-    combined = ad.concat([rna, atac])
-    
-    # Add modality information
-    combined.obs['modality'] = ['RNA'] * rna.n_obs + ['ATAC'] * atac.n_obs
     
     print("Computing UMAP from scGLUE embeddings...")
     # Compute neighbors and UMAP using the scGLUE embeddings
@@ -342,100 +1003,196 @@ def glue_visualize(rna_path, atac_path, output_dir=None):
     
     # Set up plotting parameters
     sc.settings.set_figure_params(dpi=80, facecolor='white', figsize=(8, 6))
+    plt.rcParams['figure.max_open_warning'] = 50  # Increase the warning threshold
     
-    print("Generating visualizations...")
+    # Set default columns if none specified
+    if plot_columns is None:
+        plot_columns = ['modality', 'cell_type']
     
-    # Create visualization by modality
-    plt.figure(figsize=(10, 8))
-    sc.pl.umap(combined, color="modality", 
-               title="scGLUE Integration: RNA vs ATAC",
-               save=False, show=False)
-    plt.tight_layout()
-    modality_plot_path = os.path.join(output_dir, "scglue_umap_modality.png")
-    plt.savefig(modality_plot_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Saved modality plot: {modality_plot_path}")
+    print(f"Generating visualizations for columns: {plot_columns}")
     
-    # Create visualization by cell type (if available)
-    if "cell_type" in combined.obs.columns:
-        plt.figure(figsize=(12, 8))
-        sc.pl.umap(combined, color="cell_type", 
-                   title="scGLUE Integration: Cell Types",
-                   save=False, show=False, wspace=0.65)
+    # Generate plots for specified columns
+    for col in plot_columns:
+        if col not in combined.obs.columns:
+            print(f"Warning: Column '{col}' not found in data. Skipping...")
+            continue
+        
+        # Skip columns that also exist in var_names to avoid ambiguity
+        if col in combined.var_names:
+            print(f"Warning: Column '{col}' exists in both obs.columns and var_names. Skipping...")
+            continue
+        
+        try:
+            plt.figure(figsize=(12, 8))
+            sc.pl.umap(combined, color=col, 
+                       title=f"scGLUE Integration: {col}",
+                       save=False, show=False, wspace=0.65)
+            plt.tight_layout()
+            col_plot_path = os.path.join(output_dir, f"scglue_umap_{col}.png")
+            plt.savefig(col_plot_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f"Saved {col} plot: {col_plot_path}")
+        except Exception as e:
+            print(f"Error plotting {col}: {str(e)}")
+            plt.close()  # Close the figure even if there's an error
+    
+    # Create modality-cell type distribution heatmap if both columns exist and are in plot_columns
+    if ("modality" in plot_columns and "modality" in combined.obs.columns and 
+        "cell_type" in plot_columns and "cell_type" in combined.obs.columns):
+        print("\nCreating modality-cell type distribution heatmap...")
+        
+        # Create a cross-tabulation of modality and cell type
+        modality_celltype_counts = pd.crosstab(
+            combined.obs['cell_type'], 
+            combined.obs['modality']
+        )
+        
+        # Calculate proportions (percentage of each modality within each cell type)
+        modality_celltype_props = modality_celltype_counts.div(
+            modality_celltype_counts.sum(axis=1), 
+            axis=0
+        ) * 100
+        
+        # Create two heatmaps: one for counts and one for proportions
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+        
+        # Heatmap 1: Raw counts
+        sns.heatmap(
+            modality_celltype_counts,
+            annot=True,
+            fmt='d',
+            cmap='Blues',
+            cbar_kws={'label': 'Number of cells'},
+            ax=ax1
+        )
+        ax1.set_title('Cell Count Distribution: Modality vs Cell Type', fontsize=14, pad=20)
+        ax1.set_xlabel('Modality', fontsize=12)
+        ax1.set_ylabel('Cell Type', fontsize=12)
+        
+        # Heatmap 2: Proportions
+        sns.heatmap(
+            modality_celltype_props,
+            annot=True,
+            fmt='.1f',
+            cmap='YlOrRd',
+            cbar_kws={'label': 'Percentage (%)'},
+            ax=ax2
+        )
+        ax2.set_title('Modality Distribution within Each Cell Type (%)', fontsize=14, pad=20)
+        ax2.set_xlabel('Modality', fontsize=12)
+        ax2.set_ylabel('Cell Type', fontsize=12)
+        
         plt.tight_layout()
-        celltype_plot_path = os.path.join(output_dir, "scglue_umap_celltype.png")
-        plt.savefig(celltype_plot_path, dpi=300, bbox_inches='tight')
+        heatmap_plot_path = os.path.join(output_dir, "scglue_modality_celltype_heatmap.png")
+        plt.savefig(heatmap_plot_path, dpi=300, bbox_inches='tight')
         plt.close()
-        print(f"Saved cell type plot: {celltype_plot_path}")
-    
-    # Create visualization by domain (if available)
-    if "domain" in combined.obs.columns:
-        plt.figure(figsize=(12, 8))
-        sc.pl.umap(combined, color="domain", 
-                   title="scGLUE Integration: Domains",
-                   save=False, show=False, wspace=0.65)
+        print(f"Saved modality-cell type heatmap: {heatmap_plot_path}")
+        
+        # Also create a stacked bar plot for better visualization
+        plt.figure(figsize=(14, 8))
+        
+        # Calculate percentages for stacked bar
+        modality_celltype_props_T = modality_celltype_props.T
+        
+        # Create stacked bar plot
+        modality_celltype_props_T.plot(
+            kind='bar',
+            stacked=True,
+            colormap='tab20',
+            width=0.8
+        )
+        
+        plt.title('Modality Composition by Cell Type', fontsize=16, pad=20)
+        plt.xlabel('Modality', fontsize=12)
+        plt.ylabel('Percentage of Cells (%)', fontsize=12)
+        plt.legend(title='Cell Type', bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
-        domain_plot_path = os.path.join(output_dir, "scglue_umap_domain.png")
-        plt.savefig(domain_plot_path, dpi=300, bbox_inches='tight')
+        
+        stacked_plot_path = os.path.join(output_dir, "scglue_modality_celltype_stacked.png")
+        plt.savefig(stacked_plot_path, dpi=300, bbox_inches='tight')
         plt.close()
-        print(f"Saved domain plot: {domain_plot_path}")
-    
-    # Create visualization by sample/batch (if available)
-    if "sample" in combined.obs.columns:
-        plt.figure(figsize=(12, 8))
-        sc.pl.umap(combined, color="sample", 
-                   title="scGLUE Integration: Samples/Batches",
-                   save=False, show=False, wspace=0.65)
-        plt.tight_layout()
-        sample_plot_path = os.path.join(output_dir, "scglue_umap_sample.png")
-        plt.savefig(sample_plot_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        print(f"Saved sample plot: {sample_plot_path}")
-    
-    # Save the combined dataset with UMAP coordinates
-    combined_output_path = os.path.join(output_dir, "scglue_combined_with_umap.h5ad")
-    combined.write(combined_output_path)
-    print(f"Saved combined dataset: {combined_output_path}")
-    
+        print(f"Saved modality-cell type stacked plot: {stacked_plot_path}")
+        
+        # Print summary statistics
+        print("\n=== Modality-Cell Type Distribution Summary ===")
+        print(f"Total cell types: {len(modality_celltype_counts.index)}")
+        print(f"Total modalities: {len(modality_celltype_counts.columns)}")
+        
+        # Print cells per modality per cell type
+        print("\nCell counts by modality and cell type:")
+        print(modality_celltype_counts.to_string())
+        
+        # Save the distribution table as CSV
+        csv_path = os.path.join(output_dir, "scglue_modality_celltype_distribution.csv")
+        modality_celltype_counts.to_csv(csv_path)
+        print(f"\nSaved distribution table to: {csv_path}")
+        
     # Generate summary statistics
     print("\n=== Integration Summary ===")
-    print(f"RNA cells: {rna.n_obs}")
-    print(f"ATAC cells: {atac.n_obs}")
     print(f"Total cells: {combined.n_obs}")
+    print(f"Total features: {combined.n_vars}")
     print(f"Available metadata columns: {list(combined.obs.columns)}")
     
-    # Save summary to file
-    summary_path = os.path.join(output_dir, "scglue_integration_summary.txt")
-    with open(summary_path, 'w') as f:
-        f.write("scGLUE Integration Summary\n")
-        f.write("=" * 30 + "\n")
-        f.write(f"RNA cells: {rna.n_obs}\n")
-        f.write(f"ATAC cells: {atac.n_obs}\n")
-        f.write(f"Total cells: {combined.n_obs}\n")
-        f.write(f"Available metadata: {', '.join(combined.obs.columns)}\n")
-        f.write(f"Files generated:\n")
-        f.write(f"  - {os.path.basename(modality_plot_path)}\n")
-        if "cell_type" in combined.obs.columns:
-            f.write(f"  - {os.path.basename(celltype_plot_path)}\n")
-        if "domain" in combined.obs.columns:
-            f.write(f"  - {os.path.basename(domain_plot_path)}\n")
-        if "sample" in combined.obs.columns:
-            f.write(f"  - {os.path.basename(sample_plot_path)}\n")
-        f.write(f"  - {os.path.basename(combined_output_path)}\n")
+    # Show breakdown by modality if available
+    if "modality" in combined.obs.columns:
+        modality_counts = combined.obs['modality'].value_counts()
+        print(f"\nModality breakdown:")
+        for modality, count in modality_counts.items():
+            print(f"  {modality}: {count} cells")
     
-    print(f"Saved summary: {summary_path}")
+    # Check feature usage
+    hvg_used = combined.var['highly_variable'].sum() if 'highly_variable' in combined.var else combined.n_vars
+    print(f"\nFeatures used: {hvg_used}/{combined.n_vars}")
+    
     print("\nVisualization complete!")
+    
+import time
 
 if __name__ == "__main__":
-    rna, atac, guidance = glue_preprocess_pipeline(
-        rna_file="/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad",
-        atac_file="/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad",
-        rna_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",  # Optional
-        atac_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",  # Optional
-        ensembl_release=98,
-        species="homo_sapiens",
-        output_dir="/users/hjiang/GenoDistance/result/glue"
+    start_time = time.time()
+
+    # rna, atac, guidance = glue_preprocess_pipeline(
+    #     rna_file="/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad",
+    #     atac_file="/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad",
+    #     rna_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
+    #     atac_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
+    #     ensembl_release=98,
+    #     species="homo_sapiens",
+    #     output_dir="/users/hjiang/GenoDistance/result/glue",
+    # )
+
+    # glue_train(
+    #     preprocess_output_dir="/users/hjiang/GenoDistance/result/glue",
+    #     save_prefix="glue",
+    #     consistency_threshold=0.05,
+    #     use_highly_variable=True,  # Use all features
+    #     output_dir = "/users/hjiang/GenoDistance/result/glue"
+    # )
+
+    import rmm
+    from rmm.allocators.cupy import rmm_cupy_allocator
+    import cupy as cp
+
+    print("\n\nEnabling managed memory for RMM...\n\n")
+    rmm.reinitialize(
+        managed_memory=True,
+        pool_allocator=False,
     )
-    # glue_train( preprocess_output_dir = "/users/hjiang/GenoDistance/result/glue", 
-    #            save_prefix="glue", consistency_threshold=0.05)
-    # glue_visualize("/users/hjiang/GenoDistance/result/glue/glue-rna-emb.h5ad", "/users/hjiang/GenoDistance/result/glue/glue-atac-emb.h5ad", "/users/hjiang/GenoDistance/result/glue")
+    cp.cuda.set_allocator(rmm_cupy_allocator)
+
+    compute_gene_activity_from_knn_with_celltype(
+        glue_dir="/users/hjiang/GenoDistance/result/glue",
+        output_path="/users/hjiang/GenoDistance/result/glue",
+        k_neighbors=50  
+    )
+
+    # Visualize results
+    glue_visualize(
+        "/users/hjiang/GenoDistance/result/glue/atac_rna_integrated.h5ad",
+        "/users/hjiang/GenoDistance/result/glue"
+    )
+
+    end_time = time.time()
+    elapsed_minutes = (end_time - start_time) / 60
+    print(f"\nTotal runtime: {elapsed_minutes:.2f} minutes")
