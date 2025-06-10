@@ -86,7 +86,7 @@ def merge_sample_metadata(
     verbose=True
 ):
     """
-    Merge sample-level metadata with AnnData object.
+    Merge sample-level metadata with AnnData object and standardize sample column to 'sample'.
     
     Parameters:
     -----------
@@ -104,7 +104,7 @@ def merge_sample_metadata(
     Returns:
     --------
     adata : AnnData
-        AnnData object with merged metadata
+        AnnData object with merged metadata and standardized 'sample' column
     """
     import pandas as pd
     
@@ -121,16 +121,28 @@ def merge_sample_metadata(
     # Perform the merge
     adata.obs = adata.obs.join(meta, on=sample_column, how='left')
     
+    # Standardize sample column name to 'sample'
+    if sample_column != 'sample':
+        if sample_column in adata.obs.columns:
+            adata.obs['sample'] = adata.obs[sample_column]
+            adata.obs = adata.obs.drop(columns=[sample_column])
+            if verbose:
+                print(f"   Standardized sample column '{sample_column}' to 'sample'")
+        elif 'sample' not in adata.obs.columns:
+            # If the original sample column doesn't exist, check if we can infer it
+            if verbose:
+                print(f"   Warning: Sample column '{sample_column}' not found")
+    
     # Calculate merge statistics
     new_cols = adata.obs.shape[1] - original_cols
     matched_samples = adata.obs[meta.columns].notna().any(axis=1).sum()
     total_samples = adata.obs.shape[0]
     
     if verbose:
-        print(f"Merged {new_cols} sample-level columns")
-        print(f"Matched metadata for {matched_samples}/{total_samples} samples")
+        print(f"   Merged {new_cols} sample-level columns")
+        print(f"   Matched metadata for {matched_samples}/{total_samples} samples")
         if matched_samples < total_samples:
-            print(f"⚠️ Warning: {total_samples - matched_samples} samples have no metadata")
+            print(f"   ⚠️ Warning: {total_samples - matched_samples} samples have no metadata")
     
     return adata
 
@@ -259,9 +271,25 @@ def glue_preprocess_pipeline(
                 verbose=True
             )
         
-        print(f"\n✅ Metadata integration complete")
+        print(f"\n✅ Metadata integration and standardization complete")
         print(f"   RNA obs columns: {list(rna.obs.columns)}")
         print(f"   ATAC obs columns: {list(atac.obs.columns)}\n")
+    else:
+        # Even if no metadata files are provided, ensure 'sample' column exists
+        # This handles cases where the sample info might already be in the obs dataframe
+        print("📋 Standardizing existing sample columns...")
+        
+        if rna_sample_column != 'sample' and rna_sample_column in rna.obs.columns:
+            print(f"   Standardizing RNA sample column '{rna_sample_column}' to 'sample'")
+            rna.obs['sample'] = rna.obs[rna_sample_column]
+            rna.obs = rna.obs.drop(columns=[rna_sample_column])
+        
+        if atac_sample_column != 'sample' and atac_sample_column in atac.obs.columns:
+            print(f"   Standardizing ATAC sample column '{atac_sample_column}' to 'sample'")
+            atac.obs['sample'] = atac.obs[atac_sample_column]
+            atac.obs = atac.obs.drop(columns=[atac_sample_column])
+        
+        print("✅ Sample column standardization complete\n")
     
     # Download and setup Ensembl annotation
     print(f"🧬 Setting up Ensembl annotation...")
@@ -458,11 +486,6 @@ def glue_preprocess_pipeline(
         atac.write(atac_path, compression=compression)
         print("   Saving guidance graph...")
         nx.write_graphml(guidance, guidance_path)
-        
-        print(f"✅ Files saved successfully:")
-        print(f"   RNA: {rna_path}")
-        print(f"   ATAC: {atac_path}")
-        print(f"   Guidance: {guidance_path}")
         
     except Exception as e:
         print(f"❌ Error saving files: {e}")
