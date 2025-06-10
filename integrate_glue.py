@@ -8,6 +8,7 @@ from pathlib import Path
 import pyensembl
 from linux.CellType_linux import *
 from CellType import *
+import time
 
 def clean_anndata_for_saving(adata, verbose=True):
     """
@@ -1147,52 +1148,144 @@ def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
     
     print("\nVisualization complete!")
     
+
 import time
+import os
+from typing import Optional, List
 
-if __name__ == "__main__":
+def glue(
+    # Data files
+    rna_file: str,
+    atac_file: str,
+    rna_sample_meta_file: Optional[str] = None,
+    atac_sample_meta_file: Optional[str] = None,
+    
+    # Preprocessing parameters
+    ensembl_release: int = 98,
+    species: str = "homo_sapiens",
+    use_highly_variable: bool = True,
+    n_top_genes: int = 2000,
+    n_pca_comps: int = 5,
+    n_lsi_comps: int = 50,
+    lsi_n_iter: int = 15,
+    gtf_by: str = "gene_name",
+    flavor: str = "seurat_v3",
+    generate_umap: bool = False,
+    compression: str = "gzip",
+    random_state: int = 42,
+    metadata_sep: str = ",",
+    rna_sample_column: str = "sample",
+    atac_sample_column: str = "sample",
+    
+    # Training parameters
+    consistency_threshold: float = 0.05,
+    save_prefix: str = "glue",
+    
+    # Gene activity computation parameters
+    k_neighbors: int = 50,
+    use_rep: str = "X_glue",
+    metric: str = "cosine",
+    use_gpu: bool = True,
+    verbose: bool = True,
+    existing_cell_types: bool = False,
+    n_target_clusters: int = 3,
+    cluster_resolution: float = 0.8,
+    use_rep_celltype: str = "X_glue",
+    markers: Optional[List] = None,
+    method: str = 'average',
+    metric_celltype: str = 'euclidean',
+    distance_mode: str = 'centroid',
+    generate_umap_celltype: bool = True,
+    
+    # Visualization parameters
+    plot_columns: Optional[List[str]] = None,
+    
+    # Output directory
+    output_dir: str = "./glue_results",
+):
+    """Complete GLUE pipeline that runs preprocessing, training, gene activity computation, and visualization."""
+    
+    os.makedirs(output_dir, exist_ok=True)
     start_time = time.time()
-
-    # rna, atac, guidance = glue_preprocess_pipeline(
-    #     rna_file="/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad",
-    #     atac_file="/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad",
-    #     rna_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
-    #     atac_sample_meta_file="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
-    #     ensembl_release=98,
-    #     species="homo_sapiens",
-    #     output_dir="/users/hjiang/GenoDistance/result/glue",
-    # )
-
-    # glue_train(
-    #     preprocess_output_dir="/users/hjiang/GenoDistance/result/glue",
-    #     save_prefix="glue",
-    #     consistency_threshold=0.05,
-    #     use_highly_variable=True,  # Use all features
-    #     output_dir = "/users/hjiang/GenoDistance/result/glue"
-    # )
-
-    import rmm
-    from rmm.allocators.cupy import rmm_cupy_allocator
-    import cupy as cp
-
-    print("\n\nEnabling managed memory for RMM...\n\n")
-    rmm.reinitialize(
-        managed_memory=True,
-        pool_allocator=False,
+    
+    # Step 1: Preprocessing
+    rna, atac, guidance = glue_preprocess_pipeline(
+        rna_file=rna_file,
+        atac_file=atac_file,
+        rna_sample_meta_file=rna_sample_meta_file,
+        atac_sample_meta_file=atac_sample_meta_file,
+        ensembl_release=ensembl_release,
+        species=species,
+        output_dir=output_dir,
+        use_highly_variable=use_highly_variable,
+        n_top_genes=n_top_genes,
+        n_pca_comps=n_pca_comps,
+        n_lsi_comps=n_lsi_comps,
+        lsi_n_iter=lsi_n_iter,
+        gtf_by=gtf_by,
+        flavor=flavor,
+        generate_umap=generate_umap,
+        compression=compression,
+        random_state=random_state,
+        metadata_sep=metadata_sep,
+        rna_sample_column=rna_sample_column,
+        atac_sample_column=atac_sample_column
     )
-    cp.cuda.set_allocator(rmm_cupy_allocator)
-
+    
+    # Step 2: Training
+    glue_train(
+        preprocess_output_dir=output_dir,
+        save_prefix=save_prefix,
+        consistency_threshold=consistency_threshold,
+        use_highly_variable=use_highly_variable,
+        output_dir=output_dir
+    )
+    
+    # Step 3: Memory management and gene activity computation
+    if use_gpu:
+        try:
+            import rmm
+            from rmm.allocators.cupy import rmm_cupy_allocator
+            import cupy as cp
+            
+            rmm.reinitialize(
+                managed_memory=True,
+                pool_allocator=False,
+            )
+            cp.cuda.set_allocator(rmm_cupy_allocator)
+        except:
+            pass
+    
     compute_gene_activity_from_knn_with_celltype(
-        glue_dir="/users/hjiang/GenoDistance/result/glue",
-        output_path="/users/hjiang/GenoDistance/result/glue",
-        k_neighbors=50  
+        glue_dir=output_dir,
+        output_path=output_dir,
+        k_neighbors=k_neighbors,
+        use_rep=use_rep,
+        metric=metric,
+        use_gpu=use_gpu,
+        verbose=verbose,
+        existing_cell_types=existing_cell_types,
+        n_target_clusters=n_target_clusters,
+        cluster_resolution=cluster_resolution,
+        use_rep_celltype=use_rep_celltype,
+        markers=markers,
+        method=method,
+        metric_celltype=metric_celltype,
+        distance_mode=distance_mode,
+        num_PCs=n_lsi_comps,
+        generate_umap=generate_umap_celltype
     )
-
-    # Visualize results
+    
+    # Step 4: Visualization
+    integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
     glue_visualize(
-        "/users/hjiang/GenoDistance/result/glue/atac_rna_integrated.h5ad",
-        "/users/hjiang/GenoDistance/result/glue"
+        integrated_path=integrated_file,
+        output_dir=output_dir,
+        plot_columns=plot_columns
     )
-
+    
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
     print(f"\nTotal runtime: {elapsed_minutes:.2f} minutes")
+    
+    return rna, atac, guidance
