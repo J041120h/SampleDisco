@@ -11,11 +11,11 @@ import time
 import contextlib
 import io
 
-def harmony(
-    h5ad_path,
+def integrate_harmony(
     output_dir,
+    h5ad_path = None,
     sample_column = 'sample',
-    min_cells=500,
+    min_cells=1,
     min_features=500,
     pct_mito_cutoff=20,
     exclude_genes=None,
@@ -36,14 +36,11 @@ def harmony(
     # Start timing
     start_time = time.time()
 
-    # 0. Create output directories if not present
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        if verbose:
-            print("Automatically generating output directory")
+    if h5ad_path == None:
+        h5ad_path = os.path.join(output_dir, 'glue/atac_rna_integrated.h5ad')
 
     # Append 'harmony' subdirectory
-    output_dir = os.path.join(output_dir, 'harmony')
+    output_dir = os.path.join(output_dir, 'integrate_harmony')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
@@ -90,7 +87,7 @@ def harmony(
         print(cell_counts_after.sort_values(ascending=False))
 
     # Drop genes that are too rare in these final cells
-    min_cells_for_gene = int(0.01 * adata.n_ob)
+    min_cells_for_gene = int(0.01 * adata.n_obs)
     sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
     if verbose:
         print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
@@ -114,4 +111,16 @@ def harmony(
     if verbose:
         print(f"Function execution time: {elapsed_time:.2f} seconds")
 
-    return 
+    return adata
+
+if __name__ == "__main__":
+    integrate_harmony(
+        output_dir = "/Users/harry/Desktop/GenoDistance/result",
+        sample_column = 'sample',
+        min_cells=1,
+        min_features=500,
+        pct_mito_cutoff=20,
+        exclude_genes=None,
+        doublet=True, 
+        verbose=True
+    )

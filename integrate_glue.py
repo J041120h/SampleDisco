@@ -629,7 +629,6 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
         print("\n\n\n⚠️ Low consistency detected. Consider adjusting parameters or checking data quality.\n\n\n")
     
     print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n")
-
 def compute_gene_activity_from_knn_with_celltype(
     glue_dir: str,
     output_path: str,
@@ -652,18 +651,21 @@ def compute_gene_activity_from_knn_with_celltype(
 ) -> ad.AnnData:
     """
     Compute gene activity for ATAC cells using weighted k-nearest neighbors from RNA cells,
-    merge with RNA data, assign cell types, and generate UMAP visualizations.
+    validate and correct the computed counts, merge with RNA data, assign cell types, 
+    and generate UMAP visualizations.
     
     This enhanced function:
     1. Computes gene activity for ATAC cells using k-NN from RNA cells
-    2. Merges the gene activity data with original RNA data
-    3. Assigns cell types using the provided cell_types_linux function
-    4. Generates UMAP visualizations
-    5. Saves the final merged dataset
+    2. Validates and corrects the computed gene activity counts (NaN, Inf, negatives)
+    3. Merges the gene activity data with original RNA data
+    4. Assigns cell types using the provided cell_types_linux function
+    5. Generates UMAP visualizations
+    6. Saves the final merged dataset
+    
     Returns:
     --------
     merged_adata : ad.AnnData
-        Merged AnnData object with gene activity, RNA data, cell types, and visualizations
+        Merged AnnData object with validated gene activity, RNA data, cell types, and visualizations
     """
     import anndata as ad
     import numpy as np
@@ -851,6 +853,45 @@ def compute_gene_activity_from_knn_with_celltype(
         elapsed = time.time() - start_time
         print(f"   Gene activity computation completed in {elapsed:.2f} seconds\n")
     
+    # Data validation and correction
+    if verbose:
+        print("🔍 Validating gene activity counts...")
+        
+    # Check for problematic values
+    n_nan = np.sum(np.isnan(gene_activity_matrix))
+    n_inf = np.sum(np.isinf(gene_activity_matrix))
+    n_neg = np.sum(gene_activity_matrix < 0)
+    
+    if verbose and (n_nan > 0 or n_inf > 0 or n_neg > 0):
+        print(f"   Found: {n_nan:,} NaN, {n_inf:,} Inf, {n_neg:,} negative values")
+    
+    # Fix NaN values (set to 0)
+    if n_nan > 0:
+        gene_activity_matrix[np.isnan(gene_activity_matrix)] = 0
+        if verbose:
+            print(f"   ✓ Fixed {n_nan:,} NaN values → 0")
+    
+    # Fix Inf values (set to maximum finite value or 0)
+    if n_inf > 0:
+        finite_mask = np.isfinite(gene_activity_matrix)
+        if np.any(finite_mask):
+            max_finite = np.max(gene_activity_matrix[finite_mask])
+            gene_activity_matrix[np.isinf(gene_activity_matrix)] = max_finite
+        else:
+            gene_activity_matrix[np.isinf(gene_activity_matrix)] = 0
+        if verbose:
+            print(f"   ✓ Fixed {n_inf:,} Inf values")
+    
+    # Fix negative values (set to 0)
+    if n_neg > 0:
+        gene_activity_matrix[gene_activity_matrix < 0] = 0
+        if verbose:
+            print(f"   ✓ Fixed {n_neg:,} negative values → 0")
+    
+    if verbose:
+        final_range = f"[{np.min(gene_activity_matrix):.3f}, {np.max(gene_activity_matrix):.3f}]"
+        print(f"   Final count range: {final_range}\n")
+    
     # Create gene activity AnnData object
     if verbose:
         print("📦 Creating gene activity AnnData object...")
@@ -935,7 +976,6 @@ def compute_gene_activity_from_knn_with_celltype(
             verbose=verbose
         )
     
-    
     # Add metadata about the processing
     merged_adata.uns['gene_activity_params'] = {
         'k_neighbors': k_neighbors,
@@ -952,6 +992,11 @@ def compute_gene_activity_from_knn_with_celltype(
             'n_target_clusters': n_target_clusters,
             'cluster_resolution': cluster_resolution,
             'use_rep': use_rep_celltype
+        },
+        'validation_applied': {
+            'nan_fixed': n_nan,
+            'inf_fixed': n_inf,
+            'negative_fixed': n_neg
         }
     }
     
@@ -969,17 +1014,10 @@ def compute_gene_activity_from_knn_with_celltype(
         print(f"   Genes: {merged_adata.n_vars}")
         print(f"   Cell types identified: {merged_adata.obs['cell_type'].nunique()}")
         print(f"   GPU acceleration: {'Yes' if gpu_available else 'No'}")
+        print(f"   Data corrections: {n_nan + n_inf + n_neg} total fixes applied")
         print(f"   UMAP visualizations: {'Generated' if generate_umap else 'Skipped'}")
-        
-        # Show cell type distribution
-        print(f"\n   Cell type distribution:")
-        cell_type_counts = merged_adata.obs['cell_type'].value_counts()
-        for cell_type, count in cell_type_counts.head(10).items():
-            print(f"      {cell_type}: {count} cells")
-        if len(cell_type_counts) > 10:
-            print(f"      ... and {len(cell_type_counts) - 10} more cell types")
-
-
+    
+    return merged_adata
 
 import os
 import sys
@@ -1171,7 +1209,6 @@ def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
     
     print("\nVisualization complete!")
     
-
 import time
 import os
 from typing import Optional, List
