@@ -15,7 +15,8 @@ def integrate_harmony(
     output_dir,
     h5ad_path = None,
     sample_column = 'sample',
-    min_cells=1,
+    min_cells_sample=1,
+    min_cell_gene=10,
     min_features=500,
     pct_mito_cutoff=20,
     exclude_genes=None,
@@ -46,6 +47,9 @@ def integrate_harmony(
         if verbose:
             print("Automatically generating harmony subdirectory")
 
+    if doublet and min_cells_sample < 30:
+        min_cells_sample = 30
+        print("Minimum dimension requested by scrublet is 30, raise sample standard accordingly")
     # 1. Read the raw count data from an existing H5AD
     if verbose:
         print('=== Read input dataset ===')
@@ -54,7 +58,7 @@ def integrate_harmony(
         print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
 
     sc.pp.filter_cells(adata, min_genes=min_features)
-    sc.pp.filter_genes(adata, min_cells=min_cells)
+    sc.pp.filter_genes(adata, min_cells=min_cell_gene)
     if verbose:
         print(f"After basic filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
 
@@ -77,9 +81,9 @@ def integrate_harmony(
     if verbose:
         print("Sample counts BEFORE filtering:")
         print(cell_counts_per_patient.sort_values(ascending=False))
-    patients_to_keep = cell_counts_per_patient[cell_counts_per_patient >= min_cells].index
+    patients_to_keep = cell_counts_per_patient[cell_counts_per_patient >= min_cells_sample].index
     if verbose:
-        print(f"\nSamples retained (>= {min_cells} cells): {list(patients_to_keep)}")
+        print(f"\nSamples retained (>= {min_cells_sample} cells): {list(patients_to_keep)}")
     adata = adata[adata.obs[sample_column].isin(patients_to_keep)].copy()
     cell_counts_after = adata.obs[sample_column].value_counts()
     if verbose:
@@ -115,9 +119,10 @@ def integrate_harmony(
 
 if __name__ == "__main__":
     integrate_harmony(
-        output_dir = "/Users/harry/Desktop/GenoDistance/result",
+        output_dir = "/users/hjiang/GenoDistance/result",
         sample_column = 'sample',
-        min_cells=1,
+        min_cells_sample=1,
+        min_cell_gene=10,
         min_features=500,
         pct_mito_cutoff=20,
         exclude_genes=None,
