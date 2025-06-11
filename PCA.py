@@ -497,3 +497,5 @@ def process_anndata_with_pca(
     if verbose and start_time is not None:
         elapsed_time = time.time() - start_time
         print(f"[process_anndata_with_pca] Total runtime for PCA processing: {elapsed_time:.2f} seconds")
+
+    return pseudobulk_anndata

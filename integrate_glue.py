@@ -1266,7 +1266,7 @@ def glue(
     species: str = "homo_sapiens",
     use_highly_variable: bool = True,
     n_top_genes: int = 2000,
-    n_pca_comps: int = 5,
+    n_pca_comps: int = 50,
     n_lsi_comps: int = 50,
     lsi_n_iter: int = 15,
     gtf_by: str = "gene_name",
@@ -1394,7 +1394,11 @@ def glue(
     return rna, atac, guidance
 
 if __name__ == "__main__":
-    compute_gene_activity_from_knn_with_celltype(
-    glue_dir = "/users/hjiang/GenoDistance/result/glue",
-    output_path = "/users/hjiang/GenoDistance/result/glue",
-    raw_rna_path = "/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad")
+    glue(
+    # Data files
+    rna_file = "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
+    atac_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad",
+    rna_sample_meta_file = "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
+    atac_sample_meta_file= "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
+    output_dir = "/users/hjiang/GenoDistance/result",
+)

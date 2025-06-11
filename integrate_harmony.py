@@ -5,6 +5,7 @@ from PCA import *
 import time
 import contextlib
 import io
+from CellType import *
 
 def integrate_preprocess(
     output_dir,
@@ -132,11 +133,17 @@ if __name__ == "__main__":
                 output_dir="/users/hjiang/GenoDistance/result/"
             )
 
-    process_anndata_with_pca(
+    pseudobulk_anndata = process_anndata_with_pca(
         adata=adata,
         pseudobulk=atac_pseudobulk_df,
         pseudobulk_anndata = pseudobulk_adata,
         sample_col = "sample",
         output_dir= "/users/hjiang/GenoDistance/result/integration",
         integrated_data = True
+    )
+
+    generate_umap_visualizations(
+    pseudobulk_anndata,
+    output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
+    groupby = 'modality'
     )
