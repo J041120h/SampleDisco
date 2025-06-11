@@ -1307,7 +1307,7 @@ def glue(
     """Complete GLUE pipeline that runs preprocessing, training, gene activity computation, and visualization."""
     
     os.makedirs(output_dir, exist_ok=True)
-    output_dir = os.path.join(output_dir, "glue")
+    output_dir = os.path.join(output_dir, "integration", "glue")
     start_time = time.time()
     
     # Step 1: Preprocessing

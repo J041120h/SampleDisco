@@ -1,17 +1,12 @@
 import os
-import numpy as np
-import pandas as pd
 import scanpy as sc
-import harmonypy as hm
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from sklearn.neighbors import KNeighborsTransformer
-from harmony import harmonize
+from pseudo_adata import *
+from PCA import *
 import time
 import contextlib
 import io
 
-def integrate_harmony(
+def integrate_preprocess(
     output_dir,
     h5ad_path = None,
     sample_column = 'sample',
@@ -41,7 +36,7 @@ def integrate_harmony(
         h5ad_path = os.path.join(output_dir, 'glue/atac_rna_integrated.h5ad')
 
     # Append 'harmony' subdirectory
-    output_dir = os.path.join(output_dir, 'integrate_harmony')
+    output_dir = os.path.join(output_dir, 'preprocess')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
@@ -118,14 +113,30 @@ def integrate_harmony(
     return adata
 
 if __name__ == "__main__":
-    integrate_harmony(
-        output_dir = "/users/hjiang/GenoDistance/result",
-        sample_column = 'sample',
-        min_cells_sample=1,
-        min_cell_gene=10,
-        min_features=500,
-        pct_mito_cutoff=20,
-        exclude_genes=None,
-        doublet=True, 
-        verbose=True
+    # adata = integrate_preprocess(
+    #     output_dir = "/users/hjiang/GenoDistance/result",
+    #     sample_column = 'sample',
+    #     min_cells_sample=1,
+    #     min_cell_gene=10,
+    #     min_features=500,
+    #     pct_mito_cutoff=20,
+    #     exclude_genes=None,
+    #     doublet=True, 
+    #     verbose=True
+    # )
+    adata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")
+    atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
+                adata=adata,
+                batch_col='batch',
+                sample_col='sample',
+                output_dir="/users/hjiang/GenoDistance/result/"
+            )
+
+    process_anndata_with_pca(
+        adata=adata,
+        pseudobulk=atac_pseudobulk_df,
+        pseudobulk_anndata = pseudobulk_adata,
+        sample_col = "sample",
+        output_dir= "/users/hjiang/GenoDistance/result/integration",
+        integrated_data = True
     )

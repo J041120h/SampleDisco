@@ -375,6 +375,7 @@ def process_anndata_with_pca(
     n_expression_pcs: int = 10, 
     n_proportion_pcs: int = 10, 
     output_dir: str = "./", 
+    integrated_data: bool = False,
     not_save: bool = False,
     atac: bool = False,
     use_snapatac2_dimred: bool = False,
@@ -426,8 +427,12 @@ def process_anndata_with_pca(
         if verbose:
             print(f"Created output directory: {output_dir}")
     
-    output_dir = os.path.join(output_dir, "harmony")
-    os.makedirs(output_dir, exist_ok=True)
+    if not integrated_data:
+        output_dir = os.path.join(output_dir, "harmony")
+        os.makedirs(output_dir, exist_ok=True)
+    else:
+        output_dir = os.path.join(output_dir, "preprocess")
+        os.makedirs(output_dir, exist_ok=True)
     
     # Get data dimensions and adjust n_components accordingly
     sample_proportion_df = pseudobulk["cell_proportion"]
@@ -472,6 +477,9 @@ def process_anndata_with_pca(
         if atac:
             adata_path = os.path.join(output_dir, 'ATAC_sample.h5ad')
             pb_adata_path = os.path.join(output_dir, 'ATAC_pseudobulk_sample.h5ad')
+        elif integrated_data:
+            adata_path = os.path.join(output_dir, 'atac_rna_integrated.h5ad')
+            pb_adata_path = os.path.join(output_dir, 'pseudobulk_sample.h5ad')
         else:
             adata_path = os.path.join(output_dir, 'adata_sample.h5ad')
             pb_adata_path = os.path.join(output_dir, 'pseudobulk_sample.h5ad')
