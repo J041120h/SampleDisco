@@ -10,6 +10,70 @@ from tf_idf import tfidf_memory_efficient
 import contextlib
 import io
 
+import os
+import time
+import warnings
+import numpy as np
+import pandas as pd
+import scanpy as sc
+from scipy.sparse import issparse
+from typing import Tuple, Dict, List
+from tf_idf import tfidf_memory_efficient
+import contextlib
+import io
+
+def _extract_sample_metadata(
+    cell_adata: sc.AnnData,
+    sample_adata: sc.AnnData,
+    sample_col: str,
+    exclude_cols: List[str] | None = None,
+) -> sc.AnnData:
+    """Detect and copy sample‑level metadata.
+
+    Parameters
+    ----------
+    cell_adata
+        Original single‑cell AnnData (cells × genes) whose ``.obs`` contains
+        potential sample‑level fields.
+    sample_adata
+        AnnData object with *samples* as observations (e.g. concatenated
+        pseudobulk counts).  **Will be modified in‑place**—columns are added to
+        ``sample_adata.obs``.
+    sample_col
+        Column in ``cell_adata.obs`` that identifies samples.
+    exclude_cols
+        Optional list of columns that should *never* be treated as sample‑level
+        (e.g. technical or grouping fields).  ``sample_col`` is always
+        excluded automatically.
+
+    Returns
+    -------
+    sample_adata
+        The same object passed in, with ``.obs`` augmented.  Returned for
+        convenience / chaining.
+    """
+
+    if exclude_cols is None:
+        exclude_cols = []
+    exclude_cols = set(exclude_cols) | {sample_col}
+
+    grouped = cell_adata.obs.groupby(sample_col)
+    meta_dict: Dict[str, pd.Series] = {}
+
+    for col in cell_adata.obs.columns:
+        if col in exclude_cols:
+            continue
+        uniques_per_sample = grouped[col].apply(lambda x: x.dropna().unique())
+        # Keep if every sample shows ≤1 unique value
+        if uniques_per_sample.apply(lambda u: len(u) <= 1).all():
+            meta_dict[col] = uniques_per_sample.apply(lambda u: u[0] if len(u) else np.nan)
+
+    if meta_dict:
+        meta_df = pd.DataFrame(meta_dict)
+        meta_df.index.name = "sample"
+        sample_adata.obs = sample_adata.obs.join(meta_df, how="left")
+
+    return sample_adata
 
 def compute_pseudobulk_layers(
     adata: sc.AnnData,
@@ -298,7 +362,6 @@ def compute_pseudobulk_layers(
     cell_proportion_df.to_csv(
         os.path.join(pseudobulk_dir, "proportion.csv")
     )
-    sc.write(os.path.join(pseudobulk_dir, "pseudobulk_adata.h5ad"), concat_adata)
     
     if verbose:
         elapsed_time = time.time() - start_time
@@ -498,6 +561,13 @@ def compute_pseudobulk_adata(
         atac=atac,
         verbose=verbose
     )
+    pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
+    final_adata = _extract_sample_metadata(
+        cell_adata = adata,
+        sample_adata = final_adata,
+        sample_col = sample_col,
+    )
+    sc.write(os.path.join(pseudobulk_dir, "pseudobulk_adata.h5ad"), final_adata)
     
     # Create backward-compatible dictionary matching original output
     pseudobulk = {
