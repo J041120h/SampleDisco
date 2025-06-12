@@ -429,11 +429,11 @@ def process_anndata_with_pca(
     
     if not integrated_data:
         count_output_dir = os.path.join(output_dir, "harmony")
-        pseudobulk_output_dir = os.path.join(output_dir, "harmony")
+        pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
         os.makedirs(output_dir, exist_ok=True)
     else:
         count_output_dir = os.path.join(output_dir, "preprocess")
-        pseudobulk_output_dir = os.path.join(output_dir, "harmony")
+        pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
         os.makedirs(output_dir, exist_ok=True)
     
     # Get data dimensions and adjust n_components accordingly
