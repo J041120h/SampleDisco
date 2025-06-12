@@ -71,4 +71,5 @@ def update_anndata_with_cell_meta(cell_meta, adata_path, index_col='cell_id', ov
 
 
 if __name__ == "__main__":
-    main("/users/hjiang/GenoDistance/result/harmony/pseudobulk_sample.h5ad")
+    # main("/users/hjiang/GenoDistance/result/harmony/pseudobulk_sample.h5ad")
+    main("/Users/harry/Desktop/GenoDistance/result/pseudobulk/pseudobulk_adata.h5ad")
