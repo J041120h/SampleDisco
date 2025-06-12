@@ -103,7 +103,7 @@ def integrate_preprocess(
     if verbose:
         print("Preprocessing complete!")
 
-    sc.write(os.path.join(h5ad_path), adata)
+    sc.write(h5ad_path, adata)
     end_time = time.time()
     elapsed_time = end_time - start_time
 
@@ -115,7 +115,7 @@ def integrate_preprocess(
 
 if __name__ == "__main__":
     adata = integrate_preprocess(
-        output_dir = "/users/hjiang/GenoDistance/result",
+        output_dir = "/users/hjiang/GenoDistance/result/integration",
         sample_column = 'sample',
         min_cells_sample=500,
         min_cell_gene=500,
@@ -142,8 +142,8 @@ if __name__ == "__main__":
         integrated_data = True
     )
 
-    # generate_umap_visualizations(
-    # pseudobulk_anndata,
-    # output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
-    # groupby = 'modality'
-    # )
+    generate_umap_visualizations(
+        pseudobulk_anndata,
+        output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
+        groupby = 'modality'
+    )

@@ -298,7 +298,7 @@ def compute_pseudobulk_layers(
     cell_proportion_df.to_csv(
         os.path.join(pseudobulk_dir, "proportion.csv")
     )
-    sc.write(os.path.join(pseudobulk_dir, "final_hvg_adata.h5ad"), concat_adata)
+    sc.write(os.path.join(pseudobulk_dir, "pseudobulk_adata.h5ad"), concat_adata)
     
     if verbose:
         elapsed_time = time.time() - start_time

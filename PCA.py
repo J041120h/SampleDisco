@@ -428,10 +428,12 @@ def process_anndata_with_pca(
             print(f"Created output directory: {output_dir}")
     
     if not integrated_data:
-        output_dir = os.path.join(output_dir, "harmony")
+        count_output_dir = os.path.join(output_dir, "harmony")
+        pseudobulk_output_dir = os.path.join(output_dir, "harmony")
         os.makedirs(output_dir, exist_ok=True)
     else:
-        output_dir = os.path.join(output_dir, "preprocess")
+        count_output_dir = os.path.join(output_dir, "preprocess")
+        pseudobulk_output_dir = os.path.join(output_dir, "harmony")
         os.makedirs(output_dir, exist_ok=True)
     
     # Get data dimensions and adjust n_components accordingly
@@ -475,14 +477,14 @@ def process_anndata_with_pca(
     # Save data unless not_save is True
     if not not_save:
         if atac:
-            adata_path = os.path.join(output_dir, 'ATAC_sample.h5ad')
-            pb_adata_path = os.path.join(output_dir, 'ATAC_pseudobulk_sample.h5ad')
+            adata_path = os.path.join(count_output_dir, 'ATAC_sample.h5ad')
+            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_adata.h5ad')
         elif integrated_data:
-            adata_path = os.path.join(output_dir, 'atac_rna_integrated.h5ad')
-            pb_adata_path = os.path.join(output_dir, 'pseudobulk_sample.h5ad')
+            adata_path = os.path.join(count_output_dir, 'atac_rna_integrated.h5ad')
+            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')
         else:
-            adata_path = os.path.join(output_dir, 'adata_sample.h5ad')
-            pb_adata_path = os.path.join(output_dir, 'pseudobulk_sample.h5ad')
+            adata_path = os.path.join(count_output_dir, 'adata_sample.h5ad')
+            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')
         
         try:
             sc.write(adata_path, adata)

@@ -1,14 +1,74 @@
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
-  from torch.distributed.optim import ZeroRedundancyOptimizer
-INFO:numba.cuda.cudadrv.driver:init
-2025-06-12 02:02:17.769333: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-06-12 02:02:17.783332: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-06-12 10:44:24.411688: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-06-12 10:44:24.424572: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1749708137.800394 1418523 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1749708137.805281 1418523 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1749708137.818349 1418523 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1749708137.818379 1418523 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1749708137.818382 1418523 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1749708137.818383 1418523 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-06-12 02:02:17.822388: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1749739464.438854 1445170 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1749739464.443087 1445170 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1749739464.454671 1445170 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1749739464.454696 1445170 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1749739464.454699 1445170 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1749739464.454700 1445170 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-06-12 10:44:24.458115: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+/users/hjiang/GenoDistance/code/integrate_preprocess.py:76: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  cell_counts_per_patient = adata.obs.groupby(sample_column).size()
+... storing 'celltype' as categorical
+... storing 'sample' as categorical
+... storing 'old' as categorical
+... storing 'large' as categorical
+... storing 'modality' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'disease severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+... storing 'cell_type' as categorical
+... storing 'cell_type_original' as categorical
+/users/hjiang/GenoDistance/code/pseudo_adata.py:73: FutureWarning: A value is trying to be set on a copy of a DataFrame or Series through chained assignment using an inplace method.
+The behavior will change in pandas 3.0. This inplace method will never work because the intermediate object on which we are setting values always behaves as a copy.
+
+For example, when doing 'df[col].method(value, inplace=True)', try using 'df.method({col: value}, inplace=True)' or df[col] = df[col].method(value) instead, to perform the operation inplace on the original object.
+
+
+  adata.obs[batch_col].fillna("Unknown", inplace=True)
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/integrate_preprocess.py", line 129, in <module>
+    atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
+  File "/users/hjiang/GenoDistance/code/pseudo_adata.py", line 489, in compute_pseudobulk_adata
+    cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers(
+  File "/users/hjiang/GenoDistance/code/pseudo_adata.py", line 73, in compute_pseudobulk_layers
+    adata.obs[batch_col].fillna("Unknown", inplace=True)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/generic.py", line 7349, in fillna
+    new_data = self._mgr.fillna(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/internals/base.py", line 186, in fillna
+    return self.apply_with_block(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/internals/managers.py", line 363, in apply
+    applied = getattr(b, f)(**kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/internals/blocks.py", line 2334, in fillna
+    new_values = self.values.fillna(value=value, method=None, limit=limit)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/arrays/_mixins.py", line 372, in fillna
+    new_values[mask] = value
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/arrays/_mixins.py", line 261, in __setitem__
+    value = self._validate_setitem_value(value)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/arrays/categorical.py", line 1589, in _validate_setitem_value
+    return self._validate_scalar(value)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/arrays/categorical.py", line 1614, in _validate_scalar
+    raise TypeError(
+TypeError: Cannot setitem on a Categorical with a new category (Unknown), set the categories first

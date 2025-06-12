@@ -71,4 +71,4 @@ def update_anndata_with_cell_meta(cell_meta, adata_path, index_col='cell_id', ov
 
 
 if __name__ == "__main__":
-    main("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")
+    main("/users/hjiang/GenoDistance/result/pseudobulk/pseudobulk_adata.h5ad")
