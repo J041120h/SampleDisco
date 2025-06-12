@@ -1,15 +1,15 @@
 ======================================
- Job ID:            17067246
+ Job ID:            17287350
  Job Name:          test
  Partition:         gpu
- Node List:         compute-123
+ Node List:         compute-170
  CPUs per Task:     16
- Memory Alloc:      409600
+ Memory Alloc:      819200
  GPU Requested:     1
- Start Time:        Sun Jun  8 01:07:37 AM EDT 2025
+ Start Time:        Thu Jun 12 01:28:24 AM EDT 2025
 ======================================
 Checking GPU status...
-Sun Jun  8 01:07:38 2025       
+Thu Jun 12 01:28:25 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -17,9 +17,9 @@ Sun Jun  8 01:07:38 2025
 | Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
-|   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   47C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
-|                                         |                        |                  N/A |
+|   0  NVIDIA H100 NVL                Off |   00000000:D1:00.0 Off |                    0 |
+| N/A   35C    P0             87W /  400W |     670MiB /  95830MiB |      0%      Default |
+|                                         |                        |             Disabled |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
 +-----------------------------------------------------------------------------------------+
@@ -27,71 +27,141 @@ Sun Jun  8 01:07:38 2025
 |  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
 |        ID   ID                                                               Usage      |
 |=========================================================================================|
-|  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
-Start of Process
+🚀 GPU acceleration enabled (cuML/CuPy detected)
 
-Resuming process from previous progress:
-{
-    "preprocessing": true,
-    "cell_type_cluster": true,
-    "sample_distance_calculation": true,
-    "DimensionalityReduction": true,
-    "trajectory_analysis": true,
-    "visualize_data": true,
-    "initialization": false
-}
-Linux system detected.
+🧬 Computing gene activity using raw RNA counts and merging data...
+   k_neighbors: 50
+   metric: cosine
+   weight method: cosine similarity
+   Processed RNA shape: (898489, 14743)
+   Raw RNA shape: (898489, 14881)
+   ATAC shape: (88985, 230356)
+   ⚠️  Gene indices don't match between processed and raw RNA, aligning...
+   Aligned to 14743 common genes
+🔍 Finding k-nearest RNA neighbors for each ATAC cell...
+   k-NN search completed in 1.57 seconds
 
+📐 Computing cosine similarity weights...
+   Cosine similarity computation completed in 0.02 seconds
+   Average cosine similarity: 0.9584
 
-Enabling managed memory for RMM...
+🧮 Computing weighted gene activity using raw RNA counts...
+   Computing activity for 14743 genes across 88985 ATAC cells
+   Progress: 27.8% (5/18 batches)
+   Progress: 55.6% (10/18 batches)
+   Progress: 83.3% (15/18 batches)
+   Gene activity computation completed in 121.29 seconds
 
+🔍 Validating gene activity counts...
+   Final count range: [0.000, 8427.943]
 
-[2025-06-08 01:09:32] True: ============================================================
-Starting scATAC-seq pipeline
-============================================================
-[2025-06-08 01:10:00] True: Loaded 88985 cells × 230356 features
-Merged 28 sample-level columns
-[2025-06-08 01:10:00] True: QC filtering
-[2025-06-08 01:10:14] True: Filtering samples with <500 cells
-[2025-06-08 01:10:20] True: Remaining cells: 79274
-[2025-06-08 01:10:24] True: TF-IDF normalisation
-[2025-06-08 01:10:59] True: Log1p transform
-[2025-06-08 01:11:00] INFO: Running snapATAC2 SVD with 30 components
-[2025-06-08 01:11:00] INFO: Converting data matrix to float32
-[2025-06-08 01:11:14] INFO: Filtering doublets (snapATAC2-Scrublet)
-[2025-06-08 01:11:14] INFO: snapATAC2-Scrublet compatibility issue – skipping.
-[2025-06-08 01:13:15] INFO: snapATAC2 dimensionality reduction complete
-[cell_types_atac] No cell type annotation found. Performing clustering.
-[cell_types_atac] Building neighborhood graph...
-[cell_types_atac] Target: 3 clusters. Trying resolution: 0.8
-[cell_types_atac] Leiden clustering produced 27 clusters.
-[cell_types_atac] Got 27 clusters (>= target). Recursing with existing_cell_types=True...
-  [cell_types_atac] Current number of cell types: 27
-  [cell_types_atac] Aggregating 27 cell types into 3 clusters using dendrogram.
-  [cell_types_atac] Using dimension reduction (X_DM_harmony) for dendrogram construction...
-=== Preparing data for dendrogram (using X_DM_harmony) ===
-Using first 30 components from X_DM_harmony
-=== Computing centroids of cell types in X_DM_harmony space ===
-Calculated centroids for 27 cell types.
-Centroid shape: (27, 30)
-=== Computing distance matrix between centroids using cosine distance ===
-=== Performing hierarchical clustering on X_DM_harmony centroids ===
-Linkage method: average, Distance metric: cosine
-=== Aggregating cell types into 3 clusters ===
-Successfully created 3 clusters
+📦 Creating gene activity AnnData object...
+🔗 Merging gene activity data with raw RNA data...
+   Merged shape: (987474, 14743)
+   RNA cells: 898489
+   ATAC cells: 88985
+
+🏷️  Assigning cell types...
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] Target: 10 clusters. Trying resolution: 0.8
+[cell_types] Leiden clustering produced 19 clusters.
+[cell_types] Got 19 clusters (>= target). Recursing with existing_cell_types=True...
+  [cell_types] Current number of cell types: 19
+  [cell_types] Aggregating 19 cell types into 10 clusters using dendrogram.
+  [cell_types] Using dimension reduction (X_glue) for dendrogram construction...
+=== Preparing data for dendrogram (using X_glue) ===
+Using all 50 components from X_glue
+=== Computing centroids of cell types in X_glue space ===
+Calculated centroids for 19 cell types.
+Centroid shape: (19, 50)
+=== Computing distance matrix between centroids using euclidean distance ===
+=== Performing hierarchical clustering on X_glue centroids ===
+Linkage method: average, Distance metric: euclidean
+=== Aggregating cell types into 10 clusters ===
+Successfully created 10 clusters
 
 === Cluster Composition ===
-Cluster 1: 10, 11, 12, 13, 14, 15, 20, 22, 24, 26, 27, 8
-Cluster 2: 1, 16, 17, 18, 2, 25, 3, 4, 5, 6, 7, 9
-Cluster 3: 19, 21, 23
+Cluster 1: 19, 7
+Cluster 10: 8
+Cluster 2: 4
+Cluster 3: 10, 17, 3, 5, 9
+Cluster 4: 11, 16
+Cluster 5: 12
+Cluster 6: 1, 13, 14, 18
+Cluster 7: 15
+Cluster 8: 6
+Cluster 9: 2
 
 === Cluster Quality Metrics ===
-Cluster 1: Average within-cluster distance = 0.0701
-Cluster 2: Average within-cluster distance = 0.0788
-Cluster 3: Average within-cluster distance = 0.1486
+Cluster 1: Average within-cluster distance = 1.3662
+Cluster 3: Average within-cluster distance = 1.7271
+Cluster 4: Average within-cluster distance = 1.6333
+Cluster 6: Average within-cluster distance = 1.7936
 
-Function execution time: 0.03 seconds
-  [cell_types_atac] Successfully aggregated to 3 cell types.
-[cell_types_atac] Finding differential peaks between cell types...
+Function execution time: 0.22 seconds
+  [cell_types] Successfully aggregated to 10 cell types.
+[cell_types] Finished assigning cell types.
+[cell_types] Total runtime: 37.84 seconds
+✅ Gene activity computation and merging complete!
+
+📊 Final Summary:
+   Merged dataset shape: (987474, 14743)
+   Total cells: 987474
+   RNA cells: 898489
+   ATAC cells: 88985
+   Genes: 14743
+   Cell types identified: 10
+   GPU acceleration: Yes
+   Data corrections: 0 total fixes applied
+   Weight method: Cosine similarity
+   Expression data: Raw RNA counts
+   UMAP visualizations: Generated
+Loading integrated RNA-ATAC data...
+Computing UMAP from scGLUE embeddings...
+Generating visualizations for columns: ['modality', 'cell_type']
+Saved modality plot: /users/hjiang/GenoDistance/result/integration/glue/scglue_umap_modality.png
+Saved cell_type plot: /users/hjiang/GenoDistance/result/integration/glue/scglue_umap_cell_type.png
+
+Creating modality-cell type distribution heatmap...
+Saved modality-cell type heatmap: /users/hjiang/GenoDistance/result/integration/glue/scglue_modality_celltype_heatmap.png
+Saved modality-cell type stacked plot: /users/hjiang/GenoDistance/result/integration/glue/scglue_modality_celltype_stacked.png
+
+=== Modality-Cell Type Distribution Summary ===
+Total cell types: 10
+Total modalities: 2
+
+Cell counts by modality and cell type:
+modality    ATAC     RNA
+cell_type               
+1           8457   69525
+10           689    6221
+2            544    4155
+3          22985  283259
+4          16346  166455
+5           7368   95606
+6          26960  226214
+7            634    5288
+8           3524   29561
+9           1478   12205
+
+Saved distribution table to: /users/hjiang/GenoDistance/result/integration/glue/scglue_modality_celltype_distribution.csv
+
+=== Integration Summary ===
+Total cells: 987474
+Total features: 14743
+Available metadata columns: ['celltype', 'sample', 'old', 'large', 'modality', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level', 'balancing_weight', 'orig.ident', 'nCount_ATAC', 'nFeature_ATAC', 'total', 'duplicate', 'chimeric', 'unmapped', 'lowmapq', 'mitochondrial', 'nonprimary', 'passed_filters', 'is__cell_barcode', 'excluded_reason', 'TSS_fragments', 'DNase_sensitive_region_fragments', 'enhancer_region_fragments', 'promoter_region_fragments', 'on_target_fragments', 'blacklist_region_fragments', 'peak_region_fragments', 'peak_region_cutsites', 'TSS.enrichment', 'TSS.percentile', 'pct_reads_in_peaks', 'disease severity', 'Donor', 'record_id', 'Age', 'Sex', 'PRIMARY_RACE', 'ETHNICITY', 'CANONICAL_ETHNICITY', 'CANONICAL_RACE', 'BMI', 'BMI_GROUP', 'ABO', 'T_SEROLOGY', 'T_POS_SEROL', 'RISK_FACTOR', 'MED_PRESSORS', 'DIALYSIS', 'O2_SUPPORT', 'MAX_SEVERITY_SCORE', 'days_post_pos_test', 'acuity', 'current_severity', 'days_to_death', 'vacutainer_type', 'ibuprofen_prior', 'abx_prior', 'remdesivir_prior', 'systemic_steroids_prior__excludes_inhaled', 'cell_type', 'cell_type_original']
+
+Modality breakdown:
+  RNA: 898489 cells
+  ATAC: 88985 cells
+
+Features used: 14743/14743
+
+Visualization complete!
+
+Total runtime: 45.19 minutes
+Finished main.py.
+End Time: Thu Jun 12 02:14:04 AM EDT 2025

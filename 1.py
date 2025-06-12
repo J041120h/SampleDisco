@@ -71,6 +71,4 @@ def update_anndata_with_cell_meta(cell_meta, adata_path, index_col='cell_id', ov
 
 
 if __name__ == "__main__":
-    # update_anndata_with_cell_meta("/dcl01/hongkai/data/data/hjiang/Data/cell_data.csv", "/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad", index_col='barcode')
-    # main("/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad")
-    main("/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad")
+    main("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")

@@ -114,17 +114,17 @@ def integrate_preprocess(
     return adata
 
 if __name__ == "__main__":
-    # adata = integrate_preprocess(
-    #     output_dir = "/users/hjiang/GenoDistance/result",
-    #     sample_column = 'sample',
-    #     min_cells_sample=1,
-    #     min_cell_gene=10,
-    #     min_features=500,
-    #     pct_mito_cutoff=20,
-    #     exclude_genes=None,
-    #     doublet=True, 
-    #     verbose=True
-    # )
+    adata = integrate_preprocess(
+        output_dir = "/users/hjiang/GenoDistance/result",
+        sample_column = 'sample',
+        min_cells_sample=500,
+        min_cell_gene=500,
+        min_features=500,
+        pct_mito_cutoff=20,
+        exclude_genes=None,
+        doublet=True, 
+        verbose=True
+    )
     adata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")
     atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=adata,
@@ -142,8 +142,8 @@ if __name__ == "__main__":
         integrated_data = True
     )
 
-    generate_umap_visualizations(
-    pseudobulk_anndata,
-    output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
-    groupby = 'modality'
-    )
+    # generate_umap_visualizations(
+    # pseudobulk_anndata,
+    # output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
+    # groupby = 'modality'
+    # )
