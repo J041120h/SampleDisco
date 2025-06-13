@@ -128,6 +128,56 @@ def plot_multimodal_embedding(adata, modality_col, severity_col, target_modality
     
     return ax
 
+def create_single_embedding_plot(adata, modality_col, severity_col, target_modality,
+                                embedding_key, embedding_type, figsize=(10, 8), 
+                                point_size=60, alpha=0.8, colormap='viridis', 
+                                show_sample_names=False, verbose=True):
+    """Create a single embedding plot with colorbar"""
+    
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    
+    # Create the plot
+    plot_multimodal_embedding(
+        adata, modality_col, severity_col, target_modality, embedding_key, ax,
+        point_size, alpha, colormap, show_sample_names
+    )
+    
+    # Get severity values for colorbar
+    target_mask = adata.obs[modality_col].values == target_modality
+    target_severity = adata.obs[severity_col].values[target_mask]
+    valid_severity = target_severity[pd.notna(target_severity)]
+    
+    # Add colorbar for severity
+    if len(valid_severity) > 1:
+        norm = Normalize(vmin=min(valid_severity), vmax=max(valid_severity))
+        sm = ScalarMappable(norm=norm, cmap=colormap)
+        sm.set_array([])
+        
+        # Add colorbar
+        cbar = plt.colorbar(sm, ax=ax, shrink=0.8)
+        
+        # Set colorbar ticks and labels
+        unique_severity = sorted(set(valid_severity))
+        if len(unique_severity) <= 10:
+            cbar.set_ticks(unique_severity)
+            cbar.set_ticklabels([f'{v:.1f}' if v != int(v) else f'{int(v)}' for v in unique_severity])
+        else:
+            # If too many unique values, use fewer ticks
+            n_ticks = 5
+            tick_values = np.linspace(min(valid_severity), max(valid_severity), n_ticks)
+            cbar.set_ticks(tick_values)
+            cbar.set_ticklabels([f'{v:.1f}' for v in tick_values])
+        
+        cbar.set_label(f'{severity_col} ({target_modality})', rotation=270, labelpad=20)
+    
+    # Set title
+    title = f'{embedding_type} Embedding: {target_modality} colored by {severity_col}'
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    
+    plt.tight_layout()
+    
+    return fig, ax
+
 def create_dual_embedding_plot(adata, modality_col, severity_col, target_modality,
                               expression_key='X_DR_expression', proportion_key='X_DR_proportion',
                               figsize=(20, 8), point_size=60, alpha=0.8, 
@@ -159,7 +209,44 @@ def create_dual_embedding_plot(adata, modality_col, severity_col, target_modalit
         available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
         raise ValueError(f"No embeddings found. Available in obsm: {available_obsm}, uns: {available_uns}")
     
-    # Create subplots
+    # If both embeddings are available and save_path is provided, save separately
+    if len(available_embeddings) == 2 and save_path:
+        save_dir = os.path.dirname(save_path)
+        base_name = os.path.splitext(os.path.basename(save_path))[0]
+        extension = os.path.splitext(save_path)[1] or '.png'
+        
+        if save_dir:
+            os.makedirs(save_dir, exist_ok=True)
+        
+        saved_files = []
+        
+        # Save each embedding as a separate plot
+        for embedding_type, embedding_key in available_embeddings:
+            fig, ax = create_single_embedding_plot(
+                adata, modality_col, severity_col, target_modality,
+                embedding_key, embedding_type, figsize=(10, 8),
+                point_size=point_size, alpha=alpha, colormap=colormap, 
+                show_sample_names=show_sample_names, verbose=verbose
+            )
+            
+            # Create filename for this embedding type
+            if save_dir:
+                separate_save_path = os.path.join(save_dir, f"{base_name}_{embedding_type.lower()}{extension}")
+            else:
+                separate_save_path = f"{base_name}_{embedding_type.lower()}{extension}"
+            
+            plt.savefig(separate_save_path, dpi=300, bbox_inches='tight')
+            saved_files.append(separate_save_path)
+            
+            if verbose:
+                print(f"{embedding_type} plot saved to: {separate_save_path}")
+            
+            plt.close(fig)  # Close to free memory
+        
+        if verbose:
+            print(f"Separate plots saved: {saved_files}")
+    
+    # Create subplots for combined view
     n_plots = len(available_embeddings)
     fig, axes = plt.subplots(1, n_plots, figsize=figsize, sharey=True)
     
@@ -223,15 +310,15 @@ def create_dual_embedding_plot(adata, modality_col, severity_col, target_modalit
     # Adjust layout to accommodate colorbar
     plt.subplots_adjust(right=0.9)
     
-    # Save if requested
-    if save_path:
+    # Save combined plot if requested and no separate plots were saved
+    if save_path and not (len(available_embeddings) == 2):
         save_dir = os.path.dirname(save_path)
         if save_dir:
             os.makedirs(save_dir, exist_ok=True)
         
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         if verbose:
-            print(f"Plot saved to: {save_path}")
+            print(f"Combined plot saved to: {save_path}")
     
     return fig, axes
 
