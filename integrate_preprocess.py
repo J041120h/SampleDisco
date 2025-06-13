@@ -169,7 +169,6 @@ if __name__ == "__main__":
     #     doublet=True, 
     #     verbose=True
     # )
-    pseudobulk_anndata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_adata.h5ad")
     # adata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")
     # fill_obs_nan_with_unknown(adata)
     # atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
@@ -187,38 +186,14 @@ if __name__ == "__main__":
     #     output_dir= "/users/hjiang/GenoDistance/result/integration",
     #     integrated_data = True
     # )
-
-    # generate_umap_visualizations(
-    #     pseudobulk_anndata,
-    #     output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
-    #     point_size = 100,
-    #     groupby = 'modality'
-    # )
-
-    fig, ax = multimodal_embedding_visualization(
-        adata=pseudobulk_anndata,
+    pseudobulk_anndata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_sample.h5ad")
+    fig, axes = visualize_severity_trend(
+        pseudobulk_anndata,
         modality_col='modality',
         severity_col='sev.level',
-        embedding_key='X_',
         target_modality='RNA',
-        save_path='/users/hjiang/GenoDistance/result/integration/visualization/embedding_rna_severity.png'
+        save_path='/users/hjiang/GenoDistance/result/integration/visualization/rna_severity_trend.png'
     )
-
-    fig, ax = multimodal_embedding_visualization(
-        adata=pseudobulk_anndata,
-        modality_col='modality',
-        severity_col='current_severity',
-        target_modality='ATAC',
-        save_path='/users/hjiang/GenoDistance/result/integration/visualization/embedding_atac_severity.png'
-    )
-
-    # fig, axes = multimodal_embedding_comparison(
-    #     adata=pseudobulk_anndata,
-    #     modality_col='modality',
-    #     severity_col='current_severity',
-    #     target_modality='ATAC',
-    #     save_path='/users/hjiang/GenoDistance/result/integration/visualization/embedding_comparison.png'
-    # )
 
 
     # generate_umap_visualizations(

@@ -541,9 +541,7 @@ def process_anndata_with_pca(
     try:
         run_pca_expression(
             adata=adata, 
-            pseudobulk=pseudobulk, 
             pseudobulk_anndata=pseudobulk_anndata,
-            sample_col=sample_col,
             n_components=n_expression_pcs,
             atac=atac,
             use_snapatac2_dimred=use_snapatac2_dimred,
@@ -580,6 +578,8 @@ def process_anndata_with_pca(
             pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')
         
         try:
+            os.makedirs(os.path.dirname(adata_path), exist_ok=True)
+            os.makedirs(os.path.dirname(pb_adata_path), exist_ok=True)
             sc.write(adata_path, adata)
             sc.write(pb_adata_path, pseudobulk_anndata)
             if verbose:
