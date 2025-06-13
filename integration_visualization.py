@@ -7,7 +7,76 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import os
 
+def detect_data_type(values):
+    """
+    Detect if the data is numerical/gradual or categorical.
+    
+    Returns:
+        tuple: (data_type, unique_values)
+        where data_type is 'numerical' or 'categorical'
+    """
+    # Remove NaN values for analysis
+    valid_values = [v for v in values if pd.notna(v)]
+    
+    if not valid_values:
+        return 'categorical', []
+    
+    unique_values = list(set(valid_values))
+    
+    # Check if all values can be converted to numbers
+    try:
+        numeric_values = [float(v) for v in valid_values]
+        
+        # Additional checks for numerical data:
+        # 1. If there are very few unique values relative to total, might be categorical
+        # 2. If values are all integers and sequential, might be ordinal
+        # 3. If range is large compared to number of unique values, likely continuous
+        
+        n_unique = len(unique_values)
+        n_total = len(valid_values)
+        
+        # If very few unique values (e.g., less than 10) and they're integers
+        if n_unique <= 10 and all(float(v).is_integer() for v in numeric_values):
+            # Check if they're sequential (like stages 1,2,3,4)
+            sorted_vals = sorted([int(v) for v in numeric_values])
+            if sorted_vals == list(range(min(sorted_vals), max(sorted_vals) + 1)):
+                return 'numerical', unique_values  # Ordinal numerical
+        
+        # If ratio of unique to total is low, might be categorical
+        if n_unique / n_total < 0.1 and n_unique < 20:
+            return 'categorical', unique_values
+        
+        return 'numerical', unique_values
+        
+    except (ValueError, TypeError):
+        # If conversion to float fails, it's categorical
+        return 'categorical', unique_values
+
+def create_categorical_colormap(unique_values, colormap='tab20'):
+    """
+    Create a color mapping for categorical data.
+    """
+    n_categories = len(unique_values)
+    
+    # Choose appropriate colormap based on number of categories
+    if n_categories <= 10:
+        colors = plt.cm.tab10(np.linspace(0, 1, n_categories))
+    elif n_categories <= 20:
+        colors = plt.cm.tab20(np.linspace(0, 1, n_categories))
+    else:
+        # For many categories, use a continuous colormap
+        base_cmap = plt.cm.get_cmap(colormap)
+        colors = base_cmap(np.linspace(0, 1, n_categories))
+    
+    # Create mapping from value to color
+    color_map = {val: colors[i] for i, val in enumerate(sorted(unique_values))}
+    
+    return color_map
+
 def create_quantitative_colormap(values, colormap='viridis'):
+    """
+    Create a color mapping for numerical/gradual data.
+    """
     unique_values = sorted(set(values))
     
     if len(unique_values) == 1:
@@ -25,6 +94,9 @@ def create_quantitative_colormap(values, colormap='viridis'):
     return color_map
 
 def get_embedding_data(adata, embedding_key, verbose=True):
+    """
+    Extract embedding coordinates from AnnData object.
+    """
     if embedding_key in adata.obsm:
         embedding = adata.obsm[embedding_key]
         coord_source = "obsm"
@@ -62,18 +134,42 @@ def get_embedding_data(adata, embedding_key, verbose=True):
     
     return x_coords, y_coords, sample_names, coord_source
 
-def plot_multimodal_embedding(adata, modality_col, severity_col, target_modality,
+def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
                              embedding_key, ax, point_size=60, alpha=0.8, 
                              colormap='viridis', show_sample_names=False, 
-                             non_target_color='lightgray', non_target_alpha=0.4):
+                             non_target_color='lightgray', non_target_alpha=0.4,
+                             data_type=None, unique_values=None):
+    """
+    Plot embedding with points colored by specified column values.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Annotated data object
+    modality_col : str
+        Column name for modality information
+    color_col : str
+        Column name for coloring (can be numerical or categorical)
+    target_modality : str
+        Which modality to highlight
+    embedding_key : str
+        Key for embedding coordinates
+    ax : matplotlib axis
+        Axis to plot on
+    """
     
     x_coords, y_coords, sample_names, coord_source = get_embedding_data(adata, embedding_key, verbose=False)
     
     modality_values = adata.obs[modality_col].values
-    severity_values = adata.obs[severity_col].values
+    color_values = adata.obs[color_col].values
     
     target_mask = modality_values == target_modality
     non_target_mask = ~target_mask
+    
+    # Auto-detect data type if not provided
+    if data_type is None:
+        target_color_values = color_values[target_mask]
+        data_type, unique_values = detect_data_type(target_color_values)
     
     # Plot non-target modality samples first (background)
     if np.any(non_target_mask):
@@ -82,37 +178,49 @@ def plot_multimodal_embedding(adata, modality_col, severity_col, target_modality
                   edgecolors='black', linewidth=0.5, 
                   label=f'Other modalities', zorder=1)
     
-    # Plot target modality samples with severity coloring
+    # Plot target modality samples with appropriate coloring
     if np.any(target_mask):
         target_x = x_coords[target_mask]
         target_y = y_coords[target_mask]
-        target_severity = severity_values[target_mask]
+        target_color_values = color_values[target_mask]
         
-        # Handle valid severity values
-        valid_severity_mask = pd.notna(target_severity)
+        # Handle valid color values
+        valid_mask = pd.notna(target_color_values)
         
-        if np.any(valid_severity_mask):
-            valid_severity = target_severity[valid_severity_mask]
-            valid_x = target_x[valid_severity_mask]
-            valid_y = target_y[valid_severity_mask]
+        if np.any(valid_mask):
+            valid_values = target_color_values[valid_mask]
+            valid_x = target_x[valid_mask]
+            valid_y = target_y[valid_mask]
             
-            # Create color mapping
-            color_map = create_quantitative_colormap(valid_severity, colormap)
-            colors = [color_map[sev] for sev in valid_severity]
-            
-            # Plot samples with valid severity
-            scatter = ax.scatter(valid_x, valid_y, c=colors, s=point_size, alpha=alpha,
-                               edgecolors='black', linewidth=0.5, 
-                               label=f'{target_modality} (by severity)', zorder=2)
+            # Create color mapping based on data type
+            if data_type == 'numerical':
+                color_map = create_quantitative_colormap(valid_values, colormap)
+                colors = [color_map[val] for val in valid_values]
+                
+                # Single scatter for numerical data
+                scatter = ax.scatter(valid_x, valid_y, c=colors, s=point_size, alpha=alpha,
+                                   edgecolors='black', linewidth=0.5, 
+                                   label=f'{target_modality} (by {color_col})', zorder=2)
+            else:  # categorical
+                color_map = create_categorical_colormap(unique_values, colormap)
+                
+                # Plot each category separately for legend
+                for category in sorted(unique_values):
+                    cat_mask = valid_values == category
+                    if np.any(cat_mask):
+                        ax.scatter(valid_x[cat_mask], valid_y[cat_mask], 
+                                 c=[color_map[category]], s=point_size, alpha=alpha,
+                                 edgecolors='black', linewidth=0.5, 
+                                 label=f'{target_modality}: {category}', zorder=2)
         
-        # Plot samples with missing severity values
-        missing_severity_mask = ~valid_severity_mask
-        if np.any(missing_severity_mask):
-            missing_x = target_x[missing_severity_mask]
-            missing_y = target_y[missing_severity_mask]
+        # Plot samples with missing values
+        missing_mask = ~valid_mask
+        if np.any(missing_mask):
+            missing_x = target_x[missing_mask]
+            missing_y = target_y[missing_mask]
             ax.scatter(missing_x, missing_y, c='red', s=point_size, alpha=alpha,
                       edgecolors='black', linewidth=0.5, 
-                      label=f'{target_modality} (missing severity)', zorder=2)
+                      label=f'{target_modality} (missing {color_col})', zorder=2)
     
     # Add sample labels if requested
     if show_sample_names:
@@ -124,32 +232,48 @@ def plot_multimodal_embedding(adata, modality_col, severity_col, target_modality
     ax.set_xlabel('Dimension 1')
     ax.set_ylabel('Dimension 2')
     ax.grid(True, alpha=0.3)
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     
-    return ax
+    # Adjust legend position based on data type
+    if data_type == 'categorical' and len(unique_values) > 5:
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', ncol=1 if len(unique_values) <= 15 else 2)
+    else:
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    return ax, data_type, unique_values
 
-def create_single_embedding_plot(adata, modality_col, severity_col, target_modality,
+def create_single_embedding_plot(adata, modality_col, color_col, target_modality,
                                 embedding_key, embedding_type, figsize=(10, 8), 
                                 point_size=60, alpha=0.8, colormap='viridis', 
                                 show_sample_names=False, verbose=True):
-    """Create a single embedding plot with colorbar"""
+    """
+    Create a single embedding plot with colorbar (for numerical) or legend (for categorical).
+    """
     
     fig, ax = plt.subplots(1, 1, figsize=figsize)
     
+    # Detect data type
+    target_mask = adata.obs[modality_col].values == target_modality
+    target_values = adata.obs[color_col].values[target_mask]
+    data_type, unique_values = detect_data_type(target_values)
+    
+    if verbose:
+        print(f"Detected data type for {color_col}: {data_type}")
+        if data_type == 'categorical':
+            print(f"Categories: {sorted(unique_values)}")
+    
     # Create the plot
-    plot_multimodal_embedding(
-        adata, modality_col, severity_col, target_modality, embedding_key, ax,
-        point_size, alpha, colormap, show_sample_names
+    ax, data_type, unique_values = plot_multimodal_embedding(
+        adata, modality_col, color_col, target_modality, embedding_key, ax,
+        point_size, alpha, colormap, show_sample_names,
+        data_type=data_type, unique_values=unique_values
     )
     
-    # Get severity values for colorbar
-    target_mask = adata.obs[modality_col].values == target_modality
-    target_severity = adata.obs[severity_col].values[target_mask]
-    valid_severity = target_severity[pd.notna(target_severity)]
+    # Get valid values
+    valid_values = target_values[pd.notna(target_values)]
     
-    # Add colorbar for severity
-    if len(valid_severity) > 1:
-        norm = Normalize(vmin=min(valid_severity), vmax=max(valid_severity))
+    # Add colorbar for numerical data
+    if data_type == 'numerical' and len(valid_values) > 1:
+        norm = Normalize(vmin=min(valid_values), vmax=max(valid_values))
         sm = ScalarMappable(norm=norm, cmap=colormap)
         sm.set_array([])
         
@@ -157,37 +281,85 @@ def create_single_embedding_plot(adata, modality_col, severity_col, target_modal
         cbar = plt.colorbar(sm, ax=ax, shrink=0.8)
         
         # Set colorbar ticks and labels
-        unique_severity = sorted(set(valid_severity))
-        if len(unique_severity) <= 10:
-            cbar.set_ticks(unique_severity)
-            cbar.set_ticklabels([f'{v:.1f}' if v != int(v) else f'{int(v)}' for v in unique_severity])
+        unique_vals = sorted(set(valid_values))
+        if len(unique_vals) <= 10:
+            cbar.set_ticks(unique_vals)
+            cbar.set_ticklabels([f'{v:.1f}' if v != int(v) else f'{int(v)}' for v in unique_vals])
         else:
             # If too many unique values, use fewer ticks
             n_ticks = 5
-            tick_values = np.linspace(min(valid_severity), max(valid_severity), n_ticks)
+            tick_values = np.linspace(min(valid_values), max(valid_values), n_ticks)
             cbar.set_ticks(tick_values)
             cbar.set_ticklabels([f'{v:.1f}' for v in tick_values])
         
-        cbar.set_label(f'{severity_col} ({target_modality})', rotation=270, labelpad=20)
+        cbar.set_label(f'{color_col} ({target_modality})', rotation=270, labelpad=20)
     
     # Set title
-    title = f'{embedding_type} Embedding: {target_modality} colored by {severity_col}'
+    title = f'{embedding_type} Embedding: {target_modality} colored by {color_col}'
     ax.set_title(title, fontsize=14, fontweight='bold')
     
     plt.tight_layout()
     
     return fig, ax
 
-def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
-                            expression_key='X_DR_expression', proportion_key='X_DR_proportion',
-                            figsize=(20, 8), point_size=60, alpha=0.8, 
-                            colormap='viridis', output_dir=None, 
-                            show_sample_names=False, verbose=True):
+def visualize_multimodal_embedding(adata, modality_col, color_col, target_modality,
+                                  expression_key='X_DR_expression', proportion_key='X_DR_proportion',
+                                  figsize=(20, 8), point_size=60, alpha=0.8, 
+                                  colormap='viridis', output_dir=None, 
+                                  show_sample_names=False, verbose=True):
+    """
+    Visualize multimodal embeddings with flexible coloring by any column.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Annotated data object containing embeddings and metadata
+    modality_col : str
+        Column name in adata.obs containing modality information
+    color_col : str
+        Column name in adata.obs to use for coloring points (numerical or categorical)
+    target_modality : str
+        Which modality to highlight in the visualization
+    expression_key : str
+        Key for expression-based embedding (default: 'X_DR_expression')
+    proportion_key : str
+        Key for proportion-based embedding (default: 'X_DR_proportion')
+    figsize : tuple
+        Figure size for combined plot (default: (20, 8))
+    point_size : int
+        Size of scatter points (default: 60)
+    alpha : float
+        Transparency of points (default: 0.8)
+    colormap : str
+        Colormap to use for numerical data (default: 'viridis')
+    output_dir : str
+        Directory or file path to save plots
+    show_sample_names : bool
+        Whether to show sample names on plot (default: False)
+    verbose : bool
+        Print progress messages (default: True)
+    
+    Returns:
+    --------
+    fig, axes : matplotlib figure and axes
+        The created visualization (None if saved separately)
+    """
     
     if verbose:
-        print(f"Creating dual embedding visualization for {target_modality}")
+        print(f"Creating multimodal embedding visualization for {target_modality}")
+        print(f"Coloring by: {color_col}")
         print(f"Expression key: {expression_key}")
         print(f"Proportion key: {proportion_key}")
+    
+    # Detect data type early
+    target_mask = adata.obs[modality_col].values == target_modality
+    target_values = adata.obs[color_col].values[target_mask]
+    data_type, unique_values = detect_data_type(target_values)
+    
+    if verbose:
+        print(f"\nDetected data type for {color_col}: {data_type}")
+        if data_type == 'categorical':
+            print(f"Categories found: {sorted(unique_values)}")
     
     # Check which embeddings are available
     available_embeddings = []
@@ -215,8 +387,8 @@ def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
         if os.path.isdir(output_dir) or (not os.path.splitext(output_dir)[1]):
             # It's a directory path
             save_dir = output_dir
-            # Create filename based on modality and severity column
-            base_name = f"{target_modality}_{severity_col}"
+            # Create filename based on modality and color column
+            base_name = f"{target_modality}_{color_col}"
             extension = '.png'
         else:
             # It's a file path
@@ -232,7 +404,7 @@ def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
         # Save each embedding as a separate plot
         for embedding_type, embedding_key in available_embeddings:
             fig, ax = create_single_embedding_plot(
-                adata, modality_col, severity_col, target_modality,
+                adata, modality_col, color_col, target_modality,
                 embedding_key, embedding_type, figsize=(10, 8),
                 point_size=point_size, alpha=alpha, colormap=colormap, 
                 show_sample_names=show_sample_names, verbose=verbose
@@ -263,18 +435,17 @@ def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
     if n_plots == 1:
         axes = [axes]
     
-    # Get severity values for colorbar
-    target_mask = adata.obs[modality_col].values == target_modality
-    target_severity = adata.obs[severity_col].values[target_mask]
-    valid_severity = target_severity[pd.notna(target_severity)]
+    # Get valid values
+    valid_values = target_values[pd.notna(target_values)]
     
     # Create plots for each available embedding
     for i, (embedding_type, embedding_key) in enumerate(available_embeddings):
         ax = axes[i]
         
-        plot_multimodal_embedding(
-            adata, modality_col, severity_col, target_modality, embedding_key, ax,
-            point_size, alpha, colormap, show_sample_names
+        ax, _, _ = plot_multimodal_embedding(
+            adata, modality_col, color_col, target_modality, embedding_key, ax,
+            point_size, alpha, colormap, show_sample_names,
+            data_type=data_type, unique_values=unique_values
         )
         
         # Set title based on embedding type
@@ -288,10 +459,10 @@ def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
         if i == 0:
             ax.set_ylabel('Dimension 2')
     
-    # Add shared colorbar for severity
-    if len(valid_severity) > 1:
+    # Add shared colorbar for numerical data only
+    if data_type == 'numerical' and len(valid_values) > 1:
         # Create colorbar on the right side
-        norm = Normalize(vmin=min(valid_severity), vmax=max(valid_severity))
+        norm = Normalize(vmin=min(valid_values), vmax=max(valid_values))
         sm = ScalarMappable(norm=norm, cmap=colormap)
         sm.set_array([])
         
@@ -300,25 +471,32 @@ def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
         cbar = fig.colorbar(sm, cax=cbar_ax)
         
         # Set colorbar ticks and labels
-        unique_severity = sorted(set(valid_severity))
-        if len(unique_severity) <= 10:
-            cbar.set_ticks(unique_severity)
-            cbar.set_ticklabels([f'{v:.1f}' if v != int(v) else f'{int(v)}' for v in unique_severity])
+        unique_vals = sorted(set(valid_values))
+        if len(unique_vals) <= 10:
+            cbar.set_ticks(unique_vals)
+            cbar.set_ticklabels([f'{v:.1f}' if v != int(v) else f'{int(v)}' for v in unique_vals])
         else:
             # If too many unique values, use fewer ticks
             n_ticks = 5
-            tick_values = np.linspace(min(valid_severity), max(valid_severity), n_ticks)
+            tick_values = np.linspace(min(valid_values), max(valid_values), n_ticks)
             cbar.set_ticks(tick_values)
             cbar.set_ticklabels([f'{v:.1f}' for v in tick_values])
         
-        cbar.set_label(f'{severity_col} ({target_modality})', rotation=270, labelpad=20)
+        cbar.set_label(f'{color_col} ({target_modality})', rotation=270, labelpad=20)
     
     # Add main title
-    main_title = f'Multi-modal Embedding: {target_modality} colored by {severity_col}'
+    main_title = f'Multi-modal Embedding: {target_modality} colored by {color_col}'
     fig.suptitle(main_title, fontsize=16, fontweight='bold', y=0.95)
     
-    # Adjust layout to accommodate colorbar
-    plt.subplots_adjust(right=0.9)
+    # Adjust layout to accommodate colorbar or legend
+    if data_type == 'numerical':
+        plt.subplots_adjust(right=0.9)
+    else:
+        # For categorical data with many categories, might need more space
+        if len(unique_values) > 10:
+            plt.subplots_adjust(right=0.85)
+        else:
+            plt.subplots_adjust(right=0.9)
     
     # Save combined plot if requested and no separate plots were saved
     if output_dir and not (len(available_embeddings) == 2):

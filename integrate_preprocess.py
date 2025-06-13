@@ -195,11 +195,11 @@ if __name__ == "__main__":
     #     output_dir='/users/hjiang/GenoDistance/result/integration/visualization'
     # )
 
-    fig, axes = visualize_severity_trend(
+    fig, axes = visualize_multimodal_embedding(
         pseudobulk_anndata,
         modality_col='modality',
-        severity_col='severity',
-        target_modality='ATAC',
+        color_col='severity',
+        target_modality='RNA',
         output_dir='/users/hjiang/GenoDistance/result/integration/visualization/'
     )
 
