@@ -178,11 +178,11 @@ def create_single_embedding_plot(adata, modality_col, severity_col, target_modal
     
     return fig, ax
 
-def create_dual_embedding_plot(adata, modality_col, severity_col, target_modality,
-                              expression_key='X_DR_expression', proportion_key='X_DR_proportion',
-                              figsize=(20, 8), point_size=60, alpha=0.8, 
-                              colormap='viridis', save_path=None, 
-                              show_sample_names=False, verbose=True):
+def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
+                            expression_key='X_DR_expression', proportion_key='X_DR_proportion',
+                            figsize=(20, 8), point_size=60, alpha=0.8, 
+                            colormap='viridis', output_dir=None, 
+                            show_sample_names=False, verbose=True):
     
     if verbose:
         print(f"Creating dual embedding visualization for {target_modality}")
@@ -209,14 +209,23 @@ def create_dual_embedding_plot(adata, modality_col, severity_col, target_modalit
         available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
         raise ValueError(f"No embeddings found. Available in obsm: {available_obsm}, uns: {available_uns}")
     
-    # If both embeddings are available and save_path is provided, save separately
-    if len(available_embeddings) == 2 and save_path:
-        save_dir = os.path.dirname(save_path)
-        base_name = os.path.splitext(os.path.basename(save_path))[0]
-        extension = os.path.splitext(save_path)[1] or '.png'
+    # If both embeddings are available and output_dir is provided, save separately
+    if len(available_embeddings) == 2 and output_dir:
+        # Check if output_dir is a directory or a file path
+        if os.path.isdir(output_dir) or (not os.path.splitext(output_dir)[1]):
+            # It's a directory path
+            save_dir = output_dir
+            # Create filename based on modality and severity column
+            base_name = f"{target_modality}_{severity_col}"
+            extension = '.png'
+        else:
+            # It's a file path
+            save_dir = os.path.dirname(output_dir)
+            base_name = os.path.splitext(os.path.basename(output_dir))[0]
+            extension = os.path.splitext(output_dir)[1] or '.png'
         
-        if save_dir:
-            os.makedirs(save_dir, exist_ok=True)
+        # Create output directory if it doesn't exist
+        os.makedirs(save_dir, exist_ok=True)
         
         saved_files = []
         
@@ -230,10 +239,8 @@ def create_dual_embedding_plot(adata, modality_col, severity_col, target_modalit
             )
             
             # Create filename for this embedding type
-            if save_dir:
-                separate_save_path = os.path.join(save_dir, f"{base_name}_{embedding_type.lower()}{extension}")
-            else:
-                separate_save_path = f"{base_name}_{embedding_type.lower()}{extension}"
+            filename = f"{base_name}_{embedding_type.lower()}{extension}"
+            separate_save_path = os.path.join(save_dir, filename)
             
             plt.savefig(separate_save_path, dpi=300, bbox_inches='tight')
             saved_files.append(separate_save_path)
@@ -245,6 +252,9 @@ def create_dual_embedding_plot(adata, modality_col, severity_col, target_modalit
         
         if verbose:
             print(f"Separate plots saved: {saved_files}")
+        
+        # Return early since we've saved the separate plots
+        return None, None
     
     # Create subplots for combined view
     n_plots = len(available_embeddings)
@@ -311,35 +321,13 @@ def create_dual_embedding_plot(adata, modality_col, severity_col, target_modalit
     plt.subplots_adjust(right=0.9)
     
     # Save combined plot if requested and no separate plots were saved
-    if save_path and not (len(available_embeddings) == 2):
-        save_dir = os.path.dirname(save_path)
+    if output_dir and not (len(available_embeddings) == 2):
+        save_dir = os.path.dirname(output_dir)
         if save_dir:
             os.makedirs(save_dir, exist_ok=True)
         
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(output_dir, dpi=300, bbox_inches='tight')
         if verbose:
-            print(f"Combined plot saved to: {save_path}")
+            print(f"Combined plot saved to: {output_dir}")
     
     return fig, axes
-
-def visualize_severity_trend(adata, modality_col, severity_col, target_modality,
-                           expression_key='X_DR_expression', proportion_key='X_DR_proportion',
-                           figsize=(20, 8), point_size=60, alpha=0.8, 
-                           colormap='viridis', save_path=None, 
-                           show_sample_names=False, verbose=True, **kwargs):
-    
-    return create_dual_embedding_plot(
-        adata=adata,
-        modality_col=modality_col,
-        severity_col=severity_col,
-        target_modality=target_modality,
-        expression_key=expression_key,
-        proportion_key=proportion_key,
-        figsize=figsize,
-        point_size=point_size,
-        alpha=alpha,
-        colormap=colormap,
-        save_path=save_path,
-        show_sample_names=show_sample_names,
-        verbose=verbose
-    )

@@ -187,12 +187,20 @@ if __name__ == "__main__":
     #     integrated_data = True
     # )
     pseudobulk_anndata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_sample.h5ad")
+    # fig, axes = visualize_severity_trend(
+    #     pseudobulk_anndata,
+    #     modality_col='modality',
+    #     severity_col='sev.level',
+    #     target_modality='RNA',
+    #     output_dir='/users/hjiang/GenoDistance/result/integration/visualization'
+    # )
+
     fig, axes = visualize_severity_trend(
         pseudobulk_anndata,
         modality_col='modality',
-        severity_col='sev.level',
-        target_modality='RNA',
-        save_path='/users/hjiang/GenoDistance/result/integration/visualization/rna_severity_trend.png'
+        severity_col='severity',
+        target_modality='ATAC',
+        output_dir='/users/hjiang/GenoDistance/result/integration/visualization/'
     )
 
 

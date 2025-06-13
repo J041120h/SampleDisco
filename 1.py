@@ -255,5 +255,5 @@ def update_anndata_with_cell_meta(cell_meta, adata_path, index_col='cell_id', ov
 
 if __name__ == "__main__":
     # main("/users/hjiang/GenoDistance/result/harmony/pseudobulk_sample.h5ad")
-    adata = inspect_anndata("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_adata.h5ad", verbose=True)
+    adata = inspect_anndata("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_sample.h5ad", verbose=True)
 
