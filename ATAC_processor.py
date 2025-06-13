@@ -17,7 +17,7 @@ from VectorDistance import *
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Visualization import visualization
-from PCA import process_anndata_with_pca
+from GenoDistance.code.DR import process_anndata_with_pca
 from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test

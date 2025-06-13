@@ -187,23 +187,63 @@ def run_snapatac2_spectral(
             print(f"[snapATAC2] Failed: {str(e)}")
         return None
 
+def _store_results_in_both_objects(adata, pseudobulk_anndata, key, df_result, obsm_key=None, verbose=False):
+    """
+    Helper function to store results consistently in both adata and pseudobulk_anndata objects.
+    
+    Parameters:
+    -----------
+    adata : sc.AnnData
+        Main AnnData object
+    pseudobulk_anndata : sc.AnnData
+        Pseudobulk AnnData object
+    key : str
+        Key for storing in .uns
+    df_result : pd.DataFrame
+        Results DataFrame to store
+    obsm_key : str, optional
+        Key for storing in .obsm (if provided)
+    verbose : bool
+        Whether to print verbose output
+    """
+    if df_result is not None:
+        # Store in both .uns dictionaries
+        adata.uns[key] = df_result
+        pseudobulk_anndata.uns[key] = df_result
+        
+        # Store in .obsm if requested
+        if obsm_key is not None:
+            pseudobulk_anndata.obsm[obsm_key] = df_result.values
+            
+        if verbose:
+            print(f"[Storage] Stored {key} in both adata and pseudobulk_anndata (shape: {df_result.shape})")
+    else:
+        if verbose:
+            print(f"[Storage] Skipped storing {key} - result was None")
+
 def run_pca_expression(
     adata: sc.AnnData, 
-    pseudobulk: dict, 
     pseudobulk_anndata: sc.AnnData,
-    sample_col: str = 'sample',
     n_components: int = 10, 
-    n_features: int = 2000, 
-    frac: float = 0.3, 
     atac: bool = False,
     use_snapatac2_dimred: bool = False,
     verbose: bool = False
 ) -> None:
     """
-    Performs PCA on pseudobulk-corrected expression data using scanpy and stores the principal components 
-    in both the pseudobulk_anndata and original adata objects.
-    For ATAC data (atac=True), also computes LSI and stores combined results in X_DR_expression.
-    If use_snapatac2_dimred=True and atac=True, also computes snapATAC2 spectral embedding.
+    Performs dimension reduction on pseudobulk-corrected expression data.
+    All results are stored under the unified key 'X_DR_expression'.
+    
+    For RNA-seq data (atac=False):
+    - Performs PCA and stores results as X_DR_expression
+    
+    For ATAC-seq data (atac=True):
+    - Performs LSI and stores results as X_DR_expression (default)
+    - If use_snapatac2_dimred=True, performs snapATAC2 spectral embedding instead
+    
+    Additional method results (if computed) are stored with method-specific keys for reference:
+    - X_pca_expression_method: PCA results
+    - X_lsi_expression_method: LSI results  
+    - X_spectral_expression_method: snapATAC2 spectral results
     
     Parameters:
     -----------
@@ -216,13 +256,13 @@ def run_pca_expression(
     sample_col : str, default 'sample'
         Column name for sample identification
     n_components : int, default 10
-        Number of principal components to compute
+        Number of components to compute
     n_features : int, default 2000
         Number of highly variable features to use (if feature selection is needed)
     atac : bool, default False
-        If True, also compute LSI and store combined results in X_DR_expression
+        If True, use ATAC-seq appropriate methods (LSI or spectral)
     use_snapatac2_dimred : bool, default False
-        If True and atac=True, also compute snapATAC2 spectral embedding
+        If True and atac=True, use snapATAC2 spectral embedding instead of LSI
     verbose : bool, default False
         Whether to print verbose output
     """
@@ -231,7 +271,11 @@ def run_pca_expression(
         raise ValueError("pseudobulk_anndata parameter is required.")
     
     if verbose:
-        print(f"[PCA] Computing PCA with {n_components} components on {pseudobulk_anndata.shape} data")
+        if atac:
+            method = "snapATAC2 spectral" if use_snapatac2_dimred else "LSI"
+            print(f"[DimRed] Computing {method} for ATAC data with {n_components} components on {pseudobulk_anndata.shape} data")
+        else:
+            print(f"[DimRed] Computing PCA for RNA data with {n_components} components on {pseudobulk_anndata.shape} data")
     
     pb_adata = pseudobulk_anndata.copy()
     
@@ -241,96 +285,119 @@ def run_pca_expression(
         n_components = max_components
     
     if n_components <= 0:
-        raise ValueError(f"Cannot perform PCA: insufficient data dimensions (samples={n_samples}, genes={n_genes}).")
+        raise ValueError(f"Cannot perform dimension reduction: insufficient data dimensions (samples={n_samples}, genes={n_genes}).")
     
-    try:
-        if pb_adata.X.max() > 100:
-            sc.pp.log1p(pb_adata)
-        
-        sc.tl.pca(pb_adata, n_comps=n_components, svd_solver='arpack')
-        
-        pca_coords = pb_adata.obsm['X_pca']
-        pca_df = pd.DataFrame(
-            data=pca_coords,
-            index=pb_adata.obs_names,
-            columns=[f"PC{i+1}" for i in range(pca_coords.shape[1])]
-        )
-        
-        if verbose:
-            print(f"[PCA] Success. Shape: {pca_df.shape}")
-        
-        if atac:
-            if verbose:
-                print("[PCA] ATAC mode: Computing LSI")
+    # For ATAC data
+    if atac:
+        if use_snapatac2_dimred:
+            # Use snapATAC2 spectral embedding
+            spectral_df = run_snapatac2_spectral(
+                pseudobulk_anndata=pseudobulk_anndata,
+                n_components=n_components,
+                verbose=verbose
+            )
             
+            # Store as unified X_DR_expression
+            _store_results_in_both_objects(
+                adata, pseudobulk_anndata, 
+                "X_DR_expression", spectral_df, 
+                obsm_key="X_DR_expression", 
+                verbose=verbose
+            )
+            
+            # Also store with method-specific key for reference
+            _store_results_in_both_objects(
+                adata, pseudobulk_anndata, 
+                "X_spectral_expression_method", spectral_df, 
+                obsm_key="X_spectral_expression_method", 
+                verbose=verbose
+            )
+        else:
+            # Use LSI (default for ATAC)
             lsi_df = run_lsi_expression(
                 pseudobulk_anndata=pseudobulk_anndata,
                 n_components=n_components,
                 verbose=verbose
             )
             
-            adata.uns["X_pca_expression"] = pca_df
+            # Store as unified X_DR_expression
+            _store_results_in_both_objects(
+                adata, pseudobulk_anndata, 
+                "X_DR_expression", lsi_df, 
+                obsm_key="X_DR_expression", 
+                verbose=verbose
+            )
             
-            if lsi_df is not None:
-                adata.uns["X_DR_expression"] = lsi_df
-                if verbose:
-                    print(f"[PCA] LSI stored in X_DR_expression")
-            else:
-                if verbose:
-                    print(f"[PCA] LSI failed, X_DR_expression not stored")
+            # Also store with method-specific key for reference
+            _store_results_in_both_objects(
+                adata, pseudobulk_anndata, 
+                "X_lsi_expression_method", lsi_df, 
+                obsm_key="X_lsi_expression_method", 
+                verbose=verbose
+            )
+    
+    # For RNA data (or always compute PCA for reference)
+    else:
+        try:
+            if pb_adata.X.max() > 100:
+                sc.pp.log1p(pb_adata)
             
-            # Compute snapATAC2 spectral embedding if requested
-            if use_snapatac2_dimred:
-                if verbose:
-                    print("[PCA] Computing snapATAC2 spectral embedding")
+            sc.tl.pca(pb_adata, n_comps=n_components, svd_solver='arpack')
+            
+            pca_coords = pb_adata.obsm['X_pca']
+            pca_df = pd.DataFrame(
+                data=pca_coords,
+                index=pb_adata.obs_names,
+                columns=[f"PC{i+1}" for i in range(pca_coords.shape[1])]
+            )
+            
+            if verbose:
+                print(f"[PCA] Success. Shape: {pca_df.shape}")
+            
+            # Store as unified X_DR_expression
+            _store_results_in_both_objects(
+                adata, pseudobulk_anndata, 
+                "X_DR_expression", pca_df, 
+                obsm_key="X_DR_expression", 
+                verbose=verbose
+            )
+            
+            # Also store with method-specific key for reference
+            _store_results_in_both_objects(
+                adata, pseudobulk_anndata, 
+                "X_pca_expression_method", pca_df, 
+                obsm_key="X_pca_expression_method", 
+                verbose=verbose
+            )
+            
+            # Store variance information
+            if 'pca' in pb_adata.uns:
+                adata.uns["X_DR_expression_variance"] = pb_adata.uns['pca']['variance']
+                adata.uns["X_DR_expression_variance_ratio"] = pb_adata.uns['pca']['variance_ratio']
+                pseudobulk_anndata.uns["X_DR_expression_variance"] = pb_adata.uns['pca']['variance']
+                pseudobulk_anndata.uns["X_DR_expression_variance_ratio"] = pb_adata.uns['pca']['variance_ratio']
                 
-                spectral_df = run_snapatac2_spectral(
-                    pseudobulk_anndata=pseudobulk_anndata,
-                    n_components=n_components,
-                    verbose=verbose
-                )
-                
-                if spectral_df is not None:
-                    # Store in both pseudobulk_anndata and original adata
-                    pseudobulk_anndata.uns["X_spectral_expression"] = spectral_df
-                    adata.uns["X_spectral_expression"] = spectral_df
-                    
-                    # Also store the spectral embedding in obsm for the pseudobulk_anndata
-                    pseudobulk_anndata.obsm['X_spectral_expression'] = spectral_df.values
-                    
-                    if verbose:
-                        print(f"[PCA] snapATAC2 spectral embedding stored in X_spectral_expression")
-                else:
-                    if verbose:
-                        print(f"[PCA] snapATAC2 spectral embedding failed")
-        else:
-            adata.uns["X_pca_expression"] = pca_df
-        
-        if 'pca' in pb_adata.uns:
-            if atac:
-                adata.uns["X_DR_expression_pca_variance"] = pb_adata.uns['pca']['variance']
-                adata.uns["X_DR_expression_pca_variance_ratio"] = pb_adata.uns['pca']['variance_ratio']
-            else:
-                adata.uns["X_pca_expression_variance"] = pb_adata.uns['pca']['variance']
-                adata.uns["X_pca_expression_variance_ratio"] = pb_adata.uns['pca']['variance_ratio']
-        
-        if verbose:
-            print(f"[PCA] Completed")
+                if verbose:
+                    print(f"[PCA] Stored variance information in both objects")
             
-    except Exception as e:
-        raise RuntimeError(f"PCA computation failed: {str(e)}")
+        except Exception as e:
+            raise RuntimeError(f"PCA computation failed: {str(e)}")
+    
+    if verbose:
+        print(f"[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata")
 
 
 def run_pca_proportion(
     adata: sc.AnnData, 
     pseudobulk: dict, 
+    pseudobulk_anndata: sc.AnnData = None,
     sample_col: str = 'sample',
     n_components: int = 10, 
     verbose: bool = False
 ) -> None:
     """
-    Performs PCA on cell proportion data and stores the principal components in the AnnData object
-    (adata.uns["X_pca_proportion"]). The resulting DataFrame will have each sample as the row index.
+    Performs PCA on cell proportion data and stores the principal components under the unified key
+    'X_DR_proportion' in both AnnData objects.
     """
     if "cell_proportion" not in pseudobulk:
         raise KeyError("Missing 'cell_proportion' key in pseudobulk dictionary.")
@@ -360,11 +427,22 @@ def run_pca_proportion(
         columns=[f"PC{i+1}" for i in range(n_components)]
     )
     
-    adata.uns["X_pca_proportion"] = pca_df
+    # Store in main adata object with unified key
+    adata.uns["X_DR_proportion"] = pca_df
     
-    if verbose:
-        print(f"[run_pca_proportion] PCA on cell proportions completed.")
-        print(f"Stored results in adata.uns['X_pca_proportion'] with shape: {pca_df.shape}")
+    # Store in pseudobulk_anndata if provided
+    if pseudobulk_anndata is not None:
+        pseudobulk_anndata.uns["X_DR_proportion"] = pca_df
+        # Also store in obsm for convenience
+        pseudobulk_anndata.obsm["X_DR_proportion"] = pca_df.values
+        
+        if verbose:
+            print(f"[run_pca_proportion] PCA on cell proportions completed.")
+            print(f"Stored results as X_DR_proportion in both adata and pseudobulk_anndata with shape: {pca_df.shape}")
+    else:
+        if verbose:
+            print(f"[run_pca_proportion] PCA on cell proportions completed.")
+            print(f"Stored results in adata.uns['X_DR_proportion'] with shape: {pca_df.shape}")
 
 
 def process_anndata_with_pca(
@@ -382,8 +460,14 @@ def process_anndata_with_pca(
     verbose: bool = True
 ) -> None:
     """
-    Computes PCA for both cell expression and cell proportion data and stores the results in an AnnData object.
-    For ATAC data (atac=True), also computes LSI for expression data and stores combined results.
+    Computes dimension reduction for both cell expression and cell proportion data.
+    All results are stored under unified keys:
+    - X_DR_expression: dimension reduction results for expression data
+    - X_DR_proportion: dimension reduction results for proportion data
+    
+    The specific method used depends on the data type:
+    - RNA-seq (atac=False): PCA
+    - ATAC-seq (atac=True): LSI (default) or snapATAC2 spectral (if use_snapatac2_dimred=True)
     
     Parameters:
     -----------
@@ -396,15 +480,17 @@ def process_anndata_with_pca(
     sample_col : str, default 'sample'
         Column name for sample identification
     n_expression_pcs : int, default 10
-        Number of principal components for expression PCA (and LSI if atac=True)
+        Number of components for expression dimension reduction
     n_proportion_pcs : int, default 10
-        Number of principal components for proportion PCA
+        Number of components for proportion dimension reduction
     output_dir : str, default "./"
         Output directory for saving results
     not_save : bool, default False
         If True, skip saving files
     atac : bool, default False
-        If True, use ATAC-seq naming convention and compute both PCA+LSI for expression data
+        If True, use ATAC-seq appropriate methods
+    use_snapatac2_dimred : bool, default False
+        If True and atac=True, use snapATAC2 spectral embedding instead of LSI
     verbose : bool, default True
         Whether to print verbose output
     """
@@ -417,9 +503,15 @@ def process_anndata_with_pca(
         raise ValueError("pseudobulk_anndata parameter is required.")
     
     if verbose:
-        print("[process_anndata_with_pca] Starting PCA computation...")
+        print("[process_anndata_with_pca] Starting dimension reduction computation...")
+        print("[process_anndata_with_pca] Results will be stored under unified keys:")
+        print("  - X_DR_expression: for expression data")
+        print("  - X_DR_proportion: for proportion data")
         if atac:
-            print("[process_anndata_with_pca] ATAC mode: Will compute both PCA and LSI for expression data")
+            method = "snapATAC2 spectral" if use_snapatac2_dimred else "LSI"
+            print(f"[process_anndata_with_pca] ATAC mode: Will use {method} for expression data")
+        else:
+            print("[process_anndata_with_pca] RNA mode: Will use PCA for expression data")
     
     # Create output directory
     if not os.path.exists(output_dir):
@@ -445,7 +537,7 @@ def process_anndata_with_pca(
     if verbose:
         print(f"[process_anndata_with_pca] Using n_expression_pcs={n_expression_pcs}, n_proportion_pcs={n_proportion_pcs}")
     
-    # Run PCA (and LSI if ATAC) on expression data
+    # Run dimension reduction on expression data
     try:
         run_pca_expression(
             adata=adata, 
@@ -453,26 +545,27 @@ def process_anndata_with_pca(
             pseudobulk_anndata=pseudobulk_anndata,
             sample_col=sample_col,
             n_components=n_expression_pcs,
-            atac=atac,  # Pass the atac parameter
-            use_snapatac2_dimred =use_snapatac2_dimred,
+            atac=atac,
+            use_snapatac2_dimred=use_snapatac2_dimred,
             verbose=verbose
         )
     except Exception as e:
         if verbose:
-            print(f"[process_anndata_with_pca] Warning: Expression PCA/LSI failed ({str(e)}). Continuing with proportion PCA.")
+            print(f"[process_anndata_with_pca] Warning: Expression dimension reduction failed ({str(e)}). Continuing with proportion dimension reduction.")
     
-    # Run PCA on proportion data
+    # Run dimension reduction on proportion data
     try:
         run_pca_proportion(
             adata=adata, 
             pseudobulk=pseudobulk, 
+            pseudobulk_anndata=pseudobulk_anndata,
             sample_col=sample_col,
             n_components=n_proportion_pcs, 
             verbose=verbose
         )
     except Exception as e:
         if verbose:
-            print(f"[process_anndata_with_pca] Warning: Proportion PCA failed ({str(e)}).")
+            print(f"[process_anndata_with_pca] Warning: Proportion dimension reduction failed ({str(e)}).")
     
     # Save data unless not_save is True
     if not not_save:
@@ -490,14 +583,16 @@ def process_anndata_with_pca(
             sc.write(adata_path, adata)
             sc.write(pb_adata_path, pseudobulk_anndata)
             if verbose:
-                print(f"[process_anndata_with_pca] AnnData with PCA results saved to: {adata_path}")
-                print(f"[process_anndata_with_pca] Pseudobulk AnnData saved to: {pb_adata_path}")
+                print(f"[process_anndata_with_pca] AnnData with dimension reduction results saved to: {adata_path}")
+                print(f"[process_anndata_with_pca] Pseudobulk AnnData with dimension reduction results saved to: {pb_adata_path}")
         except Exception as e:
             if verbose:
                 print(f"[process_anndata_with_pca] Warning: Could not save file ({str(e)}).")
     
     if verbose and start_time is not None:
         elapsed_time = time.time() - start_time
-        print(f"[process_anndata_with_pca] Total runtime for PCA processing: {elapsed_time:.2f} seconds")
+        print(f"[process_anndata_with_pca] Total runtime for dimension reduction: {elapsed_time:.2f} seconds")
+        print(f"[process_anndata_with_pca] All results are now available under unified keys:")
+        print(f"  - X_DR_expression and X_DR_proportion in both adata.uns and pseudobulk_anndata.uns")
 
     return pseudobulk_anndata

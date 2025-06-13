@@ -1,15 +1,15 @@
 ======================================
- Job ID:            17290498
+ Job ID:            17312882
  Job Name:          test
  Partition:         gpu
  Node List:         compute-170
  CPUs per Task:     16
  Memory Alloc:      819200
  GPU Requested:     1
- Start Time:        Thu Jun 12 10:44:13 AM EDT 2025
+ Start Time:        Thu Jun 12 03:30:40 PM EDT 2025
 ======================================
 Checking GPU status...
-Thu Jun 12 10:44:16 2025       
+Thu Jun 12 15:30:43 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -30,44 +30,5 @@ Thu Jun 12 10:44:16 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
-Automatically generating harmony subdirectory
-=== Read input dataset ===
-Dimension of raw data (cells x genes): 987474 x 14743
-After basic filtering -- Cells remaining: 985244, Genes remaining: 14638
-After remove MT_gene and user input cell -- Cells remaining: 984653, Genes remaining: 14625
-Sample counts BEFORE filtering:
-sample
-HD-16-Yu          12238
-HD-7-Wen          11405
-HD-9-Wen          11336
-CoV-29-Yu         11204
-CoV-85.1-Su       11051
-                  ...  
-CoV-153.2-Su        513
-CoV-73.1-SS2        509
-SRR14466471         355
-re_SRR14466469      344
-SRR14466469          17
-Length: 432, dtype: int64
-
-Samples retained (>= 500 cells): ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-2-Wilk', 'CoV-3-Wilk', 'CoV-4-Wilk', 'CoV-5-Wilk', 'CoV-7-Wilk', 'CoV-18-Lee', 'CoV-19-Lee', 'CoV-20.2-Lee', 'CoV-21-Lee', 'CoV-22-Lee', 'CoV-23.1-Lee', 'CoV-23.2-Lee', 'CoV-24.1-Lee', 'CoV-24.2-Lee', 'CoV-25-Lee', 'CoV-26.1-Guo', 'CoV-27.1-Guo', 'CoV-28-Yu', 'CoV-29-Yu', 'CoV-30-Yu', 'CoV-31-Yu', 'CoV-32-Yu', 'CoV-33-Yu', 'CoV-34-Aruna', 'CoV-35-Aruna', 'CoV-36-Aruna', 'CoV-37-Aruna', 'CoV-38-Aruna', 'CoV-39-Aruna', 'CoV-40-Aruna', 'CoV-41.1-SS1', 'CoV-41.2-SS1', 'CoV-42.1-SS1', 'CoV-42.2-SS1', 'CoV-43.1-SS1', 'CoV-43.2-SS1', 'CoV-44.2-SS1', 'CoV-45-SS1', 'CoV-46-SS1', 'CoV-47-SS1', 'CoV-48-SS1', 'CoV-49.1-SS1', 'CoV-49.2-SS1', 'CoV-50.1-SS1', 'CoV-50.2-SS1', 'CoV-51-SS1', 'CoV-52.1-SS1', 'CoV-52.2-SS1', 'CoV-53.1-SS1', 'CoV-53.2-SS1', 'CoV-54-SS1', 'CoV-55-SS1', 'CoV-56-SS1', 'CoV-57-SS1', 'CoV-58-SS1', 'CoV-59.1-SS2', 'CoV-59.2-SS2', 'CoV-59.3-SS2', 'CoV-60-SS2', 'CoV-61-SS2', 'CoV-62.1-SS2', 'CoV-62.2-SS2', 'CoV-62.3-SS2', 'CoV-62.4-SS2', 'CoV-63.1-SS2', 'CoV-63.2-SS2', 'CoV-63.3-SS2', 'CoV-63.4-SS2', 'CoV-63.5-SS2', 'CoV-63.6-SS2', 'CoV-63.7-SS2', 'CoV-64.1-SS2', 'CoV-64.2-SS2', 'CoV-64.3-SS2', 'CoV-65.1-SS2', 'CoV-65.2-SS2', 'CoV-67.1-SS2', 'CoV-67.2-SS2', 'CoV-68.1-SS2', 'CoV-68.2-SS2', 'CoV-68.3-SS2', 'CoV-68.4-SS2', 'CoV-69.1-SS2', 'CoV-69.4-SS2', 'CoV-69.6-SS2', 'CoV-70.1-SS2', 'CoV-70.3-SS2', 'CoV-71.1-SS2', 'CoV-71.2-SS2', 'CoV-71.3-SS2', 'CoV-71.4-SS2', 'CoV-72.1-SS2', 'CoV-72.2-SS2', 'CoV-72.3-SS2', 'CoV-73.1-SS2', 'CoV-73.2-SS2', 'CoV-73.3-SS2', 'CoV-74.1-SS2', 'CoV-74.2-SS2', 'CoV-76.5-SS2', 'CoV-77.2-Silvin', 'CoV-79.1-Silvin', 'CoV-82.1-Su', 'CoV-82.2-Su', 'CoV-83.1-Su', 'CoV-83.2-Su', 'CoV-84.1-Su', 'CoV-84.2-Su', 'CoV-85.1-Su', 'CoV-85.2-Su', 'CoV-86.1-Su', 'CoV-86.2-Su', 'CoV-87.1-Su', 'CoV-87.2-Su', 'CoV-88.1-Su', 'CoV-88.2-Su', 'CoV-89.1-Su', 'CoV-90.1-Su', 'CoV-90.2-Su', 'CoV-91.1-Su', 'CoV-91.2-Su', 'CoV-92.1-Su', 'CoV-92.2-Su', 'CoV-93.1-Su', 'CoV-93.2-Su', 'CoV-94.1-Su', 'CoV-94.2-Su', 'CoV-95-Su', 'CoV-96.1-Su', 'CoV-96.2-Su', 'CoV-97.1-Su', 'CoV-97.2-Su', 'CoV-98.1-Su', 'CoV-98.2-Su', 'CoV-99.2-Su', 'CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su', 'CoV-101.2-Su', 'CoV-102.1-Su', 'CoV-102.2-Su', 'CoV-103.1-Su', 'CoV-103.2-Su', 'CoV-104.1-Su', 'CoV-104.2-Su', 'CoV-105.1-Su', 'CoV-105.2-Su', 'CoV-106.1-Su', 'CoV-106.2-Su', 'CoV-107.1-Su', 'CoV-107.2-Su', 'CoV-108.1-Su', 'CoV-108.2-Su', 'CoV-109.1-Su', 'CoV-109.2-Su', 'CoV-110.1-Su', 'CoV-110.2-Su', 'CoV-111.1-Su', 'CoV-111.2-Su', 'CoV-112.1-Su', 'CoV-112.2-Su', 'CoV-113.1-Su', 'CoV-113.2-Su', 'CoV-114.1-Su', 'CoV-114.2-Su', 'CoV-115.1-Su', 'CoV-115.2-Su', 'CoV-116.1-Su', 'CoV-116.2-Su', 'CoV-117.1-Su', 'CoV-117.2-Su', 'CoV-118.2-Su', 'CoV-119.1-Su', 'CoV-119.2-Su', 'CoV-120.1-Su', 'CoV-120.2-Su', 'CoV-121.2-Su', 'CoV-122.2-Su', 'CoV-123.1-Su', 'CoV-123.2-Su', 'CoV-124.2-Su', 'CoV-125-Su', 'CoV-126.1-Su', 'CoV-126.2-Su', 'CoV-127.1-Su', 'CoV-127.2-Su', 'CoV-128.1-Su', 'CoV-128.2-Su', 'CoV-129.1-Su', 'CoV-129.2-Su', 'CoV-130.1-Su', 'CoV-130.2-Su', 'CoV-132.1-Su', 'CoV-132.2-Su', 'CoV-133.1-Su', 'CoV-133.2-Su', 'CoV-134.1-Su', 'CoV-134.2-Su', 'CoV-135.1-Su', 'CoV-135.2-Su', 'CoV-136.1-Su', 'CoV-136.2-Su', 'CoV-137.1-Su', 'CoV-137.2-Su', 'CoV-138.1-Su', 'CoV-138.2-Su', 'CoV-139.1-Su', 'CoV-139.2-Su', 'CoV-140.1-Su', 'CoV-140.2-Su', 'CoV-141.1-Su', 'CoV-141.2-Su', 'CoV-142.1-Su', 'CoV-142.2-Su', 'CoV-143.1-Su', 'CoV-143.2-Su', 'CoV-144.1-Su', 'CoV-144.2-Su', 'CoV-145.1-Su', 'CoV-145.2-Su', 'CoV-146.1-Su', 'CoV-146.2-Su', 'CoV-147.1-Su', 'CoV-148.1-Su', 'CoV-149.1-Su', 'CoV-149.2-Su', 'CoV-150.1-Su', 'CoV-150.2-Su', 'CoV-151.1-Su', 'CoV-151.2-Su', 'CoV-152.1-Su', 'CoV-152.2-Su', 'CoV-153.1-Su', 'CoV-153.2-Su', 'CoV-154.2-Su', 'CoV-155.1-Su', 'CoV-155.2-Su', 'CoV-156.1-Su', 'CoV-156.2-Su', 'CoV-157.1-Su', 'CoV-157.2-Su', 'CoV-158.1-Su', 'CoV-158.2-Su', 'CoV-159.1-Su', 'CoV-159.2-Su', 'CoV-160.1-Su', 'CoV-160.2-Su', 'CoV-161.1-Su', 'CoV-161.2-Su', 'CoV-162.1-Su', 'CoV-162.2-Su', 'CoV-163.1-Su', 'CoV-163.2-Su', 'CoV-164.1-Su', 'CoV-164.2-Su', 'CoV-165.1-Su', 'CoV-165.2-Su', 'CoV-166.2-Su', 'CoV-167.2-Su', 'CoV-168.1-Su', 'CoV-169.1-Su', 'CoV-169.2-Su', 'CoV-170.1-Su', 'CoV-171.1-Su', 'CoV-171.2-Su', 'CoV-172.1-Su', 'CoV-172.2-Su', 'CoV-173.1-Su', 'CoV-173.2-Su', 'CoV-174.2-Su', 'CoV-175.1-Su', 'CoV-175.2-Su', 'CoV-176.1-Su', 'CoV-176.2-Su', 'CoV-177.2-Su', 'CoV-179.1-Su', 'CoV-179.2-Su', 'CoV-180.1-Su', 'CoV-180.2-Su', 'CoV-181.1-Su', 'CoV-181.2-Su', 'CoV-182.1-Su', 'CoV-182.2-Su', 'CoV-183.1-Su', 'CoV-183.2-Su', 'CoV-184.1-Su', 'CoV-184.2-Su', 'CoV-185.1-Su', 'CoV-185.2-Su', 'CoV-186.1-Su', 'CoV-186.2-Su', 'CoV-187.1-Su', 'CoV-187.2-Su', 'CoV-188.1-Su', 'CoV-188.2-Su', 'CoV-189.1-Su', 'CoV-189.2-Su', 'CoV-190.1-Su', 'CoV-190.2-Su', 'CoV-191.1-Su', 'CoV-191.2-Su', 'CoV-192.1-Su', 'CoV-192.2-Su', 'CoV-193.1-Su', 'CoV-193.2-Su', 'CoV-194.1-Su', 'CoV-194.2-Su', 'CoV-195.1-Su', 'CoV-195.2-Su', 'CoV-196.1-Su', 'CoV-196.2-Su', 'CoV-197.1-Su', 'CoV-197.2-Su', 'CoV-198.1-Su', 'CoV-198.2-Su', 'CoV-199.1-Su', 'CoV-199.2-Su', 'CoV-200.2-Su', 'CoV-201.2-Su', 'CoV-202.2-Su', 'CoV-203.1-Su', 'CoV-203.2-Su', 'CoV-204.1-Su', 'CoV-204.2-Su', 'CoV-205.1-Su', 'CoV-205.2-Su', 'CoV-206.1-Su', 'CoV-206.2-Su', 'CoV-207.1-Su', 'CoV-207.2-Su', 'CoV-208.1-Su', 'CoV-208.2-Su', 'CoV-209.1-Su', 'CoV-210.1-Su', 'CoV-210.2-Su', 'CoV-211.1-Zhu', 'CoV-211.2-Zhu', 'CoV-212.2-Zhu', 'CoV-212.3-Zhu', 'CoV-212.5-Zhu', 'CoV-213.1-Zhu', 'CoV-213.2-Zhu', 'CoV-214.1-Zhu', 'CoV-214.2-Zhu', 'CoV-215.1-Zhu', 'CoV-215.3-Zhu', 'CoV-216-Mudd', 'CoV-217-Mudd', 'CoV-218-Mudd', 'HD-1-Wilk', 'HD-2-Wilk', 'HD-3-Wilk', 'HD-4-Wilk', 'HD-5-Wilk', 'HD-6-Wilk', 'HD-7-Wen', 'HD-8-Wen', 'HD-9-Wen', 'HD-10-Wen', 'HD-11-Wen', 'HD-12-Lee', 'HD-13-Lee', 'HD-14-Lee', 'HD-15-Lee', 'HD-16-Yu', 'HD-17-Yu', 'HD-18-Yu', 'HD-19-Aruna', 'HD-20-Aruna', 'HD-21-Aruna', 'HD-22-Aruna', 'HD-23-Aruna', 'HD-24-SS2', 'HD-28-SS2', 'HD-29-SS2', 'HD-30-SS2', 'HD-31-SS2', 'HD-32-SS2', 'HD-33-SS2', 'HD-35-SS2', 'HD-36-SS2', 'HD-37-SS2', 'HD-39-SS2', 'HD-43-Su', 'HD-44-Su', 'HD-45-Su', 'HD-46-Su', 'HD-47-Su', 'HD-48-Su', 'HD-49-Su', 'HD-50-Su', 'HD-51-Su', 'HD-52-Su', 'HD-53-Su', 'HD-54-Su', 'HD-55-Su', 'HD-56-Su', 'HD-57-Su', 'HD-58-Su', 'HD-58-Zhu', 'HD-59-Zhu', 'HD-60-Zhu', 'HD-61-Mudd', 'SRR14466459', 'SRR14466460', 'SRR14466461', 'SRR14466462', 'SRR14466463', 'SRR14466464', 'SRR14466465', 'SRR14466466', 'SRR14466467', 'SRR14466468', 'SRR14466470', 'SRR14466472', 'SRR14466473', 'SRR14466474', 'SRR14466475', 'SRR14466476', 'SRR14466477', 'SRR14466478', 'SRR14466479', 'SRR14466480', 'SRR14466481', 'SRR14466482', 'SRR14466483', 're_SRR14466471']
-
-Sample counts AFTER filtering:
-sample
-HD-16-Yu        12238
-HD-7-Wen        11405
-HD-9-Wen        11336
-CoV-29-Yu       11204
-CoV-85.1-Su     11051
-                ...  
-CoV-53.1-SS1      522
-CoV-203.1-Su      520
-CoV-102.1-Su      520
-CoV-153.2-Su      513
-CoV-73.1-SS2      509
-Name: count, Length: 429, dtype: int64
-Final filtering -- Cells remaining: 983937, Genes remaining: 12138
-Preprocessing complete!
-Function execution time: 4541.56 seconds
 Finished main.py.
-End Time: Thu Jun 12 12:04:37 PM EDT 2025
+End Time: Thu Jun 12 03:35:22 PM EDT 2025

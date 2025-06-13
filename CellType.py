@@ -471,82 +471,116 @@ import scanpy as sc
 import os
 import time
 
+import os
+import matplotlib.pyplot as plt
+import scanpy as sc
+import numpy as np
+from typing import Tuple
+
 def generate_umap_visualizations(
-    adata,
+    adata: sc.AnnData,
     output_dir: str,
-    groupby: str = 'cell_type',
-    figsize: tuple = (12, 8),
+    groupby: str = "cell_type",
+    figsize: Tuple[int, int] = (12, 8),
     point_size: float = 20,
     dpi: int = 300,
-    verbose: bool = True
-):
+    n_neighbors: int = 15,
+    n_pcs: int | None = 50,
+    random_state: int = 42,
+    verbose: bool = True,
+) -> sc.AnnData:
     """
-    Generate UMAP visualizations for cell types and save to specified directory.
-    
-    This function complements the cell_types() function by creating UMAP plots
-    and saving essential outputs.
-    
+    Compute (if needed) neighbors ➔ UMAP ➔ save figure.
+
     Parameters
     ----------
-    adata : AnnData
-        Annotated data object with cell type assignments
-    output_dir : str
-        Directory to save the UMAP plots and related files
-    groupby : str, default 'cell_type'
-        Column in adata.obs to use for coloring the UMAP
-    figsize : tuple, default (12, 8)
-        Figure size as (width, height)
-    point_size : float, default 20
-        Size of points in the scatter plot
-    dpi : int, default 300
-        Resolution for saved plots
-    verbose : bool, default True
-        Whether to print progress messages
-        
+    adata
+        Annotated data matrix.
+    output_dir
+        Folder for the PNG figure.
+    groupby
+        .obs column used for colouring the UMAP.
+    figsize, point_size, dpi
+        Plot appearance.
+    n_neighbors, n_pcs
+        Parameters passed to ``sc.pp.neighbors`` when a graph is absent.
+        If ``n_pcs`` is None the whole X is used.
+    random_state
+        For reproducibility in both neighbors & UMAP.
+    verbose
+        Print progress messages.
+
     Returns
     -------
-    adata : AnnData
-        Updated AnnData object with UMAP coordinates
+    AnnData
+        The same object with ``neighbors`` and ``X_umap`` filled in.
     """
-    
-    
     if verbose:
-        print(f"[generate_umap_visualizations] Starting UMAP visualization...")
-    
-    # Validate groupby column
+        print("[generate_umap_visualizations] Starting …")
+
     if groupby not in adata.obs.columns:
         raise ValueError(f"Column '{groupby}' not found in adata.obs")
-    
-    # Compute UMAP if needed
-    if 'X_umap' not in adata.obsm:
+
+    # ------------------------------------------------------------------ #
+    # 1. Nearest-neighbour graph (if absent)
+    # ------------------------------------------------------------------ #
+    need_neighbors = (
+        "neighbors" not in adata.uns
+        or not {"distances", "connectivities"}.issubset(adata.obsp.keys())
+    )
+
+    if need_neighbors:
         if verbose:
-            print("[generate_umap_visualizations] Computing UMAP coordinates...")
-        sc.tl.umap(adata, min_dist=0.5, n_neighbors=15, random_state=42)
-    
-    # Set scanpy figure parameters
-    sc.settings.set_figure_params(dpi=dpi, facecolor='white', figsize=figsize)
-    
-    # Create UMAP plot
+            print("[generate_umap_visualizations] → Computing neighbors")
+
+        # Ensure PCA exists if we plan to use PCs
+        if n_pcs is not None and "X_pca" not in adata.obsm:
+            if verbose:
+                print("  ⤷ PCA not found – running sc.tl.pca")
+            sc.tl.pca(adata, svd_solver="arpack")
+
+        sc.pp.neighbors(
+            adata,
+            n_neighbors=n_neighbors,
+            n_pcs=n_pcs,
+            random_state=random_state,
+        )
+
+    # ------------------------------------------------------------------ #
+    # 2. UMAP embedding (if absent)
+    # ------------------------------------------------------------------ #
+    if "X_umap" not in adata.obsm:
+        if verbose:
+            print("[generate_umap_visualizations] → Computing UMAP")
+        sc.tl.umap(adata, min_dist=0.5, random_state=random_state)
+
+    # ------------------------------------------------------------------ #
+    # 3. Plot & save
+    # ------------------------------------------------------------------ #
+    os.makedirs(output_dir, exist_ok=True)
+    sc.settings.set_figure_params(dpi=dpi, facecolor="white", figsize=figsize)
+
     if verbose:
-        print(f"[generate_umap_visualizations] Creating UMAP plot colored by {groupby}...")
-    
-    sc.pl.umap(
-        adata, 
-        color=groupby, 
-        palette='tab20',
+        print(f"[generate_umap_visualizations] → Plotting coloured by '{groupby}'")
+
+    fig = sc.pl.umap(
+        adata,
+        color=groupby,
+        palette="tab20",
         size=point_size,
         alpha=0.8,
-        legend_loc='right margin',
+        legend_loc="right margin",
         legend_fontsize=10,
-        title=f'UMAP - {groupby.replace("_", " ").title()}',
+        title=f"UMAP – {groupby.replace('_', ' ').title()}",
         show=False,
-        save=False
+        return_fig=True,
     )
-    
-    # Save UMAP plot
-    umap_path = os.path.join(output_dir, f'umap_{groupby}.png')
-    plt.savefig(umap_path, dpi=dpi, bbox_inches='tight', facecolor='white')
-    plt.close()
-    
+
+    outfile = os.path.join(output_dir, f"umap_{groupby}.png")
+    fig.savefig(outfile, dpi=dpi, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+
     if verbose:
-        print(f"[generate_umap_visualizations] Saved UMAP plot: {umap_path}")
+        print(f"[generate_umap_visualizations] ✓ Saved: {outfile}")
+
+    return adata

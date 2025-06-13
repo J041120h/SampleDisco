@@ -1,11 +1,12 @@
 import os
 import scanpy as sc
 from pseudo_adata import *
-from PCA import *
+from DR import *
 import time
 import contextlib
 import io
 from CellType import *
+from integration_visualization import *
 
 def integrate_preprocess(
     output_dir,
@@ -98,7 +99,8 @@ def integrate_preprocess(
         with contextlib.redirect_stdout(f):
             sc.pp.scrublet(adata, batch_key=sample_column)
             adata = adata[~adata.obs['predicted_doublet']].copy()
-    
+
+    fill_obs_nan_with_unknown(adata)
     adata.raw = adata.copy()
     if verbose:
         print("Preprocessing complete!")
@@ -111,39 +113,117 @@ def integrate_preprocess(
     if verbose:
         print(f"Function execution time: {elapsed_time:.2f} seconds")
 
-    return adata
+    return 
+
+import pandas as pd
+import scanpy as sc
+
+def fill_obs_nan_with_unknown(
+    adata: sc.AnnData,
+    fill_value: str = "unKnown",
+    verbose: bool = False,
+) -> None:
+    """
+    Replace NaN values in all .obs columns with `fill_value`.
+    Works transparently for Categorical, string/object, numeric, or mixed types.
+    Operates in-place on `adata`.
+    """
+    for col in adata.obs.columns:
+        ser = adata.obs[col]
+
+        # Skip if the column has no missing values
+        if not ser.isnull().any():
+            continue
+
+        # --- Handle categoricals ------------------------------------------------
+        if pd.api.types.is_categorical_dtype(ser):
+            if fill_value not in ser.cat.categories:
+                # add the new category then continue using categorical dtype
+                ser = ser.cat.add_categories([fill_value])
+            ser = ser.fillna(fill_value)
+
+        # --- Handle everything else (string, numeric, mixed) --------------------
+        else:
+            # Cast to object first if it’s numeric; keeps mixed dtypes safe
+            if pd.api.types.is_numeric_dtype(ser):
+                ser = ser.astype("object")
+            ser = ser.fillna(fill_value)
+
+        # Write back to AnnData
+        adata.obs[col] = ser
+
+        if verbose:
+            print(f"✓ Filled NaNs in .obs['{col}'] with '{fill_value}'")
+
+
 
 if __name__ == "__main__":
-    adata = integrate_preprocess(
-        output_dir = "/users/hjiang/GenoDistance/result/integration",
-        sample_column = 'sample',
-        min_cells_sample=500,
-        min_cell_gene=500,
-        min_features=500,
-        pct_mito_cutoff=20,
-        exclude_genes=None,
-        doublet=True, 
-        verbose=True
-    )
-    adata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")
-    atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
-                adata=adata,
-                batch_col='batch',
-                sample_col='sample',
-                output_dir="/users/hjiang/GenoDistance/result/"
-            )
+    # adata = integrate_preprocess(
+    #     output_dir = "/users/hjiang/GenoDistance/result/integration",
+    #     sample_column = 'sample',
+    #     min_cells_sample=500,
+    #     min_cell_gene=500,
+    #     min_features=500,
+    #     pct_mito_cutoff=20,
+    #     exclude_genes=None,
+    #     doublet=True, 
+    #     verbose=True
+    # )
+    pseudobulk_anndata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_adata.h5ad")
+    # adata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")
+    # fill_obs_nan_with_unknown(adata)
+    # atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
+    #             adata=adata,
+    #             batch_col='batch',
+    #             sample_col='sample',
+    #             output_dir="/users/hjiang/GenoDistance/result/integration"
+    #         )
 
-    pseudobulk_anndata = process_anndata_with_pca(
-        adata=adata,
-        pseudobulk=atac_pseudobulk_df,
-        pseudobulk_anndata = pseudobulk_adata,
-        sample_col = "sample",
-        output_dir= "/users/hjiang/GenoDistance/result/integration",
-        integrated_data = True
+    # pseudobulk_anndata = process_anndata_with_pca(
+    #     adata=adata,
+    #     pseudobulk=atac_pseudobulk_df,
+    #     pseudobulk_anndata = pseudobulk_adata,
+    #     sample_col = "sample",
+    #     output_dir= "/users/hjiang/GenoDistance/result/integration",
+    #     integrated_data = True
+    # )
+
+    # generate_umap_visualizations(
+    #     pseudobulk_anndata,
+    #     output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
+    #     point_size = 100,
+    #     groupby = 'modality'
+    # )
+
+    fig, ax = multimodal_embedding_visualization(
+        adata=pseudobulk_anndata,
+        modality_col='modality',
+        severity_col='sev.level',
+        embedding_key='X_',
+        target_modality='RNA',
+        save_path='/users/hjiang/GenoDistance/result/integration/visualization/embedding_rna_severity.png'
     )
 
-    generate_umap_visualizations(
-        pseudobulk_anndata,
-        output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
-        groupby = 'modality'
+    fig, ax = multimodal_embedding_visualization(
+        adata=pseudobulk_anndata,
+        modality_col='modality',
+        severity_col='current_severity',
+        target_modality='ATAC',
+        save_path='/users/hjiang/GenoDistance/result/integration/visualization/embedding_atac_severity.png'
     )
+
+    # fig, axes = multimodal_embedding_comparison(
+    #     adata=pseudobulk_anndata,
+    #     modality_col='modality',
+    #     severity_col='current_severity',
+    #     target_modality='ATAC',
+    #     save_path='/users/hjiang/GenoDistance/result/integration/visualization/embedding_comparison.png'
+    # )
+
+
+    # generate_umap_visualizations(
+    #     pseudobulk_anndata,
+    #     output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
+    #     point_size = 100,
+    #     groupby = 'modality'
+    # )
