@@ -195,11 +195,19 @@ if __name__ == "__main__":
     #     output_dir='/users/hjiang/GenoDistance/result/integration/visualization'
     # )
 
+    # fig, axes = visualize_multimodal_embedding(
+    #     pseudobulk_anndata,
+    #     modality_col='modality',
+    #     color_col='sev.level',
+    #     target_modality='RNA',
+    #     output_dir='/users/hjiang/GenoDistance/result/integration/visualization/'
+    # )
+
     fig, axes = visualize_multimodal_embedding(
         pseudobulk_anndata,
         modality_col='modality',
-        color_col='severity',
-        target_modality='RNA',
+        color_col='current_severity',
+        target_modality='ATAC',
         output_dir='/users/hjiang/GenoDistance/result/integration/visualization/'
     )
 

@@ -27,29 +27,31 @@ def detect_data_type(values):
     try:
         numeric_values = [float(v) for v in valid_values]
         
-        # Additional checks for numerical data:
-        # 1. If there are very few unique values relative to total, might be categorical
-        # 2. If values are all integers and sequential, might be ordinal
-        # 3. If range is large compared to number of unique values, likely continuous
-        
+        # If we can convert to numbers, default to numerical
         n_unique = len(unique_values)
-        n_total = len(valid_values)
         
-        # If very few unique values (e.g., less than 10) and they're integers
-        if n_unique <= 10 and all(float(v).is_integer() for v in numeric_values):
-            # Check if they're sequential (like stages 1,2,3,4)
-            sorted_vals = sorted([int(v) for v in numeric_values])
-            if sorted_vals == list(range(min(sorted_vals), max(sorted_vals) + 1)):
-                return 'numerical', unique_values  # Ordinal numerical
+        # Special case: binary data (only 2 values) that are 0/1 or similar
+        if n_unique == 2:
+            sorted_vals = sorted(numeric_values)
+            # Check if it's 0/1 (common for binary categories)
+            if sorted_vals[0] == 0 and sorted_vals[1] == 1:
+                return 'categorical', unique_values
         
-        # If ratio of unique to total is low, might be categorical
-        if n_unique / n_total < 0.1 and n_unique < 20:
-            return 'categorical', unique_values
+        # For sequential numeric data (like 1,2,3,4 or 1.0,2.0,3.0,4.0), 
+        # always treat as numerical for gradient visualization
+        sorted_unique = sorted(unique_values)
         
+        # Check if values form a sequence (with gaps allowed)
+        # This handles severity levels, stages, scores, etc.
+        if all(isinstance(v, (int, float)) for v in sorted_unique):
+            # Any ordered numeric sequence should be numerical
+            return 'numerical', unique_values
+        
+        # Default: treat numeric data as numerical
         return 'numerical', unique_values
         
     except (ValueError, TypeError):
-        # If conversion to float fails, it's categorical
+        # If conversion to float fails, it's definitely categorical
         return 'categorical', unique_values
 
 def create_categorical_colormap(unique_values, colormap='tab20'):
@@ -306,7 +308,7 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
                                   expression_key='X_DR_expression', proportion_key='X_DR_proportion',
                                   figsize=(20, 8), point_size=60, alpha=0.8, 
                                   colormap='viridis', output_dir=None, 
-                                  show_sample_names=False, verbose=True):
+                                  show_sample_names=False, force_data_type=None, verbose=True):
     """
     Visualize multimodal embeddings with flexible coloring by any column.
     
@@ -336,6 +338,8 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
         Directory or file path to save plots
     show_sample_names : bool
         Whether to show sample names on plot (default: False)
+    force_data_type : str or None
+        Force data type to 'numerical' or 'categorical' instead of auto-detection (default: None)
     verbose : bool
         Print progress messages (default: True)
     
@@ -354,7 +358,18 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
     # Detect data type early
     target_mask = adata.obs[modality_col].values == target_modality
     target_values = adata.obs[color_col].values[target_mask]
-    data_type, unique_values = detect_data_type(target_values)
+    
+    # Use forced data type if provided, otherwise auto-detect
+    if force_data_type is not None:
+        if force_data_type not in ['numerical', 'categorical']:
+            raise ValueError("force_data_type must be 'numerical' or 'categorical'")
+        data_type = force_data_type
+        if data_type == 'categorical':
+            unique_values = list(set([v for v in target_values if pd.notna(v)]))
+        else:
+            unique_values = sorted(set([v for v in target_values if pd.notna(v)]))
+    else:
+        data_type, unique_values = detect_data_type(target_values)
     
     if verbose:
         print(f"\nDetected data type for {color_col}: {data_type}")
@@ -509,3 +524,22 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
             print(f"Combined plot saved to: {output_dir}")
     
     return fig, axes
+
+# Backward compatibility wrapper
+def visualize_severity_trend(*args, **kwargs):
+    """
+    Backward compatibility wrapper for the old function name.
+    This function is deprecated, use visualize_multimodal_embedding instead.
+    """
+    import warnings
+    warnings.warn(
+        "visualize_severity_trend is deprecated. Use visualize_multimodal_embedding instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    # Map old parameter name to new one if present
+    if 'severity_col' in kwargs:
+        kwargs['color_col'] = kwargs.pop('severity_col')
+    
+    return visualize_multimodal_embedding(*args, **kwargs)
