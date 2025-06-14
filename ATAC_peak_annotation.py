@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""
-Parallel ATAC-seq peak-to-gene annotation
-
-*Modified to use gene IDs as primary identifiers*:  
-➜ Changed all grouping, indexing, and primary references to use gene_id instead of gene_name
-➜ Gene names are still included for human readability but gene_id is the unique key
-➜ This ensures no conflicts from duplicate/similar gene names
-"""
-
-# ────────────────────────────── imports ──────────────────────────────
 import os
 import json
 import pickle

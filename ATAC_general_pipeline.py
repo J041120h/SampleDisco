@@ -13,18 +13,12 @@ from sklearn.neighbors import NearestNeighbors
 from ATAC_cell_type import *
 warnings.filterwarnings("ignore")
 
-# --------------------------------------------------------------------------- #
-#                               Utility helpers                               #
-# --------------------------------------------------------------------------- #
 
 def log(msg, level="INFO", verbose=True):
     """Timestamped logger."""
     if verbose:
         print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {level}: {msg}")
 
-# --------------------------------------------------------------------------- #
-#                          Metadata / I/O convenience                         #
-# --------------------------------------------------------------------------- #
 
 def merge_sample_metadata(
     adata, metadata_path, sample_column="sample", sep=",", verbose=True
@@ -35,10 +29,6 @@ def merge_sample_metadata(
         print(f"Merged {meta.shape[1]} sample-level columns")
     return adata
 
-
-# --------------------------------------------------------------------------- #
-#                       snapATAC2 dimensionality reduction                    #
-# --------------------------------------------------------------------------- #
 def snapatac2_dimensionality_reduction(
     adata,
     n_components=50,
