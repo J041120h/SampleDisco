@@ -159,7 +159,7 @@ def fill_obs_nan_with_unknown(
 
 if __name__ == "__main__":
     # adata = integrate_preprocess(
-    #     output_dir = "/users/hjiang/GenoDistance/result/integration",
+    #     output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration",
     #     sample_column = 'sample',
     #     min_cells_sample=500,
     #     min_cell_gene=500,
@@ -169,13 +169,13 @@ if __name__ == "__main__":
     #     doublet=True, 
     #     verbose=True
     # )
-    # adata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/glue/atac_rna_integrated.h5ad")
+    # adata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad")
     # fill_obs_nan_with_unknown(adata)
     # atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
     #             adata=adata,
     #             batch_col='batch',
     #             sample_col='sample',
-    #             output_dir="/users/hjiang/GenoDistance/result/integration"
+    #             output_dir="/dcl01/hongkai/data/data/hjiang/result/integration"
     #         )
 
     # pseudobulk_anndata = process_anndata_with_pca(
@@ -183,16 +183,16 @@ if __name__ == "__main__":
     #     pseudobulk=atac_pseudobulk_df,
     #     pseudobulk_anndata = pseudobulk_adata,
     #     sample_col = "sample",
-    #     output_dir= "/users/hjiang/GenoDistance/result/integration",
+    #     output_dir= "/dcl01/hongkai/data/data/hjiang/result/integration",
     #     integrated_data = True
     # )
-    pseudobulk_anndata = sc.read_h5ad("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_sample.h5ad")
+    pseudobulk_anndata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad")
     # fig, axes = visualize_severity_trend(
     #     pseudobulk_anndata,
     #     modality_col='modality',
     #     severity_col='sev.level',
     #     target_modality='RNA',
-    #     output_dir='/users/hjiang/GenoDistance/result/integration/visualization'
+    #     output_dir='/dcl01/hongkai/data/data/hjiang/result/integration/visualization'
     # )
 
     # fig, axes = visualize_multimodal_embedding(
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     #     modality_col='modality',
     #     color_col='sev.level',
     #     target_modality='RNA',
-    #     output_dir='/users/hjiang/GenoDistance/result/integration/visualization/'
+    #     output_dir='/dcl01/hongkai/data/data/hjiang/result/integration/visualization/'
     # )
 
     fig, axes = visualize_multimodal_embedding(
@@ -208,13 +208,13 @@ if __name__ == "__main__":
         modality_col='modality',
         color_col='current_severity',
         target_modality='ATAC',
-        output_dir='/users/hjiang/GenoDistance/result/integration/visualization/'
+        output_dir='/dcl01/hongkai/data/data/hjiang/result/integration/visualization/'
     )
 
 
     # generate_umap_visualizations(
     #     pseudobulk_anndata,
-    #     output_dir = "/users/hjiang/GenoDistance/result/integration/visualization",
+    #     output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration/visualization",
     #     point_size = 100,
     #     groupby = 'modality'
     # )

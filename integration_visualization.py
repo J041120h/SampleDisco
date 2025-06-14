@@ -524,22 +524,3 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
             print(f"Combined plot saved to: {output_dir}")
     
     return fig, axes
-
-# Backward compatibility wrapper
-def visualize_severity_trend(*args, **kwargs):
-    """
-    Backward compatibility wrapper for the old function name.
-    This function is deprecated, use visualize_multimodal_embedding instead.
-    """
-    import warnings
-    warnings.warn(
-        "visualize_severity_trend is deprecated. Use visualize_multimodal_embedding instead.",
-        DeprecationWarning,
-        stacklevel=2
-    )
-    
-    # Map old parameter name to new one if present
-    if 'severity_col' in kwargs:
-        kwargs['color_col'] = kwargs.pop('severity_col')
-    
-    return visualize_multimodal_embedding(*args, **kwargs)

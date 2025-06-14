@@ -1,7 +1,7 @@
 # ===== Harmony Preprocessing Parameters =====
-h5ad_path: "/users/hjiang/GenoDistance/Test/count_data.h5ad"
-sample_meta_path: "/users/hjiang/GenoDistance/Test/sample_data.csv"
-output_dir: "/users/hjiang/GenoDistance/Test/result"
+h5ad_path: "/dcl01/hongkai/data/data/hjiang/Test/count_data.h5ad"
+sample_meta_path: "/dcl01/hongkai/data/data/hjiang/Test/sample_data.csv"
+output_dir: "/dcl01/hongkai/data/data/hjiang/Test/result"
 sample_col: "sample"
 grouping_columns:
   - "sev.level"
@@ -45,7 +45,7 @@ pseudobulk_verbose: true
 n_expression_pcs: 10
 n_proportion_pcs: 10
 pca_output_dir: null
-AnnData_sample_path: "/users/hjiang/GenoDistance/Test/result/harmony/adata_sample.h5ad"
+AnnData_sample_path: "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_sample.h5ad"
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
@@ -72,7 +72,7 @@ trajectory_diff_gene_verbose: True
 top_gene_number: 30
 
 # ===== Paths for Skipping Preprocessing =====
-AnnData_cell_path: "/users/hjiang/GenoDistance/Test/result/harmony/adata_cell.h5ad"
+AnnData_cell_path: "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_cell.h5ad"
 
 # ===== Sample Distance Parameters =====
 summary_sample_csv_path: null
@@ -110,9 +110,9 @@ atac_preprocessing: true
 atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false
 
-atac_file_path: "/users/hjiang/GenoDistance/Data/test_ATAC.h5ad"
+atac_file_path: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
 atac_output_dir: null
-atac_metadata_path: "/users/hjiang/GenoDistance/Data/ATAC_Metadata.csv"
+atac_metadata_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
 atac_pseudobulk_output_dir: null
 atac_pca_output_dir: null
 atac_sample_col: "sample"

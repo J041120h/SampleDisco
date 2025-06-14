@@ -1398,5 +1398,5 @@ if __name__ == "__main__":
     atac_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad",
     rna_sample_meta_file = "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
     atac_sample_meta_file= "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
-    output_dir = "/users/hjiang/GenoDistance/result",
+    output_dir = "/dcl01/hongkai/data/data/hjiang/result",
 )

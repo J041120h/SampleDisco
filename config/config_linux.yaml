@@ -1,7 +1,7 @@
 # ===== Harmony Preprocessing Parameters =====
 h5ad_path: "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad"
 sample_meta_path: "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv"
-output_dir: "/users/hjiang/GenoDistance/result"
+output_dir: "/dcl01/hongkai/data/data/hjiang/result"
 sample_col: "sample"
 grouping_columns:
   - "sev.level"
@@ -46,7 +46,7 @@ pseudobulk_verbose: true
 n_expression_pcs: 10
 n_proportion_pcs: 10
 pca_output_dir: null
-AnnData_sample_path: "/users/hjiang/GenoDistance/result/harmony/adata_sample.h5ad"
+AnnData_sample_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_sample.h5ad"
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
@@ -73,7 +73,7 @@ trajectory_diff_gene_verbose: True
 top_gene_number: 30
 
 # ===== Paths for Skipping Preprocessing =====
-AnnData_cell_path: "/users/hjiang/GenoDistance/result/harmony/adata_cell.h5ad"
+AnnData_cell_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad"
 
 # ===== Sample Distance Parameters =====
 summary_sample_csv_path: null
