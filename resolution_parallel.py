@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from anndata import AnnData
 from pseudobulk import compute_pseudobulk_dataframes
-from GenoDistance.code.DR import process_anndata_with_pca
+from DR import process_anndata_with_pca
 from CCA import load_severity_levels
 from CellType import cell_types, cell_type_assign
 
