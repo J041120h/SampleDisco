@@ -355,6 +355,15 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
         print(f"Expression key: {expression_key}")
         print(f"Proportion key: {proportion_key}")
     
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        if verbose:
+            print("Automatically generating output_dir")
+    output_dir = os.path.join(output_dir, 'visualization')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        if verbose:
+            print("Automatically generating visualization output_dir")
     # Detect data type early
     target_mask = adata.obs[modality_col].values == target_modality
     target_values = adata.obs[color_col].values[target_mask]

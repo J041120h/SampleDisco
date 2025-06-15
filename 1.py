@@ -251,9 +251,129 @@ def update_anndata_with_cell_meta(cell_meta, adata_path, index_col='cell_id', ov
     # Save back to disk
     adata.write(adata_path, compression='gzip')
 
+import scanpy as sc
+import numpy as np
+import anndata as ad
+import pandas as pd
+
+def subsample_rna_and_merge_with_atac(
+    input_path: str,
+    output_path: str,
+    modality_col: str = "modality",
+    sample_col: str = "sample",
+    rna_label: str = "RNA",
+    atac_label: str = "ATAC",
+    sample_fraction: float = 0.1,
+    random_seed: int = 42
+):
+    """
+    Subsample RNA data by selecting a fraction of samples and keeping all cells
+    from those selected samples, then merge with ATAC cells.
+    
+    Parameters:
+    -----------
+    input_path : str
+        Path to input h5ad file
+    output_path : str
+        Path to save output h5ad file
+    modality_col : str
+        Column name indicating modality (default: "modality")
+    sample_col : str
+        Column name indicating sample origin (default: "sample")
+    rna_label : str
+        Label for RNA cells in modality column (default: "RNA")
+    atac_label : str
+        Label for ATAC cells in modality column (default: "ATAC")
+    sample_fraction : float
+        Fraction of samples to keep (default: 0.1)
+    random_seed : int
+        Random seed for reproducibility (default: 42)
+    
+    Returns:
+    --------
+    combined_adata : anndata.AnnData
+        Combined AnnData object with RNA cells from selected samples and all ATAC cells
+    """
+    # Load the full AnnData object
+    adata = sc.read_h5ad(input_path)
+    
+    # Filter RNA and ATAC cells
+    rna_adata = adata[adata.obs[modality_col] == rna_label].copy()
+    atac_adata = adata[adata.obs[modality_col] == atac_label].copy()
+    
+    # Set random seed for reproducibility
+    np.random.seed(random_seed)
+    
+    # Get unique samples in RNA data
+    unique_samples = rna_adata.obs[sample_col].unique()
+    total_samples = len(unique_samples)
+    
+    # Calculate number of samples to keep
+    n_samples_to_keep = max(1, int(sample_fraction * total_samples))  # Keep at least 1 sample
+    
+    # Randomly select samples
+    if n_samples_to_keep >= total_samples:
+        # Keep all samples if fraction would require more samples than available
+        selected_samples = unique_samples
+    else:
+        selected_samples = np.random.choice(
+            unique_samples,
+            size=n_samples_to_keep,
+            replace=False
+        )
+    
+    # Filter RNA data to keep only cells from selected samples
+    sample_mask = rna_adata.obs[sample_col].isin(selected_samples)
+    rna_subsampled = rna_adata[sample_mask].copy()
+    
+    # Print summary statistics
+    print(f"Total samples in RNA data: {total_samples}")
+    print(f"Selected samples: {n_samples_to_keep}")
+    print(f"Sample selection ratio: {n_samples_to_keep / total_samples:.3f}")
+    print(f"Selected sample names: {sorted(selected_samples)}")
+    print(f"\nOriginal RNA cells: {rna_adata.n_obs}")
+    print(f"RNA cells after sample selection: {rna_subsampled.n_obs}")
+    print(f"Cell retention ratio: {rna_subsampled.n_obs / rna_adata.n_obs:.3f}")
+    print(f"ATAC cells: {atac_adata.n_obs}")
+    
+    # Show sample composition
+    print("\nSample composition (cells per sample):")
+    original_counts = rna_adata.obs[sample_col].value_counts().sort_index()
+    subsampled_counts = rna_subsampled.obs[sample_col].value_counts().sort_index()
+    
+    for sample in original_counts.index:
+        orig_count = original_counts[sample]
+        if sample in selected_samples:
+            print(f"  {sample}: {orig_count} (KEPT)")
+        else:
+            print(f"  {sample}: {orig_count} (REMOVED)")
+    
+    # Concatenate the ATAC cells with the subsampled RNA cells
+    combined_adata = ad.concat([rna_subsampled, atac_adata], axis=0, join='outer', label='source', fill_value=0)
+    
+    # Save the result
+    combined_adata.write_h5ad(output_path)
+    
+    return combined_adata
+
+def print_genes_per_cell(adata_path):
+    # Load AnnData
+    adata = sc.read_h5ad(adata_path)
+
+    # Compute number of genes per cell
+    if hasattr(adata.X, "A1"):  # sparse matrix
+        gene_counts = (adata.X > 0).sum(axis=1).A1
+    else:
+        gene_counts = (adata.X > 0).sum(axis=1)
+
+    # Print results
+    for cell, count in zip(adata.obs_names, gene_counts):
+        print(f"{cell}\t{count}")
 
 
 if __name__ == "__main__":
     # main("/users/hjiang/GenoDistance/result/harmony/pseudobulk_sample.h5ad")
-    adata = inspect_anndata("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_sample.h5ad", verbose=True)
+    # adata = inspect_anndata("/users/hjiang/GenoDistance/result/integration/pseudobulk/pseudobulk_sample.h5ad", verbose=True)
+    # print_genes_per_cell("/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad")
+    combined = subsample_rna_and_merge_with_atac("/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad", "/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated_test.h5ad")
 

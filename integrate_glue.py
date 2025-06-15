@@ -1283,7 +1283,7 @@ def glue(
     save_prefix: str = "glue",
     
     # Gene activity computation parameters
-    k_neighbors: int = 50,
+    k_neighbors: int = 10,
     use_rep: str = "X_glue",
     metric: str = "cosine",
     use_gpu: bool = True,
@@ -1379,24 +1379,14 @@ def glue(
         generate_umap=generate_umap_celltype
     )
     
-    # Step 4: Visualization
-    integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
-    glue_visualize(
-        integrated_path=integrated_file,
-        output_dir=output_dir,
-        plot_columns=plot_columns
-    )
+    # # Step 4: Visualization
+    # integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
+    # glue_visualize(
+    #     integrated_path=integrated_file,
+    #     output_dir=output_dir,
+    #     plot_columns=plot_columns
+    # )
     
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
     print(f"\nTotal runtime: {elapsed_minutes:.2f} minutes")
-
-if __name__ == "__main__":
-    glue(
-    # Data files
-    rna_file = "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
-    atac_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad",
-    rna_sample_meta_file = "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
-    atac_sample_meta_file= "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
-    output_dir = "/dcl01/hongkai/data/data/hjiang/result",
-)

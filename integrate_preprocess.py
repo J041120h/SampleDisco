@@ -7,6 +7,7 @@ import contextlib
 import io
 from CellType import *
 from integration_visualization import *
+from integrate_glue import *
 
 def integrate_preprocess(
     output_dir,
@@ -38,6 +39,10 @@ def integrate_preprocess(
         h5ad_path = os.path.join(output_dir, 'glue/atac_rna_integrated.h5ad')
 
     # Append 'harmony' subdirectory
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        if verbose:
+            print("Automatically generating output_dir")
     output_dir = os.path.join(output_dir, 'preprocess')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -113,7 +118,7 @@ def integrate_preprocess(
     if verbose:
         print(f"Function execution time: {elapsed_time:.2f} seconds")
 
-    return 
+    return adata
 
 import pandas as pd
 import scanpy as sc
@@ -158,63 +163,51 @@ def fill_obs_nan_with_unknown(
 
 
 if __name__ == "__main__":
-    # adata = integrate_preprocess(
-    #     output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration",
-    #     sample_column = 'sample',
-    #     min_cells_sample=500,
-    #     min_cell_gene=500,
-    #     min_features=500,
-    #     pct_mito_cutoff=20,
-    #     exclude_genes=None,
-    #     doublet=True, 
-    #     verbose=True
-    # )
-    # adata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad")
-    # fill_obs_nan_with_unknown(adata)
-    # atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
-    #             adata=adata,
-    #             batch_col='batch',
-    #             sample_col='sample',
-    #             output_dir="/dcl01/hongkai/data/data/hjiang/result/integration"
-    #         )
 
-    # pseudobulk_anndata = process_anndata_with_pca(
-    #     adata=adata,
-    #     pseudobulk=atac_pseudobulk_df,
-    #     pseudobulk_anndata = pseudobulk_adata,
-    #     sample_col = "sample",
-    #     output_dir= "/dcl01/hongkai/data/data/hjiang/result/integration",
-    #     integrated_data = True
-    # )
-    pseudobulk_anndata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad")
-    # fig, axes = visualize_severity_trend(
-    #     pseudobulk_anndata,
-    #     modality_col='modality',
-    #     severity_col='sev.level',
-    #     target_modality='RNA',
-    #     output_dir='/dcl01/hongkai/data/data/hjiang/result/integration/visualization'
-    # )
+    glue(
+        rna_file = "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
+        atac_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad",
+        rna_sample_meta_file = "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
+        atac_sample_meta_file= "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
+        output_dir = "/dcl01/hongkai/data/data/hjiang/result/k10",
+        )
 
-    # fig, axes = visualize_multimodal_embedding(
-    #     pseudobulk_anndata,
-    #     modality_col='modality',
-    #     color_col='sev.level',
-    #     target_modality='RNA',
-    #     output_dir='/dcl01/hongkai/data/data/hjiang/result/integration/visualization/'
-    # )
+    adata = integrate_preprocess(
+        output_dir = "/dcl01/hongkai/data/data/hjiang/result/k10/integration",
+        h5ad_path="/dcl01/hongkai/data/data/hjiang/result/k10/integration/glue/atac_rna_integrated.h5ad",
+        sample_column = 'sample',
+        min_cells_sample=500,
+        min_cell_gene=500,
+        min_features=500,
+        pct_mito_cutoff=20,
+        exclude_genes=None,
+        doublet=True, 
+        verbose=True
+    )
+
+    # adata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated_test.h5ad")
+    atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
+                adata=adata,
+                batch_col='batch',
+                sample_col='sample',
+                output_dir="/dcl01/hongkai/data/data/hjiang/result/k10/integration"
+            )
+
+    pseudobulk_anndata = process_anndata_with_pca(
+        adata=adata,
+        pseudobulk=atac_pseudobulk_df,
+        pseudobulk_anndata = pseudobulk_adata,
+        sample_col = "sample",
+        output_dir= "/dcl01/hongkai/data/data/hjiang/result/k10/integration",
+        integrated_data = True
+    )
+    # pseudobulk_anndata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad")
+
 
     fig, axes = visualize_multimodal_embedding(
         pseudobulk_anndata,
         modality_col='modality',
         color_col='current_severity',
         target_modality='ATAC',
-        output_dir='/dcl01/hongkai/data/data/hjiang/result/integration/visualization/'
+        output_dir='/dcl01/hongkai/data/data/hjiang/result/k10/integration'
     )
-
-
-    # generate_umap_visualizations(
-    #     pseudobulk_anndata,
-    #     output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration/visualization",
-    #     point_size = 100,
-    #     groupby = 'modality'
-    # )
