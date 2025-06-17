@@ -162,6 +162,23 @@ def run_snapatac2_spectral(
     pb_adata = pseudobulk_anndata.copy()
     
     try:
+        # Fix data type issues - ensure data is in correct format for snapATAC2
+        if sparse.issparse(pb_adata.X):
+            # Convert to CSR format and ensure correct dtype
+            pb_adata.X = pb_adata.X.tocsr().astype(np.float32)
+        else:
+            # Ensure dense matrix has correct dtype
+            pb_adata.X = pb_adata.X.astype(np.float32)
+        
+        # Handle any infinite or NaN values
+        if sparse.issparse(pb_adata.X):
+            pb_adata.X.data = np.nan_to_num(pb_adata.X.data, nan=0.0, posinf=0.0, neginf=0.0)
+        else:
+            pb_adata.X = np.nan_to_num(pb_adata.X, nan=0.0, posinf=0.0, neginf=0.0)
+        
+        if verbose:
+            print(f"[snapATAC2] Data preprocessing complete. Matrix type: {type(pb_adata.X)}, dtype: {pb_adata.X.dtype}")
+        
         # Select features (keeping all since they're already filtered)
         n_features_to_select = min(50000, pb_adata.shape[1])
         snap.pp.select_features(pb_adata, n_features=n_features_to_select)
@@ -237,8 +254,8 @@ def run_pca_expression(
     - Performs PCA and stores results as X_DR_expression
     
     For ATAC-seq data (atac=True):
-    - Performs LSI and stores results as X_DR_expression (default)
-    - If use_snapatac2_dimred=True, performs snapATAC2 spectral embedding instead
+    - Tries snapATAC2 spectral embedding if use_snapatac2_dimred=True, falls back to LSI on failure
+    - Performs LSI if use_snapatac2_dimred=False (default)
     
     Additional method results (if computed) are stored with method-specific keys for reference:
     - X_pca_expression_method: PCA results
@@ -249,20 +266,14 @@ def run_pca_expression(
     -----------
     adata : sc.AnnData
         Original AnnData object
-    pseudobulk : dict
-        Dictionary containing pseudobulk data (kept for backward compatibility)
     pseudobulk_anndata : sc.AnnData
         AnnData object with samples as observations and genes as variables (sample * gene)
-    sample_col : str, default 'sample'
-        Column name for sample identification
     n_components : int, default 10
         Number of components to compute
-    n_features : int, default 2000
-        Number of highly variable features to use (if feature selection is needed)
     atac : bool, default False
         If True, use ATAC-seq appropriate methods (LSI or spectral)
     use_snapatac2_dimred : bool, default False
-        If True and atac=True, use snapATAC2 spectral embedding instead of LSI
+        If True and atac=True, try snapATAC2 spectral embedding first, fallback to LSI if it fails
     verbose : bool, default False
         Whether to print verbose output
     """
@@ -272,8 +283,10 @@ def run_pca_expression(
     
     if verbose:
         if atac:
-            method = "snapATAC2 spectral" if use_snapatac2_dimred else "LSI"
-            print(f"[DimRed] Computing {method} for ATAC data with {n_components} components on {pseudobulk_anndata.shape} data")
+            if use_snapatac2_dimred:
+                print(f"[DimRed] Computing snapATAC2 spectral (with LSI fallback) for ATAC data with {n_components} components on {pseudobulk_anndata.shape} data")
+            else:
+                print(f"[DimRed] Computing LSI for ATAC data with {n_components} components on {pseudobulk_anndata.shape} data")
         else:
             print(f"[DimRed] Computing PCA for RNA data with {n_components} components on {pseudobulk_anndata.shape} data")
     
@@ -289,52 +302,65 @@ def run_pca_expression(
     
     # For ATAC data
     if atac:
+        primary_result = None
+        method_used = None
+        
         if use_snapatac2_dimred:
-            # Use snapATAC2 spectral embedding
+            # Try snapATAC2 spectral embedding first
             spectral_df = run_snapatac2_spectral(
                 pseudobulk_anndata=pseudobulk_anndata,
                 n_components=n_components,
                 verbose=verbose
             )
             
-            # Store as unified X_DR_expression
-            _store_results_in_both_objects(
-                adata, pseudobulk_anndata, 
-                "X_DR_expression", spectral_df, 
-                obsm_key="X_DR_expression", 
-                verbose=verbose
-            )
-            
-            # Also store with method-specific key for reference
-            _store_results_in_both_objects(
-                adata, pseudobulk_anndata, 
-                "X_spectral_expression_method", spectral_df, 
-                obsm_key="X_spectral_expression_method", 
-                verbose=verbose
-            )
-        else:
-            # Use LSI (default for ATAC)
+            if spectral_df is not None:
+                primary_result = spectral_df
+                method_used = "snapATAC2_spectral"
+                
+                # Store with method-specific key for reference
+                _store_results_in_both_objects(
+                    adata, pseudobulk_anndata, 
+                    "X_spectral_expression_method", spectral_df, 
+                    obsm_key="X_spectral_expression_method", 
+                    verbose=verbose
+                )
+            else:
+                if verbose:
+                    print("[DimRed] snapATAC2 spectral failed, falling back to LSI...")
+        
+        # If snapATAC2 failed or wasn't requested, use LSI
+        if primary_result is None:
             lsi_df = run_lsi_expression(
                 pseudobulk_anndata=pseudobulk_anndata,
                 n_components=n_components,
                 verbose=verbose
             )
             
-            # Store as unified X_DR_expression
+            if lsi_df is not None:
+                primary_result = lsi_df
+                method_used = "LSI"
+                
+                # Store with method-specific key for reference
+                _store_results_in_both_objects(
+                    adata, pseudobulk_anndata, 
+                    "X_lsi_expression_method", lsi_df, 
+                    obsm_key="X_lsi_expression_method", 
+                    verbose=verbose
+                )
+            else:
+                raise RuntimeError("Both snapATAC2 spectral and LSI methods failed for ATAC data")
+        
+        # Store the successful result as unified X_DR_expression
+        if primary_result is not None:
             _store_results_in_both_objects(
                 adata, pseudobulk_anndata, 
-                "X_DR_expression", lsi_df, 
+                "X_DR_expression", primary_result, 
                 obsm_key="X_DR_expression", 
                 verbose=verbose
             )
             
-            # Also store with method-specific key for reference
-            _store_results_in_both_objects(
-                adata, pseudobulk_anndata, 
-                "X_lsi_expression_method", lsi_df, 
-                obsm_key="X_lsi_expression_method", 
-                verbose=verbose
-            )
+            if verbose:
+                print(f"[DimRed] Successfully used {method_used} for ATAC dimension reduction")
     
     # For RNA data (or always compute PCA for reference)
     else:
@@ -467,7 +493,7 @@ def process_anndata_with_pca(
     
     The specific method used depends on the data type:
     - RNA-seq (atac=False): PCA
-    - ATAC-seq (atac=True): LSI (default) or snapATAC2 spectral (if use_snapatac2_dimred=True)
+    - ATAC-seq (atac=True): snapATAC2 spectral (with LSI fallback) or LSI (default)
     
     Parameters:
     -----------
@@ -490,7 +516,7 @@ def process_anndata_with_pca(
     atac : bool, default False
         If True, use ATAC-seq appropriate methods
     use_snapatac2_dimred : bool, default False
-        If True and atac=True, use snapATAC2 spectral embedding instead of LSI
+        If True and atac=True, try snapATAC2 spectral embedding first, fallback to LSI if it fails
     verbose : bool, default True
         Whether to print verbose output
     """
@@ -508,8 +534,10 @@ def process_anndata_with_pca(
         print("  - X_DR_expression: for expression data")
         print("  - X_DR_proportion: for proportion data")
         if atac:
-            method = "snapATAC2 spectral" if use_snapatac2_dimred else "LSI"
-            print(f"[process_anndata_with_pca] ATAC mode: Will use {method} for expression data")
+            if use_snapatac2_dimred:
+                print("[process_anndata_with_pca] ATAC mode: Will try snapATAC2 spectral first, fallback to LSI if needed")
+            else:
+                print("[process_anndata_with_pca] ATAC mode: Will use LSI for expression data")
         else:
             print("[process_anndata_with_pca] RNA mode: Will use PCA for expression data")
     
@@ -538,6 +566,7 @@ def process_anndata_with_pca(
         print(f"[process_anndata_with_pca] Using n_expression_pcs={n_expression_pcs}, n_proportion_pcs={n_proportion_pcs}")
     
     # Run dimension reduction on expression data
+    expression_dr_successful = False
     try:
         run_pca_expression(
             adata=adata, 
@@ -547,11 +576,13 @@ def process_anndata_with_pca(
             use_snapatac2_dimred=use_snapatac2_dimred,
             verbose=verbose
         )
+        expression_dr_successful = True
     except Exception as e:
         if verbose:
             print(f"[process_anndata_with_pca] Warning: Expression dimension reduction failed ({str(e)}). Continuing with proportion dimension reduction.")
     
     # Run dimension reduction on proportion data
+    proportion_dr_successful = False
     try:
         run_pca_proportion(
             adata=adata, 
@@ -561,12 +592,13 @@ def process_anndata_with_pca(
             n_components=n_proportion_pcs, 
             verbose=verbose
         )
+        proportion_dr_successful = True
     except Exception as e:
         if verbose:
             print(f"[process_anndata_with_pca] Warning: Proportion dimension reduction failed ({str(e)}).")
     
-    # Save data unless not_save is True
-    if not not_save:
+    # Only save if at least one dimension reduction was successful
+    if not not_save and (expression_dr_successful or proportion_dr_successful):
         if atac:
             adata_path = os.path.join(count_output_dir, 'ATAC_sample.h5ad')
             pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_adata.h5ad')
@@ -588,11 +620,18 @@ def process_anndata_with_pca(
         except Exception as e:
             if verbose:
                 print(f"[process_anndata_with_pca] Warning: Could not save file ({str(e)}).")
+    elif not not_save:
+        if verbose:
+            print("[process_anndata_with_pca] Warning: Skipping save because all dimension reduction methods failed.")
     
     if verbose and start_time is not None:
         elapsed_time = time.time() - start_time
         print(f"[process_anndata_with_pca] Total runtime for dimension reduction: {elapsed_time:.2f} seconds")
-        print(f"[process_anndata_with_pca] All results are now available under unified keys:")
-        print(f"  - X_DR_expression and X_DR_proportion in both adata.uns and pseudobulk_anndata.uns")
+        if expression_dr_successful or proportion_dr_successful:
+            print(f"[process_anndata_with_pca] Results are now available under unified keys:")
+            if expression_dr_successful:
+                print(f"  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns")
+            if proportion_dr_successful:
+                print(f"  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns")
 
     return pseudobulk_anndata

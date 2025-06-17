@@ -107,9 +107,9 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_preprocessing: true
+atac_preprocessing: false
 atac_pseudobulk_dimensionality_reduction: false
-atac_visualization_processing: false
+atac_visualization_processing: true
 
 atac_file_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
 atac_output_dir: null
@@ -120,7 +120,7 @@ atac_sample_col: "sample"
 atac_batch_col: null
 atac_cell_type_column: "cell_type"
 atac_pipeline_verbose: true
-use_snapatac2_dimred: false
+use_snapatac2_dimred: true
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
@@ -141,7 +141,6 @@ atac_umap_spread: 1.0
 atac_umap_random_state: 42
 atac_plot_dpi: 300
 atac_pseudobulk_n_features: 40000
-atac_pseudobulk_frac: 0.1
 atac_pseudobulk_verbose: true
 atac_pca_n_expression_pcs: 30
 atac_pca_n_proportion_pcs: 30
@@ -149,8 +148,9 @@ atac_pca_verbose: true
 atac_figsize: [10, 8]  
 atac_point_size: 50
 atac_visualization_grouping_columns:
-  - current_severity
+  - sev.level
   - Donor
+atac_show_sample_names: true
 atac_visualization_age_size: null
 
 # ===== Process Control Flags =====

@@ -84,14 +84,70 @@ def is_quantitative_column(values, threshold_unique_ratio=0.5):
         # Non-numeric values
         return False
 
-def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsize=(10, 8), 
-                      point_size=50, alpha=0.7, save_path=None, 
-                      title=None, grouping_columns=None, age_bin_size=None,
-                      sample_col='sample', output_dir=None, show_sample_names=False, 
-                      verbose=True):
+def detect_analysis_method(adata, data_type='expression'):
     """
-    Visualize samples using first and second principal components from PCA, LSI, or Spectral analysis.
-    Now supports separate visualization of each analysis type when available.
+    Detect which analysis method was used based on the unified results.
+    
+    Parameters:
+    -----------
+    adata : sc.AnnData
+        AnnData object containing analysis results
+    data_type : str, default 'expression'
+        Type of analysis data ('expression' or 'proportion')
+        
+    Returns:
+    --------
+    tuple : (method_name, component_prefix, data_key)
+    """
+    if data_type == 'expression':
+        unified_key = 'X_DR_expression'
+        
+        if unified_key not in adata.uns:
+            raise KeyError(f"No dimension reduction results found in adata.uns['{unified_key}']. "
+                          "Please run dimension reduction analysis first.")
+        
+        # Check method-specific keys to determine which method was used
+        if 'X_spectral_expression_method' in adata.uns:
+            return 'Spectral', 'Spectral', unified_key
+        elif 'X_lsi_expression_method' in adata.uns:
+            return 'LSI', 'LSI', unified_key
+        elif 'X_pca_expression_method' in adata.uns:
+            return 'PCA', 'PC', unified_key
+        else:
+            # Fallback: infer from column names in the unified result
+            df = adata.uns[unified_key]
+            first_col = df.columns[0]
+            if 'Spectral' in first_col:
+                return 'Spectral', 'Spectral', unified_key
+            elif 'LSI' in first_col:
+                return 'LSI', 'LSI', unified_key
+            elif 'PC' in first_col:
+                return 'PCA', 'PC', unified_key
+            else:
+                # Default assumption
+                return 'Dimension Reduction', 'Component', unified_key
+                
+    elif data_type == 'proportion':
+        unified_key = 'X_DR_proportion'
+        
+        if unified_key not in adata.uns:
+            raise KeyError(f"No dimension reduction results found in adata.uns['{unified_key}']. "
+                          "Please run dimension reduction analysis first.")
+        
+        # Proportion data typically uses PCA
+        return 'PCA', 'PC', unified_key
+    
+    else:
+        raise ValueError("data_type must be 'expression' or 'proportion'")
+
+def DR_visualization(adata, data_type='expression', figsize=(10, 8), 
+                     point_size=50, alpha=0.7, save_path=None, 
+                     title=None, grouping_columns=None, age_bin_size=None,
+                     sample_col='sample', output_dir=None, show_sample_names=False, 
+                     verbose=True):
+    """
+    Visualize samples using first and second components from dimension reduction analysis.
+    Works with the unified storage system - automatically detects the method used.
     Always generates a plot labeled by sample names, plus additional plots colored by grouping columns.
     
     Handles both categorical and quantitative grouping columns:
@@ -102,9 +158,7 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
     -----------
     adata : sc.AnnData
         AnnData object containing analysis results
-    analysis_type : str, default 'pca'
-        Type of analysis to visualize ('pca', 'lsi', or 'spectral')
-    pca_type : str, default 'expression'
+    data_type : str, default 'expression'
         Type of analysis to visualize ('expression' or 'proportion')
     figsize : tuple, default (10, 8)
         Figure size for the plot
@@ -128,68 +182,21 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
         Whether to show sample names as annotations on the plots
     verbose : bool, default True
         Whether to print detailed information about data type detection and visualization choices
-    verbose : bool, default True
-        Whether to print detailed information about data type detection and visualization choices
     """
     
-    # Determine which analysis results to use based on analysis_type
-    if pca_type == 'expression':
-        if analysis_type == 'spectral':
-            if 'X_spectral_expression' in adata.uns:
-                analysis_key = 'X_spectral_expression'
-                method_name = 'Spectral'
-                default_title = 'Spectral Analysis - Expression Data'
-                component_names = ('Spectral1', 'Spectral2')
-                legend_prefix = 'Spectral Groups'
-            else:
-                raise KeyError("Spectral analysis results not found in adata.uns['X_spectral_expression']. "
-                              "Please run spectral analysis first.")
-        elif analysis_type == 'lsi':
-            if 'X_DR_expression' in adata.uns:
-                analysis_key = 'X_DR_expression'
-                method_name = 'LSI'
-                default_title = 'LSI - Expression Data'
-                component_names = ('LSI1', 'LSI2')
-                legend_prefix = 'LSI Groups'
-            else:
-                raise KeyError("LSI analysis results not found in adata.uns['X_DR_expression']. "
-                              "Please run LSI analysis first.")
-        elif analysis_type == 'pca':
-            if 'X_pca_expression' in adata.uns:
-                analysis_key = 'X_pca_expression'
-                method_name = 'PCA'
-                default_title = 'PCA - Expression Data'
-                component_names = ('PC1', 'PC2')
-                legend_prefix = 'PCA Groups'
-            else:
-                raise KeyError("PCA results not found in adata.uns['X_pca_expression']. "
-                              "Please run PCA analysis first.")
-        else:
-            raise ValueError("analysis_type must be 'pca', 'lsi', or 'spectral'")
-        
-        group_key = 'X_pca_expression_groups'  # Groups are still stored under PCA key
-        
-    elif pca_type == 'proportion':
-        # For proportion, only PCA is typically used
-        if analysis_type != 'pca':
-            raise ValueError("For proportion data, only 'pca' analysis_type is supported")
-        
-        if 'X_pca_proportion' in adata.uns:
-            analysis_key = 'X_pca_proportion'
-            method_name = 'PCA'
-            default_title = 'PCA - Cell Proportion Data'
-            component_names = ('PC1', 'PC2')
-            legend_prefix = 'PCA Groups'
-        else:
-            raise KeyError("PCA results not found in adata.uns['X_pca_proportion']. "
-                          "Please run PCA analysis first.")
-        
-        group_key = None  # proportion PCA doesn't store groups
-    else:
-        raise ValueError("pca_type must be 'expression' or 'proportion'")
+    # Detect the analysis method used
+    method_name, component_prefix, data_key = detect_analysis_method(adata, data_type)
+    
+    # Set up titles and labels
+    if data_type == 'expression':
+        default_title = f'{method_name} - Expression Data'
+        legend_prefix = f'{method_name} Groups'
+    else:  # proportion
+        default_title = f'{method_name} - Cell Proportion Data'
+        legend_prefix = f'{method_name} Groups'
     
     # Get analysis data
-    analysis_df = adata.uns[analysis_key].copy()
+    analysis_df = adata.uns[data_key].copy()
     
     # Check if we have at least 2 components
     if analysis_df.shape[1] < 2:
@@ -199,6 +206,15 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
     comp1 = analysis_df.iloc[:, 0]  # First component
     comp2 = analysis_df.iloc[:, 1]  # Second component
     sample_names = analysis_df.index
+    
+    # Component names from the actual column names
+    comp1_name = analysis_df.columns[0]
+    comp2_name = analysis_df.columns[1]
+    
+    if verbose:
+        print(f"✓ Detected {method_name} analysis for {data_type} data")
+        print(f"  → Using components: {comp1_name} vs {comp2_name}")
+        print(f"  → Data shape: {analysis_df.shape}")
     
     # Generate plots
     plots_generated = []
@@ -215,9 +231,9 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                         xytext=(5, 5), textcoords='offset points',
                         fontsize=8, alpha=0.8)
     
-    # Set labels and title using component names
-    plt.xlabel(f'{component_names[0]} ({analysis_df.columns[0]})')
-    plt.ylabel(f'{component_names[1]} ({analysis_df.columns[1]})')
+    # Set labels and title using actual component names
+    plt.xlabel(f'{comp1_name}')
+    plt.ylabel(f'{comp2_name}')
     
     sample_title = title if title else f'{default_title} - Sample Labels'
     plt.title(sample_title)
@@ -227,14 +243,16 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
     # Save sample-labeled plot
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
-        sample_filename = f"{method_name.lower()}_{pca_type}_samples.png"
+        sample_filename = f"{method_name.lower()}_{data_type}_samples.png"
         sample_save_path = os.path.join(output_dir, sample_filename)
         plt.savefig(sample_save_path, dpi=300, bbox_inches='tight')
-        print(f"Sample-labeled plot saved to: {sample_save_path}")
+        if verbose:
+            print(f"Sample-labeled plot saved to: {sample_save_path}")
         plots_generated.append(sample_save_path)
     elif save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Sample-labeled plot saved to: {save_path}")
+        if verbose:
+            print(f"Sample-labeled plot saved to: {save_path}")
         plots_generated.append(save_path)
     
     plt.close()  # Close the figure instead of showing it
@@ -260,7 +278,8 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                 valid_groups = [g for g in sample_groups if pd.notna(g)]
                 
                 if not valid_groups:
-                    print(f"Warning: No valid values found for grouping column '{grouping_col}'")
+                    if verbose:
+                        print(f"Warning: No valid values found for grouping column '{grouping_col}'")
                     continue
                 
                 # Determine if this is a quantitative column
@@ -357,9 +376,9 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                                     xytext=(5, 5), textcoords='offset points',
                                     fontsize=8, alpha=0.8)
                 
-                # Set labels and title using component names
-                plt.xlabel(f'{component_names[0]} ({analysis_df.columns[0]})')
-                plt.ylabel(f'{component_names[1]} ({analysis_df.columns[1]})')
+                # Set labels and title using actual component names
+                plt.xlabel(f'{comp1_name}')
+                plt.ylabel(f'{comp2_name}')
                 
                 group_title = title if title else f'{default_title} - Grouped by {grouping_col}'
                 plt.title(group_title)
@@ -369,72 +388,72 @@ def ATAC_visualization(adata, analysis_type='pca', pca_type='expression', figsiz
                 
                 # Save group-colored plot
                 if output_dir:
-                    group_filename = f"{method_name.lower()}_{pca_type}_grouped_by_{grouping_col}.png"
+                    group_filename = f"{method_name.lower()}_{data_type}_grouped_by_{grouping_col}.png"
                     group_save_path = os.path.join(output_dir, group_filename)
                     plt.savefig(group_save_path, dpi=300, bbox_inches='tight')
-                    print(f"Group-colored plot ({grouping_col}) saved to: {group_save_path}")
+                    if verbose:
+                        print(f"Group-colored plot ({grouping_col}) saved to: {group_save_path}")
                     plots_generated.append(group_save_path)
                 
                 plt.close()  # Close the figure instead of showing it
                 
-                if is_quantitative:
-                    if verbose:
+                if verbose:
+                    if is_quantitative:
                         print(f"Generated quantitative plot for '{grouping_col}' with graduated color scale")
+                        unique_values = sorted([g for g in set(valid_groups)])
                         print(f"  → Color range: {min(unique_values):.2f} (dark) to {max(unique_values):.2f} (bright)")
-                else:
-                    if verbose:
+                    else:
+                        unique_groups = list(set([g for g in sample_groups if pd.notna(g)]))
                         print(f"Generated categorical plot for '{grouping_col}' with discrete colors")
                         print(f"  → {len(unique_groups)} distinct categories: {unique_groups}")
                 
             except Exception as e:
-                print(f"Warning: Could not generate plot for grouping column '{grouping_col}': {str(e)}")
+                if verbose:
+                    print(f"Warning: Could not generate plot for grouping column '{grouping_col}': {str(e)}")
     
     # Print summary
     if verbose:
-        print(f"Used {method_name} for visualization")
+        print(f"Used {method_name} for {data_type} data visualization")
         print(f"Total plots generated: {len(plots_generated)}")
         if plots_generated:
             print("Saved plots:")
             for plot_path in plots_generated:
                 print(f"  - {plot_path}")
 
-def get_available_analyses(adata, pca_type='expression'):
+def get_available_data_types(adata):
     """
-    Detect which analysis types are available for the given data type.
+    Detect which data types have dimension reduction results available.
     
     Parameters:
     -----------
     adata : sc.AnnData
         AnnData object containing analysis results
-    pca_type : str, default 'expression'
-        Type of analysis to check ('expression' or 'proportion')
     
     Returns:
     --------
-    list : Available analysis types
+    list : Available data types with their methods
     """
     available = []
     
-    if pca_type == 'expression':
-        if 'X_spectral_expression' in adata.uns:
-            available.append('spectral')
-        if 'X_DR_expression' in adata.uns:
-            available.append('lsi')
-        if 'X_pca_expression' in adata.uns:
-            available.append('pca')
-    elif pca_type == 'proportion':
-        if 'X_pca_proportion' in adata.uns:
-            available.append('pca')
+    # Check expression data
+    if 'X_DR_expression' in adata.uns:
+        method_name, _, _ = detect_analysis_method(adata, 'expression')
+        available.append(('expression', method_name))
+    
+    # Check proportion data
+    if 'X_DR_proportion' in adata.uns:
+        method_name, _, _ = detect_analysis_method(adata, 'proportion')
+        available.append(('proportion', method_name))
     
     return available
 
-def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50, 
-                          alpha=0.7, output_dir=None, grouping_columns=None, 
-                          age_bin_size=None, sample_col='sample', show_sample_names=False, 
-                          verbose=True):
+def DR_visualization_all(adata, figsize=(10, 8), point_size=50, 
+                        alpha=0.7, output_dir=None, grouping_columns=None, 
+                        age_bin_size=None, sample_col='sample', show_sample_names=False, 
+                        verbose=True):
     """
-    Generate separate plots for all available analysis types (Spectral, LSI, PCA) 
-    for both expression and proportion data when available.
+    Generate plots for all available dimension reduction data types.
+    Automatically detects available results and their methods.
     
     Parameters:
     -----------
@@ -456,51 +475,36 @@ def ATAC_visualization_all(adata, figsize=(10, 8), point_size=50,
         Column name for sample identification
     show_sample_names : bool, default False
         Whether to show sample names as annotations on the plots
+    verbose : bool, default True
+        Whether to print detailed information
     """
-    print("=== ATAC Visualization - All Available Analyses ===")
+    if verbose:
+        print("=== Dimension Reduction Visualization - All Available Data ===")
     
-    # Check expression analyses
-    expression_analyses = get_available_analyses(adata, 'expression')
-    print(f"Available expression analyses: {expression_analyses}")
+    # Check available data types
+    available_data = get_available_data_types(adata)
     
-    for analysis_type in expression_analyses:
-        print(f"\n--- Generating {analysis_type.upper()} Expression plots ---")
+    if not available_data:
+        print("No dimension reduction results found. Please run dimension reduction analysis first.")
+        return
+    
+    if verbose:
+        print(f"Available data types:")
+        for data_type, method in available_data:
+            print(f"  - {data_type}: {method}")
+    
+    for data_type, method in available_data:
+        if verbose:
+            print(f"\n--- Generating {method} {data_type.title()} plots ---")
         try:
-            ATAC_visualization(adata, analysis_type=analysis_type, pca_type='expression', 
-                             figsize=figsize, point_size=point_size, alpha=alpha, 
-                             grouping_columns=grouping_columns, age_bin_size=age_bin_size, 
-                             sample_col=sample_col, output_dir=output_dir, 
-                             show_sample_names=show_sample_names, verbose=verbose)
+            DR_visualization(adata, data_type=data_type, 
+                           figsize=figsize, point_size=point_size, alpha=alpha, 
+                           grouping_columns=grouping_columns, age_bin_size=age_bin_size, 
+                           sample_col=sample_col, output_dir=output_dir, 
+                           show_sample_names=show_sample_names, verbose=verbose)
         except Exception as e:
-            print(f"Error generating {analysis_type} expression plots: {str(e)}")
+            if verbose:
+                print(f"Error generating {method} {data_type} plots: {str(e)}")
     
-    # Check proportion analyses
-    proportion_analyses = get_available_analyses(adata, 'proportion')
-    print(f"\nAvailable proportion analyses: {proportion_analyses}")
-    
-    for analysis_type in proportion_analyses:
-        print(f"\n--- Generating {analysis_type.upper()} Proportion plots ---")
-        try:
-            ATAC_visualization(adata, analysis_type=analysis_type, pca_type='proportion', 
-                             figsize=figsize, point_size=point_size, alpha=alpha, 
-                             grouping_columns=grouping_columns, age_bin_size=age_bin_size, 
-                             sample_col=sample_col, output_dir=output_dir, 
-                             show_sample_names=show_sample_names, verbose=verbose)
-        except Exception as e:
-            print(f"Error generating {analysis_type} proportion plots: {str(e)}")
-    
-    print("\n=== Visualization Complete ===")
-
-# Keep the old function name for backward compatibility
-def ATAC_visualization_both(adata, figsize=(10, 8), point_size=50, 
-                          alpha=0.7, output_dir=None, grouping_columns=None, 
-                          age_bin_size=None, sample_col='sample', show_sample_names=False, 
-                          verbose=True):
-    """
-    Backward compatibility wrapper - now calls ATAC_visualization_all.
-    """
-    print("Note: ATAC_visualization_both is deprecated. Use ATAC_visualization_all for all analysis types.")
-    ATAC_visualization_all(adata, figsize=figsize, point_size=point_size, 
-                          alpha=alpha, output_dir=output_dir, grouping_columns=grouping_columns, 
-                          age_bin_size=age_bin_size, sample_col=sample_col, 
-                          show_sample_names=show_sample_names, verbose=verbose)
+    if verbose:
+        print("\n=== Visualization Complete ===")

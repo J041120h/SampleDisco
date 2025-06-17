@@ -200,7 +200,6 @@ def wrapper(
 
     # Pseudobulk parameters
     atac_pseudobulk_n_features = 50000,
-    atac_pseudobulk_frac = 0.8,
     atac_pseudobulk_verbose = True,
 
     # PCA parameters
@@ -212,6 +211,7 @@ def wrapper(
     atac_figsize=(10, 8),
     atac_point_size=50, 
     atac_visualization_grouping_columns=['current_severity'], 
+    atac_show_sample_names = True,
     atac_visualization_age_size=None,
     # ===== Process Control Flags =====
     preprocessing=True,
@@ -838,7 +838,7 @@ def wrapper(
             )
 
         if atac_visualization_processing:
-            ATAC_visualization_both(
+            DR_visualization_all(
                 atac_sample, 
                 figsize=atac_figsize, 
                 point_size=atac_point_size, 
@@ -846,6 +846,7 @@ def wrapper(
                 output_dir=os.path.join(atac_output_dir, "visualization"), 
                 grouping_columns=atac_visualization_grouping_columns,
                 age_bin_size=atac_visualization_age_size, 
+                show_sample_names = atac_show_sample_names,
                 sample_col=atac_sample_col
             )
 

@@ -172,18 +172,18 @@ if __name__ == "__main__":
     #         output_dir = "/dcl01/hongkai/data/data/hjiang/result/k10",
     #     )
 
-    # adata = integrate_preprocess(
-    #     output_dir = "/dcl01/hongkai/data/data/hjiang/result/k10/integration",
-    #     h5ad_path="/dcl01/hongkai/data/data/hjiang/result/k10/integration/glue/atac_rna_integrated.h5ad",
-    #     sample_column = 'sample',
-    #     min_cells_sample=500,
-    #     min_cell_gene=500,
-    #     min_features=500,
-    #     pct_mito_cutoff=20,
-    #     exclude_genes=None,
-    #     doublet=True, 
-    #     verbose=True
-    # )
+    adata = integrate_preprocess(
+        output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration",
+        h5ad_path="/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad",
+        sample_column = 'sample',
+        min_cells_sample=500,
+        min_cell_gene=500,
+        min_features=500,
+        pct_mito_cutoff=20,
+        exclude_genes=None,
+        doublet=True, 
+        verbose=True
+    )
 
     # # adata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated_test.h5ad")
     # atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
@@ -201,13 +201,14 @@ if __name__ == "__main__":
     #     output_dir= "/dcl01/hongkai/data/data/hjiang/result/k10/integration",
     #     integrated_data = True
     # )
-    pseudobulk_anndata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/pseudobulk/pseudobulk_sample.h5ad")
+    # pseudobulk_anndata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad")
 
 
-    fig, axes = visualize_multimodal_embedding(
-        pseudobulk_anndata,
-        modality_col='modality',
-        color_col='sev.level',
-        target_modality='RNA',
-        output_dir='/dcl01/hongkai/data/data/hjiang/result/integration_test'
-    )
+    # fig, axes = visualize_multimodal_embedding(
+    #     pseudobulk_anndata,
+    #     modality_col='modality',
+    #     color_col='sev.level',
+    #     target_modality='ATAC',
+    #     show_sample_names = True,
+    #     output_dir='/dcl01/hongkai/data/data/hjiang/result/integration'
+    # )

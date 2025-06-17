@@ -158,6 +158,8 @@ def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
         Key for embedding coordinates
     ax : matplotlib axis
         Axis to plot on
+    show_sample_names : bool
+        Whether to show sample names (only for target modality)
     """
     
     x_coords, y_coords, sample_names, coord_source = get_embedding_data(adata, embedding_key, verbose=False)
@@ -185,6 +187,7 @@ def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
         target_x = x_coords[target_mask]
         target_y = y_coords[target_mask]
         target_color_values = color_values[target_mask]
+        target_sample_names = sample_names[target_mask]  # Get target modality sample names
         
         # Handle valid color values
         valid_mask = pd.notna(target_color_values)
@@ -193,6 +196,7 @@ def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
             valid_values = target_color_values[valid_mask]
             valid_x = target_x[valid_mask]
             valid_y = target_y[valid_mask]
+            valid_names = target_sample_names[valid_mask]  # Names for valid samples
             
             # Create color mapping based on data type
             if data_type == 'numerical':
@@ -214,22 +218,31 @@ def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
                                  c=[color_map[category]], s=point_size, alpha=alpha,
                                  edgecolors='black', linewidth=0.5, 
                                  label=f'{target_modality}: {category}', zorder=2)
+            
+            # Add sample labels for valid target modality samples only
+            if show_sample_names:
+                for i, sample in enumerate(valid_names):
+                    ax.annotate(sample, (valid_x[i], valid_y[i]), 
+                               xytext=(5, 5), textcoords='offset points',
+                               fontsize=8, alpha=0.8)
         
         # Plot samples with missing values
         missing_mask = ~valid_mask
         if np.any(missing_mask):
             missing_x = target_x[missing_mask]
             missing_y = target_y[missing_mask]
+            missing_names = target_sample_names[missing_mask]  # Names for missing samples
+            
             ax.scatter(missing_x, missing_y, c='red', s=point_size, alpha=alpha,
                       edgecolors='black', linewidth=0.5, 
                       label=f'{target_modality} (missing {color_col})', zorder=2)
-    
-    # Add sample labels if requested
-    if show_sample_names:
-        for i, sample in enumerate(sample_names):
-            ax.annotate(sample, (x_coords[i], y_coords[i]), 
-                       xytext=(5, 5), textcoords='offset points',
-                       fontsize=8, alpha=0.8)
+            
+            # Add sample labels for missing target modality samples only
+            if show_sample_names:
+                for i, sample in enumerate(missing_names):
+                    ax.annotate(sample, (missing_x[i], missing_y[i]), 
+                               xytext=(5, 5), textcoords='offset points',
+                               fontsize=8, alpha=0.8, color='red')
     
     ax.set_xlabel('Dimension 1')
     ax.set_ylabel('Dimension 2')
@@ -337,7 +350,7 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
     output_dir : str
         Directory or file path to save plots
     show_sample_names : bool
-        Whether to show sample names on plot (default: False)
+        Whether to show sample names on plot (only for target modality, default: False)
     force_data_type : str or None
         Force data type to 'numerical' or 'categorical' instead of auto-detection (default: None)
     verbose : bool
@@ -354,6 +367,8 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
         print(f"Coloring by: {color_col}")
         print(f"Expression key: {expression_key}")
         print(f"Proportion key: {proportion_key}")
+        if show_sample_names:
+            print(f"Sample names will be shown only for {target_modality} modality")
     
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -364,6 +379,7 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
         os.makedirs(output_dir)
         if verbose:
             print("Automatically generating visualization output_dir")
+    
     # Detect data type early
     target_mask = adata.obs[modality_col].values == target_modality
     target_values = adata.obs[color_col].values[target_mask]
