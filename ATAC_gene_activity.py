@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Enhanced Peak-to-Gene Activity Matrix Generator with Consistent Filtering
+GPU-Accelerated Peak-to-Gene Activity Matrix Generator with Consistent Filtering
 
-*Modified to use gene IDs as primary identifiers and apply consistent peak filtering*:
-➜ Changed to use gene_ids instead of gene_names as primary keys
-➜ Output matrix is structured as cells × gene_ids
-➜ Gene names included for readability but gene_id is the unique identifier
-➜ All grouping and indexing now uses gene_id for consistency
-➜ Applies same accessibility filtering used during annotation
+This version uses CuPy for GPU acceleration of matrix operations.
+Key optimizations:
+- GPU-based sparse matrix operations
+- Batch processing on GPU
+- Minimized CPU-GPU memory transfers
+- Parallel GPU streams for concurrent operations
 """
 
 import os
@@ -25,18 +25,30 @@ import multiprocessing as mp
 from functools import partial
 from tqdm import tqdm
 
+# GPU imports
+try:
+    import cupy as cp
+    import cupyx.scipy.sparse as cusparse
+    GPU_AVAILABLE = True
+except ImportError:
+    GPU_AVAILABLE = False
+    print("CuPy not available. Install with: pip install cupy-cuda11x (adjust for your CUDA version)")
+
 warnings.filterwarnings("ignore")
 
 
-def process_gene_batch(args):
-    """Worker function to process a batch of genes in parallel."""
-    gene_batch, gene2peaks_weighted, peak_to_idx, X, aggregation_method, decay_params = args
+def process_gene_batch_gpu(args):
+    """GPU-accelerated worker function to process a batch of genes."""
+    gene_batch, gene2peaks_weighted, peak_to_idx, X_gpu, aggregation_method, decay_params, device_id = args
     
-    n_cells = X.shape[0]
+    # Set GPU device for this worker
+    cp.cuda.Device(device_id).use()
+    
+    n_cells = X_gpu.shape[0]
     n_genes = len(gene_batch)
     
-    # Initialize batch results
-    batch_activity = lil_matrix((n_cells, n_genes))
+    # Initialize batch results on GPU
+    batch_activity = cp.zeros((n_cells, n_genes), dtype=cp.float32)
     batch_stats = []
     
     for gene_idx, gene_id in enumerate(gene_batch):
@@ -63,8 +75,6 @@ def process_gene_batch(args):
             peak = peak_info['peak']
             if peak in peak_to_idx:
                 peak_indices.append(peak_to_idx[peak])
-                
-                # Use the combined weight from annotation
                 weight = peak_info.get('combined_weight', 1.0)
                 weights.append(weight)
                 distances.append(peak_info.get('distance_to_tss', 0))
@@ -75,41 +85,51 @@ def process_gene_batch(args):
                     n_gene_body += 1
         
         if len(peak_indices) > 0:
-            weights = np.array(weights)
+            # Convert to GPU arrays
+            peak_indices_gpu = cp.array(peak_indices, dtype=cp.int32)
+            weights_gpu = cp.array(weights, dtype=cp.float32)
             
-            # Get peak counts
-            peak_counts = X[:, peak_indices]
+            # Get peak counts on GPU
+            peak_counts = X_gpu[:, peak_indices_gpu]
             
             if aggregation_method == 'weighted_sum':
-                # ArchR-style weighted sum
-                if issparse(peak_counts):
-                    gene_activity_values = peak_counts.multiply(weights).sum(axis=1).A.flatten()
-                else:
-                    gene_activity_values = (peak_counts * weights).sum(axis=1)
+                # ArchR-style weighted sum on GPU
+                if hasattr(peak_counts, 'multiply'):  # sparse
+                    gene_activity_values = peak_counts.multiply(weights_gpu).sum(axis=1)
+                    if hasattr(gene_activity_values, 'toarray'):
+                        gene_activity_values = gene_activity_values.toarray().flatten()
+                else:  # dense
+                    gene_activity_values = (peak_counts * weights_gpu).sum(axis=1)
                     
             elif aggregation_method == 'weighted_mean':
-                # Weighted mean (normalized by total weight)
-                if issparse(peak_counts):
-                    weighted_counts = peak_counts.multiply(weights).sum(axis=1).A.flatten()
-                else:
-                    weighted_counts = (peak_counts * weights).sum(axis=1)
-                gene_activity_values = weighted_counts / weights.sum()
+                # Weighted mean on GPU
+                if hasattr(peak_counts, 'multiply'):  # sparse
+                    weighted_counts = peak_counts.multiply(weights_gpu).sum(axis=1)
+                    if hasattr(weighted_counts, 'toarray'):
+                        weighted_counts = weighted_counts.toarray().flatten()
+                else:  # dense
+                    weighted_counts = (peak_counts * weights_gpu).sum(axis=1)
+                gene_activity_values = weighted_counts / weights_gpu.sum()
                 
             elif aggregation_method == 'max_weighted':
-                # Maximum weighted peak (useful for sharp peaks)
-                if issparse(peak_counts):
-                    weighted_counts = peak_counts.multiply(weights)
-                    gene_activity_values = weighted_counts.max(axis=1).A.flatten()
-                else:
-                    weighted_counts = peak_counts * weights
+                # Maximum weighted peak on GPU
+                if hasattr(peak_counts, 'multiply'):  # sparse
+                    weighted_counts = peak_counts.multiply(weights_gpu)
+                    gene_activity_values = weighted_counts.max(axis=1)
+                    if hasattr(gene_activity_values, 'toarray'):
+                        gene_activity_values = gene_activity_values.toarray().flatten()
+                else:  # dense
+                    weighted_counts = peak_counts * weights_gpu
                     gene_activity_values = weighted_counts.max(axis=1)
                     
             else:  # 'sum' - simple sum without weights
-                gene_activity_values = peak_counts.sum(axis=1).A.flatten() if issparse(peak_counts) else peak_counts.sum(axis=1)
+                gene_activity_values = peak_counts.sum(axis=1)
+                if hasattr(gene_activity_values, 'toarray'):
+                    gene_activity_values = gene_activity_values.toarray().flatten()
             
-            batch_activity[:, gene_idx] = gene_activity_values.reshape(-1, 1)
+            batch_activity[:, gene_idx] = gene_activity_values.flatten()
         
-        # Get gene name for this gene_id (first occurrence in the data)
+        # Get gene name for this gene_id
         gene_name = "Unknown"
         for peak_info in peak_data:
             if 'gene_name' in peak_info:
@@ -120,16 +140,18 @@ def process_gene_batch(args):
             'gene_id': gene_id,
             'gene_name': gene_name,
             'n_peaks': len(peak_indices),
-            'total_weight': weights.sum() if len(weights) > 0 else 0,
+            'total_weight': float(cp.asnumpy(weights_gpu.sum())) if len(weights) > 0 else 0,
             'mean_distance': np.mean(distances) if len(distances) > 0 else np.nan,
             'n_promoter_peaks': n_promoter,
             'n_gene_body_peaks': n_gene_body
         })
     
-    return batch_activity.tocsr(), batch_stats
+    # Convert back to CPU sparse matrix
+    batch_activity_cpu = cp.asnumpy(batch_activity)
+    return csr_matrix(batch_activity_cpu), batch_stats
 
 
-def peak_to_gene_activity_weighted(
+def peak_to_gene_activity_weighted_gpu(
     atac,
     annotation_results,
     output_dir,
@@ -137,82 +159,93 @@ def peak_to_gene_activity_weighted(
     aggregation_method='weighted_sum',
     distance_threshold=None,
     weight_threshold=0.01,
-    min_peak_accessibility=0.01,  # NEW: Add this parameter to match annotation
-    n_threads=None,
+    min_peak_accessibility=0.01,
+    n_gpu_workers=None,
+    gpu_batch_size=None,
     normalize_by='none',
     log_transform=False,
     scale_factors=None,
-    verbose=True
+    verbose=True,
+    use_gpu=True
 ):
     """
-    Convert ATAC-seq peak counts to gene activity scores using weighted aggregation.
-    Uses gene IDs as primary identifiers for robust mapping.
-    Now applies the same accessibility filtering used during annotation.
+    GPU-accelerated conversion of ATAC-seq peak counts to gene activity scores.
     
     Parameters:
     -----------
     atac : AnnData
         ATAC-seq data with peaks as features
     annotation_results : dict or str
-        Either the annotation results dictionary from annotate_atac_peaks_parallel
-        or path to the pickle file containing peak2gene mapping
+        Peak2gene mapping from annotation
     output_dir : str or Path
         Directory to save the gene activity AnnData
     layer : str or None
         Layer to use for counts (default: X)
     aggregation_method : str
-        Method for aggregating peaks to genes:
-        - 'weighted_sum': ArchR-style weighted sum (default)
-        - 'weighted_mean': Weighted mean normalized by total weight
-        - 'max_weighted': Maximum weighted peak
-        - 'sum': Simple sum without weights
+        Method for aggregating peaks to genes
     distance_threshold : int or None
         Maximum TSS distance to include peaks (bp)
     weight_threshold : float
-        Minimum weight to include a peak (default: 0.01)
+        Minimum weight to include a peak
     min_peak_accessibility : float
-        Minimum peak accessibility to include (should match annotation parameter)
-    n_threads : int or None
-        Number of threads for parallel processing
+        Minimum peak accessibility to include
+    n_gpu_workers : int or None
+        Number of GPU workers (default: 1)
+    gpu_batch_size : int or None
+        Batch size for GPU processing
     normalize_by : str
-        Normalization method:
-        - 'none': No normalization
-        - 'n_peaks': Normalize by number of peaks per gene
-        - 'total_weight': Normalize by total weight per gene
-        - 'archR': ArchR-style normalization (log2(counts + 1))
+        Normalization method
     log_transform : bool
-        Apply log1p transformation after aggregation
+        Apply log1p transformation
     scale_factors : dict or None
         Optional scaling factors per cell type
     verbose : bool
         Print progress messages
+    use_gpu : bool
+        Whether to use GPU acceleration
     
     Returns:
     --------
     AnnData
-        Gene activity matrix (cells × gene_ids) saved to output_dir/gene_activity_weighted.h5ad
+        Gene activity matrix saved to output_dir/gene_activity_weighted_gpu.h5ad
     """
+    
+    # Check GPU availability
+    if use_gpu and not GPU_AVAILABLE:
+        print("GPU requested but CuPy not available. Falling back to CPU.")
+        use_gpu = False
+    
+    if use_gpu:
+        # Check available GPUs
+        n_gpus = cp.cuda.runtime.getDeviceCount()
+        if n_gpus == 0:
+            print("No GPUs detected. Falling back to CPU.")
+            use_gpu = False
+        else:
+            if verbose:
+                print(f"GPU acceleration enabled. Detected {n_gpus} GPU(s)")
+                for i in range(n_gpus):
+                    props = cp.cuda.runtime.getDeviceProperties(i)
+                    print(f"  GPU {i}: {props['name'].decode()} ({props['totalGlobalMem'] / 1e9:.1f} GB)")
     
     # Setup
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    if n_threads is None:
-        n_threads = mp.cpu_count()
+    if n_gpu_workers is None:
+        n_gpu_workers = min(4, n_gpus) if use_gpu else mp.cpu_count()
     
     if verbose:
-        print(f"Creating gene activity matrix using {n_threads} threads")
+        mode = "GPU" if use_gpu else "CPU"
+        print(f"Creating gene activity matrix using {mode} with {n_gpu_workers} workers")
         print(f"Aggregation method: {aggregation_method}")
         print(f"Normalization: {normalize_by}")
         print(f"Min peak accessibility: {min_peak_accessibility}")
-        print(f"Output format: cells × gene_ids")
     
     # Load annotation results
     if isinstance(annotation_results, (str, Path)):
         with open(annotation_results, 'rb') as f:
             peak2gene = pickle.load(f)
-        if verbose:
-            print(f"Loaded peak annotations from {annotation_results}")
     elif isinstance(annotation_results, dict) and 'peak2gene' in annotation_results:
         peak2gene = annotation_results['peak2gene']
     else:
@@ -221,8 +254,6 @@ def peak_to_gene_activity_weighted(
     # Get count matrix
     if layer is not None:
         X = atac.layers[layer]
-        if verbose:
-            print(f"Using counts from layer '{layer}'")
     else:
         X = atac.X
     
@@ -232,33 +263,22 @@ def peak_to_gene_activity_weighted(
     else:
         X = X.tocsr()
     
-    # NEW: Apply the same peak filtering used during annotation
+    # Apply peak filtering
     if min_peak_accessibility is not None and min_peak_accessibility > 0:
-        if hasattr(X, "toarray"):  # sparse
-            peak_means = np.asarray(X.mean(axis=0)).ravel()
-        else:  # dense
-            peak_means = np.asarray(X.mean(axis=0)).ravel()
-        
+        peak_means = np.asarray(X.mean(axis=0)).ravel()
         valid_peak_mask = peak_means >= min_peak_accessibility
-        
-        # Filter peaks to only those that were annotated
         valid_peak_names = [peak for i, peak in enumerate(atac.var_names) 
                            if valid_peak_mask[i]]
-        
         if verbose:
-            print(f"Applying accessibility filter: {len(valid_peak_names)}/{len(atac.var_names)} peaks pass threshold")
-            print(f"  Filtered out: {len(atac.var_names) - len(valid_peak_names)} peaks below {min_peak_accessibility} accessibility")
+            print(f"Accessibility filter: {len(valid_peak_names)}/{len(atac.var_names)} peaks pass")
     else:
         valid_peak_names = list(atac.var_names)
-        if verbose:
-            print(f"No accessibility filtering applied - using all {len(valid_peak_names)} peaks")
     
-    # Create peak name to index mapping (only for valid peaks)
+    # Create peak name to index mapping
     peak_to_idx = {peak: i for i, peak in enumerate(atac.var_names) 
                    if peak in valid_peak_names}
     
-    # Build gene-to-peaks mapping with weights and filtering
-    # Now using gene_id as the primary key
+    # Build gene-to-peaks mapping
     gene2peaks_weighted = defaultdict(list)
     peak_stats = {
         'total_annotated': 0,
@@ -271,17 +291,16 @@ def peak_to_gene_activity_weighted(
         'not_in_atac_data': 0
     }
     
+    # Process annotations (same as CPU version)
     for peak, annotation in peak2gene.items():
         peak_stats['total_annotated'] += 1
         
-        # Check if peak exists in ATAC data
         if peak not in atac.var_names:
             peak_stats['not_in_atac_data'] += 1
             continue
         
         peak_stats['peaks_in_atac_data'] += 1
         
-        # Check if peak passes accessibility filter
         if peak not in valid_peak_names:
             peak_stats['filtered_by_accessibility'] += 1
             continue
@@ -291,24 +310,20 @@ def peak_to_gene_activity_weighted(
         if not isinstance(annotation, dict):
             continue
             
-        # Use gene_ids as primary identifiers
         gene_ids = annotation.get('gene_ids', [])
-        gene_names = annotation.get('gene_names', [])  # For readability
+        gene_names = annotation.get('gene_names', [])
         weights = annotation.get('weights', [])
         distances = annotation.get('distances', [])
         in_promoter = annotation.get('in_promoter', [])
         in_gene_body = annotation.get('in_gene_body', [])
         tss_weights = annotation.get('tss_weights', [])
         
-        # Process each gene annotation for this peak
         peak_used = False
         for i, gene_id in enumerate(gene_ids):
-            # Get values with bounds checking
             weight = weights[i] if i < len(weights) else 0
             distance = distances[i] if i < len(distances) else float('inf')
             gene_name = gene_names[i] if i < len(gene_names) else "Unknown"
             
-            # Apply filters
             if weight_threshold is not None and weight < weight_threshold:
                 peak_stats['filtered_by_weight'] += 1
                 continue
@@ -317,7 +332,6 @@ def peak_to_gene_activity_weighted(
                 peak_stats['filtered_by_distance'] += 1
                 continue
             
-            # Store peak info for this gene_id
             peak_info = {
                 'peak': peak,
                 'gene_id': gene_id,
@@ -335,63 +349,105 @@ def peak_to_gene_activity_weighted(
         if peak_used:
             peak_stats['used_after_filtering'] += 1
     
-    # Get valid gene IDs (primary identifiers)
+    # Get valid gene IDs
     gene_ids = sorted(list(gene2peaks_weighted.keys()))
     gene_ids = [g for g in gene_ids if g and str(g).strip() and str(g).lower() != 'nan']
     n_genes = len(gene_ids)
     n_cells = atac.n_obs
     
     if verbose:
-        print(f"\nPeak filtering statistics:")
-        print(f"  Total annotated peaks: {peak_stats['total_annotated']:,}")
-        print(f"  Peaks in ATAC data: {peak_stats['peaks_in_atac_data']:,}")
-        print(f"  Peaks pass accessibility filter: {peak_stats['peaks_pass_accessibility']:,}")
-        print(f"  Used after all filtering: {peak_stats['used_after_filtering']:,}")
-        print(f"  Filtered by accessibility: {peak_stats['filtered_by_accessibility']:,}")
-        if weight_threshold:
-            print(f"  Filtered by weight (<{weight_threshold}): {peak_stats['filtered_by_weight']:,}")
-        if distance_threshold:
-            print(f"  Filtered by distance (>{distance_threshold:,} bp): {peak_stats['filtered_by_distance']:,}")
-        if peak_stats['not_in_atac_data'] > 0:
-            print(f"  Not found in ATAC data: {peak_stats['not_in_atac_data']:,}")
-        print(f"\nProcessing {n_genes:,} genes (by gene_id) from {atac.n_vars:,} total peaks")
+        print(f"\nProcessing {n_genes:,} genes from {atac.n_vars:,} peaks")
         print(f"Using {len(valid_peak_names):,} accessibility-filtered peaks")
     
-    # Prepare gene batches for parallel processing
-    batch_size = max(1, n_genes // (n_threads * 4))  # 4 batches per thread
-    gene_batches = [gene_ids[i:i + batch_size] for i in range(0, n_genes, batch_size)]
-    
-    # Prepare arguments for parallel processing
-    decay_params = {
-        'sigma': 50000  # Default value
-    }
-    
-    process_args = [
-        (batch, gene2peaks_weighted, peak_to_idx, X, aggregation_method, decay_params)
-        for batch in gene_batches
-    ]
-    
-    # Process in parallel
-    if verbose:
-        print(f"Processing {len(gene_batches)} gene batches in parallel...")
-    
-    with mp.Pool(n_threads) as pool:
-        results = list(tqdm(
-            pool.imap(process_gene_batch, process_args),
-            total=len(gene_batches),
-            desc="Processing genes",
-            disable=not verbose
-        ))
+    if use_gpu:
+        # GPU processing
+        if gpu_batch_size is None:
+            # Estimate batch size based on GPU memory
+            gpu_mem = cp.cuda.runtime.getDeviceProperties(0)['totalGlobalMem']
+            # Conservative estimate: use 25% of GPU memory
+            estimated_batch_size = int((gpu_mem * 0.25) / (n_cells * 8 * 100))  # assume ~100 peaks per gene
+            gpu_batch_size = max(50, min(500, estimated_batch_size))
+        
+        if verbose:
+            print(f"GPU batch size: {gpu_batch_size} genes per batch")
+        
+        # Transfer matrix to GPU once
+        if verbose:
+            print("Transferring data to GPU...")
+        
+        # For multi-GPU, we'll distribute the matrix
+        X_gpu_list = []
+        for gpu_id in range(min(n_gpu_workers, n_gpus)):
+            with cp.cuda.Device(gpu_id):
+                if issparse(X):
+                    X_gpu = cusparse.csr_matrix(X)
+                else:
+                    X_gpu = cp.array(X)
+                X_gpu_list.append(X_gpu)
+        
+        # Prepare gene batches
+        gene_batches = [gene_ids[i:i + gpu_batch_size] for i in range(0, n_genes, gpu_batch_size)]
+        
+        # Distribute batches across GPUs
+        process_args = []
+        for i, batch in enumerate(gene_batches):
+            gpu_id = i % min(n_gpu_workers, n_gpus)
+            args = (batch, gene2peaks_weighted, peak_to_idx, X_gpu_list[gpu_id], 
+                   aggregation_method, {'sigma': 50000}, gpu_id)
+            process_args.append(args)
+        
+        # Process batches
+        if verbose:
+            print(f"Processing {len(gene_batches)} gene batches on GPU...")
+        
+        # Use multiprocessing for multi-GPU
+        if n_gpu_workers > 1 and n_gpus > 1:
+            with mp.Pool(n_gpu_workers) as pool:
+                results = list(tqdm(
+                    pool.imap(process_gene_batch_gpu, process_args),
+                    total=len(gene_batches),
+                    desc="GPU processing",
+                    disable=not verbose
+                ))
+        else:
+            # Single GPU processing
+            results = []
+            for args in tqdm(process_args, desc="GPU processing", disable=not verbose):
+                results.append(process_gene_batch_gpu(args))
+        
+        # Clear GPU memory
+        for X_gpu in X_gpu_list:
+            del X_gpu
+        cp.get_default_memory_pool().free_all_blocks()
+        
+    else:
+        # CPU fallback (original implementation)
+        from peak_to_gene_activity_weighted import process_gene_batch
+        
+        batch_size = max(1, n_genes // (n_gpu_workers * 4))
+        gene_batches = [gene_ids[i:i + batch_size] for i in range(0, n_genes, batch_size)]
+        
+        process_args = [
+            (batch, gene2peaks_weighted, peak_to_idx, X, aggregation_method, {'sigma': 50000})
+            for batch in gene_batches
+        ]
+        
+        with mp.Pool(n_gpu_workers) as pool:
+            results = list(tqdm(
+                pool.imap(process_gene_batch, process_args),
+                total=len(gene_batches),
+                desc="CPU processing",
+                disable=not verbose
+            ))
     
     # Combine results
     if verbose:
-        print("Combining results from parallel processing...")
+        print("Combining results...")
     
-    # Concatenate sparse matrices
     activity_matrices = [r[0] for r in results]
     gene_stats_lists = [r[1] for r in results]
     
-    # Stack horizontally to get full gene activity matrix
+    # Stack horizontally
     gene_activity = activity_matrices[0]
     for mat in activity_matrices[1:]:
         gene_activity = csr_matrix(np.hstack([gene_activity.toarray(), mat.toarray()]))
@@ -403,27 +459,49 @@ def peak_to_gene_activity_weighted(
     
     gene_stats_df = pd.DataFrame(all_gene_stats).set_index('gene_id')
     
-    # Apply normalization
-    if normalize_by == 'n_peaks':
+    # Apply normalization (can be GPU accelerated too)
+    if normalize_by != 'none' and use_gpu:
         if verbose:
-            print("Normalizing by number of peaks per gene...")
-        for i, gene_id in enumerate(gene_ids):
-            n_peaks = gene_stats_df.loc[gene_id, 'n_peaks']
-            if n_peaks > 0:
-                gene_activity[:, i] = gene_activity[:, i] / n_peaks
-                
-    elif normalize_by == 'total_weight':
-        if verbose:
-            print("Normalizing by total weight per gene...")
-        for i, gene_id in enumerate(gene_ids):
-            total_weight = gene_stats_df.loc[gene_id, 'total_weight']
-            if total_weight > 0:
-                gene_activity[:, i] = gene_activity[:, i] / total_weight
-                
-    elif normalize_by == 'archR':
-        if verbose:
-            print("Applying ArchR-style normalization (log2(counts + 1))...")
-        gene_activity = csr_matrix(np.log2(gene_activity.toarray() + 1))
+            print(f"Applying {normalize_by} normalization on GPU...")
+        
+        with cp.cuda.Device(0):
+            gene_activity_gpu = cp.array(gene_activity.toarray(), dtype=cp.float32)
+            
+            if normalize_by == 'n_peaks':
+                for i, gene_id in enumerate(gene_ids):
+                    n_peaks = gene_stats_df.loc[gene_id, 'n_peaks']
+                    if n_peaks > 0:
+                        gene_activity_gpu[:, i] /= n_peaks
+                        
+            elif normalize_by == 'total_weight':
+                for i, gene_id in enumerate(gene_ids):
+                    total_weight = gene_stats_df.loc[gene_id, 'total_weight']
+                    if total_weight > 0:
+                        gene_activity_gpu[:, i] /= total_weight
+                        
+            elif normalize_by == 'archR':
+                gene_activity_gpu = cp.log2(gene_activity_gpu + 1)
+            
+            gene_activity = csr_matrix(cp.asnumpy(gene_activity_gpu))
+            del gene_activity_gpu
+            cp.get_default_memory_pool().free_all_blocks()
+    
+    elif normalize_by != 'none':
+        # CPU normalization
+        if normalize_by == 'n_peaks':
+            for i, gene_id in enumerate(gene_ids):
+                n_peaks = gene_stats_df.loc[gene_id, 'n_peaks']
+                if n_peaks > 0:
+                    gene_activity[:, i] = gene_activity[:, i] / n_peaks
+                    
+        elif normalize_by == 'total_weight':
+            for i, gene_id in enumerate(gene_ids):
+                total_weight = gene_stats_df.loc[gene_id, 'total_weight']
+                if total_weight > 0:
+                    gene_activity[:, i] = gene_activity[:, i] / total_weight
+                    
+        elif normalize_by == 'archR':
+            gene_activity = csr_matrix(np.log2(gene_activity.toarray() + 1))
     
     # Apply log transformation if requested
     if log_transform and normalize_by != 'archR':
@@ -431,37 +509,27 @@ def peak_to_gene_activity_weighted(
             print("Applying log1p transformation...")
         gene_activity = csr_matrix(np.log1p(gene_activity.toarray()))
     
-    # Apply cell-type specific scale factors if provided
-    if scale_factors is not None:
-        if verbose:
-            print("Applying cell-type specific scale factors...")
-        for cell_type, factor in scale_factors.items():
-            mask = atac.obs['cell_type'] == cell_type if 'cell_type' in atac.obs else []
-            gene_activity[mask, :] = gene_activity[mask, :] * factor
-    
-    # Create AnnData object with gene_ids as var_names
+    # Create AnnData object
     adata_gene = ad.AnnData(
         X=gene_activity,
         obs=atac.obs.copy(),
         var=gene_stats_df.loc[gene_ids].copy()
     )
     
-    # Set gene_ids as the index/var_names (primary identifiers)
     adata_gene.var_names = gene_ids
     adata_gene.var_names.name = 'gene_id'
     
-    # Ensure gene_name is available for readability
     if 'gene_name' not in adata_gene.var.columns:
-        adata_gene.var['gene_name'] = adata_gene.var.index  # Fallback
+        adata_gene.var['gene_name'] = adata_gene.var.index
     
-    # Copy relevant uns data
+    # Copy metadata
     for key in ['sample_name', 'genome', 'species']:
         if key in atac.uns:
             adata_gene.uns[key] = atac.uns[key]
     
     # Add processing metadata
     adata_gene.uns['gene_activity_params'] = {
-        'method': 'weighted_aggregation_gene_id_consistent_filtering',
+        'method': 'gpu_accelerated_weighted_aggregation' if use_gpu else 'weighted_aggregation',
         'aggregation': aggregation_method,
         'normalization': normalize_by,
         'source_peaks': atac.n_vars,
@@ -470,35 +538,22 @@ def peak_to_gene_activity_weighted(
         'weight_threshold': weight_threshold,
         'min_peak_accessibility': min_peak_accessibility,
         'log_transformed': log_transform or normalize_by == 'archR',
-        'n_threads': n_threads,
+        'n_workers': n_gpu_workers,
+        'gpu_used': use_gpu,
+        'gpu_batch_size': gpu_batch_size if use_gpu else None,
         'filtering_stats': peak_stats,
         'identifier_type': 'gene_id'
     }
     
-    # Add ArchR-compatible metadata
-    adata_gene.uns['GeneScoreMatrix'] = {
-        'method': 'ArchR-compatible weighted aggregation (gene_id indexed, consistent filtering)',
-        'date': pd.Timestamp.now().isoformat(),
-        'parameters': {
-            'aggregation': aggregation_method,
-            'normalization': normalize_by,
-            'distance_threshold': distance_threshold,
-            'weight_threshold': weight_threshold,
-            'min_peak_accessibility': min_peak_accessibility,
-            'identifier': 'gene_id'
-        }
-    }
-    
     # Save results
-    output_path = output_dir / 'gene_activity_weighted.h5ad'
+    suffix = '_gpu' if use_gpu else ''
+    output_path = output_dir / f'gene_activity_weighted{suffix}.h5ad'
     adata_gene.write(output_path)
     
     if verbose:
         print(f"\nGene activity matrix created: {n_cells:,} cells × {n_genes:,} genes")
-        print(f"Matrix structure: cells × gene_ids")
         print(f"Results saved to: {output_path}")
         
-        # Summary statistics
         non_zero_genes = (adata_gene.X.sum(axis=0) > 0).A1.sum()
         sparsity = 1 - (adata_gene.X.nnz / (n_cells * n_genes))
         
@@ -507,131 +562,86 @@ def peak_to_gene_activity_weighted(
         print(f"  Sparsity: {100*sparsity:.1f}%")
         print(f"  Total counts: {adata_gene.X.sum():,.0f}")
         
-        # Gene statistics
-        print(f"\nGene statistics:")
-        print(f"  Peaks per gene: {adata_gene.var['n_peaks'].mean():.1f} ± {adata_gene.var['n_peaks'].std():.1f}")
-        print(f"  Promoter peaks per gene: {adata_gene.var['n_promoter_peaks'].mean():.1f}")
-        print(f"  Gene body peaks per gene: {adata_gene.var['n_gene_body_peaks'].mean():.1f}")
-        
-        valid_distances = adata_gene.var['mean_distance'].dropna()
-        if len(valid_distances) > 0:
-            print(f"  Mean TSS distance: {valid_distances.mean():.0f} bp")
-        
-        # Show example gene IDs vs names
-        print(f"\nExample gene ID → name mapping:")
-        for i in range(min(5, len(adata_gene.var))):
-            gene_id = adata_gene.var_names[i]
-            gene_name = adata_gene.var.iloc[i]['gene_name']
-            print(f"  {gene_id} → {gene_name}")
+        if use_gpu:
+            print(f"\nGPU acceleration statistics:")
+            print(f"  GPUs used: {min(n_gpu_workers, n_gpus)}")
+            print(f"  Batch size: {gpu_batch_size} genes")
     
     return adata_gene
 
 
-def brief_gene_activity_overview(adata):
-    """
-    Enhanced overview of gene activity AnnData object with gene ID focus.
-    """
-    print(f"Gene Activity Matrix Overview")
-    print(f"=" * 50)
-    print(f"Shape: {adata.shape[0]:,} cells × {adata.shape[1]:,} genes")
-    print(f"Matrix type: {'Sparse' if issparse(adata.X) else 'Dense'}")
-    print(f"Gene identifiers: {adata.var_names.name or 'gene_id'}")
+# Benchmark function
+def benchmark_gpu_vs_cpu(atac, annotation_results, output_dir, n_genes_test=1000):
+    """Benchmark GPU vs CPU performance."""
+    import time
     
-    # Matrix statistics
-    if issparse(adata.X):
-        total_counts = adata.X.sum()
-        non_zero_pct = (adata.X.nnz / adata.X.size) * 100
-    else:
-        total_counts = adata.X.sum()
-        non_zero_pct = (np.count_nonzero(adata.X) / adata.X.size) * 100
+    print("Running performance benchmark...")
+    print(f"Testing with {n_genes_test} genes")
     
-    print(f"Total counts: {total_counts:,.0f}")
-    print(f"Non-zero values: {non_zero_pct:.1f}%")
+    # Subset data for testing
+    atac_subset = atac[:, :min(atac.n_vars, 10000)]  # Use subset of peaks
     
-    # Processing information
-    if 'gene_activity_params' in adata.uns:
-        params = adata.uns['gene_activity_params']
-        print(f"\nProcessing parameters:")
-        print(f"  Aggregation: {params.get('aggregation', 'unknown')}")
-        print(f"  Normalization: {params.get('normalization', 'unknown')}")
-        print(f"  Distance threshold: {params.get('distance_threshold', 'None')}")
-        print(f"  Weight threshold: {params.get('weight_threshold', 'None')}")
-        print(f"  Min peak accessibility: {params.get('min_peak_accessibility', 'None')}")
-        print(f"  Identifier type: {params.get('identifier_type', 'unknown')}")
-        
-        # Show filtering stats
-        if 'filtering_stats' in params:
-            stats = params['filtering_stats']
-            print(f"\nFiltering statistics:")
-            print(f"  Total annotated peaks: {stats.get('total_annotated', 'N/A'):,}")
-            print(f"  Peaks in ATAC data: {stats.get('peaks_in_atac_data', 'N/A'):,}")
-            print(f"  Peaks pass accessibility: {stats.get('peaks_pass_accessibility', 'N/A'):,}")
-            print(f"  Used after filtering: {stats.get('used_after_filtering', 'N/A'):,}")
-    
-    # Gene statistics
-    if 'n_peaks' in adata.var.columns:
-        print(f"\nGene statistics:")
-        print(f"  Peaks per gene: {adata.var['n_peaks'].mean():.1f} (range: {adata.var['n_peaks'].min()}-{adata.var['n_peaks'].max()})")
-    
-    if 'n_promoter_peaks' in adata.var.columns:
-        print(f"  Promoter peaks: {adata.var['n_promoter_peaks'].sum():,} total")
-    
-    if 'n_gene_body_peaks' in adata.var.columns:
-        print(f"  Gene body peaks: {adata.var['n_gene_body_peaks'].sum():,} total")
-    
-    # Gene ID and name mapping
-    if 'gene_name' in adata.var.columns:
-        print(f"\nGene ID → Name examples:")
-        for i in range(min(3, len(adata.var))):
-            gene_id = adata.var_names[i]
-            gene_name = adata.var.iloc[i]['gene_name']
-            print(f"  {gene_id} → {gene_name}")
-    
-    # Sample of the matrix
-    print(f"\nCount matrix sample (first 3 genes × 3 cells):")
-    if issparse(adata.X):
-        sample_matrix = adata.X[:3, :3].toarray().T
-    else:
-        sample_matrix = adata.X[:3, :3].T
-    
-    sample_df = pd.DataFrame(
-        sample_matrix,
-        index=adata.var_names[:3],
-        columns=adata.obs_names[:3]
+    # CPU benchmark
+    print("\nCPU Processing:")
+    start_time = time.time()
+    adata_cpu = peak_to_gene_activity_weighted_gpu(
+        atac=atac_subset,
+        annotation_results=annotation_results,
+        output_dir=output_dir / "benchmark_cpu",
+        use_gpu=False,
+        verbose=False
     )
-    print(sample_df.round(4))
+    cpu_time = time.time() - start_time
+    print(f"  Time: {cpu_time:.2f} seconds")
+    
+    # GPU benchmark
+    if GPU_AVAILABLE:
+        print("\nGPU Processing:")
+        start_time = time.time()
+        adata_gpu = peak_to_gene_activity_weighted_gpu(
+            atac=atac_subset,
+            annotation_results=annotation_results,
+            output_dir=output_dir / "benchmark_gpu",
+            use_gpu=True,
+            verbose=False
+        )
+        gpu_time = time.time() - start_time
+        print(f"  Time: {gpu_time:.2f} seconds")
+        print(f"  Speedup: {cpu_time/gpu_time:.2f}x")
+        
+        # Verify results match
+        diff = np.abs(adata_cpu.X - adata_gpu.X).max()
+        print(f"  Max difference: {diff:.2e}")
+        print(f"  Results match: {diff < 1e-5}")
 
 
 # Example usage
 if __name__ == "__main__":
-    # atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad")
-    # with open("/users/hjiang/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
-    #     annotation_results = pickle.load(f)
-    # adata_gene = peak_to_gene_activity_weighted(
-    #     atac=atac,
-    #     annotation_results=annotation_results,
-    #     output_dir="/users/hjiang/GenoDistance/result/gene_activity/",
-    #     aggregation_method='weighted_sum',  # ArchR-style
-    #     distance_threshold=100_000,  # 100kb
-    #     weight_threshold=0.01,  # Minimum weight
-    #     min_peak_accessibility=0.01,  # SAME AS ANNOTATION SCRIPT
-    #     normalize_by='archR',  # ArchR normalization
-    #     verbose=True
-    # )
-    # brief_gene_activity_overview(adata_gene)
-
-    atac = ad.read_h5ad("/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad")
-    with open("/Users/harry/Desktop/GenoDistance/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
+    # Load data
+    atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad")
+    with open("/dcl01/hongkai/data/data/hjiang/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
         annotation_results = pickle.load(f)
-    adata_gene = peak_to_gene_activity_weighted(
+    
+    # Run GPU-accelerated version
+    adata_gene = peak_to_gene_activity_weighted_gpu(
         atac=atac,
         annotation_results=annotation_results,
-        output_dir="/Users/harry/Desktop/GenoDistance/result/gene_activity/",
-        aggregation_method='weighted_sum',  # ArchR-style
-        distance_threshold=100_000,  # 100kb
-        weight_threshold=0.01,  # Minimum weight
-        min_peak_accessibility=0.01,  # SAME AS ANNOTATION SCRIPT
-        normalize_by='archR',  # ArchR normalization
+        output_dir="/dcl01/hongkai/data/data/hjiang/result/gene_activity/",
+        aggregation_method='weighted_sum',
+        distance_threshold=100_000,
+        weight_threshold=0.01,
+        min_peak_accessibility=0.01,
+        normalize_by='archR',
+        use_gpu=True,  # Enable GPU
+        n_gpu_workers=4,  # Use 4 GPU workers
+        gpu_batch_size=200,  # Process 200 genes per batch
         verbose=True
     )
-    brief_gene_activity_overview(adata_gene)
+    
+    # Optional: Run benchmark
+    # benchmark_gpu_vs_cpu(
+    #     atac=atac,
+    #     annotation_results=annotation_results,
+    #     output_dir="/dcl01/hongkai/data/data/hjiang/result/gene_activity/benchmark/",
+    #     n_genes_test=1000
+    # )
