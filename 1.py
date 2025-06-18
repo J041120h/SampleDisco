@@ -1047,24 +1047,77 @@ def print_srr14466476_obs_column_values(adata_path):
         print("Object 'SRR14466476' not found in obs.")
 
 
+import scanpy as sc
+import anndata as ad
+import numpy as np
+import pandas as pd
+import random
+
+def subset_anndata_to_random_samples(adata: ad.AnnData, sample_column: str = "sample", n_samples: int = 8, random_seed: int = 42) -> ad.AnnData:
+    """
+    Subset an AnnData object to cells from a randomly selected subset of samples.
+
+    Parameters
+    ----------
+    adata : AnnData
+        Input AnnData object with 'sample' information in .obs.
+    sample_column : str
+        The column in adata.obs that contains sample labels.
+    n_samples : int
+        Number of unique samples to randomly select.
+    random_seed : int
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    AnnData
+        A new AnnData object containing cells from the selected samples.
+    """
+    if sample_column not in adata.obs:
+        raise ValueError(f"Column '{sample_column}' not found in adata.obs")
+
+    all_samples = adata.obs[sample_column].unique()
+    if len(all_samples) < n_samples:
+        raise ValueError(f"Requested {n_samples} samples, but only {len(all_samples)} available.")
+
+    random.seed(random_seed)
+    selected_samples = random.sample(list(all_samples), n_samples)
+    print(f"Selected samples: {selected_samples}")
+
+    subset_mask = adata.obs[sample_column].isin(selected_samples)
+    adata_subset = adata[subset_mask].copy()
+
+    return adata_subset
+
+# Example usage
 if __name__ == "__main__":
-    adata = sc.read("/dcl01/hongkai/data/data/hjiang/result/ATAC/harmony/ATAC_sample.h5ad")
-    
-    # updated_adata = update_sev_level_from_mapping_file(
-    #     adata=adata,
-    #     mapping_file_path="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
-    # )
-    
-    # # Save the updated AnnData
-    # sc.write("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad", updated_adata)
-    
-    sample_counts = adata.obs['sample'].value_counts()
+    input_path = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
+    output_path = "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
 
-    # Print the results
-    print("Number of cells per sample:")
-    print(sample_counts)
+    adata = sc.read_h5ad(input_path)
+    adata_subset = subset_anndata_to_random_samples(adata, sample_column="sample", n_samples=8)
+    adata_subset.write_h5ad(output_path)
+    print(f"Subset saved to {output_path}")
 
-    # Or if you want it sorted by sample name instead of count:
-    sample_counts_sorted = adata.obs['sample'].value_counts().sort_index()
-    print("\nNumber of cells per sample (sorted by sample name):")
-    print(sample_counts_sorted)
+
+# if __name__ == "__main__":
+#     adata = sc.read("/dcl01/hongkai/data/data/hjiang/result/ATAC/harmony/ATAC_sample.h5ad")
+    
+#     # updated_adata = update_sev_level_from_mapping_file(
+#     #     adata=adata,
+#     #     mapping_file_path="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
+#     # )
+    
+#     # # Save the updated AnnData
+#     # sc.write("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad", updated_adata)
+    
+#     sample_counts = adata.obs['sample'].value_counts()
+
+#     # Print the results
+#     print("Number of cells per sample:")
+#     print(sample_counts)
+
+#     # Or if you want it sorted by sample name instead of count:
+#     sample_counts_sorted = adata.obs['sample'].value_counts().sort_index()
+#     print("\nNumber of cells per sample (sorted by sample name):")
+#     print(sample_counts_sorted)
