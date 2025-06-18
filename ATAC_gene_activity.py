@@ -618,7 +618,7 @@ def benchmark_gpu_vs_cpu(atac, annotation_results, output_dir, n_genes_test=1000
 # Example usage
 if __name__ == "__main__":
     # Load data
-    atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad")
+    atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad")
     with open("/dcl01/hongkai/data/data/hjiang/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
         annotation_results = pickle.load(f)
     
@@ -626,7 +626,7 @@ if __name__ == "__main__":
     adata_gene = peak_to_gene_activity_weighted_gpu(
         atac=atac,
         annotation_results=annotation_results,
-        output_dir="/dcl01/hongkai/data/data/hjiang/result/gene_activity/",
+        output_dir="/dcl01/hongkai/data/data/hjiang/Test/gene_activity/",
         aggregation_method='weighted_sum',
         distance_threshold=100_000,
         weight_threshold=0.01,
@@ -637,11 +637,3 @@ if __name__ == "__main__":
         gpu_batch_size=200,  # Process 200 genes per batch
         verbose=True
     )
-    
-    # Optional: Run benchmark
-    # benchmark_gpu_vs_cpu(
-    #     atac=atac,
-    #     annotation_results=annotation_results,
-    #     output_dir="/dcl01/hongkai/data/data/hjiang/result/gene_activity/benchmark/",
-    #     n_genes_test=1000
-    # )
