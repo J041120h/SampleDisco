@@ -495,17 +495,6 @@ def cell_types_atac(
             if verbose:
                 print(f"[cell_types_atac] Warning: Peak list length ({len(peaks)}) doesn't match cluster count ({final_cluster_count}). Skipping peak mapping.")
 
-        # Find differential peaks if requested
-        if verbose:
-            print("[cell_types_atac] Finding differential peaks between cell types...")
-        try:
-            sc.tl.rank_genes_groups(adata, 'cell_type', method='wilcoxon')
-            if verbose:
-                print("[cell_types_atac] Successfully computed differential peaks.")
-        except Exception as e:
-            if verbose:
-                print(f"[cell_types_atac] Warning: Could not compute differential peaks. Error: {e}")
-
         if verbose:
             print("[cell_types_atac] Finished assigning cell types.")
         

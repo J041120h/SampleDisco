@@ -206,6 +206,7 @@ def wrapper(
     atac_pca_n_proportion_pcs = 30,
     atac_pca_verbose = True,
 
+    atac_cca_output_dir = None,
     #visualization parameters
     atac_figsize=(10, 8),
     atac_point_size=50, 
@@ -704,6 +705,8 @@ def wrapper(
             atac_pseudobulk_output_dir = atac_output_dir
         if atac_pca_output_dir is None:
             atac_pca_output_dir = atac_output_dir
+        if atac_cca_output_dir is None:
+            atac_cca_output_dir = atac_output_dir
         os.makedirs(atac_output_dir, exist_ok=True)
         os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
         os.makedirs(atac_pca_output_dir, exist_ok=True)
@@ -803,7 +806,7 @@ def wrapper(
                         pseudo_adata = pseudobulk_anndata,
                         column = "X_DR_proportion",
                         input_correlation = first_component_score_proportion,
-                        output_directory = cca_output_dir,
+                        output_directory = atac_cca_output_dir,
                         num_simulations = 1000,
                         sev_col = sev_col_cca,
                         verbose = trajectory_verbose
@@ -813,7 +816,7 @@ def wrapper(
                         pseudo_adata = pseudobulk_anndata,
                         column = "X_DR_expression",
                         input_correlation = first_component_score_expression,
-                        output_directory = cca_output_dir,
+                        output_directory = atac_cca_output_dir,
                         num_simulations = 1000,
                         sev_col = sev_col_cca,
                         verbose = trajectory_verbose

@@ -117,7 +117,7 @@ atac_preprocessing: true
 atac_pseudobulk_dimensionality_reduction: true
 atac_visualization_processing: false
   
-atac_file_path: "/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad"
+atac_file_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC.h5ad"
 atac_output_dir: null
 atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
 atac_pseudobulk_output_dir: null
@@ -151,6 +151,7 @@ atac_pseudobulk_verbose: true
 atac_pca_n_expression_pcs: 30
 atac_pca_n_proportion_pcs: 30
 atac_pca_verbose: true
+atac_cca_output_dir: null
 atac_figsize: [10, 8]  
 atac_point_size: 50
 atac_visualization_grouping_columns:
