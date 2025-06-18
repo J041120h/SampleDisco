@@ -483,7 +483,7 @@ def wrapper(
         if not status_flags["DimensionalityReduction"]:
             raise ValueError("Dimensionality reduction is required before trajectory analysis.")
         if trajectory_supervised:
-            if sev_col_cca not in AnnData_sample.obs.columns:
+            if sev_col_cca not in pseudobulk_anndata.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
             first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, output_dir=cca_output_dir, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
             if cca_pvalue:
@@ -790,6 +790,40 @@ def wrapper(
                 use_snapatac2_dimred = use_snapatac2_dimred,
                 verbose=atac_pca_verbose
             )
+        
+        if trajectory_analysis:
+            if not DimensionalityReduction:
+                pseudobulk_anndata = sc.read(os.path.join(atac_pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad"))
+            if trajectory_supervised:
+                if sev_col_cca not in pseudobulk_anndata.obs.columns:
+                    raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
+                first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, output_dir=cca_output_dir, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
+                if cca_pvalue:
+                    cca_pvalue_test(
+                        pseudo_adata = pseudobulk_anndata,
+                        column = "X_DR_proportion",
+                        input_correlation = first_component_score_proportion,
+                        output_directory = cca_output_dir,
+                        num_simulations = 1000,
+                        sev_col = sev_col_cca,
+                        verbose = trajectory_verbose
+                    )
+
+                    cca_pvalue_test(
+                        pseudo_adata = pseudobulk_anndata,
+                        column = "X_DR_expression",
+                        input_correlation = first_component_score_expression,
+                        output_directory = cca_output_dir,
+                        num_simulations = 1000,
+                        sev_col = sev_col_cca,
+                        verbose = trajectory_verbose
+                    )
+                status_flags["trajectory_analysis"] = True
+                with open(status_file_path, 'w') as f:
+                    json.dump(status_flags, f, indent=4)
+            else:
+                TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+                TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
 
         if atac_visualization_processing:
             DR_visualization_all(
