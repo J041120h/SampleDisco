@@ -2,6 +2,7 @@ import scanpy as sc
 import pandas as pd
 import anndata as ad
 import numpy as np
+import pyensembl
 import os
 
 def integration_validation(adata_path, n_genes=5, output_dir='./'):
@@ -251,14 +252,15 @@ def integration_validation(adata_path, n_genes=5, output_dir='./'):
     
     return adata_rna, marker_genes_df, significant_markers
 
-
-# === BONUS: Manual heatmap function with proper ordering ===
 def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./'):
     """
     Create a properly ordered heatmap using matplotlib/seaborn for full control over ordering
+    Returns the ordered list of marker genes for further use
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
+    import numpy as np
+    import pandas as pd
     
     # Get sorted clusters
     sorted_clusters = sorted(adata_rna.obs['cell_type'].cat.categories, 
@@ -284,7 +286,7 @@ def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./
     gene_mask = adata_rna.var.index.isin(unique_ordered_genes)
     if gene_mask.sum() == 0:
         print("No marker genes found in the data")
-        return
+        return unique_ordered_genes  # Return empty list for consistency
     
     # Get expression data
     expr_data = adata_rna[:, gene_mask].X
@@ -330,20 +332,45 @@ def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./
     plt.show()
     
     print(f"Custom ordered heatmap saved to {output_dir}")
+    
+    # Return the ordered genes for use in subsequent steps
+    return unique_ordered_genes
 
-import scanpy as sc
-import pandas as pd
-import anndata as ad
-import numpy as np
-import os
-import pyensembl
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.sparse import issparse
 
-# Import the create_ordered_heatmap function from the RNA validation module
-# If it's in a separate file, you would do: from rna_validation import create_ordered_heatmap
-# For now, we'll assume it's available in the same script or imported
+def process_gene_activity_with_markers(gene_activity, ordered_marker_genes):
+    """
+    Step 7: Filter genes to match RNA marker genes
+    """
+    # Handle potential duplicate gene names by keeping track of which version to use
+    gene_to_var_names = {}
+    for var_name in gene_activity.var_names:
+        base_gene = var_name.split('-')[0]  # Remove any suffix added by make_unique
+        if base_gene not in gene_to_var_names:
+            gene_to_var_names[base_gene] = []
+        gene_to_var_names[base_gene].append(var_name)
+    
+    # Map ordered marker genes to actual variable names in gene activity
+    available_genes_mapping = {}
+    for gene in ordered_marker_genes:
+        if gene in gene_to_var_names:
+            # Use the first occurrence if there are duplicates
+            available_genes_mapping[gene] = gene_to_var_names[gene][0]
+        elif gene in gene_activity.var_names:
+            # Direct match
+            available_genes_mapping[gene] = gene
+    
+    available_genes = list(available_genes_mapping.keys())
+    available_var_names = list(available_genes_mapping.values())
+    
+    print(f"Found {len(available_genes)} marker genes in gene activity matrix")
+    
+    if len(available_genes) == 0:
+        print("WARNING: No marker genes found in gene activity matrix!")
+        print("Sample of ordered marker genes:", ordered_marker_genes[:5])
+        print("Sample of gene activity genes:", gene_activity.var.index[:5].tolist())
+        raise ValueError("No matching genes found!")
+    
+    return available_genes, available_var_names, available_genes_mapping
 
 def atac_integration_validation(integrated_adata_path, rna_validation_output_dir, gene_activity_path, 
                                 output_dir='./atac_validation', ensembl_version=98,
@@ -371,6 +398,12 @@ def atac_integration_validation(integrated_adata_path, rna_validation_output_dir
     --------
     tuple : (adata_atac, gene_activity, marker_genes_used)
     """
+    import os
+    import pandas as pd
+    import anndata as ad
+    import scanpy as sc
+    import numpy as np
+    from scipy.sparse import issparse
     
     # Create output directory
     if not os.path.exists(output_dir):
@@ -452,65 +485,88 @@ def atac_integration_validation(integrated_adata_path, rna_validation_output_dir
         print("Sample of gene activity genes:", gene_activity.var.index[:5].tolist())
         raise ValueError("No matching genes found!")
     
-    # Maintain the order from RNA analysis
-    available_ordered_genes = [g for g in ordered_marker_genes if g in available_genes]
+    # Maintain the order from ordered_marker_genes
+    available_genes_ordered = [gene for gene in ordered_marker_genes if gene in gene_activity.var.index]
+    available_var_names = available_genes_ordered.copy()
     
     # Step 8: Preprocess gene activity data for visualization
     print("Preprocessing gene activity data...")
-    gene_activity_subset = gene_activity[:, available_ordered_genes].copy()
+    gene_activity_subset = gene_activity[:, available_var_names].copy()
     
     # Normalize and log transform if needed
     if gene_activity_subset.X.min() >= 0:  # Check if already log-transformed
         sc.pp.normalize_total(gene_activity_subset, target_sum=1e4)
         sc.pp.log1p(gene_activity_subset)
     
-    # Step 9: Create visualizations matching RNA analysis
+    gene_activity_subset.var_names_make_unique()
     print("Creating visualizations...")
     
     # Set up scanpy settings
     sc.settings.figdir = output_dir
     sc.settings.set_figure_params(dpi=80, facecolor='white')
     
-    # 9a. Dotplot
-    create_gene_activity_dotplot(gene_activity_subset, available_ordered_genes, 
-                                sorted_clusters, output_dir)
+    # 9a. Dotplot - FIX 2: These functions need to be defined or imported
+    try:
+        create_gene_activity_dotplot(gene_activity_subset, available_genes_ordered, available_var_names,
+                                    sorted_clusters, output_dir)
+    except NameError:
+        print("WARNING: create_gene_activity_dotplot function not found - creating basic dotplot")
+        # Basic dotplot as fallback
+        sc.pl.dotplot(gene_activity_subset, available_genes_ordered, groupby='cell_type', 
+                     save='_gene_activity_dotplot.png')
     
-    # 9b. Heatmap
-    create_gene_activity_heatmap(gene_activity_subset, available_ordered_genes, 
-                                sorted_clusters, output_dir)
+    # 9b. Heatmap - FIX 3: This function needs to be defined or imported
+    try:
+        create_gene_activity_heatmap(gene_activity_subset, available_var_names, 
+                                    sorted_clusters, output_dir)
+    except NameError:
+        print("WARNING: create_gene_activity_heatmap function not found - creating basic heatmap")
+        # Basic heatmap as fallback
+        sc.pl.heatmap(gene_activity_subset, available_genes_ordered, groupby='cell_type',
+                     save='_gene_activity_heatmap.png')
     
     # 9c. Custom ordered heatmap
     if create_ordered_heatmap_func is not None:
         # Create a mock marker_genes_df that will work with create_ordered_heatmap
         mock_marker_df = pd.DataFrame()
         for i, cluster in enumerate(sorted_clusters):
-            for j, gene in enumerate(available_ordered_genes):
+            for j, gene in enumerate(available_genes_ordered):
                 mock_marker_df = pd.concat([mock_marker_df, pd.DataFrame({
                     'cell_type': [cluster],
-                    'gene': [gene],
-                    'score': [len(available_ordered_genes) - j]  # Higher score for genes that appear earlier
+                    'gene': [gene],  # Use original gene name
+                    'score': [len(available_genes_ordered) - j]  # Higher score for genes that appear earlier
                 })], ignore_index=True)
+        
+        # Create a modified gene_activity_subset with original gene names
+        gene_activity_for_heatmap = gene_activity_subset.copy()
+        gene_activity_for_heatmap.var.index = available_genes_ordered  # Use original gene names
         
         # Call the RNA validation heatmap function with ATAC data
         print("Creating ordered heatmap using RNA validation function...")
-        create_ordered_heatmap_func(gene_activity_subset, mock_marker_df, 
-                                   n_genes=len(available_ordered_genes), 
-                                   output_dir=output_dir)
-        
-        # Rename the output files to indicate they're for ATAC
-        import shutil
-        for ext in ['.pdf', '.png']:
-            old_file = f'{output_dir}/ordered_marker_genes_heatmap{ext}'
-            new_file = f'{output_dir}/ordered_gene_activity_heatmap_atac{ext}'
-            if os.path.exists(old_file):
-                shutil.move(old_file, new_file)
+        try:
+            create_ordered_heatmap_func(gene_activity_for_heatmap, mock_marker_df, 
+                                       n_genes=len(available_genes_ordered), 
+                                       output_dir=output_dir)
+            
+            # Rename the output files to indicate they're for ATAC
+            import shutil
+            for ext in ['.pdf', '.png']:
+                old_file = f'{output_dir}/ordered_marker_genes_heatmap{ext}'
+                new_file = f'{output_dir}/ordered_gene_activity_heatmap_atac{ext}'
+                if os.path.exists(old_file):
+                    shutil.move(old_file, new_file)
+        except Exception as e:
+            print(f"Error creating ordered heatmap: {e}")
+            print("Creating basic heatmap instead...")
+            sc.pl.heatmap(gene_activity_subset, available_genes_ordered, groupby='cell_type',
+                         save='_gene_activity_heatmap_basic.png')
     else:
         print("create_ordered_heatmap function not provided, skipping custom heatmap")
     
     # Step 10: Summary statistics
     print("\n=== ATAC Gene Activity Summary ===")
     print(f"Total ATAC cells analyzed: {gene_activity_subset.n_obs}")
-    print(f"Total marker genes visualized: {len(available_ordered_genes)}")
+    print(f"Total marker genes visualized: {len(available_genes_ordered)}")
     print(f"Cell types: {len(sorted_clusters)}")
     
     # Calculate mean gene activity per cell type
@@ -530,11 +586,12 @@ def atac_integration_validation(integrated_adata_path, rna_validation_output_dir
     
     # Save gene list used
     with open(f"{output_dir}/genes_used_in_atac_validation.txt", 'w') as f:
-        f.write('\n'.join(available_ordered_genes))
+        for gene in available_genes_ordered:
+            f.write(f"{gene}\n")
     
     print(f"\nAll ATAC validation results saved to: {output_dir}")
     
-    return adata_atac, gene_activity_subset, available_ordered_genes
+    return adata_atac, gene_activity_subset, available_genes_ordered
 
 
 def convert_ensembl_to_symbol(adata, ensembl_version=98):
@@ -580,7 +637,11 @@ def convert_ensembl_to_symbol(adata, ensembl_version=98):
     # Update gene names
     adata.var['ensembl_id'] = adata.var.index
     adata.var.index = [gene_id_to_symbol[gid] for gid in adata.var.index]
+    
+    # Make gene names unique by appending a suffix to duplicates
     adata.var_names_make_unique()
+    
+    print(f"Made gene names unique. Total genes: {adata.n_vars}")
     
     return adata
 
@@ -609,9 +670,22 @@ def get_sorted_clusters(cell_type_series):
         return sorted(unique_labels)
 
 
-def create_gene_activity_dotplot(gene_activity, ordered_genes, sorted_clusters, output_dir):
+def create_gene_activity_dotplot(gene_activity, ordered_genes, var_names, sorted_clusters, output_dir):
     """
     Create dotplot for gene activity matching RNA visualization
+    
+    Parameters:
+    -----------
+    gene_activity : AnnData
+        Gene activity data
+    ordered_genes : list
+        Original gene names in order
+    var_names : list
+        Actual variable names in gene_activity (may have suffixes for duplicates)
+    sorted_clusters : list
+        Sorted cluster names
+    output_dir : str
+        Output directory
     """
     print("Creating gene activity dotplot...")
     
@@ -625,9 +699,9 @@ def create_gene_activity_dotplot(gene_activity, ordered_genes, sorted_clusters, 
             
         cluster_data = gene_activity[cluster_mask]
         
-        for gene in ordered_genes:
-            if gene in gene_activity.var_names:
-                gene_idx = gene_activity.var_names.get_loc(gene)
+        for gene_orig, gene_var in zip(ordered_genes, var_names):
+            if gene_var in gene_activity.var_names:
+                gene_idx = gene_activity.var_names.get_loc(gene_var)
                 gene_expr = cluster_data.X[:, gene_idx]
                 
                 if issparse(gene_expr):
@@ -644,7 +718,7 @@ def create_gene_activity_dotplot(gene_activity, ordered_genes, sorted_clusters, 
                 
                 dotplot_data.append({
                     'cell_type': cluster,
-                    'gene': gene,
+                    'gene': gene_orig,  # Use original gene name for display
                     'pct_expr': pct_expr,
                     'mean_expr': mean_expr
                 })
@@ -723,27 +797,6 @@ def create_gene_activity_heatmap(gene_activity, ordered_genes, sorted_clusters, 
         print(f"Standard heatmap generation failed: {e}")
         print("Creating fallback heatmap...")
 
-
-# Example usage
-if __name__ == "__main__":
-    # Import the create_ordered_heatmap function from RNA validation
-    # from rna_validation import create_ordered_heatmap
-    
-    # Example paths
-    integrated_path = "/path/to/integrated_adata.h5ad"
-    rna_output = "/path/to/rna_validation_output"
-    gene_activity_path = "/path/to/gene_activity_matrix.h5ad"
-    
-    # Run ATAC validation
-    adata_atac, gene_activity, genes_used = atac_integration_validation(
-        integrated_adata_path=integrated_path,
-        rna_validation_output_dir=rna_output,
-        gene_activity_path=gene_activity_path,
-        output_dir="./atac_validation",
-        ensembl_version=98,
-        create_ordered_heatmap_func=create_ordered_heatmap  # Pass the function if available
-    )
-    
 # Example usage
 if __name__ == "__main__":
     # adata_path = "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_sample.h5ad"
@@ -753,9 +806,24 @@ if __name__ == "__main__":
     #     output_dir="/dcl01/hongkai/data/data/hjiang/Test/result"
     # )
     
-    adata_path = "/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated_test.h5ad"
-    adata_rna, marker_genes, significant_markers = integration_validation(
-        adata_path=adata_path,
-        n_genes=10,
-        output_dir="/dcl01/hongkai/data/data/hjiang/result/integration/validation"
+    # adata_path = "/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad"
+    # adata_rna, marker_genes, significant_markers = integration_validation(
+    #     adata_path=adata_path,
+    #     n_genes=10,
+    #     output_dir="/dcl01/hongkai/data/data/hjiang/result/integration/validation"
+    # )
+
+    # Example paths
+    integrated_path = "/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad"
+    rna_output = "/dcl01/hongkai/data/data/hjiang/result/integration/validation"
+    gene_activity_path = "/dcl01/hongkai/data/data/hjiang/result/gene_activity/gene_activity_weighted_gpu.h5ad"
+    
+    # Run ATAC validation
+    adata_atac, gene_activity, genes_used = atac_integration_validation(
+        integrated_adata_path=integrated_path,
+        rna_validation_output_dir=rna_output,
+        gene_activity_path=gene_activity_path,
+        output_dir="/dcl01/hongkai/data/data/hjiang/result/integration/validation/gene_activity",
+        ensembl_version=98,
+        create_ordered_heatmap_func=create_ordered_heatmap  # Pass the function if available
     )

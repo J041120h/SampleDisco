@@ -1,98 +1,22 @@
-2025-06-15 09:55:32.355762: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-06-15 09:55:32.368106: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1749995732.382298 1771756 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1749995732.386497 1771756 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1749995732.397935 1771756 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1749995732.397953 1771756 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1749995732.397955 1771756 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1749995732.397957 1771756 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-06-15 09:55:32.401376: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
-  from torch.distributed.optim import ZeroRedundancyOptimizer
-2025-06-15 10:07:14 - INFO - init
-/users/hjiang/GenoDistance/code/integrate_preprocess.py:82: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
-  cell_counts_per_patient = adata.obs.groupby(sample_column).size()
-/users/hjiang/GenoDistance/code/integrate_preprocess.py:144: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
-  if pd.api.types.is_categorical_dtype(ser):
-... storing 'celltype' as categorical
-... storing 'sample' as categorical
-... storing 'old' as categorical
-... storing 'large' as categorical
-... storing 'modality' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'disease severity' as categorical
-... storing 'Donor' as categorical
-... storing 'record_id' as categorical
-... storing 'Age' as categorical
-... storing 'Sex' as categorical
-... storing 'PRIMARY_RACE' as categorical
-... storing 'ETHNICITY' as categorical
-... storing 'CANONICAL_ETHNICITY' as categorical
-... storing 'CANONICAL_RACE' as categorical
-... storing 'BMI_GROUP' as categorical
-... storing 'ABO' as categorical
-... storing 'MED_PRESSORS' as categorical
-... storing 'O2_SUPPORT' as categorical
-... storing 'acuity' as categorical
-... storing 'vacutainer_type' as categorical
-... storing 'ibuprofen_prior' as categorical
-... storing 'abx_prior' as categorical
-... storing 'remdesivir_prior' as categorical
-... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
-... storing 'cell_type' as categorical
-... storing 'cell_type_original' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/GenoDistance/code/pseudo_adata.py:60: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
-  grouped = cell_adata.obs.groupby(sample_col)
-... storing 'modality' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'disease severity' as categorical
-... storing 'Donor' as categorical
-... storing 'record_id' as categorical
-... storing 'Age' as categorical
-... storing 'Sex' as categorical
-... storing 'PRIMARY_RACE' as categorical
-... storing 'ETHNICITY' as categorical
-... storing 'CANONICAL_ETHNICITY' as categorical
-... storing 'CANONICAL_RACE' as categorical
-... storing 'BMI_GROUP' as categorical
-... storing 'ABO' as categorical
-... storing 'MED_PRESSORS' as categorical
-... storing 'O2_SUPPORT' as categorical
-... storing 'acuity' as categorical
-... storing 'vacutainer_type' as categorical
-... storing 'ibuprofen_prior' as categorical
-... storing 'abx_prior' as categorical
-... storing 'remdesivir_prior' as categorical
-... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_core/anndata.py:1756: UserWarning: Variable names are not unique. To make them unique, call `.var_names_make_unique`.
+  utils.warn_names_duplicates("var")
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/integration_validation.py", line 748, in <module>
+    adata_atac, gene_activity, genes_used = atac_integration_validation(
+  File "/users/hjiang/GenoDistance/code/integration_validation.py", line 475, in atac_integration_validation
+    create_gene_activity_dotplot(gene_activity_subset, available_ordered_genes,
+  File "/users/hjiang/GenoDistance/code/integration_validation.py", line 658, in create_gene_activity_dotplot
+    pct_pivot = dotplot_df.pivot(index='cell_type', columns='gene', values='pct_expr')
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/frame.py", line 9339, in pivot
+    return pivot(self, index=index, columns=columns, values=values)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/pivot.py", line 570, in pivot
+    result = indexed.unstack(columns_listlike)  # type: ignore[arg-type]
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/series.py", line 4615, in unstack
+    return unstack(self, level, fill_value, sort)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/reshape.py", line 517, in unstack
+    unstacker = _Unstacker(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/reshape.py", line 154, in __init__
+    self._make_selectors()
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/reshape.py", line 210, in _make_selectors
+    raise ValueError("Index contains duplicate entries, cannot reshape")
+ValueError: Index contains duplicate entries, cannot reshape
