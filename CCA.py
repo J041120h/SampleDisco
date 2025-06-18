@@ -7,75 +7,28 @@ from sklearn.cross_decomposition import CCA
 import time
 
 
-def load_severity_levels(
-    sample_meta_path: str, 
-    sample_index: pd.Index, 
-    sample_col: str = "sample", 
-    sev_col: str = "sev.level"
-) -> np.ndarray:
-    """
-    Load severity levels from a CSV and align them with the provided sample index.
-    """
-    summary_df = pd.read_csv(sample_meta_path)
-    
-    if sample_col not in summary_df.columns or sev_col not in summary_df.columns:
-        raise ValueError(f"CSV must contain columns: '{sample_col}' and '{sev_col}'.")
-
-    summary_df[sev_col] = pd.to_numeric(summary_df[sev_col], errors='coerce')
-    summary_df[sample_col] = summary_df[sample_col].astype(str).str.strip().str.lower()
-    
-    # Convert sample_index to a pandas Series before applying string methods
-    if isinstance(sample_index, np.ndarray):
-        sample_index = pd.Series(sample_index).astype(str).str.strip().str.lower().values
-    else:
-        # If it's already a pandas Index/Series
-        sample_index = sample_index.astype(str).str.strip().str.lower()
-
-    sample_to_sev = summary_df.set_index(sample_col)[sev_col].to_dict()
-    sev_levels = np.array([sample_to_sev.get(sample, np.nan) for sample in sample_index])
-
-    missing = np.isnan(sev_levels).sum()
-    if missing > 0:
-        print(f"Warning: {missing} sample(s) missing severity level. Imputing with mean.")
-        sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
-
-    return sev_levels.reshape(-1, 1)
-
-
 def run_cca_on_2d_pca_from_adata(
     adata: AnnData,
-    sample_meta_path: str,
     column: str,
-    sample_col: str = "sample",
     sev_col: str = "sev.level"
 ):
-    """
-    Run CCA on 2D PCA coordinates from adata.uns[column] vs. severity levels from CSV.
-    """
-    if column not in adata.uns:
-        raise KeyError(f"'{column}' not found in adata.uns.")
-
     pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
         raise ValueError("PCA must have at least 2 components for CCA.")
 
-    # Extract first two PCs
     pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, 'iloc') else pca_coords[:, :2]
 
-    # Ensure sample_col exists in adata.obs
-    if sample_col not in adata.obs.columns:
-        raise KeyError(f"'{sample_col}' column is missing in adata.obs.")
-
-    # Get the unique samples (lowercased, stripped) in the same order as pca_coords_2d
-    samples = adata.obs[sample_col].astype(str).str.strip().str.lower().unique()
+    sev_levels = pd.to_numeric(adata.obs[sev_col], errors='coerce').values
+    missing = np.isnan(sev_levels).sum()
+    if missing > 0:
+        print(f"Warning: {missing} sample(s) missing severity level. Imputing with mean.")
+        sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
     
-    # Check dimension alignment
-    if len(samples) != pca_coords_2d.shape[0]:
-        raise ValueError("Mismatch between PCA rows and number of unique samples in adata.obs[sample_col].")
+    if len(sev_levels) != pca_coords_2d.shape[0]:
+        raise ValueError(f"Mismatch between PCA rows ({pca_coords_2d.shape[0]}) and severity levels ({len(sev_levels)}).")
 
-    # Load severity levels aligned to these samples
-    sev_levels_2d = load_severity_levels(sample_meta_path, samples, sample_col=sample_col, sev_col=sev_col)
-    sev_levels = sev_levels_2d.flatten()
+    sev_levels_2d = sev_levels.reshape(-1, 1)
+    samples = adata.obs.index.values
 
     cca = CCA(n_components=1)
     cca.fit(pca_coords_2d, sev_levels_2d)
@@ -91,12 +44,10 @@ def plot_cca_on_2d_pca(
     sev_levels: np.ndarray,
     cca: CCA,
     output_path: str = None,
-    sample_labels=None
+    sample_labels=None,
+    title_suffix: str = ""
 ):
-    """
-    Plot 2D PCA colored by severity with CCA direction.
-    """
-    plt.figure(figsize=(7, 6))
+    plt.figure(figsize=(8, 6))
 
     norm_sev = (sev_levels - np.min(sev_levels)) / (np.max(sev_levels) - np.min(sev_levels) + 1e-16)
 
@@ -106,32 +57,34 @@ def plot_cca_on_2d_pca(
         c=norm_sev,
         cmap='viridis_r',
         edgecolors='k',
-        alpha=0.8
+        alpha=0.8,
+        s=60
     )
-    plt.colorbar(sc, label='Severity')
+    cbar = plt.colorbar(sc, label='Severity Level')
 
-    # CCA direction vector
     dx, dy = cca.x_weights_[:, 0]
     scale = 0.5 * max(np.ptp(pca_coords_2d[:, 0]), np.ptp(pca_coords_2d[:, 1]))
     x_start, x_end = -scale * dx, scale * dx
     y_start, y_end = -scale * dy, scale * dy
 
     plt.plot([x_start, x_end], [y_start, y_end],
-             linestyle="dashed", color="red", linewidth=2, label="CCA Direction")
+             linestyle="--", color="red", linewidth=2, label="CCA Direction", alpha=0.8)
 
     if sample_labels is not None:
         for i, label in enumerate(sample_labels):
-            plt.text(pca_coords_2d[i, 0], pca_coords_2d[i, 1], label, fontsize=8)
+            plt.text(pca_coords_2d[i, 0], pca_coords_2d[i, 1], 
+                    str(label), fontsize=8, alpha=0.7)
 
     plt.xlabel("PC1")
     plt.ylabel("PC2")
-    plt.title("2D PCA with CCA Direction")
-    plt.grid(True)
+    title = f"2D PCA with CCA Direction{' - ' + title_suffix if title_suffix else ''}"
+    plt.title(title)
+    plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
 
     if output_path:
-        plt.savefig(output_path)
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
         print(f"Saved CCA plot to: {output_path}")
     else:
         plt.show()
@@ -143,60 +96,32 @@ def assign_pseudotime_from_cca(
     sample_labels: np.ndarray,
     scale_to_unit: bool = True
 ) -> dict:
-    """
-    Assign pseudotime to each sample based on its projection onto the CCA direction.
-
-    Parameters
-    ----------
-    pca_coords_2d : np.ndarray
-        The 2D PCA coordinates for each sample.
-    cca : sklearn.cross_decomposition.CCA
-        A fitted CCA model. We use cca.x_weights_ to get the direction in PCA space.
-    sample_labels : np.ndarray
-        An array of sample labels corresponding to each row in pca_coords_2d.
-    scale_to_unit : bool, default=True
-        Whether to scale the pseudotime to the [0, 1] range.
-
-    Returns
-    -------
-    dict
-        A dictionary mapping each sample label to its pseudotime.
-    """
-    # Extract the direction (the first CCA weight vector)
     direction = cca.x_weights_[:, 0]
 
-    # Project each point onto the CCA direction (dot product)
-    # shape of pca_coords_2d: (n_samples, 2)
-    # shape of direction: (2,)
-    raw_projection = pca_coords_2d @ direction  # shape: (n_samples,)
+    raw_projection = pca_coords_2d @ direction
 
     if scale_to_unit:
         min_proj, max_proj = np.min(raw_projection), np.max(raw_projection)
         denom = max_proj - min_proj
-        # Avoid division by zero
         if denom < 1e-16:
             denom = 1e-16
-        # Scale the projection to [0, 1]
         pseudotimes = (raw_projection - min_proj) / denom
     else:
         pseudotimes = raw_projection
 
-    # Build and return dictionary
-    return {sample_labels[i]: pseudotimes[i] for i in range(len(sample_labels))}
+    return {str(sample_labels[i]): pseudotimes[i] for i in range(len(sample_labels))}
+
 
 def CCA_Call(
     adata: AnnData,
-    sample_meta_path: str,
     output_dir: str = None,
-    sample_col: str = "sample",
     sev_col: str = "sev.level",
     ptime: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    show_sample_labels: bool = False
 ):
-    """
-    Run CCA analysis on PCA projections stored in adata.uns and plot results.
-    """
     start_time = time.time() if verbose else None
+    
     if output_dir:
         output_dir = os.path.join(output_dir, 'CCA')
         os.makedirs(output_dir, exist_ok=True)
@@ -207,42 +132,51 @@ def CCA_Call(
     }
 
     results = {}
-    # We'll also hold onto the sample labels to generate pseudotime at the end
     sample_dicts = {}
 
     for key in ["X_pca_proportion", "X_pca_expression"]:
-        (pca_coords_2d, 
-         sev_levels, 
-         cca_model, 
-         score, 
-         samples) = run_cca_on_2d_pca_from_adata(
-            adata=adata,
-            sample_meta_path=sample_meta_path,
-            column=key,
-            sample_col=sample_col,
-            sev_col=sev_col
-        )
+        if verbose:
+            print(f"Processing {key}...")
+            
+        try:
+            (pca_coords_2d, 
+             sev_levels, 
+             cca_model, 
+             score, 
+             samples) = run_cca_on_2d_pca_from_adata(
+                adata=adata,
+                column=key,
+                sev_col=sev_col
+            )
 
-        # Plot and save
-        plot_cca_on_2d_pca(
-            pca_coords_2d=pca_coords_2d,
-            sev_levels=sev_levels,
-            cca=cca_model,
-            output_path=paths[key],
-            sample_labels=samples  # if you want text labels, else None
-        )
-        # Save results
-        results[key] = score
+            plot_cca_on_2d_pca(
+                pca_coords_2d=pca_coords_2d,
+                sev_levels=sev_levels,
+                cca=cca_model,
+                output_path=paths[key],
+                sample_labels=samples if show_sample_labels else None,
+                title_suffix=key.replace("X_pca_", "").title()
+            )
+            
+            results[key] = score
 
-        # Compute pseudotime for each sample (dictionary)
-        sample_dicts[key] = assign_pseudotime_from_cca(
-            pca_coords_2d=pca_coords_2d, 
-            cca=cca_model, 
-            sample_labels=samples
-        )
+            sample_dicts[key] = assign_pseudotime_from_cca(
+                pca_coords_2d=pca_coords_2d, 
+                cca=cca_model, 
+                sample_labels=samples
+            )
+            
+        except Exception as e:
+            print(f"Error processing {key}: {str(e)}")
+            results[key] = np.nan
+            sample_dicts[key] = {}
 
     if verbose:
-        print("CCA completed.")
-        print(f"\n[CCA] Total runtime: {time.time() - start_time:.2f} seconds\n")
+        print("CCA analysis completed.")
+        if start_time:
+            print(f"\n[CCA] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
-    return results["X_pca_proportion"], results["X_pca_expression"], sample_dicts["X_pca_proportion"], sample_dicts["X_pca_expression"]
+    return (results.get("X_pca_proportion", np.nan), 
+            results.get("X_pca_expression", np.nan), 
+            sample_dicts.get("X_pca_proportion", {}), 
+            sample_dicts.get("X_pca_expression", {}))

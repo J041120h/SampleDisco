@@ -4,6 +4,8 @@ import anndata as ad
 import numpy as np
 import pyensembl
 import os
+import matplotlib.pyplot as plt
+from scipy.sparse import issparse
 
 def integration_validation(adata_path, n_genes=5, output_dir='./'):
     """
@@ -226,9 +228,17 @@ def integration_validation(adata_path, n_genes=5, output_dir='./'):
             top_genes = cluster_markers.nlargest(n_genes, 'score')['gene'].tolist()
             ordered_genes.extend(top_genes)
     
+    # Remove duplicates while preserving order
+    seen = set()
+    ordered_genes_unique = []
+    for gene in ordered_genes:
+        if gene not in seen:
+            seen.add(gene)
+            ordered_genes_unique.append(gene)
+    
     # Save ordered gene list
     with open(f"{output_dir}/ordered_marker_genes.txt", 'w') as f:
-        f.write('\n'.join(ordered_genes))
+        f.write('\n'.join(ordered_genes_unique))
     
     # === Quality metrics ===
     print("\n=== Marker Gene Quality Summary ===")
@@ -245,17 +255,35 @@ def integration_validation(adata_path, n_genes=5, output_dir='./'):
     
     # === Create ordered heatmap as complementary visualization ===
     print("Creating complementary ordered heatmap...")
-    create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=n_genes, output_dir=output_dir)
+    create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=n_genes, 
+                          output_dir=output_dir, ordered_genes=ordered_genes_unique)
     
     print(f"\nAll results saved to: {output_dir}")
     print(f"Ordered gene list saved to: {output_dir}/ordered_marker_genes.txt")
     
     return adata_rna, marker_genes_df, significant_markers
 
-def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./'):
+
+def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./', 
+                          ordered_genes=None, suffix=''):
     """
     Create a properly ordered heatmap using matplotlib/seaborn for full control over ordering
     Returns the ordered list of marker genes for further use
+    
+    Parameters:
+    -----------
+    adata_rna : AnnData
+        RNA expression data
+    marker_genes_df : DataFrame
+        Marker genes dataframe
+    n_genes : int
+        Number of genes per cluster
+    output_dir : str
+        Output directory
+    ordered_genes : list
+        Pre-defined gene order (if None, will be calculated)
+    suffix : str
+        Suffix for output filenames (e.g., '_atac' for ATAC data)
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -266,30 +294,36 @@ def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./
     sorted_clusters = sorted(adata_rna.obs['cell_type'].cat.categories, 
                            key=lambda x: int(x) if str(x).isdigit() else float('inf'))
     
-    # Get top genes per cluster in order
-    ordered_genes = []
-    for cluster in sorted_clusters:
-        cluster_markers = marker_genes_df[marker_genes_df['cell_type'] == cluster]
-        if len(cluster_markers) > 0:
-            top_genes = cluster_markers.nlargest(n_genes, 'score')['gene'].tolist()
-            ordered_genes.extend(top_genes)
-    
-    # Remove duplicates while preserving order
-    unique_ordered_genes = []
-    seen = set()
-    for gene in ordered_genes:
-        if gene not in seen:
-            unique_ordered_genes.append(gene)
-            seen.add(gene)
+    # Use provided gene order or calculate it
+    if ordered_genes is None:
+        # Get top genes per cluster in order
+        ordered_genes = []
+        for cluster in sorted_clusters:
+            cluster_markers = marker_genes_df[marker_genes_df['cell_type'] == cluster]
+            if len(cluster_markers) > 0:
+                top_genes = cluster_markers.nlargest(n_genes, 'score')['gene'].tolist()
+                ordered_genes.extend(top_genes)
+        
+        # Remove duplicates while preserving order
+        unique_ordered_genes = []
+        seen = set()
+        for gene in ordered_genes:
+            if gene not in seen:
+                unique_ordered_genes.append(gene)
+                seen.add(gene)
+    else:
+        unique_ordered_genes = ordered_genes
     
     # Create expression matrix
     gene_mask = adata_rna.var.index.isin(unique_ordered_genes)
-    if gene_mask.sum() == 0:
+    available_genes = [g for g in unique_ordered_genes if g in adata_rna.var.index]
+    
+    if len(available_genes) == 0:
         print("No marker genes found in the data")
-        return unique_ordered_genes  # Return empty list for consistency
+        return unique_ordered_genes
     
     # Get expression data
-    expr_data = adata_rna[:, gene_mask].X
+    expr_data = adata_rna[:, available_genes].X
     if hasattr(expr_data, 'toarray'):
         expr_data = expr_data.toarray()
     
@@ -303,19 +337,15 @@ def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./
     
     cluster_means = np.array(cluster_means)
     
-    # Create DataFrame for plotting
+    # Create DataFrame for plotting with genes in the exact order we want
     heatmap_df = pd.DataFrame(
         cluster_means.T,
-        index=adata_rna.var.index[gene_mask],
+        index=available_genes,
         columns=sorted_clusters
     )
     
-    # Reorder genes to match our desired order
-    available_ordered_genes = [g for g in unique_ordered_genes if g in heatmap_df.index]
-    heatmap_df = heatmap_df.loc[available_ordered_genes]
-    
     # Create heatmap
-    plt.figure(figsize=(len(sorted_clusters) * 0.8, len(available_ordered_genes) * 0.3))
+    plt.figure(figsize=(len(sorted_clusters) * 0.8, len(available_genes) * 0.3))
     sns.heatmap(heatmap_df, 
                 cmap='RdYlBu_r', 
                 center=0, 
@@ -323,54 +353,21 @@ def create_ordered_heatmap(adata_rna, marker_genes_df, n_genes=5, output_dir='./
                 xticklabels=True,
                 yticklabels=True)
     
-    plt.title('Marker Genes Heatmap (Numerically Ordered Clusters)')
+    plt.title(f'Marker Genes Heatmap (Numerically Ordered Clusters){" - " + suffix if suffix else ""}')
     plt.xlabel('Clusters')
     plt.ylabel('Genes')
     plt.tight_layout()
-    plt.savefig(f'{output_dir}/ordered_marker_genes_heatmap.pdf', dpi=300, bbox_inches='tight')
-    plt.savefig(f'{output_dir}/ordered_marker_genes_heatmap.png', dpi=300, bbox_inches='tight')
-    plt.show()
+    
+    # Save with suffix
+    plt.savefig(f'{output_dir}/ordered_marker_genes_heatmap{suffix}.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{output_dir}/ordered_marker_genes_heatmap{suffix}.png', dpi=300, bbox_inches='tight')
+    plt.close()
     
     print(f"Custom ordered heatmap saved to {output_dir}")
     
     # Return the ordered genes for use in subsequent steps
-    return unique_ordered_genes
+    return available_genes
 
-
-def process_gene_activity_with_markers(gene_activity, ordered_marker_genes):
-    """
-    Step 7: Filter genes to match RNA marker genes
-    """
-    # Handle potential duplicate gene names by keeping track of which version to use
-    gene_to_var_names = {}
-    for var_name in gene_activity.var_names:
-        base_gene = var_name.split('-')[0]  # Remove any suffix added by make_unique
-        if base_gene not in gene_to_var_names:
-            gene_to_var_names[base_gene] = []
-        gene_to_var_names[base_gene].append(var_name)
-    
-    # Map ordered marker genes to actual variable names in gene activity
-    available_genes_mapping = {}
-    for gene in ordered_marker_genes:
-        if gene in gene_to_var_names:
-            # Use the first occurrence if there are duplicates
-            available_genes_mapping[gene] = gene_to_var_names[gene][0]
-        elif gene in gene_activity.var_names:
-            # Direct match
-            available_genes_mapping[gene] = gene
-    
-    available_genes = list(available_genes_mapping.keys())
-    available_var_names = list(available_genes_mapping.values())
-    
-    print(f"Found {len(available_genes)} marker genes in gene activity matrix")
-    
-    if len(available_genes) == 0:
-        print("WARNING: No marker genes found in gene activity matrix!")
-        print("Sample of ordered marker genes:", ordered_marker_genes[:5])
-        print("Sample of gene activity genes:", gene_activity.var.index[:5].tolist())
-        raise ValueError("No matching genes found!")
-    
-    return available_genes, available_var_names, available_genes_mapping
 
 def atac_integration_validation(integrated_adata_path, rna_validation_output_dir, gene_activity_path, 
                                 output_dir='./atac_validation', ensembl_version=98,
@@ -422,7 +419,7 @@ def atac_integration_validation(integrated_adata_path, rna_validation_output_dir
     gene_activity = ad.read_h5ad(gene_activity_path)
     print(f"Gene activity shape: {gene_activity.shape}")
     
-    # Step 3: Load marker genes from RNA validation
+    # Step 3: Load marker genes from RNA validation with exact order
     print("Loading RNA marker genes...")
     marker_genes_df = pd.read_csv(f"{rna_validation_output_dir}/marker_genes_significant.csv")
     ordered_genes_file = f"{rna_validation_output_dir}/ordered_marker_genes.txt"
@@ -430,11 +427,19 @@ def atac_integration_validation(integrated_adata_path, rna_validation_output_dir
     if os.path.exists(ordered_genes_file):
         with open(ordered_genes_file, 'r') as f:
             ordered_marker_genes = [gene.strip() for gene in f.readlines()]
+        print(f"Loaded exact gene order from RNA analysis: {len(ordered_marker_genes)} genes")
     else:
         # Fallback: get genes from marker_genes_df
-        ordered_marker_genes = marker_genes_df.groupby('cell_type').apply(
-            lambda x: x.nlargest(5, 'score')['gene'].tolist()
-        ).sum()
+        sorted_clusters = get_sorted_clusters(marker_genes_df['cell_type'])
+        ordered_marker_genes = []
+        for cluster in sorted_clusters:
+            cluster_markers = marker_genes_df[marker_genes_df['cell_type'] == cluster]
+            if len(cluster_markers) > 0:
+                top_genes = cluster_markers.nlargest(5, 'score')['gene'].tolist()
+                ordered_marker_genes.extend(top_genes)
+        # Remove duplicates while preserving order
+        seen = set()
+        ordered_marker_genes = [g for g in ordered_marker_genes if not (g in seen or seen.add(g))]
     
     print(f"Found {len(ordered_marker_genes)} ordered marker genes from RNA analysis")
     
@@ -475,86 +480,76 @@ def atac_integration_validation(integrated_adata_path, rna_validation_output_dir
         ordered=True
     )
     
-    # Step 7: Filter genes to match RNA marker genes
-    available_genes = list(set(ordered_marker_genes) & set(gene_activity.var.index))
-    print(f"Found {len(available_genes)} marker genes in gene activity matrix")
+    # Step 7: Filter genes to match RNA marker genes IN THE EXACT SAME ORDER
+    # Check which genes from the ordered list are available in gene activity
+    available_genes_ordered = []
+    for gene in ordered_marker_genes:
+        if gene in gene_activity.var.index:
+            available_genes_ordered.append(gene)
     
-    if len(available_genes) == 0:
+    print(f"Found {len(available_genes_ordered)} marker genes in gene activity matrix (in RNA order)")
+    
+    if len(available_genes_ordered) == 0:
         print("WARNING: No marker genes found in gene activity matrix!")
         print("Sample of ordered marker genes:", ordered_marker_genes[:5])
         print("Sample of gene activity genes:", gene_activity.var.index[:5].tolist())
         raise ValueError("No matching genes found!")
     
-    # Maintain the order from ordered_marker_genes
-    available_genes_ordered = [gene for gene in ordered_marker_genes if gene in gene_activity.var.index]
-    available_var_names = available_genes_ordered.copy()
-    
     # Step 8: Preprocess gene activity data for visualization
     print("Preprocessing gene activity data...")
-    gene_activity_subset = gene_activity[:, available_var_names].copy()
+    gene_activity_subset = gene_activity[:, available_genes_ordered].copy()
     
     # Normalize and log transform if needed
     if gene_activity_subset.X.min() >= 0:  # Check if already log-transformed
         sc.pp.normalize_total(gene_activity_subset, target_sum=1e4)
         sc.pp.log1p(gene_activity_subset)
     
-    gene_activity_subset.var_names_make_unique()
     print("Creating visualizations...")
     
     # Set up scanpy settings
     sc.settings.figdir = output_dir
     sc.settings.set_figure_params(dpi=80, facecolor='white')
     
-    # 9a. Dotplot - FIX 2: These functions need to be defined or imported
+    # 9a. Dotplot
     try:
-        create_gene_activity_dotplot(gene_activity_subset, available_genes_ordered, available_var_names,
+        create_gene_activity_dotplot(gene_activity_subset, available_genes_ordered, available_genes_ordered,
                                     sorted_clusters, output_dir)
-    except NameError:
-        print("WARNING: create_gene_activity_dotplot function not found - creating basic dotplot")
+    except Exception as e:
+        print(f"WARNING: Dotplot creation failed: {e}")
         # Basic dotplot as fallback
         sc.pl.dotplot(gene_activity_subset, available_genes_ordered, groupby='cell_type', 
                      save='_gene_activity_dotplot.png')
     
-    # 9b. Heatmap - FIX 3: This function needs to be defined or imported
+    # 9b. Heatmap
     try:
-        create_gene_activity_heatmap(gene_activity_subset, available_var_names, 
+        create_gene_activity_heatmap(gene_activity_subset, available_genes_ordered, 
                                     sorted_clusters, output_dir)
-    except NameError:
-        print("WARNING: create_gene_activity_heatmap function not found - creating basic heatmap")
+    except Exception as e:
+        print(f"WARNING: Heatmap creation failed: {e}")
         # Basic heatmap as fallback
         sc.pl.heatmap(gene_activity_subset, available_genes_ordered, groupby='cell_type',
                      save='_gene_activity_heatmap.png')
     
-    # 9c. Custom ordered heatmap
+    # 9c. Custom ordered heatmap - using exact same gene order as RNA
     if create_ordered_heatmap_func is not None:
-        # Create a mock marker_genes_df that will work with create_ordered_heatmap
+        # Create a mock marker_genes_df for compatibility
         mock_marker_df = pd.DataFrame()
         for i, cluster in enumerate(sorted_clusters):
             for j, gene in enumerate(available_genes_ordered):
                 mock_marker_df = pd.concat([mock_marker_df, pd.DataFrame({
                     'cell_type': [cluster],
-                    'gene': [gene],  # Use original gene name
+                    'gene': [gene],
                     'score': [len(available_genes_ordered) - j]  # Higher score for genes that appear earlier
                 })], ignore_index=True)
         
-        # Create a modified gene_activity_subset with original gene names
-        gene_activity_for_heatmap = gene_activity_subset.copy()
-        gene_activity_for_heatmap.var.index = available_genes_ordered  # Use original gene names
-        
-        # Call the RNA validation heatmap function with ATAC data
-        print("Creating ordered heatmap using RNA validation function...")
+        print("Creating ordered heatmap with exact RNA gene order...")
         try:
-            create_ordered_heatmap_func(gene_activity_for_heatmap, mock_marker_df, 
+            # Call with the exact same gene order as RNA
+            create_ordered_heatmap_func(gene_activity_subset, mock_marker_df, 
                                        n_genes=len(available_genes_ordered), 
-                                       output_dir=output_dir)
-            
-            # Rename the output files to indicate they're for ATAC
-            import shutil
-            for ext in ['.pdf', '.png']:
-                old_file = f'{output_dir}/ordered_marker_genes_heatmap{ext}'
-                new_file = f'{output_dir}/ordered_gene_activity_heatmap_atac{ext}'
-                if os.path.exists(old_file):
-                    shutil.move(old_file, new_file)
+                                       output_dir=output_dir,
+                                       ordered_genes=available_genes_ordered,  # Pass exact gene order
+                                       suffix='_atac')
         except Exception as e:
             print(f"Error creating ordered heatmap: {e}")
             print("Creating basic heatmap instead...")
@@ -584,12 +579,21 @@ def atac_integration_validation(integrated_adata_path, rna_validation_output_dir
         if ct in mean_activity:
             print(f"  {ct}: {mean_activity[ct]:.3f}")
     
-    # Save gene list used
+    # Save gene list used (in the exact order used)
     with open(f"{output_dir}/genes_used_in_atac_validation.txt", 'w') as f:
         for gene in available_genes_ordered:
             f.write(f"{gene}\n")
     
+    # Also save a comparison file showing which genes were missing
+    missing_genes = [g for g in ordered_marker_genes if g not in available_genes_ordered]
+    if missing_genes:
+        with open(f"{output_dir}/genes_missing_from_atac.txt", 'w') as f:
+            for gene in missing_genes:
+                f.write(f"{gene}\n")
+        print(f"\n{len(missing_genes)} genes from RNA were not found in ATAC (saved to genes_missing_from_atac.txt)")
+    
     print(f"\nAll ATAC validation results saved to: {output_dir}")
+    print(f"Gene order is preserved from RNA analysis for direct comparison")
     
     return adata_atac, gene_activity_subset, available_genes_ordered
 
@@ -687,6 +691,10 @@ def create_gene_activity_dotplot(gene_activity, ordered_genes, var_names, sorted
     output_dir : str
         Output directory
     """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from scipy.sparse import issparse
+    
     print("Creating gene activity dotplot...")
     
     # Calculate statistics for dotplot
@@ -774,30 +782,78 @@ def create_gene_activity_dotplot(gene_activity, ordered_genes, var_names, sorted
 
 def create_gene_activity_heatmap(gene_activity, ordered_genes, sorted_clusters, output_dir):
     """
-    Create standard scanpy heatmap for gene activity
+    Create heatmap for gene activity using the exact gene order from RNA
     """
-    print("Creating gene activity heatmap...")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from scipy.sparse import issparse
     
-    try:
-        # Store the gene order
-        gene_activity.uns['gene_order'] = ordered_genes
-        
-        # Use scanpy's heatmap function
-        sc.pl.heatmap(
-            gene_activity,
-            var_names=ordered_genes,
-            groupby='cell_type',
-            show_gene_labels=True,
-            save='_gene_activity.pdf',
-            cmap='RdBu_r',
-            use_raw=False,
-            standard_scale='var'
-        )
-    except Exception as e:
-        print(f"Standard heatmap generation failed: {e}")
-        print("Creating fallback heatmap...")
+    print("Creating gene activity heatmap with RNA gene order...")
+    
+    # Calculate mean expression per cluster
+    cluster_means = []
+    for cluster in sorted_clusters:
+        cluster_mask = gene_activity.obs['cell_type'] == cluster
+        if cluster_mask.sum() > 0:
+            cluster_data = gene_activity[cluster_mask, ordered_genes].X
+            if issparse(cluster_data):
+                cluster_data = cluster_data.toarray()
+            cluster_mean = cluster_data.mean(axis=0)
+            cluster_means.append(cluster_mean)
+    
+    cluster_means = np.array(cluster_means)
+    
+    # Create DataFrame for plotting
+    heatmap_df = pd.DataFrame(
+        cluster_means.T,
+        index=ordered_genes,
+        columns=sorted_clusters
+    )
+    
+    # Standardize by gene (z-score)
+    heatmap_df_zscore = heatmap_df.apply(lambda x: (x - x.mean()) / x.std(), axis=1)
+    
+    # Create figure
+    plt.figure(figsize=(len(sorted_clusters) * 0.8, len(ordered_genes) * 0.3))
+    
+    # Create heatmap
+    sns.heatmap(heatmap_df_zscore, 
+                cmap='RdBu_r', 
+                center=0, 
+                cbar_kws={'label': 'Z-score'},
+                xticklabels=True,
+                yticklabels=True,
+                vmin=-2, vmax=2)  # Cap at +/- 2 std devs for better visualization
+    
+    plt.title('Gene Activity Heatmap (ATAC) - Standardized')
+    plt.xlabel('Clusters')
+    plt.ylabel('Genes (in RNA marker order)')
+    plt.tight_layout()
+    
+    plt.savefig(f'{output_dir}/gene_activity_heatmap_zscore.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{output_dir}/gene_activity_heatmap_zscore.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Also create non-standardized version
+    plt.figure(figsize=(len(sorted_clusters) * 0.8, len(ordered_genes) * 0.3))
+    sns.heatmap(heatmap_df, 
+                cmap='RdBu_r', 
+                center=0, 
+                cbar_kws={'label': 'Mean Expression'},
+                xticklabels=True,
+                yticklabels=True)
+    
+    plt.title('Gene Activity Heatmap (ATAC) - Raw Values')
+    plt.xlabel('Clusters')
+    plt.ylabel('Genes (in RNA marker order)')
+    plt.tight_layout()
+    
+    plt.savefig(f'{output_dir}/gene_activity_heatmap_raw.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{output_dir}/gene_activity_heatmap_raw.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print("Gene activity heatmaps created with exact RNA gene order")
 
-# Example usage
 if __name__ == "__main__":
     # adata_path = "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_sample.h5ad"
     # adata_rna, marker_genes, significant_markers = integration_validation(
@@ -806,12 +862,12 @@ if __name__ == "__main__":
     #     output_dir="/dcl01/hongkai/data/data/hjiang/Test/result"
     # )
     
-    # adata_path = "/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad"
-    # adata_rna, marker_genes, significant_markers = integration_validation(
-    #     adata_path=adata_path,
-    #     n_genes=10,
-    #     output_dir="/dcl01/hongkai/data/data/hjiang/result/integration/validation"
-    # )
+    adata_path = "/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad"
+    adata_rna, marker_genes, significant_markers = integration_validation(
+        adata_path=adata_path,
+        n_genes=10,
+        output_dir="/dcl01/hongkai/data/data/hjiang/result/integration/validation"
+    )
 
     # Example paths
     integrated_path = "/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad"

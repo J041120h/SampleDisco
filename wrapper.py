@@ -461,7 +461,7 @@ def wrapper(
             verbose=pseudobulk_verbose
         )
 
-        process_anndata_with_pca(
+        pseudobulk_anndata = process_anndata_with_pca(
             adata=AnnData_sample,
             pseudobulk=pseudobulk_df,
             pseudobulk_anndata = pseudobulk_adata,
@@ -483,7 +483,7 @@ def wrapper(
         if trajectory_supervised:
             if sev_col_cca not in AnnData_sample.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
-            first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = AnnData_sample, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
+            first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
             if cca_pvalue:
                 cca_pvalue_test(
                     adata = AnnData_sample,
