@@ -147,16 +147,40 @@ def find_optimal_cell_resolution(
     return final_best_resolution
 
 def cca_pvalue_test(
-    adata: AnnData,
-    summary_sample_csv_path: str,
+    pseudo_adata: AnnData,
     column: str,
     input_correlation: float,
     output_directory: str,
     num_simulations: int = 1000,
     sev_col: str = "sev.level",
-    sample_col: str = "sample",
     verbose: bool = True
 ):
+    """
+    Perform CCA p-value test using pseudo anndata (sample by gene).
+    
+    Parameters:
+    -----------
+    pseudo_adata : AnnData
+        Pseudo anndata object where observations are samples and variables are genes.
+        Must contain severity levels in pseudo_adata.obs[sev_col].
+    column : str
+        Key in pseudo_adata.uns containing the coordinates (e.g., PCA coordinates)
+    input_correlation : float
+        Observed correlation to test against
+    output_directory : str
+        Directory to save results
+    num_simulations : int
+        Number of permutation simulations (default: 1000)
+    sev_col : str
+        Column name for severity levels in pseudo_adata.obs (default: "sev.level")
+    verbose : bool
+        Whether to print timing information (default: True)
+    
+    Returns:
+    --------
+    float
+        P-value from permutation test
+    """
     import os
     import time
     import numpy as np
@@ -167,24 +191,28 @@ def cca_pvalue_test(
     output_directory = os.path.join(output_directory, "CCA_test")
     os.makedirs(output_directory, exist_ok=True)
     
-    pca_coords = adata.uns[column]
+    # Extract coordinates from pseudo_adata.uns
+    pca_coords = pseudo_adata.uns[column]
     if pca_coords.shape[1] < 2:
-        raise ValueError("X_pca must have at least 2 components for 2D plotting.")
+        raise ValueError("Coordinates must have at least 2 components for 2D analysis.")
     
+    # Get first 2 components
     pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, "iloc") else pca_coords[:, :2]
     
-    if sample_col not in adata.obs.columns:
-        raise KeyError(f"adata.obs must have a '{sample_col}' column to match sample metadata.")
+    # Check if severity column exists
+    if sev_col not in pseudo_adata.obs.columns:
+        raise KeyError(f"pseudo_adata.obs must have a '{sev_col}' column.")
     
-    # Convert unique samples to a pandas Series before processing
-    samples = pd.Series(adata.obs[sample_col].unique())
+    # Get severity levels directly from pseudo_adata.obs
+    sev_levels = pseudo_adata.obs[sev_col].values
     
-    if len(samples) != pca_coords_2d.shape[0]:
-        raise ValueError("Mismatch between number of PCA rows and number of samples.")
+    if len(sev_levels) != pca_coords_2d.shape[0]:
+        raise ValueError("Mismatch between number of coordinate rows and number of samples.")
     
-    sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sample_col=sample_col, sev_col=sev_col)
-    sev_levels_1d = sev_levels_2d.flatten()
+    # Reshape for CCA (needs 2D array)
+    sev_levels_1d = sev_levels.flatten()
     
+    # Perform permutation test
     simulated_scores = []
     for _ in range(num_simulations):
         permuted = np.random.permutation(sev_levels_1d).reshape(-1, 1)
@@ -210,6 +238,7 @@ def cca_pvalue_test(
     plt.savefig(plot_path, dpi=300)
     plt.close()
     
+    # Save results to file
     with open(os.path.join(output_directory, f"cca_pvalue_result_{column}.txt"), "w") as f:
         f.write(f"Observed correlation: {input_correlation}\n")
         f.write(f"P-value: {p_value}\n")

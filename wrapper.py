@@ -475,8 +475,8 @@ def wrapper(
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
 
-    if (trajectory_analysis or sample_distance_calculation or cluster_and_DGE) and not status_flags["DimensionalityReduction"]:
-        pseudobulk_anndata = sc.read(os.path.join(pca_output_dir, "pseudobulk", "adata_sample.h5ad"))
+    if (trajectory_analysis or sample_distance_calculation or cluster_and_DGE) and not DimensionalityReduction:
+        pseudobulk_anndata = sc.read(os.path.join(pca_output_dir, "pseudobulk", "pseudobulk_sample.h5ad"))
 
     # Step 4: CCA
     if trajectory_analysis:
@@ -488,26 +488,22 @@ def wrapper(
             first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, output_dir=cca_output_dir, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
             if cca_pvalue:
                 cca_pvalue_test(
-                    adata = AnnData_sample,
-                    summary_sample_csv_path = sample_meta_path,
-                    column = "X_pca_proportion",
+                    pseudo_adata = pseudobulk_anndata,
+                    column = "X_DR_proportion",
                     input_correlation = first_component_score_proportion,
                     output_directory = cca_output_dir,
                     num_simulations = 1000,
                     sev_col = sev_col_cca,
-                    sample_col = sample_col,
                     verbose = trajectory_verbose
                 )
 
                 cca_pvalue_test(
-                    adata = AnnData_sample,
-                    summary_sample_csv_path = sample_meta_path,
-                    column = "X_pca_expression",
+                    pseudo_adata = pseudobulk_anndata,
+                    column = "X_DR_expression",
                     input_correlation = first_component_score_expression,
                     output_directory = cca_output_dir,
                     num_simulations = 1000,
                     sev_col = sev_col_cca,
-                    sample_col = sample_col,
                     verbose = trajectory_verbose
                 )
             if cca_optimal_cell_resolution:

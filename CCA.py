@@ -12,6 +12,12 @@ def run_cca_on_2d_pca_from_adata(
     column: str,
     sev_col: str = "sev.level"
 ):
+    if column not in adata.uns:
+        raise KeyError(f"'{column}' not found in adata.uns. Available keys: {list(adata.uns.keys())}")
+    
+    if sev_col not in adata.obs.columns:
+        raise KeyError(f"'{sev_col}' column is missing in adata.obs. Available columns: {list(adata.obs.columns)}")
+
     pca_coords = adata.uns[column]
     if pca_coords.shape[1] < 2:
         raise ValueError("PCA must have at least 2 components for CCA.")
@@ -127,14 +133,14 @@ def CCA_Call(
         os.makedirs(output_dir, exist_ok=True)
 
     paths = {
-        "X_pca_proportion": os.path.join(output_dir, "pca_2d_cca_proportion.pdf") if output_dir else None,
-        "X_pca_expression": os.path.join(output_dir, "pca_2d_cca_expression.pdf") if output_dir else None
+        "X_DR_proportion": os.path.join(output_dir, "pca_2d_cca_proportion.pdf") if output_dir else None,
+        "X_DR_expression": os.path.join(output_dir, "pca_2d_cca_expression.pdf") if output_dir else None
     }
 
     results = {}
     sample_dicts = {}
 
-    for key in ["X_pca_proportion", "X_pca_expression"]:
+    for key in ["X_DR_proportion", "X_DR_expression"]:
         if verbose:
             print(f"Processing {key}...")
             
@@ -155,7 +161,7 @@ def CCA_Call(
                 cca=cca_model,
                 output_path=paths[key],
                 sample_labels=samples if show_sample_labels else None,
-                title_suffix=key.replace("X_pca_", "").title()
+                title_suffix=key.replace("X_DR_", "").title()
             )
             
             results[key] = score
@@ -176,7 +182,7 @@ def CCA_Call(
         if start_time:
             print(f"\n[CCA] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
-    return (results.get("X_pca_proportion", np.nan), 
-            results.get("X_pca_expression", np.nan), 
-            sample_dicts.get("X_pca_proportion", {}), 
-            sample_dicts.get("X_pca_expression", {}))
+    return (results.get("X_DR_proportion", np.nan), 
+            results.get("X_DR_expression", np.nan), 
+            sample_dicts.get("X_DR_proportion", {}), 
+            sample_dicts.get("X_DR_expression", {}))

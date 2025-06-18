@@ -11,6 +11,40 @@ from DR import process_anndata_with_pca
 from CellType import cell_types, cell_type_assign
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 
+def load_severity_levels(
+    sample_meta_path: str, 
+    sample_index: pd.Index, 
+    sample_col: str = "sample", 
+    sev_col: str = "sev.level"
+) -> np.ndarray:
+    """
+    Load severity levels from a CSV and align them with the provided sample index.
+    """
+    summary_df = pd.read_csv(sample_meta_path)
+    
+    if sample_col not in summary_df.columns or sev_col not in summary_df.columns:
+        raise ValueError(f"CSV must contain columns: '{sample_col}' and '{sev_col}'.")
+
+    summary_df[sev_col] = pd.to_numeric(summary_df[sev_col], errors='coerce')
+    summary_df[sample_col] = summary_df[sample_col].astype(str).str.strip().str.lower()
+    
+    # Convert sample_index to a pandas Series before applying string methods
+    if isinstance(sample_index, np.ndarray):
+        sample_index = pd.Series(sample_index).astype(str).str.strip().str.lower().values
+    else:
+        # If it's already a pandas Index/Series
+        sample_index = sample_index.astype(str).str.strip().str.lower()
+
+    sample_to_sev = summary_df.set_index(sample_col)[sev_col].to_dict()
+    sev_levels = np.array([sample_to_sev.get(sample, np.nan) for sample in sample_index])
+
+    missing = np.isnan(sev_levels).sum()
+    if missing > 0:
+        print(f"Warning: {missing} sample(s) missing severity level. Imputing with mean.")
+        sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
+
+    return sev_levels.reshape(-1, 1)
+    
 def find_optimal_cell_resolution_linux(
     AnnData_cell,
     AnnData_sample,
