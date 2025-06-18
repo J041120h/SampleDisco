@@ -159,14 +159,14 @@ atac_show_sample_names: true
 atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
-preprocessing: true
-cell_type_cluster: true
+preprocessing: false
+cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: true
-trajectory_analysis: false
+trajectory_analysis: true
 trajectory_differential_gene: false
 cluster_and_DGE: false
 ATAC_data: false
-visualize_data: true
+visualize_data: false
 initialization: false
 use_gpu: false

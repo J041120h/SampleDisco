@@ -600,7 +600,7 @@ def process_anndata_with_pca(
     # Only save if at least one dimension reduction was successful
     if not not_save and (expression_dr_successful or proportion_dr_successful):
         if atac:
-            adata_path = os.path.join(count_output_dir, 'ATAC_sample.h5ad')
+            adata_path = os.path.join(count_output_dir, 'adata_sample.h5ad')
             pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_adata.h5ad')
         elif integrated_data:
             adata_path = os.path.join(count_output_dir, 'atac_rna_integrated.h5ad')

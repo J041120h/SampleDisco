@@ -8,7 +8,6 @@ from anndata import AnnData
 import time
 from pseudobulk import compute_pseudobulk_dataframes
 from DR import process_anndata_with_pca
-from CCA import load_severity_levels
 from CellType import cell_types, cell_type_assign
 
 def find_optimal_cell_resolution(

@@ -5,11 +5,9 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import CCA
-from anndata import AnnData
 import time
 from pseudobulk import compute_pseudobulk_dataframes
 from DR import process_anndata_with_pca
-from CCA import load_severity_levels
 from CellType import cell_types, cell_type_assign
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 
