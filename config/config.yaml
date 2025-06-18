@@ -53,7 +53,7 @@ trajectory_supervised: true
 cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
-cca_pvalue: false
+cca_pvalue: true
 trajectory_verbose: true
 TSCAN_origin: null
 
@@ -113,7 +113,7 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_preprocessing: false
+atac_preprocessing: true
 atac_pseudobulk_dimensionality_reduction: true
 atac_visualization_processing: false
   
@@ -159,14 +159,14 @@ atac_show_sample_names: true
 atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
-preprocessing: true
-cell_type_cluster: true
+preprocessing: false
+cell_type_cluster: false
 sample_distance_calculation: false
-DimensionalityReduction: true
-trajectory_analysis: false
+DimensionalityReduction: false
+trajectory_analysis: true
 trajectory_differential_gene: false
 cluster_and_DGE: false
-ATAC_data: false
-visualize_data: true
+ATAC_data: true
+visualize_data: false
 initialization: false
 use_gpu: false

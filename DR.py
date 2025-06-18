@@ -114,9 +114,54 @@ def run_lsi_expression(
             tfidf = TfidfTransformer(norm='l2', use_idf=True, sublinear_tf=True)
             X_tfidf = tfidf.fit_transform(X)
             
+            # CRITICAL FIX: Check for NaN/inf values AFTER TF-IDF transformation
+            if sparse.issparse(X_tfidf):
+                # For sparse matrices, check the data array
+                nan_mask = np.isnan(X_tfidf.data) | np.isinf(X_tfidf.data)
+                if np.any(nan_mask):
+                    if verbose:
+                        print(f"[run_lsi_expression] Found {np.sum(nan_mask)} NaN/inf values in TF-IDF data, replacing with 0")
+                    X_tfidf.data[nan_mask] = 0.0
+                    X_tfidf.eliminate_zeros()  # Remove explicit zeros
+                
+                # Convert to dense for final check and SVD
+                X_tfidf_dense = X_tfidf.toarray()
+            else:
+                X_tfidf_dense = X_tfidf
+            
+            # Final check for NaN/inf values in dense matrix
+            nan_mask = np.isnan(X_tfidf_dense) | np.isinf(X_tfidf_dense)
+            if np.any(nan_mask):
+                if verbose:
+                    print(f"[run_lsi_expression] Found {np.sum(nan_mask)} NaN/inf values after TF-IDF, replacing with 0")
+                X_tfidf_dense[nan_mask] = 0.0
+            
+            # Additional safety check: if any sample has all zeros, this can cause issues
+            sample_sums = np.sum(X_tfidf_dense, axis=1)
+            zero_samples = sample_sums == 0
+            if np.any(zero_samples):
+                if verbose:
+                    print(f"[run_lsi_expression] Found {np.sum(zero_samples)} samples with all-zero TF-IDF values")
+                    print("[run_lsi_expression] Adding small noise to prevent SVD issues")
+                # Add very small random noise to zero samples
+                noise_scale = 1e-10
+                for i in np.where(zero_samples)[0]:
+                    X_tfidf_dense[i, :] = np.random.normal(0, noise_scale, X_tfidf_dense.shape[1])
+            
+            if verbose:
+                print(f"[run_lsi_expression] TF-IDF matrix stats: shape={X_tfidf_dense.shape}, "
+                      f"min={X_tfidf_dense.min():.6f}, max={X_tfidf_dense.max():.6f}, "
+                      f"mean={X_tfidf_dense.mean():.6f}")
+            
             # Perform SVD (LSI is essentially SVD on term-document matrix)
             svd = TruncatedSVD(n_components=n_components, random_state=42)
-            lsi_coords = svd.fit_transform(X_tfidf)
+            lsi_coords = svd.fit_transform(X_tfidf_dense)
+            
+            # Final check for NaN in results
+            if np.any(np.isnan(lsi_coords)):
+                if verbose:
+                    print("[run_lsi_expression] NaN values found in LSI results, attempting cleanup")
+                lsi_coords = np.nan_to_num(lsi_coords, nan=0.0, posinf=0.0, neginf=0.0)
             
             lsi_df = pd.DataFrame(
                 data=lsi_coords,
@@ -126,6 +171,7 @@ def run_lsi_expression(
             
             if verbose:
                 print(f"[run_lsi_expression] Manual LSI computation successful. Shape: {lsi_df.shape}")
+                print(f"[run_lsi_expression] LSI result stats: min={lsi_coords.min():.6f}, max={lsi_coords.max():.6f}")
             
             return lsi_df
             
@@ -133,7 +179,7 @@ def run_lsi_expression(
             if verbose:
                 print(f"[run_lsi_expression] Manual LSI also failed: {str(e2)}")
             return None
-
+        
 def run_snapatac2_spectral(
     pseudobulk_anndata: sc.AnnData,
     n_components: int = 10,
@@ -600,8 +646,8 @@ def process_anndata_with_pca(
     # Only save if at least one dimension reduction was successful
     if not not_save and (expression_dr_successful or proportion_dr_successful):
         if atac:
-            adata_path = os.path.join(count_output_dir, 'ATAC_sample.h5ad')
-            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_adata.h5ad')
+            adata_path = os.path.join(count_output_dir, 'adata_sample.h5ad')
+            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')
         elif integrated_data:
             adata_path = os.path.join(count_output_dir, 'atac_rna_integrated.h5ad')
             pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')

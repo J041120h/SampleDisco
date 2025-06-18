@@ -13,14 +13,6 @@ import numpy as np
 import pandas as pd
 import os
 import scanpy as sc
-from anndata import AnnData
-
-
-import numpy as np
-import pandas as pd
-import os
-import scanpy as sc
-from anndata import AnnData
 
 
 def clean_obs_for_saving(adata, verbose=True):

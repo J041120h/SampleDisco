@@ -567,7 +567,7 @@ def compute_pseudobulk_adata(
         sample_adata = final_adata,
         sample_col = sample_col,
     )
-    sc.write(os.path.join(pseudobulk_dir, "pseudobulk_adata.h5ad"), final_adata)
+    sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
     
     # Create backward-compatible dictionary matching original output
     pseudobulk = {

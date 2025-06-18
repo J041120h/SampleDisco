@@ -23,7 +23,6 @@ from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
-from resolution_parallel import find_optimal_cell_resolution_parallel
 from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
 from cluster import cluster
 from sample_clustering.RAISIN import *
@@ -476,36 +475,35 @@ def wrapper(
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
 
+    if (trajectory_analysis or sample_distance_calculation or cluster_and_DGE) and not DimensionalityReduction:
+        pseudobulk_anndata = sc.read(os.path.join(pca_output_dir, "pseudobulk", "pseudobulk_sample.h5ad"))
+
     # Step 4: CCA
     if trajectory_analysis:
         if not status_flags["DimensionalityReduction"]:
             raise ValueError("Dimensionality reduction is required before trajectory analysis.")
         if trajectory_supervised:
-            if sev_col_cca not in AnnData_sample.obs.columns:
+            if sev_col_cca not in pseudobulk_anndata.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
-            first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, sample_meta_path=sample_meta_path, output_dir=cca_output_dir, sample_col = sample_col, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
+            first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, output_dir=cca_output_dir, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
             if cca_pvalue:
                 cca_pvalue_test(
-                    adata = AnnData_sample,
-                    summary_sample_csv_path = sample_meta_path,
-                    column = "X_pca_proportion",
+                    pseudo_adata = pseudobulk_anndata,
+                    column = "X_DR_proportion",
                     input_correlation = first_component_score_proportion,
                     output_directory = cca_output_dir,
                     num_simulations = 1000,
                     sev_col = sev_col_cca,
-                    sample_col = sample_col,
                     verbose = trajectory_verbose
                 )
 
                 cca_pvalue_test(
-                    adata = AnnData_sample,
-                    summary_sample_csv_path = sample_meta_path,
-                    column = "X_pca_expression",
+                    pseudo_adata = pseudobulk_anndata,
+                    column = "X_DR_expression",
                     input_correlation = first_component_score_expression,
                     output_directory = cca_output_dir,
                     num_simulations = 1000,
                     sev_col = sev_col_cca,
-                    sample_col = sample_col,
                     verbose = trajectory_verbose
                 )
             if cca_optimal_cell_resolution:
@@ -530,50 +528,6 @@ def wrapper(
                         sev_col = sev_col_cca,
                         sample_col = sample_col
                     )
-                else:
-                    try:
-                        find_optimal_cell_resolution_parallel(
-                            AnnData_cell = AnnData_cell,
-                            AnnData_sample = AnnData_sample,
-                            output_dir = cca_output_dir,
-                            summary_sample_csv_path = sample_meta_path,
-                            column = "X_pca_proportion",
-                            sev_col = sev_col_cca,
-                            sample_col = sample_col,
-                            n_jobs = -1,
-                            verbose = False
-                        )
-                        find_optimal_cell_resolution_parallel(
-                            AnnData_cell = AnnData_cell,
-                            AnnData_sample = AnnData_sample,
-                            output_dir = cca_output_dir,
-                            summary_sample_csv_path = sample_meta_path,
-                            column = "X_pca_expression",
-                            sev_col = sev_col_cca,
-                            sample_col = sample_col,
-                            n_jobs = -1,
-                            verbose = False
-                        )
-                    except MemoryError:
-                        print("MemoryError: Using the CPU version of the finding optimal resolution in parallel exceed memory")
-                        find_optimal_cell_resolution(
-                            AnnData_cell = AnnData_cell,
-                            AnnData_sample = AnnData_sample,
-                            output_dir = cca_output_dir,
-                            summary_sample_csv_path = sample_meta_path,
-                            column = "X_pca_proportion",
-                            sev_col = sev_col_cca,
-                            sample_col = sample_col
-                        )
-                        find_optimal_cell_resolution(
-                            AnnData_cell = AnnData_cell,
-                            AnnData_sample = AnnData_sample,
-                            output_dir = cca_output_dir,
-                            summary_sample_csv_path = sample_meta_path,
-                            column = "X_pca_expression",
-                            sev_col = sev_col_cca,
-                            sample_col = sample_col
-                        )
             status_flags["trajectory_analysis"] = True
             with open(status_file_path, 'w') as f:
                 json.dump(status_flags, f, indent=4)
@@ -836,6 +790,40 @@ def wrapper(
                 use_snapatac2_dimred = use_snapatac2_dimred,
                 verbose=atac_pca_verbose
             )
+        
+        if trajectory_analysis:
+            if not DimensionalityReduction:
+                pseudobulk_anndata = sc.read(os.path.join(atac_pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad"))
+            if trajectory_supervised:
+                if sev_col_cca not in pseudobulk_anndata.obs.columns:
+                    raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
+                first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, output_dir=cca_output_dir, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)
+                if cca_pvalue:
+                    cca_pvalue_test(
+                        pseudo_adata = pseudobulk_anndata,
+                        column = "X_DR_proportion",
+                        input_correlation = first_component_score_proportion,
+                        output_directory = cca_output_dir,
+                        num_simulations = 1000,
+                        sev_col = sev_col_cca,
+                        verbose = trajectory_verbose
+                    )
+
+                    cca_pvalue_test(
+                        pseudo_adata = pseudobulk_anndata,
+                        column = "X_DR_expression",
+                        input_correlation = first_component_score_expression,
+                        output_directory = cca_output_dir,
+                        num_simulations = 1000,
+                        sev_col = sev_col_cca,
+                        verbose = trajectory_verbose
+                    )
+                status_flags["trajectory_analysis"] = True
+                with open(status_file_path, 'w') as f:
+                    json.dump(status_flags, f, indent=4)
+            else:
+                TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+                TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
 
         if atac_visualization_processing:
             DR_visualization_all(
