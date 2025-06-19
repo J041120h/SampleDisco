@@ -1,15 +1,15 @@
 ======================================
- Job ID:            17425821
+ Job ID:            17460244
  Job Name:          test
  Partition:         gpu
  Node List:         compute-170
  CPUs per Task:     16
  Memory Alloc:      819200
  GPU Requested:     1
- Start Time:        Wed Jun 18 01:51:50 AM EDT 2025
+ Start Time:        Thu Jun 19 12:09:44 PM EDT 2025
 ======================================
 Checking GPU status...
-Wed Jun 18 01:51:53 2025       
+Thu Jun 19 12:09:46 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Wed Jun 18 01:51:53 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  NVIDIA H100 NVL                Off |   00000000:D1:00.0 Off |                    0 |
-| N/A   43C    P0             91W /  400W |       1MiB /  95830MiB |      3%      Default |
+| N/A   41C    P0             89W /  400W |       1MiB /  95830MiB |      3%      Default |
 |                                         |                        |             Disabled |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -30,24 +30,64 @@ Wed Jun 18 01:51:53 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
-=== ATAC Integration Validation ===
-Loading integrated data...
-Found 88221 ATAC cells
-Loading gene activity matrix...
-Gene activity shape: (88985, 18526)
-Loading RNA marker genes...
-Found 100 ordered marker genes from RNA analysis
-Checking gene naming convention...
-Gene activity matrix uses Ensembl IDs. Converting to gene symbols...
-Initializing Ensembl database (version 98)...
-Converting Ensembl IDs to symbols...
-Successfully converted 18526 genes
-Aligning cells between integrated data and gene activity matrix...
-Found 88221 common cells
-Cluster order: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-Found 83 marker genes in gene activity matrix
-Preprocessing gene activity data...
-Creating visualizations...
-Creating gene activity dotplot...
+Start of Process
+
+Resuming process from previous progress:
+{
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "sample_distance_calculation": true,
+    "DimensionalityReduction": true,
+    "trajectory_analysis": true,
+    "visualize_data": true,
+    "initialization": false
+}
+Linux system detected.
+
+
+Enabling managed memory for RMM...
+
+
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] Target: 3 clusters. Trying resolution: 0.9
+[cell_types] Leiden clustering produced 18 clusters.
+[cell_types] Got 18 clusters (>= target). Recursing with existing_cell_types=True...
+  [cell_types] Current number of cell types: 18
+  [cell_types] Aggregating 18 cell types into 3 clusters using dendrogram.
+  [cell_types] Using dimension reduction (X_pca_harmony) for dendrogram construction...
+=== Preparing data for dendrogram (using X_pca_harmony) ===
+Using first 20 components from X_pca_harmony
+=== Computing centroids of cell types in X_pca_harmony space ===
+Calculated centroids for 18 cell types.
+Centroid shape: (18, 20)
+=== Computing distance matrix between centroids using euclidean distance ===
+=== Performing hierarchical clustering on X_pca_harmony centroids ===
+Linkage method: average, Distance metric: euclidean
+=== Aggregating cell types into 3 clusters ===
+Successfully created 3 clusters
+
+=== Cluster Composition ===
+Cluster 1: 1, 13, 14, 16, 18, 4
+Cluster 2: 10, 11, 12, 15, 5, 6, 7, 8
+Cluster 3: 17, 2, 3, 9
+
+=== Cluster Quality Metrics ===
+Cluster 1: Average within-cluster distance = 10.0873
+Cluster 2: Average within-cluster distance = 11.5105
+Cluster 3: Average within-cluster distance = 11.5685
+
+Function execution time: 4.43 seconds
+  [cell_types] Successfully aggregated to 3 cell types.
+[cell_types] Finished assigning cell types.
+[cell_types] Computing UMAP...
+[cell_types] Converting GPU arrays to CPU...
+[safe_h5ad_write] Preparing to save to: /dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 45 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad
+[cell_types] Total runtime: 512.64 seconds
 Finished main.py.
-End Time: Wed Jun 18 01:57:18 AM EDT 2025
+End Time: Thu Jun 19 12:20:42 PM EDT 2025

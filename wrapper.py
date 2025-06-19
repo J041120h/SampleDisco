@@ -206,7 +206,9 @@ def wrapper(
     atac_pca_n_proportion_pcs = 30,
     atac_pca_verbose = True,
 
+    # Trajectory analysis parameters
     atac_cca_output_dir = None,
+    trajectory_supervised_atac = True,
     #visualization parameters
     atac_figsize=(10, 8),
     atac_point_size=50, 
@@ -222,6 +224,7 @@ def wrapper(
     trajectory_differential_gene = True,
     cluster_and_DGE = True,
     ATAC_data = True,
+    trajectory_analysis_atac = True, 
     visualize_data = True,
     initialization=True,
     use_gpu= False
@@ -515,7 +518,7 @@ def wrapper(
                         output_dir = cca_output_dir,
                         summary_sample_csv_path = sample_meta_path,
                         AnnData_sample_path = AnnData_sample_path,
-                        column = "X_pca_proportion",
+                        column = "X_DR_proportion",
                         sev_col = sev_col_cca,
                         sample_col = sample_col
                     )
@@ -525,7 +528,7 @@ def wrapper(
                         output_dir = cca_output_dir,
                         summary_sample_csv_path = sample_meta_path,
                         AnnData_sample_path = AnnData_sample_path,
-                        column = "X_pca_expression",
+                        column = "X_DR_expression",
                         sev_col = sev_col_cca,
                         sample_col = sample_col
                     )
@@ -533,8 +536,8 @@ def wrapper(
             with open(status_file_path, 'w') as f:
                 json.dump(status_flags, f, indent=4)
         else:
-            TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
-            TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+            TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_DR_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
+            TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_DR_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
 
         if trajectory_differential_gene:
             if trajectory_supervised:
@@ -781,7 +784,7 @@ def wrapper(
                 verbose=atac_pseudobulk_verbose
             )
 
-            process_anndata_with_pca(
+            pseudobulk_anndata = process_anndata_with_pca(
                 adata=atac_sample,
                 pseudobulk=atac_pseudobulk_df,
                 pseudobulk_anndata = pseudobulk_adata,
@@ -794,10 +797,10 @@ def wrapper(
                 verbose=atac_pca_verbose
             )
         
-        if trajectory_analysis:
-            if not DimensionalityReduction:
+        if trajectory_analysis_atac:
+            if not atac_pseudobulk_dimensionality_reduction:
                 pseudobulk_anndata = sc.read(os.path.join(atac_pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad"))
-            if trajectory_supervised:
+            if trajectory_supervised_atac:
                 if sev_col_cca not in pseudobulk_anndata.obs.columns:
                     raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
                 first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression= CCA_Call(adata = pseudobulk_anndata, output_dir=cca_output_dir, sev_col = sev_col_cca, ptime = True, verbose = trajectory_verbose)

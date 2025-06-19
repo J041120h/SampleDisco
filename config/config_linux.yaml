@@ -27,7 +27,7 @@ verbose: true
 
 # ===== Cell Type Clustering Parameters =====
 existing_cell_types: false
-n_target_cell_clusters: 5
+n_target_cell_clusters: 3
 umap: true
 cell_type_save: true
 
@@ -50,7 +50,7 @@ AnnData_sample_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_sampl
 pca_verbose: true
 
 # ===== Trajectory Analysis Parameters =====
-trajectory_supervised: false
+trajectory_supervised: true
 cca_output_dir: null
 sev_col_cca: "sev.level"
 cca_optimal_cell_resolution: false
@@ -107,8 +107,8 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_preprocessing: false
-atac_pseudobulk_dimensionality_reduction: false
+atac_preprocessing: true
+atac_pseudobulk_dimensionality_reduction: true
 atac_visualization_processing: true
 
 atac_file_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
@@ -120,7 +120,7 @@ atac_sample_col: "sample"
 atac_batch_col: null
 atac_cell_type_column: "cell_type"
 atac_pipeline_verbose: true
-use_snapatac2_dimred: true
+use_snapatac2_dimred: false
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
@@ -145,7 +145,10 @@ atac_pseudobulk_verbose: true
 atac_pca_n_expression_pcs: 30
 atac_pca_n_proportion_pcs: 30
 atac_pca_verbose: true
+
 atac_cca_output_dir: null
+trajectory_supervised_atac: true
+
 atac_figsize: [10, 8]  
 atac_point_size: 50
 atac_visualization_grouping_columns:
@@ -158,11 +161,12 @@ atac_visualization_age_size: null
 preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
-DimensionalityReduction: false
-trajectory_analysis: false
+DimensionalityReduction: true
+trajectory_analysis: true
 trajectory_differential_gene: false
 cluster_and_DGE: false
-ATAC_data: true
+ATAC_data: false
+trajectory_analysis_atac: true
 visualize_data: false
 initialization: false
 use_gpu: true
