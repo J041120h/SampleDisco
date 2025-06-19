@@ -12,137 +12,281 @@ from CellType import cell_types, cell_type_assign
 from pseudo_adata import compute_pseudobulk_adata 
 
 def find_optimal_cell_resolution(
-    AnnData_cell,
-    AnnData_sample,
-    output_dir,
-    summary_sample_csv_path,
-    column,
+    AnnData_cell: AnnData,
+    AnnData_sample: AnnData,
+    output_dir: str,
+    column: str,
     sev_col: str = "sev.level",
     sample_col: str = "sample"
-):
-    import numpy as np
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    from sklearn.cross_decomposition import CCA
-    import os
-    import time
+) -> float:
+    """
+    Find optimal clustering resolution by maximizing CCA correlation between 
+    dimension reduction and severity levels.
+    
+    Parameters:
+    -----------
+    AnnData_cell : AnnData
+        Cell-level AnnData object
+    AnnData_sample : AnnData  
+        Sample-level AnnData object
+    output_dir : str
+        Output directory for results
+    column : str
+        Column name in adata.uns for dimension reduction results
+    sev_col : str
+        Column name for severity levels in pseudobulk_anndata.obs
+    sample_col : str
+        Column name for sample identifiers
+        
+    Returns:
+    --------
+    float
+        Optimal resolution value
+    """
 
     start_time = time.time()
     score_counter = dict()
 
+    print(f"Starting resolution optimization for {column}...")
+    print(f"Testing resolutions from 0.01 to 1.00...")
+
+    # First pass: coarse search
     for resolution in np.arange(0.01, 1.01, 0.01):
-        print(f"\n\nTesting resolution: {resolution}\n\n")
-        cell_types(
-            AnnData_cell,
-            cell_column='cell_type',
-            Save=False,
-            output_dir=output_dir,
-            cluster_resolution=resolution,
-            markers=None,
-            method='average',
-            metric='euclidean',
-            distance_mode='centroid',
-            num_PCs=20,
-            verbose=False
-        )
-        cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
-        pseudobulk = compute_pseudobulk_adata(AnnData_sample, 'batch', sample_col, 'cell_type', output_dir)
-        process_anndata_with_pca(
-            adata=AnnData_sample,
-            pseudobulk=pseudobulk,
-            output_dir=output_dir,
-            sample_col=sample_col,
-            not_save=True,
-            verbose=False
-        )
+        print(f"\n\nTesting resolution: {resolution:.2f}\n")
+        
+        try:
+            # Clean up previous cell type assignments
+            if 'cell_type' in AnnData_cell.obs.columns:
+                AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+            if 'cell_type' in AnnData_sample.obs.columns:
+                AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+            
+            # Perform clustering
+            cell_types(
+                AnnData_cell,
+                cell_column='cell_type',
+                Save=False,
+                output_dir=output_dir,
+                cluster_resolution=resolution,
+                markers=None,
+                method='average',
+                metric='euclidean',
+                distance_mode='centroid',
+                num_PCs=20,
+                verbose=False
+            )
+            
+            # Assign cell types to samples
+            cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
+            
+            # Compute pseudobulk data using updated function
+            pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
+                adata=AnnData_sample, 
+                batch_col='batch', 
+                sample_col=sample_col, 
+                celltype_col='cell_type', 
+                output_dir=output_dir,
+                verbose=False
+            )
+            
+            # Perform dimension reduction using updated function
+            process_anndata_with_pca(
+                adata=AnnData_sample,
+                pseudobulk=pseudobulk_dict,
+                pseudobulk_anndata=pseudobulk_adata,
+                sample_col=sample_col,
+                output_dir=output_dir,
+                not_save=True,
+                verbose=False
+            )
 
-        pca_coords = AnnData_sample.uns[column]
-        pca_coords_2d = pca_coords.iloc[:, :2].values
-        samples = AnnData_sample.obs[sample_col].unique()
+            # Get PCA coordinates from the updated location
+            if column not in AnnData_sample.uns:
+                print(f"Warning: {column} not found in AnnData_sample.uns. Skipping resolution {resolution:.2f}")
+                continue
+                
+            pca_coords = AnnData_sample.uns[column]
+            if hasattr(pca_coords, 'iloc'):
+                pca_coords_2d = pca_coords.iloc[:, :2].values
+            else:
+                pca_coords_2d = pca_coords[:, :2]
+            
+            # Get samples and severity levels from pseudobulk_anndata
+            samples = pseudobulk_adata.obs.index.values
+            
+            # Get severity levels directly from pseudobulk_adata
+            if sev_col not in pseudobulk_adata.obs.columns:
+                print(f"Warning: {sev_col} not found in pseudobulk_adata.obs. Skipping resolution {resolution:.2f}")
+                continue
+                
+            sev_levels = pd.to_numeric(pseudobulk_adata.obs[sev_col], errors='coerce').values
+            missing = np.isnan(sev_levels).sum()
+            if missing > 0:
+                print(f"Warning: {missing} sample(s) missing severity level. Imputing with mean.")
+                sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
+            
+            sev_levels_2d = sev_levels.reshape(-1, 1)
+            
+            # Ensure matching dimensions
+            if len(sev_levels_2d) != pca_coords_2d.shape[0]:
+                print(f"Warning: Dimension mismatch at resolution {resolution:.2f}. Skipping.")
+                continue
+            
+            # Perform CCA
+            cca = CCA(n_components=1)
+            cca.fit(pca_coords_2d, sev_levels_2d)
+            U, V = cca.transform(pca_coords_2d, sev_levels_2d)
+            first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+            
+            print(f"Resolution {resolution:.2f}: CCA Score = {first_component_score:.4f}")
+            score_counter[resolution] = first_component_score
+            
+        except Exception as e:
+            print(f"Error at resolution {resolution:.2f}: {str(e)}")
+            continue
 
-        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sample_col=sample_col, sev_col=sev_col)
-        cca = CCA(n_components=1)
-        cca.fit(pca_coords_2d, sev_levels_2d)
-        U, V = cca.transform(pca_coords_2d, sev_levels_2d)
-        first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-        print(first_component_score)
-        score_counter[resolution] = first_component_score
+    if not score_counter:
+        raise ValueError("No valid CCA scores obtained. Check your data and parameters.")
 
-        AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-        AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-
+    # Find best resolution from first pass
     best_resolution = max(score_counter, key=score_counter.get)
-    print(f"Best resolution from first pass: {best_resolution}")
+    print(f"\nBest resolution from first pass: {best_resolution:.2f}")
+    print(f"Best CCA score: {score_counter[best_resolution]:.4f}")
+
+    # Second pass: fine-tuned search around best resolution
     fine_score_counter = dict()
+    search_range_start = max(0.01, best_resolution - 0.05)
+    search_range_end = min(1.00, best_resolution + 0.05)
+    
+    print(f"\nFine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
 
-    for resolution in np.arange(max(0.1, best_resolution - 0.05), min(1.0, best_resolution + 0.05) + 0.01, 0.01):
-        cell_types(
-            AnnData_cell,
-            cell_column='cell_type',
-            Save=False,
-            output_dir=output_dir,
-            cluster_resolution=resolution,
-            markers=None,
-            method='average',
-            metric='euclidean',
-            distance_mode='centroid',
-            num_PCs=20,
-            verbose=False
-        )
-        cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
-        pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', sample_col, 'cell_type', output_dir)
-        process_anndata_with_pca(
-            adata=AnnData_sample,
-            pseudobulk=pseudobulk,
-            output_dir=output_dir,
-            sample_col=sample_col,
-            not_save=True,
-            verbose=False
-        )
+    for resolution in np.arange(search_range_start, search_range_end + 0.001, 0.001):
+        resolution = round(resolution, 3)  # Avoid floating point precision issues
+        
+        try:
+            # Clean up previous cell type assignments
+            if 'cell_type' in AnnData_cell.obs.columns:
+                AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+            if 'cell_type' in AnnData_sample.obs.columns:
+                AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+            
+            # Perform clustering
+            cell_types(
+                AnnData_cell,
+                cell_column='cell_type',
+                Save=False,
+                output_dir=output_dir,
+                cluster_resolution=resolution,
+                markers=None,
+                method='average',
+                metric='euclidean',
+                distance_mode='centroid',
+                num_PCs=20,
+                verbose=False
+            )
+            
+            # Assign cell types to samples
+            cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
+            
+            # Compute pseudobulk data using updated function
+            pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
+                adata=AnnData_sample, 
+                batch_col='batch', 
+                sample_col=sample_col, 
+                celltype_col='cell_type', 
+                output_dir=output_dir,
+                verbose=False
+            )
+            
+            # Perform dimension reduction using updated function
+            process_anndata_with_pca(
+                adata=AnnData_sample,
+                pseudobulk=pseudobulk_dict,
+                pseudobulk_anndata=pseudobulk_adata,
+                sample_col=sample_col,
+                output_dir=output_dir,
+                not_save=True,
+                verbose=False
+            )
 
-        pca_coords = AnnData_sample.uns[column]
-        pca_coords_2d = pca_coords.iloc[:, :2].values
-        samples = AnnData_sample.obs[sample_col].unique()
+            # Get PCA coordinates
+            if column not in AnnData_sample.uns:
+                continue
+                
+            pca_coords = AnnData_sample.uns[column]
+            if hasattr(pca_coords, 'iloc'):
+                pca_coords_2d = pca_coords.iloc[:, :2].values
+            else:
+                pca_coords_2d = pca_coords[:, :2]
+            
+            # Get samples from the pseudobulk_adata
+            samples = pseudobulk_adata.obs.index.values
 
-        sev_levels_2d = load_severity_levels(summary_sample_csv_path, samples, sample_col=sample_col, sev_col=sev_col)
-        cca = CCA(n_components=1)
-        cca.fit(pca_coords_2d, sev_levels_2d)
-        U, V = cca.transform(pca_coords_2d, sev_levels_2d)
-        first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+            # Load severity levels
+            sev_levels_2d = load_severity_levels(
+                summary_sample_csv_path, 
+                samples, 
+                sample_col=sample_col, 
+                sev_col=sev_col
+            )
+            
+            # Ensure matching dimensions
+            if len(sev_levels_2d) != pca_coords_2d.shape[0]:
+                continue
+            
+            # Perform CCA
+            cca = CCA(n_components=1)
+            cca.fit(pca_coords_2d, sev_levels_2d)
+            U, V = cca.transform(pca_coords_2d, sev_levels_2d)
+            first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
 
-        print(f"Fine-tuned Resolution {resolution:.2f}: Score {first_component_score}")
-        fine_score_counter[resolution] = first_component_score
+            print(f"Fine-tuned Resolution {resolution:.3f}: Score {first_component_score:.4f}")
+            fine_score_counter[resolution] = first_component_score
+            
+        except Exception as e:
+            print(f"Error at fine-tuned resolution {resolution:.3f}: {str(e)}")
+            continue
 
-        AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-        AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+    if not fine_score_counter:
+        print("Warning: Fine-tuning failed. Using coarse search results.")
+        final_best_resolution = best_resolution
+        final_results = score_counter
+    else:
+        final_best_resolution = max(fine_score_counter, key=fine_score_counter.get)
+        final_results = {**score_counter, **fine_score_counter}
 
-    final_best_resolution = max(fine_score_counter, key=fine_score_counter.get)
-    print(f"Final best resolution: {final_best_resolution}")
+    print(f"\nFinal best resolution: {final_best_resolution:.3f}")
+    print(f"Final best CCA score: {final_results[final_best_resolution]:.4f}")
 
-    df_coarse = pd.DataFrame(score_counter.items(), columns=["resolution", "score"])
-    df_fine = pd.DataFrame(fine_score_counter.items(), columns=["resolution", "score"])
-    df_results = pd.concat([df_coarse, df_fine], ignore_index=True)
+    # Save results
+    df_results = pd.DataFrame(final_results.items(), columns=["resolution", "score"])
+    df_results = df_results.sort_values("resolution")
 
-    output_dir = os.path.join(output_dir, "CCA_test")
-    os.makedirs(output_dir, exist_ok=True)
-    to_csv_path = os.path.join(output_dir, f"resolution_scores_{column}.csv")
+    output_dir_results = os.path.join(output_dir, "CCA_test")
+    os.makedirs(output_dir_results, exist_ok=True)
+    
+    to_csv_path = os.path.join(output_dir_results, f"resolution_scores_{column}.csv")
     df_results.to_csv(to_csv_path, index=False)
 
-    plt.figure(figsize=(8, 6))
-    plt.plot(df_results["resolution"], df_results["score"], marker='o', linestyle='None', color='b', label="CCA Score")
+    # Create plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(df_results["resolution"], df_results["score"], marker='o', markersize=3, 
+             linestyle='-', linewidth=1, color='b', label="CCA Score")
+    plt.axvline(x=final_best_resolution, color='r', linestyle='--', 
+                label=f'Best Resolution: {final_best_resolution:.3f}')
     plt.xlabel("Resolution")
     plt.ylabel("CCA Score")
-    plt.title("Resolution vs. CCA Score")
+    plt.title(f"Resolution vs. CCA Score ({column})")
     plt.legend()
-    plt.grid(True)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
 
-    plot_path = os.path.join(output_dir, f"resolution_vs_cca_score_{column}.png")
-    plt.savefig(plot_path, dpi=300)
+    plot_path = os.path.join(output_dir_results, f"resolution_vs_cca_score_{column}.png")
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
 
     print(f"Plot saved to: {plot_path}")
     print(f"Resolution scores saved to: {to_csv_path}")
-
     print(f"\n[Find Optimal Resolution] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
     return final_best_resolution
