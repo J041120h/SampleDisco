@@ -52,7 +52,7 @@ pca_verbose: true
 # ===== Trajectory Analysis Parameters =====
 trajectory_supervised: true
 cca_output_dir: null
-sev_col_cca: "sev.level"
+sev_col_cca: "current_severity"
 cca_optimal_cell_resolution: false
 cca_pvalue: true
 trajectory_verbose: true
@@ -109,7 +109,7 @@ plot_pseudobulk_batch_test_proportion_flag: false
 # ===== ATAC-seq Pipeline Parameters =====
 atac_preprocessing: true
 atac_pseudobulk_dimensionality_reduction: true
-atac_visualization_processing: true
+atac_visualization_processing: false
 
 atac_file_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
 atac_output_dir: null
@@ -120,7 +120,7 @@ atac_sample_col: "sample"
 atac_batch_col: null
 atac_cell_type_column: "cell_type"
 atac_pipeline_verbose: true
-use_snapatac2_dimred: false
+use_snapatac2_dimred: true
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
@@ -133,9 +133,9 @@ atac_drop_first_lsi: true
 atac_harmony_max_iter: 30
 atac_n_neighbors: 15
 atac_n_pcs: 30
-atac_leiden_resolution: 0.8
+atac_leiden_resolution: 0.5
 atac_existing_cell_types: False
-atac_n_target_cell_clusters: 3
+atac_n_target_cell_clusters: null
 atac_umap_min_dist: 0.3
 atac_umap_spread: 1.0
 atac_umap_random_state: 42
@@ -158,14 +158,14 @@ atac_show_sample_names: true
 atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
-preprocessing: true
-cell_type_cluster: true
+preprocessing: false
+cell_type_cluster: false
 sample_distance_calculation: false
-DimensionalityReduction: true
-trajectory_analysis: true
+DimensionalityReduction: false
+trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
-ATAC_data: false
+ATAC_data: true
 trajectory_analysis_atac: true
 visualize_data: false
 initialization: false

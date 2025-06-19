@@ -19,8 +19,7 @@ def integration_validation(adata_path, n_genes=5, output_dir='./'):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    adata_rna = adata
-    # [adata.obs['modality'] == 'RNA'].copy()
+    adata_rna = [adata.obs['modality'] == 'RNA'].copy()
     print(f"Found {adata_rna.n_obs} RNA cells, {len(adata_rna.obs['cell_type'].unique())} cell types")
     
     # === FIXED: Proper numerical sorting ===

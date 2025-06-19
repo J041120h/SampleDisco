@@ -9,6 +9,7 @@ import time
 from pseudobulk import compute_pseudobulk_dataframes
 from DR import process_anndata_with_pca
 from CellType import cell_types, cell_type_assign
+from pseudo_adata import compute_pseudobulk_adata 
 
 def find_optimal_cell_resolution(
     AnnData_cell,
@@ -45,7 +46,7 @@ def find_optimal_cell_resolution(
             verbose=False
         )
         cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
-        pseudobulk = compute_pseudobulk_dataframes(AnnData_sample, 'batch', sample_col, 'cell_type', output_dir)
+        pseudobulk = compute_pseudobulk_adata(AnnData_sample, 'batch', sample_col, 'cell_type', output_dir)
         process_anndata_with_pca(
             adata=AnnData_sample,
             pseudobulk=pseudobulk,

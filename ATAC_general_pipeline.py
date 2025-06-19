@@ -133,7 +133,7 @@ def run_scatac_pipeline(
     n_pcs=30,
     #Cell type clustering
     existing_cell_types = False,
-    n_target_clusters = 3,
+    n_target_clusters = None,
     cluster_resolution= 0.8,
     # UMAP
     umap_min_dist=0.3,

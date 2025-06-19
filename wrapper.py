@@ -59,7 +59,7 @@ def wrapper(
 
     # ===== Cell Type Clustering Parameters =====
     existing_cell_types=False,
-    n_target_cell_clusters = 5,
+    n_target_cell_clusters = None,
     umap=False,
     cell_type_save=True,
 
@@ -187,7 +187,7 @@ def wrapper(
     # Leiden clustering parameters
     atac_leiden_resolution = 0.8,
     atac_existing_cell_types = False,
-    atac_n_target_cell_clusters = 3 ,
+    atac_n_target_cell_clusters = None,
 
     # UMAP parameters
     atac_umap_min_dist = 0.3,
