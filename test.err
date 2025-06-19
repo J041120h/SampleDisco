@@ -1,13 +1,72 @@
-2025-06-19 12:09:55.330690: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-06-19 12:09:55.344056: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-06-19 18:00:37.649133: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-06-19 18:00:37.662441: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1750349395.358457 3619596 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1750349395.362749 3619596 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1750349395.374592 3619596 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750349395.374611 3619596 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750349395.374614 3619596 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750349395.374615 3619596 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-06-19 12:09:55.378132: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1750370437.676763 3651536 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1750370437.681045 3651536 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1750370437.692963 3651536 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750370437.692982 3651536 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750370437.692985 3651536 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750370437.692986 3651536 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-06-19 18:00:37.696488: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2025-06-19 12:12:24 - INFO - init
-Error: cannot reindex on an axis with duplicate labels
+2025-06-19 18:03:40 - INFO - Selected 40000 features.
+... storing 'sample' as categorical
+... storing 'disease severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+... storing 'cell_type_original' as categorical
+... storing 'sample' as categorical
+... storing 'disease severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+... storing 'disease severity' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+2025-06-19 18:08:07 - INFO - Selected 39600 features.

@@ -1,15 +1,15 @@
 ======================================
- Job ID:            17460244
+ Job ID:            17475709
  Job Name:          test
  Partition:         gpu
  Node List:         compute-170
  CPUs per Task:     16
  Memory Alloc:      819200
  GPU Requested:     1
- Start Time:        Thu Jun 19 12:09:44 PM EDT 2025
+ Start Time:        Thu Jun 19 06:00:26 PM EDT 2025
 ======================================
 Checking GPU status...
-Thu Jun 19 12:09:46 2025       
+Thu Jun 19 18:00:29 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -17,8 +17,8 @@ Thu Jun 19 12:09:46 2025
 | Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
-|   0  NVIDIA H100 NVL                Off |   00000000:D1:00.0 Off |                    0 |
-| N/A   41C    P0             89W /  400W |       1MiB /  95830MiB |      3%      Default |
+|   0  NVIDIA H100 NVL                Off |   00000000:E4:00.0 Off |                    0 |
+| N/A   44C    P0             90W /  400W |       1MiB /  95830MiB |      3%      Default |
 |                                         |                        |             Disabled |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -48,46 +48,158 @@ Linux system detected.
 Enabling managed memory for RMM...
 
 
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] Target: 3 clusters. Trying resolution: 0.9
-[cell_types] Leiden clustering produced 18 clusters.
-[cell_types] Got 18 clusters (>= target). Recursing with existing_cell_types=True...
-  [cell_types] Current number of cell types: 18
-  [cell_types] Aggregating 18 cell types into 3 clusters using dendrogram.
-  [cell_types] Using dimension reduction (X_pca_harmony) for dendrogram construction...
-=== Preparing data for dendrogram (using X_pca_harmony) ===
-Using first 20 components from X_pca_harmony
-=== Computing centroids of cell types in X_pca_harmony space ===
-Calculated centroids for 18 cell types.
-Centroid shape: (18, 20)
-=== Computing distance matrix between centroids using euclidean distance ===
-=== Performing hierarchical clustering on X_pca_harmony centroids ===
-Linkage method: average, Distance metric: euclidean
+[2025-06-19 18:02:28] True: ============================================================
+Starting scATAC-seq pipeline
+============================================================
+[2025-06-19 18:02:55] True: Loaded 88985 cells × 230356 features
+Merged 30 sample-level columns
+[2025-06-19 18:02:55] True: QC filtering
+[2025-06-19 18:03:02] True: Filtering samples with <500 cells
+[2025-06-19 18:03:05] True: Remaining cells: 79274
+[2025-06-19 18:03:07] True: TF-IDF normalisation
+[2025-06-19 18:03:30] True: Log1p transform
+[2025-06-19 18:03:31] INFO: Running snapATAC2 SVD with 30 components
+[2025-06-19 18:03:31] INFO: Converting data matrix to float32
+[2025-06-19 18:03:40] INFO: Filtering doublets (snapATAC2-Scrublet)
+[2025-06-19 18:03:40] INFO: snapATAC2-Scrublet compatibility issue – skipping.
+[2025-06-19 18:04:57] INFO: snapATAC2 dimensionality reduction complete
+[cell_types_atac] No cell type annotation found. Performing clustering.
+[cell_types_atac] Building neighborhood graph...
+[cell_types_atac] Target: 3 clusters. Trying resolution: 0.5
+[cell_types_atac] Leiden clustering produced 21 clusters.
+[cell_types_atac] Got 21 clusters (>= target). Recursing with existing_cell_types=True...
+  [cell_types_atac] Current number of cell types: 21
+  [cell_types_atac] Aggregating 21 cell types into 3 clusters using dendrogram.
+  [cell_types_atac] Using dimension reduction (X_DM_harmony) for dendrogram construction...
+=== Preparing data for dendrogram (using X_DM_harmony) ===
+Using first 30 components from X_DM_harmony
+=== Computing centroids of cell types in X_DM_harmony space ===
+Calculated centroids for 21 cell types.
+Centroid shape: (21, 30)
+=== Computing distance matrix between centroids using cosine distance ===
+=== Performing hierarchical clustering on X_DM_harmony centroids ===
+Linkage method: average, Distance metric: cosine
 === Aggregating cell types into 3 clusters ===
 Successfully created 3 clusters
 
 === Cluster Composition ===
-Cluster 1: 1, 13, 14, 16, 18, 4
-Cluster 2: 10, 11, 12, 15, 5, 6, 7, 8
-Cluster 3: 17, 2, 3, 9
+Cluster 1: 10, 11, 12, 13, 14, 17, 18, 21, 9
+Cluster 2: 1, 19, 2, 3, 4, 5, 6, 7, 8
+Cluster 3: 15, 16, 20
 
 === Cluster Quality Metrics ===
-Cluster 1: Average within-cluster distance = 10.0873
-Cluster 2: Average within-cluster distance = 11.5105
-Cluster 3: Average within-cluster distance = 11.5685
+Cluster 1: Average within-cluster distance = 0.0659
+Cluster 2: Average within-cluster distance = 0.0713
+Cluster 3: Average within-cluster distance = 0.1484
 
-Function execution time: 4.43 seconds
-  [cell_types] Successfully aggregated to 3 cell types.
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[safe_h5ad_write] Preparing to save to: /dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 45 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad
-[cell_types] Total runtime: 512.64 seconds
+Function execution time: 0.01 seconds
+  [cell_types_atac] Successfully aggregated to 3 cell types.
+[cell_types_atac] Finished assigning cell types.
+[standardize] Converted categorical to string format
+[standardize] Final cell types (n=3): ['1', '2', '3']
+[cell_types_atac] Total runtime: 9.79 seconds
+[2025-06-19 18:06:06] True: Writing H5AD …
+[2025-06-19 18:07:57] True: ============================================================
+[2025-06-19 18:07:57] True: Finished in 5.5 min
+Processing 3 cell types across 24 samples
+Creating layer for 1
+Creating layer for 2
+Creating layer for 3
+
+Processing cell type: 1
+Processing 24 cells × 230356 peaks
+Input matrix is dense
+Converting to sparse matrix...
+Computing TF...
+Computing IDF...
+Computing TF-IDF...
+Processed 24/24 cells
+Output matrix sparsity: 0.070
+  Selecting top 40000 HVGs
+  Selected 40000 HVGs
+
+Processing cell type: 2
+Processing 24 cells × 230355 peaks
+Input matrix is dense
+Converting to sparse matrix...
+Computing TF...
+Computing IDF...
+Computing TF-IDF...
+Processed 24/24 cells
+Output matrix sparsity: 0.115
+  Selecting top 40000 HVGs
+  Selected 40000 HVGs
+
+Processing cell type: 3
+Processing 24 cells × 230215 peaks
+Input matrix is dense
+Converting to sparse matrix...
+Computing TF...
+Computing IDF...
+Computing TF-IDF...
+Processed 24/24 cells
+Output matrix sparsity: 0.428
+  Selecting top 40000 HVGs
+  Selected 40000 HVGs
+
+Concatenating all cell type HVGs into single AnnData
+Applying final HVG selection on 120000 concatenated genes
+Final HVG selection: 40000 genes
+
+Creating final HVG expression matrix
+
+Total runtime: 9.64 seconds
+Final HVG matrix shape: (3, 24)
+Final AnnData shape: (24, 40000)
+[process_anndata_with_pca] Starting dimension reduction computation...
+[process_anndata_with_pca] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_pca] ATAC mode: Will try snapATAC2 spectral first, fallback to LSI if needed
+[process_anndata_with_pca] Using n_expression_pcs=23, n_proportion_pcs=3
+[DimRed] Computing snapATAC2 spectral (with LSI fallback) for ATAC data with 23 components on (24, 40000) data
+[snapATAC2] Computing spectral embedding with 23 components on (24, 40000) data
+[snapATAC2] Data preprocessing complete. Matrix type: <class 'numpy.ndarray'>, dtype: float32
+[snapATAC2] Failed: Cannot convert Array(F32) to f64 CsrMatrix
+[DimRed] snapATAC2 spectral failed, falling back to LSI...
+[LSI] Computing LSI with 23 components on (24, 40000) data
+[run_lsi_expression] Scanpy LSI failed: lsi
+[run_lsi_expression] Attempting manual LSI with TF-IDF
+[run_lsi_expression] Original shape: (24, 40000)
+[run_lsi_expression] TF-IDF matrix stats: shape=(24, 40000), min=-0.039589, max=0.047773, mean=0.001932
+[run_lsi_expression] Manual LSI computation successful. Shape: (24, 23)
+[run_lsi_expression] LSI result stats: min=-0.706045, max=0.666551
+[Storage] Stored X_lsi_expression_method in both adata and pseudobulk_anndata (shape: (24, 23))
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (24, 23))
+[DimRed] Successfully used LSI for ATAC dimension reduction
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[run_pca_proportion] PCA on cell proportions completed.
+Stored results as X_DR_proportion in both adata and pseudobulk_anndata with shape: (24, 3)
+[process_anndata_with_pca] AnnData with dimension reduction results saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/harmony/adata_sample.h5ad
+[process_anndata_with_pca] Pseudobulk AnnData with dimension reduction results saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk/pseudobulk_sample.h5ad
+[process_anndata_with_pca] Total runtime for dimension reduction: 119.66 seconds
+[process_anndata_with_pca] Results are now available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+Processing X_DR_proportion...
+
+The CCA score for X_DR_proportion is 0.3260
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_proportion.pdf
+Processing X_DR_expression...
+
+The CCA score for X_DR_expression is 0.5741
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_expression.pdf
+CCA analysis completed.
+
+[CCA] Total runtime: 0.56 seconds
+
+P-value for observed correlation 0.32595302424938705: 0.284
+[CCA p-test] Runtime: 0.90 seconds
+P-value for observed correlation 0.5740778476438327: 0.01
+[CCA p-test] Runtime: 0.90 seconds
+End of Process
+
 Finished main.py.
-End Time: Thu Jun 19 12:20:42 PM EDT 2025
+End Time: Thu Jun 19 06:10:12 PM EDT 2025
