@@ -52,7 +52,7 @@ pca_verbose: true
 trajectory_supervised: true
 cca_output_dir: null
 sev_col_cca: "sev.level"
-cca_optimal_cell_resolution: false
+cca_optimal_cell_resolution: true
 cca_pvalue: true
 trajectory_verbose: true
 TSCAN_origin: null
@@ -158,14 +158,14 @@ atac_visualization_age_size: null
 
 # ===== Process Control Flags =====
 preprocessing: false
-cell_type_cluster: true
+cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: true
 trajectory_analysis: true
 trajectory_differential_gene: false
 cluster_and_DGE: false
 ATAC_data: false
-trajectory_analysis_atac: true
+trajectory_analysis_atac: false
 visualize_data: false
 initialization: false
 use_gpu: true
