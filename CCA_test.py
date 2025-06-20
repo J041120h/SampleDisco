@@ -43,7 +43,6 @@ def find_optimal_cell_resolution(
     float
         Optimal resolution value
     """
-
     start_time = time.time()
     score_counter = dict()
 
@@ -219,16 +218,20 @@ def find_optimal_cell_resolution(
             else:
                 pca_coords_2d = pca_coords[:, :2]
             
-            # Get samples from the pseudobulk_adata
+            # Get samples and severity levels from pseudobulk_anndata
             samples = pseudobulk_adata.obs.index.values
 
-            # Load severity levels
-            sev_levels_2d = load_severity_levels(
-                summary_sample_csv_path, 
-                samples, 
-                sample_col=sample_col, 
-                sev_col=sev_col
-            )
+            # Get severity levels directly from pseudobulk_adata
+            if sev_col not in pseudobulk_adata.obs.columns:
+                continue
+                
+            sev_levels = pd.to_numeric(pseudobulk_adata.obs[sev_col], errors='coerce').values
+            missing = np.isnan(sev_levels).sum()
+            if missing > 0:
+                print(f"Warning: {missing} sample(s) missing severity level. Imputing with mean.")
+                sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
+            
+            sev_levels_2d = sev_levels.reshape(-1, 1)
             
             # Ensure matching dimensions
             if len(sev_levels_2d) != pca_coords_2d.shape[0]:

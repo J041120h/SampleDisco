@@ -516,20 +516,29 @@ def wrapper(
                         AnnData_cell = AnnData_cell,
                         AnnData_sample = AnnData_sample,
                         output_dir = cca_output_dir,
-                        summary_sample_csv_path = sample_meta_path,
-                        AnnData_sample_path = AnnData_sample_path,
                         column = "X_DR_proportion",
-                        sev_col = sev_col_cca,
                         sample_col = sample_col
                     )
                     find_optimal_cell_resolution_linux(
                         AnnData_cell = AnnData_cell,
                         AnnData_sample = AnnData_sample,
                         output_dir = cca_output_dir,
-                        summary_sample_csv_path = sample_meta_path,
-                        AnnData_sample_path = AnnData_sample_path,
                         column = "X_DR_expression",
-                        sev_col = sev_col_cca,
+                        sample_col = sample_col
+                    )
+                else:
+                    find_optimal_cell_resolution(
+                        AnnData_cell = AnnData_cell,
+                        AnnData_sample = AnnData_sample,
+                        output_dir = cca_output_dir,
+                        column = "X_DR_expression",
+                        sample_col = sample_col
+                    )
+                    find_optimal_cell_resolution(
+                        AnnData_cell = AnnData_cell,
+                        AnnData_sample = AnnData_sample,
+                        output_dir = cca_output_dir,
+                        column = "X_DR_expression",
                         sample_col = sample_col
                     )
             status_flags["trajectory_analysis"] = True

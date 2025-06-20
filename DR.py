@@ -516,6 +516,61 @@ def run_pca_proportion(
             print(f"[run_pca_proportion] PCA on cell proportions completed.")
             print(f"Stored results in adata.uns['X_DR_proportion'] with shape: {pca_df.shape}")
 
+def _save_anndata_with_detailed_error_handling(file_path, adata, object_name, verbose=False):
+    """
+    Save an AnnData object with detailed error handling and reporting.
+    
+    Parameters:
+    -----------
+    file_path : str
+        Full path where to save the file
+    adata : sc.AnnData
+        AnnData object to save
+    object_name : str
+        Name of the object for error reporting
+    verbose : bool
+        Whether to print detailed information
+        
+    Returns:
+    --------
+    bool
+        True if save was successful, False otherwise
+    """
+    try:
+        # Create directory if it doesn't exist
+        directory = os.path.dirname(file_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+            if verbose:
+                print(f"[Save] Created directory: {directory}")
+        
+        # Attempt to save
+        if verbose:
+            print(f"[Save] Saving {object_name} to: {file_path}")
+        
+        sc.write(file_path, adata)
+        
+        # Verify the file was created and has reasonable size
+        if os.path.exists(file_path):
+            file_size = os.path.getsize(file_path)
+            if file_size > 0:
+                if verbose:
+                    print(f"[Save] ✓ Successfully saved {object_name} ({file_size / (1024*1024):.1f} MB)")
+                return True
+            else:
+                if verbose:
+                    print(f"[Save] ✗ File was created but has zero size: {file_path}")
+                return False
+        else:
+            if verbose:
+                print(f"[Save] ✗ File was not created: {file_path}")
+            return False
+        
+    except Exception as e:
+        if verbose:
+            print(f"[Save] ✗ Unexpected error saving {object_name}: {str(e)}")
+        return False
+
 
 def process_anndata_with_pca(
     adata: sc.AnnData, 
@@ -557,6 +612,8 @@ def process_anndata_with_pca(
         Number of components for proportion dimension reduction
     output_dir : str, default "./"
         Output directory for saving results
+    integrated_data : bool, default False
+        Whether this is integrated multimodal data
     not_save : bool, default False
         If True, skip saving files
     atac : bool, default False
@@ -587,20 +644,32 @@ def process_anndata_with_pca(
         else:
             print("[process_anndata_with_pca] RNA mode: Will use PCA for expression data")
     
-    # Create output directory
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        if verbose:
-            print(f"Created output directory: {output_dir}")
+    # Validate and create output directory structure
+    output_dir = os.path.abspath(output_dir)  # Convert to absolute path
     
+    # Determine directory structure based on data type
     if not integrated_data:
         count_output_dir = os.path.join(output_dir, "harmony")
         pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
-        os.makedirs(output_dir, exist_ok=True)
     else:
         count_output_dir = os.path.join(output_dir, "preprocess")
         pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
-        os.makedirs(output_dir, exist_ok=True)
+    
+    # Create directories early to catch permission issues
+    if not not_save:
+        try:
+            os.makedirs(count_output_dir, exist_ok=True)
+            os.makedirs(pseudobulk_output_dir, exist_ok=True)
+            if verbose:
+                print(f"[process_anndata_with_pca] ✓ Created output directories:")
+                print(f"  - count_output_dir: {count_output_dir}")
+                print(f"  - pseudobulk_output_dir: {pseudobulk_output_dir}")
+        except Exception as e:
+            if verbose:
+                print(f"[process_anndata_with_pca] ✗ Failed to create output directories: {str(e)}")
+            if not verbose:  # Always show critical errors
+                print(f"ERROR: Cannot create output directories: {str(e)}")
+            raise
     
     # Get data dimensions and adjust n_components accordingly
     sample_proportion_df = pseudobulk["cell_proportion"]
@@ -610,9 +679,15 @@ def process_anndata_with_pca(
     
     if verbose:
         print(f"[process_anndata_with_pca] Using n_expression_pcs={n_expression_pcs}, n_proportion_pcs={n_proportion_pcs}")
+        print(f"[process_anndata_with_pca] Data dimensions: expression={pseudobulk_anndata.shape}, proportion={sample_proportion_df.shape}")
+    
+    # Track what succeeded for better error reporting
+    expression_dr_successful = False
+    proportion_dr_successful = False
+    expression_error = None
+    proportion_error = None
     
     # Run dimension reduction on expression data
-    expression_dr_successful = False
     try:
         run_pca_expression(
             adata=adata, 
@@ -623,12 +698,14 @@ def process_anndata_with_pca(
             verbose=verbose
         )
         expression_dr_successful = True
-    except Exception as e:
         if verbose:
-            print(f"[process_anndata_with_pca] Warning: Expression dimension reduction failed ({str(e)}). Continuing with proportion dimension reduction.")
+            print("[process_anndata_with_pca] ✓ Expression dimension reduction completed successfully")
+    except Exception as e:
+        expression_error = str(e)
+        if verbose:
+            print(f"[process_anndata_with_pca] ✗ Expression dimension reduction failed: {expression_error}")
     
     # Run dimension reduction on proportion data
-    proportion_dr_successful = False
     try:
         run_pca_proportion(
             adata=adata, 
@@ -639,45 +716,84 @@ def process_anndata_with_pca(
             verbose=verbose
         )
         proportion_dr_successful = True
+        if verbose:
+            print("[process_anndata_with_pca] ✓ Proportion dimension reduction completed successfully")
     except Exception as e:
+        proportion_error = str(e)
         if verbose:
-            print(f"[process_anndata_with_pca] Warning: Proportion dimension reduction failed ({str(e)}).")
+            print(f"[process_anndata_with_pca] ✗ Proportion dimension reduction failed: {proportion_error}")
     
-    # Only save if at least one dimension reduction was successful
-    if not not_save and (expression_dr_successful or proportion_dr_successful):
-        if atac:
-            adata_path = os.path.join(count_output_dir, 'adata_sample.h5ad')
-            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')
-        elif integrated_data:
-            adata_path = os.path.join(count_output_dir, 'atac_rna_integrated.h5ad')
-            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')
-        else:
-            adata_path = os.path.join(count_output_dir, 'adata_sample.h5ad')
-            pb_adata_path = os.path.join(pseudobulk_output_dir, 'pseudobulk_sample.h5ad')
+    # Check if at least one dimension reduction succeeded
+    if not expression_dr_successful and not proportion_dr_successful:
+        error_msg = "Both expression and proportion dimension reduction failed.\n"
+        if expression_error:
+            error_msg += f"Expression error: {expression_error}\n"
+        if proportion_error:
+            error_msg += f"Proportion error: {proportion_error}"
+        raise RuntimeError(error_msg)
+    
+    # Save results if requested and at least one dimension reduction succeeded
+    if not not_save:
+        if verbose:
+            print("[process_anndata_with_pca] Preparing to save results...")
         
-        try:
-            os.makedirs(os.path.dirname(adata_path), exist_ok=True)
-            os.makedirs(os.path.dirname(pb_adata_path), exist_ok=True)
-            sc.write(adata_path, adata)
-            sc.write(pb_adata_path, pseudobulk_anndata)
-            if verbose:
-                print(f"[process_anndata_with_pca] AnnData with dimension reduction results saved to: {adata_path}")
-                print(f"[process_anndata_with_pca] Pseudobulk AnnData with dimension reduction results saved to: {pb_adata_path}")
-        except Exception as e:
-            if verbose:
-                print(f"[process_anndata_with_pca] Warning: Could not save file ({str(e)}).")
-    elif not not_save:
+        # Determine file names based on data type
+        if integrated_data:
+            adata_filename = 'atac_rna_integrated.h5ad'
+        else:
+            adata_filename = 'adata_sample.h5ad'
+        
+        pb_filename = 'pseudobulk_sample.h5ad'
+        
+        adata_path = os.path.join(count_output_dir, adata_filename)
+        pb_adata_path = os.path.join(pseudobulk_output_dir, pb_filename)
+        
         if verbose:
-            print("[process_anndata_with_pca] Warning: Skipping save because all dimension reduction methods failed.")
+            print(f"[process_anndata_with_pca] Target file paths:")
+            print(f"  - adata: {adata_path}")
+            print(f"  - pseudobulk_anndata: {pb_adata_path}")
+        
+        # Save with detailed error handling
+        adata_save_success = _save_anndata_with_detailed_error_handling(
+            adata_path, adata, "adata", verbose
+        )
+        
+        pb_save_success = _save_anndata_with_detailed_error_handling(
+            pb_adata_path, pseudobulk_anndata, "pseudobulk_anndata", verbose
+        )
+        
+        # Report save results
+        if adata_save_success and pb_save_success:
+            if verbose:
+                print("[process_anndata_with_pca] ✓ All files saved successfully")
+        elif adata_save_success or pb_save_success:
+            if verbose:
+                print(f"[process_anndata_with_pca] ⚠ Partial save success:")
+                print(f"  - adata: {'✓' if adata_save_success else '✗'}")
+                print(f"  - pseudobulk_anndata: {'✓' if pb_save_success else '✗'}")
+        else:
+            if verbose:
+                print("[process_anndata_with_pca] ✗ All file saves failed")
+            else:
+                print("WARNING: Failed to save processed data files")
     
+    # Final summary
     if verbose and start_time is not None:
         elapsed_time = time.time() - start_time
-        print(f"[process_anndata_with_pca] Total runtime for dimension reduction: {elapsed_time:.2f} seconds")
+        print(f"\n[process_anndata_with_pca] === SUMMARY ===")
+        print(f"Total runtime: {elapsed_time:.2f} seconds")
+        print(f"Expression dimension reduction: {'✓ SUCCESS' if expression_dr_successful else '✗ FAILED'}")
+        print(f"Proportion dimension reduction: {'✓ SUCCESS' if proportion_dr_successful else '✗ FAILED'}")
+        
         if expression_dr_successful or proportion_dr_successful:
-            print(f"[process_anndata_with_pca] Results are now available under unified keys:")
+            print(f"Results available under unified keys:")
             if expression_dr_successful:
                 print(f"  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns")
             if proportion_dr_successful:
                 print(f"  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns")
-
+        
+        if not not_save:
+            save_attempted = True
+            print(f"File saving: {'✓ ATTEMPTED' if save_attempted else 'SKIPPED'}")
+    
     return pseudobulk_anndata
