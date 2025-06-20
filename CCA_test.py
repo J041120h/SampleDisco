@@ -65,10 +65,6 @@ def process_single_resolution(
         adata_cell_copy = AnnData_cell.copy()
         adata_sample_copy = AnnData_sample.copy()
         
-        # Create a unique subdirectory for this resolution to avoid file conflicts
-        resolution_dir = os.path.join(output_dir, f"temp_res_{resolution:.3f}")
-        os.makedirs(resolution_dir, exist_ok=True)
-        
         # Clean up previous cell type assignments
         if 'cell_type' in adata_cell_copy.obs.columns:
             adata_cell_copy.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
@@ -271,7 +267,7 @@ def find_optimal_cell_resolution(
     print(f"\nFine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
     
     # Generate fine resolutions
-    fine_resolutions = np.arange(search_range_start, search_range_end + 0.001, 0.001)
+    fine_resolutions = np.arange(search_range_start, search_range_end + 0.001, 0.01)
     fine_resolutions = [round(r, 3) for r in fine_resolutions]
     
     # Batch processing for fine-tuning to avoid overwhelming the system
