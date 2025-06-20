@@ -562,7 +562,8 @@ def compute_pseudobulk_adata(
         atac=atac,
         verbose=verbose
     )
-    pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
+    if Save:
+        pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     final_adata = _extract_sample_metadata(
         cell_adata = adata,
         sample_adata = final_adata,

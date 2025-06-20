@@ -29,6 +29,7 @@ from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
 from ATAC_general_pipeline import *
 from ATAC_visualization import *
+from ATAC_CCA_test import *
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -164,23 +165,12 @@ def wrapper(
     atac_max_genes = 15000,
     atac_min_cells_per_sample = 10,
 
-    # Doublet detection
     atac_doublet = True,
-
-    # TF-IDF parameters
     atac_tfidf_scale_factor = 1e4,
-
-    # Highly variable genes parameters
-    atac_num_features = 2000,
-
-    # LSI/dimensionality reduction parameters
+    atac_num_features = 40000,
     atac_n_lsi_components = 30,
     atac_drop_first_lsi = True,
-
-    # Harmony parameters
     atac_harmony_max_iter = 30,
-
-    # Neighbors parameters
     atac_n_neighbors = 15,
     atac_n_pcs = 30,
 
@@ -193,9 +183,10 @@ def wrapper(
     atac_umap_min_dist = 0.3,
     atac_umap_spread = 1.0,
     atac_umap_random_state = 42,
-
-    # Output parameters
     atac_plot_dpi = 300,
+
+    atac_cell_path = None,
+    atac_sample_path = None,
 
     # Pseudobulk parameters
     atac_pseudobulk_n_features = 50000,
@@ -209,6 +200,7 @@ def wrapper(
     # Trajectory analysis parameters
     atac_cca_output_dir = None,
     trajectory_supervised_atac = True,
+    atac_cca_optimal_cell_resolution = False,
     #visualization parameters
     atac_figsize=(10, 8),
     atac_point_size=50, 
@@ -724,7 +716,7 @@ def wrapper(
         os.makedirs(atac_pca_output_dir, exist_ok=True)
 
         if atac_preprocessing:
-            atac_sample, atac_cluster = run_scatac_pipeline(
+            atac_sample, atac_cell = run_scatac_pipeline(
                 filepath=atac_file_path,
                 output_dir=atac_output_dir,
                 metadata_path=atac_metadata_path,
@@ -774,12 +766,16 @@ def wrapper(
                 # Output
                 plot_dpi=atac_plot_dpi,
             )
-
         else:
-            if os.path.isfile(os.path.join(atac_output_dir, "harmony", "ATAC_sample.h5ad")):
-                atac_sample = sc.read(os.path.join(atac_output_dir, "harmony", "ATAC_sample.h5ad"))
-            else:
-                raise FileNotFoundError(f"Preprocessed ATAC data not found at {os.path.join(atac_output_dir, 'harmony', 'ATAC_sample.h5ad')}. Please run the preprocessing step first.")
+            if not atac_cell_path or not atac_sample_path:
+                temp_cell_path = os.path.join(atac_output_dir, "harmony", "adata_cell.h5ad")
+                temp_sample_path = os.path.join(atac_output_dir, "harmony", "adata_sample.h5ad")
+                if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
+                    raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
+                AnnData_cell_path = temp_cell_path
+                AnnData_sample_path = temp_sample_path    
+            atac_cell = sc.read(AnnData_cell_path)
+            atac_sample = sc.read(AnnData_sample_path)
 
         if atac_pseudobulk_dimensionality_reduction:
             atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
@@ -836,6 +832,23 @@ def wrapper(
                 status_flags["trajectory_analysis"] = True
                 with open(status_file_path, 'w') as f:
                     json.dump(status_flags, f, indent=4)
+                
+                if atac_cca_optimal_cell_resolution:
+                    find_optimal_cell_resolution_atac(
+                        AnnData_cell = atac_cell,
+                        AnnData_sample = atac_sample,
+                        output_dir = atac_cca_output_dir,
+                        column = "X_DR_expression",
+                        sample_col = atac_sample_col
+                    )
+                    find_optimal_cell_resolution_atac(
+                        AnnData_cell = atac_cell,
+                        AnnData_sample = atac_sample,
+                        output_dir = atac_cca_output_dir,
+                        column = "X_DR_proportion",
+                        sample_col = atac_sample_col
+                    )
+                    
             else:
                 TSCAN_result_expression = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_expression", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)
                 TSCAN_result_proportion = TSCAN(AnnData_sample = AnnData_sample, column = "X_pca_proportion", n_clusters = 8, output_dir = output_dir, grouping_columns = trajectory_visualization_label, verbose = trajectory_verbose, origin=TSCAN_origin)

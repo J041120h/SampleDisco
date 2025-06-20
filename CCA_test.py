@@ -444,7 +444,7 @@ def cca_pvalue_test(
         Column name for severity levels in pseudo_adata.obs (default: "sev.level")
     verbose : bool
         Whether to print timing information (default: True)
-    
+        
     Returns:
     --------
     float
@@ -455,8 +455,10 @@ def cca_pvalue_test(
     import numpy as np
     import matplotlib.pyplot as plt
     from sklearn.cross_decomposition import CCA
+    from sklearn.preprocessing import LabelEncoder
     
     start_time = time.time() if verbose else None
+    
     output_directory = os.path.join(output_directory, "CCA_test")
     os.makedirs(output_directory, exist_ok=True)
     
@@ -473,18 +475,30 @@ def cca_pvalue_test(
         raise KeyError(f"pseudo_adata.obs must have a '{sev_col}' column.")
     
     # Get severity levels directly from pseudo_adata.obs
-    sev_levels = pseudo_adata.obs[sev_col].values
+    sev_levels = pseudo_adata.obs[sev_col]
     
     if len(sev_levels) != pca_coords_2d.shape[0]:
         raise ValueError("Mismatch between number of coordinate rows and number of samples.")
     
+    # Convert categorical/string severity levels to numerical values
+    if hasattr(sev_levels, 'cat'):  # pandas Categorical
+        # Use category codes for categorical data
+        sev_levels_numeric = sev_levels.cat.codes.values
+    elif sev_levels.dtype == 'object':  # string data
+        # Use LabelEncoder for string data
+        le = LabelEncoder()
+        sev_levels_numeric = le.fit_transform(sev_levels.values)
+    else:
+        # Already numeric
+        sev_levels_numeric = sev_levels.values
+    
     # Reshape for CCA (needs 2D array)
-    sev_levels_1d = sev_levels.flatten()
+    sev_levels_2d = sev_levels_numeric.reshape(-1, 1)
     
     # Perform permutation test
     simulated_scores = []
-    for _ in range(num_simulations):
-        permuted = np.random.permutation(sev_levels_1d).reshape(-1, 1)
+    for i in range(num_simulations):  # Fixed the syntax error here
+        permuted = np.random.permutation(sev_levels_numeric).reshape(-1, 1)
         cca = CCA(n_components=1)
         cca.fit(pca_coords_2d, permuted)
         U, V = cca.transform(pca_coords_2d, permuted)
@@ -498,7 +512,7 @@ def cca_pvalue_test(
     plt.figure(figsize=(8, 5))
     plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
     plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
-               label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
+                label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
     plt.xlabel('Simulated Correlation Scores')
     plt.ylabel('Frequency')
     plt.title('Permutation Test: CCA Correlations')
@@ -513,7 +527,6 @@ def cca_pvalue_test(
         f.write(f"P-value: {p_value}\n")
     
     print(f"P-value for observed correlation {input_correlation}: {p_value}")
-    
     if verbose:
         print(f"[CCA p-test] Runtime: {time.time() - start_time:.2f} seconds")
     

@@ -212,8 +212,6 @@ def run_scatac_pipeline(
         )
         atac.var['HVF'] = atac.var['highly_variable']
 
-        # atac.raw = atac.copy()            # ← removed to save RAM / IO
-
         log("Running LSI", verbose)
         ac.tl.lsi(atac, n_comps=n_lsi_components)
         if drop_first_lsi:
@@ -273,10 +271,15 @@ def run_scatac_pipeline(
             plt.savefig(os.path.join(output_dir, f"umap_{key}.png"),
                         dpi=plot_dpi); plt.close()
 
+    atac = clean_obs_for_saving(atac, verbose=verbose)
+    sc.write(os.path.join(output_dir, "adata_cell.h5ad"), atac)
+    log("Saved adata_cell.h5ad", verbose)
+
     # 10. Save
     log("Writing H5AD …", verbose)
     atac_sample.obs[cell_type_column] = atac.obs[cell_type_column].copy()
-    sc.write(os.path.join(output_dir, "ATAC_sample.h5ad"), atac_sample)
+    atac_sample = clean_obs_for_saving(atac_sample, verbose=verbose)
+    sc.write(os.path.join(output_dir, "adata_sample.h5ad"), atac_sample)
 
     # 11. Summary
     log("="*60, verbose)
