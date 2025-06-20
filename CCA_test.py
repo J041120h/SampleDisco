@@ -65,6 +65,9 @@ def process_single_resolution(
         adata_cell_copy = AnnData_cell.copy()
         adata_sample_copy = AnnData_sample.copy()
         
+        # Create a unique subdirectory for this resolution to avoid file conflicts
+        resolution_dir = output_dir
+        
         # Clean up previous cell type assignments
         if 'cell_type' in adata_cell_copy.obs.columns:
             adata_cell_copy.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
