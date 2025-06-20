@@ -9,169 +9,6 @@ import time
 from DR import process_anndata_with_pca
 from ATAC_cell_type import cell_types_atac, cell_type_assign_atac
 from pseudo_adata import compute_pseudobulk_adata
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
-from threading import Lock
-import warnings
-import copy
-from typing import Dict, Tuple, Optional
-import logging
-
-# Configure logging for better debugging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Global lock for thread-safe operations
-result_lock = Lock()
-
-def process_single_resolution_atac(
-    resolution: float,
-    AnnData_cell: AnnData,
-    AnnData_sample: AnnData,
-    output_dir: str,
-    column: str,
-    sev_col: str,
-    sample_col: str,
-    use_rep: str = 'X_DM_harmony',
-    num_DMs: int = 20,
-    verbose: bool = False
-) -> Tuple[float, Optional[float]]:
-    """
-    Process a single resolution value and return the CCA score for ATAC data.
-    
-    Parameters:
-    -----------
-    resolution : float
-        Clustering resolution to test
-    AnnData_cell : AnnData
-        Cell-level AnnData object (ATAC)
-    AnnData_sample : AnnData  
-        Sample-level AnnData object (ATAC)
-    output_dir : str
-        Output directory for results
-    column : str
-        Column name in adata.uns for dimension reduction results
-    sev_col : str
-        Column name for severity levels in pseudobulk_anndata.obs
-    sample_col : str
-        Column name for sample identifiers
-    use_rep : str
-        Representation to use for neighborhood graph (default: 'X_DM_harmony')
-    num_DMs : int
-        Number of diffusion map components for neighborhood graph
-    verbose : bool
-        Whether to print detailed progress
-        
-    Returns:
-    --------
-    Tuple[float, Optional[float]]
-        Resolution value and CCA score (None if error)
-    """
-    try:
-        # Create deep copies to avoid thread conflicts
-        adata_cell_copy = AnnData_cell.copy()
-        adata_sample_copy = AnnData_sample.copy()
-        
-        # Create a unique subdirectory for this resolution to avoid file conflicts
-        resolution_dir = output_dir
-        
-        # Clean up previous cell type assignments
-        if 'cell_type' in adata_cell_copy.obs.columns:
-            adata_cell_copy.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-        if 'cell_type' in adata_sample_copy.obs.columns:
-            adata_sample_copy.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-        
-        # Perform clustering using ATAC-specific function
-        cell_types_atac(
-            adata_cell_copy,
-            cell_column='cell_type',
-            Save=False,
-            output_dir=resolution_dir,
-            cluster_resolution=resolution,
-            use_rep=use_rep,
-            peaks=None,
-            method='average',
-            metric='euclidean',
-            distance_mode='centroid',
-            num_DMs=num_DMs,
-            verbose=verbose
-        )
-        
-        # Assign cell types to samples using ATAC-specific function
-        cell_type_assign_atac(adata_cell_copy, adata_sample_copy, Save=False, 
-                             output_dir=resolution_dir, verbose=verbose)
-        
-        # Compute pseudobulk data
-        pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
-            adata=adata_sample_copy, 
-            batch_col='batch', 
-            sample_col=sample_col, 
-            celltype_col='cell_type', 
-            output_dir=resolution_dir,
-            Save=False,
-            verbose=verbose
-        )
-        
-        # Perform dimension reduction
-        process_anndata_with_pca(
-            adata=adata_sample_copy,
-            pseudobulk=pseudobulk_dict,
-            pseudobulk_anndata=pseudobulk_adata,
-            sample_col=sample_col,
-            output_dir=resolution_dir,
-            not_save=True,
-            verbose=verbose
-        )
-
-        # Get dimension reduction coordinates
-        if column not in adata_sample_copy.uns:
-            logger.warning(f"Column {column} not found in AnnData.uns for resolution {resolution:.3f}")
-            return resolution, None
-            
-        coords = adata_sample_copy.uns[column]
-        if hasattr(coords, 'iloc'):
-            coords_2d = coords.iloc[:, :2].values
-        else:
-            coords_2d = coords[:, :2]
-        
-        # Get severity levels
-        if sev_col not in pseudobulk_adata.obs.columns:
-            logger.warning(f"Severity column {sev_col} not found for resolution {resolution:.3f}")
-            return resolution, None
-            
-        sev_levels = pd.to_numeric(pseudobulk_adata.obs[sev_col], errors='coerce').values
-        missing = np.isnan(sev_levels).sum()
-        if missing > 0:
-            if verbose:
-                logger.info(f"Imputing {missing} missing severity values for resolution {resolution:.3f}")
-            sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
-        
-        sev_levels_2d = sev_levels.reshape(-1, 1)
-        
-        # Ensure matching dimensions
-        if len(sev_levels_2d) != coords_2d.shape[0]:
-            logger.warning(f"Dimension mismatch at resolution {resolution:.3f}")
-            return resolution, None
-        
-        # Perform CCA
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            cca = CCA(n_components=1)
-            cca.fit(coords_2d, sev_levels_2d)
-            U, V = cca.transform(coords_2d, sev_levels_2d)
-            first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-        
-        # Clean up temporary directory
-        try:
-            import shutil
-            shutil.rmtree(resolution_dir)
-        except:
-            pass
-            
-        return resolution, first_component_score
-        
-    except Exception as e:
-        logger.error(f"Error processing resolution {resolution:.3f}: {str(e)}")
-        return resolution, None
 
 def find_optimal_cell_resolution_atac(
     AnnData_cell: AnnData,
@@ -181,14 +18,11 @@ def find_optimal_cell_resolution_atac(
     sev_col: str = "sev.level",
     sample_col: str = "sample",
     use_rep: str = 'X_DM_harmony',
-    num_DMs: int = 20,
-    n_threads: int = None,
-    use_processes: bool = False,
-    verbose: bool = True
+    num_DMs: int = 20
 ) -> float:
     """
     Find optimal clustering resolution by maximizing CCA correlation between 
-    dimension reduction and severity levels using multithreading for ATAC data.
+    dimension reduction and severity levels for ATAC data.
     
     Parameters:
     -----------
@@ -208,12 +42,6 @@ def find_optimal_cell_resolution_atac(
         Representation to use for neighborhood graph (default: 'X_DM_harmony')
     num_DMs : int
         Number of diffusion map components for neighborhood graph
-    n_threads : int, optional
-        Number of threads to use. If None, uses CPU count
-    use_processes : bool
-        Whether to use processes instead of threads (for CPU-bound operations)
-    verbose : bool
-        Whether to print detailed progress
         
     Returns:
     --------
@@ -221,54 +49,105 @@ def find_optimal_cell_resolution_atac(
         Optimal resolution value
     """
     start_time = time.time()
-    score_counter = {}
-    
-    if n_threads is None:
-        n_threads = os.cpu_count() or 4
-    
+    score_counter = dict()
+
     print(f"Starting ATAC resolution optimization for {column}...")
-    print(f"Using {n_threads} {'processes' if use_processes else 'threads'}")
     print(f"Using representation: {use_rep} with {num_DMs} components")
     print(f"Testing resolutions from 0.01 to 1.00...")
 
-    # Create executor (process or thread based)
-    ExecutorClass = ProcessPoolExecutor if use_processes else ThreadPoolExecutor
-    
     # First pass: coarse search
-    coarse_resolutions = np.arange(0.1, 1.01, 0.1)
-    
-    with ExecutorClass(max_workers=n_threads) as executor:
-        # Submit all tasks
-        future_to_resolution = {
-            executor.submit(
-                process_single_resolution_atac,
-                resolution,
-                AnnData_cell,
-                AnnData_sample,
-                output_dir,
-                column,
-                sev_col,
-                sample_col,
-                use_rep,
-                num_DMs,
-                verbose
-            ): resolution
-            for resolution in coarse_resolutions
-        }
+    for resolution in np.arange(0.1, 1.01, 0.1):
+        print(f"\n\nTesting resolution: {resolution:.2f}\n")
         
-        # Collect results as they complete
-        for future in as_completed(future_to_resolution):
-            resolution = future_to_resolution[future]
-            try:
-                res, score = future.result()
-                if score is not None:
-                    with result_lock:
-                        score_counter[res] = score
-                    print(f"Resolution {res:.2f}: CCA Score = {score:.4f}")
-                else:
-                    print(f"Resolution {res:.2f}: Failed to compute score")
-            except Exception as exc:
-                print(f"Resolution {resolution:.2f} generated an exception: {exc}")
+        try:
+            # Clean up previous cell type assignments
+            if 'cell_type' in AnnData_cell.obs.columns:
+                AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+            if 'cell_type' in AnnData_sample.obs.columns:
+                AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+            
+            # Perform clustering using ATAC-specific function
+            cell_types_atac(
+                AnnData_cell,
+                cell_column='cell_type',
+                Save=False,
+                output_dir=output_dir,
+                cluster_resolution=resolution,
+                use_rep=use_rep,
+                peaks=None,
+                method='average',
+                metric='euclidean',
+                distance_mode='centroid',
+                num_DMs=num_DMs,
+                verbose=False
+            )
+            
+            # Assign cell types to samples using ATAC-specific function
+            cell_type_assign_atac(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
+            
+            # Compute pseudobulk data using updated function
+            pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
+                adata=AnnData_sample, 
+                batch_col='batch', 
+                sample_col=sample_col, 
+                celltype_col='cell_type', 
+                output_dir=output_dir,
+                Save = False,
+                verbose=False
+            )
+            
+            # Perform dimension reduction using updated function
+            process_anndata_with_pca(
+                adata=AnnData_sample,
+                pseudobulk=pseudobulk_dict,
+                pseudobulk_anndata=pseudobulk_adata,
+                sample_col=sample_col,
+                output_dir=output_dir,
+                not_save=True,
+                verbose=False
+            )
+
+            # Get coordinates from the updated location
+            if column not in AnnData_sample.uns:
+                print(f"Warning: {column} not found in AnnData_sample.uns. Skipping resolution {resolution:.2f}")
+                continue
+                
+            coords = AnnData_sample.uns[column]
+            if hasattr(coords, 'iloc'):
+                coords_2d = coords.iloc[:, :2].values
+            else:
+                coords_2d = coords[:, :2]
+            
+            # Get severity levels directly from pseudobulk_adata
+            if sev_col not in pseudobulk_adata.obs.columns:
+                print(f"Warning: {sev_col} not found in pseudobulk_adata.obs. Skipping resolution {resolution:.2f}")
+                continue
+                
+            sev_levels = pd.to_numeric(pseudobulk_adata.obs[sev_col], errors='coerce').values
+            missing = np.isnan(sev_levels).sum()
+            if missing > 0:
+                print(f"Warning: {missing} sample(s) missing severity level. Imputing with mean.")
+                sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
+            
+            sev_levels_2d = sev_levels.reshape(-1, 1)
+            
+            # Ensure matching dimensions
+            if len(sev_levels_2d) != coords_2d.shape[0]:
+                print(f"Warning: Dimension mismatch at resolution {resolution:.2f}. Skipping.")
+                continue
+            
+            # Perform CCA
+            cca = CCA(n_components=1)
+            cca.fit(coords_2d, sev_levels_2d)
+            U, V = cca.transform(coords_2d, sev_levels_2d)
+            first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+            
+            print(f"Resolution {resolution:.2f}: CCA Score = {first_component_score:.4f}")
+            score_counter[resolution] = first_component_score
+            
+        except Exception as e:
+            print(f"Error at resolution {resolution:.2f}: {str(e)}")
+            continue
 
     if not score_counter:
         raise ValueError("No valid CCA scores obtained. Check your ATAC data and parameters.")
@@ -279,52 +158,104 @@ def find_optimal_cell_resolution_atac(
     print(f"Best CCA score: {score_counter[best_resolution]:.4f}")
 
     # Second pass: fine-tuned search around best resolution
-    fine_score_counter = {}
+    fine_score_counter = dict()
     search_range_start = max(0.01, best_resolution - 0.05)
     search_range_end = min(1.00, best_resolution + 0.05)
     
     print(f"\nFine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
-    
-    # Generate fine resolutions
-    fine_resolutions = np.arange(search_range_start, search_range_end + 0.001, 0.01)
-    fine_resolutions = [round(r, 3) for r in fine_resolutions]
-    
-    # Batch processing for fine-tuning to avoid overwhelming the system
-    batch_size = min(n_threads * 2, len(fine_resolutions))
-    
-    with ExecutorClass(max_workers=n_threads) as executor:
-        for i in range(0, len(fine_resolutions), batch_size):
-            batch = fine_resolutions[i:i + batch_size]
+
+    for resolution in np.arange(search_range_start, search_range_end + 0.001, 0.01):
+        resolution = round(resolution, 3)  # Avoid floating point precision issues
+        
+        try:
+            # Clean up previous cell type assignments
+            if 'cell_type' in AnnData_cell.obs.columns:
+                AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
+            if 'cell_type' in AnnData_sample.obs.columns:
+                AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
             
-            future_to_resolution = {
-                executor.submit(
-                    process_single_resolution_atac,
-                    resolution,
-                    AnnData_cell,
-                    AnnData_sample,
-                    output_dir,
-                    column,
-                    sev_col,
-                    sample_col,
-                    use_rep,
-                    num_DMs,
-                    False  # Less verbose for fine-tuning
-                ): resolution
-                for resolution in batch
-            }
+            # Perform clustering using ATAC-specific function
+            cell_types_atac(
+                AnnData_cell,
+                cell_column='cell_type',
+                Save=False,
+                output_dir=output_dir,
+                cluster_resolution=resolution,
+                use_rep=use_rep,
+                peaks=None,
+                method='average',
+                metric='euclidean',
+                distance_mode='centroid',
+                num_DMs=num_DMs,
+                verbose=False
+            )
             
-            for future in as_completed(future_to_resolution):
-                resolution = future_to_resolution[future]
-                try:
-                    res, score = future.result()
-                    if score is not None:
-                        with result_lock:
-                            fine_score_counter[res] = score
-                        if verbose:
-                            print(f"Fine-tuned Resolution {res:.3f}: Score {score:.4f}")
-                except Exception as exc:
-                    if verbose:
-                        print(f"Fine-tuned resolution {resolution:.3f} generated an exception: {exc}")
+            # Assign cell types to samples using ATAC-specific function
+            cell_type_assign_atac(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
+            
+            # Compute pseudobulk data using updated function
+            pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
+                adata=AnnData_sample, 
+                batch_col='batch', 
+                sample_col=sample_col, 
+                celltype_col='cell_type', 
+                output_dir=output_dir,
+                Save = False,
+                verbose=False
+            )
+            
+            # Perform dimension reduction using updated function
+            process_anndata_with_pca(
+                adata=AnnData_sample,
+                pseudobulk=pseudobulk_dict,
+                pseudobulk_anndata=pseudobulk_adata,
+                sample_col=sample_col,
+                output_dir=output_dir,
+                not_save=True,
+                verbose=False
+            )
+
+            # Get coordinates
+            if column not in AnnData_sample.uns:
+                continue
+                
+            coords = AnnData_sample.uns[column]
+            if hasattr(coords, 'iloc'):
+                coords_2d = coords.iloc[:, :2].values
+            else:
+                coords_2d = coords[:, :2]
+            
+            # Get samples and severity levels from pseudobulk_adata
+            samples = pseudobulk_adata.obs.index.values
+
+            # Get severity levels directly from pseudobulk_adata
+            if sev_col not in pseudobulk_adata.obs.columns:
+                continue
+                
+            sev_levels = pd.to_numeric(pseudobulk_adata.obs[sev_col], errors='coerce').values
+            missing = np.isnan(sev_levels).sum()
+            if missing > 0:
+                print(f"Warning: {missing} sample(s) missing severity level. Imputing with mean.")
+                sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
+            
+            sev_levels_2d = sev_levels.reshape(-1, 1)
+            
+            # Ensure matching dimensions
+            if len(sev_levels_2d) != coords_2d.shape[0]:
+                continue
+            
+            # Perform CCA
+            cca = CCA(n_components=1)
+            cca.fit(coords_2d, sev_levels_2d)
+            U, V = cca.transform(coords_2d, sev_levels_2d)
+            first_component_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+
+            print(f"Fine-tuned Resolution {resolution:.3f}: Score {first_component_score:.4f}")
+            fine_score_counter[resolution] = first_component_score
+            
+        except Exception as e:
+            print(f"Error at fine-tuned resolution {resolution:.3f}: {str(e)}")
+            continue
 
     if not fine_score_counter:
         print("Warning: Fine-tuning failed. Using coarse search results.")
@@ -341,7 +272,7 @@ def find_optimal_cell_resolution_atac(
     df_results = pd.DataFrame(final_results.items(), columns=["resolution", "score"])
     df_results = df_results.sort_values("resolution")
 
-    output_dir_results = os.path.join(output_dir, "CCA_test_atac")
+    output_dir_results = os.path.join(output_dir, "CCA_test")
     os.makedirs(output_dir_results, exist_ok=True)
     
     to_csv_path = os.path.join(output_dir_results, f"resolution_scores_atac_{column}.csv")
@@ -370,77 +301,6 @@ def find_optimal_cell_resolution_atac(
 
     return final_best_resolution
 
-
-# Additional utility function for running multiple columns in parallel for ATAC
-def find_optimal_resolutions_multiple_columns_atac(
-    AnnData_cell: AnnData,
-    AnnData_sample: AnnData,
-    output_dir: str,
-    columns: list,
-    sev_col: str = "sev.level",
-    sample_col: str = "sample",
-    use_rep: str = 'X_DM_harmony',
-    num_DMs: int = 20,
-    n_threads: int = None,
-    use_processes: bool = False
-) -> Dict[str, float]:
-    """
-    Find optimal resolutions for multiple columns in parallel for ATAC data.
-    
-    Parameters:
-    -----------
-    columns : list
-        List of column names to process
-    use_rep : str
-        Representation to use for neighborhood graph (default: 'X_DM_harmony')
-    num_DMs : int
-        Number of diffusion map components for neighborhood graph
-    Other parameters same as find_optimal_cell_resolution_atac
-    
-    Returns:
-    --------
-    Dict[str, float]
-        Dictionary mapping column names to optimal resolutions
-    """
-    results = {}
-    
-    # Use half the threads for column-level parallelism, half for resolution-level
-    if n_threads is None:
-        n_threads = os.cpu_count() or 4
-    
-    column_threads = max(1, n_threads // 2)
-    resolution_threads = max(1, n_threads // len(columns)) if len(columns) > 1 else n_threads
-    
-    with ThreadPoolExecutor(max_workers=column_threads) as executor:
-        future_to_column = {
-            executor.submit(
-                find_optimal_cell_resolution_atac,
-                AnnData_cell,
-                AnnData_sample,
-                output_dir,
-                column,
-                sev_col,
-                sample_col,
-                use_rep,
-                num_DMs,
-                resolution_threads,
-                use_processes
-            ): column
-            for column in columns
-        }
-        
-        for future in as_completed(future_to_column):
-            column = future_to_column[future]
-            try:
-                optimal_res = future.result()
-                results[column] = optimal_res
-                print(f"Completed ATAC optimization for {column}: {optimal_res:.3f}")
-            except Exception as exc:
-                print(f"Column {column} generated an exception: {exc}")
-                results[column] = None
-    
-    return results
-
 def cca_pvalue_test_atac(
     pseudo_adata: AnnData,
     column: str,
@@ -451,15 +311,15 @@ def cca_pvalue_test_atac(
     verbose: bool = True
 ):
     """
-    Perform CCA p-value test using pseudo anndata (sample by peak) for ATAC data.
+    Perform CCA p-value test using pseudo anndata (sample by gene) for ATAC data.
     
     Parameters:
     -----------
     pseudo_adata : AnnData
-        Pseudo anndata object where observations are samples and variables are peaks.
+        Pseudo anndata object where observations are samples and variables are genes.
         Must contain severity levels in pseudo_adata.obs[sev_col].
     column : str
-        Key in pseudo_adata.uns containing the coordinates (e.g., diffusion map coordinates)
+        Key in pseudo_adata.uns containing the coordinates (e.g., PCA coordinates)
     input_correlation : float
         Observed correlation to test against
     output_directory : str
@@ -483,7 +343,7 @@ def cca_pvalue_test_atac(
     from sklearn.cross_decomposition import CCA
     
     start_time = time.time() if verbose else None
-    output_directory = os.path.join(output_directory, "CCA_test_atac")
+    output_directory = os.path.join(output_directory, "CCA_test")
     os.makedirs(output_directory, exist_ok=True)
     
     # Extract coordinates from pseudo_adata.uns
@@ -535,11 +395,10 @@ def cca_pvalue_test_atac(
     
     # Save results to file
     with open(os.path.join(output_directory, f"cca_pvalue_result_atac_{column}.txt"), "w") as f:
-        f.write(f"ATAC data analysis\n")
         f.write(f"Observed correlation: {input_correlation}\n")
         f.write(f"P-value: {p_value}\n")
     
-    print(f"ATAC P-value for observed correlation {input_correlation}: {p_value}")
+    print(f"P-value for observed correlation {input_correlation}: {p_value}")
     
     if verbose:
         print(f"[CCA p-test ATAC] Runtime: {time.time() - start_time:.2f} seconds")

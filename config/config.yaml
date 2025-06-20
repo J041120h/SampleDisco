@@ -113,9 +113,6 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_preprocessing: true
-atac_pseudobulk_dimensionality_reduction: true
-atac_visualization_processing: false
   
 atac_file_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC.h5ad"
 atac_output_dir: null
@@ -156,7 +153,7 @@ atac_pca_verbose: true
 
 atac_cca_output_dir: null
 trajectory_supervised_atac: true
-atac_cca_optimal_cell_resolution: false
+atac_cca_optimal_cell_resolution: true
 
 atac_figsize: [10, 8]  
 atac_point_size: 50
@@ -170,11 +167,16 @@ preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: false
-trajectory_analysis: true
+trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
-ATAC_data: false
+
+ATAC_data: true
 trajectory_analysis_atac: true
+atac_preprocessing: false
+atac_pseudobulk_dimensionality_reduction: false
+atac_visualization_processing: false
+
 visualize_data: false
 initialization: false
 use_gpu: false

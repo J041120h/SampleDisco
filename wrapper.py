@@ -367,7 +367,7 @@ def wrapper(
         status_flags["preprocessing"] = True
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
-    else:
+    elif not ATAC_data:
         if not status_flags["preprocessing"]:
             raise ValueError("Preprocessing is skipped, but no preprocessed data found.")
         if not AnnData_cell_path or not AnnData_sample_path:
@@ -380,12 +380,13 @@ def wrapper(
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
 
-    if sample_col != 'sample':
-        AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
-    if batch_col != 'batch':
-        AnnData_sample.obs.rename(columns={batch_col: 'batch'}, inplace=True)
-    sample_col = 'sample'
-    batch_col = 'batch'
+    if not ATAC_data:
+        if sample_col != 'sample':
+            AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
+        if batch_col != 'batch':
+            AnnData_sample.obs.rename(columns={batch_col: 'batch'}, inplace=True)
+        sample_col = 'sample'
+        batch_col = 'batch'
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
         if linux_system:
