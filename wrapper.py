@@ -538,7 +538,7 @@ def wrapper(
                         AnnData_cell = AnnData_cell,
                         AnnData_sample = AnnData_sample,
                         output_dir = cca_output_dir,
-                        column = "X_DR_expression",
+                        column = "X_DR_proportion",
                         sample_col = sample_col
                     )
             status_flags["trajectory_analysis"] = True
