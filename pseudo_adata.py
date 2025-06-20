@@ -531,6 +531,7 @@ def compute_pseudobulk_adata(
     sample_col: str = 'sample',
     celltype_col: str = 'cell_type',
     output_dir: str = './',
+    Save = True,
     n_features: int = 2000,
     normalize: bool = True,
     target_sum: float = 1e4,
@@ -567,7 +568,8 @@ def compute_pseudobulk_adata(
         sample_adata = final_adata,
         sample_col = sample_col,
     )
-    sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
+    if Save:
+        sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
     
     # Create backward-compatible dictionary matching original output
     pseudobulk = {

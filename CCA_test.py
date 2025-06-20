@@ -6,7 +6,6 @@ import os
 import matplotlib.pyplot as plt
 from anndata import AnnData
 import time
-from pseudobulk import compute_pseudobulk_dataframes
 from DR import process_anndata_with_pca
 from CellType import cell_types, cell_type_assign
 from pseudo_adata import compute_pseudobulk_adata 
@@ -50,7 +49,7 @@ def find_optimal_cell_resolution(
     print(f"Testing resolutions from 0.01 to 1.00...")
 
     # First pass: coarse search
-    for resolution in np.arange(0.01, 1.01, 0.01):
+    for resolution in np.arange(0.1, 1.01, 0.1):
         print(f"\n\nTesting resolution: {resolution:.2f}\n")
         
         try:
@@ -85,6 +84,7 @@ def find_optimal_cell_resolution(
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
                 output_dir=output_dir,
+                Save = False,
                 verbose=False
             )
             
@@ -109,10 +109,6 @@ def find_optimal_cell_resolution(
                 pca_coords_2d = pca_coords.iloc[:, :2].values
             else:
                 pca_coords_2d = pca_coords[:, :2]
-            
-            # Get samples and severity levels from pseudobulk_anndata
-            samples = pseudobulk_adata.obs.index.values
-            
             # Get severity levels directly from pseudobulk_adata
             if sev_col not in pseudobulk_adata.obs.columns:
                 print(f"Warning: {sev_col} not found in pseudobulk_adata.obs. Skipping resolution {resolution:.2f}")
@@ -194,6 +190,7 @@ def find_optimal_cell_resolution(
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
                 output_dir=output_dir,
+                Save = False,
                 verbose=False
             )
             
