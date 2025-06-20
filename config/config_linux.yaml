@@ -107,10 +107,6 @@ plot_pseudobulk_batch_test_expression_flag: false
 plot_pseudobulk_batch_test_proportion_flag: false
 
 # ===== ATAC-seq Pipeline Parameters =====
-atac_preprocessing: true
-atac_pseudobulk_dimensionality_reduction: false
-atac_visualization_processing: false
-
 atac_file_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
 atac_output_dir: null
 atac_metadata_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
@@ -168,8 +164,13 @@ DimensionalityReduction: false
 trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
+
 ATAC_data: true
-trajectory_analysis_atac: false
+trajectory_analysis_atac: true
+atac_preprocessing: false
+atac_pseudobulk_dimensionality_reduction: false
+atac_visualization_processing: false
+
 visualize_data: false
 initialization: false
 use_gpu: true
