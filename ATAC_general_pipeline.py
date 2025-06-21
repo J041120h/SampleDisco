@@ -237,6 +237,8 @@ def run_scatac_pipeline(
 
     # 10. Save
     log("Writing H5AD …", verbose)
+    atac_sample.obsm['X_DM_harmony'] = atac.obsm['X_DM_harmony'].copy()
+    atac_sample.obsm['X_umap'] = atac.obsm['X_umap'].copy()
     atac_sample = clean_obs_for_saving(atac_sample, verbose=verbose)
     sc.write(os.path.join(output_dir, "adata_sample.h5ad"), atac_sample)
 
