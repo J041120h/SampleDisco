@@ -131,7 +131,7 @@ atac_n_neighbors: 15
 atac_n_pcs: 30
 atac_leiden_resolution: 0.96
 atac_existing_cell_types: False
-atac_n_target_cell_clusters: 3
+atac_n_target_cell_clusters: null
 atac_umap_min_dist: 0.3
 atac_umap_spread: 1.0
 atac_umap_random_state: 42

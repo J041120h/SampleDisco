@@ -568,7 +568,7 @@ def cell_types_atac(
         if Save and output_dir:
             output_dir = os.path.join(output_dir, 'harmony')
             os.makedirs(output_dir, exist_ok=True)
-            save_path = os.path.join(output_dir, 'adata_cell.h5ad')
+            save_path = os.path.join(output_dir, 'adata_sample.h5ad')
             
             # Use safe saving method
             safe_h5ad_write(adata, save_path, verbose=verbose)
