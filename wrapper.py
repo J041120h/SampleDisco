@@ -10,7 +10,6 @@ import subprocess
 import sys
 import platform
 import shutil
-from pseudobulk import compute_pseudobulk_dataframes
 from pseudo_adata import compute_pseudobulk_adata
 from Harmony import harmony
 from EMD import EMD_distances
@@ -778,9 +777,10 @@ def wrapper(
             cluster_resolution=atac_leiden_resolution,
             use_rep='X_DM_harmony',
             method='average', 
-            metric='cosine', 
+            metric='euclidean', 
             distance_mode='centroid',
             num_DMs=atac_n_lsi_components, 
+            output_dir = atac_output_dir,
             verbose=verbose
         )
 
@@ -819,6 +819,16 @@ def wrapper(
                 if cca_pvalue:
                     cca_pvalue_test(
                         pseudo_adata = pseudobulk_anndata,
+                        column = "X_DR_expression",
+                        input_correlation = first_component_score_expression,
+                        output_directory = atac_cca_output_dir,
+                        num_simulations = 1000,
+                        sev_col = sev_col_cca,
+                        verbose = trajectory_verbose
+                    )
+                    
+                    cca_pvalue_test(
+                        pseudo_adata = pseudobulk_anndata,
                         column = "X_DR_proportion",
                         input_correlation = first_component_score_proportion,
                         output_directory = atac_cca_output_dir,
@@ -827,15 +837,6 @@ def wrapper(
                         verbose = trajectory_verbose
                     )
 
-                    cca_pvalue_test(
-                        pseudo_adata = pseudobulk_anndata,
-                        column = "X_DR_expression",
-                        input_correlation = first_component_score_expression,
-                        output_directory = atac_cca_output_dir,
-                        num_simulations = 1000,
-                        sev_col = sev_col_cca,
-                        verbose = trajectory_verbose
-                    )
                 status_flags["trajectory_analysis"] = True
                 with open(status_file_path, 'w') as f:
                     json.dump(status_flags, f, indent=4)
@@ -846,14 +847,16 @@ def wrapper(
                         AnnData_sample = atac_sample,
                         output_dir = atac_cca_output_dir,
                         column = "X_DR_expression",
-                        sample_col = atac_sample_col
+                        sample_col = atac_sample_col,
+                        batch_col = atac_batch_col
                     )
                     find_optimal_cell_resolution_atac(
                         AnnData_cell = atac_cell,
                         AnnData_sample = atac_sample,
                         output_dir = atac_cca_output_dir,
                         column = "X_DR_proportion",
-                        sample_col = atac_sample_col
+                        sample_col = atac_sample_col,
+                        batch_col = atac_batch_col
                     )
                     
             else:

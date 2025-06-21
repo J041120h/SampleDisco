@@ -11,6 +11,7 @@ def integration_CCA_test(pseudobulk_anndata_path,
                         verbose=False):
     """
     Perform CCA integration test on pseudobulk data with both RNA and ATAC modalities.
+    Each modality is processed separately with its own CCA analysis and p-value tests.
     
     Parameters:
     -----------
@@ -30,7 +31,7 @@ def integration_CCA_test(pseudobulk_anndata_path,
     Returns:
     --------
     dict
-        Dictionary containing CCA results and p-values
+        Dictionary containing CCA results and p-values for both modalities
     """
     
     # Create output directories
@@ -38,7 +39,15 @@ def integration_CCA_test(pseudobulk_anndata_path,
     rna_output_dir = os.path.join(output_dir, "RNA")
     atac_output_dir = os.path.join(output_dir, "ATAC")
     
-    for dir_path in [output_dir, rna_output_dir, atac_output_dir]:
+    # Create subdirectories for proportion and expression tests
+    rna_proportion_dir = os.path.join(rna_output_dir, "proportion")
+    rna_expression_dir = os.path.join(rna_output_dir, "expression")
+    atac_proportion_dir = os.path.join(atac_output_dir, "proportion")
+    atac_expression_dir = os.path.join(atac_output_dir, "expression")
+    
+    for dir_path in [output_dir, rna_output_dir, atac_output_dir, 
+                     rna_proportion_dir, rna_expression_dir, 
+                     atac_proportion_dir, atac_expression_dir]:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
     
@@ -69,67 +78,184 @@ def integration_CCA_test(pseudobulk_anndata_path,
     if pseudobulk_atac.n_obs == 0:
         raise ValueError("No ATAC samples found in the data")
     
-    # Perform CCA analysis
+    # Initialize results dictionary
+    results = {
+        'rna_results': {
+            'cca_scores': {},
+            'pvalue_tests': {}
+        },
+        'atac_results': {
+            'cca_scores': {},
+            'pvalue_tests': {}
+        }
+    }
+    
+    # Process RNA modality
+    if verbose:
+        print("\n=== Processing RNA modality ===")
+    
     try:
-        first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression = CCA_Call(
-            adata=pseudobulk_anndata, 
-            output_dir=output_dir, 
+        rna_first_component_score_proportion, rna_first_component_score_expression, rna_ptime_proportion, rna_ptime_expression = CCA_Call(
+            adata=pseudobulk_rna, 
+            output_dir=rna_output_dir, 
             sev_col=sev_col, 
             ptime=ptime, 
             verbose=verbose
         )
-    except Exception as e:
-        raise RuntimeError(f"CCA_Call failed: {e}")
-    
-    # Initialize results dictionary
-    results = {
-        'first_component_score_proportion': first_component_score_proportion,
-        'first_component_score_expression': first_component_score_expression,
-        'ptime_proportion': ptime_proportion,
-        'ptime_expression': ptime_expression
-    }
-    
-    # Perform p-value tests for proportion data (RNA)
-    try:
-        rna_pvalue_results = cca_pvalue_test(
-            pseudo_adata=pseudobulk_anndata,
-            column="X_DR_proportion",
-            input_correlation=first_component_score_proportion,
-            output_directory=rna_output_dir,
-            num_simulations=num_simulations,
-            sev_col=sev_col,
-            verbose=verbose
-        )
-        results['rna_pvalue_results'] = rna_pvalue_results
+        
+        # Store RNA CCA results
+        results['rna_results']['cca_scores'] = {
+            'first_component_score_proportion': rna_first_component_score_proportion,
+            'first_component_score_expression': rna_first_component_score_expression,
+            'ptime_proportion': rna_ptime_proportion,
+            'ptime_expression': rna_ptime_expression
+        }
         
         if verbose:
-            print(f"RNA proportion p-value test completed. Results saved to {rna_output_dir}")
+            print("RNA CCA analysis completed successfully")
             
     except Exception as e:
-        print(f"Warning: RNA p-value test failed: {e}")
-        results['rna_pvalue_results'] = None
+        print(f"Error: RNA CCA analysis failed: {e}")
+        results['rna_results']['cca_scores'] = None
+        rna_first_component_score_proportion = None
+        rna_first_component_score_expression = None
     
-    # Perform p-value tests for expression data (ATAC)
-    try:
-        atac_pvalue_results = cca_pvalue_test(
-            pseudo_adata=pseudobulk_anndata,
-            column="X_DR_expression",
-            input_correlation=first_component_score_expression,
-            output_directory=atac_output_dir,
-            num_simulations=num_simulations,
-            sev_col=sev_col,
-            verbose=verbose
-        )
-        results['atac_pvalue_results'] = atac_pvalue_results
-        
-        if verbose:
-            print(f"ATAC expression p-value test completed. Results saved to {atac_output_dir}")
-            
-    except Exception as e:
-        print(f"Warning: ATAC p-value test failed: {e}")
-        results['atac_pvalue_results'] = None
-    
+    # Process ATAC modality
     if verbose:
-        print(f"CCA integration test completed. All results saved to {output_dir}")
+        print("\n=== Processing ATAC modality ===")
+    
+    try:
+        atac_first_component_score_proportion, atac_first_component_score_expression, atac_ptime_proportion, atac_ptime_expression = CCA_Call(
+            adata=pseudobulk_atac, 
+            output_dir=atac_output_dir, 
+            sev_col=sev_col, 
+            ptime=ptime, 
+            verbose=verbose
+        )
+        
+        # Store ATAC CCA results
+        results['atac_results']['cca_scores'] = {
+            'first_component_score_proportion': atac_first_component_score_proportion,
+            'first_component_score_expression': atac_first_component_score_expression,
+            'ptime_proportion': atac_ptime_proportion,
+            'ptime_expression': atac_ptime_expression
+        }
+        
+        if verbose:
+            print("ATAC CCA analysis completed successfully")
+            
+    except Exception as e:
+        print(f"Error: ATAC CCA analysis failed: {e}")
+        results['atac_results']['cca_scores'] = None
+        atac_first_component_score_proportion = None
+        atac_first_component_score_expression = None
+    
+    # RNA p-value tests
+    if verbose:
+        print("\n=== Running RNA p-value tests ===")
+    
+    # RNA proportion test
+    if rna_first_component_score_proportion is not None:
+        try:
+            rna_proportion_pvalue = cca_pvalue_test(
+                pseudo_adata=pseudobulk_rna,
+                column="X_DR_proportion",
+                input_correlation=rna_first_component_score_proportion,
+                output_directory=rna_proportion_dir,
+                num_simulations=num_simulations,
+                sev_col=sev_col,
+                verbose=verbose
+            )
+            results['rna_results']['pvalue_tests']['proportion'] = rna_proportion_pvalue
+            
+            if verbose:
+                print(f"RNA proportion p-value test completed. Results saved to {rna_proportion_dir}")
+                
+        except Exception as e:
+            print(f"Warning: RNA proportion p-value test failed: {e}")
+            results['rna_results']['pvalue_tests']['proportion'] = None
+    
+    # RNA expression test
+    if rna_first_component_score_expression is not None:
+        try:
+            rna_expression_pvalue = cca_pvalue_test(
+                pseudo_adata=pseudobulk_rna,
+                column="X_DR_expression",
+                input_correlation=rna_first_component_score_expression,
+                output_directory=rna_expression_dir,
+                num_simulations=num_simulations,
+                sev_col=sev_col,
+                verbose=verbose
+            )
+            results['rna_results']['pvalue_tests']['expression'] = rna_expression_pvalue
+            
+            if verbose:
+                print(f"RNA expression p-value test completed. Results saved to {rna_expression_dir}")
+                
+        except Exception as e:
+            print(f"Warning: RNA expression p-value test failed: {e}")
+            results['rna_results']['pvalue_tests']['expression'] = None
+    
+    # ATAC p-value tests
+    if verbose:
+        print("\n=== Running ATAC p-value tests ===")
+    
+    # ATAC proportion test
+    if atac_first_component_score_proportion is not None:
+        try:
+            atac_proportion_pvalue = cca_pvalue_test(
+                pseudo_adata=pseudobulk_atac,
+                column="X_DR_proportion",
+                input_correlation=atac_first_component_score_proportion,
+                output_directory=atac_proportion_dir,
+                num_simulations=num_simulations,
+                sev_col=sev_col,
+                verbose=verbose
+            )
+            results['atac_results']['pvalue_tests']['proportion'] = atac_proportion_pvalue
+            
+            if verbose:
+                print(f"ATAC proportion p-value test completed. Results saved to {atac_proportion_dir}")
+                
+        except Exception as e:
+            print(f"Warning: ATAC proportion p-value test failed: {e}")
+            results['atac_results']['pvalue_tests']['proportion'] = None
+    
+    # ATAC expression test
+    if atac_first_component_score_expression is not None:
+        try:
+            atac_expression_pvalue = cca_pvalue_test(
+                pseudo_adata=pseudobulk_atac,
+                column="X_DR_expression",
+                input_correlation=atac_first_component_score_expression,
+                output_directory=atac_expression_dir,
+                num_simulations=num_simulations,
+                sev_col=sev_col,
+                verbose=verbose
+            )
+            results['atac_results']['pvalue_tests']['expression'] = atac_expression_pvalue
+            
+            if verbose:
+                print(f"ATAC expression p-value test completed. Results saved to {atac_expression_dir}")
+                
+        except Exception as e:
+            print(f"Warning: ATAC expression p-value test failed: {e}")
+            results['atac_results']['pvalue_tests']['expression'] = None
+    
+    # Print final summary
+    if verbose:
+        print(f"\n=== CCA Integration Test Summary ===")
+        print(f"RNA CCA: {'✓' if results['rna_results']['cca_scores'] else '✗'}")
+        print(f"- RNA proportion test: {'✓' if results['rna_results']['pvalue_tests'].get('proportion') else '✗'}")
+        print(f"- RNA expression test: {'✓' if results['rna_results']['pvalue_tests'].get('expression') else '✗'}")
+        print(f"ATAC CCA: {'✓' if results['atac_results']['cca_scores'] else '✗'}")
+        print(f"- ATAC proportion test: {'✓' if results['atac_results']['pvalue_tests'].get('proportion') else '✗'}")
+        print(f"- ATAC expression test: {'✓' if results['atac_results']['pvalue_tests'].get('expression') else '✗'}")
+        print(f"All results saved to {output_dir}")
     
     return results
+
+if __name__ == "__main__":
+    pseudobulk_anndata_path = "/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad"
+    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration/"
+    integration_CCA_test(pseudobulk_anndata_path,output_dir)

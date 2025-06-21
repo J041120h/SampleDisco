@@ -16,6 +16,7 @@ def find_optimal_cell_resolution_atac(
     output_dir: str,
     column: str,
     sev_col: str = "sev.level",
+    batch_col: str = None,
     sample_col: str = "sample",
     use_rep: str = 'X_DM_harmony',
     num_DMs: int = 20
@@ -68,7 +69,7 @@ def find_optimal_cell_resolution_atac(
             
             # Perform clustering using ATAC-specific function
             cell_types_atac(
-                AnnData_cell,
+                AnnData_sample,
                 cell_column='cell_type',
                 Save=False,
                 output_dir=output_dir,
@@ -82,13 +83,10 @@ def find_optimal_cell_resolution_atac(
                 verbose=False
             )
             
-            # Assign cell types to samples using ATAC-specific function
-            cell_type_assign_atac(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
-            
             # Compute pseudobulk data using updated function
             pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=AnnData_sample, 
-                batch_col='batch', 
+                batch_col=batch_col, 
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
                 output_dir=output_dir,
@@ -102,6 +100,7 @@ def find_optimal_cell_resolution_atac(
                 pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata,
                 sample_col=sample_col,
+                atac = True,
                 output_dir=output_dir,
                 not_save=True,
                 verbose=False
@@ -176,7 +175,7 @@ def find_optimal_cell_resolution_atac(
             
             # Perform clustering using ATAC-specific function
             cell_types_atac(
-                AnnData_cell,
+                AnnData_sample,
                 cell_column='cell_type',
                 Save=False,
                 output_dir=output_dir,
@@ -189,9 +188,6 @@ def find_optimal_cell_resolution_atac(
                 num_DMs=num_DMs,
                 verbose=False
             )
-            
-            # Assign cell types to samples using ATAC-specific function
-            cell_type_assign_atac(AnnData_cell, AnnData_sample, Save=False, output_dir=output_dir, verbose=False)
             
             # Compute pseudobulk data using updated function
             pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
@@ -210,6 +206,7 @@ def find_optimal_cell_resolution_atac(
                 pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata,
                 sample_col=sample_col,
+                atac = True,
                 output_dir=output_dir,
                 not_save=True,
                 verbose=False
@@ -224,9 +221,6 @@ def find_optimal_cell_resolution_atac(
                 coords_2d = coords.iloc[:, :2].values
             else:
                 coords_2d = coords[:, :2]
-            
-            # Get samples and severity levels from pseudobulk_adata
-            samples = pseudobulk_adata.obs.index.values
 
             # Get severity levels directly from pseudobulk_adata
             if sev_col not in pseudobulk_adata.obs.columns:

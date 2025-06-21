@@ -396,7 +396,8 @@ def cell_types_atac(
                 flavor='igraph',
                 n_iterations=2,
                 directed=False,
-                key_added='cell_type'
+                key_added='cell_type',
+                
             )
             
             # Convert cluster labels to 1-based indexing as strings
@@ -524,12 +525,12 @@ def cell_types_atac(
                 print("[cell_types_atac] Generating UMAP plots...")
             
             # Ensure plots directory exists
-            plots_dir = os.path.join(output_dir, 'plots')
-            os.makedirs(plots_dir, exist_ok=True)
+            output_dir = os.path.join(output_dir, 'harmony')
+            os.makedirs(output_dir, exist_ok=True)
             
             # Plot 1: UMAP colored by cell type
             sc.pl.umap(adata, color=cell_type_key, legend_loc="on data", show=False)
-            plt.savefig(os.path.join(plots_dir, f"umap_{cell_type_key}.png"), dpi=plot_dpi)
+            plt.savefig(os.path.join(output_dir, f"umap_{cell_type_key}.png"), dpi=plot_dpi)
             plt.close()
             if verbose:
                 print(f"[cell_types_atac] Saved UMAP plot colored by {cell_type_key}")
@@ -538,7 +539,7 @@ def cell_types_atac(
             if 'n_genes_by_counts' in adata.obs.columns:
                 sc.pl.umap(adata, color=[cell_type_key, "n_genes_by_counts"], 
                           legend_loc="on data", show=False)
-                plt.savefig(os.path.join(plots_dir, "umap_n_genes_by_counts.png"), dpi=plot_dpi)
+                plt.savefig(os.path.join(output_dir, "umap_n_genes_by_counts.png"), dpi=plot_dpi)
                 plt.close()
                 if verbose:
                     print("[cell_types_atac] Saved UMAP plot with n_genes_by_counts")
@@ -549,7 +550,7 @@ def cell_types_atac(
                 for key in batch_keys:
                     if key in adata.obs.columns:
                         sc.pl.umap(adata, color=key, legend_loc="on data", show=False)
-                        plt.savefig(os.path.join(plots_dir, f"umap_{key}.png"), dpi=plot_dpi)
+                        plt.savefig(os.path.join(output_dir, f"umap_{key}.png"), dpi=plot_dpi)
                         plt.close()
                         if verbose:
                             print(f"[cell_types_atac] Saved UMAP plot colored by {key}")
@@ -566,7 +567,6 @@ def cell_types_atac(
         
         # Save results if requested - USING SAFE SAVING METHOD
         if Save and output_dir:
-            output_dir = os.path.join(output_dir, 'harmony')
             os.makedirs(output_dir, exist_ok=True)
             save_path = os.path.join(output_dir, 'adata_sample.h5ad')
             
@@ -580,7 +580,6 @@ def cell_types_atac(
             print(f"[cell_types_atac] Total runtime: {elapsed_time:.2f} seconds")
 
     return adata
-
 
 def cell_type_dendrogram_atac(
     adata,
