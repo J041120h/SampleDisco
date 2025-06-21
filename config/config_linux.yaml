@@ -116,7 +116,7 @@ atac_sample_col: "sample"
 atac_batch_col: null
 atac_cell_type_column: "cell_type"
 atac_pipeline_verbose: true
-use_snapatac2_dimred: true
+use_snapatac2_dimred: false
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
@@ -129,7 +129,7 @@ atac_drop_first_lsi: true
 atac_harmony_max_iter: 30
 atac_n_neighbors: 15
 atac_n_pcs: 30
-atac_leiden_resolution: 0.5
+atac_leiden_resolution: 0.96
 atac_existing_cell_types: False
 atac_n_target_cell_clusters: 3
 atac_umap_min_dist: 0.3
@@ -146,7 +146,7 @@ atac_pca_verbose: true
 
 atac_cca_output_dir: null
 trajectory_supervised_atac: true
-atac_cca_optimal_cell_resolution: true
+atac_cca_optimal_cell_resolution: false
 
 atac_figsize: [10, 8]  
 atac_point_size: 50
@@ -168,7 +168,7 @@ cluster_and_DGE: false
 ATAC_data: true
 trajectory_analysis_atac: true
 atac_preprocessing: false
-atac_pseudobulk_dimensionality_reduction: false
+atac_pseudobulk_dimensionality_reduction: true
 atac_visualization_processing: false
 
 visualize_data: false

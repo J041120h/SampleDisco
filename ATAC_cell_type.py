@@ -7,6 +7,7 @@ from scipy.cluster.hierarchy import fcluster
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
+import matplotlib.pyplot as plt
 
 
 def clean_obs_for_saving(adata, verbose=True):
@@ -261,6 +262,11 @@ def cell_types_atac(
     num_DMs=20, 
     max_resolution=5.0,
     resolution_step=0.5,
+    # New plotting parameters
+    generate_plots=False,
+    cell_type_key='cell_type',
+    batch_key=None,
+    plot_dpi=300,
     _recursion_depth=0,  # Internal parameter to track recursion
     verbose=True
 ):
@@ -285,6 +291,10 @@ def cell_types_atac(
     - num_DMs: Number of diffusion map components for neighborhood graph
     - max_resolution: Maximum resolution to try before giving up
     - resolution_step: Step size for increasing resolution
+    - generate_plots: Boolean, whether to generate UMAP plots
+    - cell_type_key: Column name for cell types in plots (default: 'cell_type')
+    - batch_key: Column name(s) for batch information (str or list)
+    - plot_dpi: DPI for saved plots
     - _recursion_depth: Internal parameter (do not set manually)
     - verbose: Whether to print progress messages
 
@@ -362,7 +372,7 @@ def cell_types_atac(
     # ============================================================================
     else:
         if verbose and _recursion_depth == 0:
-            print("[cell_types_atac] No cell type annotation found. Performing clustering.")
+            print(f"[cell_types_atac] No cell type annotation found. Performing clustering at resolution {cluster_resolution}.")
 
         # Build neighborhood graph (only on first call)
         if _recursion_depth == 0:
@@ -420,6 +430,7 @@ def cell_types_atac(
                         distance_mode=distance_mode,
                         use_rep=use_rep,
                         num_DMs=num_DMs,
+                        generate_plots=False,  # Don't generate plots in recursion
                         _recursion_depth=_recursion_depth + 1,
                         verbose=verbose
                     )
@@ -453,6 +464,7 @@ def cell_types_atac(
                         num_DMs=num_DMs,
                         max_resolution=max_resolution,
                         resolution_step=resolution_step,
+                        generate_plots=False,  # Don't generate plots in recursion
                         _recursion_depth=_recursion_depth + 1,
                         verbose=verbose
                     )
@@ -503,6 +515,51 @@ def cell_types_atac(
             if verbose:
                 print("[cell_types_atac] Computing UMAP...")
             sc.tl.umap(adata, min_dist=0.5)
+        
+        # ========================================================================
+        # GENERATE PLOTS (NEW FUNCTIONALITY)
+        # ========================================================================
+        if generate_plots and output_dir and 'X_umap' in adata.obsm:
+            if verbose:
+                print("[cell_types_atac] Generating UMAP plots...")
+            
+            # Ensure plots directory exists
+            plots_dir = os.path.join(output_dir, 'plots')
+            os.makedirs(plots_dir, exist_ok=True)
+            
+            # Plot 1: UMAP colored by cell type
+            sc.pl.umap(adata, color=cell_type_key, legend_loc="on data", show=False)
+            plt.savefig(os.path.join(plots_dir, f"umap_{cell_type_key}.png"), dpi=plot_dpi)
+            plt.close()
+            if verbose:
+                print(f"[cell_types_atac] Saved UMAP plot colored by {cell_type_key}")
+            
+            # Plot 2: UMAP colored by cell type and n_genes_by_counts (if available)
+            if 'n_genes_by_counts' in adata.obs.columns:
+                sc.pl.umap(adata, color=[cell_type_key, "n_genes_by_counts"], 
+                          legend_loc="on data", show=False)
+                plt.savefig(os.path.join(plots_dir, "umap_n_genes_by_counts.png"), dpi=plot_dpi)
+                plt.close()
+                if verbose:
+                    print("[cell_types_atac] Saved UMAP plot with n_genes_by_counts")
+            
+            # Plot 3: UMAP colored by batch keys (if provided)
+            if batch_key:
+                batch_keys = batch_key if isinstance(batch_key, list) else [batch_key]
+                for key in batch_keys:
+                    if key in adata.obs.columns:
+                        sc.pl.umap(adata, color=key, legend_loc="on data", show=False)
+                        plt.savefig(os.path.join(plots_dir, f"umap_{key}.png"), dpi=plot_dpi)
+                        plt.close()
+                        if verbose:
+                            print(f"[cell_types_atac] Saved UMAP plot colored by {key}")
+                    else:
+                        if verbose:
+                            print(f"[cell_types_atac] Warning: Batch key '{key}' not found in adata.obs")
+        
+        elif generate_plots and 'X_umap' not in adata.obsm:
+            if verbose:
+                print("[cell_types_atac] Warning: Cannot generate plots - UMAP coordinates not found. Set umap=True to compute UMAP first.")
         
         # Standardize cell type column before saving
         standardize_cell_type_column(adata, verbose=verbose)

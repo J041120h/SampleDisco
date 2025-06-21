@@ -1,45 +1,65 @@
-2025-06-20 01:59:19.576242: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-06-20 01:59:19.588725: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-06-21 00:40:39.765904: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-06-21 00:40:39.778466: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1750399159.602907 3765318 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1750399159.607150 3765318 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1750399159.619017 3765318 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750399159.619054 3765318 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750399159.619056 3765318 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750399159.619057 3765318 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-06-20 01:59:19.622539: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1750480839.792921 3836264 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1750480839.797253 3836264 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1750480839.809219 3836264 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750480839.809239 3836264 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750480839.809242 3836264 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750480839.809244 3836264 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-06-21 00:40:39.812765: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2025-06-20 02:03:33 - ERROR - Error processing resolution 0.300: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:03:36 - ERROR - Error processing resolution 0.400: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:03:38 - ERROR - Error processing resolution 0.500: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:03:38 - ERROR - Error processing resolution 0.600: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:03:38 - ERROR - Error processing resolution 0.700: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:03:40 - ERROR - Error processing resolution 0.800: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:03:42 - ERROR - Error processing resolution 1.000: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:03:42 - ERROR - Error processing resolution 0.900: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:46 - ERROR - Error processing resolution 0.140: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:47 - ERROR - Error processing resolution 0.100: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:48 - ERROR - Error processing resolution 0.150: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:49 - ERROR - Error processing resolution 0.060: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:50 - ERROR - Error processing resolution 0.090: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:50 - ERROR - Error processing resolution 0.070: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:50 - ERROR - Error processing resolution 0.080: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:51 - ERROR - Error processing resolution 0.110: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:51 - ERROR - Error processing resolution 0.130: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:04:52 - ERROR - Error processing resolution 0.120: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:06:05 - ERROR - Error processing resolution 0.700: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:06:06 - ERROR - Error processing resolution 0.500: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:06:07 - ERROR - Error processing resolution 0.600: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:06:09 - ERROR - Error processing resolution 0.800: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:06:10 - ERROR - Error processing resolution 0.900: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:06:11 - ERROR - Error processing resolution 1.000: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:23 - ERROR - Error processing resolution 0.330: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:25 - ERROR - Error processing resolution 0.250: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:27 - ERROR - Error processing resolution 0.280: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:27 - ERROR - Error processing resolution 0.270: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:28 - ERROR - Error processing resolution 0.290: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:28 - ERROR - Error processing resolution 0.260: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:28 - ERROR - Error processing resolution 0.310: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:28 - ERROR - Error processing resolution 0.300: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:28 - ERROR - Error processing resolution 0.350: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
-2025-06-20 02:07:29 - ERROR - Error processing resolution 0.340: Cannot save file into a non-existent directory: '/dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk'
+... storing 'sample' as categorical
+... storing 'disease severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'acuity' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+... storing 'cell_type_original' as categorical
+... storing 'orig.ident' as categorical
+... storing 'DNase_sensitive_region_fragments' as categorical
+... storing 'enhancer_region_fragments' as categorical
+... storing 'promoter_region_fragments' as categorical
+... storing 'blacklist_region_fragments' as categorical
+... storing 'disease severity' as categorical
+... storing 'sev.level' as categorical
+... storing 'current_severity' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'T_SEROLOGY' as categorical
+... storing 'T_POS_SEROL' as categorical
+... storing 'RISK_FACTOR' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'DIALYSIS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'MAX_SEVERITY_SCORE' as categorical
+... storing 'days_post_pos_test' as categorical
+... storing 'acuity' as categorical
+... storing 'current_severity.1' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical

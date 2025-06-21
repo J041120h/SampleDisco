@@ -442,6 +442,7 @@ def wrapper(
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
 
+
     # Step 3: Pseudobulk and PCA
     if DimensionalityReduction:
         if status_flags["cell_type_cluster"] == False:
@@ -753,19 +754,10 @@ def wrapper(
                 n_neighbors=atac_n_neighbors,
                 n_pcs=atac_n_pcs,
                 
-                # Clustering
-                cluster_resolution=atac_leiden_resolution,
-                cell_type_column=atac_cell_type_column,
-                existing_cell_types=atac_existing_cell_types,
-                n_target_clusters = atac_n_target_cell_clusters,
-                
                 # UMAP visualization
                 umap_min_dist=atac_umap_min_dist,
                 umap_spread=atac_umap_spread,
                 umap_random_state=atac_umap_random_state,
-                
-                # Output
-                plot_dpi=atac_plot_dpi,
             )
         else:
             if not atac_cell_path or not atac_sample_path:
@@ -777,6 +769,20 @@ def wrapper(
                 AnnData_sample_path = temp_sample_path    
             atac_cell = sc.read(AnnData_cell_path)
             atac_sample = sc.read(AnnData_sample_path)
+
+        atac_sample = cell_types_atac(
+            adata = atac_sample,
+            cell_column=atac_cell_type_column, 
+            existing_cell_types=existing_cell_types,
+            n_target_clusters=atac_n_target_cell_clusters,
+            cluster_resolution=atac_leiden_resolution,
+            use_rep='X_DM_harmony',
+            method='average', 
+            metric='cosine', 
+            distance_mode='centroid',
+            num_DMs=atac_n_lsi_components, 
+            verbose=verbose
+        )
 
         if atac_pseudobulk_dimensionality_reduction:
             atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(

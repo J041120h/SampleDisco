@@ -131,19 +131,12 @@ def run_scatac_pipeline(
     # Neighbours
     n_neighbors=10,
     n_pcs=30,
-    #Cell type clustering
-    existing_cell_types = False,
-    n_target_clusters = None,
-    cluster_resolution= 0.8,
     # UMAP
     umap_min_dist=0.3,
     umap_spread=1.0,
     umap_random_state=0,
     # Output
     output_subdirectory='harmony',
-    plot_dpi=300,
-    # Additional
-    cell_type_column='cell_type'
 ):
     t0 = time.time()
     log("="*60 + "\nStarting scATAC-seq pipeline\n" + "="*60, verbose)
@@ -238,46 +231,12 @@ def run_scatac_pipeline(
     sc.tl.umap(atac, min_dist=umap_min_dist, spread=umap_spread,
                random_state=umap_random_state)
 
-    # 8. Leiden clustering
-    atac = cell_types_atac(
-        atac,
-        cell_column=cell_type_column, 
-        existing_cell_types=existing_cell_types,
-        n_target_clusters=n_target_clusters,
-        cluster_resolution=cluster_resolution,
-        use_rep='X_DM_harmony',
-        method='average', 
-        metric='cosine', 
-        distance_mode='centroid',
-        num_DMs=n_lsi_components, 
-        verbose=verbose
-    )
-    cell_type_key = 'cell_type'
-
-    # 9. Plots
-    sc.pl.umap(atac, color=cell_type_key, legend_loc="on data",
-               show=False)
-    plt.savefig(os.path.join(output_dir, f"umap_{cell_type_key}.png"),
-                dpi=plot_dpi); plt.close()
-
-    sc.pl.umap(atac, color=[cell_type_key, "n_genes_by_counts"],
-               legend_loc="on data", show=False)
-    plt.savefig(os.path.join(output_dir, "umap_n_genes_by_counts.png"),
-                dpi=plot_dpi); plt.close()
-
-    if batch_key:
-        for key in (batch_key if isinstance(batch_key, list) else [batch_key]):
-            sc.pl.umap(atac, color=key, legend_loc="on data", show=False)
-            plt.savefig(os.path.join(output_dir, f"umap_{key}.png"),
-                        dpi=plot_dpi); plt.close()
-
     atac = clean_obs_for_saving(atac, verbose=verbose)
     sc.write(os.path.join(output_dir, "adata_cell.h5ad"), atac)
     log("Saved adata_cell.h5ad", verbose)
 
     # 10. Save
     log("Writing H5AD …", verbose)
-    atac_sample.obs[cell_type_column] = atac.obs[cell_type_column].copy()
     atac_sample = clean_obs_for_saving(atac_sample, verbose=verbose)
     sc.write(os.path.join(output_dir, "adata_sample.h5ad"), atac_sample)
 
