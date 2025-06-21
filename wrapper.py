@@ -849,7 +849,10 @@ def wrapper(
                         column = "X_DR_expression",
                         n_features = atac_pseudobulk_n_features,
                         sample_col = atac_sample_col,
-                        batch_col = atac_batch_col
+                        batch_col = atac_batch_col,
+                        num_DR_components = atac_pca_n_expression_pcs,
+                        num_DMs = atac_n_lsi_components
+
                     )
                     find_optimal_cell_resolution_atac(
                         AnnData_cell = atac_cell,
@@ -858,7 +861,9 @@ def wrapper(
                         column = "X_DR_proportion",
                         n_features = atac_pseudobulk_n_features,
                         sample_col = atac_sample_col,
-                        batch_col = atac_batch_col
+                        batch_col = atac_batch_col,
+                        num_DR_components = atac_pca_n_proportion_pcs,
+                        num_DMs = atac_n_lsi_components
                     )
                     
             else:

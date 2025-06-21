@@ -375,6 +375,6 @@ def integration_CCA_test(pseudobulk_anndata_path,
     return results
 
 if __name__ == "__main__":
-    pseudobulk_anndata_path = "/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad"
-    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration/"
+    pseudobulk_anndata_path = "/dcl01/hongkai/data/data/hjiang/result/k10/integration/pseudobulk/pseudobulk_sample.h5ad"
+    output_dir = "/dcl01/hongkai/data/data/hjiang/result/k10/integration/"
     integration_CCA_test(pseudobulk_anndata_path, output_dir, verbose=True)

@@ -20,6 +20,7 @@ def find_optimal_cell_resolution_atac(
     batch_col: str = None,
     sample_col: str = "sample",
     use_rep: str = 'X_DM_harmony',
+    num_DR_components: int = 30,
     num_DMs: int = 20
 ) -> float:
     """
@@ -102,6 +103,8 @@ def find_optimal_cell_resolution_atac(
                 pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata,
                 sample_col=sample_col,
+                n_expression_pcs = num_DR_components,
+                n_proportion_pcs = num_DR_components,
                 atac = True,
                 output_dir=output_dir,
                 not_save=True,
@@ -160,8 +163,8 @@ def find_optimal_cell_resolution_atac(
 
     # Second pass: fine-tuned search around best resolution
     fine_score_counter = dict()
-    search_range_start = max(0.01, best_resolution - 0.05)
-    search_range_end = min(1.00, best_resolution + 0.05)
+    search_range_start = max(0.01, best_resolution - 0.01)
+    search_range_end = min(1.00, best_resolution + 0.01)
     
     print(f"\nFine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
 
@@ -197,7 +200,9 @@ def find_optimal_cell_resolution_atac(
                 batch_col=batch_col, 
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
-                n_features = n_features,
+                n_features = n_features, 
+                n_expression_pcs = num_DR_components,
+                n_proportion_pcs = num_DR_components,
                 output_dir=output_dir,
                 Save = False,
                 verbose=False

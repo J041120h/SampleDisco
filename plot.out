@@ -1,42 +1,106 @@
 ======================================
- Job ID:            17067245
+ Job ID:            17711964
  Job Name:          plot
  Partition:         shared
- Node List:         compute-127
+ Node List:         compute-115
  CPUs per Task:     16
  Memory Alloc:      102400
  GPU Requested:     None
- Start Time:        Sun Jun  8 01:06:00 AM EDT 2025
+ Start Time:        Sat Jun 21 04:29:55 PM EDT 2025
 ======================================
 Starting plot script...
-Loading RNA data from: /users/hjiang/GenoDistance/Data/count_data.h5ad
-Original data shape: 898,489 cells × 14,881 genes
-Detected gene identifier type: gene_name
-Sample genes: ['A1BG', 'A1BG-AS1', 'A2M', 'A2M-AS1', 'A4GALT']
-Converting gene names to gene IDs using Ensembl release 98...
-Creating gene mappings from Ensembl release 98...
-Created mappings for 59,412 gene names → 60,623 gene IDs
-Warning: 69 gene names map to multiple IDs (kept first occurrence)
+RNA X_DR_expression: filtered DataFrame from (429, 10) to (405, 10)
+RNA X_DR_proportion: filtered DataFrame from (429, 9) to (405, 9)
+ATAC X_DR_expression: filtered DataFrame from (429, 10) to (24, 10)
+ATAC X_DR_proportion: filtered DataFrame from (429, 9) to (24, 9)
+RNA samples: 405
+ATAC samples: 24
+RNA obsm shapes: [('X_DR_expression', (405, 10)), ('X_DR_proportion', (405, 9)), ('X_pca_expression_method', (405, 10))]
+ATAC obsm shapes: [('X_DR_expression', (24, 10)), ('X_DR_proportion', (24, 9)), ('X_pca_expression_method', (24, 10))]
 
-Conversion results:
-  Successfully mapped: 14,743 (99.07%)
-  Unmapped genes: 138
-  Duplicate gene names: 0
-  Genes retained: 14,743
-Filtered data shape: 898,489 cells × 14,743 genes
-Detailed mapping statistics saved to: /users/hjiang/GenoDistance/Data/count_data_gene_conversion_stats.json
-Converted RNA data saved to: /users/hjiang/GenoDistance/Data/count_data_gene_ids.h5ad
+RNA PCA coordinates in .uns:
+  X_DR_expression shape: (405, 10)
+  X_DR_proportion shape: (405, 9)
 
-Final data structure:
-  Shape: 898,489 cells × 14,743 genes
-  Gene identifiers: gene_ids (var_names)
-  Gene names: available in var['gene_name']
+ATAC PCA coordinates in .uns:
+  X_DR_expression shape: (24, 10)
+  X_DR_proportion shape: (24, 9)
 
-Example gene ID → name mapping:
-  ENSG00000121410 → A1BG
-  ENSG00000268895 → A1BG-AS1
-  ENSG00000175899 → A2M
-  ENSG00000245105 → A2M-AS1
-  ENSG00000128274 → A4GALT
+RNA validation:
+  n_obs: 405
+  severity column length: 405
+  X_DR_expression shape: (405, 10)
+  X_DR_proportion shape: (405, 9)
+  X_pca_expression_method shape: (405, 10)
+
+ATAC validation:
+  n_obs: 24
+  severity column length: 24
+  X_DR_expression shape: (24, 10)
+  X_DR_proportion shape: (24, 9)
+  X_pca_expression_method shape: (24, 10)
+✓ RNA X_DR_expression validation passed: 405 rows
+✓ RNA X_DR_proportion validation passed: 405 rows
+✓ ATAC X_DR_expression validation passed: 24 rows
+✓ ATAC X_DR_proportion validation passed: 24 rows
+
+=== Processing RNA modality ===
+Processing X_DR_proportion...
+
+The CCA score for X_DR_proportion is 0.4126
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/CCA/pca_2d_cca_proportion.pdf
+Processing X_DR_expression...
+
+The CCA score for X_DR_expression is 0.4026
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/CCA/pca_2d_cca_expression.pdf
+CCA analysis completed.
+
+[CCA] Total runtime: 1.71 seconds
+
+RNA CCA analysis completed successfully
+
+=== Processing ATAC modality ===
+Processing X_DR_proportion...
+
+The CCA score for X_DR_proportion is 0.2075
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/CCA/pca_2d_cca_proportion.pdf
+Processing X_DR_expression...
+
+The CCA score for X_DR_expression is 0.2052
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/CCA/pca_2d_cca_expression.pdf
+CCA analysis completed.
+
+[CCA] Total runtime: 1.13 seconds
+
+ATAC CCA analysis completed successfully
+
+=== Running RNA p-value tests ===
+P-value for observed correlation 0.4126018428986437: 0.0
+[CCA p-test] Runtime: 3.47 seconds
+RNA proportion p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/proportion
+P-value for observed correlation 0.40256956303875935: 0.0
+[CCA p-test] Runtime: 3.49 seconds
+RNA expression p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/expression
+
+=== Running ATAC p-value tests ===
+P-value for observed correlation 0.20750854344031822: 0.653
+[CCA p-test] Runtime: 2.87 seconds
+ATAC proportion p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/proportion
+P-value for observed correlation 0.20522621337004437: 0.644
+[CCA p-test] Runtime: 2.89 seconds
+ATAC expression p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/expression
+
+=== CCA Integration Test Summary ===
+RNA CCA: ✓
+- RNA proportion test: ✗
+- RNA expression test: ✗
+ATAC CCA: ✓
+- ATAC proportion test: ✓
+- ATAC expression test: ✓
+All results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test
 Finished plot script.
-End Time: Sun Jun  8 01:07:29 AM EDT 2025
+End Time: Sat Jun 21 04:30:41 PM EDT 2025

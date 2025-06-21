@@ -53,6 +53,6 @@ export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 ############################################
 export PYTHONUNBUFFERED=1
 echo "Starting plot script..."
-python -u ATAC_RNA_harmony.py
+python integration_CCA_test.py
 echo "Finished plot script."
 echo "End Time: $(date)"
