@@ -129,7 +129,7 @@ atac_drop_first_lsi: true
 atac_harmony_max_iter: 30
 atac_n_neighbors: 15
 atac_n_pcs: 30
-atac_leiden_resolution: 0.96
+atac_leiden_resolution: 0.7
 atac_existing_cell_types: False
 atac_n_target_cell_clusters: null
 atac_umap_min_dist: 0.3
@@ -168,7 +168,7 @@ cluster_and_DGE: false
 ATAC_data: true
 trajectory_analysis_atac: true
 atac_preprocessing: false
-atac_pseudobulk_dimensionality_reduction: true
+atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false
 
 visualize_data: false

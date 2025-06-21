@@ -5,7 +5,7 @@ from CCA import *
 
 def integration_CCA_test(pseudobulk_anndata_path,
                         output_dir,
-                        sev_col="severity",
+                        sev_col="sev.level",
                         num_simulations=1000,
                         ptime=True,
                         verbose=False):
@@ -65,18 +65,137 @@ def integration_CCA_test(pseudobulk_anndata_path,
         raise ValueError(f"Severity column '{sev_col}' not found in pseudobulk_anndata.obs")
     
     # Filter data by modality
-    pseudobulk_rna = pseudobulk_anndata[pseudobulk_anndata.obs['modality'] == 'RNA'].copy()
-    pseudobulk_atac = pseudobulk_anndata[pseudobulk_anndata.obs['modality'] == 'ATAC'].copy()
+    rna_mask = pseudobulk_anndata.obs['modality'] == 'RNA'
+    atac_mask = pseudobulk_anndata.obs['modality'] == 'ATAC'
+    
+    # Get indices for proper PCA coordinate filtering
+    rna_indices = pseudobulk_anndata.obs.index[rna_mask]
+    atac_indices = pseudobulk_anndata.obs.index[atac_mask]
+    
+    # Get positions in the original data for PCA coordinate filtering
+    rna_positions = [i for i, idx in enumerate(pseudobulk_anndata.obs.index) if idx in rna_indices]
+    atac_positions = [i for i, idx in enumerate(pseudobulk_anndata.obs.index) if idx in atac_indices]
+    
+    # Filter RNA and ATAC data - AnnData filtering automatically handles obsm
+    pseudobulk_rna = pseudobulk_anndata[rna_mask].copy()
+    pseudobulk_atac = pseudobulk_anndata[atac_mask].copy()
+    
+    # Fix PCA coordinates in .uns to match filtered samples
+    def filter_pca_coordinates(adata, positions, modality_name):
+        """Filter PCA coordinates in .uns to match the samples in the filtered data"""
+        import pandas as pd
+        import numpy as np
+        
+        pca_keys = ["X_DR_expression", "X_DR_proportion"]
+        
+        for key in pca_keys:
+            if key in adata.uns:
+                original_shape = adata.uns[key].shape
+                if original_shape[0] != adata.n_obs:
+                    # Handle different data types
+                    if isinstance(adata.uns[key], pd.DataFrame):
+                        # pandas DataFrame - use iloc for row indexing
+                        adata.uns[key] = adata.uns[key].iloc[positions]
+                        if verbose:
+                            print(f"{modality_name} {key}: filtered DataFrame from {original_shape} to {adata.uns[key].shape}")
+                    elif isinstance(adata.uns[key], np.ndarray):
+                        # numpy array
+                        adata.uns[key] = adata.uns[key][positions]
+                        if verbose:
+                            print(f"{modality_name} {key}: filtered numpy array from {original_shape} to {adata.uns[key].shape}")
+                    else:
+                        # Try generic indexing (works for most array-like objects)
+                        try:
+                            adata.uns[key] = adata.uns[key][positions]
+                            if verbose:
+                                print(f"{modality_name} {key}: filtered {type(adata.uns[key])} from {original_shape} to {adata.uns[key].shape}")
+                        except Exception as e:
+                            print(f"Warning: Could not filter {modality_name} {key}: {e}")
+                            print(f"  Data type: {type(adata.uns[key])}")
+                            print(f"  Shape: {adata.uns[key].shape}")
+                else:
+                    if verbose:
+                        print(f"{modality_name} {key}: already correct shape {original_shape}")
+            else:
+                if verbose:
+                    print(f"Warning: {key} not found in {modality_name} .uns")
+        
+        return adata
+    
+    # Filter PCA coordinates for each modality
+    pseudobulk_rna = filter_pca_coordinates(pseudobulk_rna, rna_positions, "RNA")
+    pseudobulk_atac = filter_pca_coordinates(pseudobulk_atac, atac_positions, "ATAC")
     
     if verbose:
         print(f"RNA samples: {pseudobulk_rna.n_obs}")
         print(f"ATAC samples: {pseudobulk_atac.n_obs}")
+        print(f"RNA obsm shapes: {[(k, v.shape) for k, v in pseudobulk_rna.obsm.items()]}")
+        print(f"ATAC obsm shapes: {[(k, v.shape) for k, v in pseudobulk_atac.obsm.items()]}")
+        
+        # Check PCA coordinates in .uns
+        for modality_name, adata in [("RNA", pseudobulk_rna), ("ATAC", pseudobulk_atac)]:
+            print(f"\n{modality_name} PCA coordinates in .uns:")
+            for key in ["X_DR_expression", "X_DR_proportion"]:
+                if key in adata.uns:
+                    print(f"  {key} shape: {adata.uns[key].shape}")
+                else:
+                    print(f"  {key}: not found")
+        
+        # Debug: Check if obsm matrices have correct dimensions
+        for modality_name, adata in [("RNA", pseudobulk_rna), ("ATAC", pseudobulk_atac)]:
+            print(f"\n{modality_name} validation:")
+            print(f"  n_obs: {adata.n_obs}")
+            print(f"  severity column length: {len(adata.obs[sev_col])}")
+            for key, matrix in adata.obsm.items():
+                print(f"  {key} shape: {matrix.shape}")
+                if matrix.shape[0] != adata.n_obs:
+                    print(f"    WARNING: {key} has {matrix.shape[0]} rows but should have {adata.n_obs}")
     
     # Validate that we have both modalities
     if pseudobulk_rna.n_obs == 0:
         raise ValueError("No RNA samples found in the data")
     if pseudobulk_atac.n_obs == 0:
         raise ValueError("No ATAC samples found in the data")
+    
+    # Additional validation: Check obsm consistency
+    def validate_obsm_consistency(adata, modality_name):
+        """Validate that obsm matrices have consistent dimensions with the filtered data"""
+        inconsistent_keys = []
+        for key, matrix in adata.obsm.items():
+            if matrix.shape[0] != adata.n_obs:
+                inconsistent_keys.append((key, matrix.shape[0], adata.n_obs))
+        
+        if inconsistent_keys:
+            print(f"Warning: {modality_name} has inconsistent obsm matrices:")
+            for key, matrix_rows, expected_rows in inconsistent_keys:
+                print(f"  {key}: {matrix_rows} rows, expected {expected_rows}")
+            
+            # Fix inconsistent obsm matrices by removing them or fixing them
+            # Option 1: Remove inconsistent matrices (conservative approach)
+            for key, _, _ in inconsistent_keys:
+                print(f"  Removing inconsistent matrix: {key}")
+                del adata.obsm[key]
+        
+        return adata
+    
+    # Validate and fix obsm consistency
+    pseudobulk_rna = validate_obsm_consistency(pseudobulk_rna, "RNA")
+    pseudobulk_atac = validate_obsm_consistency(pseudobulk_atac, "ATAC")
+    
+    # Final validation: Check that PCA coordinates match sample counts
+    def validate_pca_coordinates(adata, modality_name):
+        """Final validation that PCA coordinates match the number of samples"""
+        pca_keys = ["X_DR_expression", "X_DR_proportion"]
+        for key in pca_keys:
+            if key in adata.uns:
+                if adata.uns[key].shape[0] != adata.n_obs:
+                    raise ValueError(f"{modality_name} {key} has {adata.uns[key].shape[0]} rows but should have {adata.n_obs}")
+                else:
+                    if verbose:
+                        print(f"✓ {modality_name} {key} validation passed: {adata.uns[key].shape[0]} rows")
+    
+    validate_pca_coordinates(pseudobulk_rna, "RNA")
+    validate_pca_coordinates(pseudobulk_atac, "ATAC")
     
     # Initialize results dictionary
     results = {
@@ -258,4 +377,4 @@ def integration_CCA_test(pseudobulk_anndata_path,
 if __name__ == "__main__":
     pseudobulk_anndata_path = "/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad"
     output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration/"
-    integration_CCA_test(pseudobulk_anndata_path,output_dir)
+    integration_CCA_test(pseudobulk_anndata_path, output_dir, verbose=True)

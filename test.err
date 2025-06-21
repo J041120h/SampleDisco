@@ -1,11 +1,44 @@
-2025-06-21 14:11:59.687601: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-06-21 14:11:59.700064: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-06-21 15:52:31.562288: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-06-21 15:52:31.575693: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1750529519.714385 3878477 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1750529519.718663 3878477 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1750529519.730534 3878477 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750529519.730553 3878477 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750529519.730555 3878477 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750529519.730557 3878477 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-06-21 14:11:59.734024: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1750535551.590166 3883894 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1750535551.594454 3883894 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1750535551.606127 3883894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750535551.606146 3883894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750535551.606149 3883894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750535551.606150 3883894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-06-21 15:52:31.609653: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+... storing 'orig.ident' as categorical
+... storing 'DNase_sensitive_region_fragments' as categorical
+... storing 'enhancer_region_fragments' as categorical
+... storing 'promoter_region_fragments' as categorical
+... storing 'blacklist_region_fragments' as categorical
+... storing 'disease severity' as categorical
+... storing 'sev.level' as categorical
+... storing 'current_severity' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'Sex' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'T_SEROLOGY' as categorical
+... storing 'T_POS_SEROL' as categorical
+... storing 'RISK_FACTOR' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'DIALYSIS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'MAX_SEVERITY_SCORE' as categorical
+... storing 'days_post_pos_test' as categorical
+... storing 'acuity' as categorical
+... storing 'current_severity.1' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical

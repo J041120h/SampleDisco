@@ -15,6 +15,7 @@ def find_optimal_cell_resolution_atac(
     AnnData_sample: AnnData,
     output_dir: str,
     column: str,
+    n_features: int = 40000,
     sev_col: str = "sev.level",
     batch_col: str = None,
     sample_col: str = "sample",
@@ -68,7 +69,7 @@ def find_optimal_cell_resolution_atac(
                 AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
             
             # Perform clustering using ATAC-specific function
-            cell_types_atac(
+            AnnData_sample = cell_types_atac(
                 AnnData_sample,
                 cell_column='cell_type',
                 Save=False,
@@ -89,6 +90,7 @@ def find_optimal_cell_resolution_atac(
                 batch_col=batch_col, 
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
+                n_features = n_features, 
                 output_dir=output_dir,
                 Save = False,
                 verbose=False
@@ -174,7 +176,7 @@ def find_optimal_cell_resolution_atac(
                 AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
             
             # Perform clustering using ATAC-specific function
-            cell_types_atac(
+            AnnData_sample = cell_types_atac(
                 AnnData_sample,
                 cell_column='cell_type',
                 Save=False,
@@ -192,9 +194,10 @@ def find_optimal_cell_resolution_atac(
             # Compute pseudobulk data using updated function
             pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=AnnData_sample, 
-                batch_col='batch', 
+                batch_col=batch_col, 
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
+                n_features = n_features,
                 output_dir=output_dir,
                 Save = False,
                 verbose=False

@@ -847,6 +847,7 @@ def wrapper(
                         AnnData_sample = atac_sample,
                         output_dir = atac_cca_output_dir,
                         column = "X_DR_expression",
+                        n_features = atac_pseudobulk_n_features,
                         sample_col = atac_sample_col,
                         batch_col = atac_batch_col
                     )
@@ -855,6 +856,7 @@ def wrapper(
                         AnnData_sample = atac_sample,
                         output_dir = atac_cca_output_dir,
                         column = "X_DR_proportion",
+                        n_features = atac_pseudobulk_n_features,
                         sample_col = atac_sample_col,
                         batch_col = atac_batch_col
                     )
