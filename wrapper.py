@@ -772,7 +772,7 @@ def wrapper(
         atac_sample = cell_types_atac(
             adata = atac_sample,
             cell_column=atac_cell_type_column, 
-            existing_cell_types=existing_cell_types,
+            existing_cell_types=atac_existing_cell_types,
             n_target_clusters=atac_n_target_cell_clusters,
             cluster_resolution=atac_leiden_resolution,
             use_rep='X_DM_harmony',

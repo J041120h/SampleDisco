@@ -1,106 +1,106 @@
 ======================================
- Job ID:            17711964
+ Job ID:            17711993
  Job Name:          plot
  Partition:         shared
  Node List:         compute-115
  CPUs per Task:     16
  Memory Alloc:      102400
  GPU Requested:     None
- Start Time:        Sat Jun 21 04:29:55 PM EDT 2025
+ Start Time:        Sat Jun 21 05:02:50 PM EDT 2025
 ======================================
 Starting plot script...
-RNA X_DR_expression: filtered DataFrame from (429, 10) to (405, 10)
-RNA X_DR_proportion: filtered DataFrame from (429, 9) to (405, 9)
-ATAC X_DR_expression: filtered DataFrame from (429, 10) to (24, 10)
-ATAC X_DR_proportion: filtered DataFrame from (429, 9) to (24, 9)
-RNA samples: 405
+RNA X_DR_expression: filtered DataFrame from (64, 10) to (40, 10)
+RNA X_DR_proportion: filtered DataFrame from (64, 10) to (40, 10)
+ATAC X_DR_expression: filtered DataFrame from (64, 10) to (24, 10)
+ATAC X_DR_proportion: filtered DataFrame from (64, 10) to (24, 10)
+RNA samples: 40
 ATAC samples: 24
-RNA obsm shapes: [('X_DR_expression', (405, 10)), ('X_DR_proportion', (405, 9)), ('X_pca_expression_method', (405, 10))]
-ATAC obsm shapes: [('X_DR_expression', (24, 10)), ('X_DR_proportion', (24, 9)), ('X_pca_expression_method', (24, 10))]
+RNA obsm shapes: [('X_DR_expression', (40, 10)), ('X_DR_proportion', (40, 10)), ('X_pca_expression_method', (40, 10))]
+ATAC obsm shapes: [('X_DR_expression', (24, 10)), ('X_DR_proportion', (24, 10)), ('X_pca_expression_method', (24, 10))]
 
 RNA PCA coordinates in .uns:
-  X_DR_expression shape: (405, 10)
-  X_DR_proportion shape: (405, 9)
+  X_DR_expression shape: (40, 10)
+  X_DR_proportion shape: (40, 10)
 
 ATAC PCA coordinates in .uns:
   X_DR_expression shape: (24, 10)
-  X_DR_proportion shape: (24, 9)
+  X_DR_proportion shape: (24, 10)
 
 RNA validation:
-  n_obs: 405
-  severity column length: 405
-  X_DR_expression shape: (405, 10)
-  X_DR_proportion shape: (405, 9)
-  X_pca_expression_method shape: (405, 10)
+  n_obs: 40
+  severity column length: 40
+  X_DR_expression shape: (40, 10)
+  X_DR_proportion shape: (40, 10)
+  X_pca_expression_method shape: (40, 10)
 
 ATAC validation:
   n_obs: 24
   severity column length: 24
   X_DR_expression shape: (24, 10)
-  X_DR_proportion shape: (24, 9)
+  X_DR_proportion shape: (24, 10)
   X_pca_expression_method shape: (24, 10)
-✓ RNA X_DR_expression validation passed: 405 rows
-✓ RNA X_DR_proportion validation passed: 405 rows
+✓ RNA X_DR_expression validation passed: 40 rows
+✓ RNA X_DR_proportion validation passed: 40 rows
 ✓ ATAC X_DR_expression validation passed: 24 rows
 ✓ ATAC X_DR_proportion validation passed: 24 rows
 
 === Processing RNA modality ===
 Processing X_DR_proportion...
 
-The CCA score for X_DR_proportion is 0.4126
+The CCA score for X_DR_proportion is 0.4674
 
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/CCA/pca_2d_cca_proportion.pdf
+Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/CCA/pca_2d_cca_proportion.pdf
 Processing X_DR_expression...
 
-The CCA score for X_DR_expression is 0.4026
+The CCA score for X_DR_expression is 0.1367
 
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/CCA/pca_2d_cca_expression.pdf
+Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/CCA/pca_2d_cca_expression.pdf
 CCA analysis completed.
 
-[CCA] Total runtime: 1.71 seconds
+[CCA] Total runtime: 1.48 seconds
 
 RNA CCA analysis completed successfully
 
 === Processing ATAC modality ===
 Processing X_DR_proportion...
 
-The CCA score for X_DR_proportion is 0.2075
+The CCA score for X_DR_proportion is 0.2226
 
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/CCA/pca_2d_cca_proportion.pdf
+Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/CCA/pca_2d_cca_proportion.pdf
 Processing X_DR_expression...
 
-The CCA score for X_DR_expression is 0.2052
+The CCA score for X_DR_expression is 0.0754
 
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/CCA/pca_2d_cca_expression.pdf
+Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/CCA/pca_2d_cca_expression.pdf
 CCA analysis completed.
 
-[CCA] Total runtime: 1.13 seconds
+[CCA] Total runtime: 1.10 seconds
 
 ATAC CCA analysis completed successfully
 
 === Running RNA p-value tests ===
-P-value for observed correlation 0.4126018428986437: 0.0
-[CCA p-test] Runtime: 3.47 seconds
-RNA proportion p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/proportion
-P-value for observed correlation 0.40256956303875935: 0.0
-[CCA p-test] Runtime: 3.49 seconds
-RNA expression p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/RNA/expression
+P-value for observed correlation 0.46741173530590213: 0.011
+[CCA p-test] Runtime: 2.90 seconds
+RNA proportion p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/proportion
+P-value for observed correlation 0.13673778808248002: 0.695
+[CCA p-test] Runtime: 2.91 seconds
+RNA expression p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/expression
 
 === Running ATAC p-value tests ===
-P-value for observed correlation 0.20750854344031822: 0.653
-[CCA p-test] Runtime: 2.87 seconds
-ATAC proportion p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/proportion
-P-value for observed correlation 0.20522621337004437: 0.644
+P-value for observed correlation 0.2225621673356608: 0.572
 [CCA p-test] Runtime: 2.89 seconds
-ATAC expression p-value test completed. Results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test/ATAC/expression
+ATAC proportion p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/proportion
+P-value for observed correlation 0.07542955652466325: 0.937
+[CCA p-test] Runtime: 2.90 seconds
+ATAC expression p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/expression
 
 === CCA Integration Test Summary ===
 RNA CCA: ✓
-- RNA proportion test: ✗
-- RNA expression test: ✗
+- RNA proportion test: ✓
+- RNA expression test: ✓
 ATAC CCA: ✓
 - ATAC proportion test: ✓
 - ATAC expression test: ✓
-All results saved to /dcl01/hongkai/data/data/hjiang/result/k10/integration/CCA_test
+All results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test
 Finished plot script.
-End Time: Sat Jun 21 04:30:41 PM EDT 2025
+End Time: Sat Jun 21 05:03:34 PM EDT 2025

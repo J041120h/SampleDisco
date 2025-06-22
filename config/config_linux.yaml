@@ -168,7 +168,7 @@ cluster_and_DGE: false
 ATAC_data: true
 trajectory_analysis_atac: true
 atac_preprocessing: false
-atac_pseudobulk_dimensionality_reduction: false
+atac_pseudobulk_dimensionality_reduction: true
 atac_visualization_processing: false
 
 visualize_data: false

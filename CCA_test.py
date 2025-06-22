@@ -290,6 +290,7 @@ def find_optimal_cell_resolution(
     print(f"\n[Find Optimal Resolution] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
     return final_best_resolution
+
 def cca_pvalue_test(
     pseudo_adata: AnnData,
     column: str,
