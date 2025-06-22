@@ -1310,38 +1310,38 @@ def glue(
     output_dir = os.path.join(output_dir, "integration", "glue")
     start_time = time.time()
     
-    # # Step 1: Preprocessing
-    # rna, atac, guidance = glue_preprocess_pipeline(
-    #     rna_file=rna_file,
-    #     atac_file=atac_file,
-    #     rna_sample_meta_file=rna_sample_meta_file,
-    #     atac_sample_meta_file=atac_sample_meta_file,
-    #     ensembl_release=ensembl_release,
-    #     species=species,
-    #     output_dir=output_dir,
-    #     use_highly_variable=use_highly_variable,
-    #     n_top_genes=n_top_genes,
-    #     n_pca_comps=n_pca_comps,
-    #     n_lsi_comps=n_lsi_comps,
-    #     lsi_n_iter=lsi_n_iter,
-    #     gtf_by=gtf_by,
-    #     flavor=flavor,
-    #     generate_umap=generate_umap,
-    #     compression=compression,
-    #     random_state=random_state,
-    #     metadata_sep=metadata_sep,
-    #     rna_sample_column=rna_sample_column,
-    #     atac_sample_column=atac_sample_column
-    # )
+    # Step 1: Preprocessing
+    rna, atac, guidance = glue_preprocess_pipeline(
+        rna_file=rna_file,
+        atac_file=atac_file,
+        rna_sample_meta_file=rna_sample_meta_file,
+        atac_sample_meta_file=atac_sample_meta_file,
+        ensembl_release=ensembl_release,
+        species=species,
+        output_dir=output_dir,
+        use_highly_variable=use_highly_variable,
+        n_top_genes=n_top_genes,
+        n_pca_comps=n_pca_comps,
+        n_lsi_comps=n_lsi_comps,
+        lsi_n_iter=lsi_n_iter,
+        gtf_by=gtf_by,
+        flavor=flavor,
+        generate_umap=generate_umap,
+        compression=compression,
+        random_state=random_state,
+        metadata_sep=metadata_sep,
+        rna_sample_column=rna_sample_column,
+        atac_sample_column=atac_sample_column
+    )
     
-    # # Step 2: Training
-    # glue_train(
-    #     preprocess_output_dir=output_dir,
-    #     save_prefix=save_prefix,
-    #     consistency_threshold=consistency_threshold,
-    #     use_highly_variable=use_highly_variable,
-    #     output_dir=output_dir
-    # )
+    # Step 2: Training
+    glue_train(
+        preprocess_output_dir=output_dir,
+        save_prefix=save_prefix,
+        consistency_threshold=consistency_threshold,
+        use_highly_variable=use_highly_variable,
+        output_dir=output_dir
+    )
     
     # Step 3: Memory management and gene activity computation
     if use_gpu:

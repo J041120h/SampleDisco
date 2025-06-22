@@ -59,6 +59,19 @@ def find_optimal_cell_resolution_atac(
     tuple: (optimal_resolution, results_dataframe)
     """
     start_time = time.time()
+
+    try:
+        import rmm
+        from rmm.allocators.cupy import rmm_cupy_allocator
+        import cupy as cp
+        
+        rmm.reinitialize(
+            managed_memory=True,
+            pool_allocator=False,
+        )
+        cp.cuda.set_allocator(rmm_cupy_allocator)
+    except:
+        pass
     
     # Create subdirectories for different outputs
     main_output_dir = os.path.join(output_dir, "CCA_resolution_optimization")
@@ -74,10 +87,8 @@ def find_optimal_cell_resolution_atac(
     if compute_pvalues:
         print(f"Computing p-values with {num_pvalue_simulations} simulations per resolution")
 
-    # Storage for all results
     all_results = []
 
-    # First pass: coarse search
     print("\n=== FIRST PASS: Coarse Search ===")
     for resolution in np.arange(0.1, 1.01, 0.1):
         print(f"\n\nTesting resolution: {resolution:.2f}\n")
