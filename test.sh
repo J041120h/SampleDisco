@@ -66,6 +66,6 @@ export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 ############################################
 export PYTHONUNBUFFERED=1
 echo "Starting main.py..."
-python -u GenoDistance.py -m complex --config "/users/hjiang/GenoDistance/code/config/config_linux.yaml"
+python Test.py
 echo "Finished main.py."
 echo "End Time: $(date)"

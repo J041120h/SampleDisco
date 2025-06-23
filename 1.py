@@ -2,6 +2,7 @@
 import anndata as ad
 import numpy as np
 import pandas as pd
+from ATAC_cell_type import *
 
 def inspect_anndata(adata_path, verbose=True):
     """
@@ -1089,35 +1090,223 @@ def subset_anndata_to_random_samples(adata: ad.AnnData, sample_column: str = "sa
 
     return adata_subset
 
+import pandas as pd
+import numpy as np
+
+def analyze_atac_samples(adata, modality_col: str = "modality", sample_col: str = "sample"):
+    """
+    Analyze ATAC modality samples and print unique values for each observation column
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        AnnData object containing the data
+    modality_col : str
+        Name of the modality column (default: "modality")
+    sample_col : str
+        Name of the sample column (default: "sample")
+    """
+    
+    print("=== ATAC Sample Analysis ===\n")
+    
+    # Check if modality column exists
+    if modality_col not in adata.obs.columns:
+        print(f"❌ Column '{modality_col}' not found in adata.obs")
+        print(f"Available columns: {list(adata.obs.columns)}")
+        return
+    
+    # Filter for ATAC modality
+    atac_mask = adata.obs[modality_col] == "ATAC"
+    
+    if not atac_mask.any():
+        print("❌ No ATAC samples found")
+        print(f"Available modalities: {adata.obs[modality_col].unique()}")
+        return
+    
+    atac_data = adata.obs[atac_mask]
+    
+    print(f"📊 Total ATAC cells: {len(atac_data)}")
+    print(f"📊 Percentage of total: {len(atac_data)/len(adata.obs)*100:.1f}%\n")
+    
+    # Print unique samples in ATAC
+    if sample_col in atac_data.columns:
+        unique_samples = sorted(atac_data[sample_col].dropna().unique())
+        print(f"🧬 Unique ATAC samples ({len(unique_samples)}):")
+        for i, sample in enumerate(unique_samples, 1):
+            sample_count = (atac_data[sample_col] == sample).sum()
+            print(f"  {i:2d}. {sample} (n={sample_count})")
+        print()
+    else:
+        print(f"⚠️ Sample column '{sample_col}' not found\n")
+    
+    # Analyze each observation column
+    print("📋 Unique values per observation column:")
+    print("-" * 60)
+    
+    for col in sorted(atac_data.columns):
+        unique_values = atac_data[col].dropna().unique()
+        n_unique = len(unique_values)
+        
+        print(f"{col:20s} | {n_unique:4d} unique values", end="")
+        
+        # Show values if reasonable number
+        if n_unique <= 10:
+            print(f" | {sorted(unique_values)}")
+        elif n_unique <= 50:
+            print(f" | {sorted(unique_values)[:5]}...{sorted(unique_values)[-2:]}")
+        else:
+            print(f" | [too many to display]")
+    
+    print("-" * 60)
+    print(f"Total observation columns: {len(atac_data.columns)}")
+
+
+# Alternative version that returns data instead of just printing
+def get_atac_sample_info(adata, modality_col: str = "modality", sample_col: str = "sample"):
+    """
+    Get ATAC sample information as structured data
+    
+    Returns:
+    --------
+    dict with keys:
+        - 'unique_samples': list of unique sample names
+        - 'sample_counts': dict of sample -> cell count
+        - 'column_stats': dict of column -> unique value count
+        - 'atac_cells': filtered AnnData.obs for ATAC cells
+    """
+    
+    # Filter for ATAC modality
+    atac_mask = adata.obs[modality_col] == "ATAC"
+    
+    if not atac_mask.any():
+        return None
+    
+    atac_data = adata.obs[atac_mask]
+    
+    # Get unique samples and counts
+    if sample_col in atac_data.columns:
+        unique_samples = sorted(atac_data[sample_col].dropna().unique())
+        sample_counts = {sample: (atac_data[sample_col] == sample).sum() 
+                        for sample in unique_samples}
+    else:
+        unique_samples = []
+        sample_counts = {}
+    
+    # Get column statistics
+    column_stats = {}
+    for col in atac_data.columns:
+        column_stats[col] = len(atac_data[col].dropna().unique())
+    
+    return {
+        'unique_samples': unique_samples,
+        'sample_counts': sample_counts,
+        'column_stats': column_stats,
+        'atac_cells': atac_data
+    }
+
+
+import pandas as pd
+import scanpy as sc
+
+def clean_obs_for_saving(adata):
+    """
+    Clean the adata.obs DataFrame to remove problematic columns before saving.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        AnnData object to clean
+        
+    Returns:
+    --------
+    AnnData
+        Cleaned AnnData object
+    """
+    # Remove '_index' column if it exists (reserved name)
+    if '_index' in adata.obs.columns:
+        adata.obs = adata.obs.drop(columns=['_index'])
+        print("Removed '_index' column (reserved name)")
+    
+    # Convert object-type columns to string to avoid saving issues
+    for col in adata.obs.select_dtypes(include='object').columns:
+        adata.obs[col] = adata.obs[col].astype(str)
+    
+    return adata
+
+def update_obs_from_csv(adata_path, csv_file, sample_column='sample'):
+    """
+    Update AnnData obs columns with metadata from a CSV file and overwrite the original file.
+    
+    Parameters:
+    -----------
+    adata_path : str
+        Path to the AnnData (.h5ad) file to update
+    csv_file : str
+        Path to the CSV file containing sample metadata
+    sample_column : str, default 'sample'
+        Name of the column in adata.obs that contains sample identifiers
+    """
+    
+    # Read the AnnData file
+    print(f"Reading AnnData from {adata_path}")
+    adata = sc.read_h5ad(adata_path)
+    print(f"Original shape: {adata.shape}")
+    
+    # Read the CSV file
+    print(f"Reading metadata from {csv_file}")
+    meta_df = pd.read_csv(csv_file, index_col=0)  # First column as index (sample names)
+    print(f"Metadata shape: {meta_df.shape}")
+    print(f"Metadata columns: {list(meta_df.columns)}")
+    
+    # Check if sample column exists
+    if sample_column not in adata.obs.columns:
+        raise ValueError(f"Column '{sample_column}' not found in adata.obs")
+    
+    # Show overlap between samples
+    adata_samples = set(adata.obs[sample_column].unique())
+    meta_samples = set(meta_df.index)
+    common_samples = adata_samples.intersection(meta_samples)
+    print(f"Samples in AnnData: {len(adata_samples)}")
+    print(f"Samples in metadata: {len(meta_samples)}")
+    print(f"Common samples: {len(common_samples)}")
+    
+    # For each metadata column in the CSV
+    for col in meta_df.columns:
+        print(f"Processing column: {col}")
+        
+        # Initialize the new column with NaN if it doesn't exist
+        if col not in adata.obs.columns:
+            adata.obs[col] = pd.NA
+            print(f"  Created new column '{col}'")
+        else:
+            print(f"  Updating existing column '{col}'")
+        
+        # Update values for samples that are in the CSV
+        for sample_name in meta_df.index:
+            # Find cells that belong to this sample
+            sample_mask = adata.obs[sample_column] == sample_name
+            
+            # Update the metadata for these cells
+            if sample_mask.any():
+                adata.obs.loc[sample_mask, col] = meta_df.loc[sample_name, col]
+    
+    # Clean the obs DataFrame before saving
+    adata = clean_obs_for_saving(adata)
+    
+    # Save the updated AnnData
+    print(f"Saving updated AnnData to {adata_path}")
+    adata.write_h5ad(adata_path)
+    print(f"Successfully updated and saved AnnData to {adata_path}")
+    
+    return adata
+
+
 # Example usage
 if __name__ == "__main__":
-    input_path = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
-    output_path = "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
+    input_path = "/dcl01/hongkai/data/data/hjiang/result/integration_test/preprocess/atac_rna_integrated.h5ad"
+    csv_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
 
+
+    update_obs_from_csv(input_path, csv_file, sample_column='sample')
     adata = sc.read_h5ad(input_path)
-    adata_subset = subset_anndata_to_random_samples(adata, sample_column="sample", n_samples=8)
-    adata_subset.write_h5ad(output_path)
-    print(f"Subset saved to {output_path}")
-
-
-# if __name__ == "__main__":
-#     adata = sc.read("/dcl01/hongkai/data/data/hjiang/result/ATAC/harmony/ATAC_sample.h5ad")
-    
-#     # updated_adata = update_sev_level_from_mapping_file(
-#     #     adata=adata,
-#     #     mapping_file_path="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
-#     # )
-    
-#     # # Save the updated AnnData
-#     # sc.write("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad", updated_adata)
-    
-#     sample_counts = adata.obs['sample'].value_counts()
-
-#     # Print the results
-#     print("Number of cells per sample:")
-#     print(sample_counts)
-
-#     # Or if you want it sorted by sample name instead of count:
-#     sample_counts_sorted = adata.obs['sample'].value_counts().sort_index()
-#     print("\nNumber of cells per sample (sorted by sample name):")
-#     print(sample_counts_sorted)
+    analyze_atac_samples(adata, modality_col="modality", sample_col="sample")

@@ -173,8 +173,8 @@ if __name__ == "__main__":
     #     )
 
     adata = integrate_preprocess(
-        output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration",
-        h5ad_path="/dcl01/hongkai/data/data/hjiang/result/integration/glue/atac_rna_integrated.h5ad",
+        output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/",
+        h5ad_path="/dcl01/hongkai/data/data/hjiang/result/integration_test/glue/atac_rna_integrated_test.h5ad",
         sample_column = 'sample',
         min_cells_sample=500,
         min_cell_gene=500,

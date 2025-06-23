@@ -1,0 +1,229 @@
+GPU Memory: 34.07 GB
+GPU Memory Available: 0.00 GB
+
+
+ Finding optimal resolution begins 
+
+
+
+=== Converting sev.level to numeric ===
+Converting severity data to numeric...
+Original unique values: [1.0, 2.0, 3.0, 4.0]
+✓ Direct numeric conversion successful
+Conversion complete: 162916/162916 values converted
+Final range: [1.000, 4.000]
+Variance: 1.332256
+=== Data Quality Check ===
+Missing values in sev.level: 0
+Missing values in modality: 0
+
+Severity level distribution:
+sev.level
+2.0    57870
+1.0    46180
+4.0    43880
+3.0    14986
+Name: count, dtype: int64
+
+Modality distribution:
+modality
+ATAC    88215
+RNA     74701
+Name: count, dtype: int64
+
+RNA - Severity variance: 1.191391
+RNA - Unique severity levels: 4
+
+ATAC - Severity variance: 1.350928
+ATAC - Unique severity levels: 4
+Starting integrated resolution optimization...
+Optimization target: ATAC
+Using representation: X_glue with 30 components
+Testing resolutions from 0.01 to 1.00...
+Computing p-values with 1000 simulations per resolution
+
+=== FIRST PASS: Coarse Search ===
+
+
+Testing resolution: 0.10
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.8995, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.5249, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.4917, p-value: nan
+Resolution 0.10: Optimization Score = 1.0000
+
+
+Testing resolution: 0.20
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.9310, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.6113, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.6204, p-value: nan
+Resolution 0.20: Optimization Score = 1.0000
+
+
+Testing resolution: 0.30
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.8856, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.7290, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.9031, p-value: nan
+Resolution 0.30: Optimization Score = 1.0000
+
+
+Testing resolution: 0.40
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.9046, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.7310, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.8496, p-value: nan
+Resolution 0.40: Optimization Score = 1.0000
+
+
+Testing resolution: 0.50
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.8986, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.7322, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.9123, p-value: nan
+Resolution 0.50: Optimization Score = 1.0000
+
+
+Testing resolution: 0.60
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.8418, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.7947, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.8500, p-value: nan
+Resolution 0.60: Optimization Score = 1.0000
+
+
+Testing resolution: 0.70
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.8709, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.7795, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.9543, p-value: nan
+Resolution 0.70: Optimization Score = 1.0000
+
+
+Testing resolution: 0.80
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.8786, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.8391, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.9760, p-value: nan
+Resolution 0.80: Optimization Score = 1.0000
+
+
+Testing resolution: 0.90
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.9087, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.8358, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 0.9999, p-value: nan
+Resolution 0.90: Optimization Score = 1.0000
+
+
+Testing resolution: 1.00
+
+Filtered X_DR_expression from 64 to 40 samples for RNA
+RNA expression CCA Score: 0.8724, p-value: nan
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+RNA proportion CCA Score: 0.9299, p-value: nan
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+ATAC expression CCA Score: 1.0000, p-value: nan
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+ATAC proportion CCA Score: 1.0000, p-value: nan
+Resolution 1.00: Optimization Score = 1.0000
+
+Best resolution from first pass: 1.00
+Best optimization score: 1.0000
+
+=== SECOND PASS: Fine-tuned Search ===
+Fine-tuning search from 0.95 to 1.00...
+
+Testing fine-tuned resolution: 0.950
+Filtered X_DR_expression from 64 to 40 samples for RNA
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+Fine-tuned Resolution 0.950: Score 1.0000
+
+Testing fine-tuned resolution: 0.960
+Filtered X_DR_expression from 64 to 40 samples for RNA
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+Fine-tuned Resolution 0.960: Score 1.0000
+
+Testing fine-tuned resolution: 0.970
+Filtered X_DR_expression from 64 to 40 samples for RNA
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+Fine-tuned Resolution 0.970: Score 1.0000
+
+Testing fine-tuned resolution: 0.980
+Filtered X_DR_expression from 64 to 40 samples for RNA
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+Fine-tuned Resolution 0.980: Score 1.0000
+
+Testing fine-tuned resolution: 0.990
+Filtered X_DR_expression from 64 to 40 samples for RNA
+Filtered X_DR_proportion from 64 to 40 samples for RNA
+Filtered X_DR_expression from 64 to 24 samples for ATAC
+Filtered X_DR_proportion from 64 to 24 samples for ATAC
+Fine-tuned Resolution 0.990: Score 1.0000
+
+=== FINAL RESULTS ===
+Best resolution: 0.950
+Best optimization score (atac): 1.0000
+Best RNA scores - Expression: 0.9489, Proportion: 0.9486
+Best ATAC scores - Expression: 1.0000, Proportion: 1.0000
+
+Comprehensive results saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/resolution_scores_comprehensive_integration_atac.csv
+Comprehensive plot saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/resolution_optimization_comprehensive_integration_atac.png
+P-value summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/pvalue_results/pvalue_summary_integration_atac.txt
+
+[Find Optimal Resolution Integration] Total runtime: 565.58 seconds
+

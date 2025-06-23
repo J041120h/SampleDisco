@@ -1,15 +1,15 @@
 ======================================
- Job ID:            17711946
+ Job ID:            17715445
  Job Name:          test
  Partition:         gpu
  Node List:         compute-170
  CPUs per Task:     16
  Memory Alloc:      819200
  GPU Requested:     1
- Start Time:        Sat Jun 21 03:52:20 PM EDT 2025
+ Start Time:        Sun Jun 22 06:35:20 PM EDT 2025
 ======================================
 Checking GPU status...
-Sat Jun 21 15:52:23 2025       
+Sun Jun 22 18:35:23 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -30,418 +30,189 @@ Sat Jun 21 15:52:23 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
-Start of Process
-
-Resuming process from previous progress:
-{
-    "preprocessing": true,
-    "cell_type_cluster": true,
-    "sample_distance_calculation": true,
-    "DimensionalityReduction": true,
-    "trajectory_analysis": true,
-    "visualize_data": true,
-    "initialization": false
-}
-Linux system detected.
+GPU Memory: 99.99 GB
+GPU Memory Available: 0.00 GB
 
 
-Enabling managed memory for RMM...
+ Finding optimal resolution begins 
 
 
-[cell_types_atac] No cell type annotation found. Performing clustering at resolution 0.7.
-[cell_types_atac] Building neighborhood graph...
-[cell_types_atac] No target clusters specified. Using standard Leiden clustering (resolution=0.7)...
-[cell_types_atac] Found 24 clusters after Leiden clustering.
-[cell_types_atac] Finished assigning cell types.
-[standardize] Converted categorical to string format
-[standardize] Final cell types (n=24): ['1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '2', '20', '21', '22', '23', '24', '3', '4', '5', '6', '7', '8', '9']
-[cell_types_atac] Total runtime: 25.49 seconds
-Processing 24 cell types across 24 samples
-Creating layer for 1
-Creating layer for 10
-Creating layer for 11
-Creating layer for 12
-Creating layer for 13
-Creating layer for 14
-Creating layer for 15
-Creating layer for 16
-Creating layer for 17
-Creating layer for 18
-Creating layer for 19
-Creating layer for 2
-Creating layer for 20
-Creating layer for 21
-Creating layer for 22
-Creating layer for 23
-Creating layer for 24
-Creating layer for 3
-Creating layer for 4
-Creating layer for 5
-Creating layer for 6
-Creating layer for 7
-Creating layer for 8
-Creating layer for 9
 
-Processing cell type: 1
-Processing 24 cells × 230275 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.450
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+=== Converting sev.level to numeric ===
+Converting severity data to numeric...
+Original unique values: [1.0, 2.0, 3.0, 4.0]
+✓ Direct numeric conversion successful
+Conversion complete: 162916/162916 values converted
+Final range: [1.000, 4.000]
+Variance: 1.332256
+=== Data Quality Check ===
+Missing values in sev.level: 0
+Missing values in modality: 0
 
-Processing cell type: 10
-Processing 24 cells × 230219 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.460
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+Severity level distribution:
+sev.level
+2.0    57870
+1.0    46180
+4.0    43880
+3.0    14986
+Name: count, dtype: int64
 
-Processing cell type: 11
-Processing 24 cells × 229822 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.735
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+Modality distribution:
+modality
+ATAC    88215
+RNA     74701
+Name: count, dtype: int64
 
-Processing cell type: 12
-Processing 24 cells × 230129 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.721
-  Selecting top 40000 HVGs
-  Selected 40001 HVGs
+RNA - Severity variance: 1.191391
+RNA - Unique severity levels: 4
 
-Processing cell type: 13
-Processing 24 cells × 229114 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.624
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+ATAC - Severity variance: 1.350928
+ATAC - Unique severity levels: 4
+Starting integrated resolution optimization...
+Optimization target: ATAC
+Using representation: X_glue with 30 components
+Testing resolutions from 0.01 to 1.00...
+Computing p-values with 1000 simulations per resolution
 
-Processing cell type: 14
-Processing 24 cells × 230057 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.800
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+=== FIRST PASS: Coarse Search ===
 
-Processing cell type: 15
-Processing 24 cells × 216351 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.687
-  Selecting top 40000 HVGs
-  Selected 40373 HVGs
 
-Processing cell type: 16
-Processing 24 cells × 230016 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.676
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+Testing resolution: 0.10
 
-Processing cell type: 17
-Processing 24 cells × 204559 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.838
-  Selecting top 40000 HVGs
-  Selected 40192 HVGs
+RNA expression CCA Score: 0.9357, p-value: 0.0740
+RNA proportion CCA Score: 0.5544, p-value: 0.0070
+ATAC expression CCA Score: 1.0000, p-value: 0.0620
+ATAC proportion CCA Score: 0.5964, p-value: 0.0420
+Resolution 0.10: Optimization Score = 1.0000
 
-Processing cell type: 18
-Processing 24 cells × 227895 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.871
-  Selecting top 40000 HVGs
-  Selected 40019 HVGs
 
-Processing cell type: 19
-Processing 24 cells × 230262 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.729
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+Testing resolution: 0.20
 
-Processing cell type: 2
-Processing 24 cells × 230314 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.519
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+RNA expression CCA Score: 0.9391, p-value: 0.0710
+RNA proportion CCA Score: 0.5656, p-value: 0.0090
+ATAC expression CCA Score: 1.0000, p-value: 0.1060
+ATAC proportion CCA Score: 0.3712, p-value: 0.6000
+Resolution 0.20: Optimization Score = 1.0000
 
-Processing cell type: 20
-Processing 24 cells × 212724 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.731
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
 
-Processing cell type: 21
-Processing 24 cells × 229844 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.917
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+Testing resolution: 0.30
 
-Processing cell type: 22
-Processing 24 cells × 224331 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.908
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+RNA expression CCA Score: 0.9371, p-value: 0.0730
+RNA proportion CCA Score: 0.7605, p-value: 0.0020
+ATAC expression CCA Score: 1.0000, p-value: 0.2500
+ATAC proportion CCA Score: 0.8120, p-value: 0.0370
+Resolution 0.30: Optimization Score = 1.0000
 
-Processing cell type: 23
-Processing 24 cells × 226951 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.957
-  Selecting top 40000 HVGs
-  Selected 40770 HVGs
 
-Processing cell type: 24
-Processing 24 cells × 220640 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.947
-  Selecting top 40000 HVGs
-  Selected 40356 HVGs
+Testing resolution: 0.40
 
-Processing cell type: 3
-Processing 24 cells × 229872 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.712
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+RNA expression CCA Score: 0.9258, p-value: 0.1330
+RNA proportion CCA Score: 0.6924, p-value: 0.0150
+ATAC expression CCA Score: 1.0000, p-value: 0.0590
+ATAC proportion CCA Score: 0.7725, p-value: 0.1120
+Resolution 0.40: Optimization Score = 1.0000
 
-Processing cell type: 4
-Processing 24 cells × 229810 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.588
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
 
-Processing cell type: 5
-Processing 24 cells × 229836 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.530
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+Testing resolution: 0.50
 
-Processing cell type: 6
-Processing 24 cells × 230320 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.692
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+RNA expression CCA Score: 0.9465, p-value: 0.0370
+RNA proportion CCA Score: 0.7354, p-value: 0.0340
+ATAC expression CCA Score: 1.0000, p-value: 0.2330
+ATAC proportion CCA Score: 0.9375, p-value: 0.0010
+Resolution 0.50: Optimization Score = 1.0000
 
-Processing cell type: 7
-Processing 24 cells × 230293 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.691
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
 
-Processing cell type: 8
-Processing 24 cells × 227544 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.916
-  Selecting top 40000 HVGs
-  Selected 40124 HVGs
+Testing resolution: 0.60
 
-Processing cell type: 9
-Processing 24 cells × 229843 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.862
-  Selecting top 40000 HVGs
-  Selected 40000 HVGs
+RNA expression CCA Score: 0.9035, p-value: 0.2920
+RNA proportion CCA Score: 0.7984, p-value: 0.0100
+ATAC expression CCA Score: 1.0000, p-value: 0.0640
+ATAC proportion CCA Score: 0.9056, p-value: 0.0830
+Resolution 0.60: Optimization Score = 1.0000
 
-Concatenating all cell type HVGs into single AnnData
-Applying final HVG selection on 961835 concatenated genes
-Final HVG selection: 40000 genes
 
-Creating final HVG expression matrix
+Testing resolution: 0.70
 
-Total runtime: 40.17 seconds
-Final HVG matrix shape: (24, 24)
-Final AnnData shape: (24, 40000)
-[process_anndata_with_pca] Starting dimension reduction computation...
-[process_anndata_with_pca] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_pca] ATAC mode: Will use LSI for expression data
-[process_anndata_with_pca] ✓ Created output directories:
-  - count_output_dir: /dcl01/hongkai/data/data/hjiang/result/ATAC/harmony
-  - pseudobulk_output_dir: /dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk
-[process_anndata_with_pca] Using n_expression_pcs=23, n_proportion_pcs=24
-[process_anndata_with_pca] Data dimensions: expression=(24, 40000), proportion=(24, 24)
-[DimRed] Computing LSI for ATAC data with 23 components on (24, 40000) data
-[LSI] Computing LSI with 23 components on (24, 40000) data
-[run_lsi_expression] Scanpy LSI failed: lsi
-[run_lsi_expression] Attempting manual LSI with TF-IDF
-[run_lsi_expression] Original shape: (24, 40000)
-[run_lsi_expression] TF-IDF matrix stats: shape=(24, 40000), min=-0.021274, max=0.063202, mean=0.001312
-[run_lsi_expression] Manual LSI computation successful. Shape: (24, 23)
-[run_lsi_expression] LSI result stats: min=-0.576873, max=0.737825
-[Storage] Stored X_lsi_expression_method in both adata and pseudobulk_anndata (shape: (24, 23))
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (24, 23))
-[DimRed] Successfully used LSI for ATAC dimension reduction
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_pca] ✓ Expression dimension reduction completed successfully
-[run_pca_proportion] PCA on cell proportions completed.
-Stored results as X_DR_proportion in both adata and pseudobulk_anndata with shape: (24, 24)
-[process_anndata_with_pca] ✓ Proportion dimension reduction completed successfully
-[process_anndata_with_pca] Preparing to save results...
-[process_anndata_with_pca] Target file paths:
-  - adata: /dcl01/hongkai/data/data/hjiang/result/ATAC/harmony/adata_sample.h5ad
-  - pseudobulk_anndata: /dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving adata to: /dcl01/hongkai/data/data/hjiang/result/ATAC/harmony/adata_sample.h5ad
-[Save] ✓ Successfully saved adata (1563.8 MB)
-[Save] Saving pseudobulk_anndata to: /dcl01/hongkai/data/data/hjiang/result/ATAC/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (3.3 MB)
-[process_anndata_with_pca] ✓ All files saved successfully
+RNA expression CCA Score: 0.9227, p-value: 0.1590
+RNA proportion CCA Score: 0.7849, p-value: 0.0170
+ATAC expression CCA Score: 1.0000, p-value: 0.3560
+ATAC proportion CCA Score: 0.9264, p-value: 0.0480
+Resolution 0.70: Optimization Score = 1.0000
 
-[process_anndata_with_pca] === SUMMARY ===
-Total runtime: 120.14 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ✓ ATTEMPTED
-Processing X_DR_proportion...
 
-The CCA score for X_DR_proportion is 0.6649
+Testing resolution: 0.80
 
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_proportion.pdf
-Processing X_DR_expression...
+RNA expression CCA Score: 0.8429, p-value: 0.7960
+RNA proportion CCA Score: 0.9087, p-value: 0.0020
+ATAC expression CCA Score: 1.0000, p-value: 0.0410
+ATAC proportion CCA Score: 0.9808, p-value: 0.6290
+Resolution 0.80: Optimization Score = 1.0000
 
-The CCA score for X_DR_expression is 0.2728
 
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_expression.pdf
-CCA analysis completed.
+Testing resolution: 0.90
 
-[CCA] Total runtime: 0.51 seconds
+RNA expression CCA Score: 0.8460, p-value: 0.7430
+RNA proportion CCA Score: 0.8963, p-value: 0.0170
+ATAC expression CCA Score: 1.0000, p-value: 0.4060
+ATAC proportion CCA Score: 1.0000, p-value: 0.6920
+Resolution 0.90: Optimization Score = 1.0000
 
-P-value for observed correlation 0.27284133416752143: 0.447
-[CCA p-test] Runtime: 0.88 seconds
-P-value for observed correlation 0.6648649148841654: 0.005
-[CCA p-test] Runtime: 0.88 seconds
-End of Process
+
+Testing resolution: 1.00
+
+RNA expression CCA Score: 0.8886, p-value: 0.4230
+RNA proportion CCA Score: 0.9296, p-value: 0.0910
+ATAC expression CCA Score: 1.0000, p-value: 0.5570
+ATAC proportion CCA Score: 1.0000, p-value: 0.8410
+Resolution 1.00: Optimization Score = 1.0000
+
+Best resolution from first pass: 0.90
+Best optimization score: 1.0000
+
+=== SECOND PASS: Fine-tuned Search ===
+Fine-tuning search from 0.85 to 0.95...
+
+Testing fine-tuned resolution: 0.850
+Fine-tuned Resolution 0.850: Score 1.0000
+
+Testing fine-tuned resolution: 0.860
+Fine-tuned Resolution 0.860: Score 1.0000
+
+Testing fine-tuned resolution: 0.870
+Fine-tuned Resolution 0.870: Score 1.0000
+
+Testing fine-tuned resolution: 0.880
+Fine-tuned Resolution 0.880: Score 1.0000
+
+Testing fine-tuned resolution: 0.890
+Fine-tuned Resolution 0.890: Score 1.0000
+
+Testing fine-tuned resolution: 0.910
+Fine-tuned Resolution 0.910: Score 1.0000
+
+Testing fine-tuned resolution: 0.920
+Fine-tuned Resolution 0.920: Score 1.0000
+
+Testing fine-tuned resolution: 0.930
+Fine-tuned Resolution 0.930: Score 1.0000
+
+Testing fine-tuned resolution: 0.940
+Fine-tuned Resolution 0.940: Score 1.0000
+
+Testing fine-tuned resolution: 0.950
+Fine-tuned Resolution 0.950: Score 1.0000
+
+=== FINAL RESULTS ===
+Best resolution: 0.880
+Best optimization score (atac): 1.0000
+Best RNA scores - Expression: 0.8535, Proportion: 0.9574
+Best ATAC scores - Expression: 1.0000, Proportion: 1.0000
+
+Comprehensive results saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/resolution_scores_comprehensive_integration_atac.csv
+Comprehensive plot saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/resolution_optimization_comprehensive_integration_atac.png
+P-value summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/pvalue_results/pvalue_summary_integration_atac.txt
+
+[Find Optimal Resolution Integration] Total runtime: 542.09 seconds
 
 Finished main.py.
-End Time: Sat Jun 21 03:56:59 PM EDT 2025
+End Time: Sun Jun 22 06:47:43 PM EDT 2025
