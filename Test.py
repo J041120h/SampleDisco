@@ -12,7 +12,6 @@ from CCA_test import *
 from linux.CellType_linux import cell_types_linux
 from integration_visualization import visualize_multimodal_embedding
 
-
 import warnings
 import numpy as np
 import pandas as pd
@@ -24,123 +23,6 @@ import numpy as np
 import re
 from typing import Union
 
-def convert_severity_to_numeric(data: Union[pd.Series, np.ndarray, list], 
-                               verbose: bool = True) -> np.ndarray:
-    """
-    Convert severity level data to numeric values.
-    
-    Parameters:
-    -----------
-    data : pd.Series, np.ndarray, or list
-        The severity level data to convert
-    verbose : bool
-        Whether to print conversion details
-        
-    Returns:
-    --------
-    numeric_data : np.ndarray
-        Converted numeric array
-    """
-    
-    # Convert to pandas Series for easier handling
-    if isinstance(data, (np.ndarray, list)):
-        data = pd.Series(data)
-    elif isinstance(data, pd.Series):
-        data = data.copy()
-    else:
-        raise ValueError("Data must be pandas Series, numpy array, or list")
-    
-    if verbose:
-        print(f"Converting severity data to numeric...")
-        print(f"Original unique values: {sorted(data.dropna().unique())}")
-    
-    # Convert categorical to string first if needed
-    if pd.api.types.is_categorical_dtype(data):
-        data = data.astype(str)
-    
-    # Strategy 1: Try direct numeric conversion
-    try:
-        numeric_data = pd.to_numeric(data, errors='coerce')
-        if numeric_data.notna().sum() > 0:
-            if verbose:
-                print("✓ Direct numeric conversion successful")
-            return numeric_data.values
-    except:
-        pass
-    
-    # Strategy 2: Extract numbers from strings (e.g., "level_2.5" -> 2.5)
-    def extract_number(value):
-        if pd.isna(value):
-            return np.nan
-        value_str = str(value).strip()
-        # Find first number in string
-        match = re.search(r'-?\d+\.?\d*', value_str)
-        if match:
-            try:
-                return float(match.group())
-            except:
-                pass
-        return np.nan
-    
-    extracted_numbers = data.apply(extract_number)
-    if extracted_numbers.notna().sum() > 0:
-        if verbose:
-            print("✓ Extracted numbers from strings")
-        return extracted_numbers.values
-    
-    # Strategy 3: Automatic ordinal ranking for categorical data
-    unique_values = sorted([v for v in data.dropna().unique() if v is not None])
-    
-    if len(unique_values) <= 20:  # Only for reasonable number of categories
-        ordinal_mapping = {val: i for i, val in enumerate(unique_values)}
-        ordinal_values = data.map(ordinal_mapping)
-        
-        if verbose:
-            print("✓ Applied automatic ordinal ranking")
-            print(f"Mapping: {ordinal_mapping}")
-        
-        return ordinal_values.values
-    
-    # If all else fails, return NaN array
-    if verbose:
-        print("❌ Could not convert to numeric - returning NaN array")
-    
-    return np.full(len(data), np.nan)
-
-
-def convert_adata_severity_column(adata, sev_col: str = "sev.level", verbose: bool = True):
-    """
-    Convert severity column in AnnData object to numeric values
-    
-    Parameters:
-    -----------
-    adata : AnnData
-        AnnData object containing the severity data
-    sev_col : str
-        Name of the severity column in adata.obs
-    verbose : bool
-        Whether to print conversion details
-    """
-    
-    if sev_col not in adata.obs.columns:
-        raise ValueError(f"Column '{sev_col}' not found in adata.obs")
-    
-    if verbose:
-        print(f"\n=== Converting {sev_col} to numeric ===")
-    
-    # Convert the severity column
-    numeric_data = convert_severity_to_numeric(adata.obs[sev_col], verbose=verbose)
-    
-    # Update the AnnData object
-    adata.obs[sev_col] = numeric_data
-    
-    if verbose:
-        valid_count = (~np.isnan(numeric_data)).sum()
-        print(f"Conversion complete: {valid_count}/{len(numeric_data)} values converted")
-        if valid_count > 0:
-            print(f"Final range: [{np.nanmin(numeric_data):.3f}, {np.nanmax(numeric_data):.3f}]")
-            print(f"Variance: {np.nanvar(numeric_data):.6f}")
-            
 def suppress_warnings():
     """Suppress specific warnings that are expected during CCA analysis"""
     warnings.filterwarnings('ignore', category=UserWarning, 
@@ -584,10 +466,290 @@ def ensure_non_categorical_columns(adata, columns):
                 adata.obs[col] = adata.obs[col].astype(str)
     return adata
 
+def save_comprehensive_cca_summary(df_results, optimization_target, dr_type, output_dir):
+    """
+    Save comprehensive CCA summary for all modalities and DR types
+    """
+    summary_path = os.path.join(output_dir, f"CCA_scores_comprehensive_summary_{optimization_target}_{dr_type}.txt")
+    
+    with open(summary_path, "w") as f:
+        f.write(f"Comprehensive CCA Scores Summary - Integration ({optimization_target.upper()} {dr_type.upper()})\n")
+        f.write("="*80 + "\n\n")
+        
+        # Summary statistics for each metric
+        metrics = ['rna_cca_expression', 'rna_cca_proportion', 'atac_cca_expression', 'atac_cca_proportion']
+        metric_names = ['RNA Expression', 'RNA Proportion', 'ATAC Expression', 'ATAC Proportion']
+        
+        for metric, name in zip(metrics, metric_names):
+            valid_data = df_results[~df_results[metric].isna()]
+            if not valid_data.empty:
+                f.write(f"{name} CCA Scores:\n")
+                f.write(f"  Mean: {valid_data[metric].mean():.4f}\n")
+                f.write(f"  Std:  {valid_data[metric].std():.4f}\n")
+                f.write(f"  Min:  {valid_data[metric].min():.4f} (at resolution {valid_data.loc[valid_data[metric].idxmin(), 'resolution']:.3f})\n")
+                f.write(f"  Max:  {valid_data[metric].max():.4f} (at resolution {valid_data.loc[valid_data[metric].idxmax(), 'resolution']:.3f})\n")
+                f.write(f"  Valid measurements: {len(valid_data)}\n\n")
+        
+        # Highlight the optimization target
+        f.write(f"OPTIMIZATION TARGET: {optimization_target.upper()} {dr_type.upper()}\n")
+        f.write("-" * 50 + "\n")
+        target_metric = f"{optimization_target}_cca_{dr_type}"
+        if target_metric in df_results.columns:
+            valid_target = df_results[~df_results[target_metric].isna()]
+            if not valid_target.empty:
+                f.write(f"Target metric ({target_metric}) statistics:\n")
+                f.write(f"  Best score: {valid_target[target_metric].max():.4f} (at resolution {valid_target.loc[valid_target[target_metric].idxmax(), 'resolution']:.3f})\n")
+                f.write(f"  Mean score: {valid_target[target_metric].mean():.4f}\n")
+                f.write(f"  Std: {valid_target[target_metric].std():.4f}\n\n")
+        
+        # Top 5 resolutions for each metric
+        f.write("Top 5 Resolutions for Each Metric:\n")
+        f.write("-" * 40 + "\n")
+        
+        for metric, name in zip(metrics, metric_names):
+            valid_data = df_results[~df_results[metric].isna()]
+            if not valid_data.empty:
+                top5 = valid_data.nlargest(5, metric)
+                f.write(f"\n{name}:\n")
+                for idx, row in top5.iterrows():
+                    f.write(f"  Resolution {row['resolution']:.3f}: {row[metric]:.4f}\n")
+        
+        # Correlation between metrics
+        f.write("\n\nCorrelation Matrix Between CCA Scores:\n")
+        f.write("-" * 40 + "\n")
+        correlation_matrix = df_results[metrics].corr()
+        f.write(correlation_matrix.to_string())
+        f.write("\n")
+    
+    print(f"Comprehensive CCA summary saved to: {summary_path}")
+
+def save_detailed_pvalue_summary(df_results, optimization_target, dr_type, output_dir):
+    """
+    Save detailed p-value summary including all resolutions for the chosen modality and DR type
+    """
+    pvalue_summary_path = os.path.join(output_dir, f"pvalue_summary_integration_{optimization_target}_{dr_type}.txt")
+    
+    # Find best resolution
+    valid_results = df_results[~df_results['optimization_score'].isna()]
+    if valid_results.empty:
+        return
+    
+    final_best_idx = valid_results['optimization_score'].idxmax()
+    final_best_resolution = valid_results.loc[final_best_idx, 'resolution']
+    final_best_score = valid_results.loc[final_best_idx, 'optimization_score']
+    
+    with open(pvalue_summary_path, "w") as f:
+        f.write(f"Detailed P-value Summary for Integration ({optimization_target.upper()} {dr_type.upper()})\n")
+        f.write("="*80 + "\n\n")
+        
+        f.write(f"Optimization Target: {optimization_target.upper()} {dr_type.upper()}\n")
+        f.write(f"Best Resolution: {final_best_resolution:.3f}\n")
+        f.write(f"Best CCA Score: {final_best_score:.4f}\n\n")
+        
+        # Best resolution p-values
+        f.write("P-values at Best Resolution:\n")
+        f.write("-" * 30 + "\n")
+        f.write(f"  RNA Expression: {valid_results.loc[final_best_idx, 'rna_pvalue_expression']:.4f}\n")
+        f.write(f"  RNA Proportion: {valid_results.loc[final_best_idx, 'rna_pvalue_proportion']:.4f}\n")
+        f.write(f"  ATAC Expression: {valid_results.loc[final_best_idx, 'atac_pvalue_expression']:.4f}\n")
+        f.write(f"  ATAC Proportion: {valid_results.loc[final_best_idx, 'atac_pvalue_proportion']:.4f}\n\n")
+        
+        # P-values for chosen modality and DR type across all resolutions
+        target_pvalue_metric = f"{optimization_target}_pvalue_{dr_type}"
+        target_cca_metric = f"{optimization_target}_cca_{dr_type}"
+        
+        f.write(f"P-values and CCA Scores for {optimization_target.upper()} {dr_type.upper()} Across All Resolutions:\n")
+        f.write("="*80 + "\n")
+        f.write("Resolution\tCCA Score\tP-value\t\tSignificant (p<0.05)\n")
+        f.write("-" * 60 + "\n")
+        
+        valid_data = df_results[~df_results[target_pvalue_metric].isna()].sort_values('resolution')
+        for idx, row in valid_data.iterrows():
+            is_significant = "Yes" if row[target_pvalue_metric] < 0.05 else "No"
+            cca_score = row[target_cca_metric] if not pd.isna(row[target_cca_metric]) else "N/A"
+            f.write(f"{row['resolution']:.3f}\t\t{cca_score:.4f}\t\t{row[target_pvalue_metric]:.4f}\t\t{is_significant}\n")
+        
+        # Summary statistics for target metric
+        f.write(f"\n\nSummary Statistics for {optimization_target.upper()} {dr_type.upper()}:\n")
+        f.write("="*60 + "\n")
+        
+        valid_pvalues = df_results[~df_results[target_pvalue_metric].isna()][target_pvalue_metric]
+        valid_cca_scores = df_results[~df_results[target_cca_metric].isna()][target_cca_metric]
+        
+        if not valid_pvalues.empty:
+            significant_count = (valid_pvalues < 0.05).sum()
+            f.write(f"P-value Statistics:\n")
+            f.write(f"  Total measurements: {len(valid_pvalues)}\n")
+            f.write(f"  Significant (p<0.05): {significant_count} ({significant_count/len(valid_pvalues)*100:.1f}%)\n")
+            f.write(f"  Mean p-value: {valid_pvalues.mean():.4f}\n")
+            f.write(f"  Median p-value: {valid_pvalues.median():.4f}\n")
+            f.write(f"  Min p-value: {valid_pvalues.min():.4f}\n")
+            f.write(f"  Max p-value: {valid_pvalues.max():.4f}\n\n")
+        
+        if not valid_cca_scores.empty:
+            f.write(f"CCA Score Statistics:\n")
+            f.write(f"  Mean CCA score: {valid_cca_scores.mean():.4f}\n")
+            f.write(f"  Median CCA score: {valid_cca_scores.median():.4f}\n")
+            f.write(f"  Min CCA score: {valid_cca_scores.min():.4f}\n")
+            f.write(f"  Max CCA score: {valid_cca_scores.max():.4f}\n")
+            f.write(f"  Std CCA score: {valid_cca_scores.std():.4f}\n")
+    
+    print(f"Detailed P-value summary saved to: {pvalue_summary_path}")
+
+def create_separate_modality_plots(df_results, best_resolution, optimization_target, dr_type, output_dir):
+    """
+    Create separate plots for each modality's CCA scores and p-values
+    """
+    valid_df = df_results[~df_results['optimization_score'].isna()]
+    coarse_df = valid_df[valid_df['pass'] == 'coarse']
+    fine_df = valid_df[valid_df['pass'] == 'fine']
+    
+    # RNA Modality Plots
+    create_rna_modality_plots(coarse_df, fine_df, best_resolution, output_dir)
+    
+    # ATAC Modality Plots  
+    create_atac_modality_plots(coarse_df, fine_df, best_resolution, output_dir)
+    
+    # Target modality optimization plot
+    create_target_optimization_plot(coarse_df, fine_df, best_resolution, optimization_target, dr_type, output_dir)
+
+def create_rna_modality_plots(coarse_df, fine_df, best_resolution, output_dir):
+    """Create separate plots for RNA modality"""
+    
+    # RNA CCA Scores Plot
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+    
+    # CCA Scores
+    ax1.scatter(coarse_df['resolution'], coarse_df['rna_cca_expression'], 
+               color='darkblue', s=60, alpha=0.6, marker='o', label='RNA Expression (Coarse)')
+    ax1.scatter(fine_df['resolution'], fine_df['rna_cca_expression'], 
+               color='darkblue', s=40, alpha=0.8, marker='o', label='RNA Expression (Fine)')
+    ax1.scatter(coarse_df['resolution'], coarse_df['rna_cca_proportion'], 
+               color='lightblue', s=60, alpha=0.6, marker='^', label='RNA Proportion (Coarse)')
+    ax1.scatter(fine_df['resolution'], fine_df['rna_cca_proportion'], 
+               color='lightblue', s=40, alpha=0.8, marker='^', label='RNA Proportion (Fine)')
+    
+    ax1.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
+    ax1.set_xlabel("Resolution")
+    ax1.set_ylabel("CCA Score")
+    ax1.set_title("RNA Modality - CCA Scores")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+    
+    # P-values
+    valid_pval_rna_exp = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['rna_pvalue_expression'].isna()]
+    valid_pval_rna_prop = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['rna_pvalue_proportion'].isna()]
+    
+    if not valid_pval_rna_exp.empty:
+        ax2.scatter(valid_pval_rna_exp['resolution'], valid_pval_rna_exp['rna_pvalue_expression'], 
+                   color='darkblue', s=40, alpha=0.7, marker='o', label='RNA Expression')
+    if not valid_pval_rna_prop.empty:
+        ax2.scatter(valid_pval_rna_prop['resolution'], valid_pval_rna_prop['rna_pvalue_proportion'], 
+                   color='lightblue', s=40, alpha=0.7, marker='^', label='RNA Proportion')
+    
+    ax2.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
+    ax2.axhline(y=0.05, color='orange', linestyle=':', label='p=0.05 threshold')
+    ax2.set_xlabel("Resolution")
+    ax2.set_ylabel("P-value")
+    ax2.set_title("RNA Modality - P-values")
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    ax2.set_ylim(-0.05, 1.05)
+    
+    plt.tight_layout()
+    rna_plot_path = os.path.join(output_dir, "RNA_modality_analysis.png")
+    plt.savefig(rna_plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"RNA modality plot saved to: {rna_plot_path}")
+
+def create_atac_modality_plots(coarse_df, fine_df, best_resolution, output_dir):
+    """Create separate plots for ATAC modality"""
+    
+    # ATAC CCA Scores and P-values Plot
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+    
+    # CCA Scores
+    ax1.scatter(coarse_df['resolution'], coarse_df['atac_cca_expression'], 
+               color='darkgreen', s=60, alpha=0.6, marker='o', label='ATAC Expression (Coarse)')
+    ax1.scatter(fine_df['resolution'], fine_df['atac_cca_expression'], 
+               color='darkgreen', s=40, alpha=0.8, marker='o', label='ATAC Expression (Fine)')
+    ax1.scatter(coarse_df['resolution'], coarse_df['atac_cca_proportion'], 
+               color='lightgreen', s=60, alpha=0.6, marker='^', label='ATAC Proportion (Coarse)')
+    ax1.scatter(fine_df['resolution'], fine_df['atac_cca_proportion'], 
+               color='lightgreen', s=40, alpha=0.8, marker='^', label='ATAC Proportion (Fine)')
+    
+    ax1.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
+    ax1.set_xlabel("Resolution")
+    ax1.set_ylabel("CCA Score")
+    ax1.set_title("ATAC Modality - CCA Scores")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+    
+    # P-values
+    valid_pval_atac_exp = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['atac_pvalue_expression'].isna()]
+    valid_pval_atac_prop = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['atac_pvalue_proportion'].isna()]
+    
+    if not valid_pval_atac_exp.empty:
+        ax2.scatter(valid_pval_atac_exp['resolution'], valid_pval_atac_exp['atac_pvalue_expression'], 
+                   color='darkgreen', s=40, alpha=0.7, marker='s', label='ATAC Expression')
+    if not valid_pval_atac_prop.empty:
+        ax2.scatter(valid_pval_atac_prop['resolution'], valid_pval_atac_prop['atac_pvalue_proportion'], 
+                   color='lightgreen', s=40, alpha=0.7, marker='d', label='ATAC Proportion')
+    
+    ax2.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
+    ax2.axhline(y=0.05, color='orange', linestyle=':', label='p=0.05 threshold')
+    ax2.set_xlabel("Resolution")
+    ax2.set_ylabel("P-value")
+    ax2.set_title("ATAC Modality - P-values")
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    ax2.set_ylim(-0.05, 1.05)
+    
+    plt.tight_layout()
+    atac_plot_path = os.path.join(output_dir, "ATAC_modality_analysis.png")
+    plt.savefig(atac_plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"ATAC modality plot saved to: {atac_plot_path}")
+
+def create_target_optimization_plot(coarse_df, fine_df, best_resolution, optimization_target, dr_type, output_dir):
+    """Create plot for the target optimization metric"""
+    
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    
+    # Target metric CCA scores
+    target_metric = f"{optimization_target}_cca_{dr_type}"
+    
+    ax.scatter(coarse_df['resolution'], coarse_df[target_metric], 
+               color='blue', s=60, alpha=0.6, label='Coarse Search')
+    ax.scatter(fine_df['resolution'], fine_df[target_metric], 
+               color='green', s=40, alpha=0.8, label='Fine Search')
+    
+    # Connect points with lines
+    all_valid_df = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])[target_metric].isna()].sort_values('resolution')
+    if not all_valid_df.empty:
+        ax.plot(all_valid_df['resolution'], all_valid_df[target_metric], 
+                'k-', linewidth=0.5, alpha=0.3)
+    
+    ax.axvline(x=best_resolution, color='r', linestyle='--', 
+               label=f'Best Resolution: {best_resolution:.3f}')
+    
+    ax.set_xlabel("Resolution")
+    ax.set_ylabel(f"CCA Score")
+    ax.set_title(f"{optimization_target.upper()} {dr_type.capitalize()} - CCA Score Optimization")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    opt_plot_path = os.path.join(output_dir, f"optimization_target_{optimization_target}_{dr_type}.png")
+    plt.savefig(opt_plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Target optimization plot saved to: {opt_plot_path}")
+
 def find_optimal_cell_resolution_integration(
     AnnData_integrated: AnnData,
     output_dir: str,
-    optimization_target: str = "sum",  # "rna", "atac", or "sum"
+    optimization_target: str = "rna",  # "rna" or "atac"
+    dr_type: str = "expression",  # "expression" or "proportion"
     n_features: int = 40000,
     sev_col: str = "sev.level",
     batch_col: str = None,
@@ -612,8 +774,9 @@ def find_optimal_cell_resolution_integration(
     output_dir : str
         Output directory for results
     optimization_target : str
-        What to optimize: "rna" (RNA CCA only), "atac" (ATAC CCA only), 
-        or "sum" (sum of both CCA scores)
+        Which modality to optimize: "rna" or "atac"
+    dr_type : str
+        Which DR type to optimize: "expression" or "proportion"
     n_features : int
         Number of features for pseudobulk computation
     sev_col : str
@@ -647,15 +810,15 @@ def find_optimal_cell_resolution_integration(
     
     print("\n\n Finding optimal resolution begins \n\n")
 
-    # Validate optimization target
-    if optimization_target not in ["rna", "atac", "sum"]:
-        raise ValueError("optimization_target must be 'rna', 'atac', or 'sum'")
+    # Validate optimization target and dr_type
+    if optimization_target not in ["rna", "atac"]:
+        raise ValueError("optimization_target must be 'rna' or 'atac'")
     
-    convert_adata_severity_column(integrated_adata, sev_col=sev_col, verbose=verbose)
-    check_data_quality(integrated_adata)
+    if dr_type not in ["expression", "proportion"]:
+        raise ValueError("dr_type must be 'expression' or 'proportion'")
 
     # Create subdirectories for different outputs
-    main_output_dir = os.path.join(output_dir, f"CCA_resolution_optimization_integration_{optimization_target}")
+    main_output_dir = os.path.join(output_dir, f"CCA_resolution_optimization_integration_{optimization_target}_{dr_type}")
     resolution_plots_dir = os.path.join(main_output_dir, "resolution_plots")
     pvalue_results_dir = os.path.join(main_output_dir, "pvalue_results")
     embedding_plots_dir = os.path.join(main_output_dir, "embedding_visualizations")
@@ -664,7 +827,7 @@ def find_optimal_cell_resolution_integration(
         os.makedirs(dir_path, exist_ok=True)
 
     print(f"Starting integrated resolution optimization...")
-    print(f"Optimization target: {optimization_target.upper()}")
+    print(f"Optimization target: {optimization_target.upper()} {dr_type.upper()}")
     print(f"Using representation: {use_rep} with {num_PCs} components")
     print(f"Testing resolutions from 0.01 to 1.00...")
     if compute_pvalues:
@@ -702,11 +865,6 @@ def find_optimal_cell_resolution_integration(
             # Clean up previous cell type assignments
             if 'cell_type' in AnnData_integrated.obs.columns:
                 AnnData_integrated.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-            
-            # Ensure modality column is properly set up
-            if modality_col in AnnData_integrated.obs.columns:
-                # Convert to string type to avoid categorical issues
-                AnnData_integrated.obs[modality_col] = AnnData_integrated.obs[modality_col].astype(str)
             
             # Ensure modality column is properly set up
             if modality_col in AnnData_integrated.obs.columns:
@@ -753,73 +911,48 @@ def find_optimal_cell_resolution_integration(
                 verbose=False
             )
             
-            # Compute CCA for RNA modality
-            for dr_type in ['expression', 'proportion']:
-                column = f'X_DR_{dr_type}'
-                if column in pseudobulk_adata.uns:
-                    cca_score, p_value = improved_compute_modality_cca(
-                        pseudobulk_adata, 'RNA', column, sev_col
-                    )
-                    result_dict[f'rna_cca_{dr_type}'] = cca_score
-                    result_dict[f'rna_pvalue_{dr_type}'] = p_value
-                    
-                    if not np.isnan(cca_score):
-                        print(f"RNA {dr_type} CCA Score: {cca_score:.4f}, p-value: {p_value:.4f}")
+            # Compute CCA for both modalities and both DR types
+            for modality in ['RNA', 'ATAC']:
+                for dr_method in ['expression', 'proportion']:
+                    column = f'X_DR_{dr_method}'
+                    if column in pseudobulk_adata.uns:
+                        cca_score, p_value = improved_compute_modality_cca(
+                            pseudobulk_adata, modality, column, sev_col
+                        )
+                        result_dict[f'{modality.lower()}_cca_{dr_method}'] = cca_score
+                        result_dict[f'{modality.lower()}_pvalue_{dr_method}'] = p_value
+                        
+                        if not np.isnan(cca_score):
+                            print(f"{modality} {dr_method} CCA Score: {cca_score:.4f}, p-value: {p_value:.4f}")
             
-            # Compute CCA for ATAC modality
-            for dr_type in ['expression', 'proportion']:
-                column = f'X_DR_{dr_type}'
-                if column in pseudobulk_adata.uns:
-                    cca_score, p_value = improved_compute_modality_cca(
-                        pseudobulk_adata, 'ATAC', column, sev_col
-                    )
-                    result_dict[f'atac_cca_{dr_type}'] = cca_score
-                    result_dict[f'atac_pvalue_{dr_type}'] = p_value
-                    
-                    if not np.isnan(cca_score):
-                        print(f"ATAC {dr_type} CCA Score: {cca_score:.4f}, p-value: {p_value:.4f}")
+            # Set optimization score based on the specified target modality and DR type
+            target_metric = f"{optimization_target}_cca_{dr_type}"
+            if target_metric in result_dict:
+                result_dict['optimization_score'] = result_dict[target_metric]
+            else:
+                result_dict['optimization_score'] = np.nan
             
-            # Calculate optimization score based on target
-            if optimization_target == "rna":
-                # Use maximum of RNA expression and proportion scores
-                rna_scores = [result_dict['rna_cca_expression'], result_dict['rna_cca_proportion']]
-                valid_scores = [s for s in rna_scores if not np.isnan(s)]
-                result_dict['optimization_score'] = max(valid_scores) if valid_scores else np.nan
-            elif optimization_target == "atac":
-                # Use maximum of ATAC expression and proportion scores
-                atac_scores = [result_dict['atac_cca_expression'], result_dict['atac_cca_proportion']]
-                valid_scores = [s for s in atac_scores if not np.isnan(s)]
-                result_dict['optimization_score'] = max(valid_scores) if valid_scores else np.nan
-            else:  # sum
-                # Sum of best scores from each modality
-                rna_best = max([s for s in [result_dict['rna_cca_expression'], 
-                               result_dict['rna_cca_proportion']] if not np.isnan(s)] or [0])
-                atac_best = max([s for s in [result_dict['atac_cca_expression'], 
-                                result_dict['atac_cca_proportion']] if not np.isnan(s)] or [0])
-                result_dict['optimization_score'] = rna_best + atac_best
+            print(f"Resolution {resolution:.2f}: Target {optimization_target.upper()} {dr_type} CCA Score = {result_dict['optimization_score']:.4f}")
             
-            print(f"Resolution {resolution:.2f}: Optimization Score = {result_dict['optimization_score']:.4f}")
-            
-            # Create embedding visualizations if requested
+            # Create embedding visualizations if requested (only for target modality)
             if visualize_embeddings and not np.isnan(result_dict['optimization_score']):
-                for modality in ['RNA', 'ATAC']:
-                    try:
-                        embedding_path = os.path.join(
-                            embedding_plots_dir, 
-                            f"embedding_res_{resolution:.2f}_{modality}"
-                        )
-                        visualize_multimodal_embedding(
-                            adata=pseudobulk_adata,
-                            modality_col=modality_col,
-                            color_col=sev_col,
-                            target_modality=modality,
-                            output_dir=embedding_path,
-                            show_sample_names=False,
-                            verbose=False
-                        )
-                    except Exception as e:
-                        if verbose:
-                            print(f"Warning: Failed to create embedding visualization for {modality}: {str(e)}")
+                try:
+                    embedding_path = os.path.join(
+                        embedding_plots_dir, 
+                        f"embedding_res_{resolution:.2f}_{optimization_target.upper()}_{dr_type}"
+                    )
+                    visualize_multimodal_embedding(
+                        adata=pseudobulk_adata,
+                        modality_col=modality_col,
+                        color_col=sev_col,
+                        target_modality=optimization_target.upper(),
+                        output_dir=embedding_path,
+                        show_sample_names=False,
+                        verbose=False
+                    )
+                except Exception as e:
+                    if verbose:
+                        print(f"Warning: Failed to create embedding visualization: {str(e)}")
                 
         except Exception as e:
             print(f"Error at resolution {resolution:.2f}: {str(e)}")
@@ -834,7 +967,7 @@ def find_optimal_cell_resolution_integration(
     best_coarse = max(coarse_results, key=lambda x: x['optimization_score'])
     best_resolution = best_coarse['resolution']
     print(f"\nBest resolution from first pass: {best_resolution:.2f}")
-    print(f"Best optimization score: {best_coarse['optimization_score']:.4f}")
+    print(f"Best {optimization_target.upper()} {dr_type} CCA score: {best_coarse['optimization_score']:.4f}")
 
     # Second pass: fine-tuned search
     print("\n=== SECOND PASS: Fine-tuned Search ===")
@@ -913,32 +1046,23 @@ def find_optimal_cell_resolution_integration(
             
             # Compute CCA for both modalities and DR types
             for modality in ['RNA', 'ATAC']:
-                for dr_type in ['expression', 'proportion']:
-                    column = f'X_DR_{dr_type}'
+                for dr_method in ['expression', 'proportion']:
+                    column = f'X_DR_{dr_method}'
                     if column in pseudobulk_adata.uns:
                         cca_score, p_value = improved_compute_modality_cca(
                             pseudobulk_adata, modality, column, sev_col
                         )
-                        result_dict[f'{modality.lower()}_cca_{dr_type}'] = cca_score
-                        result_dict[f'{modality.lower()}_pvalue_{dr_type}'] = p_value
+                        result_dict[f'{modality.lower()}_cca_{dr_method}'] = cca_score
+                        result_dict[f'{modality.lower()}_pvalue_{dr_method}'] = p_value
             
-            # Calculate optimization score
-            if optimization_target == "rna":
-                rna_scores = [result_dict['rna_cca_expression'], result_dict['rna_cca_proportion']]
-                valid_scores = [s for s in rna_scores if not np.isnan(s)]
-                result_dict['optimization_score'] = max(valid_scores) if valid_scores else np.nan
-            elif optimization_target == "atac":
-                atac_scores = [result_dict['atac_cca_expression'], result_dict['atac_cca_proportion']]
-                valid_scores = [s for s in atac_scores if not np.isnan(s)]
-                result_dict['optimization_score'] = max(valid_scores) if valid_scores else np.nan
-            else:  # sum
-                rna_best = max([s for s in [result_dict['rna_cca_expression'], 
-                               result_dict['rna_cca_proportion']] if not np.isnan(s)] or [0])
-                atac_best = max([s for s in [result_dict['atac_cca_expression'], 
-                                result_dict['atac_cca_proportion']] if not np.isnan(s)] or [0])
-                result_dict['optimization_score'] = rna_best + atac_best
+            # Set optimization score based on target
+            target_metric = f"{optimization_target}_cca_{dr_type}"
+            if target_metric in result_dict:
+                result_dict['optimization_score'] = result_dict[target_metric]
+            else:
+                result_dict['optimization_score'] = np.nan
             
-            print(f"Fine-tuned Resolution {resolution:.3f}: Score {result_dict['optimization_score']:.4f}")
+            print(f"Fine-tuned Resolution {resolution:.3f}: Target Score {result_dict['optimization_score']:.4f}")
                     
         except Exception as e:
             print(f"Error at fine-tuned resolution {resolution:.3f}: {str(e)}")
@@ -949,7 +1073,7 @@ def find_optimal_cell_resolution_integration(
     df_results = pd.DataFrame(all_results)
     df_results = df_results.sort_values("resolution")
     
-    # Find final best resolution
+    # Find final best resolution based on target metric
     valid_results = df_results[~df_results['optimization_score'].isna()]
     if valid_results.empty:
         raise ValueError("No valid results obtained.")
@@ -959,166 +1083,37 @@ def find_optimal_cell_resolution_integration(
     final_best_score = valid_results.loc[final_best_idx, 'optimization_score']
     
     print(f"\n=== FINAL RESULTS ===")
+    print(f"Optimization Target: {optimization_target.upper()} {dr_type.upper()}")
     print(f"Best resolution: {final_best_resolution:.3f}")
-    print(f"Best optimization score ({optimization_target}): {final_best_score:.4f}")
-    print(f"Best RNA scores - Expression: {valid_results.loc[final_best_idx, 'rna_cca_expression']:.4f}, "
-          f"Proportion: {valid_results.loc[final_best_idx, 'rna_cca_proportion']:.4f}")
-    print(f"Best ATAC scores - Expression: {valid_results.loc[final_best_idx, 'atac_cca_expression']:.4f}, "
-          f"Proportion: {valid_results.loc[final_best_idx, 'atac_cca_proportion']:.4f}")
+    print(f"Best CCA score: {final_best_score:.4f}")
+    
+    # Display all scores at best resolution for context
+    best_row = valid_results.loc[final_best_idx]
+    print(f"\nAll CCA scores at best resolution {final_best_resolution:.3f}:")
+    print(f"  RNA Expression: {best_row['rna_cca_expression']:.4f}")
+    print(f"  RNA Proportion: {best_row['rna_cca_proportion']:.4f}")
+    print(f"  ATAC Expression: {best_row['atac_cca_expression']:.4f}")
+    print(f"  ATAC Proportion: {best_row['atac_cca_proportion']:.4f}")
 
     # Save comprehensive results
-    results_csv_path = os.path.join(main_output_dir, f"resolution_scores_comprehensive_integration_{optimization_target}.csv")
+    results_csv_path = os.path.join(main_output_dir, f"resolution_scores_comprehensive_integration_{optimization_target}_{dr_type}.csv")
     df_results.to_csv(results_csv_path, index=False)
     print(f"\nComprehensive results saved to: {results_csv_path}")
 
-    # Create main visualization plot
-    create_integration_resolution_visualization(
-        df_results, final_best_resolution, optimization_target, 
-        main_output_dir, compute_pvalues
-    )
+    # Create separate modality visualizations
+    create_separate_modality_plots(df_results, final_best_resolution, optimization_target, dr_type, main_output_dir)
 
-    # Save p-value summary if computed
+    # Save comprehensive CCA summary
+    save_comprehensive_cca_summary(df_results, optimization_target, dr_type, main_output_dir)
+
+    # Save detailed p-value summary if computed
     if compute_pvalues:
-        pvalue_summary_path = os.path.join(pvalue_results_dir, f"pvalue_summary_integration_{optimization_target}.txt")
-        with open(pvalue_summary_path, "w") as f:
-            f.write(f"Resolution Optimization P-value Summary for Integration ({optimization_target})\n")
-            f.write("="*60 + "\n\n")
-            f.write(f"Best Resolution: {final_best_resolution:.3f}\n")
-            f.write(f"Best Optimization Score: {final_best_score:.4f}\n\n")
-            f.write("Best P-values:\n")
-            f.write(f"  RNA Expression: {valid_results.loc[final_best_idx, 'rna_pvalue_expression']:.4f}\n")
-            f.write(f"  RNA Proportion: {valid_results.loc[final_best_idx, 'rna_pvalue_proportion']:.4f}\n")
-            f.write(f"  ATAC Expression: {valid_results.loc[final_best_idx, 'atac_pvalue_expression']:.4f}\n")
-            f.write(f"  ATAC Proportion: {valid_results.loc[final_best_idx, 'atac_pvalue_proportion']:.4f}\n")
-        print(f"P-value summary saved to: {pvalue_summary_path}")
+        save_detailed_pvalue_summary(df_results, optimization_target, dr_type, pvalue_results_dir)
 
     print(f"\n[Find Optimal Resolution Integration] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
     return final_best_resolution, df_results
 
-
-def create_integration_resolution_visualization(df_results, best_resolution, optimization_target, 
-                                              output_dir, include_pvalues):
-    """Create comprehensive visualization of integration resolution search results"""
-    
-    # Determine number of subplots based on optimization target and p-values
-    n_rows = 3 if optimization_target == "sum" else 2
-    if include_pvalues:
-        n_rows += 1
-    
-    fig, axes = plt.subplots(n_rows, 1, figsize=(12, 4*n_rows))
-    if n_rows == 1:
-        axes = [axes]
-    
-    # Plot data
-    valid_df = df_results[~df_results['optimization_score'].isna()]
-    coarse_df = valid_df[valid_df['pass'] == 'coarse']
-    fine_df = valid_df[valid_df['pass'] == 'fine']
-    
-    ax_idx = 0
-    
-    # Plot optimization score
-    ax = axes[ax_idx]
-    ax.scatter(coarse_df['resolution'], coarse_df['optimization_score'], 
-               color='blue', s=60, alpha=0.6, label='Coarse Search')
-    ax.scatter(fine_df['resolution'], fine_df['optimization_score'], 
-               color='green', s=40, alpha=0.8, label='Fine Search')
-    ax.plot(valid_df['resolution'], valid_df['optimization_score'], 
-            'k-', linewidth=0.5, alpha=0.3)
-    ax.axvline(x=best_resolution, color='r', linestyle='--', 
-               label=f'Best Resolution: {best_resolution:.3f}')
-    ax.set_xlabel("Resolution")
-    ax.set_ylabel(f"Optimization Score ({optimization_target.upper()})")
-    ax.set_title(f"Integration Resolution Optimization - Target: {optimization_target.upper()}")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax_idx += 1
-    
-    # Plot RNA CCA scores
-    if optimization_target in ["rna", "sum"]:
-        ax = axes[ax_idx]
-        # Expression scores
-        ax.scatter(coarse_df['resolution'], coarse_df['rna_cca_expression'], 
-                   color='darkblue', s=60, alpha=0.6, marker='o', label='RNA Expression (Coarse)')
-        ax.scatter(fine_df['resolution'], fine_df['rna_cca_expression'], 
-                   color='darkblue', s=40, alpha=0.8, marker='o', label='RNA Expression (Fine)')
-        # Proportion scores
-        ax.scatter(coarse_df['resolution'], coarse_df['rna_cca_proportion'], 
-                   color='lightblue', s=60, alpha=0.6, marker='^', label='RNA Proportion (Coarse)')
-        ax.scatter(fine_df['resolution'], fine_df['rna_cca_proportion'], 
-                   color='lightblue', s=40, alpha=0.8, marker='^', label='RNA Proportion (Fine)')
-        
-        ax.axvline(x=best_resolution, color='r', linestyle='--')
-        ax.set_xlabel("Resolution")
-        ax.set_ylabel("CCA Score")
-        ax.set_title("RNA CCA Scores")
-        ax.legend(ncol=2)
-        ax.grid(True, alpha=0.3)
-        ax_idx += 1
-    
-    # Plot ATAC CCA scores
-    if optimization_target in ["atac", "sum"]:
-        ax = axes[ax_idx]
-        # Expression scores
-        ax.scatter(coarse_df['resolution'], coarse_df['atac_cca_expression'], 
-                   color='darkgreen', s=60, alpha=0.6, marker='o', label='ATAC Expression (Coarse)')
-        ax.scatter(fine_df['resolution'], fine_df['atac_cca_expression'], 
-                   color='darkgreen', s=40, alpha=0.8, marker='o', label='ATAC Expression (Fine)')
-        # Proportion scores
-        ax.scatter(coarse_df['resolution'], coarse_df['atac_cca_proportion'], 
-                   color='lightgreen', s=60, alpha=0.6, marker='^', label='ATAC Proportion (Coarse)')
-        ax.scatter(fine_df['resolution'], fine_df['atac_cca_proportion'], 
-                   color='lightgreen', s=40, alpha=0.8, marker='^', label='ATAC Proportion (Fine)')
-        
-        ax.axvline(x=best_resolution, color='r', linestyle='--')
-        ax.set_xlabel("Resolution")
-        ax.set_ylabel("CCA Score")
-        ax.set_title("ATAC CCA Scores")
-        ax.legend(ncol=2)
-        ax.grid(True, alpha=0.3)
-        ax_idx += 1
-    
-    # Plot p-values if available
-    if include_pvalues:
-        ax = axes[ax_idx]
-        
-        # RNA p-values
-        valid_pval_rna_exp = valid_df[~valid_df['rna_pvalue_expression'].isna()]
-        valid_pval_rna_prop = valid_df[~valid_df['rna_pvalue_proportion'].isna()]
-        
-        if not valid_pval_rna_exp.empty:
-            ax.scatter(valid_pval_rna_exp['resolution'], valid_pval_rna_exp['rna_pvalue_expression'], 
-                       color='darkblue', s=40, alpha=0.7, marker='o', label='RNA Expression')
-        if not valid_pval_rna_prop.empty:
-            ax.scatter(valid_pval_rna_prop['resolution'], valid_pval_rna_prop['rna_pvalue_proportion'], 
-                       color='lightblue', s=40, alpha=0.7, marker='^', label='RNA Proportion')
-        
-        # ATAC p-values
-        valid_pval_atac_exp = valid_df[~valid_df['atac_pvalue_expression'].isna()]
-        valid_pval_atac_prop = valid_df[~valid_df['atac_pvalue_proportion'].isna()]
-        
-        if not valid_pval_atac_exp.empty:
-            ax.scatter(valid_pval_atac_exp['resolution'], valid_pval_atac_exp['atac_pvalue_expression'], 
-                       color='darkgreen', s=40, alpha=0.7, marker='s', label='ATAC Expression')
-        if not valid_pval_atac_prop.empty:
-            ax.scatter(valid_pval_atac_prop['resolution'], valid_pval_atac_prop['atac_pvalue_proportion'], 
-                       color='lightgreen', s=40, alpha=0.7, marker='d', label='ATAC Proportion')
-        
-        ax.axvline(x=best_resolution, color='r', linestyle='--')
-        ax.axhline(y=0.05, color='orange', linestyle=':', label='p=0.05 threshold')
-        
-        ax.set_xlabel("Resolution")
-        ax.set_ylabel("P-value")
-        ax.set_title("P-values for All Modalities and DR Types")
-        ax.legend(ncol=2)
-        ax.grid(True, alpha=0.3)
-        ax.set_ylim(-0.05, 1.05)
-    
-    plt.tight_layout()
-    plot_path = os.path.join(output_dir, f"resolution_optimization_comprehensive_integration_{optimization_target}.png")
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Comprehensive plot saved to: {plot_path}")
 
 if __name__ == "__main__":
     integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/preprocess/atac_rna_integrated.h5ad")
@@ -1147,7 +1142,8 @@ if __name__ == "__main__":
     optimal_res, results_df = find_optimal_cell_resolution_integration(
         AnnData_integrated=integrated_adata,
         output_dir=output_dir,
-        optimization_target="atac",  # or "rna" or "atac"
+        optimization_target="atac",  # "rna" or "atac"
+        dr_type="expression",  # "expression" or "proportion"
         n_features=2000,
         sev_col="sev.level",
         batch_col="batch",
