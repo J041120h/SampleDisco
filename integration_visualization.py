@@ -550,46 +550,6 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
     
     return fig, axes
 
-def get_embedding_data(adata, embedding_key, verbose=True):
-    """
-    Extract embedding coordinates from AnnData object.
-    """
-    if embedding_key in adata.obsm:
-        embedding = adata.obsm[embedding_key]
-        coord_source = "obsm"
-        if verbose:
-            print(f"Found embedding '{embedding_key}' in adata.obsm")
-    elif embedding_key in adata.uns:
-        embedding = adata.uns[embedding_key]
-        coord_source = "uns"
-        if verbose:
-            print(f"Found embedding '{embedding_key}' in adata.uns")
-    else:
-        available_obsm = list(adata.obsm.keys()) if hasattr(adata, 'obsm') else []
-        available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
-        raise KeyError(f"Embedding '{embedding_key}' not found in adata.obsm {available_obsm} or adata.uns {available_uns}")
-    
-    if verbose:
-        print(f"Embedding shape: {embedding.shape}")
-    
-    if embedding.shape[1] < 2:
-        raise ValueError(f"Need at least 2 dimensions for visualization (found {embedding.shape[1]})")
-    
-    if coord_source == "obsm":
-        x_coords = embedding[:, 0]
-        y_coords = embedding[:, 1]
-        sample_names = adata.obs.index
-    else:
-        if isinstance(embedding, pd.DataFrame):
-            x_coords = embedding.iloc[:, 0]
-            y_coords = embedding.iloc[:, 1]
-            sample_names = embedding.index
-        else:
-            x_coords = embedding[:, 0]
-            y_coords = embedding[:, 1]
-            sample_names = adata.obs.index
-    
-    return x_coords, y_coords, sample_names, coord_source
 
 def extract_cca_vectors(cca_results_df, embedding_type, modality, verbose=True):
     """
@@ -687,16 +647,6 @@ def plot_cca_vectors(ax, x_direction, y_direction, center_point=None, scale_fact
                 head_width=base_scale*0.1, head_length=base_scale*0.1,
                 fc=vector_color, ec=vector_color, alpha=alpha, linewidth=vector_width,
                 label='CCA Direction (Severity→Embedding)', zorder=10)
-    
-    # Optionally plot Y canonical direction (embedding -> severity space)  
-    # Usually we only show the X direction for clarity, but this can be enabled
-    # if len(y_direction) >= 2:
-    #     dx2 = y_direction[0] * base_scale * 0.5  # Smaller scale
-    #     dy2 = y_direction[1] * base_scale * 0.5
-    #     ax.arrow(center_x, center_y, dx2, dy2,
-    #             head_width=base_scale*0.05, head_length=base_scale*0.05,
-    #             fc='blue', ec='blue', alpha=alpha*0.7, linewidth=vector_width-1,
-    #             label='CCA Y Direction', zorder=9)
 
 def plot_embedding_with_cca(adata, modality_col, color_col, target_modality,
                            embedding_key, embedding_type, cca_results_df,
