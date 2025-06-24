@@ -60,20 +60,39 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
     }
     
     try:
-        # Extract modality samples
-        modality_mask = pseudobulk_adata.obs['modality'] == modality
+        if column not in pseudobulk_adata.uns:
+            result['error_message'] = f"Column '{column}' not found in uns"
+            return result
+        if 'modality' not in pseudobulk_adata.obs.columns:
+            result['error_message'] = "Column 'modality' not found in obs"
+            return result
+        if sev_col not in pseudobulk_adata.obs.columns:
+            result['error_message'] = f"Column '{sev_col}' not found in obs"
+            return result
+        
+        # Standardize indices to lowercase to avoid case sensitivity issues
+        obs_standardized = pseudobulk_adata.obs.copy()
+        obs_standardized.index = obs_standardized.index.str.lower()
+        
+        uns_data_standardized = pseudobulk_adata.uns[column].copy()
+        uns_data_standardized.index = uns_data_standardized.index.str.lower()
+        
+        # Extract modality samples using standardized indices
+        modality_mask = obs_standardized['modality'] == modality
+        
         if not modality_mask.any():
             result['error_message'] = f"No samples found for modality: {modality}"
             return result
         
-        dr_coords = pseudobulk_adata.uns[column].loc[modality_mask].copy()
-        sev_levels = pseudobulk_adata.obs.loc[modality_mask, sev_col].values
+        # Extract dimension reduction coordinates and severity levels
+        # Now indices should always match since we standardized them
+        dr_coords = uns_data_standardized.loc[modality_mask].copy()
+        sev_levels = obs_standardized.loc[modality_mask, sev_col].values
         
         # Basic validation only
         if len(dr_coords) < 3:
             result['error_message'] = f"Insufficient samples: {len(dr_coords)}"
             return result
-        
         if len(np.unique(sev_levels)) < 2:
             result['error_message'] = "Insufficient severity level variance"
             return result
@@ -86,7 +105,8 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         result['n_features'] = X.shape[1]
         
         # Limit components based on data dimensions
-        max_components = min(X.shape[1], X.shape[0] - 1)
+        # CCA components are limited by min(X_features, y_features, n_samples-1)
+        max_components = min(X.shape[1], y.shape[1], X.shape[0] - 1)
         n_components_actual = min(n_components, max_components)
         
         if n_components_actual < 1:
@@ -96,7 +116,6 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         # Standardize data (simplified)
         scaler_X = StandardScaler()
         scaler_y = StandardScaler()
-        
         X_scaled = scaler_X.fit_transform(X)
         y_scaled = scaler_y.fit_transform(y)
         
@@ -931,10 +950,9 @@ def find_optimal_cell_resolution_integration(
     return final_best_resolution, df_results
 
 
-
 if __name__ == "__main__":
-    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/preprocess/atac_rna_integrated.h5ad")
-    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/"
+    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/atac_rna_integrated_subsampled_10pct.h5ad")
+    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample"
     
     suppress_warnings()
 

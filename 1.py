@@ -1300,13 +1300,115 @@ def update_obs_from_csv(adata_path, csv_file, sample_column='sample'):
     
     return adata
 
+import os
+from pathlib import Path
+from typing import Union, Optional
+
+import numpy as np
+import scanpy as sc
+import anndata as ad
+
+
+def subsample_cells_by_sample(
+    anndata_path: Union[str, Path],
+    sample_col: str,
+    output_dir: Union[str, Path],
+    *,
+    frac: float = 0.10,
+    random_seed: Optional[int] = 42,
+    min_cells_per_sample: int = 1,
+    output_name: Optional[str] = None,
+    verbose: bool = True,
+) -> Path:
+    """
+    Load an AnnData object, retain only a fixed fraction of cells **within each sample**,
+    and write the subsampled object to disk.
+
+    Parameters
+    ----------
+    anndata_path
+        Path to the input `.h5ad` file.
+    sample_col
+        Column in ``adata.obs`` that contains sample labels.
+    output_dir
+        Directory in which to save the subsampled file (created if it does not exist).
+    frac
+        Fraction of cells to keep **per sample** (default ``0.10`` for 10 %).
+    random_seed
+        Seed for reproducibility. Set to ``None`` to disable deterministic sampling.
+    min_cells_per_sample
+        Guarantee that at least this many cells are kept from every sample.
+    output_name
+        Optional file name for the subsampled AnnData; defaults to
+        ``<original-stem>_subsampled_{int(frac*100)}pct.h5ad``.
+    verbose
+        If ``True``, log progress to stdout.
+
+    Returns
+    -------
+    Path
+        The full path to the saved subsampled `.h5ad` file.
+
+    Raises
+    ------
+    ValueError
+        If ``sample_col`` is missing from ``adata.obs``.
+    """
+    anndata_path = Path(anndata_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # ---------------------------------------------------------------------
+    # Load data
+    # ---------------------------------------------------------------------
+    if verbose:
+        print(f"[subsample] Reading AnnData from: {anndata_path}")
+    adata: ad.AnnData = sc.read_h5ad(anndata_path)
+
+    if sample_col not in adata.obs:
+        raise ValueError(f"Column '{sample_col}' not found in adata.obs")
+
+    rng = np.random.default_rng(random_seed)
+
+    # ---------------------------------------------------------------------
+    # Collect indices to keep
+    # ---------------------------------------------------------------------
+    keep_mask = np.zeros(adata.n_obs, dtype=bool)
+    for sample, idx in adata.obs.groupby(sample_col).indices.items():
+        n_cells = len(idx)
+        n_keep = max(min_cells_per_sample, int(round(n_cells * frac)))
+        chosen = rng.choice(idx, size=n_keep, replace=False)
+        keep_mask[chosen] = True
+        if verbose:
+            print(f"[subsample] {sample:>20s}: kept {n_keep}/{n_cells} cells")
+
+    # ---------------------------------------------------------------------
+    # Subset and save
+    # ---------------------------------------------------------------------
+    adata_sub = adata[keep_mask].copy()
+
+    if output_name is None:
+        stem = anndata_path.stem
+        output_name = f"{stem}_subsampled_{int(frac*100)}pct.h5ad"
+    out_path = output_dir / output_name
+
+    if verbose:
+        print(f"[subsample] Writing subsampled AnnData ({adata_sub.n_obs} cells) → {out_path}")
+    adata_sub.write(out_path, compression="gzip")
+
+    return out_path
+
 
 # Example usage
 if __name__ == "__main__":
     input_path = "/dcl01/hongkai/data/data/hjiang/result/integration_test/preprocess/atac_rna_integrated.h5ad"
     csv_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
 
-
+    # subsample_cells_by_sample(
+    # anndata_path = input_path,
+    # sample_col = "sample",
+    # output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample"
+    # )
     update_obs_from_csv(input_path, csv_file, sample_column='sample')
     adata = sc.read_h5ad(input_path)
     analyze_atac_samples(adata, modality_col="modality", sample_col="sample")
