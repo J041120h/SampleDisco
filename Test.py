@@ -86,8 +86,11 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         
         # Extract dimension reduction coordinates and severity levels
         # Now indices should always match since we standardized them
-        dr_coords = uns_data_standardized.loc[modality_mask].copy()
+        dr_coords_full = uns_data_standardized.loc[modality_mask].copy()
         sev_levels = obs_standardized.loc[modality_mask, sev_col].values
+        
+        # Use only the first 2 features for CCA analysis
+        dr_coords = dr_coords_full.iloc[:, :2]
         
         # Basic validation only
         if len(dr_coords) < 3:
@@ -98,11 +101,11 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
             return result
         
         # Prepare data for CCA
-        X = dr_coords.values
+        X = dr_coords.values  # Now using only first 2 features
         y = sev_levels.reshape(-1, 1)
         
         result['n_samples'] = len(X)
-        result['n_features'] = X.shape[1]
+        result['n_features'] = X.shape[1]  # Should be 2
         
         # Limit components based on data dimensions
         # CCA components are limited by min(X_features, y_features, n_samples-1)
@@ -216,78 +219,148 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
     return results_df
 
 def generate_null_distribution(pseudobulk_adata, modality, column, sev_col, 
-                             n_components=2, n_permutations=1000, 
-                             save_path=None, verbose=True):
+                                          n_components=2, n_permutations=1000, 
+                                          save_path=None, verbose=True):
+    """
+    Generate null distribution using ONLY the first 2 dimensions of DR results.
+    
+    Steps:
+    1. Extract first 2 DR components for the specified modality
+    2. Randomly shuffle severity level labels for each sample  
+    3. Run CCA between 2D embeddings and 1D severity
+    4. Record CCA correlation as one simulation
+    """
     if verbose:
         print(f"Generating null distribution with {n_permutations} permutations...")
+        print("Method: Shuffle severity labels, CCA on first 2 DR components")
     
-    # Extract data
+    # Extract data for specified modality
     modality_mask = pseudobulk_adata.obs['modality'] == modality
     if not modality_mask.any():
         raise ValueError(f"No samples found for modality: {modality}")
     
-    dr_coords = pseudobulk_adata.uns[column].loc[modality_mask].copy()
+    # Get DR coordinates and severity levels
+    dr_coords_full = pseudobulk_adata.uns[column].loc[modality_mask].copy()
     sev_levels = pseudobulk_adata.obs.loc[modality_mask, sev_col].values
     
-    if len(dr_coords) < 3:
-        raise ValueError(f"Insufficient samples: {len(dr_coords)}")
+    # IMPORTANT: Use only first 2 DR components
+    dr_coords_2d = dr_coords_full.iloc[:, :2]  # First 2 columns only
+    
+    if verbose:
+        print(f"Full DR shape: {dr_coords_full.shape}")
+        print(f"Using 2D DR shape: {dr_coords_2d.shape}")
+        print(f"Severity levels: {len(sev_levels)} samples")
+        print(f"Unique severity values: {np.unique(sev_levels)}")
+        print(f"DR column names used: {list(dr_coords_2d.columns)}")
+    
+    if len(dr_coords_2d) < 3:
+        raise ValueError(f"Insufficient samples: {len(dr_coords_2d)}")
     
     if len(np.unique(sev_levels)) < 2:
         raise ValueError("Insufficient severity level variance")
     
-    # Prepare data
-    X = dr_coords.values
-    y_original = sev_levels.reshape(-1, 1)
+    # Prepare data for CCA
+    X = dr_coords_2d.values  # 2D embedding coordinates [n_samples, 2]
+    y_original = sev_levels.copy()  # 1D severity levels [n_samples]
     
-    # Limit components
-    max_components = min(X.shape[1], X.shape[0] - 1)
-    n_components_actual = min(n_components, max_components)
+    if verbose:
+        print(f"Final X shape: {X.shape} (should be [n_samples, 2])")
+        print(f"Final y shape: {y_original.shape} (should be [n_samples])")
     
-    if n_components_actual < 1:
-        raise ValueError("Cannot compute CCA components")
+    # Import libraries
+    from sklearn.cross_decomposition import CCA
+    from sklearn.preprocessing import StandardScaler
     
-    # Pre-scale X (this won't change across permutations)
-    scaler_X = StandardScaler()
-    X_scaled = scaler_X.fit_transform(X)
+    # Determine CCA components
+    # For 2D X and 1D y: max components = min(2, 1, n_samples-1) = 1
+    max_components = min(X.shape[1], 1, X.shape[0] - 1)  # 2, 1, n_samples-1
+    n_comp_actual = min(n_components, max_components)
+    
+    if verbose:
+        print(f"CCA components: requested={n_components}, max_possible={max_components}, using={n_comp_actual}")
+    
+    # Test original analysis first
+    if verbose:
+        print("\n=== Testing Original Analysis ===")
+        try:
+            scaler_X = StandardScaler()
+            scaler_y = StandardScaler()
+            X_scaled = scaler_X.fit_transform(X)
+            y_scaled = scaler_y.fit_transform(y_original.reshape(-1, 1))
+            
+            cca_orig = CCA(n_components=n_comp_actual, max_iter=1000, tol=1e-6)
+            cca_orig.fit(X_scaled, y_scaled)
+            
+            X_c_orig, y_c_orig = cca_orig.transform(X_scaled, y_scaled)
+            orig_correlation = np.corrcoef(X_c_orig[:, 0], y_c_orig[:, 0])[0, 1]
+            
+            print(f"Original CCA correlation: {orig_correlation:.6f}")
+            
+        except Exception as e:
+            print(f"Error in original analysis: {e}")
+    
+    # Run permutations
+    print(f"\n=== Running {n_permutations} Permutations ===")
     
     null_scores = []
+    failed_permutations = 0
     
     for perm in range(n_permutations):
         if verbose and (perm + 1) % 100 == 0:
             print(f"  Completed {perm + 1}/{n_permutations} permutations...")
         
         try:
-            # Permute severity levels
-            permuted_y = np.random.permutation(sev_levels).reshape(-1, 1)
+            # Step 1 & 2: Randomly shuffle severity level labels
+            permuted_sev = np.random.permutation(y_original)
             
-            # Scale permuted y
+            # Step 3: Run CCA between 2D embeddings and shuffled 1D severity
+            scaler_X = StandardScaler()
             scaler_y = StandardScaler()
-            permuted_y_scaled = scaler_y.fit_transform(permuted_y)
+            
+            X_scaled = scaler_X.fit_transform(X)  # [n_samples, 2]
+            y_permuted_scaled = scaler_y.fit_transform(permuted_sev.reshape(-1, 1))  # [n_samples, 1]
             
             # Fit CCA
-            perm_cca = CCA(n_components=n_components_actual, max_iter=1000, tol=1e-6)
-            perm_cca.fit(X_scaled, permuted_y_scaled)
+            cca_perm = CCA(n_components=n_comp_actual, max_iter=1000, tol=1e-6)
+            cca_perm.fit(X_scaled, y_permuted_scaled)
             
             # Transform and compute correlation
-            X_c_perm, y_c_perm = perm_cca.transform(X_scaled, permuted_y_scaled)
+            X_c_perm, y_c_perm = cca_perm.transform(X_scaled, y_permuted_scaled)
             perm_correlation = np.corrcoef(X_c_perm[:, 0], y_c_perm[:, 0])[0, 1]
             
-            if not np.isnan(perm_correlation):
-                null_scores.append(abs(perm_correlation))
-            else:
+            # Step 4: Record the CCA score
+            if np.isnan(perm_correlation) or np.isinf(perm_correlation):
+                if verbose and perm < 3:
+                    print(f"  Permutation {perm}: Invalid correlation = {perm_correlation}")
                 null_scores.append(0.0)
+                failed_permutations += 1
+            else:
+                null_scores.append(abs(perm_correlation))
+                if verbose and perm < 5:
+                    print(f"  Permutation {perm}: CCA correlation = {perm_correlation:.6f}")
                 
-        except Exception:
+        except Exception as e:
+            if verbose and perm < 3:
+                print(f"  Error in permutation {perm}: {str(e)}")
             null_scores.append(0.0)
+            failed_permutations += 1
     
     null_distribution = np.array(null_scores)
-            
+    
+    if np.all(null_distribution == 1.0):
+        print(f"  WARNING: All permutation scores are 1.0! CCA might be overfitting.")
+    elif np.all(null_distribution == 0.0):
+        print(f"  WARNING: All permutation scores are 0.0! Check CCA computation.")
+    elif np.std(null_distribution) < 1e-6:
+        print(f"  WARNING: Very low variance in null distribution.")
+    
     if save_path:
         np.save(save_path, null_distribution)
         if verbose:
             print(f"Saved null distribution to: {save_path}")
     
     return null_distribution
+
 
 def ensure_non_categorical_columns(adata, columns):
     """Convert specified columns from categorical to string to avoid categorical errors"""
@@ -536,7 +609,7 @@ def find_optimal_cell_resolution_integration(
 
     # First pass: coarse search
     print("\n=== FIRST PASS: Coarse Search ===")
-    for resolution in np.arange(0.1, 1.01, 0.1):
+    for resolution in np.arange(0.1, 0.31, 0.1):
         print(f"\n\nTesting resolution: {resolution:.2f}\n")
         
         # Create resolution-specific directory
@@ -701,8 +774,8 @@ def find_optimal_cell_resolution_integration(
 
     # Second pass: fine-tuned search
     print("\n=== SECOND PASS: Fine-tuned Search ===")
-    search_range_start = max(0.01, best_resolution - 0.05)
-    search_range_end = min(1.00, best_resolution + 0.05)
+    search_range_start = max(0.01, best_resolution - 0.02)
+    search_range_end = min(1.00, best_resolution + 0.02)
     
     print(f"Fine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
 
@@ -857,6 +930,10 @@ def find_optimal_cell_resolution_integration(
         all_results.append(result_dict)
         all_resolution_null_results.append(resolution_null_result)
 
+    # Create comprehensive results dataframe BEFORE using it
+    df_results = pd.DataFrame(all_results)
+    df_results = df_results.sort_values("resolution")
+
     # Generate corrected null distribution if computing p-values
     corrected_null_distribution = None
     if compute_pvalues:
@@ -884,7 +961,7 @@ def find_optimal_cell_resolution_integration(
             # Compute corrected p-values for all CCA scores and create visualization plots
             print("\n=== COMPUTING CORRECTED P-VALUES AND CREATING PLOTS ===")
             compute_all_corrected_pvalues_and_plots(
-                df_results=df_results,
+                df_results=df_results,  # Now df_results is defined!
                 corrected_null_distribution=corrected_null_distribution,
                 main_output_dir=main_output_dir,
                 optimization_target=optimization_target,
@@ -892,10 +969,6 @@ def find_optimal_cell_resolution_integration(
             )
         else:
             print("Warning: No valid null distributions generated, cannot create corrected null distribution")
-
-    # Create comprehensive results dataframe
-    df_results = pd.DataFrame(all_results)
-    df_results = df_results.sort_values("resolution")
     
     # Find final best resolution based on target metric
     valid_results = df_results[~df_results['optimization_score'].isna()]
