@@ -25,50 +25,9 @@ def suppress_warnings():
     warnings.filterwarnings('ignore', category=RuntimeWarning, 
                           message='.*All-NaN slice encountered.*')
 
-def plot_cca_distribution(cca_score, null_distribution, modality, column, p_value=None, 
-                         save_path=None):
-    
-    fig, ax = plt.subplots(figsize=(10, 6))
-    
-    # Plot histogram of null distribution
-    ax.hist(null_distribution, bins=50, alpha=0.7, color='lightblue', 
-            edgecolor='black', density=True, label='Null Distribution')
-    
-    # Add vertical line for observed CCA score
-    ax.axvline(cca_score, color='red', linestyle='--', linewidth=2, 
-               label=f'Observed CCA Score: {cca_score:.4f}')
-    
-    # Add text annotation with p-value if provided
-    if p_value is not None:
-        ax.text(0.02, 0.98, f'p-value: {p_value:.4f}', 
-                transform=ax.transAxes, fontsize=12, 
-                verticalalignment='top', 
-                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-    
-    # Formatting
-    ax.set_xlabel('CCA Score', fontsize=12)
-    ax.set_ylabel('Density', fontsize=12)
-    ax.set_title(f'CCA Score Distribution\nModality: {modality}, Column: {column}', 
-                fontsize=14, fontweight='bold')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    
-    # Adjust layout
-    plt.tight_layout()
-    
-    # Always save the plot
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close(fig)  # Close figure to free memory
-    
-    return save_path
-
-
-def cca_analysis(pseudobulk_adata, modality, column, sev_col, 
-                            n_components=2, null_distribution=None, 
-                            save_plot_path=None):
+def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
     """
-    Simplified CCA analysis using precomputed null distribution for p-value calculation.
-    Always generates distribution plot when null_distribution is provided.
+    Simplified CCA analysis without p-value calculation or plotting.
     
     Parameters:
     -----------
@@ -82,10 +41,6 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
         Column name for severity levels
     n_components : int, default 2
         Number of CCA components
-    null_distribution : np.array, optional
-        Precomputed null distribution of CCA scores for p-value calculation
-    save_plot_path : str, optional
-        Path to save the distribution plot
         
     Assumptions based on fixed data type:
     - pseudobulk_adata.uns[column] contains pandas DataFrame with numeric coordinates
@@ -96,14 +51,12 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
     
     result = {
         'cca_score': np.nan,
-        'p_value': np.nan,
         'n_samples': 0,
         'n_features': 0,
         'modality': modality,
         'column': column,
         'valid': False,
-        'error_message': None,
-        'plot_path': None
+        'error_message': None
     }
     
     try:
@@ -157,24 +110,6 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
         cca_score = abs(correlation)
         
         result['cca_score'] = cca_score
-        
-        # Calculate p-value using precomputed null distribution
-        if null_distribution is not None:
-            result['p_value'] = np.mean(null_distribution >= cca_score)
-            
-            # Always plot distribution when null_distribution is provided
-            if save_plot_path:
-                result['plot_path'] = plot_cca_distribution(
-                    cca_score=cca_score,
-                    null_distribution=null_distribution,
-                    modality=modality,
-                    column=column,
-                    p_value=result['p_value'],
-                    save_path=save_plot_path
-                )
-        else:
-            result['p_value'] = np.nan
-        
         result['valid'] = True
         
     except Exception as e:
@@ -184,10 +119,10 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
 
 
 def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None, 
-                      n_components=2, null_distribution=None, output_dir=None):
+                      n_components=2, output_dir=None):
     """
     Run CCA analysis across multiple dimension reduction results and modalities.
-    Always generates plots and saves all results to output directory.
+    Saves results to output directory without p-value calculation or plotting.
     
     Parameters:
     -----------
@@ -201,15 +136,13 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
         List of modalities to analyze. If None, uses all unique modalities
     n_components : int, default 2
         Number of CCA components
-    null_distribution : np.array, optional
-        Precomputed null distribution of CCA scores for p-value calculation
     output_dir : str, optional
-        Directory to save all results (plots and summary table)
+        Directory to save results summary table
         
     Returns:
     --------
     pd.DataFrame
-        Results DataFrame with CCA scores and p-values for each modality-column combination
+        Results DataFrame with CCA scores for each modality-column combination
     """
     
     import os
@@ -220,30 +153,18 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
     # Create output directory if specified
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
-        plots_dir = os.path.join(output_dir, 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
     
     results = []
     
     for modality in modalities:
         for column in dr_columns:
             if column in pseudobulk_adata.uns:
-                # Construct save path for plot
-                save_path = None
-                if output_dir:
-                    # Clean modality and column names for filename
-                    safe_modality = "".join(c for c in modality if c.isalnum() or c in (' ', '-', '_')).rstrip()
-                    safe_column = "".join(c for c in column if c.isalnum() or c in (' ', '-', '_')).rstrip()
-                    save_path = os.path.join(plots_dir, f"cca_dist_{safe_modality}_{safe_column}.png")
-                
                 result = cca_analysis(
                     pseudobulk_adata=pseudobulk_adata,
                     modality=modality,
                     column=column,
                     sev_col=sev_col,
-                    n_components=n_components,
-                    null_distribution=null_distribution,
-                    save_plot_path=save_path
+                    n_components=n_components
                 )
                 
                 results.append(result)
@@ -251,14 +172,12 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
             else:
                 results.append({
                     'cca_score': np.nan,
-                    'p_value': np.nan,
                     'n_samples': 0,
                     'n_features': 0,
                     'modality': modality,
                     'column': column,
                     'valid': False,
-                    'error_message': f"Column '{column}' not found",
-                    'plot_path': None
+                    'error_message': f"Column '{column}' not found"
                 })
     
     # Create results DataFrame
@@ -274,24 +193,16 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
         detailed_path = os.path.join(output_dir, 'cca_results_detailed.csv')
         results_df.to_csv(detailed_path, index=False)
         print(f"Detailed results saved to: {detailed_path}")
-        
-        if null_distribution is not None:
-            print(f"Distribution plots saved to: {plots_dir}")
     
     return results_df
 
 def generate_null_distribution(pseudobulk_adata, modality, column, sev_col, 
-                             n_components=2, n_trials=1000, simulations_per_trial=10, 
-                             save_path=None, plot=True, verbose=True):
-    
-    import matplotlib.pyplot as plt
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.cross_decomposition import CCA
-    
+                             n_components=2, n_permutations=1000, 
+                             save_path=None, verbose=True):
     if verbose:
-        print(f"Generating null distribution with {n_trials} trials, {simulations_per_trial} simulations per trial...")
+        print(f"Generating null distribution with {n_permutations} permutations...")
     
-    # Extract data (same as in simplified_cca_analysis)
+    # Extract data
     modality_mask = pseudobulk_adata.obs['modality'] == modality
     if not modality_mask.any():
         raise ValueError(f"No samples found for modality: {modality}")
@@ -322,165 +233,43 @@ def generate_null_distribution(pseudobulk_adata, modality, column, sev_col,
     
     null_scores = []
     
-    for trial in range(n_trials):
-        if verbose and (trial + 1) % 100 == 0:
-            print(f"  Completed {trial + 1}/{n_trials} trials...")
+    for perm in range(n_permutations):
+        if verbose and (perm + 1) % 100 == 0:
+            print(f"  Completed {perm + 1}/{n_permutations} permutations...")
         
-        trial_scores = []
-        
-        # Run multiple simulations per trial
-        for sim in range(simulations_per_trial):
-            try:
-                # Permute severity levels
-                permuted_y = np.random.permutation(sev_levels).reshape(-1, 1)
+        try:
+            # Permute severity levels
+            permuted_y = np.random.permutation(sev_levels).reshape(-1, 1)
+            
+            # Scale permuted y
+            scaler_y = StandardScaler()
+            permuted_y_scaled = scaler_y.fit_transform(permuted_y)
+            
+            # Fit CCA
+            perm_cca = CCA(n_components=n_components_actual, max_iter=1000, tol=1e-6)
+            perm_cca.fit(X_scaled, permuted_y_scaled)
+            
+            # Transform and compute correlation
+            X_c_perm, y_c_perm = perm_cca.transform(X_scaled, permuted_y_scaled)
+            perm_correlation = np.corrcoef(X_c_perm[:, 0], y_c_perm[:, 0])[0, 1]
+            
+            if not np.isnan(perm_correlation):
+                null_scores.append(abs(perm_correlation))
+            else:
+                null_scores.append(0.0)
                 
-                # Scale permuted y
-                scaler_y = StandardScaler()
-                permuted_y_scaled = scaler_y.fit_transform(permuted_y)
-                
-                # Fit CCA
-                perm_cca = CCA(n_components=n_components_actual, max_iter=1000, tol=1e-6)
-                perm_cca.fit(X_scaled, permuted_y_scaled)
-                
-                # Transform and compute correlation
-                X_c_perm, y_c_perm = perm_cca.transform(X_scaled, permuted_y_scaled)
-                perm_correlation = np.corrcoef(X_c_perm[:, 0], y_c_perm[:, 0])[0, 1]
-                
-                if not np.isnan(perm_correlation):
-                    trial_scores.append(abs(perm_correlation))
-                else:
-                    trial_scores.append(0.0)
-                    
-            except Exception:
-                trial_scores.append(0.0)
-        
-        # Select the best (highest) score from this trial
-        if trial_scores:
-            null_scores.append(max(trial_scores))
-        else:
+        except Exception:
             null_scores.append(0.0)
     
     null_distribution = np.array(null_scores)
-
-    if verbose:
-            print(f"Simulation complete - generated {len(null_distribution)} null scores.")
             
     if save_path:
         np.save(save_path, null_distribution)
         if verbose:
             print(f"Saved null distribution to: {save_path}")
     
-    # Generate plot
-    if plot and save_path:
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        
-        # Histogram
-        ax1.hist(null_distribution, bins=50, density=True, alpha=0.7, 
-                color='skyblue', edgecolor='black', linewidth=0.5)
-        ax1.axvline(null_distribution.mean(), color='red', linestyle='--', 
-                   label=f'Mean: {null_distribution.mean():.3f}')
-        ax1.axvline(np.percentile(null_distribution, 95), color='orange', linestyle='--', 
-                   label=f'95th percentile: {np.percentile(null_distribution, 95):.3f}')
-        ax1.axvline(np.percentile(null_distribution, 99), color='purple', linestyle='--', 
-                   label=f'99th percentile: {np.percentile(null_distribution, 99):.3f}')
-        ax1.set_xlabel('CCA Score')
-        ax1.set_ylabel('Density')
-        ax1.set_title(f'Null Distribution\n({n_trials} trials, best of {simulations_per_trial} each)')
-        ax1.legend()
-        ax1.grid(True, alpha=0.3)
-
-        plt.tight_layout()
-
-        plot_path = save_path.replace('.npy', '_distribution_plot.png')
-        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-        if verbose:
-            print(f"Saved distribution plot to: {plot_path}")
-        
-        plt.show()
-    
     return null_distribution
 
-def create_modality_pvalue_plot(simulated_scores, observed_correlation, p_value, 
-                               modality, dr_type, output_dir):
-    """
-    Create permutation test visualization plot
-    
-    Parameters:
-    -----------
-    simulated_scores : array
-        Array of simulated correlation scores
-    observed_correlation : float
-        Observed CCA correlation
-    p_value : float
-        Calculated p-value
-    modality : str
-        Modality name (RNA/ATAC)
-    dr_type : str
-        DR type (expression/proportion)
-    output_dir : str
-        Output directory for saving plot
-    """
-    plt.figure(figsize=(8, 5))
-    plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black', density=True)
-    plt.axvline(observed_correlation, color='red', linestyle='dashed', linewidth=2,
-                label=f'Observed: {observed_correlation:.3f} (p={p_value:.4f})')
-    
-    # Add percentile lines
-    percentiles = [95, 99]
-    for p in percentiles:
-        threshold = np.percentile(simulated_scores, p)
-        plt.axvline(threshold, color='orange', linestyle=':', alpha=0.5,
-                   label=f'{p}th percentile: {threshold:.3f}')
-    
-    plt.xlabel('CCA Correlation Score')
-    plt.ylabel('Density')
-    plt.title(f'{modality} {dr_type.capitalize()} - Permutation Test (n={len(simulated_scores)})')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    
-    plot_path = os.path.join(output_dir, f"pvalue_dist_{modality}_{dr_type}.png")
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # Save summary statistics
-    stats_path = os.path.join(output_dir, f"pvalue_stats_{modality}_{dr_type}.txt")
-    with open(stats_path, 'w') as f:
-        f.write(f"Modality: {modality}\n")
-        f.write(f"DR Type: {dr_type}\n")
-        f.write(f"Observed correlation: {observed_correlation:.4f}\n")
-        f.write(f"P-value: {p_value:.4f}\n")
-        f.write(f"Number of simulations: {len(simulated_scores)}\n")
-        f.write(f"Simulated mean: {np.mean(simulated_scores):.4f}\n")
-        f.write(f"Simulated std: {np.std(simulated_scores):.4f}\n")
-        f.write(f"Simulated min: {np.min(simulated_scores):.4f}\n")
-        f.write(f"Simulated max: {np.max(simulated_scores):.4f}\n")
-        
-# Additional utility functions for data quality checks
-def check_data_quality(adata, modality_col='modality', sev_col='sev.level'):
-    """
-    Check data quality before running CCA analysis
-    """
-    print("=== Data Quality Check ===")
-    
-    # Check for missing values
-    print(f"Missing values in {sev_col}: {adata.obs[sev_col].isna().sum()}")
-    print(f"Missing values in {modality_col}: {adata.obs[modality_col].isna().sum()}")
-    
-    # Check severity level distribution
-    print(f"\nSeverity level distribution:")
-    print(adata.obs[sev_col].value_counts())
-    
-    # Check modality distribution
-    print(f"\nModality distribution:")
-    print(adata.obs[modality_col].value_counts())
-    
-    # Check for variance in severity levels by modality
-    for modality in adata.obs[modality_col].unique():
-        modality_mask = adata.obs[modality_col] == modality
-        modality_sev = adata.obs.loc[modality_mask, sev_col]
-        if not modality_sev.empty:
-            print(f"\n{modality} - Severity variance: {modality_sev.var():.6f}")
-            print(f"{modality} - Unique severity levels: {modality_sev.nunique()}")
 
 def ensure_non_categorical_columns(adata, columns):
     """Convert specified columns from categorical to string to avoid categorical errors"""
@@ -490,284 +279,145 @@ def ensure_non_categorical_columns(adata, columns):
                 adata.obs[col] = adata.obs[col].astype(str)
     return adata
 
-def save_comprehensive_cca_summary(df_results, optimization_target, dr_type, output_dir):
+def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribution, main_output_dir, 
+                                          optimization_target, dr_type):
     """
-    Save comprehensive CCA summary for all modalities and DR types
+    Compute corrected p-values for all CCA scores and create visualization plots.
+    
+    Parameters:
+    -----------
+    df_results : pd.DataFrame
+        Results dataframe with CCA scores for all resolutions
+    corrected_null_distribution : np.array
+        Corrected null distribution accounting for resolution selection
+    main_output_dir : str
+        Main output directory
+    optimization_target : str
+        Target modality for optimization
+    dr_type : str
+        Target DR type for optimization
     """
-    summary_path = os.path.join(output_dir, f"CCA_scores_comprehensive_summary_{optimization_target}_{dr_type}.txt")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
     
-    with open(summary_path, "w") as f:
-        f.write(f"Comprehensive CCA Scores Summary - Integration ({optimization_target.upper()} {dr_type.upper()})\n")
-        f.write("="*80 + "\n\n")
-        
-        # Summary statistics for each metric
-        metrics = ['rna_cca_expression', 'rna_cca_proportion', 'atac_cca_expression', 'atac_cca_proportion']
-        metric_names = ['RNA Expression', 'RNA Proportion', 'ATAC Expression', 'ATAC Proportion']
-        
-        for metric, name in zip(metrics, metric_names):
-            valid_data = df_results[~df_results[metric].isna()]
-            if not valid_data.empty:
-                f.write(f"{name} CCA Scores:\n")
-                f.write(f"  Mean: {valid_data[metric].mean():.4f}\n")
-                f.write(f"  Std:  {valid_data[metric].std():.4f}\n")
-                f.write(f"  Min:  {valid_data[metric].min():.4f} (at resolution {valid_data.loc[valid_data[metric].idxmin(), 'resolution']:.3f})\n")
-                f.write(f"  Max:  {valid_data[metric].max():.4f} (at resolution {valid_data.loc[valid_data[metric].idxmax(), 'resolution']:.3f})\n")
-                f.write(f"  Valid measurements: {len(valid_data)}\n\n")
-        
-        # Highlight the optimization target
-        f.write(f"OPTIMIZATION TARGET: {optimization_target.upper()} {dr_type.upper()}\n")
-        f.write("-" * 50 + "\n")
-        target_metric = f"{optimization_target}_cca_{dr_type}"
-        if target_metric in df_results.columns:
-            valid_target = df_results[~df_results[target_metric].isna()]
-            if not valid_target.empty:
-                f.write(f"Target metric ({target_metric}) statistics:\n")
-                f.write(f"  Best score: {valid_target[target_metric].max():.4f} (at resolution {valid_target.loc[valid_target[target_metric].idxmax(), 'resolution']:.3f})\n")
-                f.write(f"  Mean score: {valid_target[target_metric].mean():.4f}\n")
-                f.write(f"  Std: {valid_target[target_metric].std():.4f}\n\n")
-        
-        # Top 5 resolutions for each metric
-        f.write("Top 5 Resolutions for Each Metric:\n")
-        f.write("-" * 40 + "\n")
-        
-        for metric, name in zip(metrics, metric_names):
-            valid_data = df_results[~df_results[metric].isna()]
-            if not valid_data.empty:
-                top5 = valid_data.nlargest(5, metric)
-                f.write(f"\n{name}:\n")
-                for idx, row in top5.iterrows():
-                    f.write(f"  Resolution {row['resolution']:.3f}: {row[metric]:.4f}\n")
-        
-        # Correlation between metrics
-        f.write("\n\nCorrelation Matrix Between CCA Scores:\n")
-        f.write("-" * 40 + "\n")
-        correlation_matrix = df_results[metrics].corr()
-        f.write(correlation_matrix.to_string())
-        f.write("\n")
+    # Create p-value directory
+    pvalue_dir = os.path.join(main_output_dir, "p_value")
+    os.makedirs(pvalue_dir, exist_ok=True)
     
-    print(f"Comprehensive CCA summary saved to: {summary_path}")
+    # Define all modalities and DR types to process
+    modalities = ['rna', 'atac']
+    dr_types = ['expression', 'proportion']
+    
+    # Track all corrected p-values to add to dataframe
+    corrected_pvalues = {}
+    
+    # Process each resolution
+    for idx, row in df_results.iterrows():
+        resolution = row['resolution']
+        print(f"Computing corrected p-values for resolution {resolution}")
+        
+        # Create resolution-specific directory
+        res_dir = os.path.join(pvalue_dir, f"resolution_{resolution}")
+        os.makedirs(res_dir, exist_ok=True)
+        
+        # Process each modality and DR type combination
+        for modality in modalities:
+            for dr_method in dr_types:
+                cca_col = f'{modality}_cca_{dr_method}'
+                
+                if cca_col in row and not pd.isna(row[cca_col]):
+                    cca_score = row[cca_col]
+                    
+                    # Compute corrected p-value
+                    corrected_p_value = np.mean(corrected_null_distribution >= cca_score)
+                    
+                    # Store corrected p-value
+                    corrected_pval_col = f'{modality}_corrected_pvalue_{dr_method}'
+                    if corrected_pval_col not in corrected_pvalues:
+                        corrected_pvalues[corrected_pval_col] = [np.nan] * len(df_results)
+                    corrected_pvalues[corrected_pval_col][idx] = corrected_p_value
+                    
+                    # Create visualization plot
+                    plt.figure(figsize=(10, 6))
+                    
+                    # Plot histogram of null distribution
+                    plt.hist(corrected_null_distribution, bins=50, alpha=0.7, color='lightblue', 
+                            density=True, label='Corrected Null Distribution')
+                    
+                    # Plot vertical line for observed CCA score
+                    plt.axvline(cca_score, color='red', linestyle='--', linewidth=2, 
+                               label=f'Observed CCA Score: {cca_score:.4f}')
+                    
+                    # Add p-value text
+                    plt.text(0.05, 0.95, f'Corrected p-value: {corrected_p_value:.4f}', 
+                            transform=plt.gca().transAxes, fontsize=12, 
+                            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+                    
+                    # Formatting
+                    plt.xlabel('CCA Score')
+                    plt.ylabel('Density')
+                    plt.title(f'Corrected P-value Analysis\nResolution: {resolution}, {modality.upper()} {dr_method}')
+                    plt.legend()
+                    plt.grid(True, alpha=0.3)
+                    
+                    # Save plot in resolution directory
+                    plot_filename = f'pvalue_plot_res_{resolution}_{modality}_{dr_method}.png'
+                    plot_path = os.path.join(res_dir, plot_filename)
+                    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+                    plt.close()
+                    
+                    print(f"  {modality.upper()} {dr_method}: CCA={cca_score:.4f}, p={corrected_p_value:.4f}")
+    
+    # Add all corrected p-values to the dataframe
+    for col, values in corrected_pvalues.items():
+        df_results[col] = values
+    
+    print(f"All p-value plots saved to: {pvalue_dir}")
 
-def save_detailed_pvalue_summary(df_results, optimization_target, dr_type, output_dir):
-    """
-    Save detailed p-value summary including all resolutions for the chosen modality and DR type
-    """
-    pvalue_summary_path = os.path.join(output_dir, f"pvalue_summary_integration_{optimization_target}_{dr_type}.txt")
-    
-    # Find best resolution
-    valid_results = df_results[~df_results['optimization_score'].isna()]
-    if valid_results.empty:
-        return
-    
-    final_best_idx = valid_results['optimization_score'].idxmax()
-    final_best_resolution = valid_results.loc[final_best_idx, 'resolution']
-    final_best_score = valid_results.loc[final_best_idx, 'optimization_score']
-    
-    with open(pvalue_summary_path, "w") as f:
-        f.write(f"Detailed P-value Summary for Integration ({optimization_target.upper()} {dr_type.upper()})\n")
-        f.write("="*80 + "\n\n")
-        
-        f.write(f"Optimization Target: {optimization_target.upper()} {dr_type.upper()}\n")
-        f.write(f"Best Resolution: {final_best_resolution:.3f}\n")
-        f.write(f"Best CCA Score: {final_best_score:.4f}\n\n")
-        
-        # Best resolution p-values
-        f.write("P-values at Best Resolution:\n")
-        f.write("-" * 30 + "\n")
-        f.write(f"  RNA Expression: {valid_results.loc[final_best_idx, 'rna_pvalue_expression']:.4f}\n")
-        f.write(f"  RNA Proportion: {valid_results.loc[final_best_idx, 'rna_pvalue_proportion']:.4f}\n")
-        f.write(f"  ATAC Expression: {valid_results.loc[final_best_idx, 'atac_pvalue_expression']:.4f}\n")
-        f.write(f"  ATAC Proportion: {valid_results.loc[final_best_idx, 'atac_pvalue_proportion']:.4f}\n\n")
-        
-        # P-values for chosen modality and DR type across all resolutions
-        target_pvalue_metric = f"{optimization_target}_pvalue_{dr_type}"
-        target_cca_metric = f"{optimization_target}_cca_{dr_type}"
-        
-        f.write(f"P-values and CCA Scores for {optimization_target.upper()} {dr_type.upper()} Across All Resolutions:\n")
-        f.write("="*80 + "\n")
-        f.write("Resolution\tCCA Score\tP-value\t\tSignificant (p<0.05)\n")
-        f.write("-" * 60 + "\n")
-        
-        valid_data = df_results[~df_results[target_pvalue_metric].isna()].sort_values('resolution')
-        for idx, row in valid_data.iterrows():
-            is_significant = "Yes" if row[target_pvalue_metric] < 0.05 else "No"
-            cca_score = row[target_cca_metric] if not pd.isna(row[target_cca_metric]) else "N/A"
-            f.write(f"{row['resolution']:.3f}\t\t{cca_score:.4f}\t\t{row[target_pvalue_metric]:.4f}\t\t{is_significant}\n")
-        
-        # Summary statistics for target metric
-        f.write(f"\n\nSummary Statistics for {optimization_target.upper()} {dr_type.upper()}:\n")
-        f.write("="*60 + "\n")
-        
-        valid_pvalues = df_results[~df_results[target_pvalue_metric].isna()][target_pvalue_metric]
-        valid_cca_scores = df_results[~df_results[target_cca_metric].isna()][target_cca_metric]
-        
-        if not valid_pvalues.empty:
-            significant_count = (valid_pvalues < 0.05).sum()
-            f.write(f"P-value Statistics:\n")
-            f.write(f"  Total measurements: {len(valid_pvalues)}\n")
-            f.write(f"  Significant (p<0.05): {significant_count} ({significant_count/len(valid_pvalues)*100:.1f}%)\n")
-            f.write(f"  Mean p-value: {valid_pvalues.mean():.4f}\n")
-            f.write(f"  Median p-value: {valid_pvalues.median():.4f}\n")
-            f.write(f"  Min p-value: {valid_pvalues.min():.4f}\n")
-            f.write(f"  Max p-value: {valid_pvalues.max():.4f}\n\n")
-        
-        if not valid_cca_scores.empty:
-            f.write(f"CCA Score Statistics:\n")
-            f.write(f"  Mean CCA score: {valid_cca_scores.mean():.4f}\n")
-            f.write(f"  Median CCA score: {valid_cca_scores.median():.4f}\n")
-            f.write(f"  Min CCA score: {valid_cca_scores.min():.4f}\n")
-            f.write(f"  Max CCA score: {valid_cca_scores.max():.4f}\n")
-            f.write(f"  Std CCA score: {valid_cca_scores.std():.4f}\n")
-    
-    print(f"Detailed P-value summary saved to: {pvalue_summary_path}")
 
-def create_separate_modality_plots(df_results, best_resolution, optimization_target, dr_type, output_dir):
+def generate_corrected_null_distribution(all_resolution_results, optimization_target, dr_type, n_permutations=1000):
     """
-    Create separate plots for each modality's CCA scores and p-values
+    Generate null distribution accounting for resolution selection bias (double dipping).
+    
+    For each permutation:
+    1. Collect CCA scores from all resolutions for that permutation
+    2. Select the maximum CCA score (mimicking optimal resolution selection)
+    3. Use these maximum scores to form the corrected null distribution
+    
+    Parameters:
+    -----------
+    all_resolution_results : list
+        List of dictionaries containing results from all resolutions, 
+        where each dict has 'null_scores' key with array of permutation results
+    optimization_target : str
+        Target modality ("rna" or "atac")
+    dr_type : str
+        DR type ("expression" or "proportion")
+    n_permutations : int
+        Number of permutations (should match the number used in resolution testing)
+        
+    Returns:
+    --------
+    np.array
+        Corrected null distribution accounting for resolution selection
     """
-    valid_df = df_results[~df_results['optimization_score'].isna()]
-    coarse_df = valid_df[valid_df['pass'] == 'coarse']
-    fine_df = valid_df[valid_df['pass'] == 'fine']
     
-    # RNA Modality Plots
-    create_rna_modality_plots(coarse_df, fine_df, best_resolution, output_dir)
+    corrected_null_scores = []
     
-    # ATAC Modality Plots  
-    create_atac_modality_plots(coarse_df, fine_df, best_resolution, output_dir)
+    for perm_idx in range(n_permutations):
+        # Collect the CCA score from this permutation across all resolutions
+        perm_scores_across_resolutions = []
+        
+        for resolution_result in all_resolution_results:
+            if 'null_scores' in resolution_result and len(resolution_result['null_scores']) > perm_idx:
+                perm_scores_across_resolutions.append(resolution_result['null_scores'][perm_idx])
+        
+        # Select the maximum score (mimicking optimal resolution selection)
+        if perm_scores_across_resolutions:
+            max_score_for_this_perm = max(perm_scores_across_resolutions)
+            corrected_null_scores.append(max_score_for_this_perm)
     
-    # Target modality optimization plot
-    create_target_optimization_plot(coarse_df, fine_df, best_resolution, optimization_target, dr_type, output_dir)
-
-def create_rna_modality_plots(coarse_df, fine_df, best_resolution, output_dir):
-    """Create separate plots for RNA modality"""
-    
-    # RNA CCA Scores Plot
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
-    
-    # CCA Scores
-    ax1.scatter(coarse_df['resolution'], coarse_df['rna_cca_expression'], 
-               color='darkblue', s=60, alpha=0.6, marker='o', label='RNA Expression (Coarse)')
-    ax1.scatter(fine_df['resolution'], fine_df['rna_cca_expression'], 
-               color='darkblue', s=40, alpha=0.8, marker='o', label='RNA Expression (Fine)')
-    ax1.scatter(coarse_df['resolution'], coarse_df['rna_cca_proportion'], 
-               color='lightblue', s=60, alpha=0.6, marker='^', label='RNA Proportion (Coarse)')
-    ax1.scatter(fine_df['resolution'], fine_df['rna_cca_proportion'], 
-               color='lightblue', s=40, alpha=0.8, marker='^', label='RNA Proportion (Fine)')
-    
-    ax1.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
-    ax1.set_xlabel("Resolution")
-    ax1.set_ylabel("CCA Score")
-    ax1.set_title("RNA Modality - CCA Scores")
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-    
-    # P-values
-    valid_pval_rna_exp = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['rna_pvalue_expression'].isna()]
-    valid_pval_rna_prop = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['rna_pvalue_proportion'].isna()]
-    
-    if not valid_pval_rna_exp.empty:
-        ax2.scatter(valid_pval_rna_exp['resolution'], valid_pval_rna_exp['rna_pvalue_expression'], 
-                   color='darkblue', s=40, alpha=0.7, marker='o', label='RNA Expression')
-    if not valid_pval_rna_prop.empty:
-        ax2.scatter(valid_pval_rna_prop['resolution'], valid_pval_rna_prop['rna_pvalue_proportion'], 
-                   color='lightblue', s=40, alpha=0.7, marker='^', label='RNA Proportion')
-    
-    ax2.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
-    ax2.axhline(y=0.05, color='orange', linestyle=':', label='p=0.05 threshold')
-    ax2.set_xlabel("Resolution")
-    ax2.set_ylabel("P-value")
-    ax2.set_title("RNA Modality - P-values")
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    ax2.set_ylim(-0.05, 1.05)
-    
-    plt.tight_layout()
-    rna_plot_path = os.path.join(output_dir, "RNA_modality_analysis.png")
-    plt.savefig(rna_plot_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"RNA modality plot saved to: {rna_plot_path}")
-
-def create_atac_modality_plots(coarse_df, fine_df, best_resolution, output_dir):
-    """Create separate plots for ATAC modality"""
-    
-    # ATAC CCA Scores and P-values Plot
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
-    
-    # CCA Scores
-    ax1.scatter(coarse_df['resolution'], coarse_df['atac_cca_expression'], 
-               color='darkgreen', s=60, alpha=0.6, marker='o', label='ATAC Expression (Coarse)')
-    ax1.scatter(fine_df['resolution'], fine_df['atac_cca_expression'], 
-               color='darkgreen', s=40, alpha=0.8, marker='o', label='ATAC Expression (Fine)')
-    ax1.scatter(coarse_df['resolution'], coarse_df['atac_cca_proportion'], 
-               color='lightgreen', s=60, alpha=0.6, marker='^', label='ATAC Proportion (Coarse)')
-    ax1.scatter(fine_df['resolution'], fine_df['atac_cca_proportion'], 
-               color='lightgreen', s=40, alpha=0.8, marker='^', label='ATAC Proportion (Fine)')
-    
-    ax1.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
-    ax1.set_xlabel("Resolution")
-    ax1.set_ylabel("CCA Score")
-    ax1.set_title("ATAC Modality - CCA Scores")
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-    
-    # P-values
-    valid_pval_atac_exp = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['atac_pvalue_expression'].isna()]
-    valid_pval_atac_prop = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])['atac_pvalue_proportion'].isna()]
-    
-    if not valid_pval_atac_exp.empty:
-        ax2.scatter(valid_pval_atac_exp['resolution'], valid_pval_atac_exp['atac_pvalue_expression'], 
-                   color='darkgreen', s=40, alpha=0.7, marker='s', label='ATAC Expression')
-    if not valid_pval_atac_prop.empty:
-        ax2.scatter(valid_pval_atac_prop['resolution'], valid_pval_atac_prop['atac_pvalue_proportion'], 
-                   color='lightgreen', s=40, alpha=0.7, marker='d', label='ATAC Proportion')
-    
-    ax2.axvline(x=best_resolution, color='r', linestyle='--', label=f'Best Resolution: {best_resolution:.3f}')
-    ax2.axhline(y=0.05, color='orange', linestyle=':', label='p=0.05 threshold')
-    ax2.set_xlabel("Resolution")
-    ax2.set_ylabel("P-value")
-    ax2.set_title("ATAC Modality - P-values")
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    ax2.set_ylim(-0.05, 1.05)
-    
-    plt.tight_layout()
-    atac_plot_path = os.path.join(output_dir, "ATAC_modality_analysis.png")
-    plt.savefig(atac_plot_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"ATAC modality plot saved to: {atac_plot_path}")
-
-def create_target_optimization_plot(coarse_df, fine_df, best_resolution, optimization_target, dr_type, output_dir):
-    """Create plot for the target optimization metric"""
-    
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-    
-    # Target metric CCA scores
-    target_metric = f"{optimization_target}_cca_{dr_type}"
-    
-    ax.scatter(coarse_df['resolution'], coarse_df[target_metric], 
-               color='blue', s=60, alpha=0.6, label='Coarse Search')
-    ax.scatter(fine_df['resolution'], fine_df[target_metric], 
-               color='green', s=40, alpha=0.8, label='Fine Search')
-    
-    # Connect points with lines
-    all_valid_df = pd.concat([coarse_df, fine_df])[~pd.concat([coarse_df, fine_df])[target_metric].isna()].sort_values('resolution')
-    if not all_valid_df.empty:
-        ax.plot(all_valid_df['resolution'], all_valid_df[target_metric], 
-                'k-', linewidth=0.5, alpha=0.3)
-    
-    ax.axvline(x=best_resolution, color='r', linestyle='--', 
-               label=f'Best Resolution: {best_resolution:.3f}')
-    
-    ax.set_xlabel("Resolution")
-    ax.set_ylabel(f"CCA Score")
-    ax.set_title(f"{optimization_target.upper()} {dr_type.capitalize()} - CCA Score Optimization")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    opt_plot_path = os.path.join(output_dir, f"optimization_target_{optimization_target}_{dr_type}.png")
-    plt.savefig(opt_plot_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Target optimization plot saved to: {opt_plot_path}")
+    return np.array(corrected_null_scores)
 
 def find_optimal_cell_resolution_integration(
     AnnData_integrated: AnnData,
@@ -782,7 +432,7 @@ def find_optimal_cell_resolution_integration(
     use_rep: str = 'X_glue',
     num_DR_components: int = 30,
     num_PCs: int = 20,
-    num_pvalue_simulations: int = 100,
+    num_pvalue_simulations: int = 1000,  # Changed from 100 to 1000
     compute_pvalues: bool = True,
     visualize_embeddings: bool = True,
     verbose: bool = True
@@ -818,7 +468,7 @@ def find_optimal_cell_resolution_integration(
     num_PCs : int
         Number of PCs for neighborhood graph
     num_pvalue_simulations : int
-        Number of simulations for p-value calculation
+        Number of simulations for p-value calculation (default 1000)
     compute_pvalues : bool
         Whether to compute p-values for each resolution
     visualize_embeddings : bool
@@ -841,14 +491,9 @@ def find_optimal_cell_resolution_integration(
     if dr_type not in ["expression", "proportion"]:
         raise ValueError("dr_type must be 'expression' or 'proportion'")
 
-    # Create subdirectories for different outputs
-    main_output_dir = os.path.join(output_dir, f"CCA_resolution_optimization_integration_{optimization_target}_{dr_type}")
-    resolution_plots_dir = os.path.join(main_output_dir, "resolution_plots")
-    pvalue_results_dir = os.path.join(main_output_dir, "pvalue_results")
-    embedding_plots_dir = os.path.join(main_output_dir, "embedding_visualizations")
-    
-    for dir_path in [main_output_dir, resolution_plots_dir, pvalue_results_dir, embedding_plots_dir]:
-        os.makedirs(dir_path, exist_ok=True)
+    # Create main output directory
+    main_output_dir = os.path.join(output_dir, f"Integration_optimization_{optimization_target}_{dr_type}")
+    os.makedirs(main_output_dir, exist_ok=True)
 
     print(f"Starting integrated resolution optimization...")
     print(f"Optimization target: {optimization_target.upper()} {dr_type.upper()}")
@@ -865,11 +510,17 @@ def find_optimal_cell_resolution_integration(
     
     # Storage for all results
     all_results = []
+    # Storage for null distribution results from each resolution
+    all_resolution_null_results = []
 
     # First pass: coarse search
     print("\n=== FIRST PASS: Coarse Search ===")
     for resolution in np.arange(0.1, 1.01, 0.1):
         print(f"\n\nTesting resolution: {resolution:.2f}\n")
+        
+        # Create resolution-specific directory
+        resolution_dir = os.path.join(main_output_dir, f"resolution_{resolution:.2f}")
+        os.makedirs(resolution_dir, exist_ok=True)
         
         result_dict = {
             'resolution': resolution,
@@ -883,6 +534,12 @@ def find_optimal_cell_resolution_integration(
             'atac_pvalue_proportion': np.nan,
             'optimization_score': np.nan,
             'pass': 'coarse'
+        }
+        
+        # Initialize null results for this resolution
+        resolution_null_result = {
+            'resolution': resolution,
+            'null_scores': None
         }
         
         try:
@@ -901,7 +558,7 @@ def find_optimal_cell_resolution_integration(
                 cell_column='cell_type',
                 existing_cell_types=False,
                 Save=False,
-                output_dir=output_dir,
+                output_dir=resolution_dir,
                 cluster_resolution=resolution,
                 use_rep=use_rep,
                 markers=None,
@@ -916,7 +573,7 @@ def find_optimal_cell_resolution_integration(
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
                 n_features=n_features, 
-                output_dir=output_dir,
+                output_dir=resolution_dir,
                 Save=False,
                 verbose=False
             )
@@ -930,10 +587,28 @@ def find_optimal_cell_resolution_integration(
                 n_expression_pcs=num_DR_components,
                 n_proportion_pcs=num_DR_components,
                 atac=False,  # For integrated data, use RNA processing
-                output_dir=output_dir,
+                output_dir=resolution_dir,
                 not_save=True,
                 verbose=False
             )
+            
+            # Generate null distribution for this resolution if computing p-values
+            if compute_pvalues:
+                try:
+                    null_distribution = generate_null_distribution(
+                        pseudobulk_adata=pseudobulk_adata,
+                        modality=optimization_target.upper(),
+                        column=f'X_DR_{dr_type}',
+                        sev_col=sev_col,
+                        n_components=2,
+                        n_permutations=num_pvalue_simulations,
+                        save_path=os.path.join(resolution_dir, f'null_dist_{optimization_target}_{dr_type}.npy'),
+                        verbose=verbose
+                    )
+                    resolution_null_result['null_scores'] = null_distribution
+                except Exception as e:
+                    print(f"Warning: Failed to generate null distribution for resolution {resolution:.2f}: {str(e)}")
+                    resolution_null_result['null_scores'] = None
             
             # Compute CCA for both modalities and both DR types
             for modality in ['RNA', 'ATAC']:
@@ -962,8 +637,8 @@ def find_optimal_cell_resolution_integration(
             if visualize_embeddings and not np.isnan(result_dict['optimization_score']):
                 try:
                     embedding_path = os.path.join(
-                        embedding_plots_dir, 
-                        f"embedding_res_{resolution:.2f}_{optimization_target.upper()}_{dr_type}"
+                        resolution_dir, 
+                        f"embedding_{optimization_target.upper()}_{dr_type}"
                     )
                     visualize_multimodal_embedding(
                         adata=pseudobulk_adata,
@@ -977,11 +652,16 @@ def find_optimal_cell_resolution_integration(
                 except Exception as e:
                     if verbose:
                         print(f"Warning: Failed to create embedding visualization: {str(e)}")
+            
+            # Save resolution-specific results
+            resolution_results_path = os.path.join(resolution_dir, f"results_res_{resolution:.2f}.csv")
+            pd.DataFrame([result_dict]).to_csv(resolution_results_path, index=False)
                 
         except Exception as e:
             print(f"Error at resolution {resolution:.2f}: {str(e)}")
         
         all_results.append(result_dict)
+        all_resolution_null_results.append(resolution_null_result)
 
     # Find best resolution from first pass
     coarse_results = [r for r in all_results if not np.isnan(r['optimization_score'])]
@@ -1009,6 +689,10 @@ def find_optimal_cell_resolution_integration(
         
         print(f"\nTesting fine-tuned resolution: {resolution:.3f}")
         
+        # Create resolution-specific directory
+        resolution_dir = os.path.join(main_output_dir, f"resolution_{resolution:.3f}")
+        os.makedirs(resolution_dir, exist_ok=True)
+        
         result_dict = {
             'resolution': resolution,
             'rna_cca_expression': np.nan,
@@ -1023,6 +707,12 @@ def find_optimal_cell_resolution_integration(
             'pass': 'fine'
         }
         
+        # Initialize null results for this resolution
+        resolution_null_result = {
+            'resolution': resolution,
+            'null_scores': None
+        }
+        
         try:
             # Clean up previous cell type assignments
             if 'cell_type' in AnnData_integrated.obs.columns:
@@ -1034,7 +724,7 @@ def find_optimal_cell_resolution_integration(
                 cell_column='cell_type',
                 existing_cell_types=False,
                 Save=False,
-                output_dir=output_dir,
+                output_dir=resolution_dir,
                 cluster_resolution=resolution,
                 use_rep=use_rep,
                 markers=None,
@@ -1049,7 +739,7 @@ def find_optimal_cell_resolution_integration(
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
                 n_features=n_features, 
-                output_dir=output_dir,
+                output_dir=resolution_dir,
                 Save=False,
                 verbose=False
             )
@@ -1063,10 +753,28 @@ def find_optimal_cell_resolution_integration(
                 n_expression_pcs=num_DR_components,
                 n_proportion_pcs=num_DR_components,
                 atac=False,
-                output_dir=output_dir,
+                output_dir=resolution_dir,
                 not_save=True,
                 verbose=False
             )
+            
+            # Generate null distribution for this resolution if computing p-values
+            if compute_pvalues:
+                try:
+                    null_distribution = generate_null_distribution(
+                        pseudobulk_adata=pseudobulk_adata,
+                        modality=optimization_target.upper(),
+                        column=f'X_DR_{dr_type}',
+                        sev_col=sev_col,
+                        n_components=2,
+                        n_permutations=num_pvalue_simulations,
+                        save_path=os.path.join(resolution_dir, f'null_dist_{optimization_target}_{dr_type}.npy'),
+                        verbose=verbose
+                    )
+                    resolution_null_result['null_scores'] = null_distribution
+                except Exception as e:
+                    print(f"Warning: Failed to generate null distribution for resolution {resolution:.3f}: {str(e)}")
+                    resolution_null_result['null_scores'] = None
             
             # Compute CCA for both modalities and DR types
             for modality in ['RNA', 'ATAC']:
@@ -1087,11 +795,72 @@ def find_optimal_cell_resolution_integration(
                 result_dict['optimization_score'] = np.nan
             
             print(f"Fine-tuned Resolution {resolution:.3f}: Target Score {result_dict['optimization_score']:.4f}")
+            
+            # Create embedding visualizations if requested (only for target modality)
+            if visualize_embeddings and not np.isnan(result_dict['optimization_score']):
+                try:
+                    embedding_path = os.path.join(
+                        resolution_dir, 
+                        f"embedding_{optimization_target.upper()}_{dr_type}"
+                    )
+                    visualize_multimodal_embedding(
+                        adata=pseudobulk_adata,
+                        modality_col=modality_col,
+                        color_col=sev_col,
+                        target_modality=optimization_target.upper(),
+                        output_dir=embedding_path,
+                        show_sample_names=False,
+                        verbose=False
+                    )
+                except Exception as e:
+                    if verbose:
+                        print(f"Warning: Failed to create embedding visualization: {str(e)}")
+            
+            # Save resolution-specific results
+            resolution_results_path = os.path.join(resolution_dir, f"results_res_{resolution:.3f}.csv")
+            pd.DataFrame([result_dict]).to_csv(resolution_results_path, index=False)
                     
         except Exception as e:
             print(f"Error at fine-tuned resolution {resolution:.3f}: {str(e)}")
         
         all_results.append(result_dict)
+        all_resolution_null_results.append(resolution_null_result)
+
+    # Generate corrected null distribution if computing p-values
+    corrected_null_distribution = None
+    if compute_pvalues:
+        print("\n=== GENERATING CORRECTED NULL DISTRIBUTION ===")
+        print("Accounting for resolution selection bias...")
+        
+        # Filter out null results that failed to generate
+        valid_null_results = [r for r in all_resolution_null_results if r['null_scores'] is not None]
+        
+        if valid_null_results:
+            corrected_null_distribution = generate_corrected_null_distribution(
+                all_resolution_results=valid_null_results,
+                optimization_target=optimization_target,
+                dr_type=dr_type,
+                n_permutations=num_pvalue_simulations
+            )
+            
+            # Save corrected null distribution
+            summary_dir = os.path.join(main_output_dir, "summary")
+            os.makedirs(summary_dir, exist_ok=True)
+            corrected_null_path = os.path.join(summary_dir, f'corrected_null_distribution_{optimization_target}_{dr_type}.npy')
+            np.save(corrected_null_path, corrected_null_distribution)
+            print(f"Corrected null distribution saved to: {corrected_null_path}")
+            
+            # Compute corrected p-values for all CCA scores and create visualization plots
+            print("\n=== COMPUTING CORRECTED P-VALUES AND CREATING PLOTS ===")
+            compute_all_corrected_pvalues_and_plots(
+                df_results=df_results,
+                corrected_null_distribution=corrected_null_distribution,
+                main_output_dir=main_output_dir,
+                optimization_target=optimization_target,
+                dr_type=dr_type
+            )
+        else:
+            print("Warning: No valid null distributions generated, cannot create corrected null distribution")
 
     # Create comprehensive results dataframe
     df_results = pd.DataFrame(all_results)
@@ -1111,6 +880,13 @@ def find_optimal_cell_resolution_integration(
     print(f"Best resolution: {final_best_resolution:.3f}")
     print(f"Best CCA score: {final_best_score:.4f}")
     
+    # Get corrected p-value if available
+    corrected_pval_col = f"{optimization_target}_corrected_pvalue_{dr_type}"
+    if corrected_pval_col in df_results.columns:
+        corrected_p_value = df_results.loc[df_results['resolution'] == final_best_resolution, corrected_pval_col].iloc[0]
+        if not pd.isna(corrected_p_value):
+            print(f"Corrected p-value: {corrected_p_value:.4f}")
+    
     # Display all scores at best resolution for context
     best_row = valid_results.loc[final_best_idx]
     print(f"\nAll CCA scores at best resolution {final_best_resolution:.3f}:")
@@ -1119,25 +895,28 @@ def find_optimal_cell_resolution_integration(
     print(f"  ATAC Expression: {best_row['atac_cca_expression']:.4f}")
     print(f"  ATAC Proportion: {best_row['atac_cca_proportion']:.4f}")
 
+    # Create summary directory for final results
+    summary_dir = os.path.join(main_output_dir, "summary")
+    os.makedirs(summary_dir, exist_ok=True)
+
     # Save comprehensive results
-    results_csv_path = os.path.join(main_output_dir, f"resolution_scores_comprehensive_integration_{optimization_target}_{dr_type}.csv")
+    results_csv_path = os.path.join(summary_dir, f"resolution_scores_comprehensive_integration_{optimization_target}_{dr_type}.csv")
     df_results.to_csv(results_csv_path, index=False)
     print(f"\nComprehensive results saved to: {results_csv_path}")
 
-    # Create separate modality visualizations
-    create_separate_modality_plots(df_results, final_best_resolution, optimization_target, dr_type, main_output_dir)
+    # Create separate modality visualizations in summary directory
+    create_separate_modality_plots(df_results, final_best_resolution, optimization_target, dr_type, summary_dir)
 
-    # Save comprehensive CCA summary
-    save_comprehensive_cca_summary(df_results, optimization_target, dr_type, main_output_dir)
+    # Save comprehensive CCA summary in summary directory
+    save_comprehensive_cca_summary(df_results, optimization_target, dr_type, summary_dir)
 
-    # Save detailed p-value summary if computed
+    # Save detailed p-value summary if computed in summary directory
     if compute_pvalues:
-        save_detailed_pvalue_summary(df_results, optimization_target, dr_type, pvalue_results_dir)
+        save_detailed_pvalue_summary(df_results, optimization_target, dr_type, summary_dir)
 
     print(f"\n[Find Optimal Resolution Integration] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
     return final_best_resolution, df_results
-
 
 if __name__ == "__main__":
     integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/preprocess/atac_rna_integrated.h5ad")
