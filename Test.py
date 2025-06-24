@@ -24,12 +24,51 @@ def suppress_warnings():
                           message='.*invalid value encountered in divide.*')
     warnings.filterwarnings('ignore', category=RuntimeWarning, 
                           message='.*All-NaN slice encountered.*')
+
+def plot_cca_distribution(cca_score, null_distribution, modality, column, p_value=None, 
+                         save_path=None):
     
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Plot histogram of null distribution
+    ax.hist(null_distribution, bins=50, alpha=0.7, color='lightblue', 
+            edgecolor='black', density=True, label='Null Distribution')
+    
+    # Add vertical line for observed CCA score
+    ax.axvline(cca_score, color='red', linestyle='--', linewidth=2, 
+               label=f'Observed CCA Score: {cca_score:.4f}')
+    
+    # Add text annotation with p-value if provided
+    if p_value is not None:
+        ax.text(0.02, 0.98, f'p-value: {p_value:.4f}', 
+                transform=ax.transAxes, fontsize=12, 
+                verticalalignment='top', 
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+    
+    # Formatting
+    ax.set_xlabel('CCA Score', fontsize=12)
+    ax.set_ylabel('Density', fontsize=12)
+    ax.set_title(f'CCA Score Distribution\nModality: {modality}, Column: {column}', 
+                fontsize=14, fontweight='bold')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    # Adjust layout
+    plt.tight_layout()
+    
+    # Always save the plot
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)  # Close figure to free memory
+    
+    return save_path
+
 
 def cca_analysis(pseudobulk_adata, modality, column, sev_col, 
-                            n_components=2, null_distribution=None):
+                            n_components=2, null_distribution=None, 
+                            save_plot_path=None):
     """
     Simplified CCA analysis using precomputed null distribution for p-value calculation.
+    Always generates distribution plot when null_distribution is provided.
     
     Parameters:
     -----------
@@ -45,6 +84,8 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
         Number of CCA components
     null_distribution : np.array, optional
         Precomputed null distribution of CCA scores for p-value calculation
+    save_plot_path : str, optional
+        Path to save the distribution plot
         
     Assumptions based on fixed data type:
     - pseudobulk_adata.uns[column] contains pandas DataFrame with numeric coordinates
@@ -61,20 +102,18 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
         'modality': modality,
         'column': column,
         'valid': False,
-        'error_message': None
+        'error_message': None,
+        'plot_path': None
     }
     
     try:
-        # Extract modality samples (simplified - no categorical conversion needed)
+        # Extract modality samples
         modality_mask = pseudobulk_adata.obs['modality'] == modality
         if not modality_mask.any():
             result['error_message'] = f"No samples found for modality: {modality}"
             return result
         
-        # Get dimension reduction coordinates (simplified - assume DataFrame format)
         dr_coords = pseudobulk_adata.uns[column].loc[modality_mask].copy()
-        
-        # Get severity levels (simplified - assume numeric)
         sev_levels = pseudobulk_adata.obs.loc[modality_mask, sev_col].values
         
         # Basic validation only
@@ -102,9 +141,6 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
             return result
         
         # Standardize data (simplified)
-        from sklearn.preprocessing import StandardScaler
-        from sklearn.cross_decomposition import CCA
-        
         scaler_X = StandardScaler()
         scaler_y = StandardScaler()
         
@@ -125,6 +161,17 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
         # Calculate p-value using precomputed null distribution
         if null_distribution is not None:
             result['p_value'] = np.mean(null_distribution >= cca_score)
+            
+            # Always plot distribution when null_distribution is provided
+            if save_plot_path:
+                result['plot_path'] = plot_cca_distribution(
+                    cca_score=cca_score,
+                    null_distribution=null_distribution,
+                    modality=modality,
+                    column=column,
+                    p_value=result['p_value'],
+                    save_path=save_plot_path
+                )
         else:
             result['p_value'] = np.nan
         
@@ -137,9 +184,10 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col,
 
 
 def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None, 
-                      n_components=2, null_distribution=None):
+                      n_components=2, null_distribution=None, output_dir=None):
     """
     Run CCA analysis across multiple dimension reduction results and modalities.
+    Always generates plots and saves all results to output directory.
     
     Parameters:
     -----------
@@ -155,6 +203,8 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
         Number of CCA components
     null_distribution : np.array, optional
         Precomputed null distribution of CCA scores for p-value calculation
+    output_dir : str, optional
+        Directory to save all results (plots and summary table)
         
     Returns:
     --------
@@ -162,25 +212,43 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
         Results DataFrame with CCA scores and p-values for each modality-column combination
     """
     
+    import os
+    
     if modalities is None:
         modalities = pseudobulk_adata.obs['modality'].unique()
+    
+    # Create output directory if specified
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        plots_dir = os.path.join(output_dir, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
     
     results = []
     
     for modality in modalities:
         for column in dr_columns:
             if column in pseudobulk_adata.uns:
+                # Construct save path for plot
+                save_path = None
+                if output_dir:
+                    # Clean modality and column names for filename
+                    safe_modality = "".join(c for c in modality if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                    safe_column = "".join(c for c in column if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                    save_path = os.path.join(plots_dir, f"cca_dist_{safe_modality}_{safe_column}.png")
+                
                 result = cca_analysis(
                     pseudobulk_adata=pseudobulk_adata,
                     modality=modality,
                     column=column,
                     sev_col=sev_col,
                     n_components=n_components,
-                    null_distribution=null_distribution
+                    null_distribution=null_distribution,
+                    save_plot_path=save_path
                 )
+                
                 results.append(result)
+                
             else:
-                # Add placeholder for missing data
                 results.append({
                     'cca_score': np.nan,
                     'p_value': np.nan,
@@ -189,10 +257,28 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
                     'modality': modality,
                     'column': column,
                     'valid': False,
-                    'error_message': f"Column '{column}' not found"
+                    'error_message': f"Column '{column}' not found",
+                    'plot_path': None
                 })
     
-    return pd.DataFrame(results)
+    # Create results DataFrame
+    results_df = pd.DataFrame(results)
+    
+    # Save results table to output directory
+    if output_dir:
+        results_path = os.path.join(output_dir, 'cca_results_summary.csv')
+        results_df.to_csv(results_path, index=False)
+        print(f"Results saved to: {results_path}")
+        
+        # Save a detailed results table with additional info
+        detailed_path = os.path.join(output_dir, 'cca_results_detailed.csv')
+        results_df.to_csv(detailed_path, index=False)
+        print(f"Detailed results saved to: {detailed_path}")
+        
+        if null_distribution is not None:
+            print(f"Distribution plots saved to: {plots_dir}")
+    
+    return results_df
 
 def generate_null_distribution(pseudobulk_adata, modality, column, sev_col, 
                              n_components=2, n_trials=1000, simulations_per_trial=10, 
