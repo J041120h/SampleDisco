@@ -11,18 +11,11 @@ from CCA import *
 from CCA_test import *
 from linux.CellType_linux import cell_types_linux
 from integration_visualization import visualize_multimodal_embedding
-
 import warnings
-import numpy as np
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.cross_decomposition import CCA, PLSCanonical
+from sklearn.cross_decomposition import CCA
 
-import pandas as pd
-import numpy as np
-import re
-from typing import Union
-
+# Suppress specific warnings that are expected during CCA analysis
 def suppress_warnings():
     """Suppress specific warnings that are expected during CCA analysis"""
     warnings.filterwarnings('ignore', category=UserWarning, 
@@ -31,350 +24,175 @@ def suppress_warnings():
                           message='.*invalid value encountered in divide.*')
     warnings.filterwarnings('ignore', category=RuntimeWarning, 
                           message='.*All-NaN slice encountered.*')
+    
 
-def validate_data_for_cca(X, y, min_variance_threshold=1e-6):
+def cca_analysis(pseudobulk_adata, modality, column, sev_col, 
+                            n_components=2, null_distribution=None):
     """
-    Validate and preprocess data before CCA analysis
+    Simplified CCA analysis using precomputed null distribution for p-value calculation.
     
     Parameters:
     -----------
-    X : array-like
-        Feature matrix
-    y : array-like  
-        Target variable (e.g., severity levels)
-    min_variance_threshold : float
-        Minimum variance threshold for features
-        
-    Returns:
-    --------
-    X_valid, y_valid, is_valid : processed data and validity flag
-    """
-    X = np.array(X)
-    y = np.array(y)
-    
-    # Check for NaN values
-    X_nan_mask = np.isnan(X).any(axis=1)
-    y_nan_mask = np.isnan(y)
-    valid_mask = ~(X_nan_mask | y_nan_mask)
-    
-    if valid_mask.sum() < 3:  # Need at least 3 samples
-        return None, None, False
-    
-    X_clean = X[valid_mask]
-    y_clean = y[valid_mask]
-    
-    # Check variance in features
-    feature_vars = np.var(X_clean, axis=0)
-    valid_features = feature_vars > min_variance_threshold
-    
-    if valid_features.sum() < 2:  # Need at least 2 features with variance
-        return None, None, False
-    
-    X_clean = X_clean[:, valid_features]
-    
-    # Check variance in target
-    if np.var(y_clean) < min_variance_threshold:
-        return None, None, False
-    
-    # Check for constant values
-    if len(np.unique(y_clean)) < 2:
-        return None, None, False
-    
-    return X_clean, y_clean, True
-
-def robust_cca_analysis(X, y, n_components=2):
-    """
-    Perform robust CCA analysis with proper error handling
-    
-    Parameters:
-    -----------
-    X : array-like
-        Feature matrix (e.g., PCA coordinates)
-    y : array-like
-        Target variable (e.g., severity levels)
-    n_components : int
+    pseudobulk_adata : sc.AnnData
+        AnnData object containing dimension reduction results
+    modality : str
+        Modality to analyze
+    column : str
+        Column name for dimension reduction coordinates
+    sev_col : str
+        Column name for severity levels
+    n_components : int, default 2
         Number of CCA components
+    null_distribution : np.array, optional
+        Precomputed null distribution of CCA scores for p-value calculation
         
-    Returns:
-    --------
-    cca_score : float
-        CCA correlation score (NaN if analysis fails)
-    cca_model : CCA model or None
+    Assumptions based on fixed data type:
+    - pseudobulk_adata.uns[column] contains pandas DataFrame with numeric coordinates
+    - modality column exists and contains string values
+    - severity column exists and contains numeric values
+    - Data is already preprocessed and clean
     """
+    
+    result = {
+        'cca_score': np.nan,
+        'p_value': np.nan,
+        'n_samples': 0,
+        'n_features': 0,
+        'modality': modality,
+        'column': column,
+        'valid': False,
+        'error_message': None
+    }
+    
     try:
-        # Validate data
-        X_valid, y_valid, is_valid = validate_data_for_cca(X, y)
+        # Extract modality samples (simplified - no categorical conversion needed)
+        modality_mask = pseudobulk_adata.obs['modality'] == modality
+        if not modality_mask.any():
+            result['error_message'] = f"No samples found for modality: {modality}"
+            return result
         
-        if not is_valid:
-            print("Warning: Data validation failed for CCA analysis")
-            return np.nan, None
+        # Get dimension reduction coordinates (simplified - assume DataFrame format)
+        dr_coords = pseudobulk_adata.uns[column].loc[modality_mask].copy()
         
-        # Reshape y if needed
-        if y_valid.ndim == 1:
-            y_valid = y_valid.reshape(-1, 1)
+        # Get severity levels (simplified - assume numeric)
+        sev_levels = pseudobulk_adata.obs.loc[modality_mask, sev_col].values
         
-        # Determine number of components based on data dimensions
-        max_components = min(X_valid.shape[1], y_valid.shape[1], X_valid.shape[0] - 1)
-        n_components = min(n_components, max_components)
+        # Basic validation only
+        if len(dr_coords) < 3:
+            result['error_message'] = f"Insufficient samples: {len(dr_coords)}"
+            return result
         
-        if n_components < 1:
-            return np.nan, None
+        if len(np.unique(sev_levels)) < 2:
+            result['error_message'] = "Insufficient severity level variance"
+            return result
         
-        # Standardize data to avoid scaling issues
+        # Prepare data for CCA
+        X = dr_coords.values
+        y = sev_levels.reshape(-1, 1)
+        
+        result['n_samples'] = len(X)
+        result['n_features'] = X.shape[1]
+        
+        # Limit components based on data dimensions
+        max_components = min(X.shape[1], X.shape[0] - 1)
+        n_components_actual = min(n_components, max_components)
+        
+        if n_components_actual < 1:
+            result['error_message'] = "Cannot compute CCA components"
+            return result
+        
+        # Standardize data (simplified)
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.cross_decomposition import CCA
+        
         scaler_X = StandardScaler()
         scaler_y = StandardScaler()
         
-        X_scaled = scaler_X.fit_transform(X_valid)
-        y_scaled = scaler_y.fit_transform(y_valid)
+        X_scaled = scaler_X.fit_transform(X)
+        y_scaled = scaler_y.fit_transform(y)
         
-        # Check for zero variance after scaling
-        if np.any(np.var(X_scaled, axis=0) < 1e-10) or np.any(np.var(y_scaled, axis=0) < 1e-10):
-            return np.nan, None
+        # Fit CCA
+        cca = CCA(n_components=n_components_actual, max_iter=1000, tol=1e-6)
+        cca.fit(X_scaled, y_scaled)
         
-        # Perform CCA with error handling
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            
-            cca = CCA(n_components=n_components, max_iter=1000, tol=1e-6)
-            cca.fit(X_scaled, y_scaled)
-            
-            # Transform data
-            X_c, y_c = cca.transform(X_scaled, y_scaled)
-            
-            # Calculate correlation for first canonical component
-            if X_c.shape[1] > 0 and y_c.shape[1] > 0:
-                correlation = np.corrcoef(X_c[:, 0], y_c[:, 0])[0, 1]
-                
-                # Return absolute correlation as CCA score
-                cca_score = abs(correlation) if not np.isnan(correlation) else np.nan
-            else:
-                cca_score = np.nan
-                
-        return cca_score, cca
+        # Transform and compute correlation
+        X_c, y_c = cca.transform(X_scaled, y_scaled)
+        correlation = np.corrcoef(X_c[:, 0], y_c[:, 0])[0, 1]
+        cca_score = abs(correlation)
+        
+        result['cca_score'] = cca_score
+        
+        # Calculate p-value using precomputed null distribution
+        if null_distribution is not None:
+            result['p_value'] = np.mean(null_distribution >= cca_score)
+        else:
+            result['p_value'] = np.nan
+        
+        result['valid'] = True
         
     except Exception as e:
-        print(f"CCA analysis failed: {str(e)}")
-        return np.nan, None
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
-from sklearn.cross_decomposition import CCA
-import os
-
-def improved_compute_modality_cca(pseudobulk_adata, modality, column, sev_col, 
-                                  num_pvalue_simulations=1000, output_dir=None, verbose=False):
-    """
-    Improved version of compute_modality_cca function with proper PCA coordinate filtering
-    and p-value calculation
-    """
-    try:
-        # Ensure modality column is not categorical
-        modality_col = 'modality'  # Assuming this is your modality column name
-        if modality_col in pseudobulk_adata.obs.columns:
-            if pd.api.types.is_categorical_dtype(pseudobulk_adata.obs[modality_col]):
-                pseudobulk_adata.obs[modality_col] = pseudobulk_adata.obs[modality_col].astype(str)
-        
-        # Filter for specific modality
-        modality_mask = pseudobulk_adata.obs[modality_col] == modality
-        if not any(modality_mask):
-            print(f"No samples found for modality: {modality}")
-            return np.nan, np.nan
-        
-        # Get positions of the modality samples in the original data
-        modality_positions = [i for i, is_modality in enumerate(modality_mask) if is_modality]
-        
-        # Filter the AnnData object
-        modality_adata = pseudobulk_adata[modality_mask].copy()
-        
-        # CRITICAL: Filter PCA coordinates in .uns to match the filtered samples
-        if column in pseudobulk_adata.uns:
-            original_pca = pseudobulk_adata.uns[column]
-            
-            # Handle different data types for PCA coordinates
-            if isinstance(original_pca, pd.DataFrame):
-                # For pandas DataFrame
-                modality_adata.uns[column] = original_pca.iloc[modality_positions].copy()
-            elif isinstance(original_pca, np.ndarray):
-                # For numpy array
-                modality_adata.uns[column] = original_pca[modality_positions].copy()
-            else:
-                # Try generic indexing
-                try:
-                    modality_adata.uns[column] = original_pca[modality_positions]
-                except Exception as e:
-                    print(f"Warning: Could not filter PCA coordinates for {column}: {e}")
-                    return np.nan, np.nan
-            
-            if verbose:
-                print(f"Filtered {column} from {original_pca.shape[0]} to {modality_adata.uns[column].shape[0]} samples for {modality}")
-        else:
-            print(f"Column {column} not found in .uns for modality {modality}")
-            return np.nan, np.nan
-        
-        # Validate dimensions match
-        if modality_adata.uns[column].shape[0] != modality_adata.n_obs:
-            print(f"Error: PCA coordinates ({modality_adata.uns[column].shape[0]}) don't match number of samples ({modality_adata.n_obs})")
-            return np.nan, np.nan
-        
-        if sev_col not in modality_adata.obs.columns:
-            print(f"Severity column {sev_col} not found for modality {modality}")
-            return np.nan, np.nan
-        
-        # Get PCA coordinates and severity levels
-        pca_coords = modality_adata.uns[column]
-        if isinstance(pca_coords, pd.DataFrame):
-            X = pca_coords.values
-        else:
-            X = np.array(pca_coords)
-        
-        # Get severity levels
-        sev_levels = modality_adata.obs[sev_col].values
-        
-        # Convert severity levels to numeric if they're categorical/string
-        if not pd.api.types.is_numeric_dtype(sev_levels):
-            # Try to convert to numeric
-            try:
-                sev_levels = pd.to_numeric(sev_levels, errors='coerce')
-            except:
-                # Create numeric mapping for categorical data
-                unique_levels = sorted(set(sev_levels))
-                level_mapping = {level: i for i, level in enumerate(unique_levels)}
-                sev_levels = np.array([level_mapping.get(level, np.nan) for level in sev_levels])
-        
-        # Perform robust CCA analysis
-        cca_score, cca_model = robust_cca_analysis(X, sev_levels)
-        
-        # Calculate p-value if CCA score is valid
-        if not np.isnan(cca_score) and num_pvalue_simulations > 0:
-            p_value, simulated_scores = compute_cca_pvalue_with_plot(
-                modality_adata, column, cca_score, sev_col, 
-                num_pvalue_simulations, modality, column.split('_')[-1], 
-                output_dir, verbose
-            )
-        else:
-            p_value = np.nan
-        
-        return cca_score, p_value
-        
-    except Exception as e:
-        print(f"Error in CCA computation for {modality}: {str(e)}")
-        return np.nan, np.nan
-
-
-def compute_cca_pvalue_with_plot(modality_adata, column, observed_correlation, sev_col, 
-                                num_simulations=1000, modality="", dr_type="", 
-                                output_dir=None, verbose=False):
-    """
-    Compute p-value for CCA correlation using permutation test and create visualization
+        result['error_message'] = f"CCA failed: {str(e)}"
     
+    return result
+
+
+def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None, 
+                      n_components=2, null_distribution=None):
+    """
+    Run CCA analysis across multiple dimension reduction results and modalities.
+    
+    Parameters:
+    -----------
+    pseudobulk_adata : sc.AnnData
+        AnnData object containing dimension reduction results
+    dr_columns : list
+        List of dimension reduction column names to analyze (e.g., ['X_DR_expression', 'X_DR_proportion'])
+    sev_col : str
+        Column name for severity levels
+    modalities : list, optional
+        List of modalities to analyze. If None, uses all unique modalities
+    n_components : int, default 2
+        Number of CCA components
+    null_distribution : np.array, optional
+        Precomputed null distribution of CCA scores for p-value calculation
+        
     Returns:
     --------
-    tuple : (p-value, simulated_scores)
+    pd.DataFrame
+        Results DataFrame with CCA scores and p-values for each modality-column combination
     """
-    try:
-        # Get PCA coordinates
-        pca_coords = modality_adata.uns[column]
-        if isinstance(pca_coords, pd.DataFrame):
-            pca_values = pca_coords.values
-        else:
-            pca_values = np.array(pca_coords)
-        
-        # Get severity levels and ensure they're numeric
-        sev_levels = modality_adata.obs[sev_col].values
-        
-        # Convert to numeric if needed
-        if not pd.api.types.is_numeric_dtype(sev_levels):
-            if pd.api.types.is_categorical_dtype(modality_adata.obs[sev_col]):
-                sev_levels = modality_adata.obs[sev_col].cat.codes.values
+    
+    if modalities is None:
+        modalities = pseudobulk_adata.obs['modality'].unique()
+    
+    results = []
+    
+    for modality in modalities:
+        for column in dr_columns:
+            if column in pseudobulk_adata.uns:
+                result = cca_analysis(
+                    pseudobulk_adata=pseudobulk_adata,
+                    modality=modality,
+                    column=column,
+                    sev_col=sev_col,
+                    n_components=n_components,
+                    null_distribution=null_distribution
+                )
+                results.append(result)
             else:
-                # Try numeric conversion
-                try:
-                    sev_levels = pd.to_numeric(sev_levels, errors='coerce')
-                except:
-                    # Create ordinal mapping
-                    unique_levels = sorted(set(sev_levels))
-                    level_map = {level: i for i, level in enumerate(unique_levels)}
-                    sev_levels = np.array([level_map.get(level, np.nan) for level in sev_levels])
-        
-        # Remove any NaN values
-        valid_mask = ~np.isnan(sev_levels)
-        if valid_mask.sum() < 3:  # Need at least 3 samples
-            return np.nan, []
-            
-        pca_values = pca_values[valid_mask]
-        sev_levels = sev_levels[valid_mask]
-        
-        # Reshape severity for CCA
-        sev_levels_2d = sev_levels.reshape(-1, 1)
-        
-        # Perform permutation test
-        simulated_scores = []
-        
-        for i in range(num_simulations):
-            # Permute severity levels
-            permuted_sev = np.random.permutation(sev_levels).reshape(-1, 1)
-            
-            # Perform CCA with permuted data
-            try:
-                # Validate and process data for this permutation
-                X_valid, y_valid, is_valid = validate_data_for_cca(pca_values, permuted_sev.ravel())
-                
-                if not is_valid:
-                    simulated_scores.append(0.0)  # Conservative approach: treat invalid as no correlation
-                    continue
-                
-                # Reshape y if needed
-                if y_valid.ndim == 1:
-                    y_valid = y_valid.reshape(-1, 1)
-                
-                # Standardize
-                scaler_X = StandardScaler()
-                scaler_y = StandardScaler()
-                X_scaled = scaler_X.fit_transform(X_valid)
-                y_scaled = scaler_y.fit_transform(y_valid)
-                
-                # Perform CCA
-                n_components = min(X_scaled.shape[1], y_scaled.shape[1], X_scaled.shape[0] - 1)
-                if n_components < 1:
-                    simulated_scores.append(0.0)
-                    continue
-                    
-                cca = CCA(n_components=n_components, max_iter=1000, tol=1e-6)
-                cca.fit(X_scaled, y_scaled)
-                
-                # Get correlation
-                X_c, y_c = cca.transform(X_scaled, y_scaled)
-                if X_c.shape[1] > 0 and y_c.shape[1] > 0:
-                    correlation = np.corrcoef(X_c[:, 0], y_c[:, 0])[0, 1]
-                    simulated_scores.append(abs(correlation) if not np.isnan(correlation) else 0.0)
-                else:
-                    simulated_scores.append(0.0)
-                    
-            except Exception:
-                simulated_scores.append(0.0)  # Conservative approach for any errors
-        
-        # Calculate p-value
-        simulated_scores = np.array(simulated_scores)
-        p_value = np.mean(simulated_scores >= observed_correlation)
-        
-        if verbose:
-            print(f"P-value calculation: {np.sum(simulated_scores >= observed_correlation)}/{num_simulations} = {p_value:.4f}")
-            print(f"Observed: {observed_correlation:.4f}, Simulated mean: {np.mean(simulated_scores):.4f}, std: {np.std(simulated_scores):.4f}")
-        
-        # Create visualization if output directory is provided
-        if output_dir and len(simulated_scores) > 0:
-            create_modality_pvalue_plot(simulated_scores, observed_correlation, 
-                                      p_value, modality, dr_type, output_dir)
-        
-        return p_value, simulated_scores
-        
-    except Exception as e:
-        if verbose:
-            print(f"Error in p-value calculation: {str(e)}")
-        return np.nan, []
-
+                # Add placeholder for missing data
+                results.append({
+                    'cca_score': np.nan,
+                    'p_value': np.nan,
+                    'n_samples': 0,
+                    'n_features': 0,
+                    'modality': modality,
+                    'column': column,
+                    'valid': False,
+                    'error_message': f"Column '{column}' not found"
+                })
+    
+    return pd.DataFrame(results)
 
 def create_modality_pvalue_plot(simulated_scores, observed_correlation, p_value, 
                                modality, dr_type, output_dir):
