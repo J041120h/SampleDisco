@@ -194,6 +194,126 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
     
     return pd.DataFrame(results)
 
+def generate_null_distribution(pseudobulk_adata, modality, column, sev_col, 
+                             n_components=2, n_trials=1000, simulations_per_trial=10, 
+                             save_path=None, plot=True, verbose=True):
+    
+    import matplotlib.pyplot as plt
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.cross_decomposition import CCA
+    
+    if verbose:
+        print(f"Generating null distribution with {n_trials} trials, {simulations_per_trial} simulations per trial...")
+    
+    # Extract data (same as in simplified_cca_analysis)
+    modality_mask = pseudobulk_adata.obs['modality'] == modality
+    if not modality_mask.any():
+        raise ValueError(f"No samples found for modality: {modality}")
+    
+    dr_coords = pseudobulk_adata.uns[column].loc[modality_mask].copy()
+    sev_levels = pseudobulk_adata.obs.loc[modality_mask, sev_col].values
+    
+    if len(dr_coords) < 3:
+        raise ValueError(f"Insufficient samples: {len(dr_coords)}")
+    
+    if len(np.unique(sev_levels)) < 2:
+        raise ValueError("Insufficient severity level variance")
+    
+    # Prepare data
+    X = dr_coords.values
+    y_original = sev_levels.reshape(-1, 1)
+    
+    # Limit components
+    max_components = min(X.shape[1], X.shape[0] - 1)
+    n_components_actual = min(n_components, max_components)
+    
+    if n_components_actual < 1:
+        raise ValueError("Cannot compute CCA components")
+    
+    # Pre-scale X (this won't change across permutations)
+    scaler_X = StandardScaler()
+    X_scaled = scaler_X.fit_transform(X)
+    
+    null_scores = []
+    
+    for trial in range(n_trials):
+        if verbose and (trial + 1) % 100 == 0:
+            print(f"  Completed {trial + 1}/{n_trials} trials...")
+        
+        trial_scores = []
+        
+        # Run multiple simulations per trial
+        for sim in range(simulations_per_trial):
+            try:
+                # Permute severity levels
+                permuted_y = np.random.permutation(sev_levels).reshape(-1, 1)
+                
+                # Scale permuted y
+                scaler_y = StandardScaler()
+                permuted_y_scaled = scaler_y.fit_transform(permuted_y)
+                
+                # Fit CCA
+                perm_cca = CCA(n_components=n_components_actual, max_iter=1000, tol=1e-6)
+                perm_cca.fit(X_scaled, permuted_y_scaled)
+                
+                # Transform and compute correlation
+                X_c_perm, y_c_perm = perm_cca.transform(X_scaled, permuted_y_scaled)
+                perm_correlation = np.corrcoef(X_c_perm[:, 0], y_c_perm[:, 0])[0, 1]
+                
+                if not np.isnan(perm_correlation):
+                    trial_scores.append(abs(perm_correlation))
+                else:
+                    trial_scores.append(0.0)
+                    
+            except Exception:
+                trial_scores.append(0.0)
+        
+        # Select the best (highest) score from this trial
+        if trial_scores:
+            null_scores.append(max(trial_scores))
+        else:
+            null_scores.append(0.0)
+    
+    null_distribution = np.array(null_scores)
+
+    if verbose:
+            print(f"Simulation complete - generated {len(null_distribution)} null scores.")
+            
+    if save_path:
+        np.save(save_path, null_distribution)
+        if verbose:
+            print(f"Saved null distribution to: {save_path}")
+    
+    # Generate plot
+    if plot and save_path:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        
+        # Histogram
+        ax1.hist(null_distribution, bins=50, density=True, alpha=0.7, 
+                color='skyblue', edgecolor='black', linewidth=0.5)
+        ax1.axvline(null_distribution.mean(), color='red', linestyle='--', 
+                   label=f'Mean: {null_distribution.mean():.3f}')
+        ax1.axvline(np.percentile(null_distribution, 95), color='orange', linestyle='--', 
+                   label=f'95th percentile: {np.percentile(null_distribution, 95):.3f}')
+        ax1.axvline(np.percentile(null_distribution, 99), color='purple', linestyle='--', 
+                   label=f'99th percentile: {np.percentile(null_distribution, 99):.3f}')
+        ax1.set_xlabel('CCA Score')
+        ax1.set_ylabel('Density')
+        ax1.set_title(f'Null Distribution\n({n_trials} trials, best of {simulations_per_trial} each)')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+
+        plot_path = save_path.replace('.npy', '_distribution_plot.png')
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        if verbose:
+            print(f"Saved distribution plot to: {plot_path}")
+        
+        plt.show()
+    
+    return null_distribution
+
 def create_modality_pvalue_plot(simulated_scores, observed_correlation, p_value, 
                                modality, dr_type, output_dir):
     """
