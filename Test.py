@@ -270,7 +270,6 @@ def generate_null_distribution(pseudobulk_adata, modality, column, sev_col,
     
     return null_distribution
 
-
 def ensure_non_categorical_columns(adata, columns):
     """Convert specified columns from categorical to string to avoid categorical errors"""
     for col in columns:
@@ -418,6 +417,9 @@ def generate_corrected_null_distribution(all_resolution_results, optimization_ta
             corrected_null_scores.append(max_score_for_this_perm)
     
     return np.array(corrected_null_scores)
+
+
+# -----------------Main Function for Finding Optimal Cell Resolution-----------------
 
 def find_optimal_cell_resolution_integration(
     AnnData_integrated: AnnData,
@@ -610,19 +612,25 @@ def find_optimal_cell_resolution_integration(
                     print(f"Warning: Failed to generate null distribution for resolution {resolution:.2f}: {str(e)}")
                     resolution_null_result['null_scores'] = None
             
-            # Compute CCA for both modalities and both DR types
-            for modality in ['RNA', 'ATAC']:
-                for dr_method in ['expression', 'proportion']:
-                    column = f'X_DR_{dr_method}'
-                    if column in pseudobulk_adata.uns:
-                        cca_score, p_value = improved_compute_modality_cca(
-                            pseudobulk_adata, modality, column, sev_col
-                        )
-                        result_dict[f'{modality.lower()}_cca_{dr_method}'] = cca_score
-                        result_dict[f'{modality.lower()}_pvalue_{dr_method}'] = p_value
-                        
-                        if not np.isnan(cca_score):
-                            print(f"{modality} {dr_method} CCA Score: {cca_score:.4f}, p-value: {p_value:.4f}")
+            # Compute CCA for both modalities and both DR types using batch analysis
+            dr_columns = ['X_DR_expression', 'X_DR_proportion']
+            cca_results_df = batch_cca_analysis(
+                pseudobulk_adata=pseudobulk_adata,
+                dr_columns=dr_columns,
+                sev_col=sev_col,
+                modalities=['RNA', 'ATAC'],
+                n_components=2,
+                output_dir=resolution_dir
+            )
+            
+            # Extract results into result_dict
+            for _, row in cca_results_df.iterrows():
+                modality = row['modality'].lower()
+                dr_method = row['column'].replace('X_DR_', '')
+                result_dict[f'{modality}_cca_{dr_method}'] = row['cca_score']
+                
+                if row['valid'] and not np.isnan(row['cca_score']):
+                    print(f"{row['modality']} {dr_method} CCA Score: {row['cca_score']:.4f}")
             
             # Set optimization score based on the specified target modality and DR type
             target_metric = f"{optimization_target}_cca_{dr_type}"
@@ -633,25 +641,24 @@ def find_optimal_cell_resolution_integration(
             
             print(f"Resolution {resolution:.2f}: Target {optimization_target.upper()} {dr_type} CCA Score = {result_dict['optimization_score']:.4f}")
             
-            # Create embedding visualizations if requested (only for target modality)
-            if visualize_embeddings and not np.isnan(result_dict['optimization_score']):
-                try:
-                    embedding_path = os.path.join(
-                        resolution_dir, 
-                        f"embedding_{optimization_target.upper()}_{dr_type}"
-                    )
-                    visualize_multimodal_embedding(
-                        adata=pseudobulk_adata,
-                        modality_col=modality_col,
-                        color_col=sev_col,
-                        target_modality=optimization_target.upper(),
-                        output_dir=embedding_path,
-                        show_sample_names=False,
-                        verbose=False
-                    )
-                except Exception as e:
-                    if verbose:
-                        print(f"Warning: Failed to create embedding visualization: {str(e)}")
+            # Always create embedding visualizations
+            try:
+                embedding_path = os.path.join(
+                    resolution_dir, 
+                    f"embedding_{optimization_target.upper()}_{dr_type}"
+                )
+                visualize_multimodal_embedding(
+                    adata=pseudobulk_adata,
+                    modality_col=modality_col,
+                    color_col=sev_col,
+                    target_modality=optimization_target.upper(),
+                    output_dir=embedding_path,
+                    show_sample_names=False,
+                    verbose=False
+                )
+            except Exception as e:
+                if verbose:
+                    print(f"Warning: Failed to create embedding visualization: {str(e)}")
             
             # Save resolution-specific results
             resolution_results_path = os.path.join(resolution_dir, f"results_res_{resolution:.2f}.csv")
@@ -776,16 +783,22 @@ def find_optimal_cell_resolution_integration(
                     print(f"Warning: Failed to generate null distribution for resolution {resolution:.3f}: {str(e)}")
                     resolution_null_result['null_scores'] = None
             
-            # Compute CCA for both modalities and DR types
-            for modality in ['RNA', 'ATAC']:
-                for dr_method in ['expression', 'proportion']:
-                    column = f'X_DR_{dr_method}'
-                    if column in pseudobulk_adata.uns:
-                        cca_score, p_value = improved_compute_modality_cca(
-                            pseudobulk_adata, modality, column, sev_col
-                        )
-                        result_dict[f'{modality.lower()}_cca_{dr_method}'] = cca_score
-                        result_dict[f'{modality.lower()}_pvalue_{dr_method}'] = p_value
+            # Compute CCA for both modalities and DR types using batch analysis
+            dr_columns = ['X_DR_expression', 'X_DR_proportion']
+            cca_results_df = batch_cca_analysis(
+                pseudobulk_adata=pseudobulk_adata,
+                dr_columns=dr_columns,
+                sev_col=sev_col,
+                modalities=['RNA', 'ATAC'],
+                n_components=2,
+                output_dir=resolution_dir
+            )
+            
+            # Extract results into result_dict
+            for _, row in cca_results_df.iterrows():
+                modality = row['modality'].lower()
+                dr_method = row['column'].replace('X_DR_', '')
+                result_dict[f'{modality}_cca_{dr_method}'] = row['cca_score']
             
             # Set optimization score based on target
             target_metric = f"{optimization_target}_cca_{dr_type}"
@@ -796,25 +809,24 @@ def find_optimal_cell_resolution_integration(
             
             print(f"Fine-tuned Resolution {resolution:.3f}: Target Score {result_dict['optimization_score']:.4f}")
             
-            # Create embedding visualizations if requested (only for target modality)
-            if visualize_embeddings and not np.isnan(result_dict['optimization_score']):
-                try:
-                    embedding_path = os.path.join(
-                        resolution_dir, 
-                        f"embedding_{optimization_target.upper()}_{dr_type}"
-                    )
-                    visualize_multimodal_embedding(
-                        adata=pseudobulk_adata,
-                        modality_col=modality_col,
-                        color_col=sev_col,
-                        target_modality=optimization_target.upper(),
-                        output_dir=embedding_path,
-                        show_sample_names=False,
-                        verbose=False
-                    )
-                except Exception as e:
-                    if verbose:
-                        print(f"Warning: Failed to create embedding visualization: {str(e)}")
+            # Always create embedding visualizations
+            try:
+                embedding_path = os.path.join(
+                    resolution_dir, 
+                    f"embedding_{optimization_target.upper()}_{dr_type}"
+                )
+                visualize_multimodal_embedding(
+                    adata=pseudobulk_adata,
+                    modality_col=modality_col,
+                    color_col=sev_col,
+                    target_modality=optimization_target.upper(),
+                    output_dir=embedding_path,
+                    show_sample_names=False,
+                    verbose=False
+                )
+            except Exception as e:
+                if verbose:
+                    print(f"Warning: Failed to create embedding visualization: {str(e)}")
             
             # Save resolution-specific results
             resolution_results_path = os.path.join(resolution_dir, f"results_res_{resolution:.3f}.csv")
@@ -904,19 +916,21 @@ def find_optimal_cell_resolution_integration(
     df_results.to_csv(results_csv_path, index=False)
     print(f"\nComprehensive results saved to: {results_csv_path}")
 
-    # Create separate modality visualizations in summary directory
-    create_separate_modality_plots(df_results, final_best_resolution, optimization_target, dr_type, summary_dir)
+    # # Create separate modality visualizations in summary directory
+    # create_separate_modality_plots(df_results, final_best_resolution, optimization_target, dr_type, summary_dir)
 
-    # Save comprehensive CCA summary in summary directory
-    save_comprehensive_cca_summary(df_results, optimization_target, dr_type, summary_dir)
+    # # Save comprehensive CCA summary in summary directory
+    # save_comprehensive_cca_summary(df_results, optimization_target, dr_type, summary_dir)
 
-    # Save detailed p-value summary if computed in summary directory
-    if compute_pvalues:
-        save_detailed_pvalue_summary(df_results, optimization_target, dr_type, summary_dir)
+    # # Save detailed p-value summary if computed in summary directory
+    # if compute_pvalues:
+    #     save_detailed_pvalue_summary(df_results, optimization_target, dr_type, summary_dir)
 
     print(f"\n[Find Optimal Resolution Integration] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
     return final_best_resolution, df_results
+
+
 
 if __name__ == "__main__":
     integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/preprocess/atac_rna_integrated.h5ad")
