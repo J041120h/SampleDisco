@@ -704,24 +704,32 @@ def find_optimal_cell_resolution_integration(
             
             # Always create embedding visualizations
             try:
-                embedding_path = os.path.join(
-                    resolution_dir, 
-                    f"embedding_{optimization_target.upper()}_{dr_type}"
-                )
-                visualize_multimodal_embedding_with_cca(
-                    adata=pseudobulk_adata,
-                    modality_col=modality_col,
-                    color_col=sev_col,
-                    target_modality=optimization_target.upper(),
-                    cca_results_df=cca_results_df,  # Pass your CCA results here
-                    output_dir=embedding_path,
-                    show_sample_names=False,
-                    verbose=False
-                )
+            # Create visualizations for both RNA and ATAC
+                for viz_modality in ['RNA', 'ATAC']:
+                    embedding_path = os.path.join(
+                        resolution_dir, 
+                        f"embedding_{viz_modality}_{dr_type}"
+                    )
+                    
+                    # Create visualization for this modality
+                    visualize_multimodal_embedding_with_cca(
+                        adata=pseudobulk_adata,
+                        modality_col=modality_col,
+                        color_col=sev_col,
+                        target_modality=viz_modality,  # Visualize current modality
+                        cca_results_df=cca_results_df,
+                        output_dir=embedding_path,
+                        show_sample_names=False,
+                        verbose=False
+                    )
+                    
+                    if verbose:
+                        print(f"Created {viz_modality} embedding visualization")
+                        
             except Exception as e:
                 if verbose:
                     print(f"Warning: Failed to create embedding visualization: {str(e)}")
-            
+            # Save resolution-specific embedding visualizations    
             # Save resolution-specific results
             resolution_results_path = os.path.join(resolution_dir, f"results_res_{resolution:.2f}.csv")
             pd.DataFrame([result_dict]).to_csv(resolution_results_path, index=False)
@@ -873,20 +881,27 @@ def find_optimal_cell_resolution_integration(
             
             # Always create embedding visualizations
             try:
-                embedding_path = os.path.join(
-                    resolution_dir, 
-                    f"embedding_{optimization_target.upper()}_{dr_type}"
-                )
-                visualize_multimodal_embedding_with_cca(
-                    adata=pseudobulk_adata,
-                    modality_col=modality_col,
-                    color_col=sev_col,
-                    target_modality=optimization_target.upper(),
-                    cca_results_df=cca_results_df,  # Pass your CCA results here
-                    output_dir=embedding_path,
-                    show_sample_names=False,
-                    verbose=False
-                )
+                for viz_modality in ['RNA', 'ATAC']:
+                    embedding_path = os.path.join(
+                        resolution_dir, 
+                        f"embedding_{viz_modality}_{dr_type}"
+                    )
+                    
+                    # Create visualization for this modality
+                    visualize_multimodal_embedding_with_cca(
+                        adata=pseudobulk_adata,
+                        modality_col=modality_col,
+                        color_col=sev_col,
+                        target_modality=viz_modality,  # Visualize current modality
+                        cca_results_df=cca_results_df,
+                        output_dir=embedding_path,
+                        show_sample_names=False,
+                        verbose=False
+                    )
+                    
+                    if verbose:
+                        print(f"Created {viz_modality} embedding visualization")
+                        
             except Exception as e:
                 if verbose:
                     print(f"Warning: Failed to create embedding visualization: {str(e)}")
