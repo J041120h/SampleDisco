@@ -765,7 +765,7 @@ def find_optimal_cell_resolution_integration(
 
     # First pass: coarse search
     print("\n=== FIRST PASS: Coarse Search ===")
-    for resolution in np.arange(0.1, 0.31, 0.1):
+    for resolution in np.arange(0.1, 1.01, 0.1):
         print(f"\n\nTesting resolution: {resolution:.2f}\n")
         
         # Create resolution-specific directory
@@ -939,8 +939,8 @@ def find_optimal_cell_resolution_integration(
 
     # Second pass: fine-tuned search
     print("\n=== SECOND PASS: Fine-tuned Search ===")
-    search_range_start = max(0.01, best_resolution - 0.02)
-    search_range_end = min(1.00, best_resolution + 0.02)
+    search_range_start = max(0.01, best_resolution - 0.05)
+    search_range_end = min(1.00, best_resolution + 0.05)
     
     print(f"Fine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
 
