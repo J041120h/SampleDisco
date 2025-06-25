@@ -1,15 +1,15 @@
 ======================================
- Job ID:            17818717
+ Job ID:            17820293
  Job Name:          test
  Partition:         gpu
  Node List:         compute-171
  CPUs per Task:     16
  Memory Alloc:      819200
  GPU Requested:     1
- Start Time:        Wed Jun 25 12:47:32 PM EDT 2025
+ Start Time:        Wed Jun 25 02:11:53 PM EDT 2025
 ======================================
 Checking GPU status...
-Wed Jun 25 12:47:34 2025       
+Wed Jun 25 14:11:54 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Wed Jun 25 12:47:34 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  NVIDIA L40S                    Off |   00000000:01:00.0 Off |                    0 |
-| N/A   35C    P0             84W /  350W |       1MiB /  46068MiB |      0%      Default |
+| N/A   34C    P0             84W /  350W |       1MiB /  46068MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -131,47 +131,47 @@ Corrected null distribution saved to: /dcl01/hongkai/data/data/hjiang/result/int
 
 === COMPUTING CORRECTED P-VALUES AND CREATING PLOTS ===
 Computing corrected p-values for resolution 0.1
-  RNA expression: CCA=0.3166, p=0.9270
-  RNA proportion: CCA=0.4724, p=0.3910
-  ATAC expression: CCA=0.6227, p=0.0330
+  RNA expression: CCA=0.3166, p=0.9440
+  RNA proportion: CCA=0.4724, p=0.4060
+  ATAC expression: CCA=0.6227, p=0.0430
   ATAC proportion: CCA=0.1345, p=1.0000
 Computing corrected p-values for resolution 0.18
-  RNA expression: CCA=0.3142, p=0.9360
-  RNA proportion: CCA=0.4488, p=0.4960
-  ATAC expression: CCA=0.3879, p=0.7250
-  ATAC proportion: CCA=0.3302, p=0.9070
+  RNA expression: CCA=0.3142, p=0.9520
+  RNA proportion: CCA=0.4488, p=0.5030
+  ATAC expression: CCA=0.3879, p=0.7620
+  ATAC proportion: CCA=0.3302, p=0.9120
 Computing corrected p-values for resolution 0.19
-  RNA expression: CCA=0.3309, p=0.9050
-  RNA proportion: CCA=0.5126, p=0.2370
-  ATAC expression: CCA=0.3725, p=0.7890
-  ATAC proportion: CCA=0.2766, p=0.9860
+  RNA expression: CCA=0.3309, p=0.9110
+  RNA proportion: CCA=0.5126, p=0.2620
+  ATAC expression: CCA=0.3725, p=0.8010
+  ATAC proportion: CCA=0.2766, p=0.9760
 Computing corrected p-values for resolution 0.2
-  RNA expression: CCA=0.1947, p=0.9970
-  RNA proportion: CCA=0.4620, p=0.4450
+  RNA expression: CCA=0.1947, p=0.9990
+  RNA proportion: CCA=0.4620, p=0.4550
   ATAC expression: CCA=0.6640, p=0.0120
-  ATAC proportion: CCA=0.2270, p=0.9960
+  ATAC proportion: CCA=0.2270, p=0.9980
 Computing corrected p-values for resolution 0.21
-  RNA expression: CCA=0.3218, p=0.9230
-  RNA proportion: CCA=0.5315, p=0.1780
-  ATAC expression: CCA=0.3660, p=0.8090
-  ATAC proportion: CCA=0.3144, p=0.9360
+  RNA expression: CCA=0.3218, p=0.9310
+  RNA proportion: CCA=0.5315, p=0.1940
+  ATAC expression: CCA=0.3660, p=0.8180
+  ATAC proportion: CCA=0.3144, p=0.9510
 Computing corrected p-values for resolution 0.22
-  RNA expression: CCA=0.2235, p=0.9970
-  RNA proportion: CCA=0.4656, p=0.4280
-  ATAC expression: CCA=0.6476, p=0.0190
+  RNA expression: CCA=0.2235, p=0.9980
+  RNA proportion: CCA=0.4656, p=0.4330
+  ATAC expression: CCA=0.6476, p=0.0230
   ATAC proportion: CCA=0.3009, p=0.9590
 Computing corrected p-values for resolution 0.30000000000000004
-  RNA expression: CCA=0.2958, p=0.9660
-  RNA proportion: CCA=0.4968, p=0.3070
-  ATAC expression: CCA=0.4484, p=0.4980
-  ATAC proportion: CCA=0.4542, p=0.4770
+  RNA expression: CCA=0.2958, p=0.9630
+  RNA proportion: CCA=0.4968, p=0.3190
+  ATAC expression: CCA=0.4484, p=0.5060
+  ATAC proportion: CCA=0.4542, p=0.4880
 All p-value plots saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/p_value
 
 === FINAL RESULTS ===
 Optimization Target: ATAC EXPRESSION
 Best resolution: 0.200
 Best CCA score: 0.6640
-Corrected p-value: 0.7250
+Corrected p-value: 0.7620
 
 All CCA scores at best resolution 0.200:
   RNA Expression: 0.1947
@@ -180,8 +180,19 @@ All CCA scores at best resolution 0.200:
   ATAC Proportion: 0.2270
 
 Comprehensive results saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/resolution_scores_comprehensive_integration_atac_expression.csv
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/rna_expression_results.txt
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/rna_proportion_results.txt
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/atac_expression_results.txt
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/atac_proportion_results.txt
+Saved CCA vs Resolution plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_all_modalities.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_rna_expression.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_rna_proportion.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_atac_expression.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_atac_proportion.png
 
-[Find Optimal Resolution Integration] Total runtime: 56.97 seconds
+All summary files saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary
+
+[Find Optimal Resolution Integration] Total runtime: 60.38 seconds
 
 Finished main.py.
-End Time: Wed Jun 25 12:48:57 PM EDT 2025
+End Time: Wed Jun 25 02:13:41 PM EDT 2025

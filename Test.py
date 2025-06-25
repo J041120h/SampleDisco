@@ -479,6 +479,193 @@ def generate_corrected_null_distribution(all_resolution_results, optimization_ta
     
     return np.array(corrected_null_scores)
 
+def create_resolution_optimization_summary(
+    df_results: pd.DataFrame,
+    final_best_resolution: float,
+    optimization_target: str,
+    dr_type: str,
+    summary_dir: str
+) -> None:
+    """
+    Create comprehensive summary visualizations and text files for resolution optimization results.
+    
+    Creates:
+    - 4 line charts showing CCA values vs resolution for each modality/DR type combination
+    - 4 text files containing CCA values and p-values for each combination
+    
+    Parameters:
+    -----------
+    df_results : pd.DataFrame
+        DataFrame containing all resolution results
+    final_best_resolution : float
+        The optimal resolution found
+    optimization_target : str
+        Which modality was optimized: "rna" or "atac"
+    dr_type : str
+        Which DR type was optimized: "expression" or "proportion"
+    summary_dir : str
+        Directory to save summary outputs
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import os
+    
+    # Define the modality and DR type combinations
+    modalities = ['rna', 'atac']
+    dr_types = ['expression', 'proportion']
+    
+    # Create a figure with 4 subplots (2x2 grid)
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+    axes = axes.flatten()
+    
+    # Sort results by resolution for proper line plotting
+    df_sorted = df_results.sort_values('resolution').copy()
+    
+    # Create plots and save text files for each combination
+    plot_idx = 0
+    for modality in modalities:
+        for dr in dr_types:
+            ax = axes[plot_idx]
+            
+            # Column names for CCA scores and p-values
+            cca_col = f'{modality}_cca_{dr}'
+            pval_col = f'{modality}_pvalue_{dr}'
+            corrected_pval_col = f'{modality}_corrected_pvalue_{dr}'
+            
+            # Get data for plotting
+            resolutions = df_sorted['resolution'].values
+            cca_values = df_sorted[cca_col].values
+            
+            # Create the line plot
+            ax.plot(resolutions, cca_values, 'b.-', linewidth=2, markersize=8)
+            
+            # Add vertical line at best resolution if this was the optimization target
+            if modality == optimization_target and dr == dr_type:
+                ax.axvline(x=final_best_resolution, color='red', linestyle='--', 
+                          linewidth=2, label=f'Best resolution: {final_best_resolution:.3f}')
+                # Highlight the optimization target plot with a different background
+                ax.set_facecolor('#f0f0f0')
+            
+            # Set labels and title
+            ax.set_xlabel('Resolution', fontsize=12)
+            ax.set_ylabel('CCA Score', fontsize=12)
+            ax.set_title(f'{modality.upper()} - {dr.capitalize()} DR', fontsize=14, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            
+            # Add legend if there's a best resolution line
+            if modality == optimization_target and dr == dr_type:
+                ax.legend(fontsize=10)
+            
+            # Set y-axis limits with some padding
+            valid_cca = cca_values[~np.isnan(cca_values)]
+            if len(valid_cca) > 0:
+                y_min, y_max = valid_cca.min(), valid_cca.max()
+                y_padding = (y_max - y_min) * 0.1
+                ax.set_ylim(y_min - y_padding, y_max + y_padding)
+            
+            # Save text file with CCA values and p-values
+            txt_filename = f'{modality}_{dr}_results.txt'
+            txt_path = os.path.join(summary_dir, txt_filename)
+            
+            with open(txt_path, 'w') as f:
+                f.write(f"Resolution Optimization Results: {modality.upper()} - {dr.capitalize()} DR\n")
+                f.write("=" * 80 + "\n\n")
+                
+                # Write optimization target information
+                if modality == optimization_target and dr == dr_type:
+                    f.write(f"*** OPTIMIZATION TARGET ***\n")
+                    f.write(f"Best Resolution: {final_best_resolution:.3f}\n")
+                    best_cca = df_sorted.loc[df_sorted['resolution'] == final_best_resolution, cca_col].iloc[0]
+                    f.write(f"Best CCA Score: {best_cca:.4f}\n\n")
+                
+                # Write header
+                f.write(f"{'Resolution':<12} {'CCA Score':<12} {'P-value':<12}")
+                if corrected_pval_col in df_sorted.columns:
+                    f.write(f" {'Corrected P-value':<18}")
+                f.write("\n")
+                f.write("-" * 80 + "\n")
+                
+                # Write data for each resolution
+                for idx, row in df_sorted.iterrows():
+                    resolution = row['resolution']
+                    cca_score = row[cca_col]
+                    pvalue = row.get(pval_col, np.nan)
+                    
+                    # Format values
+                    cca_str = f"{cca_score:.4f}" if not np.isnan(cca_score) else "N/A"
+                    pval_str = f"{pvalue:.4f}" if not np.isnan(pvalue) else "N/A"
+                    
+                    f.write(f"{resolution:<12.3f} {cca_str:<12} {pval_str:<12}")
+                    
+                    # Add corrected p-value if available
+                    if corrected_pval_col in df_sorted.columns:
+                        corrected_pval = row.get(corrected_pval_col, np.nan)
+                        corrected_pval_str = f"{corrected_pval:.4f}" if not np.isnan(corrected_pval) else "N/A"
+                        f.write(f" {corrected_pval_str:<18}")
+                    
+                    f.write("\n")
+                
+                # Add summary statistics at the end
+                f.write("\n" + "=" * 80 + "\n")
+                f.write("Summary Statistics:\n")
+                f.write(f"Total resolutions tested: {len(df_sorted)}\n")
+                
+                valid_cca_mask = ~df_sorted[cca_col].isna()
+                if valid_cca_mask.any():
+                    f.write(f"Min CCA Score: {df_sorted.loc[valid_cca_mask, cca_col].min():.4f}\n")
+                    f.write(f"Max CCA Score: {df_sorted.loc[valid_cca_mask, cca_col].max():.4f}\n")
+                    f.write(f"Mean CCA Score: {df_sorted.loc[valid_cca_mask, cca_col].mean():.4f}\n")
+                    f.write(f"Std CCA Score: {df_sorted.loc[valid_cca_mask, cca_col].std():.4f}\n")
+            
+            print(f"Saved results to: {txt_path}")
+            
+            plot_idx += 1
+    
+    # Adjust layout and save the figure
+    plt.suptitle(f'CCA Scores vs Resolution - All Modalities and DR Types\n(Optimization Target: {optimization_target.upper()} {dr_type.capitalize()})', 
+                 fontsize=16, fontweight='bold')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    
+    # Save the plot
+    plot_filename = 'cca_scores_vs_resolution_all_modalities.png'
+    plot_path = os.path.join(summary_dir, plot_filename)
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"Saved CCA vs Resolution plot to: {plot_path}")
+    
+    # Create individual plots for each modality/DR combination for better visibility
+    for modality in modalities:
+        for dr in dr_types:
+            plt.figure(figsize=(10, 6))
+            
+            cca_col = f'{modality}_cca_{dr}'
+            resolutions = df_sorted['resolution'].values
+            cca_values = df_sorted[cca_col].values
+            
+            plt.plot(resolutions, cca_values, 'b.-', linewidth=2, markersize=8)
+            
+            # Add vertical line at best resolution if this was the optimization target
+            if modality == optimization_target and dr == dr_type:
+                plt.axvline(x=final_best_resolution, color='red', linestyle='--', 
+                           linewidth=2, label=f'Best resolution: {final_best_resolution:.3f}')
+                plt.legend(fontsize=12)
+            
+            plt.xlabel('Resolution', fontsize=14)
+            plt.ylabel('CCA Score', fontsize=14)
+            plt.title(f'{modality.upper()} - {dr.capitalize()} DR: CCA Score vs Resolution', fontsize=16, fontweight='bold')
+            plt.grid(True, alpha=0.3)
+            
+            # Save individual plot
+            individual_plot_filename = f'cca_scores_vs_resolution_{modality}_{dr}.png'
+            individual_plot_path = os.path.join(summary_dir, individual_plot_filename)
+            plt.savefig(individual_plot_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            
+            print(f"Saved individual plot to: {individual_plot_path}")
+    
+    print(f"\nAll summary files saved to: {summary_dir}")
 
 # -----------------Main Function for Finding Optimal Cell Resolution-----------------
 
@@ -994,15 +1181,13 @@ def find_optimal_cell_resolution_integration(
     df_results.to_csv(results_csv_path, index=False)
     print(f"\nComprehensive results saved to: {results_csv_path}")
 
-    # # Create separate modality visualizations in summary directory
-    # create_separate_modality_plots(df_results, final_best_resolution, optimization_target, dr_type, summary_dir)
-
-    # # Save comprehensive CCA summary in summary directory
-    # save_comprehensive_cca_summary(df_results, optimization_target, dr_type, summary_dir)
-
-    # # Save detailed p-value summary if computed in summary directory
-    # if compute_pvalues:
-    #     save_detailed_pvalue_summary(df_results, optimization_target, dr_type, summary_dir)
+    create_resolution_optimization_summary(
+        df_results=df_results,
+        final_best_resolution=final_best_resolution,
+        optimization_target=optimization_target,
+        dr_type=dr_type,
+        summary_dir=summary_dir
+    )
 
     print(f"\n[Find Optimal Resolution Integration] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
