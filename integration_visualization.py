@@ -551,460 +551,263 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
     return fig, axes
 
 
-def extract_cca_vectors(cca_results_df, embedding_type, modality, verbose=True):
+# ----------------- New Functions for CCA Visualization -----------------
+
+def visualize_multimodal_embedding_with_cca(
+    adata, 
+    modality_col, 
+    color_col, 
+    target_modality,
+    cca_results_df=None,
+    expression_key='X_DR_expression',
+    proportion_key='X_DR_proportion',
+    figsize=(10, 8),
+    point_size=60,
+    alpha=0.8,
+    colormap='viridis',
+    output_dir=None,
+    show_sample_names=False,
+    show_cca_vectors=True,
+    vector_scale=0.3,
+    verbose=True
+):
     """
-    Extract CCA direction vectors from CCA results dataframe.
-    
-    Parameters:
-    -----------
-    cca_results_df : pandas.DataFrame
-        DataFrame containing CCA results with columns like 'column', 'modality', 'X_weights', 'Y_weights'
-    embedding_type : str
-        Either 'expression' or 'proportion'
-    modality : str
-        Target modality ('RNA' or 'ATAC')
-    
-    Returns:
-    --------
-    tuple: (x_weights, y_weights) or (None, None) if not found
+    Create 3 plots for multimodal embedding visualization with CCA direction vectors.
     """
-    if cca_results_df is None or cca_results_df.empty:
+    
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    
+    saved_files = []
+    embeddings = [
+        ('expression', expression_key),
+        ('proportion', proportion_key)
+    ]
+    
+    # Create plots 1 & 2: Expression and Proportion embeddings with CCA
+    for emb_type, emb_key in embeddings:
+        if emb_key not in adata.obsm and emb_key not in adata.uns:
+            if verbose:
+                print(f"Warning: {emb_type} embedding '{emb_key}' not found")
+            continue
+            
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Get data using helper function
+        x_coords, y_coords, sample_names, _ = get_embedding_data(adata, emb_key, verbose=False)
+        
+        # Get modality and color values
+        modalities = adata.obs[modality_col].values
+        colors = adata.obs[color_col].values
+        
+        # Plot non-target modality as gray background
+        non_target_mask = modalities != target_modality
+        if non_target_mask.any():
+            ax.scatter(x_coords[non_target_mask], y_coords[non_target_mask],
+                      c='lightgray', s=point_size, alpha=0.4,
+                      edgecolors='black', linewidth=0.5,
+                      label='Other modalities')
+        
+        # Plot target modality with proper gradient coloring
+        target_mask = modalities == target_modality
+        if target_mask.any():
+            target_colors = colors[target_mask]
+            target_x = x_coords[target_mask]
+            target_y = y_coords[target_mask]
+            
+            # Detect data type using helper
+            data_type, unique_values = detect_data_type(target_colors)
+            
+            # Handle numerical data with continuous gradient
+            if data_type == 'numerical':
+                numeric_colors = pd.to_numeric(target_colors, errors='coerce')
+                # Use pandas isna for proper handling
+                valid_mask = ~pd.isna(numeric_colors)
+                
+                if valid_mask.any():
+                    # Use continuous gradient colormap
+                    scatter = ax.scatter(target_x[valid_mask], target_y[valid_mask],
+                                       c=numeric_colors[valid_mask], 
+                                       s=point_size, alpha=alpha,
+                                       cmap=colormap, edgecolors='black', 
+                                       linewidth=0.5)
+                    
+                    # Add colorbar
+                    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8)
+                    cbar.set_label(color_col, rotation=270, labelpad=20)
+                
+                # Plot missing values
+                if (~valid_mask).any():
+                    ax.scatter(target_x[~valid_mask], target_y[~valid_mask],
+                             c='red', s=point_size, alpha=alpha,
+                             edgecolors='black', linewidth=0.5,
+                             label=f'{target_modality} (missing)')
+            else:
+                # Categorical coloring using helper
+                color_map = create_categorical_colormap(unique_values, colormap)
+                for category in sorted(unique_values):
+                    cat_mask = target_colors == category
+                    if cat_mask.any():
+                        ax.scatter(target_x[cat_mask], target_y[cat_mask],
+                                 c=[color_map[category]], s=point_size, alpha=alpha,
+                                 edgecolors='black', linewidth=0.5,
+                                 label=f'{target_modality}: {category}')
+        
+        # Add CCA vectors if requested
+        cca_score_text = ""
+        if cca_results_df is not None and show_cca_vectors:
+            cca_score_text = add_cca_vectors(ax, cca_results_df, emb_key, 
+                                           target_modality, vector_scale, verbose)
+        
+        # Add sample names if requested
+        if show_sample_names and target_mask.any():
+            for i, name in enumerate(sample_names[target_mask]):
+                ax.annotate(name, (target_x[i], target_y[i]),
+                          xytext=(5, 5), textcoords='offset points',
+                          fontsize=8, alpha=0.8)
+        
+        # Formatting
+        ax.set_xlabel('Dimension 1', fontsize=12)
+        ax.set_ylabel('Dimension 2', fontsize=12)
+        ax.set_title(f'{emb_type.capitalize()} Embedding: {target_modality} by {color_col}{cca_score_text}',
+                    fontsize=14, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+        
+        plt.tight_layout()
+        
+        # Save plot
+        if output_dir:
+            filename = f'{target_modality}_{color_col}_{emb_type}_embedding.png'
+            filepath = os.path.join(output_dir, filename)
+            plt.savefig(filepath, dpi=300, bbox_inches='tight')
+            saved_files.append(filepath)
+            if verbose:
+                print(f"Saved {emb_type} plot to: {filepath}")
+        
+        plt.close()
+    
+    # Create plot 3: Modality comparison
+    create_modality_comparison_plot(adata, modality_col, embeddings, 
+                                   point_size, alpha, output_dir, 
+                                   saved_files, verbose)
+    
+    if verbose:
+        print(f"\nVisualization complete. Created {len(saved_files)} plots.")
+    
+    return saved_files
+
+
+def create_modality_comparison_plot(adata, modality_col, embeddings, 
+                                   point_size, alpha, output_dir, 
+                                   saved_files, verbose):
+    """Create modality comparison plot."""
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # Use first available embedding
+    emb_key = None
+    for _, key in embeddings:
+        if key in adata.obsm or key in adata.uns:
+            emb_key = key
+            break
+    
+    if emb_key is None:
         if verbose:
-            print("No CCA results provided")
-        return None, None
+            print("No embeddings found for modality comparison plot")
+        return
     
-    # Look for the specific embedding type and modality
-    target_column = f'X_DR_{embedding_type}'
-    mask = (cca_results_df['column'] == target_column) & (cca_results_df['modality'] == modality)
+    x_coords, y_coords, _, _ = get_embedding_data(adata, emb_key, verbose=False)
+    modalities = adata.obs[modality_col].values
+    
+    # Plot each modality with different colors
+    modality_colors = {'RNA': '#2E86AB', 'ATAC': '#E63946'}
+    
+    for mod in pd.unique(modalities):
+        mod_mask = modalities == mod
+        color = modality_colors.get(mod, '#A8DADC')
+        ax.scatter(x_coords[mod_mask], y_coords[mod_mask],
+                  c=color, s=point_size, alpha=alpha,
+                  edgecolors='black', linewidth=0.5,
+                  label=mod)
+    
+    ax.set_xlabel('Dimension 1', fontsize=12)
+    ax.set_ylabel('Dimension 2', fontsize=12)
+    ax.set_title('Modality Comparison', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+    
+    plt.tight_layout()
+    
+    if output_dir:
+        filepath = os.path.join(output_dir, 'modality_comparison_embedding.png')
+        plt.savefig(filepath, dpi=300, bbox_inches='tight')
+        saved_files.append(filepath)
+        if verbose:
+            print(f"Saved modality comparison plot to: {filepath}")
+    
+    plt.close()
+
+
+def add_cca_vectors(ax, cca_results_df, embedding_key, modality, 
+                    scale_factor=0.3, verbose=True):
+    """Add CCA direction vectors to the plot."""
+    
+    # Find matching CCA result
+    mask = (cca_results_df['column'] == embedding_key) & \
+           (cca_results_df['modality'] == modality)
     
     if not mask.any():
-        if verbose:
-            print(f"No CCA results found for {modality} {embedding_type}")
-        return None, None
+        return ""
     
     row = cca_results_df[mask].iloc[0]
     
-    # Extract the first canonical direction (first 2 components for visualization)
-    x_weights = row['X_weights']  # Should be array-like
-    y_weights = row['Y_weights']  # Should be array-like
+    # Get CCA score
+    cca_score = row['cca_score'] if 'cca_score' in row else np.nan
+    cca_score_text = f" (CCA: {cca_score:.3f})" if not np.isnan(cca_score) else ""
     
-    if x_weights is not None and len(x_weights) >= 2:
-        x_direction = x_weights[:2]  # First 2 components
+    # Get weights
+    x_weights = row['X_weights'] if 'X_weights' in row else None
+    
+    if x_weights is None or len(x_weights) < 2:
+        return cca_score_text
+    
+    # Normalize weights
+    x_weights = np.array(x_weights)[:2]
+    weight_norm = np.linalg.norm(x_weights)
+    if weight_norm > 0:
+        x_weights_norm = x_weights / weight_norm
     else:
-        x_direction = None
+        return cca_score_text
     
-    if y_weights is not None and len(y_weights) >= 2:
-        y_direction = y_weights[:2]  # First 2 components
-    else:
-        y_direction = None
-    
-    if verbose and x_direction is not None:
-        print(f"Found CCA vectors for {modality} {embedding_type}")
-    
-    return x_direction, y_direction
-
-def plot_cca_vectors(ax, x_direction, y_direction, center_point=None, scale_factor=2.0, 
-                     vector_color='red', vector_width=3, alpha=0.8):
-    """
-    Plot CCA direction vectors as arrows on the embedding plot.
-    
-    Parameters:
-    -----------
-    ax : matplotlib axis
-        Axis to plot on
-    x_direction : array-like
-        X canonical weights (first 2 components)
-    y_direction : array-like  
-        Y canonical weights (first 2 components)
-    center_point : tuple
-        (x, y) coordinates for vector origin. If None, use plot center
-    scale_factor : float
-        Scaling factor for vector length
-    """
-    if x_direction is None or y_direction is None:
-        return
-    
-    # Get plot limits to determine center and scale
+    # Get plot center and scale
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
+    center_x = (xlim[0] + xlim[1]) / 2
+    center_y = (ylim[0] + ylim[1]) / 2
+    plot_scale = min(xlim[1] - xlim[0], ylim[1] - ylim[0]) * scale_factor
     
-    if center_point is None:
-        center_x = (xlim[0] + xlim[1]) / 2
-        center_y = (ylim[0] + ylim[1]) / 2
-    else:
-        center_x, center_y = center_point
+    # Draw CCA vectors
+    dx = x_weights_norm[0] * plot_scale
+    dy = x_weights_norm[1] * plot_scale
     
-    # Scale vectors based on plot dimensions
-    plot_width = xlim[1] - xlim[0]
-    plot_height = ylim[1] - ylim[0]
-    base_scale = min(plot_width, plot_height) * 0.2 * scale_factor
+    # Main arrow
+    ax.arrow(center_x, center_y, dx, dy,
+            head_width=plot_scale*0.1, head_length=plot_scale*0.1,
+            fc='darkred', ec='darkred', linewidth=4, alpha=0.9,
+            label='CCA Direction', zorder=15)
     
-    # Plot X canonical direction (severity -> embedding space)
-    if len(x_direction) >= 2:
-        dx = x_direction[0] * base_scale
-        dy = x_direction[1] * base_scale
-        ax.arrow(center_x, center_y, dx, dy, 
-                head_width=base_scale*0.1, head_length=base_scale*0.1,
-                fc=vector_color, ec=vector_color, alpha=alpha, linewidth=vector_width,
-                label='CCA Direction (Severity→Embedding)', zorder=10)
-
-def plot_embedding_with_cca(adata, modality_col, color_col, target_modality,
-                           embedding_key, embedding_type, cca_results_df,
-                           ax, point_size=60, alpha=0.8, colormap='viridis', 
-                           show_sample_names=False, non_target_color='lightgray', 
-                           non_target_alpha=0.4, data_type=None, unique_values=None,
-                           show_cca_vectors=True, verbose=True):
-    """
-    Plot embedding with CCA direction vectors overlaid.
-    """
+    # Negative direction
+    ax.arrow(center_x, center_y, -dx, -dy,
+            head_width=plot_scale*0.08, head_length=plot_scale*0.08,
+            fc='darkred', ec='darkred', alpha=0.4, linewidth=2.5,
+            zorder=14)
     
-    x_coords, y_coords, sample_names, coord_source = get_embedding_data(adata, embedding_key, verbose=False)
-    
-    modality_values = adata.obs[modality_col].values
-    color_values = adata.obs[color_col].values
-    
-    target_mask = modality_values == target_modality
-    non_target_mask = ~target_mask
-    
-    # Auto-detect data type if not provided
-    if data_type is None:
-        target_color_values = color_values[target_mask]
-        data_type, unique_values = detect_data_type(target_color_values)
-    
-    # Plot non-target modality samples first (background)
-    if np.any(non_target_mask):
-        ax.scatter(x_coords[non_target_mask], y_coords[non_target_mask], 
-                  c=non_target_color, s=point_size, alpha=non_target_alpha,
-                  edgecolors='black', linewidth=0.5, 
-                  label=f'Other modalities', zorder=1)
-    
-    # Plot target modality samples with appropriate coloring
-    if np.any(target_mask):
-        target_x = x_coords[target_mask]
-        target_y = y_coords[target_mask]
-        target_color_values = color_values[target_mask]
-        target_sample_names = sample_names[target_mask]
-        
-        # Handle valid color values
-        valid_mask = pd.notna(target_color_values)
-        
-        if np.any(valid_mask):
-            valid_values = target_color_values[valid_mask]
-            valid_x = target_x[valid_mask]
-            valid_y = target_y[valid_mask]
-            valid_names = target_sample_names[valid_mask]
-            
-            # Create color mapping based on data type
-            if data_type == 'numerical':
-                color_map = create_quantitative_colormap(valid_values, colormap)
-                colors = [color_map[val] for val in valid_values]
-                
-                # Single scatter for numerical data
-                scatter = ax.scatter(valid_x, valid_y, c=colors, s=point_size, alpha=alpha,
-                                   edgecolors='black', linewidth=0.5, 
-                                   label=f'{target_modality} (by {color_col})', zorder=2)
-            else:  # categorical
-                color_map = create_categorical_colormap(unique_values, colormap)
-                
-                # Plot each category separately for legend
-                for category in sorted(unique_values):
-                    cat_mask = valid_values == category
-                    if np.any(cat_mask):
-                        ax.scatter(valid_x[cat_mask], valid_y[cat_mask], 
-                                 c=[color_map[category]], s=point_size, alpha=alpha,
-                                 edgecolors='black', linewidth=0.5, 
-                                 label=f'{target_modality}: {category}', zorder=2)
-            
-            # Add sample labels for valid target modality samples only
-            if show_sample_names:
-                for i, sample in enumerate(valid_names):
-                    ax.annotate(sample, (valid_x[i], valid_y[i]), 
-                               xytext=(5, 5), textcoords='offset points',
-                               fontsize=8, alpha=0.8)
-        
-        # Plot samples with missing values
-        missing_mask = ~valid_mask
-        if np.any(missing_mask):
-            missing_x = target_x[missing_mask]
-            missing_y = target_y[missing_mask]
-            missing_names = target_sample_names[missing_mask]
-            
-            ax.scatter(missing_x, missing_y, c='red', s=point_size, alpha=alpha,
-                      edgecolors='black', linewidth=0.5, 
-                      label=f'{target_modality} (missing {color_col})', zorder=2)
-            
-            # Add sample labels for missing target modality samples only
-            if show_sample_names:
-                for i, sample in enumerate(missing_names):
-                    ax.annotate(sample, (missing_x[i], missing_y[i]), 
-                               xytext=(5, 5), textcoords='offset points',
-                               fontsize=8, alpha=0.8, color='red')
-    
-    # Add CCA direction vectors
-    if show_cca_vectors and cca_results_df is not None:
-        x_direction, y_direction = extract_cca_vectors(
-            cca_results_df, embedding_type, target_modality, verbose=verbose
-        )
-        
-        if x_direction is not None:
-            plot_cca_vectors(ax, x_direction, y_direction, 
-                           scale_factor=2.0, vector_color='red', 
-                           vector_width=3, alpha=0.8)
-    
-    ax.set_xlabel('Dimension 1')
-    ax.set_ylabel('Dimension 2')
-    ax.grid(True, alpha=0.3)
-    
-    # Adjust legend position based on data type
-    if data_type == 'categorical' and len(unique_values) > 5:
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', ncol=1 if len(unique_values) <= 15 else 2)
-    else:
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    
-    return ax, data_type, unique_values
-
-def plot_modality_comparison(adata, modality_col, embedding_key, ax, point_size=60, alpha=0.8):
-    """
-    Plot embedding with samples colored by their modality (RNA vs ATAC).
-    """
-    
-    x_coords, y_coords, sample_names, coord_source = get_embedding_data(adata, embedding_key, verbose=False)
-    
-    modality_values = adata.obs[modality_col].values
-    unique_modalities = sorted(set(modality_values))
-    
-    # Create color mapping for modalities
-    modality_colors = {'RNA': '#1f77b4', 'ATAC': '#ff7f0e'}  # Blue for RNA, Orange for ATAC
-    
-    # If there are other modalities, assign additional colors
-    if len(unique_modalities) > 2:
-        additional_colors = plt.cm.Set1(np.linspace(0, 1, len(unique_modalities)))
-        for i, mod in enumerate(unique_modalities):
-            if mod not in modality_colors:
-                modality_colors[mod] = additional_colors[i]
-    
-    # Plot each modality separately for clear legend
-    for modality in unique_modalities:
-        mask = modality_values == modality
-        if np.any(mask):
-            color = modality_colors.get(modality, '#gray')
-            ax.scatter(x_coords[mask], y_coords[mask], 
-                     c=color, s=point_size, alpha=alpha,
-                     edgecolors='black', linewidth=0.5, 
-                     label=f'{modality}', zorder=2)
-    
-    ax.set_xlabel('Dimension 1')
-    ax.set_ylabel('Dimension 2')
-    ax.grid(True, alpha=0.3)
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    
-    return ax
-
-def visualize_multimodal_embedding_with_cca(adata, modality_col, color_col, target_modality,
-                                           cca_results_df=None, 
-                                           expression_key='X_DR_expression', 
-                                           proportion_key='X_DR_proportion',
-                                           figsize=(24, 8), point_size=60, alpha=0.8, 
-                                           colormap='viridis', output_dir=None, 
-                                           show_sample_names=False, force_data_type=None,
-                                           show_cca_vectors=True, verbose=True):
-    """
-    Enhanced multimodal embedding visualization with CCA direction vectors.
-    
-    Creates 3 plots:
-    1. Expression embedding with target modality colored by color_col + CCA vectors
-    2. Proportion embedding with target modality colored by color_col + CCA vectors  
-    3. Combined modality plot showing all samples colored by modality
-    
-    Parameters:
-    -----------
-    adata : AnnData
-        Annotated data object containing embeddings and metadata
-    modality_col : str
-        Column name in adata.obs containing modality information
-    color_col : str
-        Column name in adata.obs to use for coloring points (numerical or categorical)
-    target_modality : str
-        Which modality to highlight in the first two plots
-    cca_results_df : pandas.DataFrame
-        DataFrame containing CCA results with columns like 'column', 'modality', 'X_weights', 'Y_weights'
-    expression_key : str
-        Key for expression-based embedding (default: 'X_DR_expression')
-    proportion_key : str
-        Key for proportion-based embedding (default: 'X_DR_proportion')
-    figsize : tuple
-        Figure size for combined plot (default: (24, 8))
-    point_size : int
-        Size of scatter points (default: 60)
-    alpha : float
-        Transparency of points (default: 0.8)
-    colormap : str
-        Colormap to use for numerical data (default: 'viridis')
-    output_dir : str
-        Directory to save plots
-    show_sample_names : bool
-        Whether to show sample names on plot (default: False)
-    force_data_type : str or None
-        Force data type to 'numerical' or 'categorical' (default: None)
-    show_cca_vectors : bool
-        Whether to show CCA direction vectors (default: True)
-    verbose : bool
-        Print progress messages (default: True)
-    
-    Returns:
-    --------
-    fig, axes : matplotlib figure and axes
-        The created visualization
-    """
+    # Origin marker
+    circle = plt.Circle((center_x, center_y), plot_scale*0.03, 
+                       color='white', ec='darkred', linewidth=2, zorder=16)
+    ax.add_patch(circle)
     
     if verbose:
-        print(f"Creating enhanced multimodal embedding visualization for {target_modality}")
-        print(f"Coloring by: {color_col}")
-        print(f"Expression key: {expression_key}")
-        print(f"Proportion key: {proportion_key}")
-        if show_cca_vectors:
-            print("CCA direction vectors will be overlaid")
-        if show_sample_names:
-            print(f"Sample names will be shown only for {target_modality} modality")
+        print(f"Added CCA vector for {modality} {embedding_key}")
     
-    # Create output directory if specified
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-        if verbose:
-            print(f"Output directory: {output_dir}")
-    
-    # Detect data type early
-    target_mask = adata.obs[modality_col].values == target_modality
-    target_values = adata.obs[color_col].values[target_mask]
-    
-    # Use forced data type if provided, otherwise auto-detect
-    if force_data_type is not None:
-        if force_data_type not in ['numerical', 'categorical']:
-            raise ValueError("force_data_type must be 'numerical' or 'categorical'")
-        data_type = force_data_type
-        if data_type == 'categorical':
-            unique_values = list(set([v for v in target_values if pd.notna(v)]))
-        else:
-            unique_values = sorted(set([v for v in target_values if pd.notna(v)]))
-    else:
-        data_type, unique_values = detect_data_type(target_values)
-    
-    if verbose:
-        print(f"\nDetected data type for {color_col}: {data_type}")
-        if data_type == 'categorical':
-            print(f"Categories found: {sorted(unique_values)}")
-    
-    # Check which embeddings are available
-    available_embeddings = []
-    
-    if expression_key in adata.obsm or expression_key in adata.uns:
-        available_embeddings.append(('Expression', expression_key))
-    else:
-        if verbose:
-            print(f"Warning: Expression embedding '{expression_key}' not found")
-    
-    if proportion_key in adata.obsm or proportion_key in adata.uns:
-        available_embeddings.append(('Proportion', proportion_key))
-    else:
-        if verbose:
-            print(f"Warning: Proportion embedding '{proportion_key}' not found")
-    
-    if not available_embeddings:
-        available_obsm = list(adata.obsm.keys()) if hasattr(adata, 'obsm') else []
-        available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
-        raise ValueError(f"No embeddings found. Available in obsm: {available_obsm}, uns: {available_uns}")
-    
-    # Create 3 subplots
-    n_plots = len(available_embeddings) + 1  # +1 for modality comparison plot
-    fig, axes = plt.subplots(1, n_plots, figsize=figsize, sharey=True)
-    
-    if n_plots == 1:
-        axes = [axes]
-    
-    # Get valid values for colorbar
-    valid_values = target_values[pd.notna(target_values)]
-    
-    # Plot 1 & 2: Create plots for each available embedding with CCA vectors
-    for i, (embedding_type, embedding_key) in enumerate(available_embeddings):
-        ax = axes[i]
-        
-        ax, _, _ = plot_embedding_with_cca(
-            adata, modality_col, color_col, target_modality, embedding_key, 
-            embedding_type.lower(), cca_results_df, ax,
-            point_size, alpha, colormap, show_sample_names,
-            data_type=data_type, unique_values=unique_values,
-            show_cca_vectors=show_cca_vectors, verbose=verbose
-        )
-        
-        # Set title based on embedding type
-        title = f'{embedding_type} Embedding\n{target_modality} by {color_col}'
-        if show_cca_vectors:
-            title += ' + CCA'
-        
-        ax.set_title(title, fontsize=12, fontweight='bold')
-        ax.set_xlabel('Dimension 1')
-        if i == 0:
-            ax.set_ylabel('Dimension 2')
-    
-    # Plot 3: Modality comparison plot (use the first available embedding)
-    if available_embeddings:
-        comparison_ax = axes[len(available_embeddings)]
-        comparison_embedding_key = available_embeddings[0][1]  # Use first available embedding
-        
-        comparison_ax = plot_modality_comparison(
-            adata, modality_col, comparison_embedding_key, comparison_ax,
-            point_size, alpha
-        )
-        
-        comparison_ax.set_title(f'Modality Comparison\n(All samples by modality)', fontsize=12, fontweight='bold')
-        comparison_ax.set_xlabel('Dimension 1')
-    
-    # Add shared colorbar for numerical data only (for first two plots)
-    if data_type == 'numerical' and len(valid_values) > 1:
-        # Create colorbar on the right side
-        norm = Normalize(vmin=min(valid_values), vmax=max(valid_values))
-        sm = ScalarMappable(norm=norm, cmap=colormap)
-        sm.set_array([])
-        
-        # Add colorbar to the figure
-        cbar_ax = fig.add_axes([0.92, 0.15, 0.015, 0.7])  # [left, bottom, width, height]
-        cbar = fig.colorbar(sm, cax=cbar_ax)
-        
-        # Set colorbar ticks and labels
-        unique_vals = sorted(set(valid_values))
-        if len(unique_vals) <= 10:
-            cbar.set_ticks(unique_vals)
-            cbar.set_ticklabels([f'{v:.1f}' if v != int(v) else f'{int(v)}' for v in unique_vals])
-        else:
-            # If too many unique values, use fewer ticks
-            n_ticks = 5
-            tick_values = np.linspace(min(valid_values), max(valid_values), n_ticks)
-            cbar.set_ticks(tick_values)
-            cbar.set_ticklabels([f'{v:.1f}' for v in tick_values])
-        
-        cbar.set_label(f'{color_col} ({target_modality})', rotation=270, labelpad=20)
-    
-    # Add main title
-    main_title = f'Enhanced Multi-modal Embedding Analysis: {target_modality}'
-    if show_cca_vectors:
-        main_title += ' with CCA Directions'
-    fig.suptitle(main_title, fontsize=16, fontweight='bold', y=0.95)
-    
-    # Adjust layout to accommodate colorbar or legend
-    if data_type == 'numerical':
-        plt.subplots_adjust(right=0.91)
-    else:
-        # For categorical data with many categories, might need more space
-        if len(unique_values) > 10:
-            plt.subplots_adjust(right=0.85)
-        else:
-            plt.subplots_adjust(right=0.88)
-    
-    # Save plot if requested
-    if output_dir:
-        save_path = os.path.join(output_dir, f'enhanced_embedding_{target_modality}_{color_col}.png')
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        if verbose:
-            print(f"Enhanced plot saved to: {save_path}")
-    
-    return fig, axes
+    return cca_score_text

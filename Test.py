@@ -25,9 +25,14 @@ def suppress_warnings():
     warnings.filterwarnings('ignore', category=RuntimeWarning, 
                           message='.*All-NaN slice encountered.*')
 
+import numpy as np
+import pandas as pd
+from sklearn.cross_decomposition import CCA
+from sklearn.preprocessing import StandardScaler
+
 def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
     """
-    Simplified CCA analysis without p-value calculation or plotting.
+    CCA analysis with weight vectors included in results.
     
     Parameters:
     -----------
@@ -42,11 +47,9 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
     n_components : int, default 2
         Number of CCA components
         
-    Assumptions based on fixed data type:
-    - pseudobulk_adata.uns[column] contains pandas DataFrame with numeric coordinates
-    - modality column exists and contains string values
-    - severity column exists and contains numeric values
-    - Data is already preprocessed and clean
+    Returns:
+    --------
+    dict with CCA results including weight vectors
     """
     
     result = {
@@ -56,7 +59,11 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         'modality': modality,
         'column': column,
         'valid': False,
-        'error_message': None
+        'error_message': None,
+        'X_weights': None,  # Added: weights for embedding space
+        'Y_weights': None,  # Added: weights for severity space
+        'X_loadings': None, # Added: loadings (correlations)
+        'Y_loadings': None  # Added: loadings (correlations)
     }
     
     try:
@@ -85,7 +92,6 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
             return result
         
         # Extract dimension reduction coordinates and severity levels
-        # Now indices should always match since we standardized them
         dr_coords_full = uns_data_standardized.loc[modality_mask].copy()
         sev_levels = obs_standardized.loc[modality_mask, sev_col].values
         
@@ -108,7 +114,6 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         result['n_features'] = X.shape[1]  # Should be 2
         
         # Limit components based on data dimensions
-        # CCA components are limited by min(X_features, y_features, n_samples-1)
         max_components = min(X.shape[1], y.shape[1], X.shape[0] - 1)
         n_components_actual = min(n_components, max_components)
         
@@ -116,7 +121,7 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
             result['error_message'] = "Cannot compute CCA components"
             return result
         
-        # Standardize data (simplified)
+        # Standardize data
         scaler_X = StandardScaler()
         scaler_y = StandardScaler()
         X_scaled = scaler_X.fit_transform(X)
@@ -131,8 +136,17 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         correlation = np.corrcoef(X_c[:, 0], y_c[:, 0])[0, 1]
         cca_score = abs(correlation)
         
+        # Store results
         result['cca_score'] = cca_score
         result['valid'] = True
+        
+        # Store weight vectors (these define the canonical directions)
+        result['X_weights'] = cca.x_weights_.flatten()  # Shape: (n_features,)
+        result['Y_weights'] = cca.y_weights_.flatten()  # Shape: (1,) for univariate y
+        
+        # Store loadings (correlations between original variables and canonical variates)
+        result['X_loadings'] = cca.x_loadings_ if hasattr(cca, 'x_loadings_') else None
+        result['Y_loadings'] = cca.y_loadings_ if hasattr(cca, 'y_loadings_') else None
         
     except Exception as e:
         result['error_message'] = f"CCA failed: {str(e)}"
@@ -144,14 +158,14 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
                       n_components=2, output_dir=None):
     """
     Run CCA analysis across multiple dimension reduction results and modalities.
-    Saves results to output directory without p-value calculation or plotting.
+    Now includes weight vectors in the results.
     
     Parameters:
     -----------
     pseudobulk_adata : sc.AnnData
         AnnData object containing dimension reduction results
     dr_columns : list
-        List of dimension reduction column names to analyze (e.g., ['X_DR_expression', 'X_DR_proportion'])
+        List of dimension reduction column names to analyze
     sev_col : str
         Column name for severity levels
     modalities : list, optional
@@ -159,12 +173,12 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
     n_components : int, default 2
         Number of CCA components
     output_dir : str, optional
-        Directory to save results summary table
+        Directory to save results
         
     Returns:
     --------
     pd.DataFrame
-        Results DataFrame with CCA scores for each modality-column combination
+        Results DataFrame with CCA scores and weight vectors
     """
     
     import os
@@ -199,7 +213,11 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
                     'modality': modality,
                     'column': column,
                     'valid': False,
-                    'error_message': f"Column '{column}' not found"
+                    'error_message': f"Column '{column}' not found",
+                    'X_weights': None,
+                    'Y_weights': None,
+                    'X_loadings': None,
+                    'Y_loadings': None
                 })
     
     # Create results DataFrame
@@ -207,14 +225,19 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
     
     # Save results table to output directory
     if output_dir:
-        results_path = os.path.join(output_dir, 'cca_results_summary.csv')
-        results_df.to_csv(results_path, index=False)
-        print(f"Results saved to: {results_path}")
+        # Save summary (without vectors for readability)
+        summary_df = results_df[['modality', 'column', 'cca_score', 'n_samples', 
+                                'n_features', 'valid', 'error_message']]
+        summary_path = os.path.join(output_dir, 'cca_results_summary.csv')
+        summary_df.to_csv(summary_path, index=False)
+        print(f"Summary saved to: {summary_path}")
         
-        # Save a detailed results table with additional info
-        detailed_path = os.path.join(output_dir, 'cca_results_detailed.csv')
-        results_df.to_csv(detailed_path, index=False)
-        print(f"Detailed results saved to: {detailed_path}")
+        # Save complete results (including vectors) as pickle for preservation
+        import pickle
+        complete_path = os.path.join(output_dir, 'cca_results_complete.pkl')
+        with open(complete_path, 'wb') as f:
+            pickle.dump(results_df, f)
+        print(f"Complete results with vectors saved to: {complete_path}")
     
     return results_df
 
@@ -690,6 +713,7 @@ def find_optimal_cell_resolution_integration(
                     modality_col=modality_col,
                     color_col=sev_col,
                     target_modality=optimization_target.upper(),
+                    cca_results_df=cca_results_df,  # Pass your CCA results here
                     output_dir=embedding_path,
                     show_sample_names=False,
                     verbose=False
@@ -858,6 +882,7 @@ def find_optimal_cell_resolution_integration(
                     modality_col=modality_col,
                     color_col=sev_col,
                     target_modality=optimization_target.upper(),
+                    cca_results_df=cca_results_df,  # Pass your CCA results here
                     output_dir=embedding_path,
                     show_sample_names=False,
                     verbose=False
