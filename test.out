@@ -1,15 +1,15 @@
 ======================================
- Job ID:            17820293
+ Job ID:            17821337
  Job Name:          test
  Partition:         gpu
  Node List:         compute-171
  CPUs per Task:     16
  Memory Alloc:      819200
  GPU Requested:     1
- Start Time:        Wed Jun 25 02:11:53 PM EDT 2025
+ Start Time:        Wed Jun 25 02:44:33 PM EDT 2025
 ======================================
 Checking GPU status...
-Wed Jun 25 14:11:54 2025       
+Wed Jun 25 14:44:34 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -49,13 +49,13 @@ Computing p-values with 1000 simulations per resolution
 Testing resolution: 0.10
 
 Null distribution generated: 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.10/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.10/cca_results_complete.pkl
-RNA expression CCA Score: 0.3166
-RNA proportion CCA Score: 0.4724
-ATAC expression CCA Score: 0.6227
-ATAC proportion CCA Score: 0.1345
-Resolution 0.10: Target ATAC expression CCA Score = 0.6227
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.10/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.10/cca_results_complete.pkl
+RNA expression CCA Score: 0.3154
+RNA proportion CCA Score: 0.4660
+ATAC expression CCA Score: 0.4601
+ATAC proportion CCA Score: 0.1942
+Resolution 0.10: Target ATAC expression CCA Score = 0.4601
 Created RNA embedding visualization
 Created ATAC embedding visualization
 
@@ -63,13 +63,13 @@ Created ATAC embedding visualization
 Testing resolution: 0.20
 
 Null distribution generated: 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.20/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.20/cca_results_complete.pkl
-RNA expression CCA Score: 0.1947
-RNA proportion CCA Score: 0.4620
-ATAC expression CCA Score: 0.6640
-ATAC proportion CCA Score: 0.2270
-Resolution 0.20: Target ATAC expression CCA Score = 0.6640
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.20/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.20/cca_results_complete.pkl
+RNA expression CCA Score: 0.3623
+RNA proportion CCA Score: 0.4762
+ATAC expression CCA Score: 0.3100
+ATAC proportion CCA Score: 0.4037
+Resolution 0.20: Target ATAC expression CCA Score = 0.3100
 Created RNA embedding visualization
 Created ATAC embedding visualization
 
@@ -77,122 +77,333 @@ Created ATAC embedding visualization
 Testing resolution: 0.30
 
 Null distribution generated: 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.30/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.30/cca_results_complete.pkl
-RNA expression CCA Score: 0.2958
-RNA proportion CCA Score: 0.4968
-ATAC expression CCA Score: 0.4484
-ATAC proportion CCA Score: 0.4542
-Resolution 0.30: Target ATAC expression CCA Score = 0.4484
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.30/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.30/cca_results_complete.pkl
+RNA expression CCA Score: 0.3867
+RNA proportion CCA Score: 0.5043
+ATAC expression CCA Score: 0.4184
+ATAC proportion CCA Score: 0.2814
+Resolution 0.30: Target ATAC expression CCA Score = 0.4184
 Created RNA embedding visualization
 Created ATAC embedding visualization
 
-Best resolution from first pass: 0.20
-Best ATAC expression CCA score: 0.6640
+
+Testing resolution: 0.40
+
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.40/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.40/cca_results_complete.pkl
+RNA expression CCA Score: 0.4189
+RNA proportion CCA Score: 0.5161
+ATAC expression CCA Score: 0.4173
+ATAC proportion CCA Score: 0.3209
+Resolution 0.40: Target ATAC expression CCA Score = 0.4173
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+
+Testing resolution: 0.50
+
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.50/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.50/cca_results_complete.pkl
+RNA expression CCA Score: 0.3767
+RNA proportion CCA Score: 0.5124
+ATAC expression CCA Score: 0.4740
+ATAC proportion CCA Score: 0.2499
+Resolution 0.50: Target ATAC expression CCA Score = 0.4740
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+
+Testing resolution: 0.60
+
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.60/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.60/cca_results_complete.pkl
+RNA expression CCA Score: 0.3840
+RNA proportion CCA Score: 0.5555
+ATAC expression CCA Score: 0.3653
+ATAC proportion CCA Score: 0.3313
+Resolution 0.60: Target ATAC expression CCA Score = 0.3653
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+
+Testing resolution: 0.70
+
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.70/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.70/cca_results_complete.pkl
+RNA expression CCA Score: 0.4543
+RNA proportion CCA Score: 0.5433
+ATAC expression CCA Score: 0.4128
+ATAC proportion CCA Score: 0.3574
+Resolution 0.70: Target ATAC expression CCA Score = 0.4128
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+
+Testing resolution: 0.80
+
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.80/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.80/cca_results_complete.pkl
+RNA expression CCA Score: 0.4057
+RNA proportion CCA Score: 0.4792
+ATAC expression CCA Score: 0.2591
+ATAC proportion CCA Score: 0.3413
+Resolution 0.80: Target ATAC expression CCA Score = 0.2591
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+
+Testing resolution: 0.90
+
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.90/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.90/cca_results_complete.pkl
+RNA expression CCA Score: 0.4837
+RNA proportion CCA Score: 0.5034
+ATAC expression CCA Score: 0.3600
+ATAC proportion CCA Score: 0.3517
+Resolution 0.90: Target ATAC expression CCA Score = 0.3600
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+
+Testing resolution: 1.00
+
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_1.00/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_1.00/cca_results_complete.pkl
+RNA expression CCA Score: 0.4236
+RNA proportion CCA Score: 0.5464
+ATAC expression CCA Score: 0.2327
+ATAC proportion CCA Score: 0.3884
+Resolution 1.00: Target ATAC expression CCA Score = 0.2327
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+Best resolution from first pass: 0.50
+Best ATAC expression CCA score: 0.4740
 
 === SECOND PASS: Fine-tuned Search ===
-Fine-tuning search from 0.18 to 0.22...
+Fine-tuning search from 0.45 to 0.55...
 
-Testing fine-tuned resolution: 0.180
+Testing fine-tuned resolution: 0.450
 Null distribution generated: 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.180/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.180/cca_results_complete.pkl
-Fine-tuned Resolution 0.180: Target Score 0.3879
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.450/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.450/cca_results_complete.pkl
+Fine-tuned Resolution 0.450: Target Score 0.4518
 Created RNA embedding visualization
 Created ATAC embedding visualization
 
-Testing fine-tuned resolution: 0.190
+Testing fine-tuned resolution: 0.460
 Null distribution generated: 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.190/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.190/cca_results_complete.pkl
-Fine-tuned Resolution 0.190: Target Score 0.3725
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.460/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.460/cca_results_complete.pkl
+Fine-tuned Resolution 0.460: Target Score 0.4029
 Created RNA embedding visualization
 Created ATAC embedding visualization
 
-Testing fine-tuned resolution: 0.210
+Testing fine-tuned resolution: 0.470
 Null distribution generated: 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.210/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.210/cca_results_complete.pkl
-Fine-tuned Resolution 0.210: Target Score 0.3660
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.470/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.470/cca_results_complete.pkl
+Fine-tuned Resolution 0.470: Target Score 0.3562
 Created RNA embedding visualization
 Created ATAC embedding visualization
 
-Testing fine-tuned resolution: 0.220
+Testing fine-tuned resolution: 0.480
 Null distribution generated: 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.220/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.220/cca_results_complete.pkl
-Fine-tuned Resolution 0.220: Target Score 0.6476
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.480/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.480/cca_results_complete.pkl
+Fine-tuned Resolution 0.480: Target Score 0.4267
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+Testing fine-tuned resolution: 0.490
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.490/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.490/cca_results_complete.pkl
+Fine-tuned Resolution 0.490: Target Score 0.2563
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+Testing fine-tuned resolution: 0.510
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.510/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.510/cca_results_complete.pkl
+Fine-tuned Resolution 0.510: Target Score 0.3023
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+Testing fine-tuned resolution: 0.520
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.520/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.520/cca_results_complete.pkl
+Fine-tuned Resolution 0.520: Target Score 0.3985
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+Testing fine-tuned resolution: 0.530
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.530/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.530/cca_results_complete.pkl
+Fine-tuned Resolution 0.530: Target Score 0.3273
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+Testing fine-tuned resolution: 0.540
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.540/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.540/cca_results_complete.pkl
+Fine-tuned Resolution 0.540: Target Score 0.3343
+Created RNA embedding visualization
+Created ATAC embedding visualization
+
+Testing fine-tuned resolution: 0.550
+Null distribution generated: 100.0% success rate (1000/1000 permutations)
+Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.550/cca_results_summary.csv
+Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/resolution_0.550/cca_results_complete.pkl
+Fine-tuned Resolution 0.550: Target Score 0.3064
 Created RNA embedding visualization
 Created ATAC embedding visualization
 
 === GENERATING CORRECTED NULL DISTRIBUTION ===
 Accounting for resolution selection bias...
-Corrected null distribution saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/corrected_null_distribution_atac_expression.npy
+Corrected null distribution saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/corrected_null_distribution_atac_expression.npy
 
 === COMPUTING CORRECTED P-VALUES AND CREATING PLOTS ===
 Computing corrected p-values for resolution 0.1
-  RNA expression: CCA=0.3166, p=0.9440
-  RNA proportion: CCA=0.4724, p=0.4060
-  ATAC expression: CCA=0.6227, p=0.0430
-  ATAC proportion: CCA=0.1345, p=1.0000
-Computing corrected p-values for resolution 0.18
-  RNA expression: CCA=0.3142, p=0.9520
-  RNA proportion: CCA=0.4488, p=0.5030
-  ATAC expression: CCA=0.3879, p=0.7620
-  ATAC proportion: CCA=0.3302, p=0.9120
-Computing corrected p-values for resolution 0.19
-  RNA expression: CCA=0.3309, p=0.9110
-  RNA proportion: CCA=0.5126, p=0.2620
-  ATAC expression: CCA=0.3725, p=0.8010
-  ATAC proportion: CCA=0.2766, p=0.9760
+  RNA expression: CCA=0.3154, p=1.0000
+  RNA proportion: CCA=0.4660, p=0.7980
+  ATAC expression: CCA=0.4601, p=0.8190
+  ATAC proportion: CCA=0.1942, p=1.0000
 Computing corrected p-values for resolution 0.2
-  RNA expression: CCA=0.1947, p=0.9990
-  RNA proportion: CCA=0.4620, p=0.4550
-  ATAC expression: CCA=0.6640, p=0.0120
-  ATAC proportion: CCA=0.2270, p=0.9980
-Computing corrected p-values for resolution 0.21
-  RNA expression: CCA=0.3218, p=0.9310
-  RNA proportion: CCA=0.5315, p=0.1940
-  ATAC expression: CCA=0.3660, p=0.8180
-  ATAC proportion: CCA=0.3144, p=0.9510
-Computing corrected p-values for resolution 0.22
-  RNA expression: CCA=0.2235, p=0.9980
-  RNA proportion: CCA=0.4656, p=0.4330
-  ATAC expression: CCA=0.6476, p=0.0230
-  ATAC proportion: CCA=0.3009, p=0.9590
+  RNA expression: CCA=0.3623, p=0.9970
+  RNA proportion: CCA=0.4762, p=0.7500
+  ATAC expression: CCA=0.3100, p=1.0000
+  ATAC proportion: CCA=0.4037, p=0.9640
 Computing corrected p-values for resolution 0.30000000000000004
-  RNA expression: CCA=0.2958, p=0.9630
-  RNA proportion: CCA=0.4968, p=0.3190
-  ATAC expression: CCA=0.4484, p=0.5060
-  ATAC proportion: CCA=0.4542, p=0.4880
-All p-value plots saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/p_value
+  RNA expression: CCA=0.3867, p=0.9800
+  RNA proportion: CCA=0.5043, p=0.6030
+  ATAC expression: CCA=0.4184, p=0.9380
+  ATAC proportion: CCA=0.2814, p=1.0000
+Computing corrected p-values for resolution 0.4
+  RNA expression: CCA=0.4189, p=0.9380
+  RNA proportion: CCA=0.5161, p=0.5380
+  ATAC expression: CCA=0.4173, p=0.9400
+  ATAC proportion: CCA=0.3209, p=1.0000
+Computing corrected p-values for resolution 0.45
+  RNA expression: CCA=0.4319, p=0.9090
+  RNA proportion: CCA=0.5007, p=0.6240
+  ATAC expression: CCA=0.4518, p=0.8440
+  ATAC proportion: CCA=0.2466, p=1.0000
+Computing corrected p-values for resolution 0.46
+  RNA expression: CCA=0.4192, p=0.9370
+  RNA proportion: CCA=0.5249, p=0.4920
+  ATAC expression: CCA=0.4029, p=0.9650
+  ATAC proportion: CCA=0.3403, p=1.0000
+Computing corrected p-values for resolution 0.47
+  RNA expression: CCA=0.4621, p=0.8120
+  RNA proportion: CCA=0.5325, p=0.4490
+  ATAC expression: CCA=0.3562, p=0.9990
+  ATAC proportion: CCA=0.2872, p=1.0000
+Computing corrected p-values for resolution 0.48
+  RNA expression: CCA=0.4363, p=0.9020
+  RNA proportion: CCA=0.5576, p=0.3260
+  ATAC expression: CCA=0.4267, p=0.9250
+  ATAC proportion: CCA=0.3127, p=1.0000
+Computing corrected p-values for resolution 0.49
+  RNA expression: CCA=0.4090, p=0.9560
+  RNA proportion: CCA=0.5457, p=0.3860
+  ATAC expression: CCA=0.2563, p=1.0000
+  ATAC proportion: CCA=0.3009, p=1.0000
+Computing corrected p-values for resolution 0.5
+  RNA expression: CCA=0.3767, p=0.9900
+  RNA proportion: CCA=0.5124, p=0.5560
+  ATAC expression: CCA=0.4740, p=0.7640
+  ATAC proportion: CCA=0.2499, p=1.0000
+Computing corrected p-values for resolution 0.51
+  RNA expression: CCA=0.3876, p=0.9800
+  RNA proportion: CCA=0.5199, p=0.5200
+  ATAC expression: CCA=0.3023, p=1.0000
+  ATAC proportion: CCA=0.3348, p=1.0000
+Computing corrected p-values for resolution 0.52
+  RNA expression: CCA=0.4822, p=0.7200
+  RNA proportion: CCA=0.5102, p=0.5690
+  ATAC expression: CCA=0.3985, p=0.9690
+  ATAC proportion: CCA=0.3845, p=0.9820
+Computing corrected p-values for resolution 0.53
+  RNA expression: CCA=0.5031, p=0.6080
+  RNA proportion: CCA=0.4663, p=0.7960
+  ATAC expression: CCA=0.3273, p=1.0000
+  ATAC proportion: CCA=0.2377, p=1.0000
+Computing corrected p-values for resolution 0.54
+  RNA expression: CCA=0.4406, p=0.8850
+  RNA proportion: CCA=0.5166, p=0.5340
+  ATAC expression: CCA=0.3343, p=1.0000
+  ATAC proportion: CCA=0.3260, p=1.0000
+Computing corrected p-values for resolution 0.55
+  RNA expression: CCA=0.4994, p=0.6330
+  RNA proportion: CCA=0.4882, p=0.6890
+  ATAC expression: CCA=0.3064, p=1.0000
+  ATAC proportion: CCA=0.2282, p=1.0000
+Computing corrected p-values for resolution 0.6
+  RNA expression: CCA=0.3840, p=0.9820
+  RNA proportion: CCA=0.5555, p=0.3350
+  ATAC expression: CCA=0.3653, p=0.9970
+  ATAC proportion: CCA=0.3313, p=1.0000
+Computing corrected p-values for resolution 0.7000000000000001
+  RNA expression: CCA=0.4543, p=0.8360
+  RNA proportion: CCA=0.5433, p=0.3930
+  ATAC expression: CCA=0.4128, p=0.9490
+  ATAC proportion: CCA=0.3574, p=0.9990
+Computing corrected p-values for resolution 0.8
+  RNA expression: CCA=0.4057, p=0.9590
+  RNA proportion: CCA=0.4792, p=0.7320
+  ATAC expression: CCA=0.2591, p=1.0000
+  ATAC proportion: CCA=0.3413, p=1.0000
+Computing corrected p-values for resolution 0.9
+  RNA expression: CCA=0.4837, p=0.7100
+  RNA proportion: CCA=0.5034, p=0.6080
+  ATAC expression: CCA=0.3600, p=0.9980
+  ATAC proportion: CCA=0.3517, p=1.0000
+Computing corrected p-values for resolution 1.0
+  RNA expression: CCA=0.4236, p=0.9290
+  RNA proportion: CCA=0.5464, p=0.3860
+  ATAC expression: CCA=0.2327, p=1.0000
+  ATAC proportion: CCA=0.3884, p=0.9790
+All p-value plots saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/p_value
 
 === FINAL RESULTS ===
 Optimization Target: ATAC EXPRESSION
-Best resolution: 0.200
-Best CCA score: 0.6640
-Corrected p-value: 0.7620
+Best resolution: 0.500
+Best CCA score: 0.4740
+Corrected p-value: 1.0000
 
-All CCA scores at best resolution 0.200:
-  RNA Expression: 0.1947
-  RNA Proportion: 0.4620
-  ATAC Expression: 0.6640
-  ATAC Proportion: 0.2270
+All CCA scores at best resolution 0.500:
+  RNA Expression: 0.3767
+  RNA Proportion: 0.5124
+  ATAC Expression: 0.4740
+  ATAC Proportion: 0.2499
 
-Comprehensive results saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/resolution_scores_comprehensive_integration_atac_expression.csv
-Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/rna_expression_results.txt
-Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/rna_proportion_results.txt
-Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/atac_expression_results.txt
-Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/atac_proportion_results.txt
-Saved CCA vs Resolution plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_all_modalities.png
-Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_rna_expression.png
-Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_rna_proportion.png
-Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_atac_expression.png
-Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_atac_proportion.png
+Comprehensive results saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/resolution_scores_comprehensive_integration_atac_expression.csv
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/rna_expression_results.txt
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/rna_proportion_results.txt
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/atac_expression_results.txt
+Saved results to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/atac_proportion_results.txt
+Saved CCA vs Resolution plot to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_all_modalities.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_rna_expression.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_rna_proportion.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_atac_expression.png
+Saved individual plot to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary/cca_scores_vs_resolution_atac_proportion.png
 
-All summary files saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/summary
+All summary files saved to: /dcl01/hongkai/data/data/hjiang/result/integration/Integration_optimization_atac_expression/summary
 
-[Find Optimal Resolution Integration] Total runtime: 60.38 seconds
+[Find Optimal Resolution Integration] Total runtime: 7642.27 seconds
 
 Finished main.py.
-End Time: Wed Jun 25 02:13:41 PM EDT 2025
+End Time: Wed Jun 25 04:52:43 PM EDT 2025

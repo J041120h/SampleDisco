@@ -1195,8 +1195,8 @@ def find_optimal_cell_resolution_integration(
 
 
 if __name__ == "__main__":
-    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/atac_rna_integrated_subsampled_10pct.h5ad")
-    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample"
+    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/preprocess/atac_rna_integrated.h5ad")
+    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration"
     
     suppress_warnings()
 

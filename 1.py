@@ -1401,14 +1401,9 @@ def subsample_cells_by_sample(
 
 # Example usage
 if __name__ == "__main__":
-    input_path = "/dcl01/hongkai/data/data/hjiang/result/integration_test/preprocess/atac_rna_integrated.h5ad"
+    input_path = "/dcl01/hongkai/data/data/hjiang/result/integration/preprocess/atac_rna_integrated.h5ad"
     csv_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
 
-    # subsample_cells_by_sample(
-    # anndata_path = input_path,
-    # sample_col = "sample",
-    # output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample"
-    # )
     update_obs_from_csv(input_path, csv_file, sample_column='sample')
     adata = sc.read_h5ad(input_path)
     analyze_atac_samples(adata, modality_col="modality", sample_col="sample")
