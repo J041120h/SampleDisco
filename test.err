@@ -1,1047 +1,357 @@
-2025-06-25 14:44:42.604544: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-06-26 10:24:15.845261: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1750877082.617511 2695133 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1750877082.621497 2695133 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1750877082.633884 2695133 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750877082.633897 2695133 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750877082.633900 2695133 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1750877082.633902 2695133 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-06-25 14:44:42.637120: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1750947855.857793 2759332 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1750947855.861577 2759332 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1750947855.873474 2759332 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750947855.873487 2759332 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750947855.873490 2759332 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1750947855.873492 2759332 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-06-26 10:24:15.876611: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-/users/hjiang/GenoDistance/code/Test.py:338: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
+/users/hjiang/GenoDistance/code/Test.py:362: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
   if pd.api.types.is_categorical_dtype(adata.obs[col]):
-/users/hjiang/GenoDistance/code/Test.py:338: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
+/users/hjiang/GenoDistance/code/Test.py:362: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
   if pd.api.types.is_categorical_dtype(adata.obs[col]):
-/users/hjiang/GenoDistance/code/Test.py:338: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
+/users/hjiang/GenoDistance/code/Test.py:362: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
   if pd.api.types.is_categorical_dtype(adata.obs[col]):
-/users/hjiang/GenoDistance/code/Test.py:338: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
+/users/hjiang/GenoDistance/code/Test.py:362: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
   if pd.api.types.is_categorical_dtype(adata.obs[col]):
-2025-06-25 14:45:45 - INFO - init
-... storing 'batch' as categorical
-... storing 'batch' as categorical
+2025-06-26 10:24:35 - INFO - init
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
   return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
-  return fn(*args_all, **kw)
-... storing 'batch' as categorical

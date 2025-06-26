@@ -30,7 +30,7 @@ import pandas as pd
 from sklearn.cross_decomposition import CCA
 from sklearn.preprocessing import StandardScaler
 
-def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
+def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2, n_pcs=None):
     """
     CCA analysis with weight vectors included in results.
     
@@ -46,6 +46,8 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         Column name for severity levels
     n_components : int, default 2
         Number of CCA components
+    n_pcs : int, optional
+        Number of PCs to use for CCA analysis. If None, uses all available PCs.
         
     Returns:
     --------
@@ -63,7 +65,8 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         'X_weights': None,  # Added: weights for embedding space
         'Y_weights': None,  # Added: weights for severity space
         'X_loadings': None, # Added: loadings (correlations)
-        'Y_loadings': None  # Added: loadings (correlations)
+        'Y_loadings': None,  # Added: loadings (correlations)
+        'n_pcs_used': 0  # Added: track number of PCs actually used
     }
     
     try:
@@ -95,8 +98,17 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
         dr_coords_full = uns_data_standardized.loc[modality_mask].copy()
         sev_levels = obs_standardized.loc[modality_mask, sev_col].values
         
-        # Use only the first 2 features for CCA analysis
-        dr_coords = dr_coords_full.iloc[:, :2]
+        # Determine number of PCs to use
+        max_pcs = dr_coords_full.shape[1]
+        if n_pcs is None:
+            # Use all available PCs by default
+            n_pcs_to_use = max_pcs
+        else:
+            # Use specified number of PCs, but not more than available
+            n_pcs_to_use = min(n_pcs, max_pcs)
+        
+        # Use only the specified number of PCs for CCA analysis
+        dr_coords = dr_coords_full.iloc[:, :n_pcs_to_use]
         
         # Basic validation only
         if len(dr_coords) < 3:
@@ -107,11 +119,12 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
             return result
         
         # Prepare data for CCA
-        X = dr_coords.values  # Now using only first 2 features
+        X = dr_coords.values  # Now using specified number of PCs
         y = sev_levels.reshape(-1, 1)
         
         result['n_samples'] = len(X)
-        result['n_features'] = X.shape[1]  # Should be 2
+        result['n_features'] = X.shape[1]  # Number of PCs used
+        result['n_pcs_used'] = n_pcs_to_use
         
         # Limit components based on data dimensions
         max_components = min(X.shape[1], y.shape[1], X.shape[0] - 1)
@@ -155,7 +168,7 @@ def cca_analysis(pseudobulk_adata, modality, column, sev_col, n_components=2):
 
 
 def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None, 
-                      n_components=2, output_dir=None):
+                      n_components=2, n_pcs=None, output_dir=None):
     """
     Run CCA analysis across multiple dimension reduction results and modalities.
     Now includes weight vectors in the results.
@@ -172,6 +185,8 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
         List of modalities to analyze. If None, uses all unique modalities
     n_components : int, default 2
         Number of CCA components
+    n_pcs : int, optional
+        Number of PCs to use for CCA analysis. If None, uses all available PCs.
     output_dir : str, optional
         Directory to save results
         
@@ -200,7 +215,8 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
                     modality=modality,
                     column=column,
                     sev_col=sev_col,
-                    n_components=n_components
+                    n_components=n_components,
+                    n_pcs=n_pcs  # Pass n_pcs parameter
                 )
                 
                 results.append(result)
@@ -217,7 +233,8 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
                     'X_weights': None,
                     'Y_weights': None,
                     'X_loadings': None,
-                    'Y_loadings': None
+                    'Y_loadings': None,
+                    'n_pcs_used': 0
                 })
     
     # Create results DataFrame
@@ -227,7 +244,7 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
     if output_dir:
         # Save summary (without vectors for readability)
         summary_df = results_df[['modality', 'column', 'cca_score', 'n_samples', 
-                                'n_features', 'valid', 'error_message']]
+                                'n_features', 'n_pcs_used', 'valid', 'error_message']]
         summary_path = os.path.join(output_dir, 'cca_results_summary.csv')
         summary_df.to_csv(summary_path, index=False)
         print(f"Summary saved to: {summary_path}")
@@ -241,17 +258,22 @@ def batch_cca_analysis(pseudobulk_adata, dr_columns, sev_col, modalities=None,
     
     return results_df
 
-def generate_null_distribution(pseudobulk_adata, modality, column, sev_col, 
-                                          n_components=2, n_permutations=1000, 
-                                          save_path=None, verbose=True):
+
+def generate_null_distribution(pseudobulk_adata, modality, column, sev_col,
+                             n_permutations=1000, n_pcs=None,
+                             save_path=None, verbose=True):
     """
-    Generate null distribution using ONLY the first 2 dimensions of DR results.
-    
+    Generate null distribution using customizable number of PC dimensions.
     Steps:
-    1. Extract first 2 DR components for the specified modality
-    2. Randomly shuffle severity level labels for each sample  
-    3. Run CCA between 2D embeddings and 1D severity
+    1. Extract specified number of DR components for the specified modality
+    2. Randomly shuffle severity level labels for each sample
+    3. Run CCA between PC embeddings and 1D severity (always 1 component)
     4. Record CCA correlation as one simulation
+    
+    Parameters:
+    -----------
+    n_pcs : int, optional
+        Number of PC dimensions to use. If None, uses all available PCs.
     """
     # Extract data for specified modality
     modality_mask = pseudobulk_adata.obs['modality'] == modality
@@ -262,26 +284,30 @@ def generate_null_distribution(pseudobulk_adata, modality, column, sev_col,
     dr_coords_full = pseudobulk_adata.uns[column].loc[modality_mask].copy()
     sev_levels = pseudobulk_adata.obs.loc[modality_mask, sev_col].values
     
-    # Use only first 2 DR components
-    dr_coords_2d = dr_coords_full.iloc[:, :2]
+    # Use specified number of DR components (default: all available)
+    if n_pcs is None:
+        dr_coords = dr_coords_full
+        n_dims_used = dr_coords_full.shape[1]
+    else:
+        n_pcs = min(n_pcs, dr_coords_full.shape[1])  # Don't exceed available PCs
+        dr_coords = dr_coords_full.iloc[:, :n_pcs]
+        n_dims_used = n_pcs
     
-    if len(dr_coords_2d) < 3:
-        raise ValueError(f"Insufficient samples: {len(dr_coords_2d)}")
-    
+    if len(dr_coords) < 3:
+        raise ValueError(f"Insufficient samples: {len(dr_coords)}")
     if len(np.unique(sev_levels)) < 2:
         raise ValueError("Insufficient severity level variance")
     
     # Prepare data for CCA
-    X = dr_coords_2d.values  # 2D embedding coordinates [n_samples, 2]
+    X = dr_coords.values  # PC embedding coordinates [n_samples, n_dims]
     y_original = sev_levels.copy()  # 1D severity levels [n_samples]
     
     # Import libraries
     from sklearn.cross_decomposition import CCA
     from sklearn.preprocessing import StandardScaler
     
-    # Determine CCA components
-    max_components = min(X.shape[1], 1, X.shape[0] - 1)  # 2, 1, n_samples-1
-    n_comp_actual = min(n_components, max_components)
+    # Always use 1 CCA component
+    n_components = 1
     
     # Run permutations
     null_scores = []
@@ -292,15 +318,14 @@ def generate_null_distribution(pseudobulk_adata, modality, column, sev_col,
             # Randomly shuffle severity level labels
             permuted_sev = np.random.permutation(y_original)
             
-            # Run CCA between 2D embeddings and shuffled 1D severity
+            # Run CCA between PC embeddings and shuffled 1D severity
             scaler_X = StandardScaler()
             scaler_y = StandardScaler()
-            
             X_scaled = scaler_X.fit_transform(X)
             y_permuted_scaled = scaler_y.fit_transform(permuted_sev.reshape(-1, 1))
             
-            # Fit CCA
-            cca_perm = CCA(n_components=n_comp_actual, max_iter=1000, tol=1e-6)
+            # Fit CCA with 1 component
+            cca_perm = CCA(n_components=n_components, max_iter=1000, tol=1e-6)
             cca_perm.fit(X_scaled, y_permuted_scaled)
             
             # Transform and compute correlation
@@ -323,13 +348,12 @@ def generate_null_distribution(pseudobulk_adata, modality, column, sev_col,
     # Single status print
     if verbose:
         success_rate = (n_permutations - failed_permutations) / n_permutations * 100
-        print(f"Null distribution generated: {success_rate:.1f}% success rate ({n_permutations - failed_permutations}/{n_permutations} permutations)")
+        print(f"Null distribution generated using {n_dims_used} PC dimensions (1 CCA component): {success_rate:.1f}% success rate ({n_permutations - failed_permutations}/{n_permutations} permutations)")
     
     if save_path:
         np.save(save_path, null_distribution)
     
     return null_distribution
-
 
 def ensure_non_categorical_columns(adata, columns):
     """Convert specified columns from categorical to string to avoid categorical errors"""
@@ -368,11 +392,18 @@ def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribut
     modalities = ['rna', 'atac']
     dr_types = ['expression', 'proportion']
     
-    # Track all corrected p-values to add to dataframe
-    corrected_pvalues = {}
+    # Create a copy of the dataframe to avoid modifying the original
+    df_results_copy = df_results.copy()
+    
+    # Add corrected p-value columns if they don't exist
+    for modality in modalities:
+        for dr_method in dr_types:
+            corrected_pval_col = f'{modality}_corrected_pvalue_{dr_method}'
+            if corrected_pval_col not in df_results_copy.columns:
+                df_results_copy[corrected_pval_col] = np.nan
     
     # Process each resolution
-    for idx, row in df_results.iterrows():
+    for idx, row in df_results_copy.iterrows():
         resolution = row['resolution']
         print(f"Computing corrected p-values for resolution {resolution}")
         
@@ -391,11 +422,9 @@ def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribut
                     # Compute corrected p-value
                     corrected_p_value = np.mean(corrected_null_distribution >= cca_score)
                     
-                    # Store corrected p-value
+                    # Store corrected p-value directly using loc to ensure proper alignment
                     corrected_pval_col = f'{modality}_corrected_pvalue_{dr_method}'
-                    if corrected_pval_col not in corrected_pvalues:
-                        corrected_pvalues[corrected_pval_col] = [np.nan] * len(df_results)
-                    corrected_pvalues[corrected_pval_col][idx] = corrected_p_value
+                    df_results_copy.loc[idx, corrected_pval_col] = corrected_p_value
                     
                     # Create visualization plot
                     plt.figure(figsize=(10, 6))
@@ -428,9 +457,11 @@ def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribut
                     
                     print(f"  {modality.upper()} {dr_method}: CCA={cca_score:.4f}, p={corrected_p_value:.4f}")
     
-    # Add all corrected p-values to the dataframe
-    for col, values in corrected_pvalues.items():
-        df_results[col] = values
+    # Update the original dataframe with the corrected p-values
+    for modality in modalities:
+        for dr_method in dr_types:
+            corrected_pval_col = f'{modality}_corrected_pvalue_{dr_method}'
+            df_results[corrected_pval_col] = df_results_copy[corrected_pval_col]
     
     print(f"All p-value plots saved to: {pvalue_dir}")
 
@@ -850,7 +881,7 @@ def find_optimal_cell_resolution_integration(
                         modality=optimization_target.upper(),
                         column=f'X_DR_{dr_type}',
                         sev_col=sev_col,
-                        n_components=2,
+                        n_pcs = 10,
                         n_permutations=num_pvalue_simulations,
                         save_path=os.path.join(resolution_dir, f'null_dist_{optimization_target}_{dr_type}.npy'),
                         verbose=verbose
@@ -867,7 +898,8 @@ def find_optimal_cell_resolution_integration(
                 dr_columns=dr_columns,
                 sev_col=sev_col,
                 modalities=['RNA', 'ATAC'],
-                n_components=2,
+                n_components=1,
+                n_pcs = 10,
                 output_dir=resolution_dir
             )
             
@@ -1030,7 +1062,7 @@ def find_optimal_cell_resolution_integration(
                         modality=optimization_target.upper(),
                         column=f'X_DR_{dr_type}',
                         sev_col=sev_col,
-                        n_components=2,
+                        n_pcs = 10,
                         n_permutations=num_pvalue_simulations,
                         save_path=os.path.join(resolution_dir, f'null_dist_{optimization_target}_{dr_type}.npy'),
                         verbose=verbose
@@ -1047,7 +1079,8 @@ def find_optimal_cell_resolution_integration(
                 dr_columns=dr_columns,
                 sev_col=sev_col,
                 modalities=['RNA', 'ATAC'],
-                n_components=2,
+                n_components=1,
+                n_pcs = 10,
                 output_dir=resolution_dir
             )
             
@@ -1195,9 +1228,11 @@ def find_optimal_cell_resolution_integration(
 
 
 if __name__ == "__main__":
-    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/preprocess/atac_rna_integrated.h5ad")
-    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration"
+    # integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/preprocess/atac_rna_integrated.h5ad")
+    # output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration"
     
+    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/atac_rna_integrated_subsampled_10pct.h5ad")
+    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample"
     suppress_warnings()
 
     try:

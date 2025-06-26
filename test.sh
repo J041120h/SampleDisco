@@ -12,7 +12,7 @@
 #SBATCH --cpus-per-task=16              # CPU count
 #SBATCH --gpus=1                        # Request 1 GPU
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=800GB                     # Memory allocation
+#SBATCH --mem=400GB                     # Memory allocation
 #SBATCH --output=test.out
 #SBATCH --error=test.err
 #SBATCH --mail-type=ALL
