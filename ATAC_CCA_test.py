@@ -14,15 +14,6 @@ from CCA_test import *
 import warnings
 from sklearn.preprocessing import StandardScaler
 
-# Suppress specific warnings that are expected during CCA analysis
-def suppress_warnings():
-    """Suppress specific warnings that are expected during CCA analysis"""
-    warnings.filterwarnings('ignore', category=UserWarning, 
-                          message='.*y residual is constant at iteration.*')
-    warnings.filterwarnings('ignore', category=RuntimeWarning, 
-                          message='.*invalid value encountered in divide.*')
-    warnings.filterwarnings('ignore', category=RuntimeWarning, 
-                          message='.*All-NaN slice encountered.*')
 
 def generate_null_distribution_atac(pseudobulk_adata, column, sev_col,
                                    n_permutations=1000, n_pcs=None,
@@ -436,7 +427,6 @@ def find_optimal_cell_resolution_atac(
     tuple: (optimal_resolution, results_dataframe)
     """
     start_time = time.time()
-    suppress_warnings()
     
     # Create main output directory structure
     main_output_dir = os.path.join(output_dir, f"ATAC_resolution_optimization_{column}")
@@ -458,7 +448,7 @@ def find_optimal_cell_resolution_atac(
 
     # First pass: coarse search
     print("\n=== FIRST PASS: Coarse Search ===")
-    for resolution in np.arange(0.1, 0.21, 0.1):
+    for resolution in np.arange(0.1, 1.01, 0.1):
         print(f"\n\nTesting resolution: {resolution:.2f}\n")
         
         # Create resolution-specific directory
@@ -613,8 +603,8 @@ def find_optimal_cell_resolution_atac(
 
     # Second pass: fine-tuned search
     print("\n=== SECOND PASS: Fine-tuned Search ===")
-    search_range_start = max(0.01, best_resolution - 0.02)
-    search_range_end = min(1.00, best_resolution + 0.02)
+    search_range_start = max(0.01, best_resolution - 0.05)
+    search_range_end = min(1.00, best_resolution + 0.05)
     
     print(f"Fine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
 
