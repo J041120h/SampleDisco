@@ -70,6 +70,7 @@ visualize_all_deg: True
 top_n_heatmap: 50
 trajectory_diff_gene_verbose: True
 top_gene_number: 30
+n_pcs_for_null: 5
 
 # ===== Paths for Skipping Preprocessing =====
 AnnData_cell_path: null

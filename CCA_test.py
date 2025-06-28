@@ -373,7 +373,7 @@ def find_optimal_cell_resolution(
     AnnData_sample: AnnData,
     output_dir: str,
     column: str,
-    n_features: int = 40000,
+    n_features: int = 2000,
     sev_col: str = "sev.level",
     batch_col: str = "batch",
     sample_col: str = "sample",
@@ -1000,7 +1000,14 @@ def create_comprehensive_summary_rna(df_results, best_resolution, column, output
     
     # Add best score annotation
     best_score = valid_df.loc[valid_df['resolution'] == best_resolution, 'cca_score'].iloc[0]
-    ax1.annotate(f'Best Score: {best_score:.4f}')
+    ax1.annotate(
+        f'Best Score: {best_score:.4f}',
+        xy=(best_resolution, best_score),
+        xytext=(best_resolution, best_score + 0.02),  # slight offset for visibility
+        arrowprops=dict(arrowstyle='->', color='black'),
+        fontsize=10,
+        ha='center'
+    )
 
 def cca_pvalue_test(
     pseudo_adata: AnnData,

@@ -14,7 +14,6 @@ from CCA_test import *
 import warnings
 from sklearn.preprocessing import StandardScaler
 
-
 def generate_null_distribution_atac(pseudobulk_adata, column, sev_col,
                                    n_permutations=1000, n_pcs=None,
                                    save_path=None, verbose=True):
@@ -494,12 +493,10 @@ def find_optimal_cell_resolution_atac(
                 verbose=False
             )
             
-            # Record number of clusters
             n_clusters = AnnData_sample.obs['cell_type'].nunique()
             result_dict['n_clusters'] = n_clusters
             print(f"Number of clusters: {n_clusters}")
             
-            # Compute pseudobulk data
             pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=AnnData_sample, 
                 batch_col=batch_col, 

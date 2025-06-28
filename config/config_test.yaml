@@ -70,6 +70,7 @@ visualize_all_deg: True
 top_n_heatmap: 50
 trajectory_diff_gene_verbose: True
 top_gene_number: 30
+n_pcs_for_null: 3
 
 # ===== Paths for Skipping Preprocessing =====
 AnnData_cell_path: "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_cell.h5ad"
@@ -174,4 +175,4 @@ atac_visualization_processing: false
 
 visualize_data: false
 initialization: false
-use_gpu: true
+use_gpu: false

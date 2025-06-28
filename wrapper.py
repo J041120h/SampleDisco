@@ -103,6 +103,7 @@ def wrapper(
     top_n_heatmap = 50,
     trajectory_diff_gene_verbose = True,
     top_gene_number = 30,
+    n_pcs_for_null = 10,
 
     # ===== Paths for Skipping Preprocessing =====
     AnnData_cell_path=None,
@@ -201,7 +202,7 @@ def wrapper(
     trajectory_supervised_atac = True,
     atac_cca_optimal_cell_resolution = False,
     n_pcs_for_null_atatc = 10,
-    
+
     #visualization parameters
     atac_figsize=(10, 8),
     atac_point_size=50, 
@@ -527,14 +528,23 @@ def wrapper(
                         AnnData_sample = AnnData_sample,
                         output_dir = cca_output_dir,
                         column = "X_DR_expression",
-                        sample_col = sample_col
+                        sample_col = sample_col,
+                        n_features = n_features,
+                        sev_col = sev_col_cca, 
+                        batch_col = batch_col,
+                        n_pcs_for_null = n_pcs_for_null
+
                     )
                     find_optimal_cell_resolution(
                         AnnData_cell = AnnData_cell,
                         AnnData_sample = AnnData_sample,
                         output_dir = cca_output_dir,
                         column = "X_DR_proportion",
-                        sample_col = sample_col
+                        sample_col = sample_col,
+                        n_features = n_features,
+                        sev_col = sev_col_cca, 
+                        batch_col = batch_col,
+                        n_pcs_for_null = n_pcs_for_null
                     )
             status_flags["trajectory_analysis"] = True
             with open(status_file_path, 'w') as f:
