@@ -200,6 +200,8 @@ def wrapper(
     atac_cca_output_dir = None,
     trajectory_supervised_atac = True,
     atac_cca_optimal_cell_resolution = False,
+    n_pcs_for_null_atatc = 10,
+    
     #visualization parameters
     atac_figsize=(10, 8),
     atac_point_size=50, 
@@ -851,7 +853,8 @@ def wrapper(
                         sample_col = atac_sample_col,
                         batch_col = atac_batch_col,
                         num_DR_components = atac_pca_n_expression_pcs,
-                        num_DMs = atac_n_lsi_components
+                        num_DMs = atac_n_lsi_components,
+                        n_pcs_for_null = n_pcs_for_null_atatc
 
                     )
                     find_optimal_cell_resolution_atac(
@@ -863,7 +866,8 @@ def wrapper(
                         sample_col = atac_sample_col,
                         batch_col = atac_batch_col,
                         num_DR_components = atac_pca_n_proportion_pcs,
-                        num_DMs = atac_n_lsi_components
+                        num_DMs = atac_n_lsi_components,
+                        n_pcs_for_null = n_pcs_for_null_atatc
                     )
                     
             else:
