@@ -175,4 +175,4 @@ atac_visualization_processing: false
 
 visualize_data: false
 initialization: false
-use_gpu: false
+use_gpu: true
