@@ -148,9 +148,9 @@ atac_pca_verbose: true
 atac_cca_output_dir: null
 trajectory_supervised_atac: true
 atac_cca_optimal_cell_resolution: true
-n_pcs_for_null_atatc: 10
+n_pcs_for_null_atatc: 2
 
-atac_figsize: [10, 8]  
+atac_figsize: [10, 8]
 atac_point_size: 50
 atac_visualization_grouping_columns:
   - sev.level

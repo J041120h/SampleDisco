@@ -363,7 +363,7 @@ def ensure_non_categorical_columns(adata, columns):
                 adata.obs[col] = adata.obs[col].astype(str)
     return adata
 
-def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribution, main_output_dir, 
+def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distributions, main_output_dir, 
                                           optimization_target, dr_type):
     """
     Compute corrected p-values for all CCA scores and create visualization plots.
@@ -372,8 +372,9 @@ def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribut
     -----------
     df_results : pd.DataFrame
         Results dataframe with CCA scores for all resolutions
-    corrected_null_distribution : np.array
-        Corrected null distribution accounting for resolution selection
+    corrected_null_distributions : dict
+        Dictionary with corrected null distributions for each modality
+        Format: {'rna': np.array, 'atac': np.array}
     main_output_dir : str
         Main output directory
     optimization_target : str
@@ -413,13 +414,20 @@ def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribut
         
         # Process each modality and DR type combination
         for modality in modalities:
+            # Use the modality-specific null distribution
+            if modality not in corrected_null_distributions:
+                print(f"  Warning: No null distribution available for {modality}")
+                continue
+                
+            corrected_null_distribution = corrected_null_distributions[modality]
+            
             for dr_method in dr_types:
                 cca_col = f'{modality}_cca_{dr_method}'
                 
                 if cca_col in row and not pd.isna(row[cca_col]):
                     cca_score = row[cca_col]
                     
-                    # Compute corrected p-value
+                    # Compute corrected p-value using modality-specific null distribution
                     corrected_p_value = np.mean(corrected_null_distribution >= cca_score)
                     
                     # Store corrected p-value directly using loc to ensure proper alignment
@@ -431,7 +439,7 @@ def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribut
                     
                     # Plot histogram of null distribution
                     plt.hist(corrected_null_distribution, bins=50, alpha=0.7, color='lightblue', 
-                            density=True, label='Corrected Null Distribution')
+                            density=True, label=f'Corrected Null Distribution ({modality.upper()})')
                     
                     # Plot vertical line for observed CCA score
                     plt.axvline(cca_score, color='red', linestyle='--', linewidth=2, 
@@ -466,31 +474,25 @@ def compute_all_corrected_pvalues_and_plots(df_results, corrected_null_distribut
     print(f"All p-value plots saved to: {pvalue_dir}")
 
 
-def generate_corrected_null_distribution(all_resolution_results, optimization_target, dr_type, n_permutations=1000):
+def generate_corrected_null_distribution_for_modality(all_resolution_results, modality, dr_type, n_permutations=1000):
     """
-    Generate null distribution accounting for resolution selection bias (double dipping).
-    
-    For each permutation:
-    1. Collect CCA scores from all resolutions for that permutation
-    2. Select the maximum CCA score (mimicking optimal resolution selection)
-    3. Use these maximum scores to form the corrected null distribution
+    Generate null distribution for a specific modality accounting for resolution selection bias.
     
     Parameters:
     -----------
     all_resolution_results : list
-        List of dictionaries containing results from all resolutions, 
-        where each dict has 'null_scores' key with array of permutation results
-    optimization_target : str
+        List of dictionaries containing results from all resolutions for this modality
+    modality : str
         Target modality ("rna" or "atac")
     dr_type : str
         DR type ("expression" or "proportion")
     n_permutations : int
-        Number of permutations (should match the number used in resolution testing)
+        Number of permutations
         
     Returns:
     --------
     np.array
-        Corrected null distribution accounting for resolution selection
+        Corrected null distribution for this modality
     """
     
     corrected_null_scores = []
@@ -500,8 +502,9 @@ def generate_corrected_null_distribution(all_resolution_results, optimization_ta
         perm_scores_across_resolutions = []
         
         for resolution_result in all_resolution_results:
-            if 'null_scores' in resolution_result and len(resolution_result['null_scores']) > perm_idx:
-                perm_scores_across_resolutions.append(resolution_result['null_scores'][perm_idx])
+            if 'null_scores' in resolution_result and resolution_result['null_scores'] is not None:
+                if len(resolution_result['null_scores']) > perm_idx:
+                    perm_scores_across_resolutions.append(resolution_result['null_scores'][perm_idx])
         
         # Select the maximum score (mimicking optimal resolution selection)
         if perm_scores_across_resolutions:
@@ -713,7 +716,8 @@ def find_optimal_cell_resolution_integration(
     use_rep: str = 'X_glue',
     num_DR_components: int = 30,
     num_PCs: int = 20,
-    num_pvalue_simulations: int = 1000,  # Changed from 100 to 1000
+    num_pvalue_simulations: int = 1000,
+    n_pcs = 2,
     compute_pvalues: bool = True,
     visualize_embeddings: bool = True,
     verbose: bool = True
@@ -722,44 +726,7 @@ def find_optimal_cell_resolution_integration(
     Find optimal clustering resolution for integrated RNA+ATAC data by maximizing 
     CCA correlation between dimension reduction and severity levels.
     
-    Parameters:
-    -----------
-    AnnData_integrated : AnnData
-        Integrated AnnData object containing both RNA and ATAC data
-    output_dir : str
-        Output directory for results
-    optimization_target : str
-        Which modality to optimize: "rna" or "atac"
-    dr_type : str
-        Which DR type to optimize: "expression" or "proportion"
-    n_features : int
-        Number of features for pseudobulk computation
-    sev_col : str
-        Column name for severity levels in pseudobulk_anndata.obs
-    batch_col : str
-        Column name for batch information
-    sample_col : str
-        Column name for sample identifiers
-    modality_col : str
-        Column name containing modality information (RNA/ATAC)
-    use_rep : str
-        Representation to use for neighborhood graph
-    num_DR_components : int
-        Number of dimension reduction components
-    num_PCs : int
-        Number of PCs for neighborhood graph
-    num_pvalue_simulations : int
-        Number of simulations for p-value calculation (default 1000)
-    compute_pvalues : bool
-        Whether to compute p-values for each resolution
-    visualize_embeddings : bool
-        Whether to create embedding visualizations for each resolution
-    verbose : bool
-        Whether to print verbose output
-        
-    Returns:
-    --------
-    tuple: (optimal_resolution, results_dataframe)
+    [Parameters remain the same]
     """
     start_time = time.time()
     
@@ -791,8 +758,11 @@ def find_optimal_cell_resolution_integration(
     
     # Storage for all results
     all_results = []
-    # Storage for null distribution results from each resolution
-    all_resolution_null_results = []
+    # Storage for null distribution results from each resolution for each modality
+    all_resolution_null_results = {
+        'rna': [],
+        'atac': []
+    }
 
     # First pass: coarse search
     print("\n=== FIRST PASS: Coarse Search ===")
@@ -817,10 +787,10 @@ def find_optimal_cell_resolution_integration(
             'pass': 'coarse'
         }
         
-        # Initialize null results for this resolution
-        resolution_null_result = {
-            'resolution': resolution,
-            'null_scores': None
+        # Initialize null results for this resolution for both modalities
+        resolution_null_results = {
+            'rna': {'resolution': resolution, 'null_scores': None},
+            'atac': {'resolution': resolution, 'null_scores': None}
         }
         
         try:
@@ -873,23 +843,24 @@ def find_optimal_cell_resolution_integration(
                 verbose=False
             )
             
-            # Generate null distribution for this resolution if computing p-values
+            # Generate null distributions for BOTH modalities if computing p-values
             if compute_pvalues:
-                try:
-                    null_distribution = generate_null_distribution(
-                        pseudobulk_adata=pseudobulk_adata,
-                        modality=optimization_target.upper(),
-                        column=f'X_DR_{dr_type}',
-                        sev_col=sev_col,
-                        n_pcs = 10,
-                        n_permutations=num_pvalue_simulations,
-                        save_path=os.path.join(resolution_dir, f'null_dist_{optimization_target}_{dr_type}.npy'),
-                        verbose=verbose
-                    )
-                    resolution_null_result['null_scores'] = null_distribution
-                except Exception as e:
-                    print(f"Warning: Failed to generate null distribution for resolution {resolution:.2f}: {str(e)}")
-                    resolution_null_result['null_scores'] = None
+                for modality in ['rna', 'atac']:
+                    try:
+                        null_distribution = generate_null_distribution(
+                            pseudobulk_adata=pseudobulk_adata,
+                            modality=modality.upper(),
+                            column=f'X_DR_{dr_type}',
+                            sev_col=sev_col,
+                            n_pcs=n_pcs,
+                            n_permutations=num_pvalue_simulations,
+                            save_path=os.path.join(resolution_dir, f'null_dist_{modality}_{dr_type}.npy'),
+                            verbose=verbose and (modality == optimization_target)  # Only verbose for target
+                        )
+                        resolution_null_results[modality]['null_scores'] = null_distribution
+                    except Exception as e:
+                        print(f"Warning: Failed to generate null distribution for {modality} at resolution {resolution:.2f}: {str(e)}")
+                        resolution_null_results[modality]['null_scores'] = None
             
             # Compute CCA for both modalities and both DR types using batch analysis
             dr_columns = ['X_DR_expression', 'X_DR_proportion']
@@ -899,7 +870,7 @@ def find_optimal_cell_resolution_integration(
                 sev_col=sev_col,
                 modalities=['RNA', 'ATAC'],
                 n_components=1,
-                n_pcs = 10,
+                n_pcs=n_pcs,
                 output_dir=resolution_dir
             )
             
@@ -923,7 +894,7 @@ def find_optimal_cell_resolution_integration(
             
             # Always create embedding visualizations
             try:
-            # Create visualizations for both RNA and ATAC
+                # Create visualizations for both RNA and ATAC
                 for viz_modality in ['RNA', 'ATAC']:
                     embedding_path = os.path.join(
                         resolution_dir, 
@@ -948,7 +919,7 @@ def find_optimal_cell_resolution_integration(
             except Exception as e:
                 if verbose:
                     print(f"Warning: Failed to create embedding visualization: {str(e)}")
-            # Save resolution-specific embedding visualizations    
+            
             # Save resolution-specific results
             resolution_results_path = os.path.join(resolution_dir, f"results_res_{resolution:.2f}.csv")
             pd.DataFrame([result_dict]).to_csv(resolution_results_path, index=False)
@@ -957,7 +928,8 @@ def find_optimal_cell_resolution_integration(
             print(f"Error at resolution {resolution:.2f}: {str(e)}")
         
         all_results.append(result_dict)
-        all_resolution_null_results.append(resolution_null_result)
+        all_resolution_null_results['rna'].append(resolution_null_results['rna'])
+        all_resolution_null_results['atac'].append(resolution_null_results['atac'])
 
     # Find best resolution from first pass
     coarse_results = [r for r in all_results if not np.isnan(r['optimization_score'])]
@@ -1003,10 +975,10 @@ def find_optimal_cell_resolution_integration(
             'pass': 'fine'
         }
         
-        # Initialize null results for this resolution
-        resolution_null_result = {
-            'resolution': resolution,
-            'null_scores': None
+        # Initialize null results for this resolution for both modalities
+        resolution_null_results = {
+            'rna': {'resolution': resolution, 'null_scores': None},
+            'atac': {'resolution': resolution, 'null_scores': None}
         }
         
         try:
@@ -1054,23 +1026,24 @@ def find_optimal_cell_resolution_integration(
                 verbose=False
             )
             
-            # Generate null distribution for this resolution if computing p-values
+            # Generate null distributions for BOTH modalities if computing p-values
             if compute_pvalues:
-                try:
-                    null_distribution = generate_null_distribution(
-                        pseudobulk_adata=pseudobulk_adata,
-                        modality=optimization_target.upper(),
-                        column=f'X_DR_{dr_type}',
-                        sev_col=sev_col,
-                        n_pcs = 10,
-                        n_permutations=num_pvalue_simulations,
-                        save_path=os.path.join(resolution_dir, f'null_dist_{optimization_target}_{dr_type}.npy'),
-                        verbose=verbose
-                    )
-                    resolution_null_result['null_scores'] = null_distribution
-                except Exception as e:
-                    print(f"Warning: Failed to generate null distribution for resolution {resolution:.3f}: {str(e)}")
-                    resolution_null_result['null_scores'] = None
+                for modality in ['rna', 'atac']:
+                    try:
+                        null_distribution = generate_null_distribution(
+                            pseudobulk_adata=pseudobulk_adata,
+                            modality=modality.upper(),
+                            column=f'X_DR_{dr_type}',
+                            sev_col=sev_col,
+                            n_pcs=n_pcs,
+                            n_permutations=num_pvalue_simulations,
+                            save_path=os.path.join(resolution_dir, f'null_dist_{modality}_{dr_type}.npy'),
+                            verbose=verbose and (modality == optimization_target)  # Only verbose for target
+                        )
+                        resolution_null_results[modality]['null_scores'] = null_distribution
+                    except Exception as e:
+                        print(f"Warning: Failed to generate null distribution for {modality} at resolution {resolution:.3f}: {str(e)}")
+                        resolution_null_results[modality]['null_scores'] = None
             
             # Compute CCA for both modalities and DR types using batch analysis
             dr_columns = ['X_DR_expression', 'X_DR_proportion']
@@ -1080,7 +1053,7 @@ def find_optimal_cell_resolution_integration(
                 sev_col=sev_col,
                 modalities=['RNA', 'ATAC'],
                 n_components=1,
-                n_pcs = 10,
+                n_pcs=n_pcs,
                 output_dir=resolution_dir
             )
             
@@ -1134,47 +1107,51 @@ def find_optimal_cell_resolution_integration(
             print(f"Error at fine-tuned resolution {resolution:.3f}: {str(e)}")
         
         all_results.append(result_dict)
-        all_resolution_null_results.append(resolution_null_result)
+        all_resolution_null_results['rna'].append(resolution_null_results['rna'])
+        all_resolution_null_results['atac'].append(resolution_null_results['atac'])
 
     # Create comprehensive results dataframe BEFORE using it
     df_results = pd.DataFrame(all_results)
     df_results = df_results.sort_values("resolution")
 
-    # Generate corrected null distribution if computing p-values
-    corrected_null_distribution = None
+    # Generate corrected null distributions for BOTH modalities if computing p-values
+    corrected_null_distributions = {}
     if compute_pvalues:
-        print("\n=== GENERATING CORRECTED NULL DISTRIBUTION ===")
+        print("\n=== GENERATING CORRECTED NULL DISTRIBUTIONS ===")
         print("Accounting for resolution selection bias...")
         
-        # Filter out null results that failed to generate
-        valid_null_results = [r for r in all_resolution_null_results if r['null_scores'] is not None]
+        for modality in ['rna', 'atac']:
+            # Filter out null results that failed to generate
+            valid_null_results = [r for r in all_resolution_null_results[modality] if r['null_scores'] is not None]
+            
+            if valid_null_results:
+                print(f"\nGenerating corrected null distribution for {modality.upper()}...")
+                corrected_null_distributions[modality] = generate_corrected_null_distribution_for_modality(
+                    all_resolution_results=valid_null_results,
+                    modality=modality,
+                    dr_type=dr_type,
+                    n_permutations=num_pvalue_simulations
+                )
+                
+                # Save corrected null distribution
+                summary_dir = os.path.join(main_output_dir, "summary")
+                os.makedirs(summary_dir, exist_ok=True)
+                corrected_null_path = os.path.join(summary_dir, f'corrected_null_distribution_{modality}_{dr_type}.npy')
+                np.save(corrected_null_path, corrected_null_distributions[modality])
+                print(f"Corrected null distribution for {modality.upper()} saved to: {corrected_null_path}")
+            else:
+                print(f"Warning: No valid null distributions generated for {modality.upper()}")
         
-        if valid_null_results:
-            corrected_null_distribution = generate_corrected_null_distribution(
-                all_resolution_results=valid_null_results,
-                optimization_target=optimization_target,
-                dr_type=dr_type,
-                n_permutations=num_pvalue_simulations
-            )
-            
-            # Save corrected null distribution
-            summary_dir = os.path.join(main_output_dir, "summary")
-            os.makedirs(summary_dir, exist_ok=True)
-            corrected_null_path = os.path.join(summary_dir, f'corrected_null_distribution_{optimization_target}_{dr_type}.npy')
-            np.save(corrected_null_path, corrected_null_distribution)
-            print(f"Corrected null distribution saved to: {corrected_null_path}")
-            
+        if corrected_null_distributions:
             # Compute corrected p-values for all CCA scores and create visualization plots
             print("\n=== COMPUTING CORRECTED P-VALUES AND CREATING PLOTS ===")
             compute_all_corrected_pvalues_and_plots(
-                df_results=df_results,  # Now df_results is defined!
-                corrected_null_distribution=corrected_null_distribution,
+                df_results=df_results,
+                corrected_null_distributions=corrected_null_distributions,
                 main_output_dir=main_output_dir,
                 optimization_target=optimization_target,
                 dr_type=dr_type
             )
-        else:
-            print("Warning: No valid null distributions generated, cannot create corrected null distribution")
     
     # Find final best resolution based on target metric
     valid_results = df_results[~df_results['optimization_score'].isna()]
@@ -1225,7 +1202,6 @@ def find_optimal_cell_resolution_integration(
     print(f"\n[Find Optimal Resolution Integration] Total runtime: {time.time() - start_time:.2f} seconds\n")
 
     return final_best_resolution, df_results
-
 
 if __name__ == "__main__":
     # integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/preprocess/atac_rna_integrated.h5ad")

@@ -66,6 +66,6 @@ export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 ############################################
 export PYTHONUNBUFFERED=1
 echo "Starting main.py..."
-python Test.py
+python -u integration_optimal_resolution.py
 echo "Finished main.py."
 echo "End Time: $(date)"

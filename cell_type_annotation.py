@@ -97,7 +97,7 @@ if __name__ == "__main__":
     annotate_cell_types_with_celltypist(
         adata=adata,
         output_dir=output_dir,
-        model_name="Healthy_COVID19_PBMC.pkl",  # or custom_model_path="/path/to/model.pkl"
+        model_name="Healthy_COVID19_PBMC.pkl",  
         majority_voting=True,
         save=True
     )
