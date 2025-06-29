@@ -1245,5 +1245,6 @@ if __name__ == "__main__":
         num_pvalue_simulations=1000,
         compute_pvalues=True,
         visualize_embeddings=True,
+        n_pcs = 10,
         verbose=True
     )

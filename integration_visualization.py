@@ -552,7 +552,6 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
 
 
 # ----------------- New Functions for CCA Visualization -----------------
-
 def visualize_multimodal_embedding_with_cca(
     adata, 
     modality_col, 
@@ -701,43 +700,61 @@ def visualize_multimodal_embedding_with_cca(
 def create_modality_comparison_plot(adata, modality_col, embeddings, 
                                    point_size, alpha, output_dir, 
                                    saved_files, verbose):
-    """Create modality comparison plot."""
-    fig, ax = plt.subplots(figsize=(10, 8))
+    """Create modality comparison plot showing both embeddings side by side."""
     
-    # Use first available embedding
-    emb_key = None
-    for _, key in embeddings:
-        if key in adata.obsm or key in adata.uns:
-            emb_key = key
-            break
+    # Check which embeddings are available
+    available_embeddings = []
+    for emb_name, emb_key in embeddings:
+        if emb_key in adata.obsm or emb_key in adata.uns:
+            available_embeddings.append((emb_name, emb_key))
     
-    if emb_key is None:
+    if len(available_embeddings) == 0:
         if verbose:
             print("No embeddings found for modality comparison plot")
         return
     
-    x_coords, y_coords, _, _ = get_embedding_data(adata, emb_key, verbose=False)
-    modalities = adata.obs[modality_col].values
+    # Create subplots based on available embeddings
+    if len(available_embeddings) == 2:
+        fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+        axes = axes.flatten()
+    else:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+        axes = [ax]
     
-    # Plot each modality with different colors
+    # Define modality colors
     modality_colors = {'RNA': '#2E86AB', 'ATAC': '#E63946'}
     
-    for mod in pd.unique(modalities):
-        mod_mask = modalities == mod
-        color = modality_colors.get(mod, '#A8DADC')
-        ax.scatter(x_coords[mod_mask], y_coords[mod_mask],
-                  c=color, s=point_size, alpha=alpha,
-                  edgecolors='black', linewidth=0.5,
-                  label=mod)
-    
-    ax.set_xlabel('Dimension 1', fontsize=12)
-    ax.set_ylabel('Dimension 2', fontsize=12)
-    ax.set_title('Modality Comparison', fontsize=14, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+    # Plot each available embedding
+    for idx, (emb_name, emb_key) in enumerate(available_embeddings):
+        if idx >= len(axes):
+            break
+            
+        ax = axes[idx]
+        
+        # Get embedding data
+        x_coords, y_coords, _, _ = get_embedding_data(adata, emb_key, verbose=False)
+        modalities = adata.obs[modality_col].values
+        
+        # Plot each modality with different colors
+        for mod in pd.unique(modalities):
+            mod_mask = modalities == mod
+            color = modality_colors.get(mod, '#A8DADC')
+            ax.scatter(x_coords[mod_mask], y_coords[mod_mask],
+                      c=color, s=point_size, alpha=alpha,
+                      edgecolors='black', linewidth=0.5,
+                      label=mod)
+        
+        # Formatting
+        ax.set_xlabel('Dimension 1', fontsize=12)
+        ax.set_ylabel('Dimension 2', fontsize=12)
+        ax.set_title(f'{emb_name.capitalize()} Embedding: Modality Comparison', 
+                    fontsize=14, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
     
     plt.tight_layout()
     
+    # Save plot
     if output_dir:
         filepath = os.path.join(output_dir, 'modality_comparison_embedding.png')
         plt.savefig(filepath, dpi=300, bbox_inches='tight')
