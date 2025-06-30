@@ -1204,11 +1204,11 @@ def find_optimal_cell_resolution_integration(
     return final_best_resolution, df_results
 
 if __name__ == "__main__":
-    # integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/preprocess/atac_rna_integrated.h5ad")
-    # output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration"
+    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/preprocess/atac_rna_integrated.h5ad")
+    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration"
     
-    integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/atac_rna_integrated_subsampled_10pct.h5ad")
-    output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample"
+    # integrated_adata = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/atac_rna_integrated_subsampled_10pct.h5ad")
+    # output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/subsample"
     suppress_warnings()
 
     try:
@@ -1233,7 +1233,7 @@ if __name__ == "__main__":
         AnnData_integrated=integrated_adata,
         output_dir=output_dir,
         optimization_target="atac",  # "rna" or "atac"
-        dr_type="expression",  # "expression" or "proportion"
+        dr_type="proportion",  # "expression" or "proportion"
         n_features=2000,
         sev_col="sev.level",
         batch_col="batch",

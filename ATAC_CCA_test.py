@@ -370,6 +370,161 @@ def create_comprehensive_summary_atac(df_results, best_resolution, column, outpu
     df_sorted.to_csv(detailed_csv_path, index=False)
     print(f"Detailed results saved to: {detailed_csv_path}")
 
+def cca_analysis(pseudobulk_adata, column, sev_col, n_components=2, n_pcs=None):
+    """
+    CCA analysis for ATAC data with case-insensitive index matching.
+    
+    Parameters:
+    -----------
+    pseudobulk_adata : sc.AnnData
+        AnnData object containing dimension reduction results
+    column : str
+        Column name for dimension reduction coordinates
+    sev_col : str
+        Column name for severity levels
+    n_components : int, default 2
+        Number of CCA components
+    n_pcs : int, optional
+        Number of PCs to use for CCA analysis. If None, uses all available PCs.
+        
+    Returns:
+    --------
+    dict with CCA results including weight vectors
+    """
+    
+    result = {
+        'cca_score': np.nan,
+        'n_samples': 0,
+        'n_features': 0,
+        'column': column,
+        'valid': False,
+        'error_message': None,
+        'X_weights': None,
+        'Y_weights': None,
+        'X_loadings': None,
+        'Y_loadings': None,
+        'n_pcs_used': 0
+    }
+    
+    try:
+        # Check if required columns exist
+        if column not in pseudobulk_adata.uns:
+            result['error_message'] = f"Column '{column}' not found in uns"
+            return result
+        if sev_col not in pseudobulk_adata.obs.columns:
+            result['error_message'] = f"Column '{sev_col}' not found in obs"
+            return result
+        
+        # Extract dimension reduction coordinates
+        dr_coords_full = pseudobulk_adata.uns[column].copy()
+        
+        # Convert indices to lowercase for case-insensitive matching
+        dr_coords_full.index = dr_coords_full.index.str.lower()
+        
+        # Create a mapping from lowercase to original obs indices
+        obs_index_map = dict(zip(pseudobulk_adata.obs.index.str.lower(), pseudobulk_adata.obs.index))
+        
+        # Find common indices using lowercase
+        dr_indices_lower = dr_coords_full.index
+        obs_indices_lower = pseudobulk_adata.obs.index.str.lower()
+        common_indices_lower = dr_indices_lower.intersection(obs_indices_lower)
+        
+        if len(common_indices_lower) == 0:
+            result['error_message'] = f"No matching samples between DR results and observations. DR has {len(dr_indices_lower)} samples, obs has {len(obs_indices_lower)} samples."
+            return result
+        
+        # Filter DR coordinates to common indices
+        dr_coords_full = dr_coords_full.loc[common_indices_lower]
+        
+        # Get severity levels using the original obs indices
+        original_indices = [obs_index_map[idx] for idx in common_indices_lower]
+        sev_levels = pseudobulk_adata.obs.loc[original_indices, sev_col].values
+        
+        # Determine number of PCs to use
+        max_pcs = dr_coords_full.shape[1]
+        if n_pcs is None:
+            n_pcs_to_use = max_pcs
+        else:
+            n_pcs_to_use = min(n_pcs, max_pcs)
+        
+        # Use only the specified number of PCs
+        dr_coords = dr_coords_full.iloc[:, :n_pcs_to_use]
+        
+        # Basic validation
+        if len(dr_coords) < 3:
+            result['error_message'] = f"Insufficient samples: {len(dr_coords)}"
+            return result
+        if len(np.unique(sev_levels)) < 2:
+            result['error_message'] = "Insufficient severity level variance"
+            return result
+        
+        # Prepare data for CCA
+        X = dr_coords.values
+        y = sev_levels.reshape(-1, 1)
+        
+        result['n_samples'] = len(X)
+        result['n_features'] = X.shape[1]
+        result['n_pcs_used'] = n_pcs_to_use
+        
+        # Limit components
+        max_components = min(X.shape[1], y.shape[1], X.shape[0] - 1)
+        n_components_actual = min(n_components, max_components)
+        
+        if n_components_actual < 1:
+            result['error_message'] = "Cannot compute CCA components"
+            return result
+        
+        # Standardize data
+        scaler_X = StandardScaler()
+        scaler_y = StandardScaler()
+        X_scaled = scaler_X.fit_transform(X)
+        y_scaled = scaler_y.fit_transform(y)
+        
+        # Check for constant variance
+        if np.var(X_scaled) < 1e-10 or np.var(y_scaled) < 1e-10:
+            result['error_message'] = "Near-zero variance in standardized data"
+            return result
+        
+        # Fit CCA
+        try:
+            cca = CCA(n_components=n_components_actual, max_iter=1000, tol=1e-6)
+            cca.fit(X_scaled, y_scaled)
+            
+            # Transform and compute correlation
+            X_c, y_c = cca.transform(X_scaled, y_scaled)
+            
+            if X_c.shape[0] > 1:
+                correlation = np.corrcoef(X_c[:, 0], y_c[:, 0])[0, 1]
+                cca_score = abs(correlation)
+                
+                if np.isnan(cca_score):
+                    result['error_message'] = "CCA produced NaN correlation"
+                    return result
+            else:
+                result['error_message'] = "Insufficient samples for correlation"
+                return result
+            
+            # Store results
+            result['cca_score'] = cca_score
+            result['valid'] = True
+            
+            # Store weight vectors
+            result['X_weights'] = cca.x_weights_.flatten()
+            result['Y_weights'] = cca.y_weights_.flatten()
+            
+            # Store loadings if available
+            result['X_loadings'] = cca.x_loadings_ if hasattr(cca, 'x_loadings_') else None
+            result['Y_loadings'] = cca.y_loadings_ if hasattr(cca, 'y_loadings_') else None
+            
+        except Exception as e:
+            result['error_message'] = f"CCA computation failed: {str(e)}"
+            return result
+        
+    except Exception as e:
+        result['error_message'] = f"CCA analysis failed: {str(e)}"
+    
+    return result
+
 def find_optimal_cell_resolution_atac(
     AnnData_cell: AnnData,
     AnnData_sample: AnnData,
@@ -383,8 +538,9 @@ def find_optimal_cell_resolution_atac(
     num_DR_components: int = 30,
     num_DMs: int = 20,
     num_pvalue_simulations: int = 1000,
-    n_pcs_for_null: int = 10,
-    compute_corrected_pvalues: bool = True
+    n_pcs: int = 10,  # Renamed from n_pcs_for_null to match integration version
+    compute_corrected_pvalues: bool = True,
+    verbose: bool = True
 ) -> tuple:
     """
     Find optimal clustering resolution by maximizing CCA correlation between 
@@ -399,7 +555,7 @@ def find_optimal_cell_resolution_atac(
     output_dir : str
         Output directory for results
     column : str
-        Column name in adata.uns for dimension reduction results
+        Column name in adata.uns for dimension reduction results (e.g., 'X_DR_expression' or 'X_DR_proportion')
     n_features : int
         Number of features for pseudobulk
     sev_col : str
@@ -416,10 +572,12 @@ def find_optimal_cell_resolution_atac(
         Number of diffusion map components
     num_pvalue_simulations : int
         Number of simulations for null distribution (default: 1000)
-    n_pcs_for_null : int
-        Number of PCs to use for null distribution (default: 10)
+    n_pcs : int
+        Number of PCs to use for CCA analysis (default: 10)
     compute_corrected_pvalues : bool
         Whether to compute corrected p-values (default: True)
+    verbose : bool
+        Whether to print verbose output (default: True)
         
     Returns:
     --------
@@ -427,8 +585,11 @@ def find_optimal_cell_resolution_atac(
     """
     start_time = time.time()
     
+    # Extract DR type from column name for clearer output
+    dr_type = column.replace('X_DR_', '') if column.startswith('X_DR_') else column
+    
     # Create main output directory structure
-    main_output_dir = os.path.join(output_dir, f"ATAC_resolution_optimization_{column}")
+    main_output_dir = os.path.join(output_dir, f"ATAC_resolution_optimization_{dr_type}")
     os.makedirs(main_output_dir, exist_ok=True)
     
     # Create subdirectories
@@ -437,6 +598,7 @@ def find_optimal_cell_resolution_atac(
 
     print(f"Starting ATAC resolution optimization for {column}...")
     print(f"Using representation: {use_rep} with {num_DMs} components")
+    print(f"Using {n_pcs} PCs for CCA analysis")
     print(f"Testing resolutions from 0.01 to 1.00...")
     if compute_corrected_pvalues:
         print(f"Will compute corrected p-values with {num_pvalue_simulations} simulations per resolution")
@@ -461,7 +623,9 @@ def find_optimal_cell_resolution_atac(
             'corrected_pvalue': np.nan,
             'pass': 'coarse',
             'n_clusters': 0,
-            'n_samples': 0
+            'n_samples': 0,
+            'n_features': 0,
+            'n_pcs_used': n_pcs
         }
         
         # Initialize null results for this resolution
@@ -524,38 +688,57 @@ def find_optimal_cell_resolution_atac(
                 verbose=False
             )
 
-            # Check if column exists
-            if column not in AnnData_sample.uns:
-                print(f"Warning: {column} not found in AnnData_sample.uns. Skipping resolution {resolution:.2f}")
+            # Check if column exists in pseudobulk_adata.uns (not AnnData_sample.uns)
+            if column not in pseudobulk_adata.uns:
+                print(f"Warning: {column} not found in pseudobulk_adata.uns. Skipping resolution {resolution:.2f}")
                 all_results.append(result_dict)
                 all_resolution_null_results.append(resolution_null_result)
                 continue
             
-            # Run CCA analysis
-            try:
-                (pca_coords_2d, 
-                 sev_levels, 
-                 cca_model, 
-                 cca_score, 
-                 samples) = run_cca_on_2d_pca_from_adata(
-                    adata=pseudobulk_adata,
-                    column=column,
-                    sev_col=sev_col
-                )
+            # Run CCA analysis using the ATAC-specific cca_analysis function
+            # This allows us to specify n_pcs for the actual CCA analysis
+            cca_result = cca_analysis(
+                pseudobulk_adata=pseudobulk_adata,
+                column=column,
+                sev_col=sev_col,
+                n_components=1,  # Always use 1 component for univariate severity
+                n_pcs=n_pcs  # Use specified number of PCs for CCA
+            )
+            
+            if cca_result['valid']:
+                result_dict['cca_score'] = cca_result['cca_score']
+                result_dict['n_features'] = cca_result['n_features']
+                result_dict['n_pcs_used'] = cca_result['n_pcs_used']
+                print(f"Resolution {resolution:.2f}: CCA Score = {cca_result['cca_score']:.4f} (using {cca_result['n_pcs_used']} PCs)")
                 
-                result_dict['cca_score'] = cca_score
-                print(f"Resolution {resolution:.2f}: CCA Score = {cca_score:.4f}")
-                
-                # Save CCA plot
-                plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.2f}.png")
-                plot_cca_on_2d_pca(
-                    pca_coords_2d=pca_coords_2d,
-                    sev_levels=sev_levels,
-                    cca=cca_model,
-                    output_path=plot_path,
-                    sample_labels=None,
-                    title_suffix=f"Resolution {resolution:.2f}"
-                )
+                # Create CCA visualization plot
+                try:
+                    # Extract 2D visualization data for plotting
+                    (pca_coords_2d, 
+                     sev_levels, 
+                     cca_model, 
+                     cca_score, 
+                     samples) = run_cca_on_2d_pca_from_adata(
+                        adata=pseudobulk_adata,
+                        column=column,
+                        sev_col=sev_col
+                    )
+                    
+                    # Save CCA plot
+                    plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.2f}.png")
+                    plot_cca_on_2d_pca(
+                        pca_coords_2d=pca_coords_2d,
+                        sev_levels=sev_levels,
+                        cca=cca_model,
+                        output_path=plot_path,
+                        sample_labels=None,
+                        title_suffix=f"Resolution {resolution:.2f}"
+                    )
+                    if verbose:
+                        print(f"Created CCA visualization plot")
+                except Exception as e:
+                    if verbose:
+                        print(f"Warning: Failed to create CCA visualization: {str(e)}")
                 
                 # Generate null distribution if computing corrected p-values
                 if compute_corrected_pvalues:
@@ -564,23 +747,22 @@ def find_optimal_cell_resolution_atac(
                             pseudobulk_adata=pseudobulk_adata,
                             column=column,
                             sev_col=sev_col,
-                            n_pcs=n_pcs_for_null,
+                            n_pcs=n_pcs,  # Use same number of PCs for null distribution
                             n_permutations=num_pvalue_simulations,
                             save_path=os.path.join(resolution_dir, f'null_dist_{resolution:.2f}.npy'),
-                            verbose=False
+                            verbose=verbose
                         )
                         resolution_null_result['null_scores'] = null_distribution
                         
                         # Compute standard p-value for this resolution
-                        p_value = np.mean(null_distribution >= cca_score)
+                        p_value = np.mean(null_distribution >= cca_result['cca_score'])
                         result_dict['p_value'] = p_value
                         print(f"Resolution {resolution:.2f}: Standard p-value = {p_value:.4f}")
                         
                     except Exception as e:
                         print(f"Warning: Failed to generate null distribution: {str(e)}")
-                
-            except Exception as e:
-                print(f"Error in CCA analysis at resolution {resolution:.2f}: {str(e)}")
+            else:
+                print(f"Error in CCA analysis at resolution {resolution:.2f}: {cca_result['error_message']}")
                 
         except Exception as e:
             print(f"Error at resolution {resolution:.2f}: {str(e)}")
@@ -625,7 +807,9 @@ def find_optimal_cell_resolution_atac(
             'corrected_pvalue': np.nan,
             'pass': 'fine',
             'n_clusters': 0,
-            'n_samples': 0
+            'n_samples': 0,
+            'n_features': 0,
+            'n_pcs_used': n_pcs
         }
         
         # Initialize null results for this resolution
@@ -690,25 +874,54 @@ def find_optimal_cell_resolution_atac(
             )
 
             # Check if column exists
-            if column not in AnnData_sample.uns:
+            if column not in pseudobulk_adata.uns:
                 all_results.append(result_dict)
                 all_resolution_null_results.append(resolution_null_result)
                 continue
             
-            # Run CCA analysis
-            try:
-                (pca_coords_2d, 
-                 sev_levels, 
-                 cca_model, 
-                 cca_score, 
-                 samples) = run_cca_on_2d_pca_from_adata(
-                    adata=pseudobulk_adata,
-                    column=column,
-                    sev_col=sev_col
-                )
+            # Run CCA analysis with specified n_pcs
+            cca_result = cca_analysis(
+                pseudobulk_adata=pseudobulk_adata,
+                column=column,
+                sev_col=sev_col,
+                n_components=1,
+                n_pcs=n_pcs
+            )
+            
+            if cca_result['valid']:
+                result_dict['cca_score'] = cca_result['cca_score']
+                result_dict['n_features'] = cca_result['n_features']
+                result_dict['n_pcs_used'] = cca_result['n_pcs_used']
+                print(f"Fine-tuned Resolution {resolution:.3f}: Score {cca_result['cca_score']:.4f}")
                 
-                result_dict['cca_score'] = cca_score
-                print(f"Fine-tuned Resolution {resolution:.3f}: Score {cca_score:.4f}")
+                # Create CCA visualization plot
+                try:
+                    # Extract 2D visualization data for plotting
+                    (pca_coords_2d, 
+                     sev_levels, 
+                     cca_model, 
+                     cca_score, 
+                     samples) = run_cca_on_2d_pca_from_adata(
+                        adata=pseudobulk_adata,
+                        column=column,
+                        sev_col=sev_col
+                    )
+                    
+                    # Save CCA plot
+                    plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.3f}.png")
+                    plot_cca_on_2d_pca(
+                        pca_coords_2d=pca_coords_2d,
+                        sev_levels=sev_levels,
+                        cca=cca_model,
+                        output_path=plot_path,
+                        sample_labels=None,
+                        title_suffix=f"Resolution {resolution:.3f}"
+                    )
+                    if verbose:
+                        print(f"Created CCA visualization plot")
+                except Exception as e:
+                    if verbose:
+                        print(f"Warning: Failed to create CCA visualization: {str(e)}")
                 
                 # Generate null distribution if computing corrected p-values
                 if compute_corrected_pvalues:
@@ -717,23 +930,20 @@ def find_optimal_cell_resolution_atac(
                             pseudobulk_adata=pseudobulk_adata,
                             column=column,
                             sev_col=sev_col,
-                            n_pcs=n_pcs_for_null,
+                            n_pcs=n_pcs,
                             n_permutations=num_pvalue_simulations,
                             save_path=os.path.join(resolution_dir, f'null_dist_{resolution:.3f}.npy'),
-                            verbose=False
+                            verbose=verbose
                         )
                         resolution_null_result['null_scores'] = null_distribution
                         
                         # Compute standard p-value
-                        p_value = np.mean(null_distribution >= cca_score)
+                        p_value = np.mean(null_distribution >= cca_result['cca_score'])
                         result_dict['p_value'] = p_value
                         
                     except Exception as e:
                         print(f"Warning: Failed to generate null distribution: {str(e)}")
                     
-            except Exception as e:
-                print(f"Error in CCA analysis at fine-tuned resolution {resolution:.3f}: {str(e)}")
-                
         except Exception as e:
             print(f"Error at fine-tuned resolution {resolution:.3f}: {str(e)}")
         
@@ -761,7 +971,7 @@ def find_optimal_cell_resolution_atac(
             # Save corrected null distribution
             corrected_null_dir = os.path.join(main_output_dir, "corrected_null")
             os.makedirs(corrected_null_dir, exist_ok=True)
-            corrected_null_path = os.path.join(corrected_null_dir, f'corrected_null_distribution_{column}.npy')
+            corrected_null_path = os.path.join(corrected_null_dir, f'corrected_null_distribution_{dr_type}.npy')
             np.save(corrected_null_path, corrected_null_distribution)
             print(f"Corrected null distribution saved to: {corrected_null_path}")
             
@@ -816,6 +1026,7 @@ def find_optimal_cell_resolution_atac(
     print(f"Best resolution: {final_best_resolution:.3f}")
     print(f"Best CCA score: {final_best_score:.4f}")
     print(f"Number of clusters at best resolution: {valid_results.loc[final_best_idx, 'n_clusters']}")
+    print(f"Number of PCs used: {valid_results.loc[final_best_idx, 'n_pcs_used']}")
     if not np.isnan(final_best_pvalue):
         print(f"Standard p-value: {final_best_pvalue:.4f}")
     if compute_corrected_pvalues and not np.isnan(final_best_corrected_pvalue):
@@ -831,7 +1042,7 @@ def find_optimal_cell_resolution_atac(
     )
 
     # Save complete results
-    results_csv_path = os.path.join(main_output_dir, f"all_resolution_results_{column}.csv")
+    results_csv_path = os.path.join(main_output_dir, f"all_resolution_results_{dr_type}.csv")
     df_results.to_csv(results_csv_path, index=False)
     print(f"\nAll results saved to: {results_csv_path}")
 
@@ -848,9 +1059,9 @@ def find_optimal_cell_resolution_atac(
         f.write(f"  - Representation used: {use_rep}\n")
         f.write(f"  - Number of DM components: {num_DMs}\n")
         f.write(f"  - Number of DR components: {num_DR_components}\n")
+        f.write(f"  - Number of PCs used for CCA: {n_pcs}\n")
         f.write(f"  - Number of features: {n_features}\n")
-        f.write(f"  - Number of simulations: {num_pvalue_simulations}\n")
-        f.write(f"  - PCs used for null distribution: {n_pcs_for_null}\n\n")
+        f.write(f"  - Number of simulations: {num_pvalue_simulations}\n\n")
         
         f.write("RESULTS:\n")
         f.write(f"  - Optimal resolution: {final_best_resolution:.3f}\n")

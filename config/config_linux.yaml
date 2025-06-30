@@ -71,7 +71,7 @@ visualize_all_deg: True
 top_n_heatmap: 50
 trajectory_diff_gene_verbose: True
 top_gene_number: 30
-n_pcs_for_null: 5
+n_pcs_for_null: 10
 
 # ===== Paths for Skipping Preprocessing =====
 AnnData_cell_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad"
@@ -148,7 +148,7 @@ atac_pca_verbose: true
 atac_cca_output_dir: null
 trajectory_supervised_atac: true
 atac_cca_optimal_cell_resolution: true
-n_pcs_for_null_atatc: 2
+n_pcs_for_null_atac: 10
 
 atac_figsize: [10, 8]
 atac_point_size: 50
@@ -163,12 +163,12 @@ preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
 DimensionalityReduction: false
-trajectory_analysis: true
+trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
 
-ATAC_data: false
-trajectory_analysis_atac: false
+ATAC_data: true
+trajectory_analysis_atac: true
 atac_preprocessing: false
 atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false

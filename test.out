@@ -1,15 +1,15 @@
 ======================================
- Job ID:            18689299
+ Job ID:            18898721
  Job Name:          test
  Partition:         gpu
  Node List:         compute-123
  CPUs per Task:     16
  Memory Alloc:      409600
  GPU Requested:     1
- Start Time:        Sun Jun 29 05:19:19 PM EDT 2025
+ Start Time:        Mon Jun 30 12:00:26 AM EDT 2025
 ======================================
 Checking GPU status...
-Sun Jun 29 17:19:20 2025       
+Mon Jun 30 00:00:27 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -18,7 +18,7 @@ Sun Jun 29 17:19:20 2025
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
 |   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   47C    P0             40W /  250W |       1MiB /  32768MiB |      0%      Default |
+| N/A   43C    P0             39W /  250W |       1MiB /  32768MiB |      0%      Default |
 |                                         |                        |                  N/A |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
@@ -30,185 +30,305 @@ Sun Jun 29 17:19:20 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 Starting main.py...
-GPU Memory: 34.07 GB
-GPU Memory Available: 0.00 GB
+Start of Process
+
+Resuming process from previous progress:
+{
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "sample_distance_calculation": true,
+    "DimensionalityReduction": true,
+    "trajectory_analysis": true,
+    "visualize_data": true,
+    "initialization": false
+}
+Linux system detected.
 
 
- Finding optimal resolution begins 
+Enabling managed memory for RMM...
 
 
-Starting integrated resolution optimization...
-Optimization target: ATAC EXPRESSION
-Using representation: X_glue with 30 components
+[cell_types_atac] No cell type annotation found. Performing clustering at resolution 0.9.
+[cell_types_atac] Building neighborhood graph...
+[cell_types_atac] No target clusters specified. Using standard Leiden clustering (resolution=0.9)...
+[cell_types_atac] Found 26 clusters after Leiden clustering.
+[cell_types_atac] Finished assigning cell types.
+[standardize] Converted categorical to string format
+[standardize] Final cell types (n=26): ['1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '2', '20', '21', '22', '23', '24', '25', '26', '3', '4', '5', '6', '7', '8', '9']
+[cell_types_atac] Total runtime: 37.15 seconds
+Processing X_DR_proportion...
+
+The CCA score for X_DR_proportion is 0.6686
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_proportion.pdf
+Processing X_DR_expression...
+
+The CCA score for X_DR_expression is 0.3290
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_expression.pdf
+CCA analysis completed.
+
+[CCA] Total runtime: 0.74 seconds
+
+Starting ATAC resolution optimization for X_DR_proportion...
+Using representation: X_DM_harmony with 30 components
+Using 10 PCs for CCA analysis
 Testing resolutions from 0.01 to 1.00...
-Computing p-values with 1000 simulations per resolution
+Will compute corrected p-values with 1000 simulations per resolution
 
 === FIRST PASS: Coarse Search ===
 
 
 Testing resolution: 0.10
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.10/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.10/cca_results_complete.pkl
-RNA expression CCA Score: 0.3180
-RNA proportion CCA Score: 0.4722
-ATAC expression CCA Score: 0.6214
-ATAC proportion CCA Score: 0.1314
-Resolution 0.10: Target ATAC expression CCA Score = 0.6214
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 7
+Resolution 0.10: CCA Score = 0.8047 (using 7 PCs)
+
+The CCA score for X_DR_proportion is 0.2742
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.10/cca_plot_res_0.10.png
+Created CCA visualization plot
+Null distribution generated using 7 PC dimensions: 100.0% success rate
+Resolution 0.10: Standard p-value = 0.0040
 
 
 Testing resolution: 0.20
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.20/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.20/cca_results_complete.pkl
-RNA expression CCA Score: 0.3189
-RNA proportion CCA Score: 0.5192
-ATAC expression CCA Score: 0.4856
-ATAC proportion CCA Score: 0.3589
-Resolution 0.20: Target ATAC expression CCA Score = 0.4856
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 10
+Resolution 0.20: CCA Score = 0.8496 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.2890
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.20/cca_plot_res_0.20.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.20: Standard p-value = 0.0180
 
 
 Testing resolution: 0.30
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.30/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.30/cca_results_complete.pkl
-RNA expression CCA Score: 0.3292
-RNA proportion CCA Score: 0.5156
-ATAC expression CCA Score: 0.3586
-ATAC proportion CCA Score: 0.3435
-Resolution 0.30: Target ATAC expression CCA Score = 0.3586
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 14
+Resolution 0.30: CCA Score = 0.6965 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.1459
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.30/cca_plot_res_0.30.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.30: Standard p-value = 0.3310
 
 
 Testing resolution: 0.40
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.40/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.40/cca_results_complete.pkl
-RNA expression CCA Score: 0.3257
-RNA proportion CCA Score: 0.5689
-ATAC expression CCA Score: 0.3578
-ATAC proportion CCA Score: 0.5740
-Resolution 0.40: Target ATAC expression CCA Score = 0.3578
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 18
+Resolution 0.40: CCA Score = 0.6617 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.1843
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.40/cca_plot_res_0.40.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.40: Standard p-value = 0.4600
 
 
 Testing resolution: 0.50
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.50/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.50/cca_results_complete.pkl
-RNA expression CCA Score: 0.3005
-RNA proportion CCA Score: 0.5325
-ATAC expression CCA Score: 0.4194
-ATAC proportion CCA Score: 0.5266
-Resolution 0.50: Target ATAC expression CCA Score = 0.4194
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 19
+Resolution 0.50: CCA Score = 0.6548 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.1705
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.50/cca_plot_res_0.50.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.50: Standard p-value = 0.4970
 
 
 Testing resolution: 0.60
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.60/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.60/cca_results_complete.pkl
-RNA expression CCA Score: 0.3243
-RNA proportion CCA Score: 0.5322
-ATAC expression CCA Score: 0.4320
-ATAC proportion CCA Score: 0.4858
-Resolution 0.60: Target ATAC expression CCA Score = 0.4320
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 21
+Resolution 0.60: CCA Score = 0.8418 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.4229
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.60/cca_plot_res_0.60.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.60: Standard p-value = 0.0190
 
 
 Testing resolution: 0.70
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.70/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.70/cca_results_complete.pkl
-RNA expression CCA Score: 0.2994
-RNA proportion CCA Score: 0.5422
-ATAC expression CCA Score: 0.4875
-ATAC proportion CCA Score: 0.4983
-Resolution 0.70: Target ATAC expression CCA Score = 0.4875
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 24
+Resolution 0.70: CCA Score = 0.8966 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.6051
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.70/cca_plot_res_0.70.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.70: Standard p-value = 0.0020
 
 
 Testing resolution: 0.80
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.80/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.80/cca_results_complete.pkl
-RNA expression CCA Score: 0.3026
-RNA proportion CCA Score: 0.5356
-ATAC expression CCA Score: 0.2111
-ATAC proportion CCA Score: 0.4259
-Resolution 0.80: Target ATAC expression CCA Score = 0.2111
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 24
+Resolution 0.80: CCA Score = 0.8977 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.6100
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.80/cca_plot_res_0.80.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.80: Standard p-value = 0.0000
 
 
 Testing resolution: 0.90
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.90/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.90/cca_results_complete.pkl
-RNA expression CCA Score: 0.2636
-RNA proportion CCA Score: 0.5638
-ATAC expression CCA Score: 0.1125
-ATAC proportion CCA Score: 0.4183
-Resolution 0.90: Target ATAC expression CCA Score = 0.1125
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 26
+Resolution 0.90: CCA Score = 0.8651 (using 10 PCs)
+
+The CCA score for X_DR_proportion is 0.6686
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.90/cca_plot_res_0.90.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 0.90: Standard p-value = 0.0020
 
 
 Testing resolution: 1.00
 
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_1.00/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_1.00/cca_results_complete.pkl
-RNA expression CCA Score: 0.2710
-RNA proportion CCA Score: 0.5247
-ATAC expression CCA Score: 0.1441
-ATAC proportion CCA Score: 0.5978
-Resolution 1.00: Target ATAC expression CCA Score = 0.1441
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Number of clusters: 27
+Resolution 1.00: CCA Score = 0.8747 (using 10 PCs)
 
-Best resolution from first pass: 0.10
-Best ATAC expression CCA score: 0.6214
+The CCA score for X_DR_proportion is 0.6365
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_1.00/cca_plot_res_1.00.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+Resolution 1.00: Standard p-value = 0.0050
+
+Best resolution from first pass: 0.80
+Best CCA score: 0.8977
 
 === SECOND PASS: Fine-tuned Search ===
-Fine-tuning search from 0.05 to 0.15...
+Fine-tuning search from 0.75 to 0.85...
 
-Testing fine-tuned resolution: 0.050
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.050/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.050/cca_results_complete.pkl
-Fine-tuned Resolution 0.050: Target Score 0.6232
-Created RNA embedding visualization
-Created ATAC embedding visualization
+Testing fine-tuned resolution: 0.750
+Fine-tuned Resolution 0.750: Score 0.8789
 
-Testing fine-tuned resolution: 0.060
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.060/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.060/cca_results_complete.pkl
-Fine-tuned Resolution 0.060: Target Score 0.6175
-Created RNA embedding visualization
-Created ATAC embedding visualization
+The CCA score for X_DR_proportion is 0.6598
 
-Testing fine-tuned resolution: 0.070
-Null distribution generated using 2 PC dimensions (1 CCA component): 100.0% success rate (1000/1000 permutations)
-Summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.070/cca_results_summary.csv
-Complete results with vectors saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/subsample/Integration_optimization_atac_expression/resolution_0.070/cca_results_complete.pkl
-Fine-tuned Resolution 0.070: Target Score 0.6173
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.750/cca_plot_res_0.750.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.760
+Fine-tuned Resolution 0.760: Score 0.8628
+
+The CCA score for X_DR_proportion is 0.6470
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.760/cca_plot_res_0.760.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.770
+Fine-tuned Resolution 0.770: Score 0.8767
+
+The CCA score for X_DR_proportion is 0.6513
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.770/cca_plot_res_0.770.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.780
+Fine-tuned Resolution 0.780: Score 0.8801
+
+The CCA score for X_DR_proportion is 0.6854
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.780/cca_plot_res_0.780.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.790
+Fine-tuned Resolution 0.790: Score 0.8984
+
+The CCA score for X_DR_proportion is 0.6276
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.790/cca_plot_res_0.790.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.810
+Fine-tuned Resolution 0.810: Score 0.8768
+
+The CCA score for X_DR_proportion is 0.6819
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.810/cca_plot_res_0.810.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.820
+Fine-tuned Resolution 0.820: Score 0.8674
+
+The CCA score for X_DR_proportion is 0.6136
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.820/cca_plot_res_0.820.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.830
+Fine-tuned Resolution 0.830: Score 0.8700
+
+The CCA score for X_DR_proportion is 0.6707
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.830/cca_plot_res_0.830.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.840
+Fine-tuned Resolution 0.840: Score 0.8944
+
+The CCA score for X_DR_proportion is 0.6100
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.840/cca_plot_res_0.840.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+Testing fine-tuned resolution: 0.850
+Fine-tuned Resolution 0.850: Score 0.8770
+
+The CCA score for X_DR_proportion is 0.6786
+
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/resolutions/resolution_0.850/cca_plot_res_0.850.png
+Created CCA visualization plot
+Null distribution generated using 10 PC dimensions: 100.0% success rate
+
+=== GENERATING CORRECTED NULL DISTRIBUTION ===
+Accounting for resolution selection bias...
+Corrected null distribution saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/corrected_null/corrected_null_distribution_proportion.npy
+
+=== COMPUTING CORRECTED P-VALUES ===
+Corrected null distribution plot saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/corrected_null/corrected_null_distribution.png
+
+=== FINAL RESULTS ===
+Best resolution: 0.790
+Best CCA score: 0.8984
+Number of clusters at best resolution: 24
+Number of PCs used: 10
+Standard p-value: 0.0010
+Corrected p-value: 0.0240
+Summary plot saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/summary/resolution_optimization_summary_X_DR_proportion.png
+Summary report saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/summary/optimization_results_X_DR_proportion.txt
+Detailed results saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/summary/detailed_results_X_DR_proportion.csv
+
+All results saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/all_resolution_results_proportion.csv
+
+Final summary saved to: /dcl01/hongkai/data/data/hjiang/result/ATAC/ATAC_resolution_optimization_proportion/FINAL_SUMMARY.txt
+
+[Find Optimal Resolution ATAC] Total runtime: 1347.65 seconds
+
+End of Process
+
+Finished main.py.
+End Time: Mon Jun 30 12:24:59 AM EDT 2025
