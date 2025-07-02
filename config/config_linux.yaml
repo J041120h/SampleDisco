@@ -162,13 +162,13 @@ atac_visualization_age_size: null
 preprocessing: false
 cell_type_cluster: false
 sample_distance_calculation: false
-DimensionalityReduction: false
+DimensionalityReduction: true
 trajectory_analysis: false
 trajectory_differential_gene: false
 cluster_and_DGE: false
 
-ATAC_data: true
-trajectory_analysis_atac: true
+ATAC_data: false
+trajectory_analysis_atac: false
 atac_preprocessing: false
 atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false

@@ -1,229 +1,180 @@
-GPU Memory: 34.07 GB
-GPU Memory Available: 0.00 GB
+2025-07-02 17:19:39.779101: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-07-02 17:19:39.796489: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1751491179.816077 1241304 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1751491179.822115 1241304 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1751491179.838413 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1751491179.838438 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1751491179.838440 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1751491179.838442 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-07-02 17:19:39.843286: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Start of Process
+
+Resuming process from previous progress:
+{
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "sample_distance_calculation": true,
+    "DimensionalityReduction": true,
+    "trajectory_analysis": true,
+    "visualize_data": true,
+    "initialization": false
+}
+Linux system detected.
 
 
- Finding optimal resolution begins 
+Enabling managed memory for RMM...
 
 
+Using GPU for pseudobulk calculation~
+Using GPU with rapids_singlecell
+GPU Device: Tesla V100S-PCIE-32GB
+Processing 16 cell types across 8 samples
+Transferring data to GPU...
+Creating layer for B_naive
+Creating layer for CD14_mono
+Creating layer for CD16_mono
+Creating layer for CD4.CM
+Creating layer for CD4.IL22
+Creating layer for CD4.Naive
+Creating layer for CD4.Tfh
+Creating layer for CD8.EM
+Creating layer for CD8.Naive
+Creating layer for CD8.TE
+Creating layer for CD83_CD14_mono
+Creating layer for DC3
+Creating layer for HSC_CD38pos
+Creating layer for NK_16hi
+Creating layer for NK_56hi
+Creating layer for pDC
 
-=== Converting sev.level to numeric ===
-Converting severity data to numeric...
-Original unique values: [1.0, 2.0, 3.0, 4.0]
-✓ Direct numeric conversion successful
-Conversion complete: 162916/162916 values converted
-Final range: [1.000, 4.000]
-Variance: 1.332256
-=== Data Quality Check ===
-Missing values in sev.level: 0
-Missing values in modality: 0
+Processing cell type: B_naive
+filtered out 72 genes that are detected in less than 1 cells
+  Applying batch correction on 6762 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6762 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process B_naive: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Severity level distribution:
-sev.level
-2.0    57870
-1.0    46180
-4.0    43880
-3.0    14986
-Name: count, dtype: int64
+Processing cell type: CD14_mono
+filtered out 17 genes that are detected in less than 1 cells
+  Applying batch correction on 6817 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6817 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD14_mono: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Modality distribution:
-modality
-ATAC    88215
-RNA     74701
-Name: count, dtype: int64
+Processing cell type: CD16_mono
+filtered out 42 genes that are detected in less than 1 cells
+  Applying batch correction on 6792 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6792 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD16_mono: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-RNA - Severity variance: 1.191391
-RNA - Unique severity levels: 4
+Processing cell type: CD4.CM
+filtered out 113 genes that are detected in less than 1 cells
+  Applying batch correction on 6721 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6721 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD4.CM: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-ATAC - Severity variance: 1.350928
-ATAC - Unique severity levels: 4
-Starting integrated resolution optimization...
-Optimization target: ATAC
-Using representation: X_glue with 30 components
-Testing resolutions from 0.01 to 1.00...
-Computing p-values with 1000 simulations per resolution
+Processing cell type: CD4.IL22
+filtered out 8 genes that are detected in less than 1 cells
+  Applying batch correction on 6826 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6826 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD4.IL22: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-=== FIRST PASS: Coarse Search ===
+Processing cell type: CD4.Naive
+filtered out 22 genes that are detected in less than 1 cells
+  Applying batch correction on 6812 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6812 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD4.Naive: highly_variable_genes() got an unexpected keyword argument 'subset'
 
+Processing cell type: CD4.Tfh
+filtered out 6 genes that are detected in less than 1 cells
+  Applying batch correction on 6828 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6828 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD4.Tfh: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Testing resolution: 0.10
+Processing cell type: CD8.EM
+filtered out 129 genes that are detected in less than 1 cells
+  Applying batch correction on 6705 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6705 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD8.EM: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.8995, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.5249, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.4917, p-value: nan
-Resolution 0.10: Optimization Score = 1.0000
+Processing cell type: CD8.Naive
+filtered out 167 genes that are detected in less than 1 cells
+  Applying batch correction on 6667 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6667 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD8.Naive: highly_variable_genes() got an unexpected keyword argument 'subset'
 
+Processing cell type: CD8.TE
+filtered out 22 genes that are detected in less than 1 cells
+  Applying batch correction on 6812 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6812 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD8.TE: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Testing resolution: 0.20
+Processing cell type: CD83_CD14_mono
+  Applying batch correction on 6834 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6834 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process CD83_CD14_mono: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.9310, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.6113, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.6204, p-value: nan
-Resolution 0.20: Optimization Score = 1.0000
+Processing cell type: DC3
+filtered out 32 genes that are detected in less than 1 cells
+  Applying batch correction on 6802 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6802 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process DC3: highly_variable_genes() got an unexpected keyword argument 'subset'
 
+Processing cell type: HSC_CD38pos
+filtered out 120 genes that are detected in less than 1 cells
+  Applying batch correction on 6714 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6714 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process HSC_CD38pos: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Testing resolution: 0.30
+Processing cell type: NK_16hi
+filtered out 19 genes that are detected in less than 1 cells
+  Applying batch correction on 6815 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6815 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process NK_16hi: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.8856, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.7290, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.9031, p-value: nan
-Resolution 0.30: Optimization Score = 1.0000
+Processing cell type: NK_56hi
+filtered out 154 genes that are detected in less than 1 cells
+  Applying batch correction on 6680 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6680 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process NK_56hi: highly_variable_genes() got an unexpected keyword argument 'subset'
 
+Processing cell type: pDC
+filtered out 110 genes that are detected in less than 1 cells
+  Applying batch correction on 6724 genes
+... storing 'batch' as categorical
+  Combat completed successfully, 6724 genes remaining
+  Selecting top 2000 HVGs using rapids_singlecell
+  Failed to process pDC: highly_variable_genes() got an unexpected keyword argument 'subset'
 
-Testing resolution: 0.40
-
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.9046, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.7310, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.8496, p-value: nan
-Resolution 0.40: Optimization Score = 1.0000
-
-
-Testing resolution: 0.50
-
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.8986, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.7322, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.9123, p-value: nan
-Resolution 0.50: Optimization Score = 1.0000
-
-
-Testing resolution: 0.60
-
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.8418, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.7947, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.8500, p-value: nan
-Resolution 0.60: Optimization Score = 1.0000
-
-
-Testing resolution: 0.70
-
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.8709, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.7795, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.9543, p-value: nan
-Resolution 0.70: Optimization Score = 1.0000
-
-
-Testing resolution: 0.80
-
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.8786, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.8391, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.9760, p-value: nan
-Resolution 0.80: Optimization Score = 1.0000
-
-
-Testing resolution: 0.90
-
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.9087, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.8358, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 0.9999, p-value: nan
-Resolution 0.90: Optimization Score = 1.0000
-
-
-Testing resolution: 1.00
-
-Filtered X_DR_expression from 64 to 40 samples for RNA
-RNA expression CCA Score: 0.8724, p-value: nan
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-RNA proportion CCA Score: 0.9299, p-value: nan
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-ATAC expression CCA Score: 1.0000, p-value: nan
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-ATAC proportion CCA Score: 1.0000, p-value: nan
-Resolution 1.00: Optimization Score = 1.0000
-
-Best resolution from first pass: 1.00
-Best optimization score: 1.0000
-
-=== SECOND PASS: Fine-tuned Search ===
-Fine-tuning search from 0.95 to 1.00...
-
-Testing fine-tuned resolution: 0.950
-Filtered X_DR_expression from 64 to 40 samples for RNA
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-Fine-tuned Resolution 0.950: Score 1.0000
-
-Testing fine-tuned resolution: 0.960
-Filtered X_DR_expression from 64 to 40 samples for RNA
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-Fine-tuned Resolution 0.960: Score 1.0000
-
-Testing fine-tuned resolution: 0.970
-Filtered X_DR_expression from 64 to 40 samples for RNA
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-Fine-tuned Resolution 0.970: Score 1.0000
-
-Testing fine-tuned resolution: 0.980
-Filtered X_DR_expression from 64 to 40 samples for RNA
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-Fine-tuned Resolution 0.980: Score 1.0000
-
-Testing fine-tuned resolution: 0.990
-Filtered X_DR_expression from 64 to 40 samples for RNA
-Filtered X_DR_proportion from 64 to 40 samples for RNA
-Filtered X_DR_expression from 64 to 24 samples for ATAC
-Filtered X_DR_proportion from 64 to 24 samples for ATAC
-Fine-tuned Resolution 0.990: Score 1.0000
-
-=== FINAL RESULTS ===
-Best resolution: 0.950
-Best optimization score (atac): 1.0000
-Best RNA scores - Expression: 0.9489, Proportion: 0.9486
-Best ATAC scores - Expression: 1.0000, Proportion: 1.0000
-
-Comprehensive results saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/resolution_scores_comprehensive_integration_atac.csv
-Comprehensive plot saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/resolution_optimization_comprehensive_integration_atac.png
-P-value summary saved to: /dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_resolution_optimization_integration_atac/pvalue_results/pvalue_summary_integration_atac.txt
-
-[Find Optimal Resolution Integration] Total runtime: 565.58 seconds
-
+Concatenating all cell type HVGs into single AnnData
+Error: No HVGs found across all cell types

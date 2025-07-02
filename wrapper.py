@@ -29,6 +29,7 @@ from sample_clustering.RAISIN_TEST import *
 from ATAC_general_pipeline import *
 from ATAC_visualization import *
 from ATAC_CCA_test import *
+from pseudo_adata_linux import *
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -450,7 +451,9 @@ def wrapper(
         if status_flags["cell_type_cluster"] == False:
             raise ValueError("Cell type clustering is required before dimension reduction.")
 
-        pseudobulk_df,pseudobulk_adata = compute_pseudobulk_adata(
+        if linux_system:
+            print("Using GPU for pseudobulk calculation~")
+            pseudobulk_df,pseudobulk_adata = compute_pseudobulk_adata_linux(
             adata=AnnData_sample,
             batch_col=batch_col,
             sample_col=sample_col,
@@ -459,6 +462,16 @@ def wrapper(
             n_features=n_features,
             verbose=pseudobulk_verbose
         )
+        else:
+            pseudobulk_df,pseudobulk_adata = compute_pseudobulk_adata(
+                adata=AnnData_sample,
+                batch_col=batch_col,
+                sample_col=sample_col,
+                celltype_col=celltype_col,
+                output_dir=pseudobulk_output_dir,
+                n_features=n_features,
+                verbose=pseudobulk_verbose
+            )
 
         pseudobulk_anndata = process_anndata_with_pca(
             adata=AnnData_sample,
