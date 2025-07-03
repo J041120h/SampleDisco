@@ -29,7 +29,7 @@ from sample_clustering.RAISIN_TEST import *
 from ATAC_general_pipeline import *
 from ATAC_visualization import *
 from ATAC_CCA_test import *
-from pseudo_adata_linux import *
+from cell_proportion_pseudotime import visualize_cell_proportion_pseudotime
 
 def wrapper(
     # ===== Harmony Preprocessing Parameters =====
@@ -300,6 +300,7 @@ def wrapper(
         from linux.harmony_linux import harmony_linux
         from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
         from linux.CCA_test_linux import find_optimal_cell_resolution_linux
+        from pseudo_adata_linux import compute_pseudobulk_adata_linux
         # Enable `managed_memory`
         import rmm
         from rmm.allocators.cupy import rmm_cupy_allocator
@@ -453,14 +454,14 @@ def wrapper(
 
         if linux_system:
             pseudobulk_df,pseudobulk_adata = compute_pseudobulk_adata_linux(
-            adata=AnnData_sample,
-            batch_col=batch_col,
-            sample_col=sample_col,
-            celltype_col=celltype_col,
-            output_dir=pseudobulk_output_dir,
-            n_features=n_features,
-            verbose=pseudobulk_verbose
-        )
+                adata=AnnData_sample,
+                batch_col=batch_col,
+                sample_col=sample_col,
+                celltype_col=celltype_col,
+                output_dir=pseudobulk_output_dir,
+                n_features=n_features,
+                verbose=pseudobulk_verbose
+            )
         else:
             pseudobulk_df,pseudobulk_adata = compute_pseudobulk_adata(
                 adata=AnnData_sample,
@@ -518,6 +519,7 @@ def wrapper(
                     sev_col = sev_col_cca,
                     verbose = trajectory_verbose
                 )
+            visualize_cell_proportion_pseudotime(ptime_expression,output_dir)
             if cca_optimal_cell_resolution:
                 if linux_system:
                     find_optimal_cell_resolution_linux(
