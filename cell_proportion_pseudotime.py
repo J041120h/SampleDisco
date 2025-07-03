@@ -11,7 +11,6 @@ warnings.filterwarnings('ignore')
 
 
 def visualize_cell_proportion_pseudotime(
-    final_adata,
     pseudotime: Dict[str, float],
     output_dir: str,
     verbose: bool = False,
