@@ -452,7 +452,6 @@ def wrapper(
             raise ValueError("Cell type clustering is required before dimension reduction.")
 
         if linux_system:
-            print("Using GPU for pseudobulk calculation~")
             pseudobulk_df,pseudobulk_adata = compute_pseudobulk_adata_linux(
             adata=AnnData_sample,
             batch_col=batch_col,

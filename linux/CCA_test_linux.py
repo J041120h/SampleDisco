@@ -10,6 +10,7 @@ from pseudo_adata import compute_pseudobulk_adata  # Updated import
 from DR import process_anndata_with_pca
 from CCA_test import * 
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
+from pseudo_adata_linux import compute_pseudobulk_adata_linux
 
 def find_optimal_cell_resolution_linux(
     AnnData_cell: AnnData,
@@ -134,7 +135,7 @@ def find_optimal_cell_resolution_linux(
             # Compute pseudobulk data
             pseudobulk_dict, pseudobulk_adata = time_function(
                 "  🧪 Pseudobulk computation",
-                compute_pseudobulk_adata,
+                compute_pseudobulk_adata_linux,
                 adata=AnnData_sample, 
                 batch_col=batch_col, 
                 sample_col=sample_col, 

@@ -11,85 +11,117 @@ import contextlib
 import io
 
 # GPU imports
-import cupy as cp
-from cupyx.scipy.sparse import csr_matrix as cp_csr_matrix
+import torch
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, TensorDataset
 
 # Import the TF-IDF function - assuming it exists
 from tf_idf import tfidf_memory_efficient
 
 
-def _extract_sample_metadata(
-    cell_adata: sc.AnnData,
-    sample_adata: sc.AnnData,
-    sample_col: str,
-    exclude_cols: List[str] | None = None,
-) -> sc.AnnData:
-    """Detect and copy sample‑level metadata."""
-    if exclude_cols is None:
-        exclude_cols = []
-    exclude_cols = set(exclude_cols) | {sample_col}
-
-    grouped = cell_adata.obs.groupby(sample_col)
-    meta_dict: Dict[str, pd.Series] = {}
-
-    for col in cell_adata.obs.columns:
-        if col in exclude_cols:
-            continue
-        uniques_per_sample = grouped[col].apply(lambda x: x.dropna().unique())
-        if uniques_per_sample.apply(lambda u: len(u) <= 1).all():
-            meta_dict[col] = uniques_per_sample.apply(lambda u: u[0] if len(u) else np.nan)
-
-    if meta_dict:
-        meta_df = pd.DataFrame(meta_dict)
-        meta_df.index.name = "sample"
-        sample_adata.obs = sample_adata.obs.join(meta_df, how="left")
-
-    return sample_adata
+def sparse_to_torch_sparse(matrix, device='cuda'):
+    """Convert scipy sparse matrix to PyTorch sparse tensor."""
+    if not issparse(matrix):
+        return torch.from_numpy(matrix).float().to(device)
+    
+    coo = matrix.tocoo()
+    indices = torch.LongTensor(np.vstack((coo.row, coo.col))).to(device)
+    values = torch.FloatTensor(coo.data).to(device)
+    shape = torch.Size(coo.shape)
+    
+    return torch.sparse_coo_tensor(indices, values, shape, dtype=torch.float32, device=device)
 
 
-def ensure_cpu_arrays(adata):
+def torch_sparse_mean(sparse_tensor, dim=0, keepdim=False):
+    """Compute mean of sparse tensor along dimension."""
+    # Sum along dimension
+    sum_result = torch.sparse.sum(sparse_tensor, dim=dim)
+    
+    # Count non-zero elements along dimension
+    ones = torch.ones_like(sparse_tensor.values())
+    indices = sparse_tensor.indices()
+    shape = sparse_tensor.shape
+    
+    ones_tensor = torch.sparse_coo_tensor(indices, ones, shape, device=sparse_tensor.device)
+    count = torch.sparse.sum(ones_tensor, dim=dim)
+    
+    # Avoid division by zero
+    count = torch.where(count == 0, torch.ones_like(count), count)
+    
+    if sparse_tensor.is_sparse:
+        # Convert to dense for division
+        mean_result = sum_result.to_dense() / count.to_dense()
+    else:
+        mean_result = sum_result / count
+    
+    if not keepdim and mean_result.dim() > 1:
+        mean_result = mean_result.squeeze(dim)
+    
+    return mean_result
+
+
+def batch_process_gpu(X_gpu, indices_list, batch_size=1000, operation='mean'):
     """
-    Ensure all arrays in AnnData object are on CPU (not GPU).
-    This prevents "Implicit conversion to NumPy array" errors.
+    Process data in batches on GPU using PyTorch.
+    
+    Args:
+        X_gpu: GPU tensor (can be sparse or dense)
+        indices_list: List of index arrays for different groups
+        batch_size: Number of groups to process simultaneously
+        operation: 'mean' or 'sum'
+    
+    Returns:
+        List of results for each group
     """
-    # Convert main matrix
-    if hasattr(adata.X, 'get'):
-        adata.X = adata.X.get()
+    device = X_gpu.device if hasattr(X_gpu, 'device') else 'cuda'
+    results = []
     
-    # Convert layers
-    if hasattr(adata, 'layers'):
-        for key in list(adata.layers.keys()):
-            if hasattr(adata.layers[key], 'get'):
-                adata.layers[key] = adata.layers[key].get()
+    # Process in batches
+    for i in range(0, len(indices_list), batch_size):
+        batch_indices = indices_list[i:i + batch_size]
+        batch_results = []
+        
+        for indices in batch_indices:
+            if len(indices) == 0:
+                # Empty result
+                if X_gpu.is_sparse:
+                    result = torch.zeros(X_gpu.shape[1], device=device)
+                else:
+                    result = torch.zeros(X_gpu.shape[1], device=device)
+            else:
+                # Convert indices to tensor
+                idx_tensor = torch.tensor(indices, dtype=torch.long, device=device)
+                
+                # Extract subset
+                if X_gpu.is_sparse:
+                    # For sparse tensors, we need to handle differently
+                    subset = torch.index_select(X_gpu, 0, idx_tensor)
+                    if operation == 'mean':
+                        result = torch_sparse_mean(subset, dim=0)
+                    else:  # sum
+                        result = torch.sparse.sum(subset, dim=0).to_dense()
+                else:
+                    subset = X_gpu[idx_tensor]
+                    if operation == 'mean':
+                        result = torch.mean(subset, dim=0)
+                    else:  # sum
+                        result = torch.sum(subset, dim=0)
+                
+            batch_results.append(result)
+        
+        # Stack batch results
+        if batch_results:
+            batch_tensor = torch.stack(batch_results)
+            results.append(batch_tensor.cpu().numpy())
     
-    # Convert obsm (embeddings)
-    if hasattr(adata, 'obsm'):
-        for key in list(adata.obsm.keys()):
-            if hasattr(adata.obsm[key], 'get'):
-                adata.obsm[key] = adata.obsm[key].get()
-    
-    # Convert varm
-    if hasattr(adata, 'varm'):
-        for key in list(adata.varm.keys()):
-            if hasattr(adata.varm[key], 'get'):
-                adata.varm[key] = adata.varm[key].get()
-    
-    # Convert obsp (pairwise arrays)
-    if hasattr(adata, 'obsp'):
-        for key in list(adata.obsp.keys()):
-            if hasattr(adata.obsp[key], 'get'):
-                adata.obsp[key] = adata.obsp[key].get()
-    
-    # Convert varp
-    if hasattr(adata, 'varp'):
-        for key in list(adata.varp.keys()):
-            if hasattr(adata.varp[key], 'get'):
-                adata.varp[key] = adata.varp[key].get()
-    
-    return adata
+    # Concatenate all results
+    if results:
+        return np.vstack(results)
+    else:
+        return np.array([])
 
 
-def compute_pseudobulk_layers_gpu_rsc(
+def compute_pseudobulk_layers_torch(
     adata: sc.AnnData,
     batch_col: str = 'batch',
     sample_col: str = 'sample',
@@ -99,19 +131,29 @@ def compute_pseudobulk_layers_gpu_rsc(
     normalize: bool = True,
     target_sum: float = 1e4,
     atac: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    batch_size: int = 1000,
+    use_mixed_precision: bool = True
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
-    GPU-accelerated compute pseudobulk expression using rapids_singlecell.
+    PyTorch GPU-accelerated compute pseudobulk expression with batching.
     
-    This version uses rsc functions instead of custom GPU implementations.
+    Additional parameters:
+        batch_size: Number of samples to process simultaneously
+        use_mixed_precision: Use FP16 for faster computation
     """
     start_time = time.time() if verbose else None
     
+    # Set up PyTorch
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available. This function requires GPU.")
+    
+    device = torch.device('cuda')
+    torch.cuda.empty_cache()
+    
     if verbose:
-        print(f"Using GPU with rapids_singlecell")
-        if cp.cuda.is_available():
-            print(f"GPU Device: {cp.cuda.runtime.getDeviceProperties(0)['name'].decode()}")
+        print(f"Using PyTorch with GPU: {torch.cuda.get_device_name(0)}")
+        print(f"Batch size: {batch_size}, Mixed precision: {use_mixed_precision}")
     
     # Create output directory
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
@@ -132,17 +174,26 @@ def compute_pseudobulk_layers_gpu_rsc(
     if verbose:
         print(f"Processing {len(cell_types)} cell types across {len(samples)} samples")
     
-    # Transfer main adata to GPU once
+    # Convert data to PyTorch tensor on GPU
     if verbose:
-        print("Transferring data to GPU...")
-    rsc.get.anndata_to_GPU(adata)
+        print("Transferring data to GPU using PyTorch...")
     
-    # Phase 1: Create pseudobulk AnnData with layers
-    pseudobulk_adata = _create_pseudobulk_layers_rsc(
-        adata, samples, cell_types, sample_col, celltype_col, batch_col, verbose
+    # Convert to appropriate format
+    if issparse(adata.X):
+        X_torch = sparse_to_torch_sparse(adata.X, device=device)
+    else:
+        X_torch = torch.from_numpy(adata.X).float().to(device)
+    
+    if use_mixed_precision and not X_torch.is_sparse:
+        X_torch = X_torch.half()
+    
+    # Phase 1: Create pseudobulk AnnData with layers using PyTorch
+    pseudobulk_adata = _create_pseudobulk_layers_torch(
+        adata, X_torch, samples, cell_types, sample_col, celltype_col, 
+        batch_col, batch_size, verbose
     )
     
-    # Phase 2: Process each cell type layer
+    # Phase 2: Process each cell type layer with batching
     all_hvg_data = {}
     all_gene_names = []
     cell_types_to_remove = []
@@ -160,110 +211,18 @@ def compute_pseudobulk_layers_gpu_rsc(
                 var=pseudobulk_adata.var.copy()
             )
             
-            # Transfer to GPU for processing
-            rsc.get.anndata_to_GPU(temp_adata)
-            
-            # Filter out genes with zero expression using rsc
-            rsc.pp.filter_genes(temp_adata, min_cells=1)
-            
-            if temp_adata.n_vars == 0:
-                if verbose:
-                    print(f"  No expressed genes for {cell_type}, skipping")
-                cell_types_to_remove.append(cell_type)
-                continue
-            
-            # Apply normalization using rsc
-            if normalize:
-                if atac:
-                    # For ATAC, we need to transfer back to CPU for TF-IDF
-                    rsc.get.anndata_to_CPU(temp_adata)
-                    tfidf_memory_efficient(temp_adata, scale_factor=target_sum)
-                    rsc.get.anndata_to_GPU(temp_adata)
-                else:
-                    # Use rsc normalization functions
-                    rsc.pp.normalize_total(temp_adata, target_sum=target_sum)
-                    rsc.pp.log1p(temp_adata)
-            
-            # Transfer to CPU for NaN checking and batch correction
-            rsc.get.anndata_to_CPU(temp_adata)
-            
-            # Check for NaN values
-            if issparse(temp_adata.X):
-                nan_genes = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
-            else:
-                nan_genes = np.isnan(temp_adata.X).any(axis=0)
-            
-            if nan_genes.any():
-                if verbose:
-                    print(f"  Found {nan_genes.sum()} genes with NaN values, removing them")
-                temp_adata = temp_adata[:, ~nan_genes].copy()
-            
-            # Apply batch correction if needed (Combat requires CPU)
-            if batch_correction and len(temp_adata.obs[batch_col].unique()) > 1:
-                min_batch_size = temp_adata.obs[batch_col].value_counts().min()
-                if min_batch_size >= 2:
-                    try:
-                        if verbose:
-                            print(f"  Applying batch correction on {temp_adata.n_vars} genes")
-                        
-                        with contextlib.redirect_stdout(io.StringIO()), \
-                             warnings.catch_warnings():
-                            warnings.filterwarnings("ignore")
-                            sc.pp.combat(temp_adata, key=batch_col)
-                        
-                        # Remove any NaN values after Combat
-                        if issparse(temp_adata.X):
-                            nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
-                        else:
-                            nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
-                        
-                        if nan_genes_post.any():
-                            if verbose:
-                                print(f"  Found {nan_genes_post.sum()} genes with NaN after Combat, removing them")
-                            temp_adata = temp_adata[:, ~nan_genes_post].copy()
-                        
-                        if verbose:
-                            print(f"  Combat completed successfully, {temp_adata.n_vars} genes remaining")
-                    
-                    except Exception as e:
-                        if verbose:
-                            print(f"  Combat failed for {cell_type}: {str(e)}")
-                            print(f"  Proceeding without batch correction for this cell type")
-            
-            # Transfer back to GPU for HVG selection
-            rsc.get.anndata_to_GPU(temp_adata)
-            
-            # Select highly variable genes using rsc
-            if verbose:
-                print(f"  Selecting top {n_features} HVGs using rapids_singlecell")
-            
-            n_hvgs = min(n_features, temp_adata.n_vars)
-            
-            # Use rsc's highly_variable_genes function
-            rsc.pp.highly_variable_genes(
-                temp_adata,
-                n_top_genes=n_hvgs,
-                subset=False,  # Don't subset yet, just mark
-                flavor='seurat_v3' if normalize else 'seurat'
+            # Process with PyTorch for HVG selection
+            hvg_genes, hvg_expr = _select_hvgs_torch(
+                temp_adata, n_features, normalize, target_sum, atac,
+                batch_col, batch_correction, device, batch_size, 
+                use_mixed_precision, verbose
             )
-            
-            # Transfer back to CPU for data extraction
-            rsc.get.anndata_to_CPU(temp_adata)
-            
-            # Extract HVG data
-            hvg_mask = temp_adata.var['highly_variable']
-            hvg_genes = temp_adata.var.index[hvg_mask].tolist()
             
             if len(hvg_genes) == 0:
                 if verbose:
                     print(f"  No HVGs found for {cell_type}, skipping")
                 cell_types_to_remove.append(cell_type)
                 continue
-            
-            # Extract expression values for HVGs
-            hvg_expr = temp_adata[:, hvg_mask].X
-            if issparse(hvg_expr):
-                hvg_expr = hvg_expr.toarray()
             
             # Create prefixed gene names and store data
             prefixed_genes = [f"{cell_type} - {g}" for g in hvg_genes]
@@ -288,55 +247,16 @@ def compute_pseudobulk_layers_gpu_rsc(
     # Remove failed cell types
     cell_types = [ct for ct in cell_types if ct not in cell_types_to_remove]
     
-    # Phase 3: Create concatenated AnnData
-    if verbose:
-        print("\nConcatenating all cell type HVGs into single AnnData")
-    
-    all_unique_genes = sorted(list(set(all_gene_names)))
-    
-    if len(all_unique_genes) == 0:
-        raise ValueError("No HVGs found across all cell types")
-    
-    concat_matrix = np.zeros((len(samples), len(all_unique_genes)))
-    
-    for i, sample in enumerate(samples):
-        for j, gene in enumerate(all_unique_genes):
-            if sample in all_hvg_data and gene in all_hvg_data[sample]:
-                concat_matrix[i, j] = all_hvg_data[sample][gene]
-    
-    concat_adata = sc.AnnData(
-        X=concat_matrix,
-        obs=pd.DataFrame(index=samples),
-        var=pd.DataFrame(index=all_unique_genes)
+    # Phase 3: Create concatenated AnnData with PyTorch optimization
+    concat_adata = _create_concat_adata_torch(
+        all_hvg_data, all_gene_names, samples, n_features, 
+        device, batch_size, verbose
     )
     
-    # Apply final HVG selection using rsc
-    if verbose:
-        print(f"Applying final HVG selection on {concat_adata.n_vars} concatenated genes")
-    
-    # Transfer to GPU for final processing
-    rsc.get.anndata_to_GPU(concat_adata)
-    
-    rsc.pp.filter_genes(concat_adata, min_cells=1)
-    
-    final_n_hvgs = min(n_features, concat_adata.n_vars)
-    if final_n_hvgs < concat_adata.n_vars:
-        rsc.pp.highly_variable_genes(
-            concat_adata,
-            n_top_genes=final_n_hvgs,
-            subset=True
-        )
-    
-    # Transfer back to CPU
-    rsc.get.anndata_to_CPU(concat_adata)
-    concat_adata = ensure_cpu_arrays(concat_adata)
-    
-    if verbose:
-        print(f"Final AnnData has {concat_adata.n_obs} samples and {concat_adata.n_vars} genes")
-    
-    # Compute cell proportions
-    cell_proportion_df = _compute_cell_proportions(
-        adata, samples, cell_types, sample_col, celltype_col
+    # Compute cell proportions using PyTorch
+    cell_proportion_df = _compute_cell_proportions_torch(
+        adata, samples, cell_types, sample_col, celltype_col, 
+        device, batch_size
     )
     
     # Create final expression matrix
@@ -344,8 +264,9 @@ def compute_pseudobulk_layers_gpu_rsc(
         all_hvg_data, all_gene_names, samples, cell_types, verbose
     )
     
-    # Transfer original adata back to CPU
-    rsc.get.anndata_to_CPU(adata)
+    # Clear GPU memory
+    del X_torch
+    torch.cuda.empty_cache()
     
     if verbose:
         elapsed_time = time.time() - start_time
@@ -354,18 +275,19 @@ def compute_pseudobulk_layers_gpu_rsc(
     return cell_expression_hvg_df, cell_proportion_df, concat_adata
 
 
-def _create_pseudobulk_layers_rsc(
+def _create_pseudobulk_layers_torch(
     adata: sc.AnnData,
+    X_torch: torch.Tensor,
     samples: list,
     cell_types: list,
     sample_col: str,
     celltype_col: str,
     batch_col: str,
+    batch_size: int,
     verbose: bool
 ) -> sc.AnnData:
     """
-    Create pseudobulk AnnData with cell type layers using GPU acceleration.
-    Note: adata should already be on GPU when this is called.
+    Create pseudobulk AnnData with cell type layers using PyTorch batching.
     """
     
     # Create observation dataframe
@@ -393,15 +315,12 @@ def _create_pseudobulk_layers_rsc(
     # Pre-compute sample indices for efficiency
     sample_indices = {sample: idx for idx, sample in enumerate(samples)}
     
-    # Get the GPU matrix
-    X_gpu = adata.X
-    
     # Add layers for each cell type
     for cell_type in cell_types:
         if verbose:
             print(f"Creating layer for {cell_type}")
         
-        layer_matrix = np.zeros((n_samples, n_genes))
+        layer_matrix = np.zeros((n_samples, n_genes), dtype=np.float32)
         
         # Get all cells for this cell type
         ct_mask = adata.obs[celltype_col] == cell_type
@@ -411,45 +330,246 @@ def _create_pseudobulk_layers_rsc(
             pseudobulk_adata.layers[cell_type] = layer_matrix
             continue
         
-        # Group by sample
+        # Group by sample and prepare batches
         ct_samples = adata.obs.loc[ct_mask, sample_col].values
+        sample_groups = {}
         
-        for sample in np.unique(ct_samples):
+        for idx, sample in zip(ct_indices, ct_samples):
+            if sample not in sample_groups:
+                sample_groups[sample] = []
+            sample_groups[sample].append(idx)
+        
+        # Process samples in batches
+        sample_list = list(sample_groups.keys())
+        indices_list = [sample_groups[s] for s in sample_list]
+        
+        # Batch process
+        results = batch_process_gpu(X_torch, indices_list, batch_size, operation='mean')
+        
+        # Fill in the layer matrix
+        for i, sample in enumerate(sample_list):
             sample_idx = sample_indices[sample]
-            sample_ct_mask = ct_indices[ct_samples == sample]
-            
-            if len(sample_ct_mask) > 0:
-                # GPU computation using CuPy
-                indices_gpu = cp.array(sample_ct_mask)
-                
-                # Extract subset and compute mean
-                if hasattr(X_gpu, 'data'):  # Sparse matrix
-                    subset = X_gpu[indices_gpu, :]
-                    expr_mean = subset.mean(axis=0)
-                    # Convert sparse output to dense array
-                    if hasattr(expr_mean, 'toarray'):
-                        expr_mean = expr_mean.toarray().flatten()
-                    elif hasattr(expr_mean, 'A1'):
-                        expr_mean = expr_mean.A1
-                    layer_matrix[sample_idx, :] = cp.asnumpy(expr_mean)
-                else:  # Dense matrix
-                    subset = X_gpu[indices_gpu, :]
-                    expr_mean = cp.mean(subset, axis=0)
-                    layer_matrix[sample_idx, :] = cp.asnumpy(expr_mean)
+            layer_matrix[sample_idx, :] = results[i]
         
         pseudobulk_adata.layers[cell_type] = layer_matrix
     
     return pseudobulk_adata
 
 
-def _compute_cell_proportions(
+def _select_hvgs_torch(
+    temp_adata: sc.AnnData,
+    n_features: int,
+    normalize: bool,
+    target_sum: float,
+    atac: bool,
+    batch_col: str,
+    batch_correction: bool,
+    device: torch.device,
+    batch_size: int,
+    use_mixed_precision: bool,
+    verbose: bool
+) -> Tuple[List[str], np.ndarray]:
+    """
+    Select highly variable genes using PyTorch for acceleration.
+    """
+    
+    # Filter out genes with zero expression
+    gene_expr_sum = np.array(temp_adata.X.sum(axis=0)).flatten()
+    expressed_mask = gene_expr_sum > 0
+    temp_adata = temp_adata[:, expressed_mask].copy()
+    
+    if temp_adata.n_vars == 0:
+        return [], np.array([])
+    
+    # Apply normalization
+    if normalize:
+        if atac:
+            # TF-IDF normalization (requires CPU)
+            tfidf_memory_efficient(temp_adata, scale_factor=target_sum)
+        else:
+            # Use PyTorch for normalization
+            X_torch = torch.from_numpy(temp_adata.X if not issparse(temp_adata.X) 
+                                     else temp_adata.X.toarray()).float().to(device)
+            
+            if use_mixed_precision:
+                with torch.cuda.amp.autocast():
+                    # Normalize total
+                    row_sums = X_torch.sum(dim=1, keepdim=True)
+                    row_sums[row_sums == 0] = 1  # Avoid division by zero
+                    X_torch = X_torch * (target_sum / row_sums)
+                    
+                    # Log1p
+                    X_torch = torch.log1p(X_torch)
+            else:
+                # Normalize total
+                row_sums = X_torch.sum(dim=1, keepdim=True)
+                row_sums[row_sums == 0] = 1
+                X_torch = X_torch * (target_sum / row_sums)
+                
+                # Log1p
+                X_torch = torch.log1p(X_torch)
+            
+            temp_adata.X = X_torch.cpu().numpy()
+            del X_torch
+    
+    # Check for NaN values
+    if issparse(temp_adata.X):
+        nan_genes = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+    else:
+        nan_genes = np.isnan(temp_adata.X).any(axis=0)
+    
+    if nan_genes.any():
+        temp_adata = temp_adata[:, ~nan_genes].copy()
+    
+    # Apply batch correction if needed
+    if batch_correction and len(temp_adata.obs[batch_col].unique()) > 1:
+        min_batch_size = temp_adata.obs[batch_col].value_counts().min()
+        if min_batch_size >= 2:
+            try:
+                with contextlib.redirect_stdout(io.StringIO()), \
+                     warnings.catch_warnings():
+                    warnings.filterwarnings("ignore")
+                    sc.pp.combat(temp_adata, key=batch_col)
+                
+                # Remove any NaN values after Combat
+                if issparse(temp_adata.X):
+                    nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+                else:
+                    nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                
+                if nan_genes_post.any():
+                    temp_adata = temp_adata[:, ~nan_genes_post].copy()
+            
+            except Exception as e:
+                if verbose:
+                    print(f"  Combat failed: {str(e)}")
+    
+    # Select HVGs using PyTorch-accelerated variance calculation
+    n_hvgs = min(n_features, temp_adata.n_vars)
+    
+    # Convert to PyTorch for variance calculation
+    X_torch = torch.from_numpy(temp_adata.X if not issparse(temp_adata.X) 
+                             else temp_adata.X.toarray()).float().to(device)
+    
+    # Calculate mean and variance in batches
+    with torch.no_grad():
+        if use_mixed_precision:
+            with torch.cuda.amp.autocast():
+                mean = X_torch.mean(dim=0)
+                variance = X_torch.var(dim=0)
+        else:
+            mean = X_torch.mean(dim=0)
+            variance = X_torch.var(dim=0)
+        
+        # Calculate coefficient of variation or dispersion
+        cv = torch.sqrt(variance) / (mean + 1e-6)
+        
+        # Get top variable genes
+        _, top_indices = torch.topk(cv, k=n_hvgs)
+        hvg_indices = top_indices.cpu().numpy()
+    
+    del X_torch
+    
+    # Extract HVG data
+    hvg_genes = temp_adata.var.index[hvg_indices].tolist()
+    hvg_expr = temp_adata[:, hvg_indices].X
+    
+    if issparse(hvg_expr):
+        hvg_expr = hvg_expr.toarray()
+    
+    return hvg_genes, hvg_expr
+
+
+def _create_concat_adata_torch(
+    all_hvg_data: dict,
+    all_gene_names: list,
+    samples: list,
+    n_features: int,
+    device: torch.device,
+    batch_size: int,
+    verbose: bool
+) -> sc.AnnData:
+    """
+    Create concatenated AnnData using PyTorch for efficiency.
+    """
+    if verbose:
+        print("\nConcatenating all cell type HVGs into single AnnData")
+    
+    all_unique_genes = sorted(list(set(all_gene_names)))
+    
+    if len(all_unique_genes) == 0:
+        raise ValueError("No HVGs found across all cell types")
+    
+    # Create matrix in batches on GPU
+    n_samples = len(samples)
+    n_genes = len(all_unique_genes)
+    
+    # Process in chunks to avoid memory issues
+    concat_matrix = torch.zeros((n_samples, n_genes), dtype=torch.float32, device=device)
+    
+    # Create gene index mapping
+    gene_to_idx = {gene: idx for idx, gene in enumerate(all_unique_genes)}
+    
+    # Fill matrix in batches
+    for i in range(0, n_samples, batch_size):
+        batch_samples = samples[i:i + batch_size]
+        batch_data = []
+        
+        for sample in batch_samples:
+            sample_vec = torch.zeros(n_genes, device=device)
+            if sample in all_hvg_data:
+                for gene, value in all_hvg_data[sample].items():
+                    if gene in gene_to_idx:
+                        sample_vec[gene_to_idx[gene]] = value
+            batch_data.append(sample_vec)
+        
+        if batch_data:
+            batch_tensor = torch.stack(batch_data)
+            concat_matrix[i:i + len(batch_samples)] = batch_tensor
+    
+    # Convert to numpy
+    concat_matrix_np = concat_matrix.cpu().numpy()
+    del concat_matrix
+    
+    concat_adata = sc.AnnData(
+        X=concat_matrix_np,
+        obs=pd.DataFrame(index=samples),
+        var=pd.DataFrame(index=all_unique_genes)
+    )
+    
+    # Apply final HVG selection
+    if verbose:
+        print(f"Applying final HVG selection on {concat_adata.n_vars} concatenated genes")
+    
+    sc.pp.filter_genes(concat_adata, min_cells=1)
+    
+    final_n_hvgs = min(n_features, concat_adata.n_vars)
+    if final_n_hvgs < concat_adata.n_vars:
+        # Use PyTorch for final HVG selection
+        X_torch = torch.from_numpy(concat_adata.X).float().to(device)
+        
+        with torch.no_grad():
+            variance = X_torch.var(dim=0)
+            _, top_indices = torch.topk(variance, k=final_n_hvgs)
+            hvg_indices = top_indices.cpu().numpy()
+        
+        del X_torch
+        
+        concat_adata = concat_adata[:, hvg_indices].copy()
+    
+    return concat_adata
+
+
+def _compute_cell_proportions_torch(
     adata: sc.AnnData,
     samples: list,
     cell_types: list,
     sample_col: str,
-    celltype_col: str
+    celltype_col: str,
+    device: torch.device,
+    batch_size: int
 ) -> pd.DataFrame:
-    """Compute cell type proportions per sample."""
+    """Compute cell type proportions per sample using PyTorch."""
     
     proportion_df = pd.DataFrame(
         index=cell_types,
@@ -457,18 +577,37 @@ def _compute_cell_proportions(
         dtype=float
     )
     
-    # Compute proportions
-    for sample in samples:
-        sample_mask = adata.obs[sample_col] == sample
-        total_cells = sample_mask.sum()
-        
-        if total_cells > 0:
-            for cell_type in cell_types:
-                ct_count = ((adata.obs[sample_col] == sample) & 
-                           (adata.obs[celltype_col] == cell_type)).sum()
-                proportion_df.loc[cell_type, sample] = ct_count / total_cells
-        else:
-            proportion_df.loc[:, sample] = 0.0
+    # Create one-hot encodings for efficient computation
+    sample_to_idx = {s: i for i, s in enumerate(samples)}
+    celltype_to_idx = {ct: i for i, ct in enumerate(cell_types)}
+    
+    # Create sample and cell type indices
+    sample_indices = torch.tensor([sample_to_idx.get(s, -1) for s in adata.obs[sample_col]], 
+                                 device=device)
+    celltype_indices = torch.tensor([celltype_to_idx.get(ct, -1) for ct in adata.obs[celltype_col]], 
+                                   device=device)
+    
+    # Remove invalid indices
+    valid_mask = (sample_indices >= 0) & (celltype_indices >= 0)
+    sample_indices = sample_indices[valid_mask]
+    celltype_indices = celltype_indices[valid_mask]
+    
+    # Create sparse matrix for counting
+    n_cells = len(sample_indices)
+    indices = torch.stack([celltype_indices, sample_indices])
+    values = torch.ones(n_cells, device=device)
+    count_matrix = torch.sparse_coo_tensor(
+        indices, values, (len(cell_types), len(samples)), 
+        dtype=torch.float32, device=device
+    ).to_dense()
+    
+    # Normalize to get proportions
+    sample_totals = count_matrix.sum(dim=0, keepdim=True)
+    sample_totals[sample_totals == 0] = 1  # Avoid division by zero
+    proportions = count_matrix / sample_totals
+    
+    # Convert to DataFrame
+    proportion_df.iloc[:, :] = proportions.cpu().numpy()
     
     return proportion_df
 
@@ -525,7 +664,36 @@ def _create_final_expression_matrix(
     return final_expression_df
 
 
-# Backward compatibility wrapper
+def _extract_sample_metadata(
+    cell_adata: sc.AnnData,
+    sample_adata: sc.AnnData,
+    sample_col: str,
+    exclude_cols: List[str] | None = None,
+) -> sc.AnnData:
+    """Detect and copy sample‑level metadata."""
+    if exclude_cols is None:
+        exclude_cols = []
+    exclude_cols = set(exclude_cols) | {sample_col}
+
+    grouped = cell_adata.obs.groupby(sample_col)
+    meta_dict: Dict[str, pd.Series] = {}
+
+    for col in cell_adata.obs.columns:
+        if col in exclude_cols:
+            continue
+        uniques_per_sample = grouped[col].apply(lambda x: x.dropna().unique())
+        if uniques_per_sample.apply(lambda u: len(u) <= 1).all():
+            meta_dict[col] = uniques_per_sample.apply(lambda u: u[0] if len(u) else np.nan)
+
+    if meta_dict:
+        meta_df = pd.DataFrame(meta_dict)
+        meta_df.index.name = "sample"
+        sample_adata.obs = sample_adata.obs.join(meta_df, how="left")
+
+    return sample_adata
+
+
+# Main entry point - choose between implementations
 def compute_pseudobulk_adata_linux(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -537,25 +705,53 @@ def compute_pseudobulk_adata_linux(
     normalize: bool = True,
     target_sum: float = 1e4,
     atac: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    use_pytorch: bool = True,
+    batch_size: int = 1000,
+    use_mixed_precision: bool = True
 ) -> Tuple[Dict, sc.AnnData]:
     """
-    GPU-accelerated backward compatibility wrapper using rapids_singlecell.
+    Optimized pseudobulk computation with choice of backend.
+    
+    Args:
+        use_pytorch: If True, use PyTorch implementation; otherwise use rapids_singlecell
+        batch_size: Batch size for PyTorch processing
+        use_mixed_precision: Use FP16 for faster PyTorch computation
     """
     
-    # Call the rsc-based GPU function
-    cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu_rsc(
-        adata=adata,
-        batch_col=batch_col,
-        sample_col=sample_col,
-        celltype_col=celltype_col,
-        output_dir=output_dir,
-        n_features=n_features,
-        normalize=normalize,
-        target_sum=target_sum,
-        atac=atac,
-        verbose=verbose
-    )
+    if use_pytorch and torch.cuda.is_available():
+        # Use PyTorch implementation
+        cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_torch(
+            adata=adata,
+            batch_col=batch_col,
+            sample_col=sample_col,
+            celltype_col=celltype_col,
+            output_dir=output_dir,
+            n_features=n_features,
+            normalize=normalize,
+            target_sum=target_sum,
+            atac=atac,
+            verbose=verbose,
+            batch_size=batch_size,
+            use_mixed_precision=use_mixed_precision
+        )
+    else:
+        # Fall back to rapids_singlecell implementation
+        if verbose and use_pytorch:
+            print("PyTorch requested but CUDA not available, falling back to rapids_singlecell")
+        
+        cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu_rsc(
+            adata=adata,
+            batch_col=batch_col,
+            sample_col=sample_col,
+            celltype_col=celltype_col,
+            output_dir=output_dir,
+            n_features=n_features,
+            normalize=normalize,
+            target_sum=target_sum,
+            atac=atac,
+            verbose=verbose
+        )
     
     if Save:
         pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
@@ -565,8 +761,6 @@ def compute_pseudobulk_adata_linux(
             sample_col=sample_col,
         )
         
-        # Ensure CPU arrays before saving
-        final_adata = ensure_cpu_arrays(final_adata)
         sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
     
     # Create backward-compatible dictionary

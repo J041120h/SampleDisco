@@ -1,13 +1,13 @@
-2025-07-02 17:19:39.779101: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-07-02 17:19:39.796489: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-07-02 23:17:15.784139: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-07-02 23:17:15.800712: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1751491179.816077 1241304 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1751491179.822115 1241304 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1751491179.838413 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1751491179.838438 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1751491179.838440 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1751491179.838442 1241304 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-07-02 17:19:39.843286: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1751512635.819817 1259707 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1751512635.825753 1259707 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1751512635.841192 1259707 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1751512635.841215 1259707 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1751512635.841217 1259707 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1751512635.841219 1259707 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-07-02 23:17:15.845642: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 Start of Process
 
@@ -27,154 +27,32 @@ Linux system detected.
 Enabling managed memory for RMM...
 
 
-Using GPU for pseudobulk calculation~
-Using GPU with rapids_singlecell
-GPU Device: Tesla V100S-PCIE-32GB
-Processing 16 cell types across 8 samples
-Transferring data to GPU...
-Creating layer for B_naive
-Creating layer for CD14_mono
-Creating layer for CD16_mono
-Creating layer for CD4.CM
-Creating layer for CD4.IL22
-Creating layer for CD4.Naive
-Creating layer for CD4.Tfh
-Creating layer for CD8.EM
-Creating layer for CD8.Naive
-Creating layer for CD8.TE
-Creating layer for CD83_CD14_mono
-Creating layer for DC3
-Creating layer for HSC_CD38pos
-Creating layer for NK_16hi
-Creating layer for NK_56hi
-Creating layer for pDC
+Processing X_DR_proportion...
 
-Processing cell type: B_naive
-filtered out 72 genes that are detected in less than 1 cells
-  Applying batch correction on 6762 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6762 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process B_naive: highly_variable_genes() got an unexpected keyword argument 'subset'
+The CCA score for X_DR_proportion is 0.4255
 
-Processing cell type: CD14_mono
-filtered out 17 genes that are detected in less than 1 cells
-  Applying batch correction on 6817 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6817 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD14_mono: highly_variable_genes() got an unexpected keyword argument 'subset'
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_proportion.pdf
+Processing X_DR_expression...
 
-Processing cell type: CD16_mono
-filtered out 42 genes that are detected in less than 1 cells
-  Applying batch correction on 6792 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6792 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD16_mono: highly_variable_genes() got an unexpected keyword argument 'subset'
+The CCA score for X_DR_expression is 0.7044
 
-Processing cell type: CD4.CM
-filtered out 113 genes that are detected in less than 1 cells
-  Applying batch correction on 6721 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6721 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD4.CM: highly_variable_genes() got an unexpected keyword argument 'subset'
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_expression.pdf
+CCA analysis completed.
 
-Processing cell type: CD4.IL22
-filtered out 8 genes that are detected in less than 1 cells
-  Applying batch correction on 6826 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6826 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD4.IL22: highly_variable_genes() got an unexpected keyword argument 'subset'
+[CCA] Total runtime: 0.84 seconds
 
-Processing cell type: CD4.Naive
-filtered out 22 genes that are detected in less than 1 cells
-  Applying batch correction on 6812 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6812 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD4.Naive: highly_variable_genes() got an unexpected keyword argument 'subset'
+🚀 Using PROFILED GPU version of optimal resolution
+⏱️  Directory setup: 0.00 seconds
 
-Processing cell type: CD4.Tfh
-filtered out 6 genes that are detected in less than 1 cells
-  Applying batch correction on 6828 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6828 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD4.Tfh: highly_variable_genes() got an unexpected keyword argument 'subset'
+📊 Starting RNA-seq resolution optimization with detailed timing...
+Using representation: X_pca with 20 components
+Will compute corrected p-values with 1000 simulations per resolution
 
-Processing cell type: CD8.EM
-filtered out 129 genes that are detected in less than 1 cells
-  Applying batch correction on 6705 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6705 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD8.EM: highly_variable_genes() got an unexpected keyword argument 'subset'
+🔍 === FIRST PASS: Coarse Search ===
 
-Processing cell type: CD8.Naive
-filtered out 167 genes that are detected in less than 1 cells
-  Applying batch correction on 6667 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6667 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD8.Naive: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Processing cell type: CD8.TE
-filtered out 22 genes that are detected in less than 1 cells
-  Applying batch correction on 6812 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6812 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD8.TE: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Processing cell type: CD83_CD14_mono
-  Applying batch correction on 6834 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6834 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process CD83_CD14_mono: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Processing cell type: DC3
-filtered out 32 genes that are detected in less than 1 cells
-  Applying batch correction on 6802 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6802 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process DC3: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Processing cell type: HSC_CD38pos
-filtered out 120 genes that are detected in less than 1 cells
-  Applying batch correction on 6714 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6714 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process HSC_CD38pos: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Processing cell type: NK_16hi
-filtered out 19 genes that are detected in less than 1 cells
-  Applying batch correction on 6815 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6815 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process NK_16hi: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Processing cell type: NK_56hi
-filtered out 154 genes that are detected in less than 1 cells
-  Applying batch correction on 6680 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6680 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process NK_56hi: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Processing cell type: pDC
-filtered out 110 genes that are detected in less than 1 cells
-  Applying batch correction on 6724 genes
-... storing 'batch' as categorical
-  Combat completed successfully, 6724 genes remaining
-  Selecting top 2000 HVGs using rapids_singlecell
-  Failed to process pDC: highly_variable_genes() got an unexpected keyword argument 'subset'
-
-Concatenating all cell type HVGs into single AnnData
-Error: No HVGs found across all cell types
+🎯 Testing resolution: 0.10
+  ⏱️  Cleanup: 0.034 seconds
+2025-07-02 23:19:43 - INFO - init
+⏱️    🧬 Cell clustering: 36.45 seconds
+⏱️    📋 Cell type assignment: 0.06 seconds
+  📊 Number of clusters: 5
