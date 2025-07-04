@@ -1,15 +1,15 @@
 ======================================
- Job ID:            19389581
+ Job ID:            19612153
  Job Name:          test
  Partition:         gpu
- Node List:         compute-123
+ Node List:         compute-128
  CPUs per Task:     16
  Memory Alloc:      409600
  GPU Requested:     1
- Start Time:        Tue Jul  1 02:16:45 PM EDT 2025
+ Start Time:        Thu Jul  3 01:30:54 PM EDT 2025
 ======================================
 Checking GPU status...
-Tue Jul  1 14:16:46 2025       
+Thu Jul  3 13:30:55 2025       
 +-----------------------------------------------------------------------------------------+
 | NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
 |-----------------------------------------+------------------------+----------------------+
@@ -17,9 +17,9 @@ Tue Jul  1 14:16:46 2025
 | Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
 |                                         |                        |               MIG M. |
 |=========================================+========================+======================|
-|   0  Tesla V100S-PCIE-32GB          Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   47C    P0             41W /  250W |       1MiB /  32768MiB |      0%      Default |
-|                                         |                        |                  N/A |
+|   0  NVIDIA A100 80GB PCIe          Off |   00000000:17:00.0 Off |                    0 |
+| N/A   45C    P0             67W /  300W |       1MiB /  81920MiB |     25%      Default |
+|                                         |                        |             Disabled |
 +-----------------------------------------+------------------------+----------------------+
                                                                                          
 +-----------------------------------------------------------------------------------------+
@@ -60,10 +60,11 @@ The CCA score for X_DR_expression is 0.7044
 Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/CCA/pca_2d_cca_expression.pdf
 CCA analysis completed.
 
-[CCA] Total runtime: 0.91 seconds
+[CCA] Total runtime: 0.65 seconds
 
-🚀 Using PROFILED GPU version of optimal resolution
-⏱️  Directory setup: 0.02 seconds
+🚀 Using PROFILED GPU version of optimal resolution WITH TIMEOUT PROTECTION
+⏰ Timeout per resolution: 3600 seconds (1.0 hours)
+⏱️  Directory setup: 0.00 seconds
 
 📊 Starting RNA-seq resolution optimization with detailed timing...
 Using representation: X_pca with 20 components
@@ -71,103 +72,122 @@ Will compute corrected p-values with 1000 simulations per resolution
 
 🔍 === FIRST PASS: Coarse Search ===
 
-🎯 Testing resolution: 0.10
-  ⏱️  Cleanup: 0.037 seconds
-⏱️    🧬 Cell clustering: 35.78 seconds
-⏱️    📋 Cell type assignment: 0.06 seconds
-  📊 Number of clusters: 6
-⏱️    🧪 Pseudobulk computation: 8106.15 seconds
-⏱️    📐 Dimension reduction: 0.28 seconds
-
-The CCA score for X_DR_proportion is 0.4365
-
-  ⏱️  CCA analysis: 0.003 seconds
-  🎯 CCA Score = 0.4365
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.10/cca_plot_res_0.10.png
-  ⏱️  CCA plot generation: 0.588 seconds
-⏱️    🎲 Null distribution (1000 sims): 2.73 seconds
-  ⏱️  P-value computation: 0.000 seconds
-  📈 Standard p-value = 0.0000
-  ⏱️  TOTAL for resolution 0.10: 8145.63 seconds
-
-🎯 Testing resolution: 0.20
-  ⏱️  Cleanup: 0.031 seconds
-⏱️    🧬 Cell clustering: 31.55 seconds
-⏱️    📋 Cell type assignment: 0.06 seconds
+🎯 Testing resolution: 0.100
+  ⏱️  Cleanup: 0.023 seconds
+⏱️    🧬 Cell clustering: 29.90 seconds
+⏱️    📋 Cell type assignment: 0.03 seconds
   📊 Number of clusters: 5
-⏱️    🧪 Pseudobulk computation: 7010.36 seconds
-⏱️    📐 Dimension reduction: 0.27 seconds
+⏱️    🧪 Pseudobulk computation: 166.97 seconds
+⏱️    📐 Dimension reduction: 0.02 seconds
 
-The CCA score for X_DR_proportion is 0.4360
+The CCA score for X_DR_proportion is 0.4358
 
-  ⏱️  CCA analysis: 0.012 seconds
-  🎯 CCA Score = 0.4360
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.20/cca_plot_res_0.20.png
-  ⏱️  CCA plot generation: 0.589 seconds
-⏱️    🎲 Null distribution (1000 sims): 2.69 seconds
+  ⏱️  CCA analysis: 0.002 seconds
+  🎯 CCA Score = 0.4358
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.100/cca_plot_res_0.100.png
+  ⏱️  CCA plot generation: 0.456 seconds
+⏱️    🎲 Null distribution (1000 sims): 1.76 seconds
   ⏱️  P-value computation: 0.000 seconds
   📈 Standard p-value = 0.0000
-  ⏱️  TOTAL for resolution 0.20: 7045.58 seconds
+  ⏱️  TOTAL for resolution 0.100: 199.18 seconds
 
-🎯 Testing resolution: 0.30
-  ⏱️  Cleanup: 0.029 seconds
-⏱️    🧬 Cell clustering: 31.77 seconds
-⏱️    📋 Cell type assignment: 0.06 seconds
+🎯 Testing resolution: 0.200
+  ⏱️  Cleanup: 0.024 seconds
+⏱️    🧬 Cell clustering: 25.24 seconds
+⏱️    📋 Cell type assignment: 0.04 seconds
   📊 Number of clusters: 6
-⏱️    🧪 Pseudobulk computation: 7946.46 seconds
-⏱️    📐 Dimension reduction: 0.25 seconds
+⏱️    🧪 Pseudobulk computation: 190.81 seconds
+⏱️    📐 Dimension reduction: 0.02 seconds
 
-The CCA score for X_DR_proportion is 0.4365
+The CCA score for X_DR_proportion is 0.4369
 
-  ⏱️  CCA analysis: 0.003 seconds
-  🎯 CCA Score = 0.4365
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.30/cca_plot_res_0.30.png
-  ⏱️  CCA plot generation: 0.575 seconds
-⏱️    🎲 Null distribution (1000 sims): 2.69 seconds
+  ⏱️  CCA analysis: 0.002 seconds
+  🎯 CCA Score = 0.4369
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.200/cca_plot_res_0.200.png
+  ⏱️  CCA plot generation: 0.428 seconds
+⏱️    🎲 Null distribution (1000 sims): 1.77 seconds
   ⏱️  P-value computation: 0.000 seconds
   📈 Standard p-value = 0.0000
-  ⏱️  TOTAL for resolution 0.30: 7981.85 seconds
+  ⏱️  TOTAL for resolution 0.200: 218.34 seconds
 
-🎯 Testing resolution: 0.40
-  ⏱️  Cleanup: 0.027 seconds
-⏱️    🧬 Cell clustering: 31.66 seconds
-⏱️    📋 Cell type assignment: 0.05 seconds
+🎯 Testing resolution: 0.300
+  ⏱️  Cleanup: 0.028 seconds
+⏱️    🧬 Cell clustering: 35.13 seconds
+⏱️    📋 Cell type assignment: 0.04 seconds
+  📊 Number of clusters: 6
+⏱️    🧪 Pseudobulk computation: 181.95 seconds
+⏱️    📐 Dimension reduction: 0.02 seconds
+
+The CCA score for X_DR_proportion is 0.4383
+
+  ⏱️  CCA analysis: 0.002 seconds
+  🎯 CCA Score = 0.4383
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.300/cca_plot_res_0.300.png
+  ⏱️  CCA plot generation: 0.427 seconds
+⏱️    🎲 Null distribution (1000 sims): 1.77 seconds
+  ⏱️  P-value computation: 0.000 seconds
+  📈 Standard p-value = 0.0000
+  ⏱️  TOTAL for resolution 0.300: 219.37 seconds
+
+🎯 Testing resolution: 0.400
+  ⏱️  Cleanup: 0.021 seconds
+⏱️    🧬 Cell clustering: 25.90 seconds
+⏱️    📋 Cell type assignment: 0.04 seconds
+  📊 Number of clusters: 10
+⏱️    🧪 Pseudobulk computation: 222.26 seconds
+⏱️    📐 Dimension reduction: 0.02 seconds
+
+The CCA score for X_DR_proportion is 0.4505
+
+  ⏱️  CCA analysis: 0.002 seconds
+  🎯 CCA Score = 0.4505
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.400/cca_plot_res_0.400.png
+  ⏱️  CCA plot generation: 0.390 seconds
+⏱️    🎲 Null distribution (1000 sims): 1.82 seconds
+  ⏱️  P-value computation: 0.000 seconds
+  📈 Standard p-value = 0.0000
+  ⏱️  TOTAL for resolution 0.400: 250.46 seconds
+
+🎯 Testing resolution: 0.500
+  ⏱️  Cleanup: 0.026 seconds
+⏱️    🧬 Cell clustering: 26.37 seconds
+⏱️    📋 Cell type assignment: 0.04 seconds
   📊 Number of clusters: 11
-⏱️    🧪 Pseudobulk computation: 14210.94 seconds
-⏱️    📐 Dimension reduction: 0.22 seconds
+⏱️    🧪 Pseudobulk computation: 232.46 seconds
+⏱️    📐 Dimension reduction: 0.02 seconds
 
-The CCA score for X_DR_proportion is 0.4468
+The CCA score for X_DR_proportion is 0.4495
 
-  ⏱️  CCA analysis: 0.011 seconds
-  🎯 CCA Score = 0.4468
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.40/cca_plot_res_0.40.png
-  ⏱️  CCA plot generation: 0.576 seconds
-⏱️    🎲 Null distribution (1000 sims): 2.77 seconds
+  ⏱️  CCA analysis: 0.002 seconds
+  🎯 CCA Score = 0.4495
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.500/cca_plot_res_0.500.png
+  ⏱️  CCA plot generation: 0.399 seconds
+⏱️    🎲 Null distribution (1000 sims): 1.82 seconds
   ⏱️  P-value computation: 0.000 seconds
   📈 Standard p-value = 0.0000
-  ⏱️  TOTAL for resolution 0.40: 14246.28 seconds
+  ⏱️  TOTAL for resolution 0.500: 261.14 seconds
 
-🎯 Testing resolution: 0.50
-  ⏱️  Cleanup: 0.029 seconds
-⏱️    🧬 Cell clustering: 31.80 seconds
-⏱️    📋 Cell type assignment: 0.05 seconds
+🎯 Testing resolution: 0.600
+  ⏱️  Cleanup: 0.026 seconds
+⏱️    🧬 Cell clustering: 27.06 seconds
+⏱️    📋 Cell type assignment: 0.04 seconds
   📊 Number of clusters: 13
-⏱️    🧪 Pseudobulk computation: 16320.89 seconds
-⏱️    📐 Dimension reduction: 0.35 seconds
+⏱️    🧪 Pseudobulk computation: 3605.76 seconds
+⏱️    📐 Dimension reduction: 0.02 seconds
 
 The CCA score for X_DR_proportion is 0.4466
 
   ⏱️  CCA analysis: 0.002 seconds
   🎯 CCA Score = 0.4466
-Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.50/cca_plot_res_0.50.png
-  ⏱️  CCA plot generation: 0.526 seconds
-⏱️    🎲 Null distribution (1000 sims): 2.80 seconds
+Saved CCA plot to: /dcl01/hongkai/data/data/hjiang/result/RNA_resolution_optimization_X_DR_proportion/resolutions/resolution_0.600/cca_plot_res_0.600.png
+  ⏱️  CCA plot generation: 0.739 seconds
+⏱️    🎲 Null distribution (1000 sims): 1.82 seconds
   ⏱️  P-value computation: 0.000 seconds
   📈 Standard p-value = 0.0000
-  ⏱️  TOTAL for resolution 0.50: 16356.47 seconds
+  ⏱️  TOTAL for resolution 0.600: 3635.47 seconds
 
-🎯 Testing resolution: 0.60
+🎯 Testing resolution: 0.700
   ⏱️  Cleanup: 0.029 seconds
-⏱️    🧬 Cell clustering: 32.03 seconds
-⏱️    📋 Cell type assignment: 0.05 seconds
-  📊 Number of clusters: 15
+⏱️    🧬 Cell clustering: 26.21 seconds
+⏱️    📋 Cell type assignment: 0.04 seconds
+  📊 Number of clusters: 16

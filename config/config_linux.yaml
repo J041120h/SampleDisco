@@ -9,7 +9,7 @@ cell_column: "cell_type"
 cell_meta_path: null
 batch_col: 'batch'
 markers: null
-cluster_resolution: 0.92
+cluster_resolution: 0.6
 num_PCs: 20
 num_harmony: 30
 num_features: 2000
@@ -27,7 +27,7 @@ verbose: true
 
 # ===== Cell Type Clustering Parameters =====
 existing_cell_types: false
-n_target_cell_clusters: 3
+n_target_cell_clusters: null
 umap: true
 cell_type_save: true
 
