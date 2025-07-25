@@ -18,7 +18,7 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.stats import mannwhitneyu
 import warnings
 from CellType import *
-from ATAC_RNA_integration_test import *
+from Archive.ATAC_RNA_integration_test import *
 from RNA_name_convertor import *
 # from linux.CellType_linux import cell_types_linux
 
