@@ -6,9 +6,10 @@ import numpy as np
 from typing import Optional, Tuple
 from pathlib import Path
 import pyensembl
-from linux.CellType_linux import *
+
 from CellType import *
 import time
+
 
 def clean_anndata_for_saving(adata, verbose=True):
     """
@@ -1379,13 +1380,13 @@ def glue(
         generate_umap=generate_umap_celltype
     )
     
-    # # Step 4: Visualization
-    # integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
-    # glue_visualize(
-    #     integrated_path=integrated_file,
-    #     output_dir=output_dir,
-    #     plot_columns=plot_columns
-    # )
+    # Step 4: Visualization
+    integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
+    glue_visualize(
+        integrated_path=integrated_file,
+        output_dir=output_dir,
+        plot_columns=plot_columns
+    )
     
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
