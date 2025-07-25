@@ -32,10 +32,25 @@ from ATAC_CCA_test import *
 from cell_proportion_pseudotime import visualize_cell_proportion_pseudotime
 
 def wrapper(
-    # ===== Harmony Preprocessing Parameters =====
-    h5ad_path,
-    sample_meta_path,
+    # ===== Required Parameter =====
+    rna_count_data_path,
+    rna_sample_meta_path,
     output_dir,
+
+    # ===== Process Control Flags =====
+    preprocessing=True,
+    cell_type_cluster=True,
+    sample_distance_calculation = True,
+    DimensionalityReduction=True,
+    trajectory_analysis=True,
+    trajectory_differential_gene = True,
+    cluster_and_DGE = True,
+    ATAC_data = True,
+    trajectory_analysis_atac = True, 
+    visualize_data = True,
+    initialization=True,
+    use_gpu= False,
+
     sample_col = 'sample',
     grouping_columns = ['sev.level'],
     cell_column='cell_type',
@@ -83,7 +98,6 @@ def wrapper(
 
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised = False,
-
     cca_output_dir=None,
     sev_col_cca = "sev.level",
     cca_optimal_cell_resolution=False,
@@ -210,19 +224,6 @@ def wrapper(
     atac_visualization_grouping_columns=['current_severity'], 
     atac_show_sample_names = True,
     atac_visualization_age_size=None,
-    # ===== Process Control Flags =====
-    preprocessing=True,
-    cell_type_cluster=True,
-    sample_distance_calculation = True,
-    DimensionalityReduction=True,
-    trajectory_analysis=True,
-    trajectory_differential_gene = True,
-    cluster_and_DGE = True,
-    ATAC_data = True,
-    trajectory_analysis_atac = True, 
-    visualize_data = True,
-    initialization=True,
-    use_gpu= False
 ):
     ## ====== Preprocessing to add ungiven parameter======
     linux_system = False
@@ -318,8 +319,8 @@ def wrapper(
     if preprocessing:
         if linux_system and use_gpu:
             AnnData_cell, AnnData_sample = harmony_linux(
-            h5ad_path=h5ad_path,
-            sample_meta_path=sample_meta_path,
+            h5ad_path=rna_count_data_path,
+            sample_meta_path=rna_sample_meta_path,
             output_dir=output_dir,
             sample_column = sample_col,
             cell_column=cell_column,
@@ -344,8 +345,8 @@ def wrapper(
         )
         else:
             AnnData_cell, AnnData_sample = harmony(
-                h5ad_path=h5ad_path,
-                sample_meta_path=sample_meta_path,
+                h5ad_path=rna_count_data_path,
+                sample_meta_path=rna_sample_meta_path,
                 output_dir=output_dir,
                 sample_column = sample_col,
                 cell_column=cell_column,
@@ -571,7 +572,7 @@ def wrapper(
             if trajectory_supervised:
                 results = identify_pseudoDEGs(
                     pseudobulk= pseudobulk_df,
-                    sample_meta_path=sample_meta_path,
+                    sample_meta_path=rna_sample_meta_path,
                     ptime_expression=ptime_expression,
                     fdr_threshold= fdr_threshold,
                     effect_size_threshold= effect_size_threshold,
@@ -599,7 +600,7 @@ def wrapper(
                 all_path_results = run_differential_analysis_for_all_paths(
                     TSCAN_results=TSCAN_result_expression,
                     pseudobulk_df=pseudobulk_df,
-                    sample_meta_path=sample_meta_path,
+                    sample_meta_path=rna_sample_meta_path,
                     sample_col= sample_col,
                     fdr_threshold=fdr_threshold,
                     effect_size_threshold=effect_size_threshold,
@@ -953,17 +954,3 @@ def wrapper(
         with open(status_file_path, 'w') as f:
             json.dump(status_flags, f, indent=4)
     print("End of Process\n")
-
-
-if __name__ == '__main__':
-    wrapper(
-        h5ad_path = "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad", 
-        output_dir = "/Users/harry/Desktop/GenoDistance/result", 
-        sample_meta_path = "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv", 
-        preprocessing=True, 
-        cell_type_cluster=True, 
-        sample_distance_calculation = True, 
-        DimensionalityReduction=True, 
-        trajectory_analysis=True,
-        visualize_data = True
-        )

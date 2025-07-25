@@ -1,7 +1,27 @@
 # ===== Harmony Preprocessing Parameters =====
-h5ad_path: "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-sample_meta_path: "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+rna_count_data_path: "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+rna_sample_meta_path: "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
 output_dir: "/Users/harry/Desktop/GenoDistance/result"
+
+# ===== Process Control Flags =====
+preprocessing: false
+cell_type_cluster: false
+sample_distance_calculation: false
+DimensionalityReduction: false
+trajectory_analysis: true
+trajectory_differential_gene: false
+cluster_and_DGE: false
+
+ATAC_data: false
+trajectory_analysis_atac: false
+atac_preprocessing: false
+atac_pseudobulk_dimensionality_reduction: false
+atac_visualization_processing: false
+
+visualize_data: false
+initialization: false
+use_gpu: true
+
 sample_col: "sample"
 grouping_columns:
   - "batch"
@@ -163,22 +183,3 @@ atac_visualization_grouping_columns:
   - current_severity
 atac_show_sample_names: true
 atac_visualization_age_size: null
-
-# ===== Process Control Flags =====
-preprocessing: false
-cell_type_cluster: false
-sample_distance_calculation: false
-DimensionalityReduction: true
-trajectory_analysis: true
-trajectory_differential_gene: false
-cluster_and_DGE: false
-
-ATAC_data: false
-trajectory_analysis_atac: true
-atac_preprocessing: false
-atac_pseudobulk_dimensionality_reduction: false
-atac_visualization_processing: false
-
-visualize_data: false
-initialization: false
-use_gpu: false
