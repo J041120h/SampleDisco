@@ -243,7 +243,7 @@ def safe_h5ad_write(adata, filepath, verbose=True):
 
 def cell_types_linux(
     adata, 
-    cell_column='cell_type', 
+    cell_type_column='cell_type', 
     existing_cell_types=False,
     n_target_clusters=None,
     umap=True,
@@ -271,7 +271,7 @@ def cell_types_linux(
 
     Parameters:
     - adata: AnnData object
-    - cell_column: Column name containing cell type annotations
+    - cell_type_column: Column name containing cell type annotations
     - existing_cell_types: Boolean, whether to use existing cell type annotations
     - n_target_clusters: int, optional. Target number of clusters.
     - umap: Boolean, whether to compute UMAP
@@ -303,12 +303,12 @@ def cell_types_linux(
     # ============================================================================
     # EXISTING CELL TYPE ANNOTATION PROCESSING
     # ============================================================================
-    if cell_column in adata.obs.columns and existing_cell_types:
+    if cell_type_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:
             print("[cell_types] Found existing cell type annotation.")
         
         # Standardize cell type column
-        adata.obs['cell_type'] = adata.obs[cell_column].astype(str)
+        adata.obs['cell_type'] = adata.obs[cell_type_column].astype(str)
 
         # Count current number of unique cell types
         current_n_types = adata.obs['cell_type'].nunique()
@@ -407,7 +407,7 @@ def cell_types_linux(
                     # RECURSIVE CALL: Now treat current clustering as "existing" and aggregate
                     adata = cell_types_linux(
                         adata=adata,
-                        cell_column='cell_type',
+                        cell_type_column='cell_type',
                         existing_cell_types=True,
                         n_target_clusters=n_target_clusters,
                         umap=False,  # Don't compute UMAP in recursion
@@ -436,7 +436,7 @@ def cell_types_linux(
                     # RECURSIVE CALL: Try higher resolution
                     return cell_types_linux(
                         adata=adata,
-                        cell_column=cell_column,
+                        cell_type_column=cell_type_column,
                         existing_cell_types=False,
                         n_target_clusters=n_target_clusters,
                         umap=False,  # Don't compute UMAP in recursion
