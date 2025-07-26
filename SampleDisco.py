@@ -3,7 +3,7 @@ import sys
 import yaml
 import os
 import inspect
-from wrapper import wrapper
+from wrapper.wrapper import wrapper
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run the data processing wrapper.")

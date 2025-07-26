@@ -35,10 +35,11 @@ def multiomics_wrapper(
     # GLUE FUNCTION PARAMETERS
     # ========================================
     # Data files
-    rna_file: Optional[str] = None,
-    atac_file: Optional[str] = None,
-    rna_sample_meta_file: Optional[str] = None,
-    atac_sample_meta_file: Optional[str] = None,
+    rna_file: str = None,
+    atac_file: str = None,
+    rna_sample_meta_file: str = None,
+    atac_sample_meta_file: str = None,
+    multiomics_output_dir: str = None,
     
     # Preprocessing parameters
     ensembl_release: int = 98,
@@ -155,8 +156,7 @@ def multiomics_wrapper(
     # ========================================
     # GLOBAL PARAMETERS
     # ========================================
-    output_dir: str = "./pipeline_results",
-    verbose: bool = True,
+    multiomics_verbose: bool = True,
     save_intermediate: bool = True,
     
     # Alternative input paths (for skipping early steps)
@@ -216,6 +216,8 @@ def multiomics_wrapper(
         - All intermediate data objects
     """
     
+    if any(var is None for var in [rna_file, atac_file, rna_sample_meta_file, atac_sample_meta_file, multiomics_output_dir]):
+        raise ValueError("All parameters must be provided (none can be None)")
     # Initialize status flags if not provided
     if status_flags is None:
         status_flags = {
@@ -243,27 +245,27 @@ def multiomics_wrapper(
     results = {}
     
     # Create output directory
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    Path(multiomics_output_dir).mkdir(parents=True, exist_ok=True)
     
-    if verbose:
-        print(f"Starting multi-modal pipeline with output directory: {output_dir}")
+    if multiomics_verbose:
+        print(f"Starting multi-modal pipeline with output directory: {multiomics_output_dir}")
         print(f"Initial status flags: {status_flags['multiomics']}")
     
     # Set default subdirectories if not specified
     if integrate_output_dir is None:
-        integrate_output_dir = f"{output_dir}/preprocess"
+        integrate_output_dir = f"{multiomics_output_dir}/preprocess"
     if pseudobulk_output_dir is None:
-        pseudobulk_output_dir = f"{output_dir}/pseudobulk"
+        pseudobulk_output_dir = f"{multiomics_output_dir}/pseudobulk"
     if pca_output_dir is None:
-        pca_output_dir = f"{output_dir}/pca"
+        pca_output_dir = f"{multiomics_output_dir}/pca"
     if viz_output_dir is None:
-        viz_output_dir = f"{output_dir}/visualization"
+        viz_output_dir = f"{multiomics_output_dir}/visualization"
     if resolution_output_dir is None:
-        resolution_output_dir = f"{output_dir}/resolution_optimization"
+        resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization"
     
     # Step 1: GLUE integration
     if run_glue:
-        if verbose:
+        if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
         
         if not rna_file or not atac_file:
@@ -299,7 +301,7 @@ def multiomics_wrapper(
             use_rep=use_rep,
             metric=metric,
             use_gpu=use_gpu,
-            verbose=verbose,
+            verbose=multiomics_verbose,
             existing_cell_types=existing_cell_types,
             n_target_clusters=n_target_clusters,
             cluster_resolution=cluster_resolution,
@@ -312,7 +314,7 @@ def multiomics_wrapper(
             # Visualization parameters
             plot_columns=plot_columns,
             # Output directory
-            output_dir=output_dir
+            output_dir=multiomics_output_dir
         )
         
         results['glue'] = glue_result
@@ -320,22 +322,22 @@ def multiomics_wrapper(
         
         # Set integrated h5ad path for next steps
         if h5ad_path is None:
-            h5ad_path = f"{output_dir}/glue/atac_rna_integrated.h5ad"
+            h5ad_path = f"{multiomics_output_dir}/glue/atac_rna_integrated.h5ad"
         
-        if verbose:
+        if multiomics_verbose:
             print("✓ GLUE integration completed successfully")
     else:
         # Load existing integrated data if available
         if not status_flags["multiomics"]["glue_integration"]:
             if integrated_h5ad_path and os.path.exists(integrated_h5ad_path):
                 h5ad_path = integrated_h5ad_path
-                if verbose:
+                if multiomics_verbose:
                     print(f"Skipping GLUE integration, using existing data: {h5ad_path}")
             else:
-                temp_integrated_path = f"{output_dir}/glue/atac_rna_integrated.h5ad"
+                temp_integrated_path = f"{multiomics_output_dir}/glue/atac_rna_integrated.h5ad"
                 if os.path.exists(temp_integrated_path):
                     h5ad_path = temp_integrated_path
-                    if verbose:
+                    if multiomics_verbose:
                         print(f"Using previously generated integrated data: {h5ad_path}")
                 else:
                     raise ValueError("GLUE integration is skipped, but no integrated data found. "
@@ -343,7 +345,7 @@ def multiomics_wrapper(
     
     # Step 2: Integration preprocessing
     if run_integrate_preprocess:
-        if verbose:
+        if multiomics_verbose:
             print("Step 2: Running integration preprocessing...")
         
         if not status_flags["multiomics"]["glue_integration"] and not h5ad_path:
@@ -365,13 +367,13 @@ def multiomics_wrapper(
             pct_mito_cutoff=pct_mito_cutoff,
             exclude_genes=exclude_genes,
             doublet=doublet,
-            verbose=verbose
+            verbose=multiomics_verbose
         )
         
         results['adata'] = adata
         status_flags["multiomics"]["integration_preprocessing"] = True
         
-        if verbose:
+        if multiomics_verbose:
             print("✓ Integration preprocessing completed successfully")
     else:
         # Load preprocessed data if needed for subsequent steps
@@ -380,7 +382,7 @@ def multiomics_wrapper(
             if os.path.exists(temp_preprocessed_path):
                 results['adata'] = sc.read(temp_preprocessed_path)
                 status_flags["multiomics"]["integration_preprocessing"] = True
-                if verbose:
+                if multiomics_verbose:
                     print(f"Loaded preprocessed data from: {temp_preprocessed_path}")
             else:
                 raise ValueError("Integration preprocessing is required for subsequent steps. "
@@ -388,7 +390,7 @@ def multiomics_wrapper(
     
     # Step 3: Compute pseudobulk
     if run_compute_pseudobulk:
-        if verbose:
+        if multiomics_verbose:
             print("Step 3: Computing pseudobulk...")
         
         if not status_flags["multiomics"]["integration_preprocessing"]:
@@ -409,14 +411,14 @@ def multiomics_wrapper(
             normalize=normalize,
             target_sum=target_sum,
             atac=atac,
-            verbose=verbose
+            verbose=multiomics_verbose
         )
         
         results['atac_pseudobulk_df'] = atac_pseudobulk_df
         results['pseudobulk_adata'] = pseudobulk_adata
         status_flags["multiomics"]["pseudobulk_computation"] = True
         
-        if verbose:
+        if multiomics_verbose:
             print("✓ Pseudobulk computation completed successfully")
     else:
         # Load pseudobulk data if needed for subsequent steps
@@ -429,7 +431,7 @@ def multiomics_wrapper(
                 results['atac_pseudobulk_df'] = pd.read_csv(temp_pseudobulk_df_path, index_col=0)
                 results['pseudobulk_adata'] = sc.read(temp_pseudobulk_adata_path)
                 status_flags["multiomics"]["pseudobulk_computation"] = True
-                if verbose:
+                if multiomics_verbose:
                     print("Loaded pseudobulk data from existing files")
             else:
                 raise ValueError("Pseudobulk computation is required for PCA processing. "
@@ -437,7 +439,7 @@ def multiomics_wrapper(
     
     # Step 4: Process with PCA
     if run_process_pca:
-        if verbose:
+        if multiomics_verbose:
             print("Step 4: Processing with PCA...")
         
         if not status_flags["multiomics"]["pseudobulk_computation"]:
@@ -462,18 +464,18 @@ def multiomics_wrapper(
             not_save=not_save or not save_intermediate,
             atac=pca_atac,
             use_snapatac2_dimred=use_snapatac2_dimred,
-            verbose=verbose
+            verbose=multiomics_verbose
         )
         
         results['pseudobulk_anndata_processed'] = pseudobulk_anndata_processed
         status_flags["multiomics"]["pca_processing"] = True
         
-        if verbose:
+        if multiomics_verbose:
             print("✓ PCA processing completed successfully")
     
     # Alternative: Load pseudobulk from file
     if pseudobulk_h5ad_path and not run_process_pca:
-        if verbose:
+        if multiomics_verbose:
             print(f"Loading pseudobulk data from: {pseudobulk_h5ad_path}")
         results['pseudobulk_anndata_processed'] = sc.read_h5ad(pseudobulk_h5ad_path)
         status_flags["multiomics"]["pca_processing"] = True
@@ -483,7 +485,7 @@ def multiomics_wrapper(
         if os.path.exists(temp_pca_path):
             results['pseudobulk_anndata_processed'] = sc.read(temp_pca_path)
             status_flags["multiomics"]["pca_processing"] = True
-            if verbose:
+            if multiomics_verbose:
                 print(f"Loaded PCA-processed data from: {temp_pca_path}")
         else:
             raise ValueError("PCA processing is required for subsequent steps. "
@@ -491,7 +493,7 @@ def multiomics_wrapper(
     
     # Step 5: Visualize multimodal embedding
     if run_visualize_embedding:
-        if verbose:
+        if multiomics_verbose:
             print("Step 5: Visualizing multimodal embedding...")
         
         if not status_flags["multiomics"]["pca_processing"]:
@@ -515,18 +517,18 @@ def multiomics_wrapper(
             output_dir=viz_output_dir,
             show_sample_names=show_sample_names,
             force_data_type=force_data_type,
-            verbose=verbose
+            verbose=multiomics_verbose
         )
         
         results['visualization'] = {'fig': fig, 'axes': axes}
         status_flags["multiomics"]["embedding_visualization"] = True
         
-        if verbose:
+        if multiomics_verbose:
             print("✓ Embedding visualization completed successfully")
     
     # Step 6: Find optimal resolution (optional)
     if run_find_optimal_resolution:
-        if verbose:
+        if multiomics_verbose:
             print("Step 6: Finding optimal cell resolution...")
         
         # Setup GPU if available
@@ -537,11 +539,11 @@ def multiomics_wrapper(
             rmm.reinitialize(managed_memory=True, pool_allocator=False)
             cp.cuda.set_allocator(rmm_cupy_allocator)
         except:
-            if verbose:
+            if multiomics_verbose:
                 print("GPU setup failed, continuing with CPU")
         
         import torch
-        if torch.cuda.is_available() and verbose:
+        if torch.cuda.is_available() and multiomics_verbose:
             print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
             print(f"GPU Memory Available: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
         
@@ -578,22 +580,22 @@ def multiomics_wrapper(
             n_pcs=n_pcs,
             compute_pvalues=compute_pvalues,
             visualize_embeddings=visualize_embeddings,
-            verbose=verbose
+            verbose=multiomics_verbose
         )
         
         results['optimal_resolution'] = optimal_res
         results['resolution_results_df'] = results_df
         status_flags["multiomics"]["optimal_resolution"] = True
         
-        if verbose:
+        if multiomics_verbose:
             print("✓ Optimal resolution finding completed successfully")
     
     # Add status_flags to results
     results['status_flags'] = status_flags
     
-    if verbose:
+    if multiomics_verbose:
         print("\nPipeline completed successfully!")
-        print(f"Results saved to: {output_dir}")
+        print(f"Results saved to: {multiomics_output_dir}")
         print(f"Available results: {list(results.keys())}")
         print(f"Final status flags: {status_flags['multiomics']}")
         print(f"Completed steps: {sum(status_flags['multiomics'].values())}/{len(status_flags['multiomics'])}")
