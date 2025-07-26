@@ -8,6 +8,7 @@ from typing import Optional, Tuple, List, Dict, Any
 from pathlib import Path
 import pyensembl
 import time
+import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from linux.CellType_linux import *
@@ -19,7 +20,7 @@ from integration.integration_optimal_resolution import *
 from integration.integration_validation import *
 from integration.integration_visualization import *
 
-def multiomics_pipeline(
+def multiomics_wrapper(
     # ========================================
     # PIPELINE CONTROL FLAGS
     # ========================================
@@ -162,9 +163,15 @@ def multiomics_pipeline(
     integrated_h5ad_path: Optional[str] = None,
     pseudobulk_h5ad_path: Optional[str] = None,
     
+    # ========================================
+    # STATUS FLAGS (NEW ADDITION)
+    # ========================================
+    status_flags: Optional[Dict[str, Any]] = None,
+    
 ) -> Dict[str, Any]:
     """
-    Comprehensive wrapper for multi-modal single-cell analysis pipeline with all parameters explicitly defined.
+    Comprehensive wrapper for multi-modal single-cell analysis pipeline with all parameters explicitly defined
+    and status flag tracking similar to the RNA wrapper.
     
     Parameters:
     -----------
@@ -183,211 +190,55 @@ def multiomics_pipeline(
     run_find_optimal_resolution : bool, default False
         Whether to run the find_optimal_cell_resolution_integration function
     
-    GLUE FUNCTION PARAMETERS:
-    rna_file : str, optional
-        Path to RNA h5ad file
-    atac_file : str, optional
-        Path to ATAC h5ad file
-    rna_sample_meta_file : str, optional
-        Path to RNA sample metadata CSV file
-    atac_sample_meta_file : str, optional
-        Path to ATAC sample metadata CSV file
-    ensembl_release : int, default 98
-        Ensembl database release version
-    species : str, default "homo_sapiens"
-        Species name for Ensembl
-    use_highly_variable : bool, default True
-        Whether to use highly variable genes
-    n_top_genes : int, default 2000
-        Number of top genes to select
-    n_pca_comps : int, default 50
-        Number of PCA components
-    n_lsi_comps : int, default 50
-        Number of LSI components
-    lsi_n_iter : int, default 15
-        Number of LSI iterations
-    gtf_by : str, default "gene_name"
-        GTF annotation method
-    flavor : str, default "seurat_v3"
-        Flavor for highly variable gene selection
-    generate_umap : bool, default False
-        Whether to generate UMAP
-    compression : str, default "gzip"
-        Compression method for output files
-    random_state : int, default 42
-        Random seed
-    metadata_sep : str, default ","
-        Separator for metadata files
-    rna_sample_column : str, default "sample"
-        Sample column name in RNA metadata
-    atac_sample_column : str, default "sample"
-        Sample column name in ATAC metadata
-    consistency_threshold : float, default 0.05
-        Consistency threshold for training
-    save_prefix : str, default "glue"
-        Prefix for saved files
-    k_neighbors : int, default 10
-        Number of neighbors for gene activity computation
-    use_rep : str, default "X_glue"
-        Representation to use
-    metric : str, default "cosine"
-        Distance metric
-    use_gpu : bool, default True
-        Whether to use GPU
-    existing_cell_types : bool, default False
-        Whether cell types already exist
-    n_target_clusters : int, default 10
-        Number of target clusters
-    cluster_resolution : float, default 0.8
-        Clustering resolution
-    use_rep_celltype : str, default "X_glue"
-        Representation for cell type analysis
-    markers : List, optional
-        Marker genes list
-    method : str, default 'average'
-        Method for computation
-    metric_celltype : str, default 'euclidean'
-        Metric for cell type analysis
-    distance_mode : str, default 'centroid'
-        Distance computation mode
-    generate_umap_celltype : bool, default True
-        Whether to generate UMAP for cell types
-    plot_columns : List[str], optional
-        Columns to plot
+    STATUS FLAGS:
+    status_flags : Dict[str, Any], optional
+        Dictionary to track completion status of each pipeline step.
+        If None, will be initialized with default values.
+        Structure: {
+            "multiomics": {
+                "glue_integration": False,
+                "integration_preprocessing": False,
+                "pseudobulk_computation": False,
+                "pca_processing": False,
+                "embedding_visualization": False,
+                "optimal_resolution": False
+            }
+        }
     
-    INTEGRATE_PREPROCESS PARAMETERS:
-    integrate_output_dir : str, optional
-        Output directory for integration preprocessing (defaults to output_dir/preprocess)
-    h5ad_path : str, optional
-        Path to input h5ad file
-    sample_column : str, default 'sample'
-        Sample column name
-    min_cells_sample : int, default 1
-        Minimum cells per sample
-    min_cell_gene : int, default 10
-        Minimum genes per cell
-    min_features : int, default 500
-        Minimum features
-    pct_mito_cutoff : int, default 20
-        Mitochondrial percentage cutoff
-    exclude_genes : List, optional
-        Genes to exclude
-    doublet : bool, default True
-        Whether to detect doublets
-    
-    COMPUTE_PSEUDOBULK_ADATA PARAMETERS:
-    batch_col : str, default 'batch'
-        Batch column name
-    sample_col : str, default 'sample'
-        Sample column name
-    celltype_col : str, default 'cell_type'
-        Cell type column name
-    pseudobulk_output_dir : str, optional
-        Output directory for pseudobulk (defaults to output_dir/pseudobulk)
-    Save : bool, default True
-        Whether to save results
-    n_features : int, default 2000
-        Number of features
-    normalize : bool, default True
-        Whether to normalize
-    target_sum : float, default 1e4
-        Target sum for normalization
-    atac : bool, default False
-        Whether data is ATAC
-    
-    PROCESS_ANNDATA_WITH_PCA PARAMETERS:
-    pca_sample_col : str, default 'sample'
-        Sample column for PCA
-    n_expression_pcs : int, default 10
-        Number of expression PCs
-    n_proportion_pcs : int, default 10
-        Number of proportion PCs
-    pca_output_dir : str, optional
-        Output directory for PCA (defaults to output_dir/pca)
-    integrated_data : bool, default False
-        Whether data is integrated
-    not_save : bool, default False
-        Whether to not save results
-    pca_atac : bool, default False
-        Whether data is ATAC for PCA
-    use_snapatac2_dimred : bool, default False
-        Whether to use snapATAC2 dimensionality reduction
-    
-    VISUALIZE_MULTIMODAL_EMBEDDING PARAMETERS:
-    modality_col : str, default 'modality'
-        Modality column name
-    color_col : str, default 'color'
-        Color column name
-    target_modality : str, default 'ATAC'
-        Target modality for visualization
-    expression_key : str, default 'X_DR_expression'
-        Key for expression data
-    proportion_key : str, default 'X_DR_proportion'
-        Key for proportion data
-    figsize : Tuple[int, int], default (20, 8)
-        Figure size
-    point_size : int, default 60
-        Point size in plots
-    alpha : float, default 0.8
-        Point transparency
-    colormap : str, default 'viridis'
-        Colormap for plots
-    viz_output_dir : str, optional
-        Output directory for visualization (defaults to output_dir/visualization)
-    show_sample_names : bool, default False
-        Whether to show sample names
-    force_data_type : str, optional
-        Force specific data type
-    
-    FIND_OPTIMAL_CELL_RESOLUTION_INTEGRATION PARAMETERS:
-    optimization_target : str, default "rna"
-        Optimization target ("rna" or "atac")
-    dr_type : str, default "expression"
-        Dimensionality reduction type ("expression" or "proportion")
-    resolution_n_features : int, default 40000
-        Number of features for resolution optimization
-    sev_col : str, default "sev.level"
-        Severity level column
-    resolution_batch_col : str, optional
-        Batch column for resolution optimization
-    resolution_sample_col : str, default "sample"
-        Sample column for resolution optimization
-    resolution_modality_col : str, default "modality"
-        Modality column for resolution optimization
-    resolution_use_rep : str, default 'X_glue'
-        Representation for resolution optimization
-    num_DR_components : int, default 30
-        Number of DR components
-    num_PCs : int, default 20
-        Number of principal components
-    num_pvalue_simulations : int, default 1000
-        Number of p-value simulations
-    n_pcs : int, default 2
-        Number of PCs for analysis
-    compute_pvalues : bool, default True
-        Whether to compute p-values
-    visualize_embeddings : bool, default True
-        Whether to visualize embeddings
-    resolution_output_dir : str, optional
-        Output directory for resolution optimization (defaults to output_dir/resolution)
-    
-    GLOBAL PARAMETERS:
-    output_dir : str, default "./pipeline_results"
-        Main output directory
-    verbose : bool, default True
-        Whether to print verbose output
-    save_intermediate : bool, default True
-        Whether to save intermediate results
-    integrated_h5ad_path : str, optional
-        Path to existing integrated h5ad file (skips glue step)
-    pseudobulk_h5ad_path : str, optional
-        Path to existing pseudobulk h5ad file (skips earlier steps)
+    [All other parameters remain the same as documented in original function]
     
     Returns:
     --------
     Dict[str, Any]
-        Dictionary containing results from each executed step
+        Dictionary containing:
+        - Results from each executed step
+        - Updated status_flags tracking completion
+        - All intermediate data objects
     """
+    
+    # Initialize status flags if not provided
+    if status_flags is None:
+        status_flags = {
+            "multiomics": {
+                "glue_integration": False,
+                "integration_preprocessing": False,
+                "pseudobulk_computation": False,
+                "pca_processing": False,
+                "embedding_visualization": False,
+                "optimal_resolution": False
+            }
+        }
+    
+    # Ensure multiomics section exists in status_flags
+    if "multiomics" not in status_flags:
+        status_flags["multiomics"] = {
+            "glue_integration": False,
+            "integration_preprocessing": False,
+            "pseudobulk_computation": False,
+            "pca_processing": False,
+            "embedding_visualization": False,
+            "optimal_resolution": False
+        }
     
     results = {}
     
@@ -396,6 +247,7 @@ def multiomics_pipeline(
     
     if verbose:
         print(f"Starting multi-modal pipeline with output directory: {output_dir}")
+        print(f"Initial status flags: {status_flags['multiomics']}")
     
     # Set default subdirectories if not specified
     if integrate_output_dir is None:
@@ -464,15 +316,38 @@ def multiomics_pipeline(
         )
         
         results['glue'] = glue_result
+        status_flags["multiomics"]["glue_integration"] = True
         
         # Set integrated h5ad path for next steps
         if h5ad_path is None:
             h5ad_path = f"{output_dir}/glue/atac_rna_integrated.h5ad"
+        
+        if verbose:
+            print("✓ GLUE integration completed successfully")
+    else:
+        # Load existing integrated data if available
+        if not status_flags["multiomics"]["glue_integration"]:
+            if integrated_h5ad_path and os.path.exists(integrated_h5ad_path):
+                h5ad_path = integrated_h5ad_path
+                if verbose:
+                    print(f"Skipping GLUE integration, using existing data: {h5ad_path}")
+            else:
+                temp_integrated_path = f"{output_dir}/glue/atac_rna_integrated.h5ad"
+                if os.path.exists(temp_integrated_path):
+                    h5ad_path = temp_integrated_path
+                    if verbose:
+                        print(f"Using previously generated integrated data: {h5ad_path}")
+                else:
+                    raise ValueError("GLUE integration is skipped, but no integrated data found. "
+                                   "Either set run_glue=True or provide integrated_h5ad_path.")
     
     # Step 2: Integration preprocessing
     if run_integrate_preprocess:
         if verbose:
             print("Step 2: Running integration preprocessing...")
+        
+        if not status_flags["multiomics"]["glue_integration"] and not h5ad_path:
+            raise ValueError("GLUE integration is required before integration preprocessing.")
         
         if h5ad_path is None and integrated_h5ad_path:
             h5ad_path = integrated_h5ad_path
@@ -494,11 +369,30 @@ def multiomics_pipeline(
         )
         
         results['adata'] = adata
+        status_flags["multiomics"]["integration_preprocessing"] = True
+        
+        if verbose:
+            print("✓ Integration preprocessing completed successfully")
+    else:
+        # Load preprocessed data if needed for subsequent steps
+        if (run_compute_pseudobulk or run_process_pca) and not status_flags["multiomics"]["integration_preprocessing"]:
+            temp_preprocessed_path = f"{integrate_output_dir}/adata_preprocessed.h5ad"
+            if os.path.exists(temp_preprocessed_path):
+                results['adata'] = sc.read(temp_preprocessed_path)
+                status_flags["multiomics"]["integration_preprocessing"] = True
+                if verbose:
+                    print(f"Loaded preprocessed data from: {temp_preprocessed_path}")
+            else:
+                raise ValueError("Integration preprocessing is required for subsequent steps. "
+                               "Either set run_integrate_preprocess=True or ensure preprocessed data exists.")
     
     # Step 3: Compute pseudobulk
     if run_compute_pseudobulk:
         if verbose:
             print("Step 3: Computing pseudobulk...")
+        
+        if not status_flags["multiomics"]["integration_preprocessing"]:
+            raise ValueError("Integration preprocessing is required before pseudobulk computation.")
         
         adata_for_pseudobulk = results.get('adata')
         if adata_for_pseudobulk is None:
@@ -520,17 +414,40 @@ def multiomics_pipeline(
         
         results['atac_pseudobulk_df'] = atac_pseudobulk_df
         results['pseudobulk_adata'] = pseudobulk_adata
+        status_flags["multiomics"]["pseudobulk_computation"] = True
+        
+        if verbose:
+            print("✓ Pseudobulk computation completed successfully")
+    else:
+        # Load pseudobulk data if needed for subsequent steps
+        if run_process_pca and not status_flags["multiomics"]["pseudobulk_computation"]:
+            temp_pseudobulk_df_path = f"{pseudobulk_output_dir}/pseudobulk_df.csv"
+            temp_pseudobulk_adata_path = f"{pseudobulk_output_dir}/pseudobulk_adata.h5ad"
+            
+            if os.path.exists(temp_pseudobulk_df_path) and os.path.exists(temp_pseudobulk_adata_path):
+                import pandas as pd
+                results['atac_pseudobulk_df'] = pd.read_csv(temp_pseudobulk_df_path, index_col=0)
+                results['pseudobulk_adata'] = sc.read(temp_pseudobulk_adata_path)
+                status_flags["multiomics"]["pseudobulk_computation"] = True
+                if verbose:
+                    print("Loaded pseudobulk data from existing files")
+            else:
+                raise ValueError("Pseudobulk computation is required for PCA processing. "
+                               "Either set run_compute_pseudobulk=True or ensure pseudobulk data exists.")
     
     # Step 4: Process with PCA
     if run_process_pca:
         if verbose:
             print("Step 4: Processing with PCA...")
         
+        if not status_flags["multiomics"]["pseudobulk_computation"]:
+            raise ValueError("Pseudobulk computation is required before PCA processing.")
+        
         adata_for_pca = results.get('adata')
         pseudobulk_for_pca = results.get('atac_pseudobulk_df')
         pseudobulk_adata_for_pca = results.get('pseudobulk_adata')
         
-        if not all([adata_for_pca, pseudobulk_for_pca, pseudobulk_adata_for_pca]):
+        if not all([adata_for_pca is not None, pseudobulk_for_pca is not None, pseudobulk_adata_for_pca is not None]):
             raise ValueError("adata, atac_pseudobulk_df, and pseudobulk_adata must be available from previous steps when run_process_pca=True")
         
         pseudobulk_anndata_processed = process_anndata_with_pca(
@@ -549,17 +466,36 @@ def multiomics_pipeline(
         )
         
         results['pseudobulk_anndata_processed'] = pseudobulk_anndata_processed
+        status_flags["multiomics"]["pca_processing"] = True
+        
+        if verbose:
+            print("✓ PCA processing completed successfully")
     
     # Alternative: Load pseudobulk from file
     if pseudobulk_h5ad_path and not run_process_pca:
         if verbose:
             print(f"Loading pseudobulk data from: {pseudobulk_h5ad_path}")
         results['pseudobulk_anndata_processed'] = sc.read_h5ad(pseudobulk_h5ad_path)
+        status_flags["multiomics"]["pca_processing"] = True
+    elif (run_visualize_embedding or run_find_optimal_resolution) and not status_flags["multiomics"]["pca_processing"]:
+        # Try to load from default location
+        temp_pca_path = f"{pca_output_dir}/pseudobulk_sample.h5ad"
+        if os.path.exists(temp_pca_path):
+            results['pseudobulk_anndata_processed'] = sc.read(temp_pca_path)
+            status_flags["multiomics"]["pca_processing"] = True
+            if verbose:
+                print(f"Loaded PCA-processed data from: {temp_pca_path}")
+        else:
+            raise ValueError("PCA processing is required for subsequent steps. "
+                           "Either set run_process_pca=True or provide pseudobulk_h5ad_path.")
     
     # Step 5: Visualize multimodal embedding
     if run_visualize_embedding:
         if verbose:
             print("Step 5: Visualizing multimodal embedding...")
+        
+        if not status_flags["multiomics"]["pca_processing"]:
+            raise ValueError("PCA processing is required before embedding visualization.")
         
         adata_for_viz = results.get('pseudobulk_anndata_processed')
         if adata_for_viz is None:
@@ -583,6 +519,10 @@ def multiomics_pipeline(
         )
         
         results['visualization'] = {'fig': fig, 'axes': axes}
+        status_flags["multiomics"]["embedding_visualization"] = True
+        
+        if verbose:
+            print("✓ Embedding visualization completed successfully")
     
     # Step 6: Find optimal resolution (optional)
     if run_find_optimal_resolution:
@@ -609,7 +549,12 @@ def multiomics_pipeline(
         integrated_adata_for_resolution = results.get('adata')
         if integrated_adata_for_resolution is None and integrated_h5ad_path:
             integrated_adata_for_resolution = sc.read_h5ad(integrated_h5ad_path)
-        
+        elif integrated_adata_for_resolution is None:
+            # Try to load from default location
+            temp_integrated_path = f"{integrate_output_dir}/adata_preprocessed.h5ad"
+            if os.path.exists(temp_integrated_path):
+                integrated_adata_for_resolution = sc.read(temp_integrated_path)
+            
         if integrated_adata_for_resolution is None:
             raise ValueError("Integrated AnnData must be available when run_find_optimal_resolution=True")
         
@@ -638,10 +583,19 @@ def multiomics_pipeline(
         
         results['optimal_resolution'] = optimal_res
         results['resolution_results_df'] = results_df
+        status_flags["multiomics"]["optimal_resolution"] = True
+        
+        if verbose:
+            print("✓ Optimal resolution finding completed successfully")
+    
+    # Add status_flags to results
+    results['status_flags'] = status_flags
     
     if verbose:
-        print("Pipeline completed successfully!")
+        print("\nPipeline completed successfully!")
         print(f"Results saved to: {output_dir}")
         print(f"Available results: {list(results.keys())}")
+        print(f"Final status flags: {status_flags['multiomics']}")
+        print(f"Completed steps: {sum(status_flags['multiomics'].values())}/{len(status_flags['multiomics'])}")
     
     return results
