@@ -159,6 +159,7 @@ def wrapper(
     
     # ATAC Process Control Flags
     atac_preprocessing: bool = True,
+    atac_cell_type_cluster: bool = True,
     atac_pseudobulk_dimensionality_reduction: bool = True,
     atac_visualization_processing: bool = True,
     atac_trajectory_analysis: bool = True,
@@ -559,7 +560,9 @@ def wrapper(
         rna_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
     if rna_sample_distance_methods is None:
         rna_sample_distance_methods = ['cosine', 'correlation']
-        
+    if atac_trajectory_visualization_label is None:
+        atac_trajectory_visualization_label = ['sev.level']
+
     # ========================================
     # RNA PIPELINE
     # ========================================
@@ -757,6 +760,7 @@ def wrapper(
                 
                 # Process control flags
                 atac_preprocessing=atac_preprocessing,
+                atac_cell_type_cluster = atac_cell_type_cluster,
                 atac_pseudobulk_dimensionality_reduction=atac_pseudobulk_dimensionality_reduction,
                 atac_visualization_processing=atac_visualization_processing,
                 trajectory_analysis_atac=atac_trajectory_analysis,
@@ -1098,37 +1102,3 @@ def wrapper(
     
     # Return comprehensive results
     return results
-
-
-# Example usage
-if __name__ == "__main__":
-    # Example of running all three pipelines
-    results = main_wrapper(
-        output_dir="./sc_analysis_results",
-        
-        # Enable pipelines
-        run_rna_pipeline=True,
-        run_atac_pipeline=True,
-        run_multiomics_pipeline=False,
-        
-        # System configuration
-        use_gpu=True,
-        initialization=True,
-        
-        # RNA pipeline parameters
-        rna_count_data_path="data/rna_counts.h5ad",
-        rna_sample_meta_path="data/rna_metadata.csv",
-        rna_trajectory_supervised=True,
-        rna_sev_col_cca="severity",
-        
-        # ATAC pipeline parameters
-        atac_count_data_path="data/atac_counts.h5ad",
-        atac_metadata_path="data/atac_metadata.csv",
-        atac_trajectory_supervised=True,
-        
-        # Multiomics pipeline parameters (if enabled)
-        multiomics_rna_file="data/rna_for_integration.h5ad",
-        multiomics_atac_file="data/atac_for_integration.h5ad",
-        multiomics_rna_sample_meta_file="data/rna_meta_integration.csv",
-        multiomics_atac_sample_meta_file="data/atac_meta_integration.csv",
-    )

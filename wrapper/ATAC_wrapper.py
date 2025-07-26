@@ -42,6 +42,7 @@ def atac_wrapper(
     
     # Process control flags
     atac_preprocessing=True,
+    atac_cell_type_cluster = True,
     atac_pseudobulk_dimensionality_reduction=True,
     atac_visualization_processing=True,
     trajectory_analysis_atac=True,
@@ -205,8 +206,6 @@ def atac_wrapper(
         atac_cca_output_dir = atac_output_dir
     if atac_trajectory_diff_gene_output_dir is None:
         atac_trajectory_diff_gene_output_dir = os.path.join(atac_output_dir, 'trajectoryDEG')
-    if atac_trajectory_visualization_label is None:
-        atac_trajectory_visualization_label = ['sev.level']
     
     os.makedirs(atac_output_dir, exist_ok=True)
     os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
@@ -321,22 +320,23 @@ def atac_wrapper(
     # Step 2: Cell Type Clustering
     if atac_pipeline_verbose:
         print("Performing cell type clustering for ATAC data...")
-        
-    atac_sample = cell_types_atac(
-        adata=atac_sample,
-        cell_column=atac_cell_type_column,
-        existing_cell_types=atac_existing_cell_types,
-        n_target_clusters=atac_n_target_cell_clusters,
-        cluster_resolution=atac_leiden_resolution,
-        use_rep='X_DM_harmony',
-        method='average',
-        metric='euclidean',
-        distance_mode='centroid',
-        num_DMs=atac_n_lsi_components,
-        output_dir=atac_output_dir,
-        verbose=verbose
-    )
-    status_flags["atac"]["cell_type_cluster"] = True
+    
+    if atac_cell_type_cluster:
+        atac_sample = cell_types_atac(
+            adata=atac_sample,
+            cell_column=atac_cell_type_column,
+            existing_cell_types=atac_existing_cell_types,
+            n_target_clusters=atac_n_target_cell_clusters,
+            cluster_resolution=atac_leiden_resolution,
+            use_rep='X_DM_harmony',
+            method='average',
+            metric='euclidean',
+            distance_mode='centroid',
+            num_DMs=atac_n_lsi_components,
+            output_dir=atac_output_dir,
+            verbose=verbose
+        )
+        status_flags["atac"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and Dimensionality Reduction
     if atac_pseudobulk_dimensionality_reduction:

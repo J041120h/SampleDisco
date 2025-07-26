@@ -4,8 +4,8 @@ output_dir: "/Users/harry/Desktop/GenoDistance/result"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: true
-run_atac_pipeline: false
+run_rna_pipeline: false
+run_atac_pipeline: true
 run_multiomics_pipeline: false
 
 # System configuration
@@ -23,9 +23,9 @@ rna_sample_meta_path: "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: true
+rna_preprocessing: false
 rna_cell_type_cluster: false
-rna_dimensionality_reduction: false
+rna_dimensionality_reduction: true
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
@@ -150,14 +150,15 @@ atac_output_dir: null
 atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
 
 # ATAC Process Control Flags
-atac_preprocessing: false
+atac_preprocessing: true
+atac_cell_type_cluster: false
 atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false
 atac_trajectory_analysis: false
-atac_sample_distance_calculation: true
-atac_cluster_dge: true
-atac_trajectory_dge: true
-atac_visualize_data: true
+atac_sample_distance_calculation: false
+atac_cluster_dge: false
+atac_trajectory_dge: false
+atac_visualize_data: false
 
 # ATAC Column specifications
 atac_sample_col: "sample"
