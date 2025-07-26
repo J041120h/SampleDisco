@@ -27,7 +27,7 @@ def rna_wrapper(
     # ===== Required Parameters =====
     rna_count_data_path = None,
     rna_sample_meta_path = None,
-    output_dir = None,
+    rna_output_dir = None,
     
     # ===== Process Control Flags =====
     preprocessing=True,
@@ -177,31 +177,49 @@ def rna_wrapper(
         sample_distance_methods = ['cosine', 'correlation']
     
     if pseudobulk_output_dir is None:
-        pseudobulk_output_dir = output_dir
+        pseudobulk_output_dir = rna_output_dir
     
     if pca_output_dir is None:
-        pca_output_dir = output_dir
+        pca_output_dir = rna_output_dir
     
     if cca_output_dir is None:
-        cca_output_dir = output_dir
+        cca_output_dir = rna_output_dir
     
     if summary_sample_csv_path is None:
-        summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
+        summary_sample_csv_path = os.path.join(rna_output_dir, 'summary_sample.csv')
     
     if trajectory_diff_gene_output_dir is None:
-        trajectory_diff_gene_output_dir = os.path.join(output_dir, 'trajectoryDEG')
+        trajectory_diff_gene_output_dir = os.path.join(rna_output_dir, 'trajectoryDEG')
     
-    if any(x is None for x in (rna_count_data_path, rna_sample_meta_path, output_dir)):
+    if any(x is None for x in (rna_count_data_path, rna_sample_meta_path, rna_output_dir)):
         raise ValueError("Required parameters rna_count_data_path, rna_sample_meta_path, and output_dir must be provided.")
     
+    # Initialize status flags if not provided
     if status_flags is None:
         status_flags = {
-            "rna_preprocessing": False,
-            "rna_cell_type_cluster": False,
-            "rna_sample_distance_calculation": False,
-            "rna_DimensionalityReduction": False,
-            "rna_trajectory_analysis": False,
-            "rna_visualize_data": False
+            "rna": {
+                "preprocessing": False,
+                "cell_type_cluster": False,
+                "dimensionality_reduction": False,
+                "sample_distance_calculation": False,
+                "trajectory_analysis": False,
+                "trajectory_dge": False,
+                "cluster_dge": False,
+                "visualization": False
+            }
+        }
+    
+    # Ensure RNA section exists in status_flags
+    if "rna" not in status_flags:
+        status_flags["rna"] = {
+            "preprocessing": False,
+            "cell_type_cluster": False,
+            "dimensionality_reduction": False,
+            "sample_distance_calculation": False,
+            "trajectory_analysis": False,
+            "trajectory_dge": False,
+            "cluster_dge": False,
+            "visualization": False
         }
 
     # Initialize variables
@@ -210,14 +228,6 @@ def rna_wrapper(
     pseudobulk_df = None
     pseudobulk_adata = None
     pseudobulk_anndata = None
-    
-    # Standardize column names
-    if sample_col != 'sample':
-        AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
-    if batch_col != 'batch':
-        AnnData_sample.obs.rename(columns={batch_col: 'batch'}, inplace=True)
-    sample_col = 'sample'
-    batch_col = 'batch'
 
     # Step 1: Harmony Preprocessing
     if preprocessing:
@@ -226,7 +236,7 @@ def rna_wrapper(
             AnnData_cell, AnnData_sample = harmony_linux(
                 h5ad_path=rna_count_data_path,
                 sample_meta_path=rna_sample_meta_path,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 sample_column=sample_col,
                 cell_type_column=cell_type_column,
                 cell_meta_path=cell_meta_path,
@@ -252,7 +262,7 @@ def rna_wrapper(
             AnnData_cell, AnnData_sample = harmony(
                 h5ad_path=rna_count_data_path,
                 sample_meta_path=rna_sample_meta_path,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 sample_column=sample_col,
                 cell_type_column=cell_type_column,
                 cell_meta_path=cell_meta_path,
@@ -274,14 +284,22 @@ def rna_wrapper(
                 vars_to_regress=vars_to_regress,
                 verbose=verbose
             )
-        status_flags["preprocessing"] = True
+        status_flags["rna"]["preprocessing"] = True
+        
+        # Standardize column names after preprocessing
+        if sample_col != 'sample':
+            AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
+        if batch_col != 'batch':
+            AnnData_sample.obs.rename(columns={batch_col: 'batch'}, inplace=True)
+        sample_col = 'sample'
+        batch_col = 'batch'
     else:
         # Load preprocessed data
-        if not status_flags["preprocessing"]:
-            raise ValueError("Preprocessing is skipped, but no preprocessed data found.")
+        if not status_flags["rna"]["preprocessing"]:
+            raise ValueError("RNA preprocessing is skipped, but no preprocessed data found.")
         if not AnnData_cell_path or not AnnData_sample_path:
-            temp_cell_path = os.path.join(output_dir, "harmony", "adata_cell.h5ad")
-            temp_sample_path = os.path.join(output_dir, "harmony", "adata_sample.h5ad")
+            temp_cell_path = os.path.join(rna_output_dir, "harmony", "adata_cell.h5ad")
+            temp_sample_path = os.path.join(rna_output_dir, "harmony", "adata_sample.h5ad")
             if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
                 raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
             AnnData_cell_path = temp_cell_path
@@ -300,7 +318,7 @@ def rna_wrapper(
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,
                 Save=cell_type_save,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 cluster_resolution=cluster_resolution,
                 markers=markers,
                 method=method,
@@ -313,7 +331,7 @@ def rna_wrapper(
                 adata_cluster=AnnData_cell,
                 adata=AnnData_sample,
                 Save=assign_save,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 verbose=verbose
             )
         else:
@@ -324,7 +342,7 @@ def rna_wrapper(
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,
                 Save=cell_type_save,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 cluster_resolution=cluster_resolution,
                 markers=markers,
                 method=method,
@@ -337,15 +355,15 @@ def rna_wrapper(
                 adata_cluster=AnnData_cell,
                 adata=AnnData_sample,
                 Save=assign_save,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 verbose=verbose
             )
-        status_flags["cell_type_cluster"] = True
+        status_flags["rna"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and PCA
     if DimensionalityReduction:
         print("Starting dimensionality reduction...")
-        if status_flags["cell_type_cluster"] == False:
+        if not status_flags["rna"]["cell_type_cluster"]:
             raise ValueError("Cell type clustering is required before dimension reduction.")
         
         if linux_system and use_gpu:
@@ -379,20 +397,20 @@ def rna_wrapper(
             output_dir=pca_output_dir,
             verbose=pca_verbose
         )
-        status_flags["DimensionalityReduction"] = True
+        status_flags["rna"]["dimensionality_reduction"] = True
     
     # Load pseudobulk data if needed for subsequent steps
     if (trajectory_analysis or sample_distance_calculation or sample_cluster or cluster_DGE) and not DimensionalityReduction:
-        temp_pseuobulk_path = os.path.join(pca_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+        temp_pseuobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         if not os.path.exists(temp_pseuobulk_path):
             raise ValueError("Pseudobulk data not found. Ensure dimensionality reduction is performed first.")
         pseudobulk_anndata = sc.read(temp_pseuobulk_path)
-        status_flags["DimensionalityReduction"] = True
+        status_flags["rna"]["dimensionality_reduction"] = True
     
     # Step 4: Trajectory Analysis
     if trajectory_analysis:
         print("Starting trajectory analysis...")
-        if not status_flags["DimensionalityReduction"]:
+        if not status_flags["rna"]["dimensionality_reduction"]:
             raise ValueError("Dimensionality reduction is required before trajectory analysis.")
         
         if trajectory_supervised:
@@ -427,7 +445,7 @@ def rna_wrapper(
                     verbose=trajectory_verbose
                 )
             
-            visualize_cell_proportion_pseudotime(ptime_expression, output_dir)
+            visualize_cell_proportion_pseudotime(ptime_expression, rna_output_dir)
             
             if cca_optimal_cell_resolution:
                 if linux_system and use_gpu:
@@ -468,14 +486,14 @@ def rna_wrapper(
                         batch_col=batch_col,
                         n_pcs_for_null=n_pcs_for_null
                     )
-            status_flags["trajectory_analysis"] = True
+            status_flags["rna"]["trajectory_analysis"] = True
         else:
             # Unsupervised trajectory analysis
             TSCAN_result_expression = TSCAN(
                 AnnData_sample=AnnData_sample,
                 column="X_DR_expression",
                 n_clusters=8,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 grouping_columns=trajectory_visualization_label,
                 verbose=trajectory_verbose,
                 origin=TSCAN_origin
@@ -484,11 +502,12 @@ def rna_wrapper(
                 AnnData_sample=AnnData_sample,
                 column="X_DR_proportion",
                 n_clusters=8,
-                output_dir=output_dir,
+                output_dir=rna_output_dir,
                 grouping_columns=trajectory_visualization_label,
                 verbose=trajectory_verbose,
                 origin=TSCAN_origin
             )
+            status_flags["rna"]["trajectory_analysis"] = True
 
         # Trajectory differential gene analysis
         if trajectory_DGE:
@@ -539,6 +558,7 @@ def rna_wrapper(
                     top_n_heatmap=top_n_heatmap,
                     verbose=trajectory_diff_gene_verbose
                 )
+            status_flags["rna"]["trajectory_dge"] = True
     
     # Clean up summary file if exists
     if os.path.exists(summary_sample_csv_path):
@@ -547,14 +567,14 @@ def rna_wrapper(
     # Step 5: Sample Distance Calculation
     if sample_distance_calculation:
         print("Starting sample distance calculation...")
-        if not status_flags["DimensionalityReduction"]:
+        if not status_flags["rna"]["dimensionality_reduction"]:
             raise ValueError("Dimensionality reduction is required before sample distance calculation.")
         
         for md in sample_distance_methods:
             print(f"\nRunning sample distance: {md}\n")
             sample_distance(
                 adata=AnnData_sample,
-                output_dir=os.path.join(output_dir, 'Sample'),
+                output_dir=os.path.join(rna_output_dir, 'Sample'),
                 method=f'{md}',
                 summary_csv_path=summary_sample_csv_path,
                 pseudobulk=pseudobulk_df,
@@ -565,7 +585,7 @@ def rna_wrapper(
         if "EMD" in sample_distance_methods:
             EMD_distances(
                 adata=AnnData_sample,
-                output_dir=os.path.join(output_dir, 'sample_level_EMD'),
+                output_dir=os.path.join(rna_output_dir, 'sample_level_EMD'),
                 summary_csv_path=summary_sample_csv_path,
                 cell_type_column='cell_type',
                 sample_column=sample_col,
@@ -574,7 +594,7 @@ def rna_wrapper(
         if "chi_square" in sample_distance_methods:
             chi_square_distance(
                 adata=AnnData_sample,
-                output_dir=os.path.join(output_dir, 'Chi_square_sample'),
+                output_dir=os.path.join(rna_output_dir, 'Chi_square_sample'),
                 summary_csv_path=summary_sample_csv_path,
                 sample_column=sample_col,
             )
@@ -582,14 +602,14 @@ def rna_wrapper(
         if "jensen_shannon" in sample_distance_methods:
             jensen_shannon_distance(
                 adata=AnnData_sample,
-                output_dir=os.path.join(output_dir, 'jensen_shannon_sample'),
+                output_dir=os.path.join(rna_output_dir, 'jensen_shannon_sample'),
                 summary_csv_path=summary_sample_csv_path,
                 sample_column=sample_col,
             )
         
-        status_flags["sample_distance_calculation"] = True
+        status_flags["rna"]["sample_distance_calculation"] = True
         if verbose:
-            print(f"Sample distance calculation completed. Results saved in {os.path.join(output_dir, 'Sample')}")
+            print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample')}")
 
     # Step 6: Clustering and Differential Gene Expression
     if cluster_DGE:
@@ -601,13 +621,12 @@ def rna_wrapper(
             Kmeans=Kmeans_based_cluster_flag,
             methods=Tree_building_method,
             prportion_test=proportion_test,
-            generalFolder=output_dir,
+            generalFolder=rna_output_dir,
             distance_method=cluster_distance_method,
             number_of_clusters=cluster_number,
             sample_to_clade_user=user_provided_sample_to_clade
         )
-    
-    if cluster_DGE:
+        
         if RAISIN_analysis:
             print("Running RAISIN analysis...")
             if expr_results is not None:
@@ -616,7 +635,7 @@ def rna_wrapper(
                     print("Only one clade found in expression results. Skipping RAISIN analysis.")
                 else:
                     fit = raisinfit(
-                        adata_path=os.path.join(output_dir, 'harmony', 'adata_sample.h5ad'),
+                        adata_path=os.path.join(rna_output_dir, 'harmony', 'adata_sample.h5ad'),
                         sample_col=sample_col,
                         batch_key=batch_col,
                         sample_to_clade=expr_results,
@@ -626,7 +645,7 @@ def rna_wrapper(
                     )
                     run_pairwise_raisin_analysis(
                         fit=fit,
-                        output_dir=os.path.join(output_dir, 'raisin_results_expression'),
+                        output_dir=os.path.join(rna_output_dir, 'raisin_results_expression'),
                         min_samples=2,
                         fdrmethod='fdr_bh',
                         n_permutations=10,
@@ -642,7 +661,7 @@ def rna_wrapper(
                     print("Only one clade found in proportion results. Skipping RAISIN analysis.")
                 else:
                     fit = raisinfit(
-                        adata_path=os.path.join(output_dir, 'harmony', 'adata_sample.h5ad'),
+                        adata_path=os.path.join(rna_output_dir, 'harmony', 'adata_sample.h5ad'),
                         sample_col=sample_col,
                         batch_key=batch_col,
                         sample_to_clade=prop_results,
@@ -651,7 +670,7 @@ def rna_wrapper(
                     )
                     run_pairwise_raisin_analysis(
                         fit=fit,
-                        output_dir=os.path.join(output_dir, 'raisin_results_proportion'),
+                        output_dir=os.path.join(rna_output_dir, 'raisin_results_proportion'),
                         min_samples=2,
                         fdrmethod='fdr_bh',
                         n_permutations=10,
@@ -660,11 +679,13 @@ def rna_wrapper(
                     )
             else:
                 print("No proportion results available. Skipping RAISIN analysis.")
+        
+        status_flags["rna"]["cluster_dge"] = True
     
     # Step 7: Visualization
     if visualize_data:
         print("Starting visualization...")
-        if not status_flags["DimensionalityReduction"]:
+        if not status_flags["rna"]["dimensionality_reduction"]:
             if (plot_pca_2d_flag or plot_pca_3d_flag or plot_3d_cells_flag or 
                 plot_cell_type_proportions_pca_flag or plot_cell_type_expression_pca_flag or 
                 plot_pseudobulk_batch_test_expression_flag or plot_pseudobulk_batch_test_proportion_flag):
@@ -672,7 +693,7 @@ def rna_wrapper(
         
         visualization(
             adata_sample_diff=AnnData_sample,
-            output_dir=os.path.join(output_dir, 'visualization'),
+            output_dir=os.path.join(rna_output_dir, 'visualization'),
             grouping_columns=grouping_columns,
             age_bin_size=age_bin_size,
             verbose=verbose_Visualization,
@@ -688,7 +709,7 @@ def rna_wrapper(
             plot_pseudobulk_batch_test_expression_flag=plot_pseudobulk_batch_test_expression_flag,
             plot_pseudobulk_batch_test_proportion_flag=plot_pseudobulk_batch_test_proportion_flag
         )
-        status_flags["visualize_data"] = True
+        status_flags["rna"]["visualization"] = True
     
     print("RNA analysis completed successfully!")
     
