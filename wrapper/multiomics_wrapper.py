@@ -215,9 +215,10 @@ def multiomics_wrapper(
         - Updated status_flags tracking completion
         - All intermediate data objects
     """
-    
+
     if any(var is None for var in [rna_file, atac_file, rna_sample_meta_file, atac_sample_meta_file, multiomics_output_dir]):
         raise ValueError("All parameters must be provided (none can be None)")
+    
     # Initialize status flags if not provided
     if status_flags is None:
         status_flags = {
