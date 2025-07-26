@@ -8,11 +8,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 
 # Import individual wrappers
-from rna_wrapper import rna_wrapper
-from atac_wrapper import atac_wrapper
-from multiomics_wrapper import multiomics_wrapper
+from .rna_wrapper import rna_wrapper
+from .atac_wrapper import atac_wrapper
 
-def main_wrapper(
+def wrapper(
     # ========================================
     # REQUIRED PARAMETERS
     # ========================================
@@ -397,9 +396,8 @@ def main_wrapper(
     
     # Multiomics Global parameters
     multiomics_verbose: bool = True,
-    multiomics_integrated_h5ad_path: Optional[str] = None,
-    multiomics_pseudobulk_h5ad_path: Optional[str] = None,
-    
+    multiomics_integrated_h5ad_path: str = None,
+    multiomics_pseudobulk_h5ad_path: str = None,  
 ) -> Dict[str, Any]:
     """
     Comprehensive main wrapper for single-cell multi-modal analysis pipelines.
@@ -434,7 +432,8 @@ def main_wrapper(
         - 'multiomics_results': Results from multiomics pipeline (if run)
         - 'system_info': System configuration information
     """
-    
+    if run_multiomics_pipeline:
+        from .multiomics_wrapper import multiomics_wrapper
     # Create main output directory
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     
@@ -542,6 +541,25 @@ def main_wrapper(
         'system_info': system_info
     }
 
+    if atac_grouping_columns is None:
+        atac_grouping_columns = ['sev.level']
+    if atac_visualization_grouping_columns is None:
+        atac_visualization_grouping_columns = ['current_severity']
+    if atac_tree_building_method is None:
+        atac_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+    if atac_sample_distance_methods is None:
+        atac_sample_distance_methods = ['cosine', 'correlation']
+    if rna_grouping_columns is None:
+        rna_grouping_columns = ['sev.level']
+    if rna_batch_col is None:
+        rna_batch_col = []
+    if rna_trajectory_visualization_label is None:
+        rna_trajectory_visualization_label = ['sev.level']
+    if rna_tree_building_method is None:
+        rna_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+    if rna_sample_distance_methods is None:
+        rna_sample_distance_methods = ['cosine', 'correlation']
+        
     # ========================================
     # RNA PIPELINE
     # ========================================

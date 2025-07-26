@@ -191,17 +191,6 @@ def rna_wrapper(
     if trajectory_diff_gene_output_dir is None:
         trajectory_diff_gene_output_dir = os.path.join(rna_output_dir, 'trajectoryDEG')
     
-    if rna_grouping_columns is None:
-        rna_grouping_columns = ['sev.level']
-    if rna_batch_col is None:
-        rna_batch_col = []
-    if rna_trajectory_visualization_label is None:
-        rna_trajectory_visualization_label = ['sev.level']
-    if rna_tree_building_method is None:
-        rna_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
-    if rna_sample_distance_methods is None:
-        rna_sample_distance_methods = ['cosine', 'correlation']
-    
     if any(x is None for x in (rna_count_data_path, rna_sample_meta_path, rna_output_dir)):
         raise ValueError("Required parameters rna_count_data_path, rna_sample_meta_path, and output_dir must be provided.")
     

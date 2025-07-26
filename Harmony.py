@@ -280,7 +280,7 @@ def harmony(
         adata_cluster=adata_cluster,
         output_dir=output_dir,
         sample_column = sample_column,
-        cell_column=cell_column,
+        cell_type_column=cell_type_column,
         cluster_resolution=cluster_resolution,
         markers=markers,
         num_features=num_features,

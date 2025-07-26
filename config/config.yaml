@@ -1,112 +1,137 @@
-# ===== Harmony Preprocessing Parameters =====
-rna_count_data_path: "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
-rna_sample_meta_path: "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
 output_dir: "/Users/harry/Desktop/GenoDistance/result"
 
-# ===== Process Control Flags =====
-preprocessing: false
-cell_type_cluster: false
-sample_distance_calculation: false
-DimensionalityReduction: false
-trajectory_analysis: true
-trajectory_differential_gene: false
-cluster_and_DGE: false
+# ========================================
+# PIPELINE CONTROL FLAGS
+# ========================================
+# Overall pipeline control
+run_rna_pipeline: true
+run_atac_pipeline: false
+run_multiomics_pipeline: false
 
-ATAC_data: false
-trajectory_analysis_atac: false
-atac_preprocessing: false
-atac_pseudobulk_dimensionality_reduction: false
-atac_visualization_processing: false
-
-visualize_data: false
+# System configuration
+use_gpu: false
 initialization: false
-use_gpu: true
-
-sample_col: "sample"
-grouping_columns:
-  - "batch"
-cell_column: "cell_type"
-cell_meta_path: null
-batch_col: 'batch'
-markers: null
-cluster_resolution: 0.8
-num_PCs: 20
-num_harmony: 30
-num_features: 2000
-min_cells: 500
-min_features: 500
-pct_mito_cutoff: 20
-exclude_genes: null
-doublet: true
-combat: true
-method: "average"
-metric: "euclidean"
-distance_mode: "centroid"
-vars_to_regress: null
 verbose: true
+save_intermediate: true
 
-# ===== Cell Type Clustering Parameters =====
-existing_cell_types: false
-n_target_cell_clusters: 8
-umap: true
-cell_type_save: true
+# ========================================
+# RNA PIPELINE PARAMETERS
+# ========================================
+# Required RNA parameters
+rna_count_data_path: "/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad"
+rna_sample_meta_path: "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
+rna_output_dir: null
 
-# ===== Cell Type Assignment Parameters =====
-assign_save: true
+# RNA Process Control Flags
+rna_preprocessing: true
+rna_cell_type_cluster: false
+rna_dimensionality_reduction: false
+rna_sample_distance_calculation: false
+rna_trajectory_analysis: false
+rna_trajectory_dge: false
+rna_sample_cluster: false
+rna_cluster_dge: false
+rna_visualize_data: false
 
-# ===== Pseudobulk Parameters =====
-celltype_col: "cell_type"
-pseudobulk_output_dir: null
-n_features: 2000
-frac: 0.3
-pseudobulk_verbose: true
+# RNA Basic Parameters
+rna_sample_col: "sample"
+rna_grouping_columns:
+  - "batch"
+rna_cell_type_column: "cell_type"
+rna_cell_meta_path: null
+rna_batch_col: "batch"
+rna_markers: null
+rna_cluster_resolution: 0.8
+rna_num_pcs: 20
+rna_num_harmony: 30
+rna_num_features: 2000
+rna_min_cells: 500
+rna_min_features: 500
+rna_pct_mito_cutoff: 20
+rna_exclude_genes: null
+rna_doublet: true
+rna_combat: true
+rna_method: "average"
+rna_metric: "euclidean"
+rna_distance_mode: "centroid"
+rna_vars_to_regress: null
 
-# ===== PCA Parameters =====
-n_expression_pcs: 10
-n_proportion_pcs: 10
-pca_output_dir: null
-AnnData_sample_path: null
-pca_verbose: true
+# RNA Cell Type Clustering Parameters
+rna_existing_cell_types: false
+rna_n_target_cell_clusters: 8
+rna_umap: true
+rna_cell_type_save: true
+rna_assign_save: true
 
-# ===== Trajectory Analysis Parameters =====
-trajectory_supervised: true
-cca_output_dir: null
-sev_col_cca: "sev.level"
-cca_optimal_cell_resolution: false
-cca_pvalue: true
-trajectory_verbose: true
-TSCAN_origin: null
+# RNA Pseudobulk Parameters
+rna_celltype_col: "cell_type"
+rna_pseudobulk_output_dir: null
+rna_pseudobulk_n_features: 2000
+rna_frac: 0.3
+rna_pseudobulk_verbose: true
 
-# ===== Trajectory Differential Gene Parameters =====
-fdr_threshold: 0.05
-effect_size_threshold: 1
-top_n_genes: 100
-trajectory_diff_gene_covariate: None
-num_splines: 5
-spline_order: 3
-trajectory_diff_gene_output_dir: None
-visualization_gene_list: null
-visualize_all_deg: True
-top_n_heatmap: 50
-trajectory_diff_gene_verbose: True
-top_gene_number: 30
-n_pcs_for_null: 5
+# RNA PCA Parameters
+rna_n_expression_pcs: 10
+rna_n_proportion_pcs: 10
+rna_pca_output_dir: null
+rna_anndata_sample_path: null
+rna_pca_verbose: true
 
-# ===== Paths for Skipping Preprocessing =====
-AnnData_cell_path: null
+# RNA Trajectory Analysis Parameters
+rna_trajectory_supervised: true
+rna_cca_output_dir: null
+rna_sev_col_cca: "sev.level"
+rna_cca_optimal_cell_resolution: false
+rna_cca_pvalue: true
+rna_trajectory_verbose: true
+rna_tscan_origin: null
 
-# ===== Sample Distance Parameters =====
-summary_sample_csv_path: null
-sample_distance_methods: null
+# RNA Trajectory Differential Gene Parameters
+rna_fdr_threshold: 0.05
+rna_effect_size_threshold: 1
+rna_top_n_genes: 100
+rna_trajectory_diff_gene_covariate: null
+rna_num_splines: 5
+rna_spline_order: 3
+rna_trajectory_diff_gene_output_dir: null
+rna_visualization_gene_list: null
+rna_visualize_all_deg: true
+rna_top_n_heatmap: 50
+rna_trajectory_diff_gene_verbose: true
+rna_top_gene_number: 30
+rna_n_pcs_for_null: 5
 
-# ===== Cluster Based DEG ===== 
-Kmeans_based_cluster_flag: true
-Tree_building_method: null
-proportion_test: true
-RAISIN_analysis: true
-cluster_distance_method: 'cosine'
-cluster_number: 4
-user_provided_sample_to_clade:
+# RNA Paths for Skipping Preprocessing
+rna_anndata_cell_path: null
+
+# RNA Distance Methods
+rna_summary_sample_csv_path: null
+rna_sample_distance_methods: null
+
+# RNA Visualization Parameters
+rna_verbose_visualization: true
+rna_trajectory_visualization_label: "sev.level"
+rna_age_bin_size: null
+rna_dot_size: 3
+rna_plot_dendrogram_flag: true
+rna_plot_cell_umap_by_plot_group_flag: false
+rna_plot_umap_by_cell_type_flag: true
+rna_plot_pca_2d_flag: false
+rna_plot_pca_3d_flag: false
+rna_plot_3d_cells_flag: false
+rna_plot_cell_type_proportions_pca_flag: false
+rna_plot_cell_type_expression_pca_flag: false
+rna_plot_pseudobulk_batch_test_expression_flag: false
+rna_plot_pseudobulk_batch_test_proportion_flag: false
+
+# RNA Cluster Based DEG
+rna_kmeans_based_cluster_flag: true
+rna_tree_building_method: null
+rna_proportion_test: true
+rna_raisin_analysis: true
+rna_cluster_distance_method: "cosine"
+rna_cluster_number: 4
+rna_user_provided_sample_to_clade:
   HD-17-Su: 0
   HD-19-Su: 1
   HD-23-Su: 1
@@ -116,39 +141,40 @@ user_provided_sample_to_clade:
   Se-181.1-Su: 2
   Se-137.1-Su: 0
 
-# ===== Visualization Parameters =====
-verbose_Visualization: true
-trajectory_visualization_label: "sev.level"
-
-age_bin_size: null
-dot_size: 3
-plot_dendrogram_flag: true
-plot_cell_umap_by_plot_group_flag: false
-plot_umap_by_cell_type_flag: true
-plot_pca_2d_flag: false
-plot_pca_3d_flag: false
-plot_3d_cells_flag: false
-plot_cell_type_proportions_pca_flag: false
-plot_cell_type_expression_pca_flag: false
-plot_pseudobulk_batch_test_expression_flag: false
-plot_pseudobulk_batch_test_proportion_flag: false
-
-# ===== ATAC-seq Pipeline Parameters =====
-  
-atac_file_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC.h5ad"
+# ========================================
+# ATAC PIPELINE PARAMETERS
+# ========================================
+# Required ATAC parameters
+atac_count_data_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC.h5ad"
 atac_output_dir: null
 atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
-atac_pseudobulk_output_dir: null
-atac_pca_output_dir: null
+
+# ATAC Process Control Flags
+atac_preprocessing: false
+atac_pseudobulk_dimensionality_reduction: false
+atac_visualization_processing: false
+atac_trajectory_analysis: false
+atac_sample_distance_calculation: true
+atac_cluster_dge: true
+atac_trajectory_dge: true
+atac_visualize_data: true
+
+# ATAC Column specifications
 atac_sample_col: "sample"
-atac_batch_col: 'Donor'
+atac_batch_col: "Donor"
 atac_cell_type_column: "cell_type"
+
+# ATAC Pipeline configuration
 atac_pipeline_verbose: true
 use_snapatac2_dimred: true
+
+# ATAC QC and filtering parameters
 atac_min_cells: 3
 atac_min_genes: 2000
 atac_max_genes: 15000
-atac_min_cells_per_sample : 1
+atac_min_cells_per_sample: 1
+
+# ATAC Processing parameters
 atac_doublet: true
 atac_tfidf_scale_factor: 10000
 atac_num_features: 2000
@@ -157,29 +183,211 @@ atac_drop_first_lsi: true
 atac_harmony_max_iter: 30
 atac_n_neighbors: 15
 atac_n_pcs: 30
+
+# ATAC Leiden clustering parameters
 atac_leiden_resolution: 0.8
-atac_existing_cell_types: False
+atac_existing_cell_types: false
 atac_n_target_cell_clusters: 3
+
+# ATAC UMAP parameters
 atac_umap_min_dist: 0.3
 atac_umap_spread: 1.0
 atac_umap_random_state: 42
 atac_plot_dpi: 300
+
+# ATAC Paths for skipping preprocessing
 atac_cell_path: null
 atac_sample_path: null
+
+# ATAC Pseudobulk parameters
+atac_pseudobulk_output_dir: null
 atac_pseudobulk_n_features: 40000
 atac_pseudobulk_verbose: true
+
+# ATAC PCA parameters
+atac_pca_output_dir: null
 atac_pca_n_expression_pcs: 30
 atac_pca_n_proportion_pcs: 30
 atac_pca_verbose: true
 
+# ATAC Trajectory analysis parameters
+atac_trajectory_supervised: true
 atac_cca_output_dir: null
-trajectory_supervised_atac: true
+atac_sev_col_cca: "sev.level"
+atac_trajectory_verbose: true
+atac_cca_pvalue: false
 atac_cca_optimal_cell_resolution: true
-n_pcs_for_null_atac: 10
+atac_n_pcs_for_null: 10
+atac_tscan_origin: null
+atac_trajectory_visualization_label: null
 
-atac_figsize: [10, 8]  
+# ATAC Trajectory differential analysis parameters
+atac_fdr_threshold: 0.05
+atac_effect_size_threshold: 1
+atac_top_n_genes: 100
+atac_trajectory_diff_gene_covariate: null
+atac_num_splines: 5
+atac_spline_order: 3
+atac_visualization_gene_list: null
+atac_visualize_all_deg: true
+atac_top_n_heatmap: 50
+atac_trajectory_diff_gene_verbose: true
+atac_top_gene_number: 30
+atac_trajectory_diff_gene_output_dir: null
+
+# ATAC Sample distance parameters
+atac_sample_distance_methods: null
+atac_summary_sample_csv_path: null
+atac_grouping_columns: null
+
+# ATAC Clustering parameters
+atac_kmeans_based_cluster_flag: false
+atac_tree_building_method: null
+atac_proportion_test: false
+atac_raisin_analysis: false
+atac_cluster_distance_method: "cosine"
+atac_cluster_number: 4
+atac_user_provided_sample_to_clade: null
+
+# ATAC Visualization parameters
+atac_figsize: [10, 8]
 atac_point_size: 50
 atac_visualization_grouping_columns:
-  - current_severity
+  - "current_severity"
 atac_show_sample_names: true
 atac_visualization_age_size: null
+atac_age_bin_size: null
+atac_verbose_visualization: true
+atac_dot_size: 3
+atac_plot_dendrogram_flag: true
+atac_plot_cell_umap_by_plot_group_flag: true
+atac_plot_umap_by_cell_type_flag: true
+atac_plot_pca_2d_flag: true
+atac_plot_pca_3d_flag: true
+atac_plot_3d_cells_flag: true
+atac_plot_cell_type_proportions_pca_flag: true
+atac_plot_cell_type_expression_pca_flag: true
+atac_plot_pseudobulk_batch_test_expression_flag: false
+atac_plot_pseudobulk_batch_test_proportion_flag: false
+
+# ========================================
+# MULTIOMICS PIPELINE PARAMETERS
+# ========================================
+# Multiomics Control Flags
+multiomics_run_glue: true
+multiomics_run_integrate_preprocess: true
+multiomics_run_compute_pseudobulk: true
+multiomics_run_process_pca: true
+multiomics_run_visualize_embedding: true
+multiomics_run_find_optimal_resolution: false
+
+# Multiomics Data files
+multiomics_rna_file: null
+multiomics_atac_file: null
+multiomics_rna_sample_meta_file: null
+multiomics_atac_sample_meta_file: null
+multiomics_output_dir: null
+
+# Multiomics Preprocessing parameters
+multiomics_ensembl_release: 98
+multiomics_species: "homo_sapiens"
+multiomics_use_highly_variable: true
+multiomics_n_top_genes: 2000
+multiomics_n_pca_comps: 50
+multiomics_n_lsi_comps: 50
+multiomics_lsi_n_iter: 15
+multiomics_gtf_by: "gene_name"
+multiomics_flavor: "seurat_v3"
+multiomics_generate_umap: false
+multiomics_compression: "gzip"
+multiomics_random_state: 42
+multiomics_metadata_sep: ","
+multiomics_rna_sample_column: "sample"
+multiomics_atac_sample_column: "sample"
+
+# Multiomics Training parameters
+multiomics_consistency_threshold: 0.05
+multiomics_save_prefix: "glue"
+
+# Multiomics Gene activity computation parameters
+multiomics_k_neighbors: 10
+multiomics_use_rep: "X_glue"
+multiomics_metric: "cosine"
+multiomics_existing_cell_types: false
+multiomics_n_target_clusters: 10
+multiomics_cluster_resolution: 0.8
+multiomics_use_rep_celltype: "X_glue"
+multiomics_markers: null
+multiomics_method: "average"
+multiomics_metric_celltype: "euclidean"
+multiomics_distance_mode: "centroid"
+multiomics_generate_umap_celltype: true
+multiomics_plot_columns: null
+
+# Multiomics Integration preprocessing parameters
+multiomics_integrate_output_dir: null
+multiomics_h5ad_path: null
+multiomics_sample_column: "sample"
+multiomics_min_cells_sample: 1
+multiomics_min_cell_gene: 10
+multiomics_min_features: 500
+multiomics_pct_mito_cutoff: 20
+multiomics_exclude_genes: null
+multiomics_doublet: true
+
+# Multiomics Pseudobulk parameters
+multiomics_batch_col: "batch"
+multiomics_sample_col: "sample"
+multiomics_celltype_col: "cell_type"
+multiomics_pseudobulk_output_dir: null
+multiomics_save: true
+multiomics_n_features: 2000
+multiomics_normalize: true
+multiomics_target_sum: 10000.0
+multiomics_atac: false
+
+# Multiomics PCA parameters
+multiomics_pca_sample_col: "sample"
+multiomics_n_expression_pcs: 10
+multiomics_n_proportion_pcs: 10
+multiomics_pca_output_dir: null
+multiomics_integrated_data: false
+multiomics_not_save: false
+multiomics_pca_atac: false
+multiomics_use_snapatac2_dimred: false
+
+# Multiomics Visualization parameters
+multiomics_modality_col: "modality"
+multiomics_color_col: "color"
+multiomics_target_modality: "ATAC"
+multiomics_expression_key: "X_DR_expression"
+multiomics_proportion_key: "X_DR_proportion"
+multiomics_figsize: [20, 8]
+multiomics_point_size: 60
+multiomics_alpha: 0.8
+multiomics_colormap: "viridis"
+multiomics_viz_output_dir: null
+multiomics_show_sample_names: false
+multiomics_force_data_type: null
+
+# Multiomics Optimal resolution parameters
+multiomics_optimization_target: "rna"
+multiomics_dr_type: "expression"
+multiomics_resolution_n_features: 40000
+multiomics_sev_col: "sev.level"
+multiomics_resolution_batch_col: null
+multiomics_resolution_sample_col: "sample"
+multiomics_resolution_modality_col: "modality"
+multiomics_resolution_use_rep: "X_glue"
+multiomics_num_dr_components: 30
+multiomics_num_pcs: 20
+multiomics_num_pvalue_simulations: 1000
+multiomics_n_pcs: 2
+multiomics_compute_pvalues: true
+multiomics_visualize_embeddings: true
+multiomics_resolution_output_dir: null
+
+# Multiomics Global parameters
+multiomics_verbose: true
+multiomics_integrated_h5ad_path: null
+multiomics_pseudobulk_h5ad_path: null

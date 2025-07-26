@@ -207,14 +207,6 @@ def atac_wrapper(
         atac_trajectory_diff_gene_output_dir = os.path.join(atac_output_dir, 'trajectoryDEG')
     if atac_trajectory_visualization_label is None:
         atac_trajectory_visualization_label = ['sev.level']
-    if atac_grouping_columns is None:
-        atac_grouping_columns = ['sev.level']
-    if atac_visualization_grouping_columns is None:
-        atac_visualization_grouping_columns = ['current_severity']
-    if atac_tree_building_method is None:
-        atac_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
-    if atac_sample_distance_methods is None:
-        atac_sample_distance_methods = ['cosine', 'correlation']
     
     os.makedirs(atac_output_dir, exist_ok=True)
     os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
