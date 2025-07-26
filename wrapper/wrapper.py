@@ -541,30 +541,7 @@ def main_wrapper(
         'status_flags': status_flags,
         'system_info': system_info
     }
-    
-    # Set default values for list parameters
-    if rna_grouping_columns is None:
-        rna_grouping_columns = ['sev.level']
-    if rna_batch_col is None:
-        rna_batch_col = []
-    if rna_trajectory_visualization_label is None:
-        rna_trajectory_visualization_label = ['sev.level']
-    if rna_tree_building_method is None:
-        rna_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
-    if rna_sample_distance_methods is None:
-        rna_sample_distance_methods = ['cosine', 'correlation']
-    
-    if atac_trajectory_visualization_label is None:
-        atac_trajectory_visualization_label = ['sev.level']
-    if atac_grouping_columns is None:
-        atac_grouping_columns = ['sev.level']
-    if atac_visualization_grouping_columns is None:
-        atac_visualization_grouping_columns = ['current_severity']
-    if atac_tree_building_method is None:
-        atac_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
-    if atac_sample_distance_methods is None:
-        atac_sample_distance_methods = ['cosine', 'correlation']
-    
+
     # ========================================
     # RNA PIPELINE
     # ========================================
