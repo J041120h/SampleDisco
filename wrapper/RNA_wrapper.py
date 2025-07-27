@@ -4,7 +4,7 @@ import json
 import scanpy as sc
 import sys
 from pseudo_adata import compute_pseudobulk_adata
-from Harmony import harmony
+from preprocess import proprocess
 from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
@@ -28,6 +28,7 @@ def rna_wrapper(
     rna_count_data_path = None,
     rna_sample_meta_path = None,
     rna_output_dir = None,
+    sample_col='sample',
     
     # ===== Process Control Flags =====
     preprocessing=True,
@@ -41,7 +42,6 @@ def rna_wrapper(
     visualize_data=True,
     
     # ===== Basic Parameters =====
-    sample_col='sample',
     grouping_columns=['sev.level'],
     cell_type_column='cell_type',
     cell_meta_path=None,
@@ -259,7 +259,7 @@ def rna_wrapper(
                 verbose=verbose
             )
         else:
-            AnnData_cell, AnnData_sample = harmony(
+            AnnData_cell, AnnData_sample = proprocess(
                 h5ad_path=rna_count_data_path,
                 sample_meta_path=rna_sample_meta_path,
                 output_dir=rna_output_dir,
@@ -298,8 +298,8 @@ def rna_wrapper(
         if not status_flags["rna"]["preprocessing"]:
             raise ValueError("RNA preprocessing is skipped, but no preprocessed data found.")
         if not AnnData_cell_path or not AnnData_sample_path:
-            temp_cell_path = os.path.join(rna_output_dir, "harmony", "adata_cell.h5ad")
-            temp_sample_path = os.path.join(rna_output_dir, "harmony", "adata_sample.h5ad")
+            temp_cell_path = os.path.join(rna_output_dir, "preprocess", "adata_cell.h5ad")
+            temp_sample_path = os.path.join(rna_output_dir, "preprocess", "adata_sample.h5ad")
             if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
                 raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
             AnnData_cell_path = temp_cell_path

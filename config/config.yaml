@@ -4,8 +4,8 @@ output_dir: "/Users/harry/Desktop/GenoDistance/result"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
-run_atac_pipeline: true
+run_rna_pipeline: true
+run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
@@ -23,9 +23,9 @@ rna_sample_meta_path: "/Users/harry/Desktop/GenoDistance/Data/sample_data.csv"
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: false
+rna_preprocessing: true
 rna_cell_type_cluster: false
-rna_dimensionality_reduction: true
+rna_dimensionality_reduction: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false

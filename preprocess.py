@@ -15,16 +15,11 @@ def anndata_cluster(
     adata_cluster,
     output_dir,
     sample_column = 'sample',
-    cell_type_column='cell_type',
     cluster_resolution=0.8,
-    markers=None,
     num_features=2000,
     num_PCs=20,
     num_harmony=30,
     vars_to_regress_for_harmony=None,
-    method='average',
-    metric='euclidean',
-    distance_mode='centroid',
     verbose=True
 ):
     """
@@ -82,8 +77,6 @@ def anndata_sample(
     adata_sample_diff,
     output_dir,
     batch_key,
-    sample_column='sample',
-    num_features=2000,
     num_PCs=20,
     num_harmony=30,
     verbose=True
@@ -119,7 +112,6 @@ def anndata_sample(
         max_iter_harmony=num_harmony,
         use_gpu = True
     )
-
     adata_sample_diff.obsm['X_pca_harmony'] = Z
 
     # Step B3: Neighbors + UMAP using Harmony embedding
@@ -131,7 +123,7 @@ def anndata_sample(
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_sample_diff
 
-def harmony(
+def proprocess(
     h5ad_path,
     sample_meta_path,
     output_dir,
@@ -176,12 +168,12 @@ def harmony(
         if verbose:
             print("Automatically generating output directory")
 
-    # Append 'harmony' subdirectory
-    output_dir = os.path.join(output_dir, 'harmony')
+    # Append 'preprocess' subdirectory
+    output_dir = os.path.join(output_dir, 'proprocess')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
-            print("Automatically generating harmony subdirectory")
+            print("Automatically generating preprocess subdirectory")
 
     # 1. Read the raw count data from an existing H5AD
     if verbose:
@@ -252,13 +244,11 @@ def harmony(
         print("\nSample counts AFTER filtering:")
         print(cell_counts_after.sort_values(ascending=False))
 
-
     # Drop genes that are too rare in these final cells
     min_cells_for_gene = int(0.01 * adata.n_obs)  # e.g., gene must appear in 1% of cells
     sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
     if verbose:
         print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
-
 
     # Optional doublet detection
     if doublet:
@@ -277,28 +267,21 @@ def harmony(
 
     # 2(a). Clustering and cell-type annotation
     adata_cluster = anndata_cluster(
-        adata_cluster=adata_cluster,
-        output_dir=output_dir,
-        sample_column = sample_column,
-        cell_type_column=cell_type_column,
-        cluster_resolution=cluster_resolution,
-        markers=markers,
-        num_features=num_features,
-        num_PCs=num_PCs,
-        num_harmony=num_harmony,
-        vars_to_regress_for_harmony=vars_to_regress_for_harmony,
-        method=method,
-        metric=metric,
-        distance_mode=distance_mode,
-        verbose=verbose
+    adata_cluster=adata_cluster,
+    output_dir=output_dir,
+    sample_column=sample_column,
+    cluster_resolution=cluster_resolution,
+    num_features=num_features,
+    num_PCs=num_PCs,
+    num_harmony=num_harmony,
+    vars_to_regress_for_harmony=vars_to_regress_for_harmony,
+    verbose=verbose
     )
 
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
         output_dir=output_dir,
-        batch_key = batch_key,
-        sample_column=sample_column,
-        num_features=num_features,
+        batch_key=batch_key,
         num_PCs=num_PCs,
         num_harmony=num_harmony,
         verbose=verbose
