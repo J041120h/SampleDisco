@@ -4,7 +4,7 @@ import json
 import scanpy as sc
 import sys
 from pseudo_adata import compute_pseudobulk_adata
-from preprocess import proprocess
+from preprocess import preprocess
 from EMD import EMD_distances
 from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
@@ -259,7 +259,7 @@ def rna_wrapper(
                 verbose=verbose
             )
         else:
-            AnnData_cell, AnnData_sample = proprocess(
+            AnnData_cell, AnnData_sample = preprocess(
                 h5ad_path=rna_count_data_path,
                 sample_meta_path=rna_sample_meta_path,
                 output_dir=rna_output_dir,
@@ -300,6 +300,7 @@ def rna_wrapper(
         if not AnnData_cell_path or not AnnData_sample_path:
             temp_cell_path = os.path.join(rna_output_dir, "preprocess", "adata_cell.h5ad")
             temp_sample_path = os.path.join(rna_output_dir, "preprocess", "adata_sample.h5ad")
+            print(f"\n*5{temp_cell_path}\n*5{temp_sample_path}")
             if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
                 raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
             AnnData_cell_path = temp_cell_path
@@ -337,7 +338,7 @@ def rna_wrapper(
         else:
             AnnData_cell = cell_types(
                 adata=AnnData_cell,
-                cell_column=cell_type_column,
+                cell_type_column=cell_type_column,
                 existing_cell_types=existing_cell_types,
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,

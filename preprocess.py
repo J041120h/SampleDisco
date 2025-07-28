@@ -2,10 +2,6 @@ import os
 import numpy as np
 import pandas as pd
 import scanpy as sc
-import harmonypy as hm
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from sklearn.neighbors import KNeighborsTransformer
 from harmony import harmonize
 import time
 import contextlib
@@ -123,7 +119,7 @@ def anndata_sample(
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
     return adata_sample_diff
 
-def proprocess(
+def preprocess(
     h5ad_path,
     sample_meta_path,
     output_dir,
@@ -169,7 +165,7 @@ def proprocess(
             print("Automatically generating output directory")
 
     # Append 'preprocess' subdirectory
-    output_dir = os.path.join(output_dir, 'proprocess')
+    output_dir = os.path.join(output_dir, 'preprocess')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:

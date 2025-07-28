@@ -10,7 +10,7 @@ import time
 
 def cell_types(
     adata, 
-    cell_column='cell_type', 
+    cell_type_column='cell_type', 
     existing_cell_types=False,
     n_target_clusters=None,
     umap=True,
@@ -25,7 +25,7 @@ def cell_types(
     num_PCs=20, 
     max_resolution=5.0,
     resolution_step=0.5,
-    _recursion_depth=0,  # Internal parameter to track recursion
+    _recursion_depth=0,
     verbose=True
 ):
     """
@@ -36,7 +36,7 @@ def cell_types(
 
     Parameters:
     - adata: AnnData object
-    - cell_column: Column name containing cell type annotations
+    - cell_type_column: Column name containing cell type annotations
     - existing_cell_types: Boolean, whether to use existing cell type annotations
     - n_target_clusters: int, optional. Target number of clusters.
     - umap: Boolean, whether to compute UMAP
@@ -61,15 +61,13 @@ def cell_types(
     if _recursion_depth > 10:
         raise RuntimeError(f"Maximum recursion depth exceeded. Could not achieve {n_target_clusters} clusters.")
 
-    # ============================================================================
     # EXISTING CELL TYPE ANNOTATION PROCESSING
-    # ============================================================================
-    if cell_column in adata.obs.columns and existing_cell_types:
+    if cell_type_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:
             print("[cell_types] Found existing cell type annotation.")
         
         # Standardize cell type column
-        adata.obs['cell_type'] = adata.obs[cell_column].astype(str)
+        adata.obs['cell_type'] = adata.obs[cell_type_column].astype(str)
 
         # Count current number of unique cell types
         current_n_types = adata.obs['cell_type'].nunique()
@@ -77,9 +75,7 @@ def cell_types(
             prefix = "  " * _recursion_depth  # Indent for recursion levels
             print(f"{prefix}[cell_types] Current number of cell types: {current_n_types}")
 
-        # ========================================================================
         # CONDITIONAL DENDROGRAM CONSTRUCTION AND AGGREGATION
-        # ========================================================================
         apply_dendrogram = (
             n_target_clusters is not None and 
             current_n_types > n_target_clusters
@@ -120,9 +116,7 @@ def cell_types(
                 print("[cell_types] Building neighborhood graph...")
             sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
 
-    # ============================================================================
-    # DE NOVO CLUSTERING (NO EXISTING ANNOTATIONS) - RECURSIVE STRATEGY
-    # ============================================================================
+    # NO EXISTING ANNOTATIONS - RECURSIVE STRATEGY
     else:
         if verbose and _recursion_depth == 0:
             print("[cell_types] No cell type annotation found. Performing clustering.")
@@ -133,9 +127,7 @@ def cell_types(
                 print("[cell_types] Building neighborhood graph...")
             sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
 
-        # ========================================================================
         # ADAPTIVE CLUSTERING WITH RECURSION
-        # ========================================================================
         if n_target_clusters is not None:
             if verbose:
                 prefix = "  " * _recursion_depth
@@ -200,7 +192,7 @@ def cell_types(
                     # RECURSIVE CALL: Try higher resolution
                     return cell_types(
                         adata=adata,
-                        cell_column=cell_column,
+                        cell_type_column=cell_type_column,
                         existing_cell_types=False,
                         n_target_clusters=n_target_clusters,
                         umap=False,  # Don't compute UMAP in recursion
@@ -241,9 +233,7 @@ def cell_types(
             if verbose:
                 print(f"[cell_types] Found {num_clusters} clusters after Leiden clustering.")
 
-    # ============================================================================
     # FINAL PROCESSING (ONLY ON TOP-LEVEL CALL)
-    # ============================================================================
     if _recursion_depth == 0:
         # Apply marker mapping if provided and appropriate
         final_cluster_count = adata.obs['cell_type'].nunique()
@@ -303,9 +293,7 @@ def cell_type_dendrogram(
     """
     start_time = time.time()
     
-    # ============================================================================
     # PARAMETER VALIDATION AND SETUP
-    # ============================================================================
     if n_clusters < 1:
         raise ValueError("n_clusters must be >= 1")
     
@@ -318,9 +306,7 @@ def cell_type_dendrogram(
     if use_rep not in adata.obsm:
         raise ValueError(f"The representation '{use_rep}' is not present in adata.obsm.")
 
-    # ============================================================================
     # DATA PREPARATION USING DIMENSION REDUCTION
-    # ============================================================================
     # Get the dimension reduction data
     if num_PCs is not None and use_rep.startswith('X_pca'):
         # Use only the first num_PCs components if specified
@@ -340,9 +326,7 @@ def cell_type_dendrogram(
     )
     df_dims[groupby] = adata.obs[groupby].values
 
-    # ============================================================================
     # CENTROID COMPUTATION AND DISTANCE MATRIX CALCULATION
-    # ============================================================================
     if distance_mode == 'centroid':
         if verbose:
             print(f'=== Computing centroids of cell types in {use_rep} space ===')
@@ -359,9 +343,7 @@ def cell_type_dendrogram(
     else:
         raise ValueError(f"Unsupported distance_mode '{distance_mode}' for dimension reduction approach.")
 
-    # ============================================================================
     # HIERARCHICAL CLUSTERING
-    # ============================================================================
     if verbose:
         print(f'=== Performing hierarchical clustering on {use_rep} centroids ===')
         print(f'Linkage method: {method}, Distance metric: {metric}')
@@ -369,9 +351,7 @@ def cell_type_dendrogram(
     Z = sch.linkage(dist_matrix, method=method)
     adata.uns['cell_type_linkage'] = Z
 
-    # ============================================================================
     # CLUSTER CUTTING AND VALIDATION
-    # ============================================================================
     if n_clusters > original_n_types:
         if verbose:
             print(f'Warning: Requested {n_clusters} clusters, but only {original_n_types} original cell types exist.')
@@ -387,9 +367,7 @@ def cell_type_dendrogram(
     if verbose:
         print(f'Successfully created {actual_n_clusters} clusters')
 
-    # ============================================================================
     # CELL TYPE ANNOTATION UPDATE AND MAPPING CREATION
-    # ============================================================================
     # Create mapping from original cell types to new clusters (as strings)
     celltype_to_cluster = dict(zip(centroids.index, [str(label) for label in cluster_labels]))
     
@@ -406,9 +384,7 @@ def cell_type_dendrogram(
     
     adata.uns['cluster_mapping'] = cluster_mapping
     
-    # ============================================================================
     # RESULTS REPORTING AND CLEANUP
-    # ============================================================================
     if verbose:
         print('\n=== Cluster Composition ===')
         for cluster_id, original_types in sorted(cluster_mapping.items()):
