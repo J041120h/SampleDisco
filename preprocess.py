@@ -137,10 +137,6 @@ def preprocess(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    combat=True,  # Note: not fully implemented in example
-    method='average',
-    metric='euclidean',
-    distance_mode='centroid',
     vars_to_regress=[],
     verbose=True
 ):

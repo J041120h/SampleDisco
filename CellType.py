@@ -258,7 +258,7 @@ def cell_types(
         
         # Save results if requested
         if Save and output_dir:
-            output_dir = os.path.join(output_dir, 'harmony')
+            output_dir = os.path.join(output_dir, 'preprocess')
             os.makedirs(output_dir, exist_ok=True)
             save_path = os.path.join(output_dir, 'adata_cell.h5ad')
             adata.write(save_path)
@@ -411,7 +411,7 @@ def cell_type_dendrogram(
     return adata
 
 
-def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None, verbose=True):
+def cell_type_assign(adata_cluster, adata, Save=True, output_dir=None, verbose=True):
     """
     Assign cell type labels from one AnnData object to another and optionally save the result.
 
@@ -434,7 +434,7 @@ def cell_type_assign(adata_cluster, adata, Save=False, output_dir=None, verbose=
     adata.obs['cell_type'] = adata_cluster.obs['cell_type']
     
     if Save and output_dir:
-        output_dir = os.path.join(output_dir, 'harmony')
+        output_dir = os.path.join(output_dir, 'preprocess')
         save_path = os.path.join(output_dir, 'adata_sample.h5ad')
         sc.write(save_path, adata)
         if verbose:

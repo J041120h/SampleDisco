@@ -306,6 +306,10 @@ def rna_wrapper(
             AnnData_sample_path = temp_sample_path
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
+        print("Available columns in AnnData.obs:")
+        print(AnnData_sample.obs.columns.tolist())
+        print("\nFirst few rows of AnnData.obs:")
+        print(AnnData_sample.obs.head())
     
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
@@ -317,7 +321,6 @@ def rna_wrapper(
                 existing_cell_types=existing_cell_types,
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,
-                Save=cell_type_save,
                 output_dir=rna_output_dir,
                 cluster_resolution=cluster_resolution,
                 markers=markers,
@@ -341,7 +344,6 @@ def rna_wrapper(
                 existing_cell_types=existing_cell_types,
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,
-                Save=cell_type_save,
                 output_dir=rna_output_dir,
                 cluster_resolution=cluster_resolution,
                 markers=markers,
@@ -358,6 +360,10 @@ def rna_wrapper(
                 output_dir=rna_output_dir,
                 verbose=verbose
             )
+            print("Available columns in AnnData.obs:")
+            print(AnnData_sample.obs.columns.tolist())
+            print("\nFirst few rows of AnnData.obs:")
+            print(AnnData_sample.obs.head())
         status_flags["rna"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and PCA
