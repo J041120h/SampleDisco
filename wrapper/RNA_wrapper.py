@@ -6,7 +6,7 @@ import sys
 from pseudo_adata import compute_pseudobulk_adata
 from preprocess import preprocess
 from EMD import EMD_distances
-from VectorDistance import sample_distance
+from sample_distance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Visualization import visualization
@@ -306,10 +306,6 @@ def rna_wrapper(
             AnnData_sample_path = temp_sample_path
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
-        print("Available columns in AnnData.obs:")
-        print(AnnData_sample.obs.columns.tolist())
-        print("\nFirst few rows of AnnData.obs:")
-        print(AnnData_sample.obs.head())
     
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
@@ -360,10 +356,6 @@ def rna_wrapper(
                 output_dir=rna_output_dir,
                 verbose=verbose
             )
-            print("Available columns in AnnData.obs:")
-            print(AnnData_sample.obs.columns.tolist())
-            print("\nFirst few rows of AnnData.obs:")
-            print(AnnData_sample.obs.head())
         status_flags["rna"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and PCA
@@ -404,6 +396,16 @@ def rna_wrapper(
             verbose=dr_verbose
         )
         status_flags["rna"]["dimensionality_reduction"] = True
+    else:
+        if not status_flags["rna"]["dimensionality_reduction"]:
+            raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
+        if not pseudobulk_output_dir:
+            temp_pseudobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+        else:
+            temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+        if not os.path.exists(temp_pseudobulk_path):
+            raise ValueError("dimensionality_reduction data paths are not provided and default files path do not exist.")
+        pseudobulk_anndata = sc.read(temp_pseudobulk_path)
     
      # Step 5: Sample Distance Calculation
     if sample_distance_calculation:
@@ -414,18 +416,15 @@ def rna_wrapper(
         for md in sample_distance_methods:
             print(f"\nRunning sample distance: {md}\n")
             sample_distance(
-                adata=AnnData_sample,
+                adata=pseudobulk_anndata,
                 output_dir=os.path.join(rna_output_dir, 'Sample'),
                 method=f'{md}',
-                summary_csv_path=summary_sample_csv_path,
-                pseudobulk=pseudobulk_df,
-                sample_column=sample_col,
                 grouping_columns=grouping_columns,
             )
         
         if "EMD" in sample_distance_methods:
             EMD_distances(
-                adata=AnnData_sample,
+                adata=pseudobulk_anndata,
                 output_dir=os.path.join(rna_output_dir, 'sample_level_EMD'),
                 summary_csv_path=summary_sample_csv_path,
                 cell_type_column='cell_type',
@@ -434,7 +433,7 @@ def rna_wrapper(
         
         if "chi_square" in sample_distance_methods:
             chi_square_distance(
-                adata=AnnData_sample,
+                adata=pseudobulk_anndata,
                 output_dir=os.path.join(rna_output_dir, 'Chi_square_sample'),
                 summary_csv_path=summary_sample_csv_path,
                 sample_column=sample_col,
@@ -442,7 +441,7 @@ def rna_wrapper(
         
         if "jensen_shannon" in sample_distance_methods:
             jensen_shannon_distance(
-                adata=AnnData_sample,
+                adata=pseudobulk_anndata,
                 output_dir=os.path.join(rna_output_dir, 'jensen_shannon_sample'),
                 summary_csv_path=summary_sample_csv_path,
                 sample_column=sample_col,

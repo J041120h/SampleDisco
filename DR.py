@@ -647,13 +647,9 @@ def dimension_reduction(
     # Validate and create output directory structure
     output_dir = os.path.abspath(output_dir)  # Convert to absolute path
     
-    # Determine directory structure based on data type
-    if not integrated_data:
-        count_output_dir = os.path.join(output_dir, "harmony")
-        pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
-    else:
-        count_output_dir = os.path.join(output_dir, "preprocess")
-        pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
+    count_output_dir = os.path.join(output_dir, "preprocess")
+    pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
+
     
     # Create directories early to catch permission issues
     if not not_save:

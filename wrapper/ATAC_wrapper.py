@@ -9,7 +9,7 @@ from DR import dimension_reduction
 from CCA import CCA_Call
 from CCA_test import cca_pvalue_test
 from TSCAN import TSCAN
-from VectorDistance import sample_distance
+from sample_distance import sample_distance
 from EMD import EMD_distances
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
