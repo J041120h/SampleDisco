@@ -163,7 +163,7 @@ def cell_types(
                     # RECURSIVE CALL: Now treat current clustering as "existing" and aggregate
                     adata = cell_types(
                         adata=adata,
-                        cell_column='cell_type',
+                        cell_type_column='cell_type',
                         existing_cell_types=True,
                         n_target_clusters=n_target_clusters,
                         umap=False,  # Don't compute UMAP in recursion

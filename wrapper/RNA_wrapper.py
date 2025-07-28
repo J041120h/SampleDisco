@@ -300,7 +300,6 @@ def rna_wrapper(
         if not AnnData_cell_path or not AnnData_sample_path:
             temp_cell_path = os.path.join(rna_output_dir, "preprocess", "adata_cell.h5ad")
             temp_sample_path = os.path.join(rna_output_dir, "preprocess", "adata_sample.h5ad")
-            print(f"\n*5{temp_cell_path}\n*5{temp_sample_path}")
             if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
                 raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
             AnnData_cell_path = temp_cell_path
