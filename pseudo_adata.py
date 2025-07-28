@@ -241,17 +241,14 @@ def compute_pseudobulk_layers(
                                 
                                 if still_has_nan:
                                     raise ValueError("NaN values persist after gene removal")
-                            
                             if verbose:
                                 print(f"  Combat completed successfully, {temp_adata.n_vars} genes remaining")
-                    
                     except Exception as e:
                         if verbose:
                             print(f"  Combat failed for {cell_type}: {str(e)}")
                             print(f"  Proceeding without batch correction for this cell type")
                         # Continue without batch correction
 
-            # Select highly variable genes
             if verbose:
                 print(f"  Selecting top {n_features} HVGs")
             
@@ -370,7 +367,6 @@ def compute_pseudobulk_layers(
         print(f"Final AnnData shape: {concat_adata.shape}")
     
     return final_expression_df, cell_proportion_df, concat_adata
-
 
 def _create_pseudobulk_layers(
     adata: sc.AnnData,
