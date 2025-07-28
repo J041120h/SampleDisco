@@ -5,7 +5,7 @@ from ATAC_general_pipeline import run_scatac_pipeline, cell_types_atac
 from ATAC_visualization import DR_visualization_all
 from ATAC_CCA_test import find_optimal_cell_resolution_atac
 from pseudo_adata import compute_pseudobulk_adata
-from DR import process_anndata_with_pca
+from DR import dimension_reduction
 from CCA import CCA_Call
 from CCA_test import cca_pvalue_test
 from TSCAN import TSCAN
@@ -27,7 +27,7 @@ def atac_wrapper(
     atac_output_dir = None,
     atac_metadata_path=None,
     atac_pseudobulk_output_dir=None,
-    atac_pca_output_dir=None,
+    atac_dr_output_dir=None,
     atac_cca_output_dir=None,
     
     # Column specifications
@@ -87,9 +87,9 @@ def atac_wrapper(
     atac_pseudobulk_verbose=True,
     
     # PCA parameters
-    atac_pca_n_expression_pcs=30,
-    atac_pca_n_proportion_pcs=30,
-    atac_pca_verbose=True,
+    atac_dr_n_expression_components=30,
+    atac_dr_n_proportion_components=30,
+    atac_dr_verbose=True,
     
     # Trajectory analysis parameters
     trajectory_supervised_atac=True,
@@ -200,8 +200,8 @@ def atac_wrapper(
         sample_distance_methods = ['cosine', 'correlation']
     if atac_pseudobulk_output_dir is None:
         atac_pseudobulk_output_dir = atac_output_dir
-    if atac_pca_output_dir is None:
-        atac_pca_output_dir = atac_output_dir
+    if atac_dr_output_dir is None:
+        atac_dr_output_dir = atac_output_dir
     if atac_cca_output_dir is None:
         atac_cca_output_dir = atac_output_dir
     if atac_trajectory_diff_gene_output_dir is None:
@@ -209,7 +209,7 @@ def atac_wrapper(
     
     os.makedirs(atac_output_dir, exist_ok=True)
     os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
-    os.makedirs(atac_pca_output_dir, exist_ok=True)
+    os.makedirs(atac_dir_output_dir, exist_ok=True)
     os.makedirs(atac_cca_output_dir, exist_ok=True)
     
     # Initialize status flags if not provided
@@ -354,17 +354,17 @@ def atac_wrapper(
             verbose=atac_pseudobulk_verbose
         )
         
-        pseudobulk_anndata = process_anndata_with_pca(
+        pseudobulk_anndata = dimension_reduction(
             adata=atac_sample,
             pseudobulk=atac_pseudobulk_df,
             pseudobulk_anndata=pseudobulk_adata,
             sample_col=sample_col,
-            n_expression_pcs=atac_pca_n_expression_pcs,
-            n_proportion_pcs=atac_pca_n_proportion_pcs,
-            output_dir=atac_pca_output_dir,
+            n_expression_components=atac_dr_n_expression_components,
+            n_proportion_components=atac_dr_n_proportion_components,
+            output_dir=atac_dr_output_dir,
             atac=True,
             use_snapatac2_dimred=use_snapatac2_dimred,
-            verbose=atac_pca_verbose
+            verbose=atac_dr_verbose
         )
         status_flags["atac"]["dimensionality_reduction"] = True
 
@@ -435,7 +435,7 @@ def atac_wrapper(
                     n_features=atac_pseudobulk_n_features,
                     sample_col=atac_sample_col,
                     batch_col=atac_batch_col,
-                    num_DR_components=atac_pca_n_expression_pcs,
+                    num_DR_components=atac_dr_n_expression_components,
                     num_DMs=atac_n_lsi_components,
                     n_pcs=n_pcs_for_null_atac
                 )
@@ -448,7 +448,7 @@ def atac_wrapper(
                     n_features=atac_pseudobulk_n_features,
                     sample_col=atac_sample_col,
                     batch_col=atac_batch_col,
-                    num_DR_components=atac_pca_n_proportion_pcs,
+                    num_DR_components=atac_dr_n_proportion_components,
                     num_DMs=atac_n_lsi_components,
                     n_pcs=n_pcs_for_null_atac
                 )

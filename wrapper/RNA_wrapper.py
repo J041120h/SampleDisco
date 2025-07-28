@@ -10,7 +10,7 @@ from VectorDistance import sample_distance
 from ChiSquare import chi_square_distance
 from jensenshannon import jensen_shannon_distance
 from Visualization import visualization
-from DR import process_anndata_with_pca
+from DR import dimension_reduction
 from CCA import CCA_Call
 from CellType import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
@@ -80,11 +80,11 @@ def rna_wrapper(
     pseudobulk_verbose=True,
     
     # ===== PCA Parameters =====
-    n_expression_pcs=10,
-    n_proportion_pcs=10,
-    pca_output_dir=None,
+    n_expression_components=10,
+    n_proportion_components=10,
+    dr_output_dir=None,
     AnnData_sample_path=None,
-    pca_verbose=True,
+    dr_verbose=True,
     
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised=False,
@@ -179,8 +179,8 @@ def rna_wrapper(
     if pseudobulk_output_dir is None:
         pseudobulk_output_dir = rna_output_dir
     
-    if pca_output_dir is None:
-        pca_output_dir = rna_output_dir
+    if dr_output_dir is None:
+        dr_output_dir = rna_output_dir
     
     if cca_output_dir is None:
         cca_output_dir = rna_output_dir
@@ -393,17 +393,64 @@ def rna_wrapper(
                 verbose=pseudobulk_verbose
             )
         
-        pseudobulk_anndata = process_anndata_with_pca(
+        pseudobulk_anndata = dimension_reduction(
             adata=AnnData_sample,
             pseudobulk=pseudobulk_df,
             pseudobulk_anndata=pseudobulk_adata,
             sample_col=sample_col,
-            n_expression_pcs=n_expression_pcs,
-            n_proportion_pcs=n_proportion_pcs,
-            output_dir=pca_output_dir,
-            verbose=pca_verbose
+            n_expression_components=n_expression_components,
+            n_proportion_components=n_proportion_components,
+            output_dir=dr_output_dir,
+            verbose=dr_verbose
         )
         status_flags["rna"]["dimensionality_reduction"] = True
+    
+     # Step 5: Sample Distance Calculation
+    if sample_distance_calculation:
+        print("Starting sample distance calculation...")
+        if not status_flags["rna"]["dimensionality_reduction"]:
+            raise ValueError("Dimensionality reduction is required before sample distance calculation.")
+        
+        for md in sample_distance_methods:
+            print(f"\nRunning sample distance: {md}\n")
+            sample_distance(
+                adata=AnnData_sample,
+                output_dir=os.path.join(rna_output_dir, 'Sample'),
+                method=f'{md}',
+                summary_csv_path=summary_sample_csv_path,
+                pseudobulk=pseudobulk_df,
+                sample_column=sample_col,
+                grouping_columns=grouping_columns,
+            )
+        
+        if "EMD" in sample_distance_methods:
+            EMD_distances(
+                adata=AnnData_sample,
+                output_dir=os.path.join(rna_output_dir, 'sample_level_EMD'),
+                summary_csv_path=summary_sample_csv_path,
+                cell_type_column='cell_type',
+                sample_column=sample_col,
+            )
+        
+        if "chi_square" in sample_distance_methods:
+            chi_square_distance(
+                adata=AnnData_sample,
+                output_dir=os.path.join(rna_output_dir, 'Chi_square_sample'),
+                summary_csv_path=summary_sample_csv_path,
+                sample_column=sample_col,
+            )
+        
+        if "jensen_shannon" in sample_distance_methods:
+            jensen_shannon_distance(
+                adata=AnnData_sample,
+                output_dir=os.path.join(rna_output_dir, 'jensen_shannon_sample'),
+                summary_csv_path=summary_sample_csv_path,
+                sample_column=sample_col,
+            )
+        
+        status_flags["rna"]["sample_distance_calculation"] = True
+        if verbose:
+            print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample')}")
     
     # Load pseudobulk data if needed for subsequent steps
     if (trajectory_analysis or sample_distance_calculation or sample_cluster or cluster_DGE) and not DimensionalityReduction:
@@ -569,53 +616,6 @@ def rna_wrapper(
     # Clean up summary file if exists
     if os.path.exists(summary_sample_csv_path):
         os.remove(summary_sample_csv_path)
-    
-    # Step 5: Sample Distance Calculation
-    if sample_distance_calculation:
-        print("Starting sample distance calculation...")
-        if not status_flags["rna"]["dimensionality_reduction"]:
-            raise ValueError("Dimensionality reduction is required before sample distance calculation.")
-        
-        for md in sample_distance_methods:
-            print(f"\nRunning sample distance: {md}\n")
-            sample_distance(
-                adata=AnnData_sample,
-                output_dir=os.path.join(rna_output_dir, 'Sample'),
-                method=f'{md}',
-                summary_csv_path=summary_sample_csv_path,
-                pseudobulk=pseudobulk_df,
-                sample_column=sample_col,
-                grouping_columns=grouping_columns,
-            )
-        
-        if "EMD" in sample_distance_methods:
-            EMD_distances(
-                adata=AnnData_sample,
-                output_dir=os.path.join(rna_output_dir, 'sample_level_EMD'),
-                summary_csv_path=summary_sample_csv_path,
-                cell_type_column='cell_type',
-                sample_column=sample_col,
-            )
-        
-        if "chi_square" in sample_distance_methods:
-            chi_square_distance(
-                adata=AnnData_sample,
-                output_dir=os.path.join(rna_output_dir, 'Chi_square_sample'),
-                summary_csv_path=summary_sample_csv_path,
-                sample_column=sample_col,
-            )
-        
-        if "jensen_shannon" in sample_distance_methods:
-            jensen_shannon_distance(
-                adata=AnnData_sample,
-                output_dir=os.path.join(rna_output_dir, 'jensen_shannon_sample'),
-                summary_csv_path=summary_sample_csv_path,
-                sample_column=sample_col,
-            )
-        
-        status_flags["rna"]["sample_distance_calculation"] = True
-        if verbose:
-            print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample')}")
 
     # Step 6: Clustering and Differential Gene Expression
     if cluster_DGE:

@@ -9,7 +9,7 @@ import time
 import signal
 from contextlib import contextmanager
 from pseudo_adata import compute_pseudobulk_adata  # Updated import
-from DR import process_anndata_with_pca
+from DR import dimension_reduction
 from CCA_test import * 
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 from pseudo_adata_linux import compute_pseudobulk_adata_linux
@@ -184,13 +184,13 @@ def find_optimal_cell_resolution_linux(
                 # Perform dimension reduction
                 dr_result = time_function(
                     "  📐 Dimension reduction",
-                    process_anndata_with_pca,
+                    dimension_reduction,
                     adata=AnnData_sample,
                     pseudobulk=pseudobulk_dict,
                     pseudobulk_anndata=pseudobulk_adata,
                     sample_col=sample_col,
-                    n_expression_pcs=num_DR_components,
-                    n_proportion_pcs=num_DR_components,
+                    n_expression_components=num_DR_components,
+                    n_proportion_components=num_DR_components,
                     atac=False,
                     output_dir=resolution_dir,
                     not_save=True,

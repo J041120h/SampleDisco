@@ -6,7 +6,7 @@ import os
 import matplotlib.pyplot as plt
 from anndata import AnnData
 import time
-from DR import process_anndata_with_pca
+from DR import dimension_reduction
 from ATAC_cell_type import cell_types_atac, cell_type_assign_atac
 from pseudo_adata import compute_pseudobulk_adata
 from CCA import *
@@ -675,13 +675,13 @@ def find_optimal_cell_resolution_atac(
             result_dict['n_samples'] = len(pseudobulk_adata)
             
             # Perform dimension reduction
-            process_anndata_with_pca(
+            dimension_reduction(
                 adata=AnnData_sample,
                 pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata,
                 sample_col=sample_col,
-                n_expression_pcs=num_DR_components,
-                n_proportion_pcs=num_DR_components,
+                n_expression_components=num_DR_components,
+                n_proportion_components=num_DR_components,
                 atac=True,
                 output_dir=resolution_dir,
                 not_save=True,
@@ -860,13 +860,13 @@ def find_optimal_cell_resolution_atac(
             result_dict['n_samples'] = len(pseudobulk_adata)
             
             # Perform dimension reduction
-            process_anndata_with_pca(
+            dimension_reduction(
                 adata=AnnData_sample,
                 pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata,
                 sample_col=sample_col,
-                n_expression_pcs=num_DR_components,
-                n_proportion_pcs=num_DR_components,
+                n_expression_components=num_DR_components,
+                n_proportion_components=num_DR_components,
                 atac=True,
                 output_dir=resolution_dir,
                 not_save=True,

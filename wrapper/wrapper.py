@@ -87,11 +87,11 @@ def wrapper(
     rna_pseudobulk_verbose: bool = True,
     
     # RNA PCA Parameters
-    rna_n_expression_pcs: int = 10,
-    rna_n_proportion_pcs: int = 10,
-    rna_pca_output_dir: Optional[str] = None,
+    rna_n_expression_components: int = 10,
+    rna_n_proportion_components: int = 10,
+    rna_dr_output_dir: Optional[str] = None,
     rna_anndata_sample_path: Optional[str] = None,
-    rna_pca_verbose: bool = True,
+    rna_dr_verbose: bool = True,
     
     # RNA Trajectory Analysis Parameters
     rna_trajectory_supervised: bool = False,
@@ -214,10 +214,10 @@ def wrapper(
     atac_pseudobulk_verbose: bool = True,
     
     # ATAC PCA parameters
-    atac_pca_output_dir: Optional[str] = None,
-    atac_pca_n_expression_pcs: int = 30,
-    atac_pca_n_proportion_pcs: int = 30,
-    atac_pca_verbose: bool = True,
+    atac_dr_output_dir: Optional[str] = None,
+    atac_dr_n_expression_components: int = 30,
+    atac_dr_n_proportion_components: int = 30,
+    atac_dr_verbose: bool = True,
     
     # ATAC Trajectory analysis parameters
     atac_trajectory_supervised: bool = True,
@@ -635,11 +635,11 @@ def wrapper(
                 pseudobulk_verbose=rna_pseudobulk_verbose,
                 
                 # PCA parameters
-                n_expression_pcs=rna_n_expression_pcs,
-                n_proportion_pcs=rna_n_proportion_pcs,
-                pca_output_dir=rna_pca_output_dir,
+                n_expression_components=rna_n_expression_components,
+                n_proportion_components=rna_n_proportion_components,
+                dr_output_dir=rna_dr_output_dir,
                 AnnData_sample_path=rna_anndata_sample_path,
-                pca_verbose=rna_pca_verbose,
+                dr_verbose=rna_dr_verbose,
                 
                 # Trajectory analysis parameters
                 trajectory_supervised=rna_trajectory_supervised,
@@ -745,7 +745,7 @@ def wrapper(
                 atac_output_dir=atac_output_dir,
                 atac_metadata_path=atac_metadata_path,
                 atac_pseudobulk_output_dir=atac_pseudobulk_output_dir,
-                atac_pca_output_dir=atac_pca_output_dir,
+                atac_dr_output_dir=atac_dr_output_dir,
                 atac_cca_output_dir=atac_cca_output_dir,
                 
                 # Column specifications
@@ -805,9 +805,9 @@ def wrapper(
                 atac_pseudobulk_verbose=atac_pseudobulk_verbose,
                 
                 # PCA parameters
-                atac_pca_n_expression_pcs=atac_pca_n_expression_pcs,
-                atac_pca_n_proportion_pcs=atac_pca_n_proportion_pcs,
-                atac_pca_verbose=atac_pca_verbose,
+                atac_dr_n_expression_pcs=atac_dr_n_expression_components,
+                atac_dr_n_proportion_pcs=atac_dr_n_proportion_components,
+                atac_dr_verbose=atac_dr_verbose,
                 
                 # Trajectory analysis parameters
                 trajectory_supervised_atac=atac_trajectory_supervised,

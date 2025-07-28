@@ -284,7 +284,7 @@ def _store_results_in_both_objects(adata, pseudobulk_anndata, key, df_result, ob
         if verbose:
             print(f"[Storage] Skipped storing {key} - result was None")
 
-def run_pca_expression(
+def run_dimension_reduction_expression(
     adata: sc.AnnData, 
     pseudobulk_anndata: sc.AnnData,
     n_components: int = 10, 
@@ -459,7 +459,7 @@ def run_pca_expression(
         print(f"[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata")
 
 
-def run_pca_proportion(
+def run_dimension_reduction_proportion(
     adata: sc.AnnData, 
     pseudobulk: dict, 
     pseudobulk_anndata: sc.AnnData = None,
@@ -468,7 +468,7 @@ def run_pca_proportion(
     verbose: bool = False
 ) -> None:
     """
-    Performs PCA on cell proportion data and stores the principal components under the unified key
+    Performs dimension reduction on cell proportion data and stores the results under the unified key
     'X_DR_proportion' in both AnnData objects.
     """
     if "cell_proportion" not in pseudobulk:
@@ -480,16 +480,16 @@ def run_pca_proportion(
     proportion_df.index = proportion_df.index.astype(str).str.strip().str.lower()
     proportion_df = proportion_df.fillna(0)
     
-    # Check if there are enough dimensions for PCA
+    # Check if there are enough dimensions for dimension reduction
     n_samples, n_features = proportion_df.shape
     max_components = min(n_samples, n_features)
     if n_components > max_components:
         if verbose:
-            print(f"[run_pca_proportion] Warning: Requested n_components={n_components} exceeds maximum possible ({max_components}). Using {max_components} components.")
+            print(f"[run_dimension_reduction_proportion] Warning: Requested n_components={n_components} exceeds maximum possible ({max_components}). Using {max_components} components.")
         n_components = max_components
     
     if n_components <= 0:
-        raise ValueError(f"Cannot perform PCA: insufficient data dimensions (samples={n_samples}, features={n_features}).")
+        raise ValueError(f"Cannot perform dimension reduction: insufficient data dimensions (samples={n_samples}, features={n_features}).")
     
     pca = PCA(n_components=n_components)
     pca_coords = pca.fit_transform(proportion_df)
@@ -509,11 +509,11 @@ def run_pca_proportion(
         pseudobulk_anndata.obsm["X_DR_proportion"] = pca_df.values
         
         if verbose:
-            print(f"[run_pca_proportion] PCA on cell proportions completed.")
+            print(f"[run_dimension_reduction_proportion] Dimension reduction on cell proportions completed.")
             print(f"Stored results as X_DR_proportion in both adata and pseudobulk_anndata with shape: {pca_df.shape}")
     else:
         if verbose:
-            print(f"[run_pca_proportion] PCA on cell proportions completed.")
+            print(f"[run_dimension_reduction_proportion] Dimension reduction on cell proportions completed.")
             print(f"Stored results in adata.uns['X_DR_proportion'] with shape: {pca_df.shape}")
 
 def _save_anndata_with_detailed_error_handling(file_path, adata, object_name, verbose=False):
@@ -572,13 +572,13 @@ def _save_anndata_with_detailed_error_handling(file_path, adata, object_name, ve
         return False
 
 
-def process_anndata_with_pca(
+def dimension_reduction(
     adata: sc.AnnData, 
     pseudobulk: dict, 
     pseudobulk_anndata: sc.AnnData,
     sample_col: str = 'sample',
-    n_expression_pcs: int = 10, 
-    n_proportion_pcs: int = 10, 
+    n_expression_components: int = 10, 
+    n_proportion_components: int = 10, 
     output_dir: str = "./", 
     integrated_data: bool = False,
     not_save: bool = False,
@@ -606,9 +606,9 @@ def process_anndata_with_pca(
         AnnData object with samples as observations and genes as variables (sample * gene)
     sample_col : str, default 'sample'
         Column name for sample identification
-    n_expression_pcs : int, default 10
+    n_expression_components : int, default 10
         Number of components for expression dimension reduction
-    n_proportion_pcs : int, default 10
+    n_proportion_components : int, default 10
         Number of components for proportion dimension reduction
     output_dir : str, default "./"
         Output directory for saving results
@@ -632,17 +632,17 @@ def process_anndata_with_pca(
         raise ValueError("pseudobulk_anndata parameter is required.")
     
     if verbose:
-        print("[process_anndata_with_pca] Starting dimension reduction computation...")
-        print("[process_anndata_with_pca] Results will be stored under unified keys:")
+        print("[process_anndata_with_dimension_reduction] Starting dimension reduction computation...")
+        print("[process_anndata_with_dimension_reduction] Results will be stored under unified keys:")
         print("  - X_DR_expression: for expression data")
         print("  - X_DR_proportion: for proportion data")
         if atac:
             if use_snapatac2_dimred:
-                print("[process_anndata_with_pca] ATAC mode: Will try snapATAC2 spectral first, fallback to LSI if needed")
+                print("[process_anndata_with_dimension_reduction] ATAC mode: Will try snapATAC2 spectral first, fallback to LSI if needed")
             else:
-                print("[process_anndata_with_pca] ATAC mode: Will use LSI for expression data")
+                print("[process_anndata_with_dimension_reduction] ATAC mode: Will use LSI for expression data")
         else:
-            print("[process_anndata_with_pca] RNA mode: Will use PCA for expression data")
+            print("[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data")
     
     # Validate and create output directory structure
     output_dir = os.path.abspath(output_dir)  # Convert to absolute path
@@ -661,12 +661,12 @@ def process_anndata_with_pca(
             os.makedirs(count_output_dir, exist_ok=True)
             os.makedirs(pseudobulk_output_dir, exist_ok=True)
             if verbose:
-                print(f"[process_anndata_with_pca] ✓ Created output directories:")
+                print(f"[process_anndata_with_dimension_reduction] ✓ Created output directories:")
                 print(f"  - count_output_dir: {count_output_dir}")
                 print(f"  - pseudobulk_output_dir: {pseudobulk_output_dir}")
         except Exception as e:
             if verbose:
-                print(f"[process_anndata_with_pca] ✗ Failed to create output directories: {str(e)}")
+                print(f"[process_anndata_with_dimension_reduction] ✗ Failed to create output directories: {str(e)}")
             if not verbose:  # Always show critical errors
                 print(f"ERROR: Cannot create output directories: {str(e)}")
             raise
@@ -674,12 +674,12 @@ def process_anndata_with_pca(
     # Get data dimensions and adjust n_components accordingly
     sample_proportion_df = pseudobulk["cell_proportion"]
     
-    n_expression_pcs = min(n_expression_pcs, min(pseudobulk_anndata.shape) - 1)
-    n_proportion_pcs = min(n_proportion_pcs, min(sample_proportion_df.shape))
+    n_expression_components = min(n_expression_components, min(pseudobulk_anndata.shape) - 1)
+    n_proportion_components = min(n_proportion_components, min(sample_proportion_df.shape))
     
     if verbose:
-        print(f"[process_anndata_with_pca] Using n_expression_pcs={n_expression_pcs}, n_proportion_pcs={n_proportion_pcs}")
-        print(f"[process_anndata_with_pca] Data dimensions: expression={pseudobulk_anndata.shape}, proportion={sample_proportion_df.shape}")
+        print(f"[process_anndata_with_dimension_reduction] Using n_expression_components={n_expression_components}, n_proportion_components={n_proportion_components}")
+        print(f"[process_anndata_with_dimension_reduction] Data dimensions: expression={pseudobulk_anndata.shape}, proportion={sample_proportion_df.shape}")
     
     # Track what succeeded for better error reporting
     expression_dr_successful = False
@@ -689,39 +689,39 @@ def process_anndata_with_pca(
     
     # Run dimension reduction on expression data
     try:
-        run_pca_expression(
+        run_dimension_reduction_expression(
             adata=adata, 
             pseudobulk_anndata=pseudobulk_anndata,
-            n_components=n_expression_pcs,
+            n_components=n_expression_components,
             atac=atac,
             use_snapatac2_dimred=use_snapatac2_dimred,
             verbose=verbose
         )
         expression_dr_successful = True
         if verbose:
-            print("[process_anndata_with_pca] ✓ Expression dimension reduction completed successfully")
+            print("[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully")
     except Exception as e:
         expression_error = str(e)
         if verbose:
-            print(f"[process_anndata_with_pca] ✗ Expression dimension reduction failed: {expression_error}")
+            print(f"[process_anndata_with_dimension_reduction] ✗ Expression dimension reduction failed: {expression_error}")
     
     # Run dimension reduction on proportion data
     try:
-        run_pca_proportion(
+        run_dimension_reduction_proportion(
             adata=adata, 
             pseudobulk=pseudobulk, 
             pseudobulk_anndata=pseudobulk_anndata,
             sample_col=sample_col,
-            n_components=n_proportion_pcs, 
+            n_components=n_proportion_components, 
             verbose=verbose
         )
         proportion_dr_successful = True
         if verbose:
-            print("[process_anndata_with_pca] ✓ Proportion dimension reduction completed successfully")
+            print("[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully")
     except Exception as e:
         proportion_error = str(e)
         if verbose:
-            print(f"[process_anndata_with_pca] ✗ Proportion dimension reduction failed: {proportion_error}")
+            print(f"[process_anndata_with_dimension_reduction] ✗ Proportion dimension reduction failed: {proportion_error}")
     
     # Check if at least one dimension reduction succeeded
     if not expression_dr_successful and not proportion_dr_successful:
@@ -735,7 +735,7 @@ def process_anndata_with_pca(
     # Save results if requested and at least one dimension reduction succeeded
     if not not_save:
         if verbose:
-            print("[process_anndata_with_pca] Preparing to save results...")
+            print("[process_anndata_with_dimension_reduction] Preparing to save results...")
         
         # Determine file names based on data type
         if integrated_data:
@@ -749,7 +749,7 @@ def process_anndata_with_pca(
         pb_adata_path = os.path.join(pseudobulk_output_dir, pb_filename)
         
         if verbose:
-            print(f"[process_anndata_with_pca] Target file paths:")
+            print(f"[process_anndata_with_dimension_reduction] Target file paths:")
             print(f"  - adata: {adata_path}")
             print(f"  - pseudobulk_anndata: {pb_adata_path}")
         
@@ -765,22 +765,22 @@ def process_anndata_with_pca(
         # Report save results
         if adata_save_success and pb_save_success:
             if verbose:
-                print("[process_anndata_with_pca] ✓ All files saved successfully")
+                print("[process_anndata_with_dimension_reduction] ✓ All files saved successfully")
         elif adata_save_success or pb_save_success:
             if verbose:
-                print(f"[process_anndata_with_pca] ⚠ Partial save success:")
+                print(f"[process_anndata_with_dimension_reduction] ⚠ Partial save success:")
                 print(f"  - adata: {'✓' if adata_save_success else '✗'}")
                 print(f"  - pseudobulk_anndata: {'✓' if pb_save_success else '✗'}")
         else:
             if verbose:
-                print("[process_anndata_with_pca] ✗ All file saves failed")
+                print("[process_anndata_with_dimension_reduction] ✗ All file saves failed")
             else:
                 print("WARNING: Failed to save processed data files")
     
     # Final summary
     if verbose and start_time is not None:
         elapsed_time = time.time() - start_time
-        print(f"\n[process_anndata_with_pca] === SUMMARY ===")
+        print(f"\n[process_anndata_with_dimension_reduction] === SUMMARY ===")
         print(f"Total runtime: {elapsed_time:.2f} seconds")
         print(f"Expression dimension reduction: {'✓ SUCCESS' if expression_dr_successful else '✗ FAILED'}")
         print(f"Proportion dimension reduction: {'✓ SUCCESS' if proportion_dr_successful else '✗ FAILED'}")

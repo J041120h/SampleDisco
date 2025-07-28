@@ -24,8 +24,8 @@ rna_output_dir: null
 
 # RNA Process Control Flags
 rna_preprocessing: false
-rna_cell_type_cluster: true
-rna_dimensionality_reduction: false
+rna_cell_type_cluster: false
+rna_dimensionality_reduction: true
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
@@ -71,11 +71,11 @@ rna_frac: 0.3
 rna_pseudobulk_verbose: true
 
 # RNA PCA Parameters
-rna_n_expression_pcs: 10
-rna_n_proportion_pcs: 10
-rna_pca_output_dir: null
+rna_n_expression_components: 10
+rna_n_proportion_components: 10
+rna_dr_output_dir: null
 rna_anndata_sample_path: null
-rna_pca_verbose: true
+rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
 rna_trajectory_supervised: true
@@ -206,10 +206,10 @@ atac_pseudobulk_n_features: 40000
 atac_pseudobulk_verbose: true
 
 # ATAC PCA parameters
-atac_pca_output_dir: null
-atac_pca_n_expression_pcs: 30
-atac_pca_n_proportion_pcs: 30
-atac_pca_verbose: true
+atac_dr_output_dir: null
+atac_dr_n_expression_components: 30
+atac_dr_n_proportion_components: 30
+atac_dr_verbose: true
 
 # ATAC Trajectory analysis parameters
 atac_trajectory_supervised: true

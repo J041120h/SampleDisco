@@ -351,11 +351,7 @@ def sample_distance(
     """
     output_dir = os.path.join(output_dir, method)
     os.makedirs(output_dir, exist_ok=True)
-
-    # Compute distances using different methods
     calculate_sample_distances_cell_proportion(adata, output_dir, method, summary_csv_path, pseudobulk, grouping_columns)
-    # calculate_sample_distances_gene_expression(adata, output_dir, method, summary_csv_path, sample_column)
-    # calculate_sample_distances_pca(adata, output_dir, method, summary_csv_path, sample_column)
     calculate_sample_distances_gene_pseudobulk(adata, output_dir, method, summary_csv_path, pseudobulk, sample_column, grouping_columns)
 
     print("Sample distance computations completed.")
