@@ -8,7 +8,7 @@ from anndata import AnnData
 import warnings
 from anndata._core.aligned_df import ImplicitModificationWarning
 from Visualization import plot_cell_type_expression_heatmap, plot_cell_type_abundances, visualizeGroupRelationship, visualizeDistanceMatrix
-from distanceTest import distanceCheck
+from distance_test import distanceCheck
 from scipy.sparse import issparse
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)

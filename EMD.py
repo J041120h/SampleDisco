@@ -8,7 +8,7 @@ import seaborn as sns
 from pyemd import emd
 from anndata import AnnData
 from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix,plot_cell_type_abundances,plot_cell_type_expression_heatmap
-from distanceTest import distanceCheck
+from distance_test import distanceCheck
 import warnings
 from scipy.sparse import issparse
 from scipy.spatial.distance import cdist

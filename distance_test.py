@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from anndata import AnnData
 from typing import List, Optional, Dict
-from Grouping import find_sample_grouping
 
 def distanceCheck(
     distance_df: pd.DataFrame,
@@ -12,12 +11,11 @@ def distanceCheck(
     output_dir: str,
     adata: AnnData = None,
     grouping_columns: List[str] = ['sev.level'],
-    age_bin_size: int = 10,
     summary_csv_path: Optional[str] = None
 ) -> float:
     """
-    Calculate in-group vs. between-group distances based on a grouping of samples,
-    using data directly from AnnData object and distance DataFrame.
+    Calculate in-group vs. between-group distances based on sample grouping,
+    using data directly from pseudobulked AnnData object and distance DataFrame.
 
     Parameters
     ----------
@@ -30,12 +28,10 @@ def distanceCheck(
     output_dir : str
         Directory to save results
     adata : anndata.AnnData or None
-        An AnnData object where per-sample metadata is stored in `adata.obs`.
+        A pseudobulked AnnData object where sample metadata is stored in `adata.obs`.
         Sample names should match the distance_df index.
     grouping_columns : list of str
         Column names in `adata.obs` to use for grouping the samples.
-    age_bin_size : int
-        If 'age' is in grouping_columns, this controls the bin width for age groups.
     summary_csv_path : str or None
         Path to the summary CSV file. If None, no summary file is updated.
 
@@ -48,61 +44,47 @@ def distanceCheck(
     # Get the sample names from the distance matrix
     samples = distance_df.index.tolist()
     
-    print(f"Debug: Distance matrix samples: {samples}")
-    
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
     # --------------------------------------------------------------------------
-    # 1) Find sample grouping using available metadata
+    # 1) Find sample grouping using available metadata from pseudobulked AnnData
     # --------------------------------------------------------------------------
     if adata is not None and hasattr(adata, 'obs') and not adata.obs.empty:
         # Check which samples from distance matrix exist in adata.obs
-        available_samples = []
-        sample_metadata = {}
-        
-        for sample in samples:
-            if sample in adata.obs.index:
-                available_samples.append(sample)
-                sample_metadata[sample] = adata.obs.loc[sample].to_dict()
-            else:
-                print(f"Warning: Sample '{sample}' not found in adata.obs")
+        available_samples = [sample for sample in samples if sample in adata.obs.index]
         
         if not available_samples:
             print("Warning: No samples from distance matrix found in adata.obs, using fallback grouping")
             # Fallback to simple grouping by first few characters
             groups = {sample: sample[:2] for sample in samples}
         else:
-            # Create a temporary AnnData-like structure for grouping function
-            temp_obs = pd.DataFrame.from_dict(sample_metadata, orient='index')
+            # Use the first available grouping column to create groups
+            grouping_column = None
+            for col in grouping_columns:
+                if col in adata.obs.columns:
+                    grouping_column = col
+                    break
             
-            # Create a minimal AnnData object for the grouping function
-            temp_adata = type('TempAnnData', (), {})()
-            temp_adata.obs = temp_obs
-            
-            try:
-                groups = find_sample_grouping(
-                    adata=temp_adata,
-                    samples=available_samples,
-                    grouping_columns=grouping_columns,
-                    age_bin_size=age_bin_size
-                )
+            if grouping_column is not None:
+                # Create groups directly from the pseudobulked AnnData metadata
+                groups = {}
+                for sample in available_samples:
+                    group_value = adata.obs.loc[sample, grouping_column]
+                    groups[sample] = str(group_value)
                 
                 # Add any missing samples with a default group
                 for sample in samples:
                     if sample not in groups:
                         groups[sample] = 'Unknown'
-                        
-            except Exception as e:
-                print(f"Warning: Grouping function failed: {e}")
+            else:
+                print(f"Warning: None of the grouping columns {grouping_columns} found in adata.obs")
                 print("Using fallback grouping by sample prefix")
                 groups = {sample: sample[:2] for sample in samples}
     else:
         print("Warning: No adata provided or adata.obs is empty, using fallback grouping")
         # Fallback grouping by first two characters
         groups = {sample: sample[:2] for sample in samples}
-
-    print(f"Debug: Sample groups: {groups}")
     
     # --------------------------------------------------------------------------
     # 2) Compute in-group vs. between-group distances

@@ -209,7 +209,7 @@ def atac_wrapper(
     
     os.makedirs(atac_output_dir, exist_ok=True)
     os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
-    os.makedirs(atac_dir_output_dir, exist_ok=True)
+    os.makedirs(atac_dr_output_dir, exist_ok=True)
     os.makedirs(atac_cca_output_dir, exist_ok=True)
     
     # Initialize status flags if not provided
