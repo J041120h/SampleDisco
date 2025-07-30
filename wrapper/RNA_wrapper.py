@@ -12,7 +12,7 @@ from jensenshannon import jensen_shannon_distance
 from Visualization import visualization
 from DR import dimension_reduction
 from CCA import CCA_Call
-from CellType import cell_types, cell_type_assign
+from Cell_type import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
@@ -340,6 +340,7 @@ def rna_wrapper(
                 existing_cell_types=existing_cell_types,
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,
+                Save = True,
                 output_dir=rna_output_dir,
                 cluster_resolution=cluster_resolution,
                 markers=markers,
@@ -424,11 +425,12 @@ def rna_wrapper(
         
         if "EMD" in sample_distance_methods:
             EMD_distances(
-                adata=AnnData_sample,
+                adata=AnnData_cell,
                 output_dir=os.path.join(rna_output_dir, 'sample_level_EMD'),
                 summary_csv_path=summary_sample_csv_path,
                 cell_type_column='cell_type',
                 sample_column=sample_col,
+                pseudobulk_adata = pseudobulk_anndata
             )
         
         if "chi_square" in sample_distance_methods:

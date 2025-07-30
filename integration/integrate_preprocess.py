@@ -5,7 +5,7 @@ from DR import *
 import time
 import contextlib
 import io
-from CellType import *
+from Cell_type import *
 from integration_visualization import *
 from integrate_glue import *
 

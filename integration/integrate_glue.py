@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 from pathlib import Path
 import pyensembl
 
-from CellType import *
+from Cell_type import *
 import time
 
 

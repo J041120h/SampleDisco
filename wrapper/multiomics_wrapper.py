@@ -12,7 +12,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from linux.CellType_linux import *
-from CellType import *
+from Cell_type import *
 from integration.integrate_glue import *
 from integration.integrate_preprocess import *
 from integration.integration_CCA_test import *

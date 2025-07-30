@@ -21,7 +21,8 @@ def calculate_sample_distances_cell_proprotion(
     output_dir: str,
     cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
-    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv"
+    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
+    pseudobulk_adata: AnnData = None
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the proportions of each cell type using Earth Mover's Distance (EMD).
@@ -39,6 +40,11 @@ def calculate_sample_distances_cell_proprotion(
         Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
+    summary_csv_path : str, optional
+        Path to save the summary CSV file.
+    pseudobulk_adata : AnnData, optional
+        Pseudobulk AnnData object where observations are samples (not cells). 
+        If provided, this will be used for sample metadata in distanceCheck.
 
     Returns:
     -------
@@ -54,7 +60,7 @@ def calculate_sample_distances_cell_proprotion(
     # Append 'cell_proportion' to the output directory path
     output_dir = os.path.join(output_dir, 'cell_proportion')
 
-    # Create the new subdirectory if it doesn’t exist
+    # Create the new subdirectory if it doesn't exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print("Automatically generating cell_proportion subdirectory")
@@ -127,9 +133,9 @@ def calculate_sample_distances_cell_proprotion(
     # Save the distance matrix
     distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    print("Error checking before distance test\n\n")
-
-    distanceCheck(distance_matrix_path, "cell_proportion", "EMD", summary_csv_path, adata)
+    
+    # Pass the DataFrame and use appropriate adata
+    distanceCheck(sample_distance_matrix, "cell_proportion", "EMD", output_dir, pseudobulk_adata, summary_csv_path=summary_csv_path)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     #save the cell type distribution map
@@ -140,7 +146,7 @@ def calculate_sample_distances_cell_proprotion(
     # generate a heatmap for sample distance
     heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
     visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
-    visualizeGroupRelationship(sample_distance_matrix, outputDir=output_dir, adata = adata)
+    visualizeGroupRelationship(sample_distance_matrix, outputDir=output_dir, adata = pseudobulk_adata)
 
     return sample_distance_matrix
 
@@ -150,6 +156,7 @@ def EMD_distances(
     summary_csv_path: str,
     cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
+    pseudobulk_adata: AnnData = None,
 ) -> pd.DataFrame:
     """
     Calculate combined distances between samples based on cell type proportions and gene expression.
@@ -160,14 +167,14 @@ def EMD_distances(
         The integrated single-cell dataset obtained from the previous analysis.
     output_dir : str
         Directory to save the output files.
+    summary_csv_path : str
+        Path to save the summary CSV file.
     cell_type_column : str, optional
         Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
-    proportion_weight : float, optional
-        Weight for the proportion distance matrix (default: 1.0).
-    expression_weight : float, optional
-        Weight for the expression distance matrix (default: 1.0).
+    pseudobulk_adata : AnnData, optional
+        Pseudobulk AnnData object where observations are samples (not cells). 
 
     Returns:
     -------
@@ -186,7 +193,8 @@ def EMD_distances(
         output_dir=output_dir,
         cell_type_column=cell_type_column,
         sample_column=sample_column,
-        summary_csv_path = summary_csv_path
+        summary_csv_path=summary_csv_path,
+        pseudobulk_adata=pseudobulk_adata
     )
 
     return proportion_matrix

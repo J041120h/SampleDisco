@@ -313,6 +313,23 @@ def sample_distance(
     - grouping_columns: List of columns for grouping analysis
     - summary_csv_path: Optional path to summary CSV for logging results across methods
     """
+    valid_pdist_metrics = {
+        "euclidean",
+        "sqeuclidean",
+        "minkowski",
+        "cityblock",
+        "chebyshev",
+        "cosine",
+        "correlation",
+        "hamming",
+        "jaccard",
+        "canberra",
+        "braycurtis",
+        "matching",
+    }
+
+    if method not in valid_pdist_metrics:
+        return
     
     sample_distance_vector(
         adata=adata,
