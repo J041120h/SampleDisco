@@ -332,7 +332,6 @@ def compute_pseudobulk_layers_torch(
     clear_gpu_memory()
     
     # Phase 3: Create concatenated AnnData
-    # Phase 3: Create concatenated AnnData
     concat_adata = _create_concat_adata_memory_efficient(
         all_hvg_data, all_gene_names, samples, n_features, 
         batch_size, verbose,
@@ -352,6 +351,17 @@ def compute_pseudobulk_layers_torch(
         all_hvg_data, all_gene_names, samples, cell_types, verbose
     )
     
+    concat_adata.uns['cell_proportions'] = cell_proportion_df
+    pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
+    os.makedirs(pseudobulk_dir, exist_ok=True)
+    
+    cell_expression_hvg_df.to_csv(
+        os.path.join(pseudobulk_dir, "expression_hvg.csv")
+    )
+    cell_proportion_df.to_csv(
+        os.path.join(pseudobulk_dir, "proportion.csv")
+    )
+
     # Final cleanup
     clear_gpu_memory()
     
@@ -854,7 +864,7 @@ def compute_pseudobulk_adata_optimized(
             sample_adata=final_adata,
             sample_col=sample_col,
         )
-        
+        final_adata.uns['cell_proportions'] = cell_proportion_df
         sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
     
     # Create backward-compatible dictionary

@@ -352,6 +352,8 @@ def compute_pseudobulk_layers(
         adata, samples, cell_types, sample_col, celltype_col
     )
     
+    concat_adata.uns['cell_proportions'] = cell_proportion_df
+
     # Save final outputs
     final_expression_df.to_csv(
         os.path.join(pseudobulk_dir, "expression_hvg.csv")
@@ -565,6 +567,9 @@ def compute_pseudobulk_adata(
         sample_adata = final_adata,
         sample_col = sample_col,
     )
+    
+    final_adata.uns['cell_proportions'] = cell_proportion_df
+
     if Save:
         sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
     

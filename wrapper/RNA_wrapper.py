@@ -424,7 +424,7 @@ def rna_wrapper(
         
         if "EMD" in sample_distance_methods:
             EMD_distances(
-                adata=pseudobulk_anndata,
+                adata=AnnData_sample,
                 output_dir=os.path.join(rna_output_dir, 'sample_level_EMD'),
                 summary_csv_path=summary_sample_csv_path,
                 cell_type_column='cell_type',
