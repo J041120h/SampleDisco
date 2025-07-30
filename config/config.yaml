@@ -108,6 +108,7 @@ rna_anndata_cell_path: null
 rna_summary_sample_csv_path: null
 rna_sample_distance_methods: 
   - "chi_square"
+  - "cosine"
 
 # RNA Visualization Parameters
 rna_verbose_visualization: true

@@ -5,10 +5,7 @@ import scanpy as sc
 import sys
 from pseudo_adata import compute_pseudobulk_adata
 from preprocess import preprocess
-from EMD import EMD_distances
-from sample_distance import sample_distance
-from ChiSquare import chi_square_distance
-from jensenshannon import jensen_shannon_distance
+from sample_distance.sample_distance import sample_distance
 from Visualization import visualization
 from DR import dimension_reduction
 from CCA import CCA_Call
@@ -408,49 +405,18 @@ def rna_wrapper(
             raise ValueError("dimensionality_reduction data paths are not provided and default files path do not exist.")
         pseudobulk_anndata = sc.read(temp_pseudobulk_path)
     
-     # Step 5: Sample Distance Calculation
-    if sample_distance_calculation:
-        print("Starting sample distance calculation...")
-        if not status_flags["rna"]["dimensionality_reduction"]:
-            raise ValueError("Dimensionality reduction is required before sample distance calculation.")
-        
-        for md in sample_distance_methods:
-            print(f"\nRunning sample distance: {md}\n")
+        for method in sample_distance_methods:
+            print(f"\nRunning sample distance: {method}\n")
             sample_distance(
                 adata=pseudobulk_anndata,
-                output_dir=os.path.join(rna_output_dir, 'Sample'),
-                method=f'{md}',
+                output_dir=os.path.join(rna_output_dir, 'Sample_distance'),
+                method=method,
                 grouping_columns=grouping_columns,
-            )
-        
-        if "EMD" in sample_distance_methods:
-            EMD_distances(
-                adata=AnnData_cell,
-                output_dir=os.path.join(rna_output_dir, 'sample_level_EMD'),
                 summary_csv_path=summary_sample_csv_path,
+                cell_adata=AnnData_cell,
                 cell_type_column='cell_type',
                 sample_column=sample_col,
-                pseudobulk_adata = pseudobulk_anndata
-            )
-        
-        if "chi_square" in sample_distance_methods:
-            chi_square_distance(
-                adata=AnnData_cell,
-                output_dir=os.path.join(rna_output_dir, 'Chi_square_sample'),
-                summary_csv_path=summary_sample_csv_path,
-                cell_type_column='cell_type',
-                sample_column=sample_col,
-                pseudobulk_adata = pseudobulk_anndata
-            )
-        
-        if "jensen_shannon" in sample_distance_methods:
-            jensen_shannon_distance(
-                adata=AnnData_cell,
-                output_dir=os.path.join(rna_output_dir, 'jensen_shannon_sample'),
-                summary_csv_path=summary_sample_csv_path,
-                cell_type_column='cell_type',
-                sample_column=sample_col,
-                pseudobulk_adata = pseudobulk_anndata
+                pseudobulk_adata=pseudobulk_anndata
             )
         
         status_flags["rna"]["sample_distance_calculation"] = True

@@ -6,6 +6,9 @@ from scipy.spatial.distance import pdist, squareform
 from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
 from typing import Optional, List
 from distance_test import distanceCheck
+from .EMD import EMD_distances
+from .ChiSquare import chi_square_distance
+from .jensenshannon import jensen_shannon_distance
 
 def calculate_sample_distances_DR(
     adata: AnnData,
@@ -292,27 +295,36 @@ def sample_distance_vector(
         except Exception as e:
             print(f"Warning: Failed to create distance statistics summary: {e}")
 
-# Main function: simplified interface
 def sample_distance(
     adata: AnnData,
     output_dir: str,
     method: str,
     grouping_columns: Optional[List[str]] = None,
-    summary_csv_path: Optional[str] = None
+    summary_csv_path: Optional[str] = None,
+    cell_adata: Optional[AnnData] = None,
+    cell_type_column: str = 'cell_type',
+    sample_column: str = 'sample',
+    pseudobulk_adata: Optional[AnnData] = None
 ) -> None:
     """
-    Compute sample distance matrices using dimension reduction results.
+    Unified function to compute sample distance matrices using various methods.
     
-    This function uses dimension reduction results stored in adata.uns
-    and sample metadata stored in adata.obs.
+    This function handles both standard distance metrics (using dimension reduction results)
+    and specialized distance methods (EMD, chi-square, Jensen-Shannon).
     
     Parameters:
     - adata: AnnData object with DR results in .uns and sample metadata in .obs
     - output_dir: Directory for outputs
-    - method: Distance metric
+    - method: Distance metric ('euclidean', 'cosine', 'EMD', 'chi_square', 'jensen_shannon', etc.)
     - grouping_columns: List of columns for grouping analysis
     - summary_csv_path: Optional path to summary CSV for logging results across methods
+    - cell_adata: AnnData object with single-cell data (required for EMD, chi_square, jensen_shannon)
+    - cell_type_column: Column name for cell types in cell_adata (default: 'cell_type')
+    - sample_column: Column name for samples in cell_adata (default: 'sample')
+    - pseudobulk_adata: Pseudobulk AnnData object (required for EMD, chi_square, jensen_shannon)
     """
+    
+    # Standard distance metrics that work with dimension reduction results
     valid_pdist_metrics = {
         "euclidean",
         "sqeuclidean",
@@ -327,14 +339,61 @@ def sample_distance(
         "braycurtis",
         "matching",
     }
-
-    if method not in valid_pdist_metrics:
-        return
     
-    sample_distance_vector(
-        adata=adata,
-        output_dir=output_dir,
-        method=method,
-        grouping_columns=grouping_columns,
-        summary_csv_path=summary_csv_path
-    )
+    # Specialized distance methods
+    specialized_methods = {"EMD", "chi_square", "jensen_shannon"}
+    
+    if method in valid_pdist_metrics:
+        # Handle standard distance metrics
+        print(f"Computing {method} distance using dimension reduction results...")
+        sample_distance_vector(
+            adata=adata,
+            output_dir=output_dir,
+            method=method,
+            grouping_columns=grouping_columns,
+            summary_csv_path=summary_csv_path
+        )
+        
+    elif method in specialized_methods:
+        # Handle specialized distance methods
+        if cell_adata is None:
+            raise ValueError(f"cell_adata is required for {method} distance calculation")
+        
+        if method == "EMD":
+            print("Computing Earth Mover's Distance (EMD)...")
+            emd_output_dir = os.path.join(output_dir, 'sample_level_EMD')
+            EMD_distances(
+                adata=cell_adata,
+                output_dir=emd_output_dir,
+                summary_csv_path=summary_csv_path,
+                cell_type_column=cell_type_column,
+                sample_column=sample_column,
+                pseudobulk_adata=pseudobulk_adata
+            )
+            
+        elif method == "chi_square":
+            print("Computing Chi-square distance...")
+            chi_output_dir = os.path.join(output_dir, 'Chi_square_sample')
+            chi_square_distance(
+                adata=cell_adata,
+                output_dir=chi_output_dir,
+                summary_csv_path=summary_csv_path,
+                cell_type_column=cell_type_column,
+                sample_column=sample_column,
+                pseudobulk_adata=pseudobulk_adata
+            )
+            
+        elif method == "jensen_shannon":
+            print("Computing Jensen-Shannon distance...")
+            js_output_dir = os.path.join(output_dir, 'jensen_shannon_sample')
+            jensen_shannon_distance(
+                adata=cell_adata,
+                output_dir=js_output_dir,
+                summary_csv_path=summary_csv_path,
+                cell_type_column=cell_type_column,
+                sample_column=sample_column,
+                pseudobulk_adata=pseudobulk_adata
+            )
+    else:
+        print(f"Warning: Unknown distance method '{method}'. Skipping...")
+        return

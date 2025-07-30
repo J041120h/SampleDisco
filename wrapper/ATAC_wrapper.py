@@ -9,10 +9,7 @@ from DR import dimension_reduction
 from CCA import CCA_Call
 from CCA_test import cca_pvalue_test
 from TSCAN import TSCAN
-from sample_distance import sample_distance
-from EMD import EMD_distances
-from ChiSquare import chi_square_distance
-from jensenshannon import jensen_shannon_distance
+from sample_distance.sample_distance import sample_distance
 from cluster import cluster
 from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
 from Visualization import visualization
@@ -548,45 +545,19 @@ def atac_wrapper(
         # Clean up existing summary file
         if os.path.exists(summary_sample_csv_path):
             os.remove(summary_sample_csv_path)
-        
-        for md in sample_distance_methods:
-            if atac_pipeline_verbose:
-                print(f"\nRunning sample distance: {md}\n")
+        for method in sample_distance_methods:
+            print(f"\nRunning sample distance: {method}\n")
             sample_distance(
-                adata=atac_sample,
-                output_dir=os.path.join(atac_output_dir, 'Sample'),
-                method=f'{md}',
-                summary_csv_path=summary_sample_csv_path,
-                pseudobulk=atac_pseudobulk_df,
-                sample_column=atac_sample_col,
+                adata=pseudobulk_anndata,
+                output_dir=os.path.join(atac_output_dir, 'Sample_distance'),
+                method=method,
                 grouping_columns=grouping_columns,
-            )
-        
-        if "EMD" in sample_distance_methods:
-            EMD_distances(
-                adata=atac_sample,
-                output_dir=os.path.join(atac_output_dir, 'sample_level_EMD'),
                 summary_csv_path=summary_sample_csv_path,
-                cell_type_column=atac_cell_type_column,
-                sample_column=atac_sample_col,
+                cell_adata= atac_cell,
+                cell_type_column='cell_type',
+                sample_column=sample_col,
+                pseudobulk_adata=pseudobulk_anndata
             )
-        
-        if "chi_square" in sample_distance_methods:
-            chi_square_distance(
-                adata=atac_sample,
-                output_dir=os.path.join(atac_output_dir, 'Chi_square_sample'),
-                summary_csv_path=summary_sample_csv_path,
-                sample_column=atac_sample_col,
-            )
-        
-        if "jensen_shannon" in sample_distance_methods:
-            jensen_shannon_distance(
-                adata=atac_sample,
-                output_dir=os.path.join(atac_output_dir, 'jensen_shannon_sample'),
-                summary_csv_path=summary_sample_csv_path,
-                sample_column=atac_sample_col,
-            )
-        
         status_flags["atac"]["sample_distance_calculation"] = True
         
         if atac_pipeline_verbose:
