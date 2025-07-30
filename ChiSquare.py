@@ -16,9 +16,10 @@ warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 def calculate_sample_distances_cell_proportion_chi_square(
     adata: AnnData,
     output_dir: str,
-    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
     cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
+    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
+    pseudobulk_adata: AnnData = None
 ) -> pd.DataFrame:
     """
     Calculate distances between samples based on the proportions of each cell type using Chi-Square Distance.
@@ -36,7 +37,10 @@ def calculate_sample_distances_cell_proportion_chi_square(
     sample_column : str, optional
         Column name in `adata.obs` that contains the sample information (default: 'sample').
     summary_csv_path : str, optional
-        Path to the summary CSV file to record distance checks.
+        Path to save the summary CSV file.
+    pseudobulk_adata : AnnData, optional
+        Pseudobulk AnnData object where observations are samples (not cells). 
+        If provided, this will be used for sample metadata in distanceCheck.
 
     Returns:
     -------
@@ -52,7 +56,7 @@ def calculate_sample_distances_cell_proportion_chi_square(
     # Append 'cell_proportion' to the output directory path
     output_dir = os.path.join(output_dir, 'cell_proportion')
 
-    # Create the new subdirectory if it doesn’t exist
+    # Create the new subdirectory if it doesn't exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print("Automatically generating cell_proportion subdirectory")
@@ -74,15 +78,15 @@ def calculate_sample_distances_cell_proportion_chi_square(
     num_samples = len(samples)
     sample_distance_matrix = pd.DataFrame(0, index=samples, columns=samples, dtype=np.float64)
 
-    # Replace zeros to avoid division by zero in denominator
+    # Replace zeros with a small epsilon to avoid division by zero in denominator
     epsilon = 1e-10
-    proportions = proportions.replace(0, epsilon)
+    proportions_safe = proportions.replace(0, epsilon)
 
     for i, sample_i in enumerate(samples):
-        hist_i = proportions.loc[sample_i].values
         for j, sample_j in enumerate(samples):
             if i < j:
-                hist_j = proportions.loc[sample_j].values
+                hist_i = proportions_safe.loc[sample_i].values
+                hist_j = proportions_safe.loc[sample_j].values
 
                 # Compute Chi-Square distance
                 chi_square = 0.5 * np.sum(((hist_i - hist_j) ** 2) / (hist_i + hist_j))
@@ -90,9 +94,11 @@ def calculate_sample_distances_cell_proportion_chi_square(
                 sample_distance_matrix.loc[sample_j, sample_i] = chi_square
 
     # Save the distance matrix
-    distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix.csv')
+    distance_matrix_path = os.path.join(output_dir, 'sample_distance_proportion_matrix_chi_square.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    distanceCheck(distance_matrix_path, "cell_proportion", "Chi-Square", summary_csv_path, adata)
+    
+    # Pass the DataFrame and use appropriate adata (matching EMD function signature)
+    distanceCheck(sample_distance_matrix, "cell_proportion", "Chi-Square", output_dir, pseudobulk_adata, summary_csv_path=summary_csv_path)
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
     # Save the cell type distribution map
@@ -101,23 +107,57 @@ def calculate_sample_distances_cell_proportion_chi_square(
     print(f"Cell type distribution in Sample saved to {cell_type_distribution_map}")
 
     # Generate a heatmap for sample distance
-    heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap.pdf')
+    heatmap_path = os.path.join(output_dir, 'sample_distance_proportion_heatmap_chi_square.pdf')
     visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
-    visualizeGroupRelationship(
-        sample_distance_matrix,
-        outputDir=output_dir,
-        adata = adata
-    )
+    visualizeGroupRelationship(sample_distance_matrix, outputDir=output_dir, adata=pseudobulk_adata)
 
     return sample_distance_matrix
 
 def chi_square_distance(
     adata: AnnData,
     output_dir: str,
-    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
+    summary_csv_path: str,
+    cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
-    normalize: bool = True,
-    log_transform: bool = True
+    pseudobulk_adata: AnnData = None,
 ) -> pd.DataFrame:
-    method = "Chi_Square"
-    calculate_sample_distances_cell_proportion_chi_square(adata, output_dir, summary_csv_path, sample_column = sample_column)
+    """
+    Calculate combined distances between samples based on cell type proportions using Chi-Square Distance.
+
+    Parameters:
+    ----------
+    adata : AnnData
+        The integrated single-cell dataset obtained from the previous analysis.
+    output_dir : str
+        Directory to save the output files.
+    summary_csv_path : str
+        Path to save the summary CSV file.
+    cell_type_column : str, optional
+        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
+    sample_column : str, optional
+        Column name in `adata.obs` that contains the sample information (default: 'sample').
+    pseudobulk_adata : AnnData, optional
+        Pseudobulk AnnData object where observations are samples (not cells). 
+
+    Returns:
+    -------
+    proportion_matrix : pd.DataFrame
+        A symmetric matrix of Chi-Square distances between samples.
+    """
+
+    # Check if output directory exists and create if necessary
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print("Automatically generating output directory")
+
+    # Calculate the proportion distance matrix using Chi-Square distance
+    proportion_matrix = calculate_sample_distances_cell_proportion_chi_square(
+        adata=adata,
+        output_dir=output_dir,
+        cell_type_column=cell_type_column,
+        sample_column=sample_column,
+        summary_csv_path=summary_csv_path,
+        pseudobulk_adata=pseudobulk_adata
+    )
+
+    return proportion_matrix

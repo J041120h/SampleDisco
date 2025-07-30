@@ -435,10 +435,12 @@ def rna_wrapper(
         
         if "chi_square" in sample_distance_methods:
             chi_square_distance(
-                adata=pseudobulk_anndata,
+                adata=AnnData_cell,
                 output_dir=os.path.join(rna_output_dir, 'Chi_square_sample'),
                 summary_csv_path=summary_sample_csv_path,
+                cell_type_column='cell_type',
                 sample_column=sample_col,
+                pseudobulk_adata = pseudobulk_anndata
             )
         
         if "jensen_shannon" in sample_distance_methods:
