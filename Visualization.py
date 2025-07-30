@@ -152,12 +152,11 @@ def visualizeGroupRelationship(
     outputDir,
     adata,
     grouping_columns=['sev.level'],
-    age_bin_size=None,
     heatmap_path=None
 ):
     """
-    Generates 2D MDS and PCA plots from a sample distance matrix, coloring points
-    according to values from the specified grouping columns.
+    Generates 2D PCA and UMAP plots using existing dimension reduction results,
+    coloring points according to values from the specified grouping columns.
     
     - For continuous numeric values: Uses a continuous color scale
     - For categorical values: Uses discrete colors with a legend
@@ -169,12 +168,10 @@ def visualizeGroupRelationship(
     outputDir : str
         Directory where the plot will be saved.
     adata : anndata.AnnData
-        An AnnData object (or any structure) needed by find_sample_grouping
-        to determine group assignments per sample.
+        A pseudobulked AnnData object where sample metadata is stored in `adata.obs`
+        and dimension reduction results are stored in `adata.uns`.
     grouping_columns : list, optional
         Which columns in `adata.obs` to use for grouping (default: ['sev.level']).
-    age_bin_size : int or None, optional
-        If grouping by age, specify the bin size here (optional).
     heatmap_path : str or None, optional
         If provided, the final figure will be saved to this path. Otherwise,
         filenames are derived automatically.
@@ -182,35 +179,34 @@ def visualizeGroupRelationship(
     import os
     import numpy as np
     import matplotlib.pyplot as plt
+    import scanpy as sc
     import re
-    from sklearn.decomposition import PCA
-    from sklearn.manifold import MDS
     import pandas as pd
-    from matplotlib.colors import ListedColormap
+    import anndata
     
     os.makedirs(outputDir, exist_ok=True)
     samples = sample_distance_matrix.index.tolist()
     
-    # Create symmetric matrix
-    sym_matrix = (sample_distance_matrix + sample_distance_matrix.T) / 2
-    np.fill_diagonal(sym_matrix.values, 0)
+    # Get the first available grouping column
+    grouping_column = None
+    for col in grouping_columns:
+        if col in adata.obs.columns:
+            grouping_column = col
+            break
     
-    # Generate MDS and PCA coordinates
-    mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
-    points_mds = mds.fit_transform(sym_matrix)
+    if grouping_column is None:
+        print(f"Warning: None of the grouping columns {grouping_columns} found in adata.obs")
+        print("Available columns:", list(adata.obs.columns))
+        return
     
-    pca = PCA(n_components=2)
-    points_pca = pca.fit_transform(sym_matrix)
+    # Get samples that exist in both distance matrix and adata
+    available_samples = [sample for sample in samples if sample in adata.obs.index]
+    if not available_samples:
+        print("Warning: No samples from distance matrix found in adata.obs")
+        return
     
-    # Get group mappings for samples
-    group_mapping = find_sample_grouping(
-        adata,
-        samples,
-        grouping_columns=grouping_columns,
-        age_bin_size=age_bin_size
-    )
-    
-    group_labels = [group_mapping[sample] for sample in samples]
+    # Get group labels
+    group_labels = [str(adata.obs.loc[sample, grouping_column]) for sample in available_samples]
     
     # Determine if the grouping is numeric or categorical
     is_numeric = True
@@ -218,46 +214,127 @@ def visualizeGroupRelationship(
     
     # Try to extract numeric values from labels
     for lbl in group_labels:
-        m = re.search(r'(\d+\.?\d*)', lbl)
-        if m:
-            numeric_values.append(float(m.group(1)))
-        else:
-            is_numeric = False
-            break
+        try:
+            # Try direct conversion first
+            numeric_values.append(float(lbl))
+        except ValueError:
+            # Try regex extraction
+            m = re.search(r'(\d+\.?\d*)', lbl)
+            if m:
+                numeric_values.append(float(m.group(1)))
+            else:
+                is_numeric = False
+                break
+    
+    # Get PCA coordinates from stored results
+    points_pca = None
+    pca_variance_ratio = None
+    
+    # Try different possible PCA keys
+    pca_keys = ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method']
+    for pca_key in pca_keys:
+        if pca_key in adata.uns:
+            pca_df = adata.uns[pca_key]
+            # Filter to available samples and get first 2 components
+            pca_samples = [s for s in available_samples if s in pca_df.index]
+            if pca_samples:
+                points_pca = pca_df.loc[pca_samples].iloc[:, :2].values
+                # Update available samples to match PCA data
+                available_samples = pca_samples
+                group_labels = [str(adata.obs.loc[sample, grouping_column]) for sample in available_samples]
+                if is_numeric:
+                    numeric_values = []
+                    for lbl in group_labels:
+                        try:
+                            numeric_values.append(float(lbl))
+                        except ValueError:
+                            m = re.search(r'(\d+\.?\d*)', lbl)
+                            if m:
+                                numeric_values.append(float(m.group(1)))
+                            else:
+                                is_numeric = False
+                                break
+                break
+    
+    # Get variance ratios if available
+    if 'X_DR_expression_variance_ratio' in adata.uns:
+        pca_variance_ratio = adata.uns['X_DR_expression_variance_ratio'][:2]
+    elif 'X_DR_proportion_variance_ratio' in adata.uns:
+        pca_variance_ratio = adata.uns['X_DR_proportion_variance_ratio'][:2]
+    
+    if points_pca is None:
+        print("Warning: No PCA results found in adata.uns")
+        print("Available keys:", list(adata.uns.keys()))
+        return
+    
+    # Create symmetric distance matrix for UMAP
+    filtered_distance_matrix = sample_distance_matrix.loc[available_samples, available_samples]
+    filtered_sym_matrix = (filtered_distance_matrix + filtered_distance_matrix.T) / 2
+    np.fill_diagonal(filtered_sym_matrix.values, 0)
+    
+    # Create temporary AnnData object for UMAP calculation
+    temp_adata = anndata.AnnData(X=filtered_sym_matrix)
+    temp_adata.obs_names = available_samples
+    temp_adata.obs[grouping_column] = group_labels
+    
+    # Calculate UMAP using scanpy
+    sc.pp.neighbors(temp_adata, use_rep='X', n_neighbors=min(15, len(available_samples)-1))
+    sc.tl.umap(temp_adata)
+    points_umap = temp_adata.obsm['X_umap']
     
     # Setup visualization parameters based on data type
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     
-    if is_numeric:
+    if is_numeric and len(numeric_values) > 1:
         # Handle numeric/continuous data with a color gradient
         numeric_values = np.array(numeric_values)
         value_min, value_max = numeric_values.min(), numeric_values.max()
-        norm_values = (numeric_values - value_min) / (value_max - value_min) if value_max > value_min else np.zeros_like(numeric_values)
+        
+        if value_max > value_min:
+            norm_values = (numeric_values - value_min) / (value_max - value_min)
+        else:
+            norm_values = np.zeros_like(numeric_values)
         
         cmap = plt.cm.coolwarm
         color_values = norm_values
         
-        for ax, method, points in zip(axes, ['MDS', 'PCA'], [points_mds, points_pca]):
-            sc = ax.scatter(
+        for ax, method, points in zip(axes, ['PCA', 'UMAP'], [points_pca, points_umap]):
+            sc_plot = ax.scatter(
                 points[:, 0], points[:, 1],
                 s=100, c=color_values, cmap=cmap, alpha=0.8, edgecolors='k'
             )
-            ax.set_xlabel(f"{method} Dimension 1")
-            ax.set_ylabel(f"{method} Dimension 2")
+            
+            # Set axis labels with variance explained for PCA
+            if method == 'PCA' and pca_variance_ratio is not None:
+                ax.set_xlabel(f"PC1 ({pca_variance_ratio[0]:.1%} variance)")
+                ax.set_ylabel(f"PC2 ({pca_variance_ratio[1]:.1%} variance)")
+            else:
+                ax.set_xlabel(f"{method} Dimension 1")
+                ax.set_ylabel(f"{method} Dimension 2")
+            
             ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
-            ax.grid(True)
+            ax.grid(True, alpha=0.3)
         
         # Add a colorbar for continuous data
-        cbar = fig.colorbar(sc, ax=axes.ravel().tolist())
-        cbar.set_label(f"Value ({value_min:.2f} - {value_max:.2f})")
+        cbar = fig.colorbar(sc_plot, ax=axes.ravel().tolist())
+        cbar.set_label(f"{grouping_column} ({value_min:.2f} - {value_max:.2f})")
     
     else:
         # Handle categorical data with discrete colors and a legend
         unique_labels = sorted(set(group_labels))
-        color_map = plt.cm.get_cmap('tab20', len(unique_labels))
+        n_colors = len(unique_labels)
+        
+        # Choose appropriate colormap based on number of categories
+        if n_colors <= 10:
+            color_map = plt.cm.get_cmap('tab10', n_colors)
+        elif n_colors <= 20:
+            color_map = plt.cm.get_cmap('tab20', n_colors)
+        else:
+            color_map = plt.cm.get_cmap('hsv', n_colors)
+        
         label_to_color = {label: color_map(i) for i, label in enumerate(unique_labels)}
         
-        for ax, method, points in zip(axes, ['MDS', 'PCA'], [points_mds, points_pca]):
+        for ax, method, points in zip(axes, ['PCA', 'UMAP'], [points_pca, points_umap]):
             for label in unique_labels:
                 # Plot each category separately to build the legend
                 indices = [i for i, l in enumerate(group_labels) if l == label]
@@ -268,34 +345,40 @@ def visualizeGroupRelationship(
                         label=label
                     )
             
-            ax.set_xlabel(f"{method} Dimension 1")
-            ax.set_ylabel(f"{method} Dimension 2")
-            ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
-            ax.grid(True)
+            # Set axis labels with variance explained for PCA
+            if method == 'PCA' and pca_variance_ratio is not None:
+                ax.set_xlabel(f"PC1 ({pca_variance_ratio[0]:.1%} variance)")
+                ax.set_ylabel(f"PC2 ({pca_variance_ratio[1]:.1%} variance)")
+            else:
+                ax.set_xlabel(f"{method} Dimension 1")
+                ax.set_ylabel(f"{method} Dimension 2")
             
-            # Add legend for categorical data
-            if method == 'MDS':  # Only add legend to one plot to avoid redundancy
-                ax.legend(title=grouping_columns[0], bbox_to_anchor=(1.05, 1), loc='upper left')
+            ax.set_title(f"2D {method} Visualization of Sample Distance Matrix")
+            ax.grid(True, alpha=0.3)
+        
+        # Add legend for categorical data (only to the second plot to avoid redundancy)
+        axes[1].legend(title=grouping_column, bbox_to_anchor=(1.05, 1), loc='upper left')
     
-    # Save the plots
+    # Save the combined plot
     if heatmap_path is None:
-        mds_path = os.path.join(outputDir, f"sample_distance_matrix_MDS_{grouping_columns[0]}.png")
-        pca_path = os.path.join(outputDir, f"sample_distance_matrix_PCA_{grouping_columns[0]}.png")
+        combined_path = os.path.join(outputDir, f"sample_distance_visualization_{grouping_column}.png")
     else:
-        mds_path = heatmap_path.replace(".png", f"_MDS_{grouping_columns[0]}.png")
-        pca_path = heatmap_path.replace(".png", f"_PCA_{grouping_columns[0]}.png")
+        combined_path = heatmap_path.replace(".pdf", f"_visualization_{grouping_column}.png")
+        combined_path = combined_path.replace(".png", f"_visualization_{grouping_column}.png")
     
     plt.tight_layout()
-    plt.savefig(mds_path, dpi=300, bbox_inches='tight')
+    plt.savefig(combined_path, dpi=300, bbox_inches='tight')
     
-    # Save PCA plot separately
-    plt.figure(figsize=(7, 6))
-    if is_numeric:
-        plt.scatter(
+    # Save individual PCA plot
+    pca_path = combined_path.replace("_visualization_", "_PCA_")
+    plt.figure(figsize=(8, 6))
+    
+    if is_numeric and len(numeric_values) > 1:
+        sc_plot = plt.scatter(
             points_pca[:, 0], points_pca[:, 1],
             s=100, c=color_values, cmap=cmap, alpha=0.8, edgecolors='k'
         )
-        plt.colorbar(label=f"Value ({value_min:.2f} - {value_max:.2f})")
+        plt.colorbar(sc_plot, label=f"{grouping_column} ({value_min:.2f} - {value_max:.2f})")
     else:
         for label in unique_labels:
             indices = [i for i, l in enumerate(group_labels) if l == label]
@@ -305,18 +388,53 @@ def visualizeGroupRelationship(
                     s=100, c=[label_to_color[label]], alpha=0.8, edgecolors='k',
                     label=label
                 )
-        plt.legend(title=grouping_columns[0], bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.legend(title=grouping_column, bbox_to_anchor=(1.05, 1), loc='upper left')
     
-    plt.xlabel("PCA Dimension 1")
-    plt.ylabel("PCA Dimension 2")
+    # Set axis labels with variance explained
+    if pca_variance_ratio is not None:
+        plt.xlabel(f"PC1 ({pca_variance_ratio[0]:.1%} variance)")
+        plt.ylabel(f"PC2 ({pca_variance_ratio[1]:.1%} variance)")
+    else:
+        plt.xlabel("PCA Dimension 1")
+        plt.ylabel("PCA Dimension 2")
+    
     plt.title("2D PCA Visualization of Sample Distance Matrix")
-    plt.grid(True)
+    plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(pca_path, dpi=300, bbox_inches='tight')
     
+    # Save individual UMAP plot
+    umap_path = combined_path.replace("_visualization_", "_UMAP_")
+    plt.figure(figsize=(8, 6))
+    
+    if is_numeric and len(numeric_values) > 1:
+        sc_plot = plt.scatter(
+            points_umap[:, 0], points_umap[:, 1],
+            s=100, c=color_values, cmap=cmap, alpha=0.8, edgecolors='k'
+        )
+        plt.colorbar(sc_plot, label=f"{grouping_column} ({value_min:.2f} - {value_max:.2f})")
+    else:
+        for label in unique_labels:
+            indices = [i for i, l in enumerate(group_labels) if l == label]
+            if indices:
+                plt.scatter(
+                    points_umap[indices, 0], points_umap[indices, 1],
+                    s=100, c=[label_to_color[label]], alpha=0.8, edgecolors='k',
+                    label=label
+                )
+        plt.legend(title=grouping_column, bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    plt.xlabel("UMAP Dimension 1")
+    plt.ylabel("UMAP Dimension 2")
+    plt.title("2D UMAP Visualization of Sample Distance Matrix")
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(umap_path, dpi=300, bbox_inches='tight')
+    
     plt.close('all')
-    print(f"MDS plot saved to {mds_path}")
+    print(f"Combined visualization saved to {combined_path}")
     print(f"PCA plot saved to {pca_path}")
+    print(f"UMAP plot saved to {umap_path}")
 
 
 def visualizeDistanceMatrix(sample_distance_matrix, heatmap_path):
