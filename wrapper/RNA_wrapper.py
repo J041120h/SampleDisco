@@ -443,10 +443,12 @@ def rna_wrapper(
         
         if "jensen_shannon" in sample_distance_methods:
             jensen_shannon_distance(
-                adata=pseudobulk_anndata,
+                adata=AnnData_cell,
                 output_dir=os.path.join(rna_output_dir, 'jensen_shannon_sample'),
                 summary_csv_path=summary_sample_csv_path,
+                cell_type_column='cell_type',
                 sample_column=sample_col,
+                pseudobulk_adata = pseudobulk_anndata
             )
         
         status_flags["rna"]["sample_distance_calculation"] = True
