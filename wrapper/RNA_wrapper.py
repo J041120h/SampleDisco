@@ -404,20 +404,22 @@ def rna_wrapper(
         if not os.path.exists(temp_pseudobulk_path):
             raise ValueError("dimensionality_reduction data paths are not provided and default files path do not exist.")
         pseudobulk_anndata = sc.read(temp_pseudobulk_path)
-    
-        for method in sample_distance_methods:
-            print(f"\nRunning sample distance: {method}\n")
-            sample_distance(
-                adata=pseudobulk_anndata,
-                output_dir=os.path.join(rna_output_dir, 'Sample_distance'),
-                method=method,
-                grouping_columns=grouping_columns,
-                summary_csv_path=summary_sample_csv_path,
-                cell_adata=AnnData_cell,
-                cell_type_column='cell_type',
-                sample_column=sample_col,
-                pseudobulk_adata=pseudobulk_anndata
-            )
+
+    # Step 5: Sample Distance Calculation
+        if sample_distance_calculation:
+            for method in sample_distance_methods:
+                print(f"\nRunning sample distance: {method}\n")
+                sample_distance(
+                    adata=pseudobulk_anndata,
+                    output_dir=os.path.join(rna_output_dir, 'Sample_distance'),
+                    method=method,
+                    grouping_columns=grouping_columns,
+                    summary_csv_path=summary_sample_csv_path,
+                    cell_adata=AnnData_cell,
+                    cell_type_column='cell_type',
+                    sample_column=sample_col,
+                    pseudobulk_adata=pseudobulk_anndata
+                )
         
         status_flags["rna"]["sample_distance_calculation"] = True
         if verbose:
@@ -469,8 +471,6 @@ def rna_wrapper(
                     verbose=trajectory_verbose
                 )
             
-            visualize_cell_proportion_pseudotime(ptime_expression, rna_output_dir)
-            
             if cca_optimal_cell_resolution:
                 if linux_system and use_gpu:
                     find_optimal_cell_resolution_linux(
@@ -514,7 +514,7 @@ def rna_wrapper(
         else:
             # Unsupervised trajectory analysis
             TSCAN_result_expression = TSCAN(
-                AnnData_sample=AnnData_sample,
+                AnnData_sample=pseudobulk_anndata,
                 column="X_DR_expression",
                 n_clusters=8,
                 output_dir=rna_output_dir,
@@ -523,7 +523,7 @@ def rna_wrapper(
                 origin=TSCAN_origin
             )
             TSCAN_result_proportion = TSCAN(
-                AnnData_sample=AnnData_sample,
+                AnnData_sample=pseudobulk_anndata,
                 column="X_DR_proportion",
                 n_clusters=8,
                 output_dir=rna_output_dir,

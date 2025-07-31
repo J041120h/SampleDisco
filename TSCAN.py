@@ -4,13 +4,43 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 import scanpy as sc
+import matplotlib.pyplot as plt
 
 from sklearn.cluster import KMeans
 from collections import defaultdict
 from scipy.spatial.distance import pdist, squareform
 from scipy.sparse.csgraph import minimum_spanning_tree
+from typing import Dict, List, Tuple, Optional, Union
 
-from Visualization import plot_clusters_by_cluster, plot_clusters_by_grouping
+
+def find_sample_grouping(adata: sc.AnnData, samples: List[str], grouping_columns: List[str]) -> Dict[str, str]:
+    """
+    Extract grouping information for samples from adata.obs.
+    """
+    grouping_dict = {}
+    
+    # Normalize sample names for comparison
+    samples_normalized = [str(s).strip().lower() for s in samples]
+    obs_index_normalized = [str(idx).strip().lower() for idx in adata.obs.index]
+    
+    for sample in samples:
+        sample_norm = str(sample).strip().lower()
+        if sample_norm in obs_index_normalized:
+            # Find the original index
+            orig_idx = adata.obs.index[obs_index_normalized.index(sample_norm)]
+            
+            # Combine grouping columns
+            group_values = []
+            for col in grouping_columns:
+                if col in adata.obs.columns:
+                    group_values.append(str(adata.obs.loc[orig_idx, col]))
+            
+            grouping_dict[sample] = "_".join(group_values) if group_values else "unknown"
+        else:
+            grouping_dict[sample] = "unknown"
+    
+    return grouping_dict
+
 
 def cluster_samples_by_pca(
     adata: sc.AnnData,
@@ -18,46 +48,51 @@ def cluster_samples_by_pca(
     k: int = 0,
     random_state: int = 0,
     verbose: bool = False
-) -> tuple[dict, pd.DataFrame]:
+) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
     """
-    Clusters samples by K-means on PCA coordinates stored in `adata.uns[column]`.
-
-    Parameters
-    ----------
-    adata : AnnData
-        Must have adata.uns[column] as a DataFrame (rows=samples, columns=PCs).
-    column : str
-        Key in adata.uns where PCA DataFrame is stored.
-    k : int
-        Number of clusters. If 0, defaults to 5% of samples (at least 1).
-    random_state : int
-        RNG seed for K-means.
-    verbose : bool
-        Print messages if True.
-
-    Returns
-    -------
-    sample_cluster : dict
-        Mapping of "cluster_i" -> list of sample IDs in that cluster.
-    pca_df : DataFrame
-        The PCA coordinates (unchanged, just returned for convenience).
+    Cluster samples based on PCA coordinates using K-means.
     """
     # 1. Retrieve PCA DataFrame
     if column not in adata.uns:
-        raise KeyError(f"[cluster_samples_by_pca] No PCA data found in adata.uns['{column}'].")
+        raise KeyError(f"No PCA data found in adata.uns['{column}'].")
     pca_data = adata.uns[column]
 
     if not isinstance(pca_data, pd.DataFrame):
-        raise TypeError(
-            f"[cluster_samples_by_pca] Expected a DataFrame in adata.uns['{column}'], "
-            f"but got {type(pca_data)}."
-        )
+        raise TypeError(f"Expected a DataFrame in adata.uns['{column}'], but got {type(pca_data)}.")
+    
+    # Enhanced sample alignment
+    if not pca_data.index.equals(adata.obs.index):
+        common_samples = pca_data.index.intersection(adata.obs.index)
+        
+        if len(common_samples) == 0:
+            # Try normalized comparison
+            pca_normalized = pd.Index([str(s).strip().lower() for s in pca_data.index])
+            obs_normalized = pd.Index([str(s).strip().lower() for s in adata.obs.index])
+            
+            # Create mapping from normalized to original
+            pca_norm_to_orig = dict(zip(pca_normalized, pca_data.index))
+            obs_norm_to_orig = dict(zip(obs_normalized, adata.obs.index))
+            
+            common_normalized = pca_normalized.intersection(obs_normalized)
+            
+            if len(common_normalized) > 0:
+                # Map back to original sample names
+                common_pca_orig = [pca_norm_to_orig[norm] for norm in common_normalized]
+                common_obs_orig = [obs_norm_to_orig[norm] for norm in common_normalized]
+                
+                # Reindex PCA data to match obs
+                pca_data = pca_data.loc[common_pca_orig]
+                pca_data.index = common_obs_orig  # Use obs naming convention
+            else:
+                raise ValueError("No common samples found between PCA data and adata.obs")
+        else:
+            pca_data = pca_data.loc[common_samples]
 
     sample_ids = pca_data.index
     n_samples = pca_data.shape[0]
 
     if k > n_samples:
-        raise ValueError(f"[cluster_samples_by_pca] k={k} cannot exceed n_samples={n_samples}.")
+        raise ValueError(f"k={k} cannot exceed n_samples={n_samples}.")
     if k == 0:
         k = max(1, int(n_samples * 0.05))  # default 5% of samples
 
@@ -70,85 +105,69 @@ def cluster_samples_by_pca(
     cluster_dict = defaultdict(list)
     for sample, cluster_idx in zip(sample_ids, cluster_labels):
         cluster_name = cluster_label_map[cluster_idx]
-        cluster_dict[cluster_name].append(sample)
+        cluster_dict[cluster_name].append(str(sample))
 
     sample_cluster = dict(cluster_dict)
 
     if verbose:
-        print(f"[cluster_samples_by_pca] K-means done (k={k}).")
-        print(f"   => {len(sample_cluster)} clusters formed from {n_samples} samples.")
+        print(f"K-means clustering complete: {len(sample_cluster)} clusters from {n_samples} samples")
 
     return sample_cluster, pca_data
 
 
 def Cluster_distance(
     pca_data: pd.DataFrame,
-    sample_cluster: dict,
+    sample_cluster: Dict[str, List[str]],
     metric: str = "euclidean",
     verbose: bool = False
 ) -> np.ndarray:
     """
-    Computes pairwise distances between cluster centroids, returns a condensed distance array.
-
-    Parameters
-    ----------
-    pca_data : DataFrame
-        Rows are samples, columns are PCA coordinates (PC1..PCn).
-    sample_cluster : dict
-        Mapping from cluster_name -> list of samples.
-    metric : str
-        Distance metric for pdist.
-    verbose : bool
-        Print messages if True.
-
-    Returns
-    -------
-    pairwise_distances : np.ndarray
-        Condensed distance matrix from pdist for the cluster centroids.
+    Computes pairwise distances between cluster centroids.
     """
     cluster_names = sorted(sample_cluster.keys())
     cluster_centroids = []
 
     for cluster_name in cluster_names:
         cluster_samples = sample_cluster[cluster_name]
-        coords = pca_data.loc[cluster_samples, :]
+        available_samples = [s for s in cluster_samples if s in pca_data.index]
+        if len(available_samples) == 0:
+            raise ValueError(f"No samples from cluster {cluster_name} found in PCA data")
+        
+        coords = pca_data.loc[available_samples, :]
         centroid = coords.mean(axis=0).values
         cluster_centroids.append(centroid)
 
-    # shape: (k_clusters, nPCs)
     cluster_centroids = np.vstack(cluster_centroids)
     pairwise_dists = pdist(cluster_centroids, metric=metric)
 
     if verbose:
-        print(f"[Cluster_distance] Computed pairwise {metric} distances among cluster centroids.")
+        print(f"Computed pairwise {metric} distances among {len(cluster_names)} cluster centroids")
+    
     return pairwise_dists
 
 
-def construct_MST(pairwise_distances, verbose=False):
+def construct_MST(pairwise_distances: np.ndarray, verbose: bool = False) -> np.ndarray:
     """
-    Builds an MST from the condensed distance matrix and returns
-    the MST as a dense adjacency matrix.
+    Builds an MST from the condensed distance matrix.
     """
     mst = minimum_spanning_tree(squareform(pairwise_distances))
     if verbose:
-        print("[construct_MST] MST adjacency matrix:\n", mst.toarray())
+        print(f"MST construction complete with shape: {mst.toarray().shape}")
     return mst.toarray()
 
 
-def find_principal_path(mst_array, sample_cluster, verbose=False):
+def find_principal_path(mst_array: np.ndarray, sample_cluster: Dict[str, List[str]], verbose: bool = False) -> List[int]:
     """
-    Creates a graph from the MST adjacency matrix and searches for
-    the single longest 'shortest_path' (in # of edges). Ties are broken
-    by total cell count. Returns that path as a list of cluster indices.
+    Finds the longest path in the MST (by number of edges), with ties broken by total sample count.
     """
     G = nx.from_numpy_array(mst_array + mst_array.T)
     cluster_list = sorted(sample_cluster.keys())
 
-    def total_cells_in_path(path):
+    def total_samples_in_path(path):
         return sum(len(sample_cluster[cluster_list[idx]]) for idx in path)
 
     max_path = []
-    max_cell_count = 0
+    max_sample_count = 0
 
     for source in G.nodes:
         for target in G.nodes:
@@ -158,25 +177,26 @@ def find_principal_path(mst_array, sample_cluster, verbose=False):
                 path = nx.shortest_path(G, source=source, target=target)
                 if len(path) > len(max_path):
                     max_path = path
-                    max_cell_count = total_cells_in_path(path)
+                    max_sample_count = total_samples_in_path(path)
                 elif len(path) == len(max_path):
-                    cell_count = total_cells_in_path(path)
-                    if cell_count > max_cell_count:
+                    sample_count = total_samples_in_path(path)
+                    if sample_count > max_sample_count:
                         max_path = path
-                        max_cell_count = cell_count
+                        max_sample_count = sample_count
             except nx.NetworkXNoPath:
                 continue
 
     if verbose:
-        print(f"[find_principal_path] Main path: length={len(max_path)}, total cell count={max_cell_count}")
+        cluster_names = [f"cluster_{i+1}" for i in max_path]
+        print(f"Principal path found: {len(max_path)} clusters, {max_sample_count} total samples")
+        print(f"Path: {' -> '.join(cluster_names)}")
 
     return max_path
 
 
-def find_branching_paths(G, origin, main_path, verbose=False):
+def find_branching_paths(G: nx.Graph, origin: int, main_path: List[int], verbose: bool = False) -> List[List[int]]:
     """
-    Identifies leaf nodes not in main_path, then gets the shortest path
-    from origin to each leaf. Returns a list of these branching paths.
+    Identifies branching paths from the main trajectory.
     """
     branching_paths = []
     leaf_nodes = [n for n in G.nodes if G.degree[n] == 1 and n not in main_path]
@@ -190,86 +210,83 @@ def find_branching_paths(G, origin, main_path, verbose=False):
             continue
 
     if verbose:
-        print(f"[find_branching_paths] {len(branching_paths)} branching path(s) found.")
+        print(f"Found {len(branching_paths)} branching paths")
+    
     return branching_paths
 
 
-def project_cells_onto_edges(
+def project_samples_onto_edges(
     pca_data: pd.DataFrame,
-    sample_cluster: dict[str, list[str]],
-    main_path: list[int],
+    sample_cluster: Dict[str, List[str]],
+    main_path: List[int],
     verbose: bool = False
-) -> dict[str, dict]:
+) -> Dict[str, Dict]:
     """
-    For each cell, projects it onto the relevant edge in the cluster ordering (main_path).
-    Returns {cell_id -> {cluster, edge, projection, cluster_index, edge_index}}
+    Projects samples onto edges in the cluster ordering.
     """
     cluster_list = sorted(sample_cluster.keys())
 
     # Precompute centroids
     cluster_centroids = {}
     for clust in cluster_list:
-        coords = pca_data.loc[sample_cluster[clust], :]
+        available_samples = [s for s in sample_cluster[clust] if s in pca_data.index]
+        if len(available_samples) == 0:
+            raise ValueError(f"No available samples for cluster {clust}")
+        coords = pca_data.loc[available_samples, :]
         cluster_centroids[clust] = coords.mean(axis=0).values
 
     def _projection(Ek, Ei, Ej):
         v_ij = Ej - Ei
         numerator = np.dot(Ek - Ei, v_ij)
         denom = np.linalg.norm(v_ij)
-        if denom == 0:
-            if verbose:
-                print("[project_cells_onto_edges] WARNING: zero-length edge.")
-            return 0.0
-        return numerator / denom
+        return numerator / denom if denom != 0 else 0.0
 
-    def _dist_cell_to_centroid(Ek, Ec):
+    def _dist_sample_to_centroid(Ek, Ec):
         return np.linalg.norm(Ek - Ec)
 
     path_cluster_names = [cluster_list[idx] for idx in main_path]
     M = len(path_cluster_names)
-
-    cell_projections = {}
+    sample_projections = {}
 
     for i, cluster_name in enumerate(path_cluster_names):
-        cells_in_cluster = sample_cluster[cluster_name]
+        samples_in_cluster = [s for s in sample_cluster[cluster_name] if s in pca_data.index]
         Ei = cluster_centroids[cluster_name]
 
         # First cluster
         if i == 0 and M > 1:
             next_cluster = path_cluster_names[i+1]
             Ej = cluster_centroids[next_cluster]
-            for c in cells_in_cluster:
-                Ek = pca_data.loc[c].values
+            for s in samples_in_cluster:
+                Ek = pca_data.loc[s].values
                 val = _projection(Ek, Ei, Ej)
-                cell_projections[c] = {
+                sample_projections[s] = {
                     "cluster": cluster_name,
                     "edge": (cluster_name, next_cluster),
                     "projection": val,
                     "cluster_index": i,
-                    "edge_index": 1  # forward
+                    "edge_index": 1
                 }
 
         # Last cluster
         elif i == M - 1 and M > 1:
             prev_cluster = path_cluster_names[i-1]
             Eprev = cluster_centroids[prev_cluster]
-            for c in cells_in_cluster:
-                Ek = pca_data.loc[c].values
+            for s in samples_in_cluster:
+                Ek = pca_data.loc[s].values
                 val = _projection(Ek, Eprev, Ei)
-                cell_projections[c] = {
+                sample_projections[s] = {
                     "cluster": cluster_name,
                     "edge": (prev_cluster, cluster_name),
                     "projection": val,
                     "cluster_index": i,
-                    "edge_index": 0  # backward
+                    "edge_index": 0
                 }
 
-        # Intermediate cluster(s)
+        # Intermediate clusters
         else:
             if M == 1:
-                # Only one cluster => no edges
-                for c in cells_in_cluster:
-                    cell_projections[c] = {
+                for s in samples_in_cluster:
+                    sample_projections[s] = {
                         "cluster": cluster_name,
                         "edge": None,
                         "projection": 0.0,
@@ -281,13 +298,13 @@ def project_cells_onto_edges(
                 next_cluster = path_cluster_names[i+1]
                 Eprev = cluster_centroids[prev_cluster]
                 Enext = cluster_centroids[next_cluster]
-                for c in cells_in_cluster:
-                    Ek = pca_data.loc[c].values
-                    dist2prev = _dist_cell_to_centroid(Ek, Eprev)
-                    dist2next = _dist_cell_to_centroid(Ek, Enext)
+                for s in samples_in_cluster:
+                    Ek = pca_data.loc[s].values
+                    dist2prev = _dist_sample_to_centroid(Ek, Eprev)
+                    dist2next = _dist_sample_to_centroid(Ek, Enext)
                     if dist2prev <= dist2next:
                         val = _projection(Ek, Eprev, Ei)
-                        cell_projections[c] = {
+                        sample_projections[s] = {
                             "cluster": cluster_name,
                             "edge": (prev_cluster, cluster_name),
                             "projection": val,
@@ -296,7 +313,7 @@ def project_cells_onto_edges(
                         }
                     else:
                         val = _projection(Ek, Ei, Enext)
-                        cell_projections[c] = {
+                        sample_projections[s] = {
                             "cluster": cluster_name,
                             "edge": (cluster_name, next_cluster),
                             "projection": val,
@@ -305,35 +322,212 @@ def project_cells_onto_edges(
                         }
 
     if verbose:
-        print("[project_cells_onto_edges] Projection complete for "
-              f"{len(cell_projections)} cells.")
-    return cell_projections
+        print(f"Projection complete for {len(sample_projections)} samples")
+    
+    return sample_projections
 
 
-def order_cells_along_paths(
-    cell_projections: dict[str, dict],
-    main_path: list[int],
+def order_samples_along_paths(
+    sample_projections: Dict[str, Dict],
+    main_path: List[int],
     verbose: bool = False
-) -> list[str]:
+) -> List[str]:
     """
-    Sorts cells by (cluster_index, edge_index, projection). 
-    Returns a list of cell IDs in the final ordering.
+    Orders samples along the trajectory path.
     """
     sortable = []
-    for cell_id, info in cell_projections.items():
+    for sample_id, info in sample_projections.items():
         c_idx = info["cluster_index"]
         e_idx = info["edge_index"] if info["edge_index"] is not None else 0
         proj = info["projection"]
-        sortable.append((c_idx, e_idx, proj, cell_id))
+        sortable.append((c_idx, e_idx, proj, sample_id))
 
-    # Sort
     sortable.sort(key=lambda x: (x[0], x[1], x[2]))
-    ordered_cells = [tup[3] for tup in sortable]
+    ordered_samples = [tup[3] for tup in sortable]
 
     if verbose:
-        print("[order_cells_along_paths] Final ordering computed with "
-              f"{len(ordered_cells)} cells total.")
-    return ordered_cells
+        print(f"Sample ordering complete: {len(ordered_samples)} samples")
+    
+    return ordered_samples
+
+
+def plot_clusters_by_cluster(
+    adata: sc.AnnData,
+    sample_cluster: Dict[str, List[str]],
+    main_path: List[int],
+    branching_paths: List[List[int]],
+    output_path: str,
+    pca_key: str = "X_pca_expression",
+    verbose: bool = False
+):
+    """Plot PCA with samples colored by cluster assignment."""
+    if pca_key not in adata.uns:
+        raise KeyError(f"Missing PCA data in adata.uns['{pca_key}'].")
+    pca_df = adata.uns[pca_key]
+    
+    if not isinstance(pca_df, pd.DataFrame):
+        raise TypeError(f"Expected a DataFrame in adata.uns['{pca_key}'], but got {type(pca_df)}.")
+
+    required_pcs = {"PC1", "PC2"}
+    if not required_pcs.issubset(pca_df.columns):
+        raise ValueError(f"PCA DataFrame must contain at least {required_pcs}. Found columns: {pca_df.columns.tolist()}")
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    cluster_names = sorted(sample_cluster.keys())
+    cluster_centroids = {}
+    for clust in cluster_names:
+        available_samples = [s for s in sample_cluster[clust] if s in pca_df.index]
+        if len(available_samples) > 0:
+            subset = pca_df.loc[available_samples, ["PC1", "PC2"]]
+            centroid = subset.mean(axis=0).values
+            cluster_centroids[clust] = centroid
+
+    def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
+        if c1 in cluster_centroids and c2 in cluster_centroids:
+            p1 = cluster_centroids[c1]
+            p2 = cluster_centroids[c2]
+            plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
+
+    plt.figure(figsize=(10, 8))
+    cmap = plt.cm.get_cmap("tab20", len(cluster_names))
+
+    for i, clust in enumerate(cluster_names):
+        available_samples = [s for s in sample_cluster[clust] if s in pca_df.index]
+        if len(available_samples) > 0:
+            subset = pca_df.loc[available_samples, ["PC1", "PC2"]]
+            plt.scatter(subset["PC1"], subset["PC2"], color=cmap(i), label=clust, s=60, alpha=0.8, edgecolors="k")
+
+    # Draw main path
+    for i in range(len(main_path) - 1):
+        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", style="-", color="red", linewidth=3)
+
+    # Draw branching paths
+    for path in branching_paths:
+        for j in range(len(path) - 1):
+            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", style="--", color="blue", linewidth=2)
+
+    # Label clusters
+    for clust in cluster_names:
+        if clust in cluster_centroids:
+            cx, cy = cluster_centroids[clust]
+            plt.text(cx, cy, clust.replace("cluster_", ""), fontsize=12, ha="center", va="center", 
+                    bbox=dict(facecolor="white", alpha=0.8, boxstyle="round,pad=0.3"))
+
+    plt.title("PCA (2D) - Samples Colored by Cluster", fontsize=14)
+    plt.xlabel("PC1", fontsize=12)
+    plt.ylabel("PC2", fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.legend(loc="best", bbox_to_anchor=(1.05, 1), fontsize=10)
+    plt.tight_layout()
+    
+    plot_path = os.path.join(output_path, "clusters_by_cluster.png")
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+    if verbose:
+        print(f"Cluster plot saved to {plot_path}")
+
+
+def plot_clusters_by_grouping(
+    adata: sc.AnnData,
+    sample_cluster: Dict[str, List[str]],
+    main_path: List[int],
+    branching_paths: List[List[int]],
+    output_path: str,
+    pca_key: str = "X_pca_expression",
+    grouping_columns: List[str] = ["sev.level"],
+    verbose: bool = False
+):
+    """Plot PCA with samples colored by grouping/metadata."""
+    pca_df = adata.uns[pca_key].copy()
+    
+    # Reset index to make sample names a column for easier merging
+    pca_df = pca_df[["PC1", "PC2"]].copy().reset_index().rename(columns={"index": "sample"})
+    pca_df["sample"] = pca_df["sample"].astype(str).str.strip()
+
+    # Get grouping info
+    sample_list = pca_df["sample"].tolist()
+    diff_groups = find_sample_grouping(adata, sample_list, grouping_columns)
+    
+    # Convert to DataFrame
+    if isinstance(diff_groups, dict):
+        diff_groups = pd.DataFrame.from_dict(diff_groups, orient="index", columns=["plot_group"])
+    diff_groups.index = diff_groups.index.astype(str).str.strip()
+    diff_groups = diff_groups.reset_index().rename(columns={"index": "sample"})
+
+    # Merge and process grouping info
+    pca_df = pca_df.merge(diff_groups, how="left", on="sample")
+    
+    # Try to extract numeric values for coloring
+    pca_df["numeric_value"] = pd.to_numeric(pca_df["plot_group"].str.extract(r"(\d+\.?\d*)")[0], errors='coerce')
+    
+    if pca_df["numeric_value"].notnull().any():
+        color_values = pca_df["numeric_value"].fillna(pca_df["numeric_value"].median())
+        cmap = "viridis_r"
+        colorbar_label = f"{'/'.join(grouping_columns)} (numeric)"
+    else:
+        unique_groups = pca_df["plot_group"].unique()
+        color_map = {group: i for i, group in enumerate(unique_groups)}
+        color_values = pca_df["plot_group"].map(color_map)
+        cmap = "tab10"
+        colorbar_label = f"{'/'.join(grouping_columns)} (categorical)"
+
+    # Compute cluster centroids
+    cluster_names = sorted(sample_cluster.keys())
+    cluster_centroids = {}
+    full_pca_df = adata.uns[pca_key]
+    for clust in cluster_names:
+        available_samples = [s for s in sample_cluster[clust] if s in full_pca_df.index]
+        if len(available_samples) > 0:
+            subset = full_pca_df.loc[available_samples, ["PC1", "PC2"]]
+            centroid = subset.mean(axis=0).values
+            cluster_centroids[clust] = centroid
+
+    def _connect_clusters(c1, c2, style="-", color="k", linewidth=2):
+        if c1 in cluster_centroids and c2 in cluster_centroids:
+            p1 = cluster_centroids[c1]
+            p2 = cluster_centroids[c2]
+            plt.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle=style, color=color, linewidth=linewidth, zorder=1)
+
+    # Plotting
+    plt.figure(figsize=(10, 8))
+    scatter_obj = plt.scatter(
+        pca_df["PC1"], pca_df["PC2"], c=color_values, cmap=cmap, 
+        s=80, alpha=0.8, edgecolors="k", zorder=2
+    )
+
+    # Draw main path
+    for i in range(len(main_path) - 1):
+        _connect_clusters(f"cluster_{main_path[i] + 1}", f"cluster_{main_path[i + 1] + 1}", 
+                         style="-", color="red", linewidth=3)
+
+    # Draw branching paths
+    for path in branching_paths:
+        for j in range(len(path) - 1):
+            _connect_clusters(f"cluster_{path[j] + 1}", f"cluster_{path[j + 1] + 1}", 
+                             style="--", color="blue", linewidth=2)
+
+    # Label clusters
+    for clust in cluster_names:
+        if clust in cluster_centroids:
+            cx, cy = cluster_centroids[clust]
+            plt.text(cx, cy, clust.replace("cluster_", ""), fontsize=10, ha="center", va="center", 
+                    bbox=dict(facecolor="white", alpha=0.8, boxstyle="round,pad=0.3"))
+
+    plt.colorbar(scatter_obj, label=colorbar_label)
+    plt.title("PCA (2D) - Samples Colored by Grouping", fontsize=14)
+    plt.xlabel("PC1", fontsize=12)
+    plt.ylabel("PC2", fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    plot_path = os.path.join(output_path, "clusters_by_grouping.png")
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+    if verbose:
+        print(f"Grouping plot saved to {plot_path}")
 
 
 def TSCAN(
@@ -341,33 +535,48 @@ def TSCAN(
     column: str,
     n_clusters: int,
     output_dir: str,
-    grouping_columns = None,
+    grouping_columns: Optional[List[str]] = None,
     verbose: bool = False,
-    origin: int = None
-):
+    origin: Optional[int] = None
+) -> Dict:
     """
-    Orchestrates TSCAN steps: 
-    1) K-means on PCA -> 
-    2) MST -> 
-    3) principal path + branching paths -> 
-    4) final ordering of cells -> 
-    5) Pseudotime calculation ->
-    6) optional plotting
-
-    Returns
-    -------
-    results : dict
-        Contains MST, main path, branching paths, sample_cluster, 
-        final cell order, pseudotime, etc.
+    Trajectory analysis using TSCAN algorithm for pseudobulk data.
+    
+    Parameters:
+    -----------
+    AnnData_sample : sc.AnnData
+        AnnData object containing sample-level data
+    column : str
+        Key for PCA data in adata.uns
+    n_clusters : int
+        Number of clusters for K-means
+    output_dir : str
+        Directory to save results
+    grouping_columns : List[str], optional
+        Columns from adata.obs to use for grouping visualization
+    verbose : bool
+        Whether to print detailed progress information
+    origin : int, optional
+        Cluster index to use as trajectory origin
+    
+    Returns:
+    --------
+    Dict containing trajectory analysis results
     """
+    import os
+    
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        if verbose:
-            print(f"[TSCAN] Output directory created: {output_dir}")
 
-    output_path = os.path.join(output_dir, "TSCAN")
-    os.makedirs(output_path, exist_ok=True)
+    tscan_output_path = os.path.join(output_dir, "TSCAN")
+    os.makedirs(tscan_output_path, exist_ok=True)
 
+    if verbose:
+        print(f"Starting TSCAN analysis:")
+        print(f"  Samples: {AnnData_sample.n_obs}")
+        print(f"  Genes: {AnnData_sample.n_vars}")
+        print(f"  Clusters: {n_clusters}")
+    
     # 1. Cluster samples by PCA
     sample_cluster, pca_df = cluster_samples_by_pca(
         AnnData_sample,
@@ -378,90 +587,130 @@ def TSCAN(
     )
 
     # 2. MST on cluster centroids
-    pairwise_dists = Cluster_distance(
-        pca_df, 
-        sample_cluster, 
-        metric="euclidean",
-        verbose=verbose
-    )
+    pairwise_dists = Cluster_distance(pca_df, sample_cluster, metric="euclidean", verbose=verbose)
     mst = construct_MST(pairwise_dists, verbose=verbose)
 
-    # 3. Find main path and pick origin
+    # 3. Find main path and determine origin
     main_path = find_principal_path(mst, sample_cluster, verbose=verbose)
     ends = [main_path[0], main_path[-1]]
     if origin is None:
         origin = random.choice(ends)
         if verbose:
-            print(f"[TSCAN] No origin specified. Using random end: {origin}")
+            print(f"Using random endpoint as origin: cluster_{origin + 1}")
     elif origin not in ends:
-        raise ValueError(f"Provided origin {origin} is not an endpoint in {ends}")
-    else:
-        if verbose:
-            print(f"[TSCAN] origin set to: {origin}")
+        raise ValueError(f"Provided origin {origin} is not an endpoint. Available endpoints: {ends}")
 
     # Build graph for branching analysis
     G = nx.from_numpy_array(mst + mst.T)
     branching_paths = find_branching_paths(G, origin, main_path, verbose=verbose)
 
-    # 4. Project + order cells along main path
-    cell_projections = project_cells_onto_edges(
+    # 4. Project + order samples along main path
+    sample_projections = project_samples_onto_edges(
         pca_data=pca_df,
         sample_cluster=sample_cluster,
         main_path=main_path,
         verbose=verbose
     )
-    ordered_cells = order_cells_along_paths(
-        cell_projections,
-        main_path=main_path,
-        verbose=verbose
-    )
+    ordered_samples = order_samples_along_paths(sample_projections, main_path=main_path, verbose=verbose)
 
-    # 5. Handle branching paths: project + order
-    cell_projections_branching_paths = {}
-    ordered_cells_branching_paths = {}
+    # 5. Handle branching paths
+    sample_projections_branching_paths = {}
+    ordered_samples_branching_paths = {}
     for index, path in enumerate(branching_paths):
-        cp = project_cells_onto_edges(
+        sp = project_samples_onto_edges(
             pca_data=pca_df,
             sample_cluster=sample_cluster,
             main_path=path,
             verbose=verbose
         )
-        oc = order_cells_along_paths(cp, main_path=path, verbose=verbose)
+        os = order_samples_along_paths(sp, main_path=path, verbose=verbose)
 
-        cell_projections_branching_paths[index] = cp
-        ordered_cells_branching_paths[index] = oc
+        sample_projections_branching_paths[index] = sp
+        ordered_samples_branching_paths[index] = os
 
-    # --- NEW STEP: Compute pseudo‐time along each path ---
-    #   We'll assign integer positions along the main path and each branch
-    pseudo_main = {cell_id: i for i, cell_id in enumerate(ordered_cells, start=1)}
+    # 6. Compute pseudotime
+    # Main path pseudotime (normalized 0-1)
+    pseudo_main = {}
+    if len(ordered_samples) > 1:
+        for i, sample_id in enumerate(ordered_samples):
+            pseudo_main[sample_id] = i / (len(ordered_samples) - 1)
+    elif len(ordered_samples) == 1:
+        pseudo_main[ordered_samples[0]] = 0.0
+
+    # Branching paths pseudotime
     pseudo_branches = {}
-    for branch_idx, oc in ordered_cells_branching_paths.items():
-        pseudo_branches[branch_idx] = {cell_id: i for i, cell_id in enumerate(oc, start=1)}
+    for branch_idx, os in ordered_samples_branching_paths.items():
+        if len(os) > 1:
+            pseudo_branches[branch_idx] = {sample_id: i / (len(os) - 1) for i, sample_id in enumerate(os)}
+        elif len(os) == 1:
+            pseudo_branches[branch_idx] = {os[0]: 0.0}
+        else:
+            pseudo_branches[branch_idx] = {}
 
-    # 6. Visualization
-    plot_clusters_by_cluster(
-        adata=AnnData_sample,
-        sample_cluster=sample_cluster,
-        main_path=main_path,
-        branching_paths=branching_paths,
-        output_path=output_path,
-        pca_key=column,
-        verbose=verbose
-    )
+    # 7. Add pseudotime to AnnData object
+    # Main path pseudotime
+    main_pseudotime = np.full(AnnData_sample.n_obs, np.nan)
+    for i, sample_id in enumerate(AnnData_sample.obs.index):
+        if str(sample_id) in pseudo_main:
+            main_pseudotime[i] = pseudo_main[str(sample_id)]
+    
+    AnnData_sample.obs['tscan_pseudotime_main'] = main_pseudotime
+    
+    # Cluster assignments
+    cluster_assignment = np.full(AnnData_sample.n_obs, 'unassigned', dtype=object)
+    for cluster_name, sample_list in sample_cluster.items():
+        for sample_id in sample_list:
+            try:
+                idx = AnnData_sample.obs.index.get_loc(sample_id)
+                cluster_assignment[idx] = cluster_name
+            except KeyError:
+                if verbose:
+                    print(f"Warning: Sample {sample_id} not found in AnnData obs index")
+    
+    AnnData_sample.obs['tscan_cluster'] = cluster_assignment
 
-    if grouping_columns is not None:
-        plot_clusters_by_grouping(
+    # 8. Visualization
+    try:
+        plot_clusters_by_cluster(
             adata=AnnData_sample,
             sample_cluster=sample_cluster,
             main_path=main_path,
             branching_paths=branching_paths,
-            output_path=output_path,
+            output_path=tscan_output_path,
             pca_key=column,
-            grouping_columns=grouping_columns,
             verbose=verbose
         )
+        if verbose:
+            print("Cluster plot created successfully")
+    except Exception as e:
+        if verbose:
+            print(f"Warning: Cluster plot failed - {e}")
 
-    # 7. Prepare and return final results
+    if grouping_columns is not None:
+        try:
+            # Handle string input for grouping columns
+            if isinstance(grouping_columns, str):
+                actual_grouping_columns = [grouping_columns]
+            else:
+                actual_grouping_columns = grouping_columns
+            
+            plot_clusters_by_grouping(
+                adata=AnnData_sample,
+                sample_cluster=sample_cluster,
+                main_path=main_path,
+                branching_paths=branching_paths,
+                output_path=tscan_output_path,
+                pca_key=column,
+                grouping_columns=actual_grouping_columns,
+                verbose=verbose
+            )
+            if verbose:
+                print("Grouping plot created successfully")
+        except Exception as e:
+            if verbose:
+                print(f"Warning: Grouping plot failed - {e}")
+
+    # 9. Prepare final results
     results = {
         "main_path": main_path,
         "origin": origin,
@@ -469,20 +718,24 @@ def TSCAN(
         "graph": G,
         "sample_cluster": sample_cluster,
         "pca_data": pca_df,
-        "cell_projections": cell_projections,
-        "ordered_cells": ordered_cells,
-        "cell_projections_branching_paths": cell_projections_branching_paths,
-        "ordered_cells_branching_paths": ordered_cells_branching_paths,
+        "sample_projections": sample_projections,
+        "ordered_samples": ordered_samples,
+        "sample_projections_branching_paths": sample_projections_branching_paths,
+        "ordered_samples_branching_paths": ordered_samples_branching_paths,
         "pseudotime": {
             "main_path": pseudo_main,
             "branching_paths": pseudo_branches
-        }
+        },
+        "cluster_names": sorted(sample_cluster.keys()),
+        "n_samples_total": sum(len(samples) for samples in sample_cluster.values())
     }
 
     if verbose:
-        print("[TSCAN] Completed. Main path cell order length:", len(ordered_cells))
-        for idx, bp in ordered_cells_branching_paths.items():
-            print(f"   Branch {idx+1} order length:", len(bp))
-        print("   Pseudotime computation done.")
+        print(f"\nTSCAN analysis completed successfully!")
+        print(f"  Main path: {len(ordered_samples)} samples across {len(main_path)} clusters")
+        for idx, bp in ordered_samples_branching_paths.items():
+            print(f"  Branch {idx+1}: {len(bp)} samples across {len(branching_paths[idx])} clusters")
+        print(f"  Total samples processed: {results['n_samples_total']}")
+        print(f"  Results saved to: {tscan_output_path}")
 
     return results
