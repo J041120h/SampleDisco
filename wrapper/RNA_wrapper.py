@@ -539,8 +539,6 @@ def rna_wrapper(
                 # CCA-based trajectory analysis
                 print("Running CCA-based differential analysis...")
                 
-                # CCA returns a tuple: (score_prop, score_expr, ptime_prop, ptime_expr)
-                # We need to pass the full CCA results, not just ptime_expression
                 results = run_integrated_differential_analysis(
                     trajectory_results= (first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression),
                     pseudobulk_adata=pseudobulk_anndata,
@@ -588,22 +586,22 @@ def rna_wrapper(
         os.remove(summary_sample_csv_path)
 
     # Step 6: Clustering and Differential Gene Expression
-    if cluster_DGE:
+    if sample_cluster:
         print("Starting clustering and differential gene expression...")
         if cluster_distance_method not in sample_distance_methods:
             raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
         
         expr_results, prop_results = cluster(
+            generalFolder = rna_output_dir,
             Kmeans=Kmeans_based_cluster_flag,
             methods=Tree_building_method,
             prportion_test=proportion_test,
-            generalFolder=rna_output_dir,
-            distance_method=cluster_distance_method,
+            distance_method=sample_distance_methods,
             number_of_clusters=cluster_number,
             sample_to_clade_user=user_provided_sample_to_clade
         )
         
-        if RAISIN_analysis:
+        if cluster_DGE and RAISIN_analysis:
             print("Running RAISIN analysis...")
             if expr_results is not None:
                 unique_expr_clades = len(set(expr_results.values()))

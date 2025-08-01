@@ -559,11 +559,11 @@ def atac_wrapper(
             raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
         
         expr_results, prop_results = cluster(
+            generalFolder = atac_output_dir,
             Kmeans=Kmeans_based_cluster_flag,
             methods=Tree_building_method,
             prportion_test=proportion_test,
-            generalFolder=atac_output_dir,
-            distance_method=cluster_distance_method,
+            distance_method=sample_distance_methods,
             number_of_clusters=cluster_number,
             sample_to_clade_user=user_provided_sample_to_clade
         )
