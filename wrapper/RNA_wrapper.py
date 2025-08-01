@@ -609,7 +609,7 @@ def rna_wrapper(
                     print("Only one clade found in expression results. Skipping RAISIN analysis.")
                 else:
                     fit = raisinfit(
-                        adata_path=os.path.join(rna_output_dir, 'harmony', 'adata_sample.h5ad'),
+                        adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
                         sample_col=sample_col,
                         batch_key=batch_col,
                         sample_to_clade=expr_results,
@@ -635,7 +635,7 @@ def rna_wrapper(
                     print("Only one clade found in proportion results. Skipping RAISIN analysis.")
                 else:
                     fit = raisinfit(
-                        adata_path=os.path.join(rna_output_dir, 'harmony', 'adata_sample.h5ad'),
+                        adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
                         sample_col=sample_col,
                         batch_key=batch_col,
                         sample_to_clade=prop_results,

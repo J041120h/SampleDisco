@@ -45,6 +45,7 @@ def atac_wrapper(
     atac_visualization_processing=True,
     trajectory_analysis_atac=True,
     sample_distance_calculation=True,
+    atac_sample_cluster=True,
     cluster_DGE=True,
     trajectory_DGE=True,
     visualize_data=True,
@@ -551,7 +552,7 @@ def atac_wrapper(
             print(f"Sample distance calculation completed. Results saved in {os.path.join(atac_output_dir, 'Sample')}")
     
     # Step 6: Clustering and Differential Analysis (if enabled)
-    if cluster_DGE:
+    if atac_sample_cluster:
         if atac_pipeline_verbose:
             print("Starting clustering and differential analysis for ATAC data...")
             
@@ -568,7 +569,7 @@ def atac_wrapper(
             sample_to_clade_user=user_provided_sample_to_clade
         )
         
-        if RAISIN_analysis:
+        if cluster_DGE:
             if atac_pipeline_verbose:
                 print("Running RAISIN analysis for ATAC data...")
                 
@@ -579,7 +580,7 @@ def atac_wrapper(
                     print("Only one clade found in ATAC expression results. Skipping RAISIN analysis.")
                 else:
                     fit = raisinfit(
-                        adata_path=os.path.join(atac_output_dir, 'harmony', 'adata_sample.h5ad'),
+                        adata_path=os.path.join(atac_output_dir, 'preprocess', 'adata_sample.h5ad'),
                         sample_col=atac_sample_col,
                         batch_key=atac_batch_col,
                         sample_to_clade=expr_results,
@@ -606,7 +607,7 @@ def atac_wrapper(
                     print("Only one clade found in ATAC proportion results. Skipping RAISIN analysis.")
                 else:
                     fit = raisinfit(
-                        adata_path=os.path.join(atac_output_dir, 'harmony', 'adata_sample.h5ad'),
+                        adata_path=os.path.join(atac_output_dir, 'preprocess', 'adata_sample.h5ad'),
                         sample_col=atac_sample_col,
                         batch_key=atac_batch_col,
                         sample_to_clade=prop_results,
@@ -624,7 +625,6 @@ def atac_wrapper(
                     )
             else:
                 print("No ATAC proportion results available. Skipping RAISIN analysis.")
-        
         status_flags["atac"]["cluster_dge"] = True
     
     # Step 8: Visualization
