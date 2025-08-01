@@ -14,6 +14,7 @@ from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results, run_differential_analysis_for_all_paths
 from cluster import cluster
+from cell_type_annotation import annotate_cell_types_with_celltypist
 from cell_proportion_pseudotime import visualize_cell_proportion_pseudotime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -22,9 +23,9 @@ from sample_clustering.RAISIN_TEST import *
 
 def rna_wrapper(
     # ===== Required Parameters =====
-    rna_count_data_path = None,
-    rna_sample_meta_path = None,
-    rna_output_dir = None,
+    rna_count_data_path=None,
+    rna_sample_meta_path=None,
+    rna_output_dir=None,
     sample_col='sample',
     
     # ===== Process Control Flags =====
@@ -35,7 +36,7 @@ def rna_wrapper(
     trajectory_analysis=True,
     trajectory_DGE=True,
     sample_cluster=True,
-    cluster_DGE = True,
+    cluster_DGE=True,
     visualize_data=True,
     
     # ===== Basic Parameters =====
@@ -68,6 +69,11 @@ def rna_wrapper(
     
     # ===== Cell Type Assignment Parameters =====
     assign_save=True,
+    
+    # ===== Cell Type Annotation Parameters =====
+    cell_type_annotation=False,
+    rna_cell_type_annotation_model_name=None,
+    rna_cell_type_annotation_custom_model_path=None,
     
     # ===== Pseudobulk Parameters =====
     celltype_col='cell_type',
@@ -144,22 +150,6 @@ def rna_wrapper(
     use_gpu=False,
     status_flags=None
 ):
-    """
-    RNA-seq analysis wrapper function.
-    
-    This function handles all RNA-seq processing steps including:
-    - Preprocessing with Harmony
-    - Cell type clustering
-    - Pseudobulk generation and PCA
-    - Trajectory analysis
-    - Differential gene expression
-    - Sample distance calculations
-    - Visualization
-    
-    Parameters are grouped by functionality for better organization.
-    System-level parameters like GPU usage and status flags should be
-    passed from the main wrapper function.
-    """
     if linux_system and use_gpu:
         from linux.harmony_linux import harmony_linux
         from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
@@ -354,6 +344,14 @@ def rna_wrapper(
                 output_dir=rna_output_dir,
                 verbose=verbose
             )
+        if cell_type_annotation:
+            annotate_cell_types_with_celltypist(
+                adata = AnnData_sample,
+                output_dir = rna_output_dir,
+                model_name= rna_cell_type_annotation_model_name,
+                custom_model_path= rna_cell_type_annotation_custom_model_path
+            )
+        
         status_flags["rna"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and PCA

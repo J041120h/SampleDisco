@@ -18,7 +18,7 @@ def annotate_cell_types_with_celltypist(
         raise ValueError("You must provide exactly one of `model_name` or `custom_model_path`.")
 
     # === Prepare output directory ===
-    plot_dir = os.path.join(output_dir, "harmony")
+    plot_dir = os.path.join(output_dir, "preprocess")
     os.makedirs(plot_dir, exist_ok=True)
 
     # === Make a copy and preprocess for CellTypist ===
@@ -86,18 +86,3 @@ def annotate_cell_types_with_celltypist(
         print(f"[INFO] Annotated AnnData saved to: {output_file}")
 
     return adata
-
-if __name__ == "__main__":
-    input_file = "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_sample.h5ad"
-    output_dir = "/dcl01/hongkai/data/data/hjiang/Test/result"
-    
-    adata = sc.read_h5ad(input_file)
-
-    # Use either `model_name=...` or `custom_model_path=...`
-    annotate_cell_types_with_celltypist(
-        adata=adata,
-        output_dir=output_dir,
-        model_name="Healthy_COVID19_PBMC.pkl",  
-        majority_voting=True,
-        save=True
-    )

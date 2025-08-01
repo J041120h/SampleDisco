@@ -13,6 +13,7 @@ from sample_distance.sample_distance import sample_distance
 from cluster import cluster
 from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results, run_differential_analysis_for_all_paths
 from Visualization import visualization
+from cell_type_annotation import annotate_cell_types_with_celltypist
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from sample_clustering.RAISIN import *
@@ -20,8 +21,8 @@ from sample_clustering.RAISIN_TEST import *
 
 def atac_wrapper(
     # File paths and directories
-    atac_count_data_path = None,
-    atac_output_dir = None,
+    atac_count_data_path=None,
+    atac_output_dir=None,
     atac_metadata_path=None,
     atac_pseudobulk_output_dir=None,
     atac_dr_output_dir=None,
@@ -39,7 +40,7 @@ def atac_wrapper(
     
     # Process control flags
     atac_preprocessing=True,
-    atac_cell_type_cluster = True,
+    atac_cell_type_cluster=True,
     atac_pseudobulk_dimensionality_reduction=True,
     atac_visualization_processing=True,
     trajectory_analysis_atac=True,
@@ -151,43 +152,12 @@ def atac_wrapper(
     batch_col='batch',
     verbose=True,
     status_flags=None,
+    
+    # ===== Cell Type Annotation Parameters =====
+    cell_type_annotation=False,
+    atac_cell_type_annotation_model_name=None,
+    atac_cell_type_annotation_custom_model_path=None,
 ):
-    """
-    Comprehensive wrapper function for ATAC-seq analysis pipeline.
-    
-    This function handles:
-    1. ATAC-seq preprocessing and quality control
-    2. Cell type clustering
-    3. Pseudobulk generation and dimensionality reduction
-    4. Trajectory analysis (supervised or unsupervised)
-    5. Sample distance calculation
-    6. Clustering-based differential analysis
-    7. Trajectory-based differential peak analysis
-    8. Comprehensive visualization of results
-    
-    Parameters
-    ----------
-    atac_count_data_path : str
-        Path to the ATAC-seq data file (h5ad format)
-    output_dir : str
-        Main output directory for all results
-    sample_distance_calculation : bool
-        Whether to calculate sample distances
-    cluster_DGE : bool
-        Whether to perform clustering and differential analysis
-    trajectory_DGE : bool
-        Whether to perform trajectory differential analysis
-    sample_distance_methods : list
-        List of distance methods to use (e.g., ['cosine', 'correlation', 'EMD'])
-    RAISIN_analysis : bool
-        Whether to perform RAISIN differential analysis
-    ... (other parameters as documented in the main wrapper)
-    
-    Returns
-    -------
-    dict
-        Dictionary containing atac_sample, atac_cell, pseudobulk_anndata, and status_flags
-    """
     # Validate input paths
     if any(data is None for data in (atac_count_data_path, atac_output_dir, atac_metadata_path)):
         raise ValueError("Please provide valid paths for atac_count_data_path, atac_output_dir, and atac_metadata_path.")
@@ -333,6 +303,13 @@ def atac_wrapper(
             output_dir=atac_output_dir,
             verbose=verbose
         )
+        if cell_type_annotation:
+            annotate_cell_types_with_celltypist(
+                adata = atac_sample,
+                output_dir = atac_output_dir,
+                model_name= atac_cell_type_annotation_model_name,
+                custom_model_path= atac_cell_type_annotation_custom_model_path
+            )
         status_flags["atac"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and Dimensionality Reduction

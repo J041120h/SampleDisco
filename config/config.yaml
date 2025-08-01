@@ -62,6 +62,11 @@ rna_umap: true
 rna_cell_type_save: true
 rna_assign_save: true
 
+# RNA Cell Type Annotation Parameters
+rna_cell_type_annotation: false
+rna_cell_type_annotation_model_name: "Healthy_COVID19_PBMC.pkl"
+rna_cell_type_annotation_custom_model_path: null
+
 # RNA Pseudobulk Parameters
 rna_celltype_col: "cell_type"
 rna_pseudobulk_output_dir: null
@@ -191,6 +196,11 @@ atac_n_pcs: 30
 atac_leiden_resolution: 0.8
 atac_existing_cell_types: false
 atac_n_target_cell_clusters: 3
+
+# ATAC Cell Type Annotation Parameters
+atac_cell_type_annotation: false
+atac_cell_type_annotation_model_name: "Healthy_COVID19_PBMC.pkl"
+atac_cell_type_annotation_custom_model_path: null
 
 # ATAC UMAP parameters
 atac_umap_min_dist: 0.3

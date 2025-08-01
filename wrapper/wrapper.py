@@ -79,6 +79,11 @@ def wrapper(
     rna_cell_type_save: bool = True,
     rna_assign_save: bool = True,
     
+    # RNA Cell Type Annotation Parameters
+    rna_cell_type_annotation: bool = False,
+    rna_cell_type_annotation_model_name: Optional[str] = None,
+    rna_cell_type_annotation_custom_model_path: Optional[str] = None,
+    
     # RNA Pseudobulk Parameters
     rna_celltype_col: str = 'cell_type',
     rna_pseudobulk_output_dir: Optional[str] = None,
@@ -197,6 +202,11 @@ def wrapper(
     atac_leiden_resolution: float = 0.8,
     atac_existing_cell_types: bool = False,
     atac_n_target_cell_clusters: Optional[int] = None,
+    
+    # ATAC Cell Type Annotation Parameters
+    atac_cell_type_annotation: bool = False,
+    atac_cell_type_annotation_model_name: Optional[str] = None,
+    atac_cell_type_annotation_custom_model_path: Optional[str] = None,
     
     # ATAC UMAP parameters
     atac_umap_min_dist: float = 0.3,
@@ -542,6 +552,7 @@ def wrapper(
         'system_info': system_info
     }
 
+    # Set default values for list parameters
     if atac_grouping_columns is None:
         atac_grouping_columns = ['sev.level']
     if atac_visualization_grouping_columns is None:
@@ -626,6 +637,11 @@ def wrapper(
                 umap=rna_umap,
                 cell_type_save=rna_cell_type_save,
                 assign_save=rna_assign_save,
+                
+                # Cell type annotation parameters
+                cell_type_annotation=rna_cell_type_annotation,
+                rna_cell_type_annotation_model_name=rna_cell_type_annotation_model_name,
+                rna_cell_type_annotation_custom_model_path=rna_cell_type_annotation_custom_model_path,
                 
                 # Pseudobulk parameters
                 celltype_col=rna_celltype_col,
@@ -760,7 +776,7 @@ def wrapper(
                 
                 # Process control flags
                 atac_preprocessing=atac_preprocessing,
-                atac_cell_type_cluster = atac_cell_type_cluster,
+                atac_cell_type_cluster=atac_cell_type_cluster,
                 atac_pseudobulk_dimensionality_reduction=atac_pseudobulk_dimensionality_reduction,
                 atac_visualization_processing=atac_visualization_processing,
                 trajectory_analysis_atac=atac_trajectory_analysis,
@@ -790,6 +806,11 @@ def wrapper(
                 atac_existing_cell_types=atac_existing_cell_types,
                 atac_n_target_cell_clusters=atac_n_target_cell_clusters,
                 
+                # Cell type annotation parameters
+                cell_type_annotation=atac_cell_type_annotation,
+                atac_cell_type_annotation_model_name=atac_cell_type_annotation_model_name,
+                atac_cell_type_annotation_custom_model_path=atac_cell_type_annotation_custom_model_path,
+                
                 # UMAP parameters
                 atac_umap_min_dist=atac_umap_min_dist,
                 atac_umap_spread=atac_umap_spread,
@@ -805,8 +826,8 @@ def wrapper(
                 atac_pseudobulk_verbose=atac_pseudobulk_verbose,
                 
                 # PCA parameters
-                atac_dr_n_expression_pcs=atac_dr_n_expression_components,
-                atac_dr_n_proportion_pcs=atac_dr_n_proportion_components,
+                atac_dr_n_expression_components=atac_dr_n_expression_components,
+                atac_dr_n_proportion_components=atac_dr_n_proportion_components,
                 atac_dr_verbose=atac_dr_verbose,
                 
                 # Trajectory analysis parameters
