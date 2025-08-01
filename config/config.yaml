@@ -77,7 +77,7 @@ rna_anndata_sample_path: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
-rna_trajectory_supervised: true
+rna_trajectory_supervised: false
 rna_trajectory_dge: true
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"

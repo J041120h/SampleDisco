@@ -102,6 +102,93 @@ def prepare_trajectory_data(
     return pseudotime_dict
 
 
+def calculate_optimal_spline_parameters(n_samples: int, 
+                                       default_num_splines: int = 5, 
+                                       default_spline_order: int = 3,
+                                       min_samples_per_spline: int = 2,
+                                       verbose: bool = False) -> Tuple[int, int]:
+    """
+    Calculate optimal spline parameters based on sample size to ensure numerical stability.
+    
+    Parameters
+    ----------
+    n_samples : int
+        Number of samples in the dataset
+    default_num_splines : int
+        Default number of splines to use
+    default_spline_order : int
+        Default spline order (degree)
+    min_samples_per_spline : int
+        Minimum samples required per spline
+    verbose : bool
+        Whether to print parameter adjustments
+        
+    Returns
+    -------
+    Tuple[int, int]
+        Adjusted (num_splines, spline_order)
+    """
+    
+    # Rule 1: Need at least spline_order + 1 samples for basic fitting
+    min_samples_needed = default_spline_order + 1
+    
+    # Rule 2: For GAM stability, we need more samples than splines
+    # General rule: n_samples >= n_splines + spline_order + 1
+    
+    if n_samples < min_samples_needed:
+        # Very few samples - use linear model (spline_order = 1)
+        spline_order = 1
+        num_splines = min(2, max(1, n_samples - 2))
+        if verbose:
+            print(f"Very few samples ({n_samples}): using linear splines with order={spline_order}, n_splines={num_splines}")
+    
+    elif n_samples < 6:
+        # Few samples - use quadratic splines
+        spline_order = 2
+        num_splines = max(2, min(default_num_splines, n_samples - spline_order - 1))
+        if verbose:
+            print(f"Few samples ({n_samples}): using quadratic splines with order={spline_order}, n_splines={num_splines}")
+    
+    elif n_samples < 10:
+        # Moderate samples - use cubic splines but fewer knots
+        spline_order = min(3, default_spline_order)
+        # Conservative approach: use fewer splines for small datasets
+        max_splines = max(2, (n_samples - spline_order - 1) // min_samples_per_spline)
+        num_splines = min(default_num_splines, max_splines)
+        if verbose:
+            print(f"Moderate samples ({n_samples}): using order={spline_order}, n_splines={num_splines}")
+    
+    else:
+        # Sufficient samples - use default or adjusted parameters
+        spline_order = default_spline_order
+        
+        # Calculate maximum feasible splines
+        # GAM needs: n_samples >= n_splines + spline_order + effective_degrees_of_freedom
+        # Conservative estimate: leave at least 3-4 degrees of freedom for error
+        max_feasible_splines = max(2, n_samples - spline_order - 4)
+        
+        # Also consider the minimum samples per spline rule
+        max_splines_by_density = max(2, n_samples // min_samples_per_spline)
+        
+        # Take the more conservative estimate
+        max_splines = min(max_feasible_splines, max_splines_by_density)
+        num_splines = min(default_num_splines, max_splines)
+        
+        if verbose and (num_splines != default_num_splines or spline_order != default_spline_order):
+            print(f"Adjusted splines for {n_samples} samples: order={spline_order}, n_splines={num_splines}")
+    
+    # Final safety check
+    if num_splines <= spline_order:
+        num_splines = spline_order + 1
+        if verbose:
+            print(f"Safety adjustment: increased n_splines to {num_splines} (must be > spline_order={spline_order})")
+    
+    # Ensure minimum values
+    num_splines = max(2, num_splines)
+    spline_order = max(1, spline_order)
+    
+    return num_splines, spline_order
+
 def prepare_gam_input_data_improved(
     pseudobulk_adata: ad.AnnData,
     ptime_expression: Dict[str, float],
@@ -269,7 +356,7 @@ def fit_gam_models_for_genes(
     verbose: bool = False
 ) -> Tuple[pd.DataFrame, Dict[str, LinearGAM]]:
     """
-    Fit GAM models for genes with pygam compatibility fix.
+    Fit GAM models for genes with improved spline parameter adjustment.
     """
     import numpy as np
     import pandas as pd
@@ -310,7 +397,7 @@ def fit_gam_models_for_genes(
 
     try:
         # ================================================================== #
-        # Data preparation
+        # Data preparation and spline parameter optimization
         # ================================================================== #
         
         def _to_dense_2d(mat) -> np.ndarray:
@@ -326,12 +413,14 @@ def fit_gam_models_for_genes(
                 mat = mat.toarray()
             return np.asarray(mat, dtype=np.float64, order="C")
 
-        # Sanity checks
-        if num_splines <= spline_order:
-            num_splines = spline_order + 1
-
-        if X.shape[0] < num_splines:
-            num_splines = max(3, X.shape[0] - 1)
+        # Calculate optimal spline parameters based on sample size
+        n_samples = X.shape[0]
+        adjusted_num_splines, adjusted_spline_order = calculate_optimal_spline_parameters(
+            n_samples=n_samples,
+            default_num_splines=num_splines,
+            default_spline_order=spline_order,
+            verbose=verbose
+        )
 
         # Densify data
         X_dense = _to_dense_2d(X)
@@ -346,8 +435,8 @@ def fit_gam_models_for_genes(
         except ValueError:
             raise ValueError(f"spline_term '{spline_term}' not found in X.columns: {list(X.columns)}")
 
-        # Build GAM term structure
-        terms = s(spline_idx, n_splines=num_splines, spline_order=spline_order)
+        # Build GAM term structure with adjusted parameters
+        terms = s(spline_idx, n_splines=adjusted_num_splines, spline_order=adjusted_spline_order)
         
         for j in range(X_dense.shape[1]):
             if j != spline_idx:
@@ -381,8 +470,11 @@ def fit_gam_models_for_genes(
             X_fit = X_dense[mask]
             y_fit = y_raw[mask]
 
-            # Skip tiny / constant vectors
-            if y_fit.size < (spline_order + 2):
+            # Skip if not enough samples after filtering
+            min_samples_needed = adjusted_spline_order + adjusted_num_splines + 2
+            if y_fit.size < min_samples_needed:
+                if verbose and k < 5:  # Only show warning for first few genes
+                    print(f"Skipping gene {gene}: only {y_fit.size} valid samples, need at least {min_samples_needed}")
                 continue
                 
             var_y = np.var(y_fit)
@@ -404,9 +496,12 @@ def fit_gam_models_for_genes(
                     good += 1
 
             except Exception as e:
-                if verbose:
+                if verbose and k < 10:  # Only show first 10 errors to avoid spam
                     print(f"GAM fitting failed for {gene}: {str(e)}")
                 continue
+
+        if verbose:
+            print(f"Successfully fitted GAM models for {good}/{total} genes using splines: n={adjusted_num_splines}, order={adjusted_spline_order}")
 
         # Assemble results table
         if not results:
@@ -504,8 +599,7 @@ def run_integrated_differential_analysis(
     verbose: bool = True
 ) -> Dict[str, pd.DataFrame]:
     """
-    Integrated function that handles both TSCAN and CCA trajectory results
-    with improved error handling and data validation.
+    Integrated function with improved spline parameter handling.
     """
     
     # Create output directory
@@ -544,13 +638,7 @@ def run_integrated_differential_analysis(
                 verbose=verbose
             )
             
-            # Adjust spline parameters based on sample size
-            n_samples = X.shape[0]
-            adjusted_num_splines = min(num_splines, max(3, n_samples // 3))
-            if adjusted_num_splines != num_splines and verbose:
-                print(f"Adjusted num_splines from {num_splines} to {adjusted_num_splines} based on sample size")
-            
-            # Run GAM analysis
+            # Run GAM analysis with automatic spline adjustment
             if verbose:
                 print(f"Fitting GAM models for {len(gene_names)} genes...")
             
@@ -559,13 +647,13 @@ def run_integrated_differential_analysis(
                 Y=Y,
                 gene_names=gene_names,
                 spline_term="pseudotime",
-                num_splines=adjusted_num_splines,
+                num_splines=num_splines,
                 spline_order=spline_order,
                 fdr_threshold=fdr_threshold,
                 verbose=verbose
             )
             
-            # Calculate effect sizes for significant genes
+            # Process results if any genes were successfully analyzed
             if len(stat_results) > 0:
                 stat_sig_genes = stat_results[stat_results["fdr"] < fdr_threshold]["gene"].tolist()
                 
@@ -656,17 +744,13 @@ def run_integrated_differential_analysis(
                     verbose=verbose
                 )
                 
-                # Adjust splines for branch size
-                n_samples = X.shape[0]
-                adjusted_num_splines = min(num_splines, max(3, n_samples // 3))
-                
-                # Run analysis
+                # Run analysis with automatic spline adjustment
                 stat_results, gam_models = fit_gam_models_for_genes(
                     X=X,
                     Y=Y,
                     gene_names=gene_names,
                     spline_term="pseudotime",
-                    num_splines=adjusted_num_splines,
+                    num_splines=num_splines,
                     spline_order=spline_order,
                     fdr_threshold=fdr_threshold,
                     verbose=verbose
