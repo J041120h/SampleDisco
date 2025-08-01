@@ -269,15 +269,14 @@ def fit_gam_models_for_genes(
     verbose: bool = False
 ) -> Tuple[pd.DataFrame, Dict[str, LinearGAM]]:
     """
-    Complete debug version with monkey patch for pygam compatibility.
+    Fit GAM models for genes with pygam compatibility fix.
     """
-    import traceback
-    import inspect
+    import numpy as np
+    import pandas as pd
+    from scipy.sparse import issparse
+    from pygam import LinearGAM, s, f
+    from statsmodels.stats.multitest import multipletests
     
-    print("="*80)
-    print("DEBUG: Starting fit_gam_models_for_genes with monkey patch")
-    print("="*80)
-
     # ========================================================================= #
     # MONKEY PATCH: Fix pygam compatibility with newer SciPy versions
     # ========================================================================= #
@@ -285,253 +284,145 @@ def fit_gam_models_for_genes(
         """
         Patched version of pygam.utils.cholesky that handles the .A attribute issue.
         """
-        print(f"DEBUG PATCH: patched_cholesky called with A type: {type(A)}")
-        print(f"DEBUG PATCH: A shape: {getattr(A, 'shape', 'No shape')}")
-        print(f"DEBUG PATCH: A is sparse: {issparse(A)}")
-        
         from scipy.sparse import issparse
         from scipy.linalg import cholesky as scipy_cholesky
         import numpy as np
         
         # Handle the .A attribute issue
         if issparse(A):
-            print("DEBUG PATCH: Converting sparse matrix using .toarray()")
             A = A.toarray()
         elif hasattr(A, 'A'):
-            print("DEBUG PATCH: Found .A attribute, using it")
             A = A.A
         
-        print(f"DEBUG PATCH: After conversion - A type: {type(A)}")
-        print(f"DEBUG PATCH: After conversion - A shape: {A.shape}")
-        
         try:
-            # Try scipy cholesky
-            print("DEBUG PATCH: Attempting scipy cholesky decomposition")
             result = scipy_cholesky(A, lower=True)
-            print(f"DEBUG PATCH: Cholesky successful, result type: {type(result)}")
             return result
         except Exception as e:
-            print(f"DEBUG PATCH: Cholesky failed: {e}")
             raise
 
-    # Check if pygam utils module exists and apply patch
+    # Apply monkey patch
     try:
         import pygam.utils
-        print("DEBUG: pygam.utils imported successfully")
-        
-        # Check the original cholesky function
         original_cholesky = pygam.utils.cholesky
-        print(f"DEBUG: Original cholesky function: {original_cholesky}")
-        print(f"DEBUG: Original cholesky source file: {inspect.getfile(original_cholesky)}")
-        
-        # Apply the monkey patch
         pygam.utils.cholesky = patched_cholesky
-        print("DEBUG: Monkey patch applied successfully")
-        
-        # Verify the patch
-        print(f"DEBUG: Patched cholesky function: {pygam.utils.cholesky}")
-        
-    except ImportError as e:
-        print(f"DEBUG: Failed to import pygam.utils: {e}")
-        original_cholesky = None
-    except Exception as e:
-        print(f"DEBUG: Error during monkey patching: {e}")
-        traceback.print_exc()
+    except ImportError:
         original_cholesky = None
 
     try:
         # ================================================================== #
-        # Data preparation with extensive debugging
+        # Data preparation
         # ================================================================== #
         
         def _to_dense_2d(mat) -> np.ndarray:
             """DataFrame / ndarray / SciPy sparse  -> C-contiguous float64 (n×m)."""
-            print(f"DEBUG _to_dense_2d: Input type: {type(mat)}")
             if isinstance(mat, pd.DataFrame):
                 if hasattr(mat, "sparse"):
                     try:
                         mat = mat.sparse.to_dense()
-                        print("DEBUG _to_dense_2d: Converted pandas sparse to dense")
                     except Exception:
                         pass
                 mat = mat.to_numpy()
-                print("DEBUG _to_dense_2d: Converted DataFrame to numpy")
             if issparse(mat):
                 mat = mat.toarray()
-                print("DEBUG _to_dense_2d: Converted scipy sparse to dense")
-            result = np.asarray(mat, dtype=np.float64, order="C")
-            print(f"DEBUG _to_dense_2d: Final result type: {type(result)}, shape: {result.shape}")
-            return result
+            return np.asarray(mat, dtype=np.float64, order="C")
 
-        # ---------------------------- sanity checks ---------------------------- #
-        print(f"DEBUG: Initial parameters - num_splines: {num_splines}, spline_order: {spline_order}")
-        
+        # Sanity checks
         if num_splines <= spline_order:
             num_splines = spline_order + 1
-            print(f"DEBUG: Adjusted num_splines to {num_splines} (must be > spline_order)")
 
         if X.shape[0] < num_splines:
             num_splines = max(3, X.shape[0] - 1)
-            print(f"DEBUG: Adjusted num_splines to {num_splines} based on sample size ({X.shape[0]})")
 
-        # ----------------------------- densify once ---------------------------- #
-        print("DEBUG: Starting data densification...")
+        # Densify data
         X_dense = _to_dense_2d(X)
         Y_dense = _to_dense_2d(Y)
 
-        print(f"DEBUG: X_dense shape = {X_dense.shape}, dtype = {X_dense.dtype}")
-        print(f"DEBUG: Y_dense shape = {Y_dense.shape}, dtype = {Y_dense.dtype}")
-        print(f"DEBUG: X_dense is sparse: {issparse(X_dense)}")
-        print(f"DEBUG: Y_dense is sparse: {issparse(Y_dense)}")
-
-        # mask rows with any NaN / Inf in covariates
+        # Mask rows with any NaN / Inf in covariates
         finite_rows = np.isfinite(X_dense).all(axis=1)
-        print(f"DEBUG: finite_rows sum: {finite_rows.sum()}/{len(finite_rows)}")
 
-        # column index for spline term
+        # Column index for spline term
         try:
             spline_idx = list(X.columns).index(spline_term)
-            print(f"DEBUG: spline_idx = {spline_idx} for term '{spline_term}'")
         except ValueError:
             raise ValueError(f"spline_term '{spline_term}' not found in X.columns: {list(X.columns)}")
 
-        # build GAM term structure
-        print("DEBUG: Building GAM terms...")
-        try:
-            terms = s(spline_idx, n_splines=num_splines, spline_order=spline_order)
-            print(f"DEBUG: Created spline term: {terms}")
-            
-            for j in range(X_dense.shape[1]):
-                if j != spline_idx:
-                    print(f"DEBUG: Adding linear term for column {j}")
-                    terms += f(j)
-            
-            print(f"DEBUG: Final GAM terms: {terms}")
-        except Exception as e:
-            print(f"DEBUG: Error creating GAM terms: {e}")
-            traceback.print_exc()
-            raise
+        # Build GAM term structure
+        terms = s(spline_idx, n_splines=num_splines, spline_order=spline_order)
+        
+        for j in range(X_dense.shape[1]):
+            if j != spline_idx:
+                terms += f(j)
 
-        # gene-to-column map
+        # Gene-to-column map
         if isinstance(Y, pd.DataFrame):
             gene_to_col = {g: i for i, g in enumerate(Y.columns)}
         else:
             gene_to_col = {g: i for i, g in enumerate(gene_names)}
-
-        print(f"DEBUG: Created gene_to_col mapping for {len(gene_to_col)} genes")
 
         results = []
         gam_models = {}
         total = len(gene_names)
         good = 0
 
-        # ----------------------------- Test with first few genes ---------------------------- #
-        test_genes = gene_names[:3]  # Test with first 3 genes
-        print(f"DEBUG: Testing with first {len(test_genes)} genes: {test_genes}")
-
-        for k, gene in enumerate(test_genes):
-            print(f"\nDEBUG: ========== Processing gene {k + 1}/{len(test_genes)}: {gene} ==========")
+        # Process genes
+        for k, gene in enumerate(gene_names):
+            if verbose and (k + 1) % 100 == 0:
+                print(f"Processing gene {k + 1}/{total}")
             
             col_idx = gene_to_col.get(gene, None)
             if col_idx is None or col_idx >= Y_dense.shape[1]:
-                print(f"DEBUG: Gene {gene} not found in Y (col_idx={col_idx}); skipping.")
                 continue
 
-            print(f"DEBUG: Extracting column {col_idx} from Y_dense")
             y_raw = Y_dense[:, col_idx]
-            print(f"DEBUG: y_raw type: {type(y_raw)}, shape: {y_raw.shape}, dtype: {y_raw.dtype}")
-            print(f"DEBUG: y_raw values: {y_raw}")
 
-            # align masks (finite in both X and y)
+            # Align masks (finite in both X and y)
             mask = finite_rows & np.isfinite(y_raw)
-            print(f"DEBUG: mask sum: {mask.sum()}/{len(mask)}")
             
             X_fit = X_dense[mask]
             y_fit = y_raw[mask]
-            
-            print(f"DEBUG: X_fit shape: {X_fit.shape}, type: {type(X_fit)}")
-            print(f"DEBUG: y_fit shape: {y_fit.shape}, type: {type(y_fit)}")
-            print(f"DEBUG: X_fit values:\n{X_fit}")
-            print(f"DEBUG: y_fit values: {y_fit}")
 
-            # skip tiny / constant vectors
+            # Skip tiny / constant vectors
             if y_fit.size < (spline_order + 2):
-                print(f"DEBUG: Skipping {gene} - too few samples ({y_fit.size} < {spline_order + 2})")
                 continue
                 
             var_y = np.var(y_fit)
-            print(f"DEBUG: y_fit variance: {var_y}")
             if var_y < 1e-10:
-                print(f"DEBUG: Skipping {gene} - variance too low ({var_y})")
                 continue
 
             try:
-                print(f"DEBUG: Creating LinearGAM with terms: {terms}")
                 gam = LinearGAM(terms)
-                print(f"DEBUG: GAM created successfully, type: {type(gam)}")
-                
-                print(f"DEBUG: About to call gam.fit() with:")
-                print(f"        X_fit type: {type(X_fit)}, sparse: {issparse(X_fit)}")
-                print(f"        y_fit type: {type(y_fit)}, sparse: {issparse(y_fit)}")
-                
-                # This is where the error should occur, and our patch should handle it
-                print("DEBUG: Calling gam.fit()...")
                 gam = gam.fit(X_fit, y_fit)
-                print(f"DEBUG: GAM fit successful! Type: {type(gam)}")
 
                 # Extract statistics
-                print("DEBUG: Extracting statistics...")
-                try:
-                    stats = gam.statistics_
-                    print(f"DEBUG: Got statistics: {list(stats.keys())}")
-                    
-                    pval = gam.statistics_["p_values"][spline_idx]
-                    dev = gam.statistics_["pseudo_r2"]["explained_deviance"]
-                    
-                    print(f"DEBUG: pval={pval}, dev={dev}")
-                    
-                    if np.isfinite(pval) and np.isfinite(dev):
-                        results.append((gene, pval, dev))
-                        gam_models[gene] = gam
-                        good += 1
-                        print(f"DEBUG: Successfully processed {gene}")
-                    else:
-                        print(f"DEBUG: Invalid statistics for {gene}: pval={pval}, dev={dev}")
-                        
-                except Exception as e:
-                    print(f"DEBUG: Statistics extraction failed for {gene}: {str(e)}")
-                    traceback.print_exc()
-                    continue
+                stats = gam.statistics_
+                pval = gam.statistics_["p_values"][spline_idx]
+                dev = gam.statistics_["pseudo_r2"]["explained_deviance"]
+                
+                if np.isfinite(pval) and np.isfinite(dev):
+                    results.append((gene, pval, dev))
+                    gam_models[gene] = gam
+                    good += 1
 
             except Exception as e:
-                print(f"DEBUG: GAM fitting failed for {gene}: {str(e)}")
-                print(f"DEBUG: Exception type: {type(e)}")
-                print("DEBUG: Full traceback:")
-                traceback.print_exc()
+                if verbose:
+                    print(f"GAM fitting failed for {gene}: {str(e)}")
                 continue
 
-        print(f"\nDEBUG: Completed testing. Successfully processed {good}/{len(test_genes)} genes")
-
-        # --------------------------- assemble table --------------------------- #
+        # Assemble results table
         if not results:
-            print("DEBUG: No successful results, returning empty DataFrame")
             cols = ["gene", "pval", "dev_exp", "fdr", "significant"]
             return pd.DataFrame(columns=cols), {}
 
-        print(f"DEBUG: Creating results DataFrame with {len(results)} results")
         res_df = pd.DataFrame(results, columns=["gene", "pval", "dev_exp"])
         
         try:
             _, fdrs, _, _ = multipletests(res_df["pval"], method="fdr_bh")
             res_df["fdr"] = fdrs
             res_df["significant"] = res_df["fdr"] < fdr_threshold
-            print("DEBUG: FDR correction successful")
-        except Exception as e:
-            print(f"DEBUG: FDR correction failed: {e}")
+        except Exception:
             res_df["fdr"] = res_df["pval"]
             res_df["significant"] = res_df["fdr"] < fdr_threshold
         
-        print("DEBUG: Returning results")
         return res_df.sort_values("fdr").reset_index(drop=True), gam_models
     
     finally:
@@ -539,12 +430,9 @@ def fit_gam_models_for_genes(
         if original_cholesky is not None:
             try:
                 pygam.utils.cholesky = original_cholesky
-                print("DEBUG: Restored original cholesky function")
-            except Exception as e:
-                print(f"DEBUG: Error restoring original cholesky: {e}")
-        
-        print("DEBUG: fit_gam_models_for_genes completed")
-        print("="*80)
+            except Exception:
+                pass
+
 
 def calculate_effect_size(
     X: pd.DataFrame,
@@ -556,6 +444,9 @@ def calculate_effect_size(
     """
     Calculate effect sizes for genes.
     """
+    import numpy as np
+    import pandas as pd
+    
     effect_sizes = []
     
     for gene in genes:
@@ -594,7 +485,6 @@ def calculate_effect_size(
         print(f"Calculated effect sizes for {len(effect_sizes)} genes")
     
     return pd.DataFrame(effect_sizes, columns=["gene", "effect_size"])
-
 
 def run_integrated_differential_analysis(
     trajectory_results: Dict,
