@@ -28,7 +28,6 @@ rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: true
-rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
 rna_visualize_data: false
@@ -78,11 +77,12 @@ rna_anndata_sample_path: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
-rna_trajectory_supervised: false
+rna_trajectory_supervised: true
+rna_trajectory_dge: true
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
 rna_cca_optimal_cell_resolution: false
-rna_cca_pvalue: true
+rna_cca_pvalue: false
 rna_trajectory_verbose: true
 rna_tscan_origin: null
 

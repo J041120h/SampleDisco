@@ -11,7 +11,7 @@ from CCA_test import cca_pvalue_test
 from TSCAN import TSCAN
 from sample_distance.sample_distance import sample_distance
 from cluster import cluster
-from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
+from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results, run_differential_analysis_for_all_paths
 from Visualization import visualization
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -455,7 +455,7 @@ def atac_wrapper(
                 print("Running unsupervised trajectory analysis with TSCAN...")
                 
             TSCAN_result_expression = TSCAN(
-                AnnData_sample=atac_sample,
+                AnnData_sample=pseudobulk_anndata,
                 column="X_pca_expression",
                 n_clusters=8,
                 output_dir=atac_output_dir,
@@ -465,7 +465,7 @@ def atac_wrapper(
             )
             
             TSCAN_result_proportion = TSCAN(
-                AnnData_sample=atac_sample,
+                AnnData_sample=pseudobulk_anndata,
                 column="X_pca_proportion",
                 n_clusters=8,
                 output_dir=atac_output_dir,
@@ -475,61 +475,71 @@ def atac_wrapper(
             )
         
         status_flags["atac"]["trajectory_analysis"] = True
-    # Step 7: Trajectory Differential Analysis (if enabled)
     if trajectory_DGE and trajectory_analysis_atac:
         if atac_pipeline_verbose:
             print("Starting trajectory differential analysis for ATAC data...")
-            
+        
         if trajectory_supervised_atac:
-            results = identify_pseudoDEGs(
-                pseudobulk=atac_pseudobulk_df,
-                sample_meta_path=atac_metadata_path,
-                ptime_expression=ptime_expression,
+            # CCA-based trajectory analysis for ATAC
+            print("Running CCA-based differential analysis for ATAC peaks...")
+            
+            # Assuming you have CCA_results_atac from running CCA on ATAC pseudobulk
+            results = run_integrated_differential_analysis(
+                trajectory_results=(first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression),
+                pseudobulk_adata=pseudobulk_anndata,  # ATAC pseudobulk AnnData
+                trajectory_type="CCA",
+                sample_col=atac_sample_col,
                 fdr_threshold=fdr_threshold,
                 effect_size_threshold=effect_size_threshold,
-                top_n_genes=top_n_genes,
+                top_n_genes=top_n_genes, 
                 covariate_columns=trajectory_diff_gene_covariate,
-                sample_col=atac_sample_col,
                 num_splines=num_splines,
                 spline_order=spline_order,
+                base_output_dir=atac_trajectory_diff_gene_output_dir,
                 visualization_gene_list=visualization_gene_list,
                 visualize_all_deg=visualize_all_deg,
                 top_n_heatmap=top_n_heatmap,
-                output_dir=atac_trajectory_diff_gene_output_dir,
                 verbose=trajectory_diff_gene_verbose
             )
             
-            if trajectory_diff_gene_verbose:
-                print("Finish finding differential peaks, summarizing results")
-                
-            summarize_results(
-                results=results,
-                top_n=top_gene_number,
-                output_file=os.path.join(atac_trajectory_diff_gene_output_dir, "differential_peaks_result.txt"),
-                verbose=trajectory_diff_gene_verbose
-            )
+            if trajectory_diff_gene_verbose and "main_path" in results:
+                print("Generating summary for differential ATAC peaks...")
+                summarize_results(
+                    results=results["main_path"],
+                    top_n=top_gene_number,
+                    output_file=os.path.join(atac_trajectory_diff_gene_output_dir, "differential_peaks_summary.txt"),
+                    verbose=trajectory_diff_gene_verbose
+                )
+        
         else:
-            print("Running differential analysis for ATAC TSCAN paths...")
-            all_path_results = run_differential_analysis_for_all_paths(
-                TSCAN_results=TSCAN_result_expression,
-                pseudobulk_df=atac_pseudobulk_df,
-                sample_meta_path=atac_metadata_path,
+            # TSCAN-based trajectory analysis for ATAC
+            print("Running TSCAN-based differential analysis for ATAC peaks...")
+            
+            # Using the integrated function for TSCAN analysis
+            all_path_results = run_integrated_differential_analysis(
+                trajectory_results=TSCAN_result_expression,  # TSCAN results for ATAC data
+                pseudobulk_adata=pseudobulk_anndata,  # ATAC pseudobulk AnnData
+                trajectory_type="TSCAN",
                 sample_col=atac_sample_col,
                 fdr_threshold=fdr_threshold,
                 effect_size_threshold=effect_size_threshold,
-                top_n_genes=top_n_genes,
+                top_n_genes=top_n_genes,  # This will be top peaks for ATAC
                 covariate_columns=trajectory_diff_gene_covariate,
                 num_splines=num_splines,
                 spline_order=spline_order,
                 base_output_dir=os.path.join(atac_output_dir, 'trajectoryDEG'),
-                top_gene_number=top_gene_number,
                 visualization_gene_list=visualization_gene_list,
                 visualize_all_deg=visualize_all_deg,
                 top_n_heatmap=top_n_heatmap,
                 verbose=trajectory_diff_gene_verbose
             )
+        
+        # Set status flag
         status_flags["atac"]["trajectory_dge"] = True
-    
+        
+        if atac_pipeline_verbose:
+            print("ATAC trajectory differential analysis completed!")
+        
     # Step 5: Sample Distance Calculation (if enabled)
     if sample_distance_calculation:
         if atac_pipeline_verbose:

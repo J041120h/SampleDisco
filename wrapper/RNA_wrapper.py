@@ -12,7 +12,7 @@ from CCA import CCA_Call
 from Cell_type import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
-from trajectory_diff_gene import identify_pseudoDEGs, summarize_results, run_differential_analysis_for_all_paths
+from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results, run_differential_analysis_for_all_paths
 from cluster import cluster
 from cell_proportion_pseudotime import visualize_cell_proportion_pseudotime
 
@@ -420,16 +420,16 @@ def rna_wrapper(
                     sample_column=sample_col,
                     pseudobulk_adata=pseudobulk_anndata
                 )
+            status_flags["rna"]["sample_distance_calculation"] = True
+            if verbose:
+                print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample')}")
         
-        status_flags["rna"]["sample_distance_calculation"] = True
-        if verbose:
-            print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample')}")
-    
     # Load pseudobulk data if needed for subsequent steps
     if (trajectory_analysis or sample_distance_calculation or sample_cluster or cluster_DGE) and not DimensionalityReduction:
         temp_pseuobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         if not os.path.exists(temp_pseuobulk_path):
             raise ValueError("Pseudobulk data not found. Ensure dimensionality reduction is performed first.")
+        print("Loading pseudobulk data for trajectory analysis and clustering...")
         pseudobulk_anndata = sc.read(temp_pseuobulk_path)
         status_flags["rna"]["dimensionality_reduction"] = True
     
@@ -533,41 +533,20 @@ def rna_wrapper(
             )
             status_flags["rna"]["trajectory_analysis"] = True
 
-        # Trajectory differential gene analysis
+       # Trajectory differential gene analysis
         if trajectory_DGE:
             print("Starting trajectory differential gene analysis...")
+            
             if trajectory_supervised:
-                results = identify_pseudoDEGs(
-                    pseudobulk=pseudobulk_df,
-                    sample_meta_path=rna_sample_meta_path,
-                    ptime_expression=ptime_expression,
-                    fdr_threshold=fdr_threshold,
-                    effect_size_threshold=effect_size_threshold,
-                    top_n_genes=top_n_genes,
-                    covariate_columns=trajectory_diff_gene_covariate,
-                    sample_col=sample_col,
-                    num_splines=num_splines,
-                    spline_order=spline_order,
-                    visualization_gene_list=visualization_gene_list,
-                    visualize_all_deg=visualize_all_deg,
-                    top_n_heatmap=top_n_heatmap,
-                    output_dir=trajectory_diff_gene_output_dir,
-                    verbose=trajectory_diff_gene_verbose
-                )
-                if trajectory_diff_gene_verbose:
-                    print("Finish finding DEG, summarizing results")
-                summarize_results(
-                    results=results,
-                    top_n=top_gene_number,
-                    output_file=os.path.join(trajectory_diff_gene_output_dir, "differential_gene_result.txt"),
-                    verbose=trajectory_diff_gene_verbose
-                )
-            else:
-                print("Running differential analysis for main path...")
-                all_path_results = run_differential_analysis_for_all_paths(
-                    TSCAN_results=TSCAN_result_expression,
-                    pseudobulk_df=pseudobulk_df,
-                    sample_meta_path=rna_sample_meta_path,
+                # CCA-based trajectory analysis
+                print("Running CCA-based differential analysis...")
+                
+                # CCA returns a tuple: (score_prop, score_expr, ptime_prop, ptime_expr)
+                # We need to pass the full CCA results, not just ptime_expression
+                results = run_integrated_differential_analysis(
+                    trajectory_results= (first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression),
+                    pseudobulk_adata=pseudobulk_anndata,
+                    trajectory_type="CCA",
                     sample_col=sample_col,
                     fdr_threshold=fdr_threshold,
                     effect_size_threshold=effect_size_threshold,
@@ -576,12 +555,34 @@ def rna_wrapper(
                     num_splines=num_splines,
                     spline_order=spline_order,
                     base_output_dir=trajectory_diff_gene_output_dir,
-                    top_gene_number=top_gene_number,
                     visualization_gene_list=visualization_gene_list,
                     visualize_all_deg=visualize_all_deg,
                     top_n_heatmap=top_n_heatmap,
                     verbose=trajectory_diff_gene_verbose
                 )
+            
+            else:
+                # TSCAN-based trajectory analysis
+                print("Running TSCAN-based differential analysis...")
+                all_path_results = run_integrated_differential_analysis(
+                    trajectory_results=TSCAN_result_expression,
+                    pseudobulk_adata=pseudobulk_anndata,
+                    trajectory_type="TSCAN",
+                    sample_col=sample_col,
+                    fdr_threshold=fdr_threshold,
+                    effect_size_threshold=effect_size_threshold,
+                    top_n_genes=top_n_genes,
+                    covariate_columns=trajectory_diff_gene_covariate,
+                    num_splines=num_splines,
+                    spline_order=spline_order,
+                    base_output_dir=trajectory_diff_gene_output_dir,
+                    visualization_gene_list=visualization_gene_list,
+                    visualize_all_deg=visualize_all_deg,
+                    top_n_heatmap=top_n_heatmap,
+                    verbose=trajectory_diff_gene_verbose
+                )
+            
+            print("Trajectory differential gene analysis completed!")
             status_flags["rna"]["trajectory_dge"] = True
     
     # Clean up summary file if exists
