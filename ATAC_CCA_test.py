@@ -625,7 +625,8 @@ def find_optimal_cell_resolution_atac(
             'n_clusters': 0,
             'n_samples': 0,
             'n_features': 0,
-            'n_pcs_used': n_pcs
+            'n_pcs_used': n_pcs,
+            'pc_indices_used': None  # Track which PCs were used for visualization
         }
         
         # Initialize null results for this resolution
@@ -711,31 +712,36 @@ def find_optimal_cell_resolution_atac(
                 result_dict['n_pcs_used'] = cca_result['n_pcs_used']
                 print(f"Resolution {resolution:.2f}: CCA Score = {cca_result['cca_score']:.4f} (using {cca_result['n_pcs_used']} PCs)")
                 
-                # Create CCA visualization plot
+                # Create CCA visualization plot using improved function
                 try:
-                    # Extract 2D visualization data for plotting
-                    (pca_coords_2d, 
-                     sev_levels, 
-                     cca_model, 
-                     cca_score, 
-                     samples) = run_cca_on_2d_pca_from_adata(
+                    # Get full PCA coordinates and metadata  
+                    pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
                         adata=pseudobulk_adata,
                         column=column,
-                        sev_col=sev_col
+                        sev_col=sev_col,
+                        n_components=n_pcs,  # Use the same number of PCs as CCA analysis
+                        verbose=False
                     )
                     
-                    # Save CCA plot
+                    # Save CCA plot with automatic PC selection for best visualization
                     plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.2f}.png")
-                    plot_cca_on_2d_pca(
-                        pca_coords_2d=pca_coords_2d,
+                    cca_score_viz, pc_indices_used, cca_model_viz = plot_cca_on_2d_pca(
+                        pca_coords_full=pca_coords_full,
                         sev_levels=sev_levels,
-                        cca=cca_model,
+                        auto_select_best_2pc=True,  # Automatically select best 2-PC combination
+                        pc_indices=None,
                         output_path=plot_path,
                         sample_labels=None,
-                        title_suffix=f"Resolution {resolution:.2f}"
+                        title_suffix=f"Resolution {resolution:.2f}",
+                        verbose=verbose
                     )
+                    
+                    # Store which PCs were used for visualization
+                    result_dict['pc_indices_used'] = pc_indices_used
+                    
                     if verbose:
-                        print(f"Created CCA visualization plot")
+                        print(f"Created CCA visualization plot using PC{pc_indices_used[0]+1} + PC{pc_indices_used[1]+1} (viz score: {cca_score_viz:.4f})")
+                        
                 except Exception as e:
                     if verbose:
                         print(f"Warning: Failed to create CCA visualization: {str(e)}")
@@ -809,7 +815,8 @@ def find_optimal_cell_resolution_atac(
             'n_clusters': 0,
             'n_samples': 0,
             'n_features': 0,
-            'n_pcs_used': n_pcs
+            'n_pcs_used': n_pcs,
+            'pc_indices_used': None
         }
         
         # Initialize null results for this resolution
@@ -894,31 +901,36 @@ def find_optimal_cell_resolution_atac(
                 result_dict['n_pcs_used'] = cca_result['n_pcs_used']
                 print(f"Fine-tuned Resolution {resolution:.3f}: Score {cca_result['cca_score']:.4f}")
                 
-                # Create CCA visualization plot
+                # Create CCA visualization plot using improved function
                 try:
-                    # Extract 2D visualization data for plotting
-                    (pca_coords_2d, 
-                     sev_levels, 
-                     cca_model, 
-                     cca_score, 
-                     samples) = run_cca_on_2d_pca_from_adata(
+                    # Get full PCA coordinates and metadata  
+                    pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
                         adata=pseudobulk_adata,
                         column=column,
-                        sev_col=sev_col
+                        sev_col=sev_col,
+                        n_components=n_pcs,  # Use the same number of PCs as CCA analysis
+                        verbose=False
                     )
                     
-                    # Save CCA plot
+                    # Save CCA plot with automatic PC selection for best visualization
                     plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.3f}.png")
-                    plot_cca_on_2d_pca(
-                        pca_coords_2d=pca_coords_2d,
+                    cca_score_viz, pc_indices_used, cca_model_viz = plot_cca_on_2d_pca(
+                        pca_coords_full=pca_coords_full,
                         sev_levels=sev_levels,
-                        cca=cca_model,
+                        auto_select_best_2pc=True,  # Automatically select best 2-PC combination
+                        pc_indices=None,
                         output_path=plot_path,
                         sample_labels=None,
-                        title_suffix=f"Resolution {resolution:.3f}"
+                        title_suffix=f"Resolution {resolution:.3f}",
+                        verbose=verbose
                     )
+                    
+                    # Store which PCs were used for visualization
+                    result_dict['pc_indices_used'] = pc_indices_used
+                    
                     if verbose:
-                        print(f"Created CCA visualization plot")
+                        print(f"Created CCA visualization plot using PC{pc_indices_used[0]+1} + PC{pc_indices_used[1]+1} (viz score: {cca_score_viz:.4f})")
+                        
                 except Exception as e:
                     if verbose:
                         print(f"Warning: Failed to create CCA visualization: {str(e)}")
@@ -1021,12 +1033,15 @@ def find_optimal_cell_resolution_atac(
     final_best_score = valid_results.loc[final_best_idx, 'cca_score']
     final_best_pvalue = valid_results.loc[final_best_idx, 'p_value'] if 'p_value' in valid_results.columns else np.nan
     final_best_corrected_pvalue = valid_results.loc[final_best_idx, 'corrected_pvalue'] if compute_corrected_pvalues else np.nan
+    final_best_pc_indices = valid_results.loc[final_best_idx, 'pc_indices_used']
 
     print(f"\n=== FINAL RESULTS ===")
     print(f"Best resolution: {final_best_resolution:.3f}")
     print(f"Best CCA score: {final_best_score:.4f}")
     print(f"Number of clusters at best resolution: {valid_results.loc[final_best_idx, 'n_clusters']}")
     print(f"Number of PCs used: {valid_results.loc[final_best_idx, 'n_pcs_used']}")
+    if final_best_pc_indices is not None:
+        print(f"Best visualization used PC{final_best_pc_indices[0]+1} + PC{final_best_pc_indices[1]+1}")
     if not np.isnan(final_best_pvalue):
         print(f"Standard p-value: {final_best_pvalue:.4f}")
     if compute_corrected_pvalues and not np.isnan(final_best_corrected_pvalue):
@@ -1067,6 +1082,8 @@ def find_optimal_cell_resolution_atac(
         f.write(f"  - Optimal resolution: {final_best_resolution:.3f}\n")
         f.write(f"  - Best CCA score: {final_best_score:.4f}\n")
         f.write(f"  - Number of clusters: {valid_results.loc[final_best_idx, 'n_clusters']}\n")
+        if final_best_pc_indices is not None:
+            f.write(f"  - Best visualization PCs: PC{final_best_pc_indices[0]+1} + PC{final_best_pc_indices[1]+1}\n")
         if not np.isnan(final_best_pvalue):
             f.write(f"  - Standard p-value: {final_best_pvalue:.4f}\n")
         if compute_corrected_pvalues and not np.isnan(final_best_corrected_pvalue):

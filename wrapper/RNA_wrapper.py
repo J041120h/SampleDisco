@@ -91,6 +91,7 @@ def rna_wrapper(
     
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised=False,
+    n_components_for_cca_rna = 2,
     cca_output_dir=None,
     sev_col_cca="sev.level",
     cca_optimal_cell_resolution=False,
@@ -443,6 +444,7 @@ def rna_wrapper(
             
             first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression = CCA_Call(
                 adata=pseudobulk_anndata,
+                n_components = n_components_for_cca_rna,
                 output_dir=cca_output_dir,
                 sev_col=sev_col_cca,
                 ptime=True,

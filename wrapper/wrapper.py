@@ -100,6 +100,7 @@ def wrapper(
     
     # RNA Trajectory Analysis Parameters
     rna_trajectory_supervised: bool = False,
+    n_components_for_cca_rna: int = 2,
     rna_cca_output_dir: Optional[str] = None,
     rna_sev_col_cca: str = "sev.level",
     rna_cca_optimal_cell_resolution: bool = False,
@@ -232,6 +233,7 @@ def wrapper(
     
     # ATAC Trajectory analysis parameters
     atac_trajectory_supervised: bool = True,
+    n_components_for_cca_atac: int = 2,
     atac_cca_output_dir: Optional[str] = None,
     atac_sev_col_cca: str = "sev.level",
     atac_trajectory_verbose: bool = True,
@@ -660,6 +662,7 @@ def wrapper(
                 
                 # Trajectory analysis parameters
                 trajectory_supervised=rna_trajectory_supervised,
+                n_components_for_cca_rna = n_components_for_cca_rna,
                 cca_output_dir=rna_cca_output_dir,
                 sev_col_cca=rna_sev_col_cca,
                 cca_optimal_cell_resolution=rna_cca_optimal_cell_resolution,
@@ -834,6 +837,7 @@ def wrapper(
                 
                 # Trajectory analysis parameters
                 trajectory_supervised_atac=atac_trajectory_supervised,
+                n_components_for_cca_atac = n_components_for_cca_atac,
                 sev_col_cca=atac_sev_col_cca,
                 trajectory_verbose=atac_trajectory_verbose,
                 cca_pvalue=atac_cca_pvalue,

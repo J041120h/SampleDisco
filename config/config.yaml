@@ -27,9 +27,9 @@ rna_preprocessing: false
 rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: false
-rna_sample_cluster: true
-rna_cluster_dge: true
+rna_trajectory_analysis: true
+rna_sample_cluster: false
+rna_cluster_dge: false
 rna_visualize_data: false
 
 # RNA Basic Parameters
@@ -82,8 +82,9 @@ rna_anndata_sample_path: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
-rna_trajectory_supervised: false
-rna_trajectory_dge: true
+rna_trajectory_supervised: true
+n_components_for_cca_rna: 4
+rna_trajectory_dge: false
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
 rna_cca_optimal_cell_resolution: false
@@ -160,11 +161,11 @@ atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
 atac_preprocessing: false
 atac_cell_type_cluster: false
 atac_pseudobulk_dimensionality_reduction: false
-atac_trajectory_analysis: false
+atac_trajectory_analysis: true
 atac_trajectory_dge: false
 atac_sample_distance_calculation: false
-atac_sample_cluster: true
-atac_cluster_dge: true
+atac_sample_cluster: false
+atac_cluster_dge: false
 atac_visualize_data: false
 atac_visualization_processing: false
 
@@ -225,12 +226,13 @@ atac_dr_n_proportion_components: 30
 atac_dr_verbose: true
 
 # ATAC Trajectory analysis parameters
-atac_trajectory_supervised: false
+atac_trajectory_supervised: true
+n_components_for_cca_atac: 2
 atac_cca_output_dir: null
 atac_sev_col_cca: "sev.level"
 atac_trajectory_verbose: true
 atac_cca_pvalue: false
-atac_cca_optimal_cell_resolution: false
+atac_cca_optimal_cell_resolution: true
 atac_n_pcs_for_null: 10
 atac_tscan_origin: null
 atac_trajectory_visualization_label: null

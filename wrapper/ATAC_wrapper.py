@@ -93,6 +93,7 @@ def atac_wrapper(
     
     # Trajectory analysis parameters
     trajectory_supervised_atac=True,
+    n_components_for_cca_atac = 2,
     sev_col_cca="sev.level",
     trajectory_verbose=True,
     cca_pvalue=False,
@@ -355,6 +356,7 @@ def atac_wrapper(
                 
             first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression = CCA_Call(
                 adata=pseudobulk_anndata,
+                n_components = n_components_for_cca_atac,
                 output_dir=atac_cca_output_dir,
                 sev_col=sev_col_cca,
                 ptime=True,
