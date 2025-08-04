@@ -38,6 +38,118 @@ def timeout(seconds):
         signal.alarm(0)
 
 
+def cca_pvalue_test_linux(
+    pseudo_adata,
+    column: str,
+    input_correlation: float,
+    output_directory: str,
+    num_simulations: int = 1000,
+    sev_col: str = "sev.level",
+    verbose: bool = True,
+    timeout_seconds: int = 3600  # 1 hour timeout
+):
+    """
+    Perform CCA p-value test using pseudo anndata (sample by gene) - Linux GPU version with timeout protection.
+    
+    Parameters:
+    -----------
+    timeout_seconds : int
+        Maximum time (in seconds) to allow for the test (default: 3600 = 1 hour)
+    """
+    import os
+    import time
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn.cross_decomposition import CCA
+    
+    start_time = time.time() if verbose else None
+    output_directory = os.path.join(output_directory, "CCA_test")
+    os.makedirs(output_directory, exist_ok=True)
+    
+    try:
+        with timeout(timeout_seconds):
+            # Extract coordinates from pseudo_adata.uns
+            pca_coords = pseudo_adata.uns[column]
+            if pca_coords.shape[1] < 2:
+                raise ValueError("Coordinates must have at least 2 components for 2D analysis.")
+            
+            # Get first 2 components
+            pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, "iloc") else pca_coords[:, :2]
+            
+            # Check if severity column exists
+            if sev_col not in pseudo_adata.obs.columns:
+                raise KeyError(f"pseudo_adata.obs must have a '{sev_col}' column.")
+            
+            # Get severity levels directly from pseudo_adata.obs
+            sev_levels = pseudo_adata.obs[sev_col].values
+            
+            if len(sev_levels) != pca_coords_2d.shape[0]:
+                raise ValueError("Mismatch between number of coordinate rows and number of samples.")
+            
+            # Reshape for CCA (needs 2D array)
+            sev_levels_1d = sev_levels.flatten()
+            
+            # Perform permutation test
+            simulated_scores = []
+            for i in range(num_simulations):
+                if verbose and i % 100 == 0:
+                    print(f"Permutation {i}/{num_simulations}")
+                    
+                permuted = np.random.permutation(sev_levels_1d).reshape(-1, 1)
+                cca = CCA(n_components=1)
+                cca.fit(pca_coords_2d, permuted)
+                U, V = cca.transform(pca_coords_2d, permuted)
+                corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+                simulated_scores.append(corr)
+            
+            simulated_scores = np.array(simulated_scores)
+            p_value = np.mean(simulated_scores >= input_correlation)
+            
+            # Plot the permutation distribution
+            plt.figure(figsize=(8, 5))
+            plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
+            plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
+                       label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
+            plt.xlabel('Simulated Correlation Scores')
+            plt.ylabel('Frequency')
+            plt.title('Permutation Test: CCA Correlations')
+            plt.legend()
+            plot_path = os.path.join(output_directory, f"cca_pvalue_distribution_{column}.png")
+            plt.savefig(plot_path, dpi=300)
+            plt.close()
+            
+            # Save results to file
+            with open(os.path.join(output_directory, f"cca_pvalue_result_{column}.txt"), "w") as f:
+                f.write(f"Observed correlation: {input_correlation}\n")
+                f.write(f"P-value: {p_value}\n")
+                f.write(f"Simulations completed: {num_simulations}\n")
+                f.write(f"Runtime: {time.time() - start_time:.2f} seconds\n")
+            
+            print(f"P-value for observed correlation {input_correlation}: {p_value}")
+            
+            if verbose:
+                print(f"[CCA p-test] Runtime: {time.time() - start_time:.2f} seconds")
+            
+            return p_value
+            
+    except TimeoutError:
+        print(f"⏰ TIMEOUT: CCA p-value test exceeded {timeout_seconds} seconds")
+        print(f"⏰ Returning NaN p-value")
+        
+        # Log timeout to file
+        timeout_log_path = os.path.join(output_directory, "CCA_PVALUE_TIMEOUT_LOG.txt")
+        with open(timeout_log_path, 'w') as f:
+            f.write(f"CCA p-value test timed out after {timeout_seconds} seconds\n")
+            f.write(f"Timeout occurred at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Input correlation: {input_correlation}\n")
+            f.write(f"Requested simulations: {num_simulations}\n")
+        
+        return np.nan
+    
+    except Exception as e:
+        print(f"❌ Error in CCA p-value test: {str(e)}")
+        return np.nan
+
 def find_optimal_cell_resolution_linux(
     AnnData_cell: AnnData,
     AnnData_sample: AnnData,
@@ -53,7 +165,8 @@ def find_optimal_cell_resolution_linux(
     num_pvalue_simulations: int = 1000,
     n_pcs_for_null: int = 10,
     compute_corrected_pvalues: bool = True,
-    resolution_timeout: int = 3600  # 1 hour timeout per resolution
+    resolution_timeout: int = 3600,  # 1 hour timeout per resolution
+    verbose: bool = True
 ) -> tuple:
     """
     PROFILED VERSION: Find optimal clustering resolution with detailed timing information and timeout protection.
@@ -62,6 +175,8 @@ def find_optimal_cell_resolution_linux(
     -----------
     resolution_timeout : int
         Maximum time (in seconds) to allow for processing each resolution (default: 3600 = 1 hour)
+    verbose : bool
+        Whether to print verbose output (default: True)
     """
     import time
     
@@ -77,9 +192,12 @@ def find_optimal_cell_resolution_linux(
     print("🚀 Using PROFILED GPU version of optimal resolution WITH TIMEOUT PROTECTION")
     print(f"⏰ Timeout per resolution: {resolution_timeout} seconds ({resolution_timeout/3600:.1f} hours)")
     
+    # Extract DR type from column name for clearer output
+    dr_type = column.replace('X_DR_', '') if column.startswith('X_DR_') else column
+    
     # Setup directories
     setup_start = time.time()
-    main_output_dir = os.path.join(output_dir, f"RNA_resolution_optimization_{column}")
+    main_output_dir = os.path.join(output_dir, f"RNA_resolution_optimization_{dr_type}")
     os.makedirs(main_output_dir, exist_ok=True)
     resolutions_dir = os.path.join(main_output_dir, "resolutions")
     os.makedirs(resolutions_dir, exist_ok=True)
@@ -88,6 +206,7 @@ def find_optimal_cell_resolution_linux(
 
     print("\n📊 Starting RNA-seq resolution optimization with detailed timing...")
     print(f"Using representation: {use_rep} with {num_PCs} components")
+    print(f"Using {n_pcs_for_null} PCs for CCA analysis")
     if compute_corrected_pvalues:
         print(f"Will compute corrected p-values with {num_pvalue_simulations} simulations per resolution")
 
@@ -113,6 +232,8 @@ def find_optimal_cell_resolution_linux(
             'pass': search_pass,
             'n_clusters': 0,
             'n_samples': 0,
+            'n_pcs_used': n_pcs_for_null,
+            'pc_indices_used': None,  # Track which PCs were used for visualization
             'timed_out': False
         }
         
@@ -197,42 +318,69 @@ def find_optimal_cell_resolution_linux(
                     verbose=False
                 )
 
-                # Check if column exists
-                if column not in AnnData_sample.uns:
-                    print(f"  ⚠️  Warning: {column} not found in AnnData_sample.uns")
+                # Check if column exists in pseudobulk_adata.uns
+                if column not in pseudobulk_adata.uns:
+                    print(f"  ⚠️  Warning: {column} not found in pseudobulk_adata.uns")
                     return result_dict, resolution_null_result
                 
-                # Run CCA analysis
+                # Run CCA analysis using improved approach
                 try:
                     cca_start = time.time()
-                    (pca_coords_2d, 
-                     sev_levels, 
-                     cca_model, 
-                     cca_score, 
-                     samples) = run_cca_on_2d_pca_from_adata(
+                    
+                    # Get full PCA coordinates and metadata  
+                    pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
                         adata=pseudobulk_adata,
                         column=column,
-                        sev_col=sev_col
+                        sev_col=sev_col,
+                        n_components=n_pcs_for_null,  # Use specified number of PCs
+                        verbose=False
                     )
+                    
+                    # Calculate CCA score using the specified number of PCs
+                    pca_coords_analysis = pca_coords_full[:, :min(n_pcs_for_null, pca_coords_full.shape[1])]
+                    sev_levels_2d = sev_levels.reshape(-1, 1)
+                    
+                    # Fit CCA on the analysis PCs
+                    from sklearn.cross_decomposition import CCA
+                    cca_analysis = CCA(n_components=1)
+                    cca_analysis.fit(pca_coords_analysis, sev_levels_2d)
+                    U, V = cca_analysis.transform(pca_coords_analysis, sev_levels_2d)
+                    cca_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+                    
                     cca_time = time.time() - cca_start
                     print(f"  ⏱️  CCA analysis: {cca_time:.3f} seconds")
                     
                     result_dict['cca_score'] = cca_score
-                    print(f"  🎯 CCA Score = {cca_score:.4f}")
+                    result_dict['n_pcs_used'] = min(n_pcs_for_null, pca_coords_full.shape[1])
+                    print(f"  🎯 CCA Score = {cca_score:.4f} (using {result_dict['n_pcs_used']} PCs)")
                     
-                    # Save CCA plot
-                    plot_start = time.time()
-                    plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.3f}.png")
-                    plot_cca_on_2d_pca(
-                        pca_coords_2d=pca_coords_2d,
-                        sev_levels=sev_levels,
-                        cca=cca_model,
-                        output_path=plot_path,
-                        sample_labels=None,
-                        title_suffix=f"Resolution {resolution:.3f}"
-                    )
-                    plot_time = time.time() - plot_start
-                    print(f"  ⏱️  CCA plot generation: {plot_time:.3f} seconds")
+                    # Create CCA visualization plot using improved function with automatic PC selection
+                    try:
+                        plot_start = time.time()
+                        plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.3f}.png")
+                        cca_score_viz, pc_indices_used, cca_model_viz = plot_cca_on_2d_pca(
+                            pca_coords_full=pca_coords_full,
+                            sev_levels=sev_levels,
+                            auto_select_best_2pc=True,  # Automatically select best 2-PC combination
+                            pc_indices=None,
+                            output_path=plot_path,
+                            sample_labels=None,
+                            title_suffix=f"Resolution {resolution:.3f}",
+                            verbose=verbose
+                        )
+                        
+                        # Store which PCs were used for visualization
+                        result_dict['pc_indices_used'] = pc_indices_used
+                        
+                        plot_time = time.time() - plot_start
+                        print(f"  ⏱️  CCA plot generation: {plot_time:.3f} seconds")
+                        
+                        if verbose:
+                            print(f"  📊 Created CCA visualization using PC{pc_indices_used[0]+1} + PC{pc_indices_used[1]+1} (viz score: {cca_score_viz:.4f})")
+                            
+                    except Exception as e:
+                        if verbose:
+                            print(f"  ⚠️  Warning: Failed to create CCA visualization: {str(e)}")
                     
                     # Generate null distribution if computing corrected p-values
                     if compute_corrected_pvalues:
@@ -360,7 +508,7 @@ def find_optimal_cell_resolution_linux(
             save_start = time.time()
             corrected_null_dir = os.path.join(main_output_dir, "corrected_null")
             os.makedirs(corrected_null_dir, exist_ok=True)
-            corrected_null_path = os.path.join(corrected_null_dir, f'corrected_null_distribution_{column}.npy')
+            corrected_null_path = os.path.join(corrected_null_dir, f'corrected_null_distribution_{dr_type}.npy')
             np.save(corrected_null_path, corrected_null_distribution)
             save_time = time.time() - save_start
             print(f"⏱️  Saving corrected null: {save_time:.3f} seconds")
@@ -419,11 +567,15 @@ def find_optimal_cell_resolution_linux(
     final_best_score = valid_results.loc[final_best_idx, 'cca_score']
     final_best_pvalue = valid_results.loc[final_best_idx, 'p_value'] if 'p_value' in valid_results.columns else np.nan
     final_best_corrected_pvalue = valid_results.loc[final_best_idx, 'corrected_pvalue'] if compute_corrected_pvalues else np.nan
+    final_best_pc_indices = valid_results.loc[final_best_idx, 'pc_indices_used']
 
     print(f"\n🏆 === FINAL RESULTS ===")
     print(f"🎯 Best resolution: {final_best_resolution:.3f}")
     print(f"📊 Best CCA score: {final_best_score:.4f}")
     print(f"🧬 Number of clusters: {valid_results.loc[final_best_idx, 'n_clusters']}")
+    print(f"📐 Number of PCs used: {valid_results.loc[final_best_idx, 'n_pcs_used']}")
+    if final_best_pc_indices is not None:
+        print(f"📊 Best visualization used PC{final_best_pc_indices[0]+1} + PC{final_best_pc_indices[1]+1}")
     if not np.isnan(final_best_pvalue):
         print(f"📈 Standard p-value: {final_best_pvalue:.4f}")
     if compute_corrected_pvalues and not np.isnan(final_best_corrected_pvalue):
@@ -451,7 +603,7 @@ def find_optimal_cell_resolution_linux(
     )
 
     # Save complete results
-    results_csv_path = os.path.join(main_output_dir, f"all_resolution_results_{column}.csv")
+    results_csv_path = os.path.join(main_output_dir, f"all_resolution_results_{dr_type}.csv")
     df_results.to_csv(results_csv_path, index=False)
 
     # Create a final summary report with timing information
@@ -486,14 +638,16 @@ def find_optimal_cell_resolution_linux(
         f.write(f"  - Representation used: {use_rep}\n")
         f.write(f"  - Number of PCs for clustering: {num_PCs}\n")
         f.write(f"  - Number of DR components: {num_DR_components}\n")
+        f.write(f"  - Number of PCs used for CCA: {n_pcs_for_null}\n")
         f.write(f"  - Number of features: {n_features}\n")
-        f.write(f"  - Number of simulations: {num_pvalue_simulations}\n")
-        f.write(f"  - PCs used for null distribution: {n_pcs_for_null}\n\n")
+        f.write(f"  - Number of simulations: {num_pvalue_simulations}\n\n")
         
         f.write("RESULTS:\n")
         f.write(f"  - Optimal resolution: {final_best_resolution:.3f}\n")
         f.write(f"  - Best CCA score: {final_best_score:.4f}\n")
         f.write(f"  - Number of clusters: {valid_results.loc[final_best_idx, 'n_clusters']}\n")
+        if final_best_pc_indices is not None:
+            f.write(f"  - Best visualization PCs: PC{final_best_pc_indices[0]+1} + PC{final_best_pc_indices[1]+1}\n")
         if not np.isnan(final_best_pvalue):
             f.write(f"  - Standard p-value: {final_best_pvalue:.4f}\n")
         if compute_corrected_pvalues and not np.isnan(final_best_corrected_pvalue):
@@ -521,116 +675,3 @@ def find_optimal_cell_resolution_linux(
         print(f"  - Time saved by skipping: ~{total_timed_out * resolution_timeout / 3600:.1f} hours")
 
     return final_best_resolution, df_results
-
-
-def cca_pvalue_test_linux(
-    pseudo_adata,
-    column: str,
-    input_correlation: float,
-    output_directory: str,
-    num_simulations: int = 1000,
-    sev_col: str = "sev.level",
-    verbose: bool = True,
-    timeout_seconds: int = 3600  # 1 hour timeout
-):
-    """
-    Perform CCA p-value test using pseudo anndata (sample by gene) - Linux GPU version with timeout protection.
-    
-    Parameters:
-    -----------
-    timeout_seconds : int
-        Maximum time (in seconds) to allow for the test (default: 3600 = 1 hour)
-    """
-    import os
-    import time
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from sklearn.cross_decomposition import CCA
-    
-    start_time = time.time() if verbose else None
-    output_directory = os.path.join(output_directory, "CCA_test")
-    os.makedirs(output_directory, exist_ok=True)
-    
-    try:
-        with timeout(timeout_seconds):
-            # Extract coordinates from pseudo_adata.uns
-            pca_coords = pseudo_adata.uns[column]
-            if pca_coords.shape[1] < 2:
-                raise ValueError("Coordinates must have at least 2 components for 2D analysis.")
-            
-            # Get first 2 components
-            pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, "iloc") else pca_coords[:, :2]
-            
-            # Check if severity column exists
-            if sev_col not in pseudo_adata.obs.columns:
-                raise KeyError(f"pseudo_adata.obs must have a '{sev_col}' column.")
-            
-            # Get severity levels directly from pseudo_adata.obs
-            sev_levels = pseudo_adata.obs[sev_col].values
-            
-            if len(sev_levels) != pca_coords_2d.shape[0]:
-                raise ValueError("Mismatch between number of coordinate rows and number of samples.")
-            
-            # Reshape for CCA (needs 2D array)
-            sev_levels_1d = sev_levels.flatten()
-            
-            # Perform permutation test
-            simulated_scores = []
-            for i in range(num_simulations):
-                if verbose and i % 100 == 0:
-                    print(f"Permutation {i}/{num_simulations}")
-                    
-                permuted = np.random.permutation(sev_levels_1d).reshape(-1, 1)
-                cca = CCA(n_components=1)
-                cca.fit(pca_coords_2d, permuted)
-                U, V = cca.transform(pca_coords_2d, permuted)
-                corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-                simulated_scores.append(corr)
-            
-            simulated_scores = np.array(simulated_scores)
-            p_value = np.mean(simulated_scores >= input_correlation)
-            
-            # Plot the permutation distribution
-            plt.figure(figsize=(8, 5))
-            plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
-            plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
-                       label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
-            plt.xlabel('Simulated Correlation Scores')
-            plt.ylabel('Frequency')
-            plt.title('Permutation Test: CCA Correlations')
-            plt.legend()
-            plot_path = os.path.join(output_directory, f"cca_pvalue_distribution_{column}.png")
-            plt.savefig(plot_path, dpi=300)
-            plt.close()
-            
-            # Save results to file
-            with open(os.path.join(output_directory, f"cca_pvalue_result_{column}.txt"), "w") as f:
-                f.write(f"Observed correlation: {input_correlation}\n")
-                f.write(f"P-value: {p_value}\n")
-                f.write(f"Simulations completed: {num_simulations}\n")
-                f.write(f"Runtime: {time.time() - start_time:.2f} seconds\n")
-            
-            print(f"P-value for observed correlation {input_correlation}: {p_value}")
-            
-            if verbose:
-                print(f"[CCA p-test] Runtime: {time.time() - start_time:.2f} seconds")
-            
-            return p_value
-            
-    except TimeoutError:
-        print(f"⏰ TIMEOUT: CCA p-value test exceeded {timeout_seconds} seconds")
-        print(f"⏰ Returning NaN p-value")
-        
-        # Log timeout to file
-        timeout_log_path = os.path.join(output_directory, "CCA_PVALUE_TIMEOUT_LOG.txt")
-        with open(timeout_log_path, 'w') as f:
-            f.write(f"CCA p-value test timed out after {timeout_seconds} seconds\n")
-            f.write(f"Timeout occurred at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"Input correlation: {input_correlation}\n")
-            f.write(f"Requested simulations: {num_simulations}\n")
-        
-        return np.nan
-    
-    except Exception as e:
-        print(f"❌ Error in CCA p-value test: {str(e)}")
-        return np.nan

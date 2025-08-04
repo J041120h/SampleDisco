@@ -4,8 +4,8 @@ output_dir: "/Users/harry/Desktop/GenoDistance/result"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
-run_atac_pipeline: true
+run_rna_pipeline: true
+run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
@@ -87,7 +87,7 @@ n_components_for_cca_rna: 4
 rna_trajectory_dge: false
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
-rna_cca_optimal_cell_resolution: false
+rna_cca_optimal_cell_resolution: true
 rna_cca_pvalue: false
 rna_trajectory_verbose: true
 rna_tscan_origin: null
