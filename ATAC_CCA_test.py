@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from anndata import AnnData
 import time
 from DR import dimension_reduction
-from ATAC_cell_type import cell_types_atac, cell_type_assign_atac
+from ATAC_cell_type import cell_types_atac
 from pseudo_adata import compute_pseudobulk_adata
 from CCA import *
 from CCA_test import *

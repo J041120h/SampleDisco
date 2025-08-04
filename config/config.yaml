@@ -4,8 +4,8 @@ output_dir: "/Users/harry/Desktop/GenoDistance/result"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: true
-run_atac_pipeline: false
+run_rna_pipeline: false
+run_atac_pipeline: true
 run_multiomics_pipeline: false
 
 # System configuration
@@ -158,7 +158,7 @@ atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
 
 # ATAC Process Control Flags
 atac_preprocessing: false
-atac_cell_type_cluster: false
+atac_cell_type_cluster: true
 atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false
 atac_trajectory_analysis: false

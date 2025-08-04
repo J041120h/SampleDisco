@@ -1,7 +1,8 @@
 import os
 import scanpy as sc
 import sys
-from ATAC_general_pipeline import run_scatac_pipeline, cell_types_atac
+from ATAC_general_pipeline import run_scatac_pipeline
+from ATAC_cell_type import *
 from ATAC_visualization import DR_visualization_all
 from ATAC_CCA_test import find_optimal_cell_resolution_atac
 from pseudo_adata import compute_pseudobulk_adata
@@ -11,7 +12,7 @@ from CCA_test import cca_pvalue_test
 from TSCAN import TSCAN
 from sample_distance.sample_distance import sample_distance
 from cluster import cluster
-from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results, run_differential_analysis_for_all_paths
+from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results
 from Visualization import visualization
 from cell_type_annotation import annotate_cell_types_with_celltypist
 
@@ -263,17 +264,9 @@ def atac_wrapper(
         status_flags["atac"]["preprocessing"] = True
     else:
         # Load preprocessed data
-        if not status_flags["atac"]["preprocessing"]:
-            # Check if files exist before raising error
-            temp_cell_path = os.path.join(atac_output_dir, "harmony", "adata_cell.h5ad")
-            temp_sample_path = os.path.join(atac_output_dir, "harmony", "adata_sample.h5ad")
-            if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
-                if not atac_cell_path or not atac_sample_path:
-                    raise ValueError("ATAC preprocessing is skipped, but no preprocessed data found.")
-        
         if not atac_cell_path or not atac_sample_path:
-            temp_cell_path = os.path.join(atac_output_dir, "harmony", "adata_cell.h5ad")
-            temp_sample_path = os.path.join(atac_output_dir, "harmony", "adata_sample.h5ad")
+            temp_cell_path = os.path.join(atac_output_dir, "preprocess", "adata_cell.h5ad")
+            temp_sample_path = os.path.join(atac_output_dir, "preprocess", "adata_sample.h5ad")
             if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
                 raise ValueError("Preprocessed ATAC data paths are not provided and default files do not exist.")
             atac_cell_path = temp_cell_path
@@ -631,7 +624,6 @@ def atac_wrapper(
     if atac_visualization_processing:
         if atac_pipeline_verbose:
             print("Creating ATAC visualizations...")
-            
         # ATAC-specific visualization
         DR_visualization_all(
             atac_sample,

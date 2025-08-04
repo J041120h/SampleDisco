@@ -31,6 +31,7 @@ def merge_sample_metadata(
 
 def snapatac2_dimensionality_reduction(
     adata,
+    adata_sample=None,
     n_components=50,
     num_features=50000,
     doublet=True,
@@ -39,6 +40,9 @@ def snapatac2_dimensionality_reduction(
     """
     Use snapATAC2 only for dimensionality reduction (SVD / spectral).
     Assumes data has already been processed with TF-IDF and feature selection.
+    
+    If adata_sample is provided, it will be filtered to match the cells
+    remaining in adata after doublet removal.
     """
     try:
         import snapatac2 as snap
@@ -64,6 +68,13 @@ def snapatac2_dimensionality_reduction(
         try:
             snap.pp.scrublet(adata)
             snap.pp.filter_doublets(adata)
+            
+            # Filter adata_sample to match remaining cells if provided
+            if adata_sample is not None:
+                cells_after_doublet = adata.obs.index
+                adata_sample = adata_sample[cells_after_doublet].copy()
+                log(f"Filtered adata_sample to match {len(cells_after_doublet)} remaining cells after doublet removal", verbose=verbose)
+                
         except (AttributeError, TypeError) as e:
             if "nonzero" in str(e):
                 log("snapATAC2-Scrublet compatibility issue – skipping.", verbose=verbose)
@@ -95,12 +106,11 @@ def snapatac2_dimensionality_reduction(
         log("Re-sparsified adata.X after snapATAC2", verbose=verbose)
     # -------------------------------------------------------------------------- #
 
-    return adata
+    if adata_sample is not None:
+        return adata, adata_sample
+    else:
+        return adata
 
-
-# --------------------------------------------------------------------------- #
-#                             Main analysis pipeline                          #
-# --------------------------------------------------------------------------- #
 def run_scatac_pipeline(
     filepath,
     output_dir,
@@ -135,14 +145,12 @@ def run_scatac_pipeline(
     umap_min_dist=0.3,
     umap_spread=1.0,
     umap_random_state=0,
-    # Output
-    output_subdirectory='harmony',
 ):
     t0 = time.time()
     log("="*60 + "\nStarting scATAC-seq pipeline\n" + "="*60, verbose)
 
     # Create sub-folder
-    output_dir = os.path.join(output_dir, output_subdirectory)
+    output_dir = os.path.join(output_dir, 'preprocess')
     os.makedirs(output_dir, exist_ok=True)
 
     # 1. Load data
@@ -188,10 +196,11 @@ def run_scatac_pipeline(
         log("Log1p transform", verbose)
         sc.pp.log1p(atac)
 
-    # 5. Dimensionality reduction
     if use_snapatac2_dimred:
-        atac = snapatac2_dimensionality_reduction(
+        # Pass both atac and atac_sample to handle doublet filtering synchronization
+        atac, atac_sample = snapatac2_dimensionality_reduction(
             atac,
+            adata_sample=atac_sample,
             n_components=n_lsi_components,
             num_features=num_features,
             doublet=doublet,

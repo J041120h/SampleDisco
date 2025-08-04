@@ -525,7 +525,7 @@ def cell_types_atac(
                 print("[cell_types_atac] Generating UMAP plots...")
             
             # Ensure plots directory exists
-            output_dir = os.path.join(output_dir, 'harmony')
+            output_dir = os.path.join(output_dir, 'preprocess')
             os.makedirs(output_dir, exist_ok=True)
             
             # Plot 1: UMAP colored by cell type
@@ -728,40 +728,5 @@ def cell_type_dendrogram_atac(
     elapsed_time = end_time - start_time
     if verbose:
         print(f"\nFunction execution time: {elapsed_time:.2f} seconds")
-
-    return adata
-
-
-def cell_type_assign_atac(adata_cluster, adata, Save=False, output_dir=None, verbose=True):
-    """
-    Assign cell type labels from one AnnData object to another and optionally save the result.
-    ATAC version with appropriate file naming and safe saving.
-
-    Parameters
-    ----------
-    adata_cluster : AnnData
-        AnnData object containing a 'cell_type' column in `.obs` to be used for assignment.
-    adata : AnnData
-        Target AnnData object to receive the 'cell_type' labels.
-    Save : bool, optional
-        If True, saves the modified `adata` object to disk.
-    output_dir : str, optional
-        Directory to save the `adata` object if `Save` is True.
-    verbose : bool, optional
-        If True and saving is enabled, prints the save location.
-    """
-    if 'cell_type' not in adata_cluster.obs.columns or adata_cluster.obs['cell_type'].nunique() == 0:
-        adata_cluster.obs['cell_type'] = '1'
-
-    adata.obs['cell_type'] = adata_cluster.obs['cell_type']
-    
-    
-    if Save and output_dir:
-        output_dir = os.path.join(output_dir, 'harmony')
-        os.makedirs(output_dir, exist_ok=True)
-        save_path = os.path.join(output_dir, 'adata_sample_atac.h5ad')
-        
-        # Use safe saving method
-        safe_h5ad_write(adata, save_path, verbose=verbose)
 
     return adata
