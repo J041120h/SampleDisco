@@ -53,8 +53,8 @@ def cluster(
     # CASE 2: No user clustering provided, proceed with clustering
     print("[INFO] No user-provided clustering found. Proceeding with default clustering methods.")
     # Construct distance matrix paths
-    sample_distance_path_proportion = os.path.join(generalFolder, "Sample", distance_method, "proportion_DR_distance", "distance_matrix_proportion_DR.csv")
-    sample_distance_path_expression = os.path.join(generalFolder, "Sample", distance_method, "expression_DR_distance", "distance_matrix_expression_DR.csv")
+    sample_distance_path_proportion = os.path.join(generalFolder, "Sample_distance", distance_method, "proportion_DR_distance", "distance_matrix_proportion_DR.csv")
+    sample_distance_path_expression = os.path.join(generalFolder, "Sample_distance", distance_method, "expression_DR_distance", "distance_matrix_expression_DR.csv")
     
     # Validate that the CSV files exist
     if not os.path.exists(sample_distance_path_proportion):

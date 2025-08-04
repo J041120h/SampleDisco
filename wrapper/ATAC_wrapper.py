@@ -547,72 +547,73 @@ def atac_wrapper(
         if cluster_distance_method not in sample_distance_methods:
             raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
         
-        expr_results, prop_results = cluster(
-            generalFolder = atac_output_dir,
-            Kmeans=Kmeans_based_cluster_flag,
-            methods=Tree_building_method,
-            prportion_test=proportion_test,
-            distance_method=sample_distance_methods,
-            number_of_clusters=cluster_number,
-            sample_to_clade_user=user_provided_sample_to_clade
-        )
+        for method in sample_distance_methods:
+            expr_results, prop_results = cluster(
+                generalFolder = atac_output_dir,
+                Kmeans=Kmeans_based_cluster_flag,
+                methods=Tree_building_method,
+                prportion_test=proportion_test,
+                distance_method=method,
+                number_of_clusters=cluster_number,
+                sample_to_clade_user=user_provided_sample_to_clade
+            )
         
-        if cluster_DGE:
-            if atac_pipeline_verbose:
-                print("Running RAISIN analysis for ATAC data...")
+            if cluster_DGE:
+                if atac_pipeline_verbose:
+                    print("Running RAISIN analysis for ATAC data...")
+                    
+                # Expression-based RAISIN analysis
+                if expr_results is not None:
+                    unique_expr_clades = len(set(expr_results.values()))
+                    if unique_expr_clades <= 1:
+                        print("Only one clade found in ATAC expression results. Skipping RAISIN analysis.")
+                    else:
+                        fit = raisinfit(
+                            adata_path=os.path.join(atac_output_dir, 'preprocess', 'adata_sample.h5ad'),
+                            sample_col=atac_sample_col,
+                            batch_key=atac_batch_col,
+                            sample_to_clade=expr_results,
+                            verbose=verbose,
+                            intercept=True,
+                            n_jobs=-1,
+                        )
+                        run_pairwise_raisin_analysis(
+                            fit=fit,
+                            output_dir=os.path.join(atac_output_dir, 'raisin_results_expression'),
+                            min_samples=2,
+                            fdrmethod='fdr_bh',
+                            n_permutations=10,
+                            fdr_threshold=0.05,
+                            verbose=True
+                        )
+                else:
+                    print("No ATAC expression results available. Skipping RAISIN analysis.")
                 
-            # Expression-based RAISIN analysis
-            if expr_results is not None:
-                unique_expr_clades = len(set(expr_results.values()))
-                if unique_expr_clades <= 1:
-                    print("Only one clade found in ATAC expression results. Skipping RAISIN analysis.")
+                # Proportion-based RAISIN analysis
+                if prop_results is not None:
+                    unique_prop_clades = len(set(prop_results.values()))
+                    if unique_prop_clades <= 1:
+                        print("Only one clade found in ATAC proportion results. Skipping RAISIN analysis.")
+                    else:
+                        fit = raisinfit(
+                            adata_path=os.path.join(atac_output_dir, 'preprocess', 'adata_sample.h5ad'),
+                            sample_col=atac_sample_col,
+                            batch_key=atac_batch_col,
+                            sample_to_clade=prop_results,
+                            intercept=True,
+                            n_jobs=-1,
+                        )
+                        run_pairwise_raisin_analysis(
+                            fit=fit,
+                            output_dir=os.path.join(atac_output_dir, 'raisin_results_proportion'),
+                            min_samples=2,
+                            fdrmethod='fdr_bh',
+                            n_permutations=10,
+                            fdr_threshold=0.05,
+                            verbose=True
+                        )
                 else:
-                    fit = raisinfit(
-                        adata_path=os.path.join(atac_output_dir, 'preprocess', 'adata_sample.h5ad'),
-                        sample_col=atac_sample_col,
-                        batch_key=atac_batch_col,
-                        sample_to_clade=expr_results,
-                        verbose=verbose,
-                        intercept=True,
-                        n_jobs=-1,
-                    )
-                    run_pairwise_raisin_analysis(
-                        fit=fit,
-                        output_dir=os.path.join(atac_output_dir, 'raisin_results_expression'),
-                        min_samples=2,
-                        fdrmethod='fdr_bh',
-                        n_permutations=10,
-                        fdr_threshold=0.05,
-                        verbose=True
-                    )
-            else:
-                print("No ATAC expression results available. Skipping RAISIN analysis.")
-            
-            # Proportion-based RAISIN analysis
-            if prop_results is not None:
-                unique_prop_clades = len(set(prop_results.values()))
-                if unique_prop_clades <= 1:
-                    print("Only one clade found in ATAC proportion results. Skipping RAISIN analysis.")
-                else:
-                    fit = raisinfit(
-                        adata_path=os.path.join(atac_output_dir, 'preprocess', 'adata_sample.h5ad'),
-                        sample_col=atac_sample_col,
-                        batch_key=atac_batch_col,
-                        sample_to_clade=prop_results,
-                        intercept=True,
-                        n_jobs=-1,
-                    )
-                    run_pairwise_raisin_analysis(
-                        fit=fit,
-                        output_dir=os.path.join(atac_output_dir, 'raisin_results_proportion'),
-                        min_samples=2,
-                        fdrmethod='fdr_bh',
-                        n_permutations=10,
-                        fdr_threshold=0.05,
-                        verbose=True
-                    )
-            else:
-                print("No ATAC proportion results available. Skipping RAISIN analysis.")
+                    print("No ATAC proportion results available. Skipping RAISIN analysis.")
         status_flags["atac"]["cluster_dge"] = True
     
     # Step 8: Visualization

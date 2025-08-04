@@ -420,7 +420,7 @@ def rna_wrapper(
                 )
             status_flags["rna"]["sample_distance_calculation"] = True
             if verbose:
-                print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample')}")
+                print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample_distance')}")
         
     # Load pseudobulk data if needed for subsequent steps
     if (trajectory_analysis or sample_distance_calculation or sample_cluster or cluster_DGE) and not DimensionalityReduction:

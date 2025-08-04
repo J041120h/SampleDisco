@@ -45,7 +45,6 @@ def calculate_sample_distances_DR(
         raise ValueError(f"DR DataFrame for key '{DR_key}' is empty or None.")
     
     # Create output directory
-    output_dir = os.path.join(output_dir, f'{dr_name}_distance')
     os.makedirs(output_dir, exist_ok=True)
     
     # Use DR data directly (it should already be averaged per sample)
@@ -153,34 +152,104 @@ def calculate_sample_distances_DR(
     print(f"{dr_name}-based distance matrix saved to: {output_dir}")
     return distance_df
 
+def get_best_expression_dr_key(adata: AnnData, data_type: str = 'ATAC') -> Optional[str]:
+    """
+    Get the best available expression DR key based on data type and availability.
+    
+    For ATAC data: Prioritize LSI > PCA > other methods
+    For RNA data: Prioritize PCA > other methods
+    
+    Parameters:
+    - adata: AnnData object
+    - data_type: 'ATAC' or 'RNA' (default: 'ATAC')
+    
+    Returns:
+    - Best available DR key or None if no expression DR found
+    """
+    # Check for unified DR results first
+    if 'X_DR_expression' in adata.uns:
+        return 'X_DR_expression'
+    
+    # Define priority order based on data type
+    if data_type.upper() == 'ATAC':
+        priority_keys = [
+            'X_lsi_expression_method',
+            'X_pca_expression_method', 
+            'X_spectral_expression_method'
+        ]
+    else:  # RNA or other
+        priority_keys = [
+            'X_pca_expression_method',
+            'X_lsi_expression_method',
+            'X_spectral_expression_method'
+        ]
+    
+    # Return the first available key in priority order
+    for key in priority_keys:
+        if key in adata.uns:
+            return key
+    
+    return None
+
+def get_best_proportion_dr_key(adata: AnnData) -> Optional[str]:
+    """
+    Get the best available proportion DR key.
+    
+    Parameters:
+    - adata: AnnData object
+    
+    Returns:
+    - Best available proportion DR key or None if not found
+    """
+    # Check for unified DR results first
+    if 'X_DR_proportion' in adata.uns:
+        return 'X_DR_proportion'
+    
+    # Check for method-specific proportion DR results
+    proportion_keys = [
+        'X_pca_proportion_method',
+        'X_lsi_proportion_method',
+        'X_spectral_proportion_method'
+    ]
+    
+    for key in proportion_keys:
+        if key in adata.uns:
+            return key
+    
+    return None
+
 def sample_distance_vector(
     adata: AnnData,
     output_dir: str,
     method: str,
+    data_type: str = 'ATAC',
     grouping_columns: Optional[List[str]] = None,
     summary_csv_path: Optional[str] = None
 ) -> None:
     """
     Compute and save sample distance matrices using dimension reduction vector results.
     
-    This function looks for DR results stored in adata.uns under the unified keys:
-    - 'X_DR_expression': Expression-based dimension reduction
-    - 'X_DR_proportion': Proportion-based dimension reduction
+    Always creates two standardized directories:
+    - expression_DR_distance: Using the best available expression DR method
+    - proportion_DR_distance: Using the best available proportion DR method
     
-    Sample metadata is automatically extracted from adata.obs.
+    For ATAC data: Prioritizes LSI over PCA for expression DR
+    For RNA data: Prioritizes PCA for expression DR
     
     Parameters:
     - adata: AnnData object with DR results in .uns and sample metadata in .obs
     - output_dir: Directory for outputs
     - method: Distance metric
+    - data_type: 'ATAC' or 'RNA' (default: 'ATAC')
     - grouping_columns: List of columns for grouping analysis
     - summary_csv_path: Optional path to global summary CSV for logging results across all methods
     
     Returns:
     - None (results are saved to disk)
     """
-    output_dir = os.path.join(output_dir, method)
-    os.makedirs(output_dir, exist_ok=True)
+    # Create main output directory for this method
+    method_output_dir = os.path.join(output_dir, method)
+    os.makedirs(method_output_dir, exist_ok=True)
     
     # Print available sample metadata columns for reference
     if hasattr(adata, 'obs') and not adata.obs.empty:
@@ -197,18 +266,21 @@ def sample_distance_vector(
     else:
         print("Warning: No sample metadata found in adata.obs")
     
-    # Track which distance matrices were computed and their scores
+    # Track which distance matrices were computed
     computed_distances = []
     distance_results = {}
     
-    # Compute distance matrix for expression DR if available
-    if 'X_DR_expression' in adata.uns:
+    # 1. Compute expression DR distance - always save to expression_DR_distance
+    expression_dr_key = get_best_expression_dr_key(adata, data_type)
+    if expression_dr_key:
         try:
-            print("Computing sample distances using expression dimension reduction...")
+            print(f"Computing sample distances using expression dimension reduction ({expression_dr_key})...")
+            expression_output_dir = os.path.join(method_output_dir, 'expression_DR_distance')
+            
             distance_df = calculate_sample_distances_DR(
                 adata=adata,
-                DR_key='X_DR_expression',
-                output_dir=output_dir,
+                DR_key=expression_dr_key,
+                output_dir=expression_output_dir,
                 method=method,
                 grouping_columns=grouping_columns,
                 dr_name='expression_DR',
@@ -219,16 +291,19 @@ def sample_distance_vector(
         except Exception as e:
             print(f"Failed to compute expression DR distances: {e}")
     else:
-        print("Warning: 'X_DR_expression' not found in adata.uns")
+        print("Warning: No expression dimension reduction results found in adata.uns")
     
-    # Compute distance matrix for proportion DR if available
-    if 'X_DR_proportion' in adata.uns:
+    # 2. Compute proportion DR distance - always save to proportion_DR_distance
+    proportion_dr_key = get_best_proportion_dr_key(adata)
+    if proportion_dr_key:
         try:
-            print("Computing sample distances using proportion dimension reduction...")
+            print(f"Computing sample distances using proportion dimension reduction ({proportion_dr_key})...")
+            proportion_output_dir = os.path.join(method_output_dir, 'proportion_DR_distance')
+            
             distance_df = calculate_sample_distances_DR(
                 adata=adata,
-                DR_key='X_DR_proportion',
-                output_dir=output_dir,
+                DR_key=proportion_dr_key,
+                output_dir=proportion_output_dir,
                 method=method,
                 grouping_columns=grouping_columns,
                 dr_name='proportion_DR',
@@ -239,32 +314,7 @@ def sample_distance_vector(
         except Exception as e:
             print(f"Failed to compute proportion DR distances: {e}")
     else:
-        print("Warning: 'X_DR_proportion' not found in adata.uns")
-    
-    # Also check for any method-specific DR results for additional analysis
-    method_specific_keys = [
-        ('X_pca_expression_method', 'PCA_expression'),
-        ('X_lsi_expression_method', 'LSI_expression'),
-        ('X_spectral_expression_method', 'spectral_expression')
-    ]
-    
-    for dr_key, dr_name in method_specific_keys:
-        if dr_key in adata.uns:
-            try:
-                print(f"Computing sample distances using {dr_name}...")
-                distance_df = calculate_sample_distances_DR(
-                    adata=adata,
-                    DR_key=dr_key,
-                    output_dir=output_dir,
-                    method=method,
-                    grouping_columns=grouping_columns,
-                    dr_name=dr_name,
-                    summary_csv_path=summary_csv_path
-                )
-                computed_distances.append(dr_name)
-                distance_results[dr_name] = distance_df
-            except Exception as e:
-                print(f"Failed to compute {dr_name} distances: {e}")
+        print("Warning: No proportion dimension reduction results found in adata.uns")
     
     if not computed_distances:
         raise ValueError("No dimension reduction results found in adata.uns. "
@@ -272,7 +322,7 @@ def sample_distance_vector(
     
     print(f"Sample distance computations completed for: {', '.join(computed_distances)}")
     
-    # Optional: Create additional summary statistics
+    # Create summary statistics for computed distance matrices
     if distance_results:
         try:
             # Create a summary of basic distance statistics
@@ -287,7 +337,7 @@ def sample_distance_vector(
                 summary_stats[f"{dr_name}_median"] = np.median(dist_values)
             
             # Save basic statistics summary
-            stats_file = os.path.join(output_dir, f'distance_statistics_summary_{method}.csv')
+            stats_file = os.path.join(method_output_dir, f'distance_statistics_summary_{method}.csv')
             stats_df = pd.DataFrame([summary_stats])
             stats_df.to_csv(stats_file)
             print(f"Distance statistics summary saved to: {stats_file}")
@@ -299,6 +349,7 @@ def sample_distance(
     adata: AnnData,
     output_dir: str,
     method: str,
+    data_type: str = 'ATAC',
     grouping_columns: Optional[List[str]] = None,
     summary_csv_path: Optional[str] = None,
     cell_adata: Optional[AnnData] = None,
@@ -312,10 +363,15 @@ def sample_distance(
     This function handles both standard distance metrics (using dimension reduction results)
     and specialized distance methods (EMD, chi-square, Jensen-Shannon).
     
+    For standard distance metrics, always creates two standardized directories:
+    - expression_DR_distance: Using the best available expression DR method
+    - proportion_DR_distance: Using the best available proportion DR method
+    
     Parameters:
     - adata: AnnData object with DR results in .uns and sample metadata in .obs
     - output_dir: Directory for outputs
     - method: Distance metric ('euclidean', 'cosine', 'EMD', 'chi_square', 'jensen_shannon', etc.)
+    - data_type: 'ATAC' or 'RNA' (default: 'ATAC') - affects DR method prioritization
     - grouping_columns: List of columns for grouping analysis
     - summary_csv_path: Optional path to summary CSV for logging results across methods
     - cell_adata: AnnData object with single-cell data (required for EMD, chi_square, jensen_shannon)
@@ -346,10 +402,12 @@ def sample_distance(
     if method in valid_pdist_metrics:
         # Handle standard distance metrics
         print(f"Computing {method} distance using dimension reduction results...")
+        print(f"Data type: {data_type} (affects DR method prioritization)")
         sample_distance_vector(
             adata=adata,
             output_dir=output_dir,
             method=method,
+            data_type=data_type,
             grouping_columns=grouping_columns,
             summary_csv_path=summary_csv_path
         )
@@ -373,7 +431,7 @@ def sample_distance(
             
         elif method == "chi_square":
             print("Computing Chi-square distance...")
-            chi_output_dir = os.path.join(output_dir, 'Chi_square_sample')
+            chi_output_dir = os.path.join(output_dir, 'chi_square')
             chi_square_distance(
                 adata=cell_adata,
                 output_dir=chi_output_dir,
@@ -385,7 +443,7 @@ def sample_distance(
             
         elif method == "jensen_shannon":
             print("Computing Jensen-Shannon distance...")
-            js_output_dir = os.path.join(output_dir, 'jensen_shannon_sample')
+            js_output_dir = os.path.join(output_dir, 'jensen_shannon')
             jensen_shannon_distance(
                 adata=cell_adata,
                 output_dir=js_output_dir,
