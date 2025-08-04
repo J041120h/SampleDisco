@@ -9,7 +9,6 @@ from harmony import harmonize
 import muon as mu
 from muon import atac as ac
 import scipy.sparse as sp           # used for re-sparsifying
-from sklearn.neighbors import NearestNeighbors
 from ATAC_cell_type import *
 warnings.filterwarnings("ignore")
 
@@ -64,22 +63,24 @@ def snapatac2_dimensionality_reduction(
 
     # Doublet filtering
     if doublet:
-        log("Filtering doublets (snapATAC2-Scrublet)", verbose=verbose)
+        log("Filtering doublets (scanpy-Scrublet)", verbose=verbose)
         try:
-            snap.pp.scrublet(adata)
-            snap.pp.filter_doublets(adata)
+            # Complete Scrublet workflow (simulate + score + predict)
+            sc.pp.scrublet(adata, sim_doublet_ratio=2.0, random_seed=0)
             
-            # Filter adata_sample to match remaining cells if provided
+            # Direct filtering
+            is_doublet = adata.obs['predicted_doublet']
+            adata = adata[~is_doublet].copy()
+            
             if adata_sample is not None:
                 cells_after_doublet = adata.obs.index
                 adata_sample = adata_sample[cells_after_doublet].copy()
                 log(f"Filtered adata_sample to match {len(cells_after_doublet)} remaining cells after doublet removal", verbose=verbose)
                 
-        except (AttributeError, TypeError) as e:
-            if "nonzero" in str(e):
-                log("snapATAC2-Scrublet compatibility issue – skipping.", verbose=verbose)
-            else:
-                raise e
+            log(f"Removed {is_doublet.sum()} predicted doublets, {len(adata)} cells remaining", verbose=verbose)
+            
+        except Exception as e:
+            log(f"Doublet filtering failed: {e}", verbose=verbose)
 
     # Save HVF
     if 'selected' in adata.var.columns:

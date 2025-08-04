@@ -5,7 +5,6 @@ import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import fcluster
 import scanpy as sc
-from sklearn.neighbors import KNeighborsTransformer
 import time
 import matplotlib.pyplot as plt
 
@@ -263,7 +262,7 @@ def cell_types_atac(
     max_resolution=5.0,
     resolution_step=0.5,
     # New plotting parameters
-    generate_plots=False,
+    generate_plots=True,
     cell_type_key='cell_type',
     batch_key=None,
     plot_dpi=300,
@@ -492,9 +491,6 @@ def cell_types_atac(
             if verbose:
                 print(f"[cell_types_atac] Found {num_clusters} clusters after Leiden clustering.")
 
-    # ============================================================================
-    # FINAL PROCESSING (ONLY ON TOP-LEVEL CALL)
-    # ============================================================================
     if _recursion_depth == 0:
         # Apply peak mapping if provided and appropriate
         final_cluster_count = adata.obs['cell_type'].nunique()
@@ -517,9 +513,6 @@ def cell_types_atac(
                 print("[cell_types_atac] Computing UMAP...")
             sc.tl.umap(adata, min_dist=0.5)
         
-        # ========================================================================
-        # GENERATE PLOTS (NEW FUNCTIONALITY)
-        # ========================================================================
         if generate_plots and output_dir and 'X_umap' in adata.obsm:
             if verbose:
                 print("[cell_types_atac] Generating UMAP plots...")

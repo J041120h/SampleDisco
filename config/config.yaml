@@ -157,7 +157,7 @@ atac_output_dir: null
 atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
 
 # ATAC Process Control Flags
-atac_preprocessing: false
+atac_preprocessing: true
 atac_cell_type_cluster: true
 atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false
