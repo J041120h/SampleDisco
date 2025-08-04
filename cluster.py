@@ -39,6 +39,11 @@ def cluster(
     """
     print(f"[INFO] Entering cluster function with parameters:\n  generalFolder={generalFolder},\n  Kmeans={Kmeans},\n  methods={methods},\n  proportion_test={prportion_test},\n  distance_method={distance_method},\n  number_of_clusters={number_of_clusters}")
     
+    # Create sample_cluster directory for all clustering results
+    sample_cluster_dir = os.path.join(generalFolder, "sample_cluster")
+    os.makedirs(sample_cluster_dir, exist_ok=True)
+    print(f"[INFO] Created sample_cluster directory: {sample_cluster_dir}")
+    
     pseudobulk_folder_path = os.path.join(generalFolder, "pseudobulk")
 
     if Kmeans == False and methods is None:
@@ -97,38 +102,38 @@ def cluster(
                 
                 # Build trees for proportion data (always)
                 if methods[0] == "HRA_VEC":
-                    HRA_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
+                    HRA_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="proportion")
                     if not use_proportion_only:
-                        HRA_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
+                        HRA_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="expression")
                 elif methods[0] == "HRC_VEC":
-                    HRC_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
+                    HRC_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="proportion")
                     if not use_proportion_only:
-                        HRC_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
+                        HRC_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="expression")
                 elif methods[0] == "NN":
-                    NN(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
+                    NN(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="proportion")
                     if not use_proportion_only:
-                        NN(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
+                        NN(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="expression")
                 elif methods[0] == "UPGMA":
-                    UPGMA(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
+                    UPGMA(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="proportion")
                     if not use_proportion_only:
-                        UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
+                        UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(sample_cluster_dir, "Tree", methods[0]), custom_tree_name="expression")
                 
                 # Set tree paths
-                proportion_tree_path = os.path.join(generalFolder, "Tree", methods[0], "proportion.nex")
+                proportion_tree_path = os.path.join(sample_cluster_dir, "Tree", methods[0], "proportion.nex")
                 if not use_proportion_only:
-                    expression_tree_path = os.path.join(generalFolder, "Tree", methods[0], "expression.nex")
+                    expression_tree_path = os.path.join(sample_cluster_dir, "Tree", methods[0], "expression.nex")
                 
             elif len(methods) > 1:
                 print(f"[INFO] Running consensus building for methods: {methods}")
                 # Build consensus for proportion data (always)
-                buildConsensus(sample_distance_paths=sample_distance_path_proportion, generalFolder=generalFolder, methods=methods, custom_tree_names="proportion")
+                buildConsensus(sample_distance_paths=sample_distance_path_proportion, generalFolder=sample_cluster_dir, methods=methods, custom_tree_names="proportion")
                 if not use_proportion_only:
-                    buildConsensus(sample_distance_paths=sample_distance_path_expression, generalFolder=generalFolder, methods=methods, custom_tree_names="expression")
+                    buildConsensus(sample_distance_paths=sample_distance_path_expression, generalFolder=sample_cluster_dir, methods=methods, custom_tree_names="expression")
                 
                 # Set consensus tree paths
-                proportion_tree_path = os.path.join(generalFolder, "Tree", "consensus", "proportion.nex")
+                proportion_tree_path = os.path.join(sample_cluster_dir, "Tree", "consensus", "proportion.nex")
                 if not use_proportion_only:
-                    expression_tree_path = os.path.join(generalFolder, "Tree", "consensus", "expression.nex")
+                    expression_tree_path = os.path.join(sample_cluster_dir, "Tree", "consensus", "expression.nex")
             
             # Cut trees to get clustering results
             prop_results = cut_tree_by_group_count(proportion_tree_path, desired_groups=number_of_clusters, format='nexus', verbose=True, tol=0)
@@ -161,7 +166,7 @@ def cluster(
                 if unique_expr_clades <= 1:
                     print("[INFO] Only one clade found in expression results. Skipping proportion test.")
                 else:
-                    proportion_DGE_test(generalFolder, expr_results, sub_folder="expression", verbose=False)
+                    proportion_DGE_test(sample_cluster_dir, expr_results, sub_folder="expression", verbose=False)
             elif use_proportion_only:
                 print("[INFO] Expression proportion test skipped for proportion-only distance method.")
                 
@@ -170,7 +175,7 @@ def cluster(
                 if unique_prop_clades <= 1:
                     print("[INFO] Only one clade found in proportion results. Skipping proportion test.")
                 else:
-                    proportion_DGE_test(generalFolder, prop_results, sub_folder="proportion", verbose=False)
+                    proportion_DGE_test(sample_cluster_dir, prop_results, sub_folder="proportion", verbose=False)
             print("[INFO] Proportion tests completed.")
         except Exception as e:
             print(f"[ERROR] Error in proportion test: {e}")
