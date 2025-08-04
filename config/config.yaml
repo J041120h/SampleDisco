@@ -157,16 +157,16 @@ atac_output_dir: null
 atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
 
 # ATAC Process Control Flags
-atac_preprocessing: true
-atac_cell_type_cluster: true
+atac_preprocessing: false
+atac_cell_type_cluster: false
 atac_pseudobulk_dimensionality_reduction: false
-atac_visualization_processing: false
-atac_trajectory_analysis: false
+atac_trajectory_analysis: true
+atac_trajectory_dge: false
 atac_sample_distance_calculation: false
 atac_sample_cluster: false
 atac_cluster_dge: false
-atac_trajectory_dge: false
 atac_visualize_data: false
+atac_visualization_processing: false
 
 # ATAC Column specifications
 atac_sample_col: "sample"
@@ -175,7 +175,7 @@ atac_cell_type_column: "cell_type"
 
 # ATAC Pipeline configuration
 atac_pipeline_verbose: true
-use_snapatac2_dimred: true
+use_snapatac2_dimred: false
 
 # ATAC QC and filtering parameters
 atac_min_cells: 3
@@ -184,7 +184,7 @@ atac_max_genes: 15000
 atac_min_cells_per_sample: 1
 
 # ATAC Processing parameters
-atac_doublet: true
+atac_doublet: false
 atac_tfidf_scale_factor: 10000
 atac_num_features: 2000
 atac_n_lsi_components: 30
@@ -199,7 +199,7 @@ atac_existing_cell_types: false
 atac_n_target_cell_clusters: 3
 
 # ATAC Cell Type Annotation Parameters
-atac_cell_type_annotation: false
+atac_cell_type_annotation: true
 atac_cell_type_annotation_model_name: "Healthy_COVID19_PBMC.pkl"
 atac_cell_type_annotation_custom_model_path: null
 
@@ -225,12 +225,12 @@ atac_dr_n_proportion_components: 30
 atac_dr_verbose: true
 
 # ATAC Trajectory analysis parameters
-atac_trajectory_supervised: true
+atac_trajectory_supervised: false
 atac_cca_output_dir: null
 atac_sev_col_cca: "sev.level"
 atac_trajectory_verbose: true
 atac_cca_pvalue: false
-atac_cca_optimal_cell_resolution: true
+atac_cca_optimal_cell_resolution: false
 atac_n_pcs_for_null: 10
 atac_tscan_origin: null
 atac_trajectory_visualization_label: null

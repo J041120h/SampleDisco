@@ -43,13 +43,13 @@ def atac_wrapper(
     atac_preprocessing=True,
     atac_cell_type_cluster=True,
     atac_pseudobulk_dimensionality_reduction=True,
-    atac_visualization_processing=True,
     trajectory_analysis_atac=True,
+    trajectory_DGE=True,
     sample_distance_calculation=True,
     atac_sample_cluster=True,
     cluster_DGE=True,
-    trajectory_DGE=True,
     visualize_data=True,
+    atac_visualization_processing=True,
     
     # QC and filtering parameters
     atac_min_cells=3,
@@ -286,6 +286,7 @@ def atac_wrapper(
         atac_sample = cell_types_atac(
             adata=atac_sample,
             cell_column=atac_cell_type_column,
+            Save = True,
             existing_cell_types=atac_existing_cell_types,
             n_target_clusters=atac_n_target_cell_clusters,
             cluster_resolution=atac_leiden_resolution,
@@ -297,13 +298,6 @@ def atac_wrapper(
             output_dir=atac_output_dir,
             verbose=verbose
         )
-        if cell_type_annotation:
-            annotate_cell_types_with_celltypist(
-                adata = atac_sample,
-                output_dir = atac_output_dir,
-                model_name= atac_cell_type_annotation_model_name,
-                custom_model_path= atac_cell_type_annotation_custom_model_path
-            )
         status_flags["atac"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and Dimensionality Reduction
@@ -336,13 +330,13 @@ def atac_wrapper(
         )
         status_flags["atac"]["dimensionality_reduction"] = True
 
-    elif sample_distance_calculation or cluster_DGE or trajectory_DGE:
+    elif sample_distance_calculation or cluster_DGE or  trajectory_analysis_atac:
         temp_pseuobulk_path = os.path.join(atac_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         if not os.path.exists(temp_pseuobulk_path):
             raise ValueError("Pseudobulk data not found. Ensure dimensionality reduction is performed first.")
         pseudobulk_anndata = sc.read(temp_pseuobulk_path)
         status_flags["atac"]["dimensionality_reduction"] = True
-    
+
     # Step 4: Trajectory Analysis
     if trajectory_analysis_atac:
         if not status_flags["atac"]["dimensionality_reduction"]:
@@ -427,7 +421,7 @@ def atac_wrapper(
                 
             TSCAN_result_expression = TSCAN(
                 AnnData_sample=pseudobulk_anndata,
-                column="X_pca_expression",
+                column="X_DR_expression",
                 n_clusters=8,
                 output_dir=atac_output_dir,
                 grouping_columns=trajectory_visualization_label,
@@ -437,7 +431,7 @@ def atac_wrapper(
             
             TSCAN_result_proportion = TSCAN(
                 AnnData_sample=pseudobulk_anndata,
-                column="X_pca_proportion",
+                column="X_DR_proportion",
                 n_clusters=8,
                 output_dir=atac_output_dir,
                 grouping_columns=trajectory_visualization_label,
@@ -446,6 +440,7 @@ def atac_wrapper(
             )
         
         status_flags["atac"]["trajectory_analysis"] = True
+        
     if trajectory_DGE and trajectory_analysis_atac:
         if atac_pipeline_verbose:
             print("Starting trajectory differential analysis for ATAC data...")
@@ -636,28 +631,7 @@ def atac_wrapper(
             show_sample_names=atac_show_sample_names,
             sample_col=atac_sample_col
         )
-        
-        # General visualization (if enabled)
-        if visualize_data:
-            visualization(
-                adata_sample_diff=atac_sample,
-                output_dir=os.path.join(atac_output_dir, 'visualization'),
-                grouping_columns=grouping_columns,
-                age_bin_size=age_bin_size,
-                verbose=verbose_Visualization,
-                dot_size=dot_size,
-                plot_dendrogram_flag=plot_dendrogram_flag,
-                plot_umap_by_plot_group_flag=plot_cell_umap_by_plot_group_flag,
-                plot_umap_by_cell_type_flag=plot_umap_by_cell_type_flag,
-                plot_pca_2d_flag=plot_pca_2d_flag,
-                plot_pca_3d_flag=plot_pca_3d_flag,
-                plot_3d_cells_flag=plot_3d_cells_flag,
-                plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
-                plot_cell_type_expression_pca_flag=plot_cell_type_expression_pca_flag,
-                plot_pseudobulk_batch_test_expression_flag=plot_pseudobulk_batch_test_expression_flag,
-                plot_pseudobulk_batch_test_proportion_flag=plot_pseudobulk_batch_test_proportion_flag
-            )
-    
+
     if atac_pipeline_verbose:
         print("ATAC-seq analysis completed successfully!")
     
