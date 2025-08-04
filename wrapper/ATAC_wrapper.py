@@ -524,12 +524,12 @@ def atac_wrapper(
         for method in sample_distance_methods:
             print(f"\nRunning sample distance: {method}\n")
             sample_distance(
-                adata=pseudobulk_anndata,
+                adata= pseudobulk_anndata,
                 output_dir=os.path.join(atac_output_dir, 'Sample_distance'),
                 method=method,
                 grouping_columns=grouping_columns,
                 summary_csv_path=summary_sample_csv_path,
-                cell_adata= atac_cell,
+                cell_adata= atac_sample,
                 cell_type_column='cell_type',
                 sample_column=sample_col,
                 pseudobulk_adata=pseudobulk_anndata

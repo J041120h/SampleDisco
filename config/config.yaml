@@ -160,9 +160,9 @@ atac_metadata_path: "/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv"
 atac_preprocessing: false
 atac_cell_type_cluster: false
 atac_pseudobulk_dimensionality_reduction: false
-atac_trajectory_analysis: true
+atac_trajectory_analysis: false
 atac_trajectory_dge: false
-atac_sample_distance_calculation: false
+atac_sample_distance_calculation: true
 atac_sample_cluster: false
 atac_cluster_dge: false
 atac_visualize_data: false
@@ -250,7 +250,9 @@ atac_top_gene_number: 30
 atac_trajectory_diff_gene_output_dir: null
 
 # ATAC Sample distance parameters
-atac_sample_distance_methods: null
+atac_sample_distance_methods:
+  - "chi_square"
+  - "cosine"
 atac_summary_sample_csv_path: null
 atac_grouping_columns: null
 
