@@ -52,19 +52,28 @@ def cluster(
 
     # CASE 2: No user clustering provided, proceed with clustering
     print("[INFO] No user-provided clustering found. Proceeding with default clustering methods.")
+    
+    # Check if distance method is proportion-only
+    proportion_only_methods = ["EMD", "chi_square", "jensen_shannon"]
+    use_proportion_only = distance_method in proportion_only_methods
+    
+    if use_proportion_only:
+        print(f"[INFO] Distance method '{distance_method}' detected. Running clustering on proportion data only.")
+    
     # Construct distance matrix paths
     sample_distance_path_proportion = os.path.join(generalFolder, "Sample_distance", distance_method, "proportion_DR_distance", "distance_matrix_proportion_DR.csv")
     sample_distance_path_expression = os.path.join(generalFolder, "Sample_distance", distance_method, "expression_DR_distance", "distance_matrix_expression_DR.csv")
     
-    # Validate that the CSV files exist
+    # Validate that the required CSV files exist
     if not os.path.exists(sample_distance_path_proportion):
         raise FileNotFoundError(f"Proportion distance matrix file not found: {sample_distance_path_proportion}")
     
-    if not os.path.exists(sample_distance_path_expression):
+    if not use_proportion_only and not os.path.exists(sample_distance_path_expression):
         raise FileNotFoundError(f"Expression distance matrix file not found: {sample_distance_path_expression}")
     
     print(f"[INFO] Using proportion distance matrix: {sample_distance_path_proportion}")
-    print(f"[INFO] Using expression distance matrix: {sample_distance_path_expression}")
+    if not use_proportion_only:
+        print(f"[INFO] Using expression distance matrix: {sample_distance_path_expression}")
     
     expr_results_Kmeans = None
     prop_results_Kmeans = None
@@ -85,29 +94,50 @@ def cluster(
         try:
             if len(methods) == 1:
                 print(f"[INFO] Running single method '{methods[0]}' for tree construction...")
+                
+                # Build trees for proportion data (always)
                 if methods[0] == "HRA_VEC":
-                    HRA_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
                     HRA_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
+                    if not use_proportion_only:
+                        HRA_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
                 elif methods[0] == "HRC_VEC":
-                    HRC_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
                     HRC_VEC(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
+                    if not use_proportion_only:
+                        HRC_VEC(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
                 elif methods[0] == "NN":
-                    NN(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
                     NN(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
+                    if not use_proportion_only:
+                        NN(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
                 elif methods[0] == "UPGMA":
-                    UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
                     UPGMA(inputFilePath=sample_distance_path_proportion, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="proportion")
-                expression_tree_path = os.path.join(generalFolder, "Tree", methods[0], "expression.nex")
+                    if not use_proportion_only:
+                        UPGMA(inputFilePath=sample_distance_path_expression, generalOutputDir=os.path.join(generalFolder, "Tree", methods[0]), custom_tree_name="expression")
+                
+                # Set tree paths
                 proportion_tree_path = os.path.join(generalFolder, "Tree", methods[0], "proportion.nex")
+                if not use_proportion_only:
+                    expression_tree_path = os.path.join(generalFolder, "Tree", methods[0], "expression.nex")
+                
             elif len(methods) > 1:
                 print(f"[INFO] Running consensus building for methods: {methods}")
-                buildConsensus(sample_distance_paths=sample_distance_path_expression, generalFolder=generalFolder, methods=methods, custom_tree_names="expression")
+                # Build consensus for proportion data (always)
                 buildConsensus(sample_distance_paths=sample_distance_path_proportion, generalFolder=generalFolder, methods=methods, custom_tree_names="proportion")
-                expression_tree_path = os.path.join(generalFolder, "Tree", "consensus", "expression.nex")
+                if not use_proportion_only:
+                    buildConsensus(sample_distance_paths=sample_distance_path_expression, generalFolder=generalFolder, methods=methods, custom_tree_names="expression")
+                
+                # Set consensus tree paths
                 proportion_tree_path = os.path.join(generalFolder, "Tree", "consensus", "proportion.nex")
+                if not use_proportion_only:
+                    expression_tree_path = os.path.join(generalFolder, "Tree", "consensus", "expression.nex")
             
-            expr_results = cut_tree_by_group_count(expression_tree_path, desired_groups=number_of_clusters, format='nexus', verbose=True, tol=0)
+            # Cut trees to get clustering results
             prop_results = cut_tree_by_group_count(proportion_tree_path, desired_groups=number_of_clusters, format='nexus', verbose=True, tol=0)
+            if not use_proportion_only:
+                expr_results = cut_tree_by_group_count(expression_tree_path, desired_groups=number_of_clusters, format='nexus', verbose=True, tol=0)
+            else:
+                # For proportion-only methods, set expression results to None or copy proportion results
+                expr_results = None
+                print("[INFO] Expression clustering skipped for proportion-only distance method.")
             
             print("[INFO] Tree construction completed.")
             print("[INFO] Tree-based clustering completed.")
@@ -115,8 +145,13 @@ def cluster(
             print(f"[ERROR] Error in tree-based clustering: {e}")
             
     if Kmeans:
-        expr_results = expr_results_Kmeans
-        prop_results = prop_results_Kmeans
+        if use_proportion_only:
+            # For proportion-only methods with Kmeans, only use proportion results
+            expr_results = None
+            prop_results = prop_results_Kmeans
+        else:
+            expr_results = expr_results_Kmeans
+            prop_results = prop_results_Kmeans
 
     if prportion_test:
         print("[INFO] Starting proportion tests...")
@@ -127,6 +162,8 @@ def cluster(
                     print("[INFO] Only one clade found in expression results. Skipping proportion test.")
                 else:
                     proportion_DGE_test(generalFolder, expr_results, sub_folder="expression", verbose=False)
+            elif use_proportion_only:
+                print("[INFO] Expression proportion test skipped for proportion-only distance method.")
                 
             if prop_results is not None:
                 unique_prop_clades = len(set(prop_results.values()))

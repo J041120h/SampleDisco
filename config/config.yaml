@@ -162,8 +162,8 @@ atac_cell_type_cluster: false
 atac_pseudobulk_dimensionality_reduction: false
 atac_trajectory_analysis: false
 atac_trajectory_dge: false
-atac_sample_distance_calculation: true
-atac_sample_cluster: false
+atac_sample_distance_calculation: false
+atac_sample_cluster: true
 atac_cluster_dge: true
 atac_visualize_data: false
 atac_visualization_processing: false
