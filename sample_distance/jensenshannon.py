@@ -9,7 +9,7 @@ import warnings
 from scipy.sparse import issparse
 from scipy.spatial.distance import jensenshannon 
 from anndata._core.aligned_df import ImplicitModificationWarning
-from Visualization import plot_cell_type_expression_heatmap, plot_cell_type_abundances, visualizeGroupRelationship, visualizeDistanceMatrix
+from Visualization import plot_cell_type_abundances, visualizeDistanceMatrix
 from distance_test import distanceCheck
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
@@ -126,17 +126,6 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
         visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
     except Exception as e:
         print(f"Warning: Failed to create distance heatmap for proportion_DR: {e}")
-
-    try:
-        visualizeGroupRelationship(
-            sample_distance_matrix, 
-            outputDir=proportion_output_dir, 
-            adata=pseudobulk_adata,
-            grouping_columns=grouping_columns,
-            heatmap_path=os.path.join(proportion_output_dir, 'sample_proportion_DR_relationship.pdf')
-        )
-    except Exception as e:
-        print(f"Warning: Failed to create group relationship visualization for proportion_DR: {e}")
 
     print(f"Jensen-Shannon-based distance matrix saved to: {proportion_output_dir}")
     return sample_distance_matrix

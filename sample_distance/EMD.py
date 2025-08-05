@@ -7,7 +7,7 @@ from scipy.cluster.hierarchy import linkage
 import seaborn as sns
 from pyemd import emd
 from anndata import AnnData
-from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix,plot_cell_type_abundances,plot_cell_type_expression_heatmap
+from Visualization import visualizeDistanceMatrix,plot_cell_type_abundances
 from distance_test import distanceCheck
 import warnings
 from scipy.sparse import issparse
@@ -162,17 +162,6 @@ def calculate_sample_distances_cell_proprotion(
         visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
     except Exception as e:
         print(f"Warning: Failed to create distance heatmap for proportion_DR: {e}")
-
-    try:
-        visualizeGroupRelationship(
-            sample_distance_matrix, 
-            outputDir=proportion_output_dir, 
-            adata=pseudobulk_adata,
-            grouping_columns=grouping_columns,
-            heatmap_path=os.path.join(proportion_output_dir, 'sample_proportion_DR_relationship.pdf')
-        )
-    except Exception as e:
-        print(f"Warning: Failed to create group relationship visualization for proportion_DR: {e}")
 
     print(f"EMD-based distance matrix saved to: {proportion_output_dir}")
     return sample_distance_matrix

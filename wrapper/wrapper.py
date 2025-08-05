@@ -577,9 +577,6 @@ def wrapper(
     if atac_trajectory_visualization_label is None:
         atac_trajectory_visualization_label = ['sev.level']
 
-    # ========================================
-    # RNA PIPELINE
-    # ========================================
     if run_rna_pipeline:
         print("\n" + "="*60)
         print("RUNNING RNA PIPELINE")
@@ -927,9 +924,6 @@ def wrapper(
                 import traceback
                 traceback.print_exc()
     
-    # ========================================
-    # MULTIOMICS PIPELINE
-    # ========================================
     if run_multiomics_pipeline:
         print("\n" + "="*60)
         print("RUNNING MULTIOMICS PIPELINE")
@@ -1091,9 +1085,6 @@ def wrapper(
                 import traceback
                 traceback.print_exc()
     
-    # ========================================
-    # FINAL SUMMARY
-    # ========================================
     print("\n" + "="*60)
     print("PIPELINE EXECUTION SUMMARY")
     print("="*60)
