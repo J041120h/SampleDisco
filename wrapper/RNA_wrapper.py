@@ -120,21 +120,18 @@ def rna_wrapper(
     summary_sample_csv_path=None,
     sample_distance_methods=None,
     
-    # ===== Visualization Parameters =====
+    # ===== Updated Visualization Parameters =====
     verbose_Visualization=True,
     trajectory_visualization_label=['sev.level'],
     age_bin_size=None,
+    age_column='age',
     dot_size=3,
+    
+    # Updated visualization flags to match new function
     plot_dendrogram_flag=True,
-    plot_cell_umap_by_plot_group_flag=True,
     plot_umap_by_cell_type_flag=True,
-    plot_pca_2d_flag=True,
-    plot_pca_3d_flag=True,
-    plot_3d_cells_flag=True,
-    plot_cell_type_proportions_pca_flag=True,
-    plot_cell_type_expression_pca_flag=True,
-    plot_pseudobulk_batch_test_expression_flag=False,
-    plot_pseudobulk_batch_test_proportion_flag=False,
+    plot_cell_type_proportions_pca_flag=False,
+    plot_cell_type_expression_umap_flag=False,
     
     # ===== Cluster Based DEG =====
     Kmeans_based_cluster_flag=False,
@@ -658,32 +655,31 @@ def rna_wrapper(
         
         status_flags["rna"]["cluster_dge"] = True
     
-    # Step 7: Visualization
+    # Step 7: Visualization - UPDATED TO MATCH NEW FUNCTION SIGNATURE
     if visualize_data:
         print("Starting visualization...")
+        if not status_flags["rna"]["cell_type_cluster"]:
+            if plot_dendrogram_flag:
+                raise ValueError("Cell type clustering is required before dendrogram visualization.")
+        
         if not status_flags["rna"]["dimensionality_reduction"]:
-            if (plot_pca_2d_flag or plot_pca_3d_flag or plot_3d_cells_flag or 
-                plot_cell_type_proportions_pca_flag or plot_cell_type_expression_pca_flag or 
-                plot_pseudobulk_batch_test_expression_flag or plot_pseudobulk_batch_test_proportion_flag):
-                raise ValueError("Dimensionality reduction is required before the required visualization.")
+            if (plot_cell_type_proportions_pca_flag or plot_cell_type_expression_umap_flag):
+                raise ValueError("Dimensionality reduction is required before the requested visualization.")
         
         visualization(
-            adata_sample_diff=AnnData_sample,
-            output_dir=os.path.join(rna_output_dir, 'visualization'),
+            AnnData_cell=AnnData_cell,
+            AnnData_sample=AnnData_sample,
+            pseudobulk_anndata=pseudobulk_anndata,
+            output_dir=rna_output_dir,
             grouping_columns=grouping_columns,
             age_bin_size=age_bin_size,
+            age_column=age_column,
             verbose=verbose_Visualization,
             dot_size=dot_size,
             plot_dendrogram_flag=plot_dendrogram_flag,
-            plot_umap_by_plot_group_flag=plot_cell_umap_by_plot_group_flag,
             plot_umap_by_cell_type_flag=plot_umap_by_cell_type_flag,
-            plot_pca_2d_flag=plot_pca_2d_flag,
-            plot_pca_3d_flag=plot_pca_3d_flag,
-            plot_3d_cells_flag=plot_3d_cells_flag,
             plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
-            plot_cell_type_expression_pca_flag=plot_cell_type_expression_pca_flag,
-            plot_pseudobulk_batch_test_expression_flag=plot_pseudobulk_batch_test_expression_flag,
-            plot_pseudobulk_batch_test_proportion_flag=plot_pseudobulk_batch_test_proportion_flag
+            plot_cell_type_expression_umap_flag=plot_cell_type_expression_umap_flag
         )
         status_flags["rna"]["visualization"] = True
     

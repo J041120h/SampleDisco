@@ -125,35 +125,3 @@ def visualization(
 
     if verbose:
         print("[visualization] All requested visualizations saved.")
-
-if __name__ == "__main__":
-    rna_output_dir = "/Users/harry/Desktop/GenoDistance/result/rna"
-    temp_cell_path = os.path.join(rna_output_dir, "preprocess", "adata_cell.h5ad")
-    temp_sample_path = os.path.join(rna_output_dir, "preprocess", "adata_sample.h5ad")
-    if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
-        raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
-    AnnData_cell_path = temp_cell_path
-    AnnData_sample_path = temp_sample_path
-    
-    AnnData_cell = sc.read(AnnData_cell_path)
-    AnnData_sample = sc.read(AnnData_sample_path)
-    temp_pseudobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
-    if not os.path.exists(temp_pseudobulk_path):
-        raise ValueError("dimensionality_reduction data paths are not provided and default files path do not exist.")
-    pseudobulk_anndata = sc.read(temp_pseudobulk_path)
-
-    visualization(
-    AnnData_cell,
-    AnnData_sample,
-    pseudobulk_anndata,
-    rna_output_dir,
-    grouping_columns=['batch', 'sev.level'],
-    age_bin_size=None,
-    verbose=True,
-    dot_size=3,
-
-    plot_dendrogram_flag=True,
-    plot_umap_by_cell_type_flag=True,
-    plot_cell_type_proportions_pca_flag=True,
-    plot_cell_type_expression_umap_flag=True,
-)

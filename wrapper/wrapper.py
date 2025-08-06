@@ -130,21 +130,18 @@ def wrapper(
     rna_summary_sample_csv_path: Optional[str] = None,
     rna_sample_distance_methods: Optional[List[str]] = None,
     
-    # RNA Visualization Parameters
+    # ===== UPDATED RNA VISUALIZATION PARAMETERS =====
     rna_verbose_visualization: bool = True,
     rna_trajectory_visualization_label: List[str] = None,
     rna_age_bin_size: Optional[int] = None,
+    rna_age_column: str = 'age',  # Added age_column parameter
     rna_dot_size: int = 3,
+    
+    # Updated visualization flags to match new function signature
     rna_plot_dendrogram_flag: bool = True,
-    rna_plot_cell_umap_by_plot_group_flag: bool = True,
     rna_plot_umap_by_cell_type_flag: bool = True,
-    rna_plot_pca_2d_flag: bool = True,
-    rna_plot_pca_3d_flag: bool = True,
-    rna_plot_3d_cells_flag: bool = True,
-    rna_plot_cell_type_proportions_pca_flag: bool = True,
-    rna_plot_cell_type_expression_pca_flag: bool = True,
-    rna_plot_pseudobulk_batch_test_expression_flag: bool = False,
-    rna_plot_pseudobulk_batch_test_proportion_flag: bool = False,
+    rna_plot_cell_type_proportions_pca_flag: bool = False,  # Changed default to False
+    rna_plot_cell_type_expression_umap_flag: bool = False,  # Renamed from expression_pca to expression_umap
     
     # RNA Cluster Based DEG
     rna_kmeans_based_cluster_flag: bool = False,
@@ -659,7 +656,7 @@ def wrapper(
                 
                 # Trajectory analysis parameters
                 trajectory_supervised=rna_trajectory_supervised,
-                n_components_for_cca_rna = n_components_for_cca_rna,
+                n_components_for_cca_rna=n_components_for_cca_rna,
                 cca_output_dir=rna_cca_output_dir,
                 sev_col_cca=rna_sev_col_cca,
                 cca_optimal_cell_resolution=rna_cca_optimal_cell_resolution,
@@ -689,21 +686,18 @@ def wrapper(
                 summary_sample_csv_path=rna_summary_sample_csv_path,
                 sample_distance_methods=rna_sample_distance_methods,
                 
-                # Visualization parameters
+                # ===== UPDATED VISUALIZATION PARAMETERS =====
                 verbose_Visualization=rna_verbose_visualization,
                 trajectory_visualization_label=rna_trajectory_visualization_label,
                 age_bin_size=rna_age_bin_size,
+                age_column=rna_age_column,  # Added age_column parameter
                 dot_size=rna_dot_size,
+                
+                # Updated visualization flags to match new function signature
                 plot_dendrogram_flag=rna_plot_dendrogram_flag,
-                plot_cell_umap_by_plot_group_flag=rna_plot_cell_umap_by_plot_group_flag,
                 plot_umap_by_cell_type_flag=rna_plot_umap_by_cell_type_flag,
-                plot_pca_2d_flag=rna_plot_pca_2d_flag,
-                plot_pca_3d_flag=rna_plot_pca_3d_flag,
-                plot_3d_cells_flag=rna_plot_3d_cells_flag,
                 plot_cell_type_proportions_pca_flag=rna_plot_cell_type_proportions_pca_flag,
-                plot_cell_type_expression_pca_flag=rna_plot_cell_type_expression_pca_flag,
-                plot_pseudobulk_batch_test_expression_flag=rna_plot_pseudobulk_batch_test_expression_flag,
-                plot_pseudobulk_batch_test_proportion_flag=rna_plot_pseudobulk_batch_test_proportion_flag,
+                plot_cell_type_expression_umap_flag=rna_plot_cell_type_expression_umap_flag,
                 
                 # Cluster based DEG
                 Kmeans_based_cluster_flag=rna_kmeans_based_cluster_flag,
@@ -782,7 +776,7 @@ def wrapper(
                 atac_visualization_processing=atac_visualization_processing,
                 trajectory_analysis_atac=atac_trajectory_analysis,
                 sample_distance_calculation=atac_sample_distance_calculation,
-                atac_sample_cluster = atac_sample_cluster,
+                atac_sample_cluster=atac_sample_cluster,
                 cluster_DGE=atac_cluster_dge,
                 trajectory_DGE=atac_trajectory_dge,
                 visualize_data=atac_visualize_data,
@@ -834,7 +828,7 @@ def wrapper(
                 
                 # Trajectory analysis parameters
                 trajectory_supervised_atac=atac_trajectory_supervised,
-                n_components_for_cca_atac = n_components_for_cca_atac,
+                n_components_for_cca_atac=n_components_for_cca_atac,
                 sev_col_cca=atac_sev_col_cca,
                 trajectory_verbose=atac_trajectory_verbose,
                 cca_pvalue=atac_cca_pvalue,
