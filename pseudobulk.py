@@ -8,7 +8,7 @@ import scanpy as sc
 import harmonypy as hm
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from Visualization import visualization
+from visualization_helper import visualization
 from combat.pycombat import pycombat
 import warnings
 import contextlib

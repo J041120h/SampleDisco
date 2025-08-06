@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import pdist, squareform
-from Visualization import visualizeGroupRelationship, visualizeDistanceMatrix
+from visualization_helper import visualizeGroupRelationship, visualizeDistanceMatrix
 from typing import Optional, List
 from distance_test import distanceCheck
 from .EMD import EMD_distances

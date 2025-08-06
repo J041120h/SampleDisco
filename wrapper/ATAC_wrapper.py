@@ -13,7 +13,7 @@ from TSCAN import TSCAN
 from sample_distance.sample_distance import sample_distance
 from cluster import cluster
 from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results
-from Visualization import visualization
+from visualization_helper import visualization
 from cell_type_annotation import annotate_cell_types_with_celltypist
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

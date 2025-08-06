@@ -6,7 +6,7 @@ import sys
 from pseudo_adata import compute_pseudobulk_adata
 from preprocess import preprocess
 from sample_distance.sample_distance import sample_distance
-from Visualization import visualization
+from visualization_helper import visualization
 from DR import dimension_reduction
 from CCA import CCA_Call
 from Cell_type import cell_types, cell_type_assign

@@ -9,7 +9,7 @@ import warnings
 from scipy.sparse import issparse
 from scipy.spatial.distance import jensenshannon 
 from anndata._core.aligned_df import ImplicitModificationWarning
-from Visualization import plot_cell_type_abundances, visualizeDistanceMatrix
+from visualization_helper import plot_cell_type_abundances, visualizeDistanceMatrix
 from distance_test import distanceCheck
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)

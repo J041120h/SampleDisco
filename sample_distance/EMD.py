@@ -7,7 +7,7 @@ from scipy.cluster.hierarchy import linkage
 import seaborn as sns
 from pyemd import emd
 from anndata import AnnData
-from Visualization import visualizeDistanceMatrix,plot_cell_type_abundances
+from visualization_helper import visualizeDistanceMatrix,plot_cell_type_abundances
 from distance_test import distanceCheck
 import warnings
 from scipy.sparse import issparse
