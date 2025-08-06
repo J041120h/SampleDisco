@@ -5,7 +5,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist
 import scanpy as sc
 from Grouping import find_sample_grouping
-from visualization_emebedding import plot_sample_cell_proportions_embedding, plot_sample_cell_expression_embedding
+from visualization_emebedding import plot_proportion_embedding, plot_expression_embedding
 
 def _preprocessing(
     adata_sample_diff,
@@ -103,23 +103,25 @@ def visualization(
     if plot_dendrogram_flag:
         plot_dendrogram(AnnData_cell, output_dir, verbose=verbose)
 
-    # # 4. Cell type proportions PCA embedding
-    # if plot_cell_type_proportions_pca_flag:
-    #     plot_sample_cell_proportions_embedding(
-    #         adata_sample_diff,
-    #         os.path.dirname(output_dir),  # pass parent (function itself appends 'harmony')
-    #         grouping_columns=grouping_columns,
-    #         verbose=verbose
-    #     )
+    if plot_cell_type_proportions_pca_flag:
+        for col in grouping_columns:
+            plot_proportion_embedding(
+                adata = pseudobulk_anndata,
+                color_col = col,
+                output_dir = output_dir, 
+                grouping_columns=grouping_columns,
+                verbose=verbose
+            )
 
-    # # 5. Cell expression UMAP embedding
-    # if plot_cell_type_expression_umap_flag:
-    #     plot_sample_cell_expression_embedding(
-    #         adata_sample_diff, 
-    #         os.path.dirname(output_dir),  # pass parent (function itself appends 'harmony')
-    #         grouping_columns=grouping_columns,
-    #         verbose=verbose
-    #     )
+    if plot_cell_type_expression_umap_flag:
+        for col in grouping_columns:
+            plot_expression_embedding(
+                adata = pseudobulk_anndata,
+                color_col = col,
+                output_dir = output_dir, 
+                grouping_columns=grouping_columns,
+                verbose=verbose
+            )
 
     if verbose:
         print("[visualization] All requested visualizations saved.")
@@ -145,7 +147,7 @@ if __name__ == "__main__":
     AnnData_sample,
     pseudobulk_anndata,
     rna_output_dir,
-    grouping_columns=['sev.level'],
+    grouping_columns=['batch', 'sev.level'],
     age_bin_size=None,
     verbose=True,
     dot_size=3,
