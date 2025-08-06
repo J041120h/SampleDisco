@@ -1,5 +1,8 @@
 import os
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.spatial.distance import pdist
 import scanpy as sc
 from Grouping import find_sample_grouping
 from visualization_emebedding import plot_sample_cell_proportions_embedding, plot_sample_cell_expression_embedding
@@ -35,61 +38,35 @@ def _preprocessing(
     
     return output_dir
 
-def _plot_umap_by_cell_type(adata_sample_diff, output_dir, dot_size, verbose):
-    """
-    UMAP colored by 'cell_type' with cell type labels on cluster centroids.
-    """
-    if verbose:
-        print("[plot_umap_by_cell_type] UMAP colored by 'cell_type'.")
+def plot_dendrogram(AnnData_cell, output_dir, verbose=True):
+    if 'X_pca_harmony' not in AnnData_cell.obsm.keys():
+        raise ValueError("X_pca_harmony not found in AnnData_cell.obsm.")
     
-    plt.figure(figsize=(12, 10))
+    X_harmony = AnnData_cell.obsm['X_pca_harmony']
+    cell_type_col = next((col for col in ['cell_type', 'celltype', 'cluster', 'leiden', 'seurat_clusters'] if col in AnnData_cell.obs.columns), None)
+    if cell_type_col is None:
+        raise ValueError("No cell type column found.")
     
-    # Create the UMAP plot
-    sc.pl.umap(
-        adata_sample_diff,
-        color='cell_type',
-        legend_loc=None,
-        frameon=False,
-        size=dot_size,
-        show=False
-    )
-    
-    # Get UMAP coordinates
-    umap_coords = adata_sample_diff.obsm['X_umap']
-    
-    # Get cell type labels
-    cell_types = adata_sample_diff.obs['cell_type']
-    
-    # Calculate centroids for each cell type and add labels
+    cell_types = AnnData_cell.obs[cell_type_col].astype(str)
     unique_cell_types = cell_types.unique()
-    
-    for cell_type in unique_cell_types:
-        # Get indices for this cell type
-        mask = cell_types == cell_type
-        
-        # Calculate centroid coordinates
-        centroid_x = umap_coords[mask, 0].mean()
-        centroid_y = umap_coords[mask, 1].mean()
-        
-        # Add text label at centroid
-        plt.text(
-            centroid_x, centroid_y, 
-            str(cell_type),
-            fontsize=12,
-            fontweight='bold',
-            ha='center',
-            va='center',
-            bbox=dict(
-                boxstyle='round,pad=0.3',
-                facecolor='white',
-                edgecolor='black',
-                alpha=0.8
-            )
-        )
-    
+    if verbose:
+        print(f"Found {len(unique_cell_types)} unique cell types.")
+
+    cell_type_embeddings = [np.mean(X_harmony[cell_types == ct], axis=0) for ct in unique_cell_types if np.sum(cell_types == ct) > 0]
+    condensed_distances = pdist(cell_type_embeddings, metric='euclidean')
+    linkage_matrix = linkage(condensed_distances, method='ward')
+
+    plt.figure(figsize=(12, 8))
+    dendrogram(linkage_matrix, labels=unique_cell_types, leaf_rotation=45, leaf_font_size=10, color_threshold=0.7 * max(linkage_matrix[:, 2]))
+    plt.title('Cell Type Relationship Dendrogram', fontsize=16, fontweight='bold', pad=20)
+    plt.xlabel('Cell Types', fontsize=12, fontweight='bold')
+    plt.ylabel('Distance', fontsize=12, fontweight='bold')
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'sample_umap_by_cell_type.pdf'), bbox_inches='tight')
+    os.makedirs(output_dir, exist_ok=True)
+    plt.savefig(os.path.join(output_dir, 'cell_type_dendrogram.png'), dpi=300, bbox_inches='tight')
     plt.close()
+    if verbose:
+        print(f"Dendrogram saved to: {os.path.join(output_dir, 'cell_type_dendrogram.png')}")
 
 def visualization(
     AnnData_cell,
@@ -122,13 +99,9 @@ def visualization(
             verbose
         )
 
-    # # 2. Dendrogram
-    # if plot_dendrogram_flag:
-    #     _plot_dendrogram(adata_sample_diff, output_dir, verbose)
-
-    # # 3. UMAP by cell type
-    # if plot_umap_by_cell_type_flag:
-    #     _plot_umap_by_cell_type(adata_sample_diff, output_dir, dot_size, verbose)
+    # 2. Dendrogram
+    if plot_dendrogram_flag:
+        plot_dendrogram(AnnData_cell, output_dir, verbose=verbose)
 
     # # 4. Cell type proportions PCA embedding
     # if plot_cell_type_proportions_pca_flag:
@@ -179,6 +152,6 @@ if __name__ == "__main__":
 
     plot_dendrogram_flag=True,
     plot_umap_by_cell_type_flag=True,
-    plot_cell_type_proportions_pca_flag=False,
-    plot_cell_type_expression_umap_flag=False,
+    plot_cell_type_proportions_pca_flag=True,
+    plot_cell_type_expression_umap_flag=True,
 )

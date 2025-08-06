@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import pdist, squareform
-from visualization_helper import visualizeGroupRelationship, visualizeDistanceMatrix
+from visualization_helper import visualizeDistanceMatrix
 from typing import Optional, List
 from distance_test import distanceCheck
 from .EMD import EMD_distances
@@ -137,17 +137,6 @@ def calculate_sample_distances_DR(
         )
     except Exception as e:
         print(f"Warning: Failed to create distance heatmap for {dr_name}: {e}")
-    
-    try:
-        visualizeGroupRelationship(
-            distance_df, 
-            outputDir=output_dir, 
-            adata=adata, 
-            grouping_columns=grouping_columns,
-            heatmap_path=os.path.join(output_dir, f'sample_{dr_name}_relationship.pdf')
-        )
-    except Exception as e:
-        print(f"Warning: Failed to create group relationship visualization for {dr_name}: {e}")
     
     print(f"{dr_name}-based distance matrix saved to: {output_dir}")
     return distance_df

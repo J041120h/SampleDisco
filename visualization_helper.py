@@ -6,6 +6,93 @@ import seaborn as sns
 import scanpy as sc
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage
+from typing import List, Tuple
+
+import matplotlib.pyplot as plt
+from typing import Tuple
+
+def generate_umap_visualizations(
+    adata: sc.AnnData,
+    output_dir: str,
+    groupby: str = "cell_type",
+    figsize: Tuple[int, int] = (12, 8),
+    point_size: float = 20,
+    dpi: int = 300,
+    palette: str = "tab20",
+    verbose: bool = True,
+) -> sc.AnnData:
+    """
+    Generate and save UMAP visualization plots. 
+    
+    This simplified version assumes that:
+    1. Neighbors graph already exists (computed by cell_types function)
+    2. UMAP coordinates already exist (computed by cell_types function)
+    3. Focus is purely on visualization generation
+    
+    Parameters
+    ----------
+    adata
+        Annotated data matrix with existing neighbors and UMAP.
+    output_dir
+        Folder for the PNG figure.
+    groupby
+        .obs column used for colouring the UMAP.
+    figsize, point_size, dpi
+        Plot appearance parameters.
+    palette
+        Color palette for the plot.
+    verbose
+        Print progress messages.
+        
+    Returns
+    -------
+    AnnData
+        The same object (unchanged).
+    """
+    if verbose:
+        print("[generate_umap_visualizations] Generating UMAP plots...")
+    
+    # Validation checks
+    if groupby not in adata.obs.columns:
+        raise ValueError(f"Column '{groupby}' not found in adata.obs")
+    
+    if "X_umap" not in adata.obsm:
+        raise ValueError("UMAP coordinates not found. Please run UMAP computation first.")
+    
+    # Create output directory
+    output_dir = os.path.join(output_dir, "preprocess")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Set figure parameters
+    sc.settings.set_figure_params(dpi=dpi, facecolor="white", figsize=figsize)
+    
+    if verbose:
+        n_categories = adata.obs[groupby].nunique()
+        print(f"[generate_umap_visualizations] → Plotting UMAP colored by '{groupby}' ({n_categories} categories)")
+    
+    # Generate the plot
+    fig = sc.pl.umap(
+        adata,
+        color=groupby,
+        palette=palette,
+        size=point_size,
+        alpha=0.8,
+        legend_loc="right margin",
+        legend_fontsize=10,
+        title=f"UMAP – {groupby.replace('_', ' ').title()}",
+        show=False,
+        return_fig=True,
+    )
+    
+    # Save the plot
+    outfile = os.path.join(output_dir, f"umap_{groupby}.png")
+    fig.savefig(outfile, dpi=dpi, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    
+    if verbose:
+        print(f"[generate_umap_visualizations] ✓ Saved: {outfile}")
+    
+    return adata
 
 
 #------------------- VISUALIZATION FOR SAMPLE DISTANCE -------------------

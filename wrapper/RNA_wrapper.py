@@ -6,16 +6,15 @@ import sys
 from pseudo_adata import compute_pseudobulk_adata
 from preprocess import preprocess
 from sample_distance.sample_distance import sample_distance
-from visualization_helper import visualization
+from visualization_other import visualization
 from DR import dimension_reduction
 from CCA import CCA_Call
 from Cell_type import cell_types, cell_type_assign
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
-from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results, run_differential_analysis_for_all_paths
+from trajectory_diff_gene import run_integrated_differential_analysis
 from cluster import cluster
 from cell_type_annotation import annotate_cell_types_with_celltypist
-from cell_proportion_pseudotime import visualize_cell_proportion_pseudotime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from sample_clustering.RAISIN import *

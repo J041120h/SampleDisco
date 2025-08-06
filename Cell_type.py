@@ -7,6 +7,7 @@ from scipy.cluster.hierarchy import fcluster
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
+from visualization_helper import generate_umap_visualizations
 
 def cell_types(
     adata, 
@@ -26,13 +27,20 @@ def cell_types(
     max_resolution=5.0,
     resolution_step=0.5,
     _recursion_depth=0,
-    verbose=True
+    verbose=True,
+    # New parameters for UMAP visualization
+    generate_plots=True,
+    figsize=(12, 8),
+    point_size=20,
+    dpi=300,
+    plot_palette="tab20"
 ):
     """
     Assigns cell types based on existing annotations or performs Leiden clustering if no annotation exists.
     Uses recursive strategy to adaptively find optimal clustering resolution when target clusters specified.
     
     IMPROVED: Now uses dimension reduction (X_pca_harmony) for dendrogram construction instead of marker genes.
+    UPDATED: Integrated UMAP visualization generation with existing neighborhood graph.
 
     Parameters:
     - adata: AnnData object
@@ -51,6 +59,9 @@ def cell_types(
     - resolution_step: Step size for increasing resolution
     - _recursion_depth: Internal parameter (do not set manually)
     - verbose: Whether to print progress messages
+    - generate_plots: Boolean, whether to generate UMAP plots
+    - figsize, point_size, dpi: Plot appearance parameters
+    - plot_palette: Color palette for UMAP plots
 
     Returns:
     - Updated AnnData object with assigned cell types
@@ -175,7 +186,8 @@ def cell_types(
                         use_rep=use_rep,
                         num_PCs=num_PCs,
                         _recursion_depth=_recursion_depth + 1,
-                        verbose=verbose
+                        verbose=verbose,
+                        generate_plots=False  # Don't generate plots in recursion
                     )
             
             else:  # num_clusters < n_target_clusters
@@ -208,7 +220,8 @@ def cell_types(
                         max_resolution=max_resolution,
                         resolution_step=resolution_step,
                         _recursion_depth=_recursion_depth + 1,
-                        verbose=verbose
+                        verbose=verbose,
+                        generate_plots=False  # Don't generate plots in recursion
                     )
         
         else:
@@ -250,17 +263,32 @@ def cell_types(
         if verbose:
             print("[cell_types] Finished assigning cell types.")
         
-        # Compute UMAP if requested
+        # Compute UMAP if requested (neighbors already computed above)
         if umap:
             if verbose:
                 print("[cell_types] Computing UMAP...")
             sc.tl.umap(adata, min_dist=0.5)
         
+        # Generate UMAP visualization plots if requested
+        if generate_plots and umap and output_dir:
+            if verbose:
+                print("[cell_types] Generating UMAP visualizations...")
+            adata = generate_umap_visualizations(
+                adata=adata,
+                output_dir=output_dir,
+                groupby='cell_type',
+                figsize=figsize,
+                point_size=point_size,
+                dpi=dpi,
+                palette=plot_palette,
+                verbose=verbose
+            )
+        
         # Save results if requested
         if Save and output_dir:
-            output_dir = os.path.join(output_dir, 'preprocess')
-            os.makedirs(output_dir, exist_ok=True)
-            save_path = os.path.join(output_dir, 'adata_cell.h5ad')
+            preprocess_dir = os.path.join(output_dir, 'preprocess')
+            os.makedirs(preprocess_dir, exist_ok=True)
+            save_path = os.path.join(preprocess_dir, 'adata_cell.h5ad')
             adata.write(save_path)
             if verbose:
                 print(f"[cell_types] Saved AnnData object to {save_path}")
@@ -439,124 +467,3 @@ def cell_type_assign(adata_cluster, adata, Save=True, output_dir=None, verbose=T
         sc.write(save_path, adata)
         if verbose:
             print(f"[cell_types] Saved AnnData object to {save_path}")
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import scanpy as sc
-import os
-import time
-
-import os
-import matplotlib.pyplot as plt
-import scanpy as sc
-import numpy as np
-from typing import Tuple
-
-def generate_umap_visualizations(
-    adata: sc.AnnData,
-    output_dir: str,
-    groupby: str = "cell_type",
-    figsize: Tuple[int, int] = (12, 8),
-    point_size: float = 20,
-    dpi: int = 300,
-    n_neighbors: int = 15,
-    n_pcs: int | None = 50,
-    random_state: int = 42,
-    verbose: bool = True,
-) -> sc.AnnData:
-    """
-    Compute (if needed) neighbors ➔ UMAP ➔ save figure.
-
-    Parameters
-    ----------
-    adata
-        Annotated data matrix.
-    output_dir
-        Folder for the PNG figure.
-    groupby
-        .obs column used for colouring the UMAP.
-    figsize, point_size, dpi
-        Plot appearance.
-    n_neighbors, n_pcs
-        Parameters passed to ``sc.pp.neighbors`` when a graph is absent.
-        If ``n_pcs`` is None the whole X is used.
-    random_state
-        For reproducibility in both neighbors & UMAP.
-    verbose
-        Print progress messages.
-
-    Returns
-    -------
-    AnnData
-        The same object with ``neighbors`` and ``X_umap`` filled in.
-    """
-    if verbose:
-        print("[generate_umap_visualizations] Starting …")
-
-    if groupby not in adata.obs.columns:
-        raise ValueError(f"Column '{groupby}' not found in adata.obs")
-
-    # ------------------------------------------------------------------ #
-    # 1. Nearest-neighbour graph (if absent)
-    # ------------------------------------------------------------------ #
-    need_neighbors = (
-        "neighbors" not in adata.uns
-        or not {"distances", "connectivities"}.issubset(adata.obsp.keys())
-    )
-
-    if need_neighbors:
-        if verbose:
-            print("[generate_umap_visualizations] → Computing neighbors")
-
-        # Ensure PCA exists if we plan to use PCs
-        if n_pcs is not None and "X_pca" not in adata.obsm:
-            if verbose:
-                print("  ⤷ PCA not found – running sc.tl.pca")
-            sc.tl.pca(adata, svd_solver="arpack")
-
-        sc.pp.neighbors(
-            adata,
-            n_neighbors=n_neighbors,
-            n_pcs=n_pcs,
-            random_state=random_state,
-        )
-
-    # ------------------------------------------------------------------ #
-    # 2. UMAP embedding (if absent)
-    # ------------------------------------------------------------------ #
-    if "X_umap" not in adata.obsm:
-        if verbose:
-            print("[generate_umap_visualizations] → Computing UMAP")
-        sc.tl.umap(adata, min_dist=0.5, random_state=random_state)
-
-    # ------------------------------------------------------------------ #
-    # 3. Plot & save
-    # ------------------------------------------------------------------ #
-    os.makedirs(output_dir, exist_ok=True)
-    sc.settings.set_figure_params(dpi=dpi, facecolor="white", figsize=figsize)
-
-    if verbose:
-        print(f"[generate_umap_visualizations] → Plotting coloured by '{groupby}'")
-
-    fig = sc.pl.umap(
-        adata,
-        color=groupby,
-        palette="tab20",
-        size=point_size,
-        alpha=0.8,
-        legend_loc="right margin",
-        legend_fontsize=10,
-        title=f"UMAP – {groupby.replace('_', ' ').title()}",
-        show=False,
-        return_fig=True,
-    )
-
-    outfile = os.path.join(output_dir, f"umap_{groupby}.png")
-    fig.savefig(outfile, dpi=dpi, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-
-    if verbose:
-        print(f"[generate_umap_visualizations] ✓ Saved: {outfile}")
-
-    return adata

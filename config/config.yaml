@@ -24,10 +24,10 @@ rna_output_dir: null
 
 # RNA Process Control Flags
 rna_preprocessing: false
-rna_cell_type_cluster: false
+rna_cell_type_cluster: true
 rna_dimensionality_reduction: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: true
+rna_trajectory_analysis: false
 rna_sample_cluster: false
 rna_cluster_dge: false
 rna_visualize_data: false
