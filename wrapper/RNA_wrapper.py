@@ -23,7 +23,6 @@ from sample_clustering.RAISIN_TEST import *
 def rna_wrapper(
     # ===== Required Parameters =====
     rna_count_data_path=None,
-    rna_sample_meta_path=None,
     rna_output_dir=None,
     sample_col='sample',
     
@@ -39,6 +38,7 @@ def rna_wrapper(
     visualize_data=True,
     
     # ===== Basic Parameters =====
+    rna_sample_meta_path=None,
     grouping_columns=['sev.level'],
     cell_type_column='cell_type',
     cell_meta_path=None,
@@ -172,8 +172,8 @@ def rna_wrapper(
     if trajectory_diff_gene_output_dir is None:
         trajectory_diff_gene_output_dir = os.path.join(rna_output_dir, 'trajectoryDEG')
     
-    if any(x is None for x in (rna_count_data_path, rna_sample_meta_path, rna_output_dir)):
-        raise ValueError("Required parameters rna_count_data_path, rna_sample_meta_path, and output_dir must be provided.")
+    if any(x is None for x in (rna_count_data_path, rna_output_dir)):
+        raise ValueError("Required parameters rna_count_data_path, and output_dir must be provided.")
     
     # Initialize status flags if not provided
     if status_flags is None:

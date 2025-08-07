@@ -21,153 +21,127 @@ from integration.integration_validation import *
 from integration.integration_visualization import *
 
 def multiomics_wrapper(
-    # ========================================
-    # PIPELINE CONTROL FLAGS
-    # ========================================
-    run_glue: bool = True,
-    run_integrate_preprocess: bool = True,
-    run_compute_pseudobulk: bool = True,
-    run_process_pca: bool = True,
-    run_visualize_embedding: bool = True,
-    run_find_optimal_resolution: bool = False,
+    # ===== Required Parameters =====
+    rna_file=None,
+    atac_file=None,
+    multiomics_output_dir=None,
     
-    # ========================================
-    # GLUE FUNCTION PARAMETERS
-    # ========================================
-    # Data files
-    rna_file: str = None,
-    atac_file: str = None,
-    rna_sample_meta_file: str = None,
-    atac_sample_meta_file: str = None,
-    multiomics_output_dir: str = None,
+    # ===== Process Control Flags =====
+    run_glue=True,
+    run_integrate_preprocess=True,
+    run_compute_pseudobulk=True,
+    run_process_pca=True,
+    run_visualize_embedding=True,
+    run_find_optimal_resolution=False,
     
-    # Preprocessing parameters
-    ensembl_release: int = 98,
-    species: str = "homo_sapiens",
-    use_highly_variable: bool = True,
-    n_top_genes: int = 2000,
-    n_pca_comps: int = 50,
-    n_lsi_comps: int = 50,
-    lsi_n_iter: int = 15,
-    gtf_by: str = "gene_name",
-    flavor: str = "seurat_v3",
-    generate_umap: bool = False,
-    compression: str = "gzip",
-    random_state: int = 42,
-    metadata_sep: str = ",",
-    rna_sample_column: str = "sample",
-    atac_sample_column: str = "sample",
+    # ===== Basic Parameters =====
+    rna_sample_meta_file=None,
+    atac_sample_meta_file=None,
+    rna_sample_column="sample",
+    atac_sample_column="sample",
+    sample_column='sample',
+    sample_col='sample',
+    batch_col='batch',
+    celltype_col='cell_type',
+    multiomics_verbose=True,
+    save_intermediate=True,
+    use_gpu=True,
+    random_state=42,
     
-    # Training parameters
-    consistency_threshold: float = 0.05,
-    save_prefix: str = "glue",
+    # ===== GLUE Integration Parameters =====
+    ensembl_release=98,
+    species="homo_sapiens",
+    use_highly_variable=True,
+    n_top_genes=2000,
+    n_pca_comps=50,
+    n_lsi_comps=50,
+    lsi_n_iter=15,
+    gtf_by="gene_name",
+    flavor="seurat_v3",
+    generate_umap=False,
+    compression="gzip",
+    metadata_sep=",",
+    consistency_threshold=0.05,
+    save_prefix="glue",
+    k_neighbors=10,
+    use_rep="X_glue",
+    metric="cosine",
+    existing_cell_types=False,
+    n_target_clusters=10,
+    cluster_resolution=0.8,
+    use_rep_celltype="X_glue",
+    markers=None,
+    method='average',
+    metric_celltype='euclidean',
+    distance_mode='centroid',
+    generate_umap_celltype=True,
+    plot_columns=None,
     
-    # Gene activity computation parameters
-    k_neighbors: int = 10,
-    use_rep: str = "X_glue",
-    metric: str = "cosine",
-    use_gpu: bool = True,
-    existing_cell_types: bool = False,
-    n_target_clusters: int = 10,
-    cluster_resolution: float = 0.8,
-    use_rep_celltype: str = "X_glue",
-    markers: Optional[List] = None,
-    method: str = 'average',
-    metric_celltype: str = 'euclidean',
-    distance_mode: str = 'centroid',
-    generate_umap_celltype: bool = True,
+    # ===== Integration Preprocessing Parameters =====
+    integrate_output_dir=None,
+    h5ad_path=None,
+    min_cells_sample=1,
+    min_cell_gene=10,
+    min_features=500,
+    pct_mito_cutoff=20,
+    exclude_genes=None,
+    doublet=True,
     
-    # Visualization parameters
-    plot_columns: Optional[List[str]] = None,
+    # ===== Pseudobulk Parameters =====
+    pseudobulk_output_dir=None,
+    Save=True,
+    n_features=2000,
+    normalize=True,
+    target_sum=1e4,
+    atac=False,
     
-    # ========================================
-    # INTEGRATE_PREPROCESS FUNCTION PARAMETERS
-    # ========================================
-    integrate_output_dir: Optional[str] = None,
-    h5ad_path: Optional[str] = None,
-    sample_column: str = 'sample',
-    min_cells_sample: int = 1,
-    min_cell_gene: int = 10,
-    min_features: int = 500,
-    pct_mito_cutoff: int = 20,
-    exclude_genes: Optional[List] = None,
-    doublet: bool = True,
+    # ===== PCA Parameters =====
+    pca_sample_col='sample',
+    n_expression_pcs=10,
+    n_proportion_pcs=10,
+    pca_output_dir=None,
+    integrated_data=False,
+    not_save=False,
+    pca_atac=False,
+    use_snapatac2_dimred=False,
     
-    # ========================================
-    # COMPUTE_PSEUDOBULK_ADATA FUNCTION PARAMETERS
-    # ========================================
-    batch_col: str = 'batch',
-    sample_col: str = 'sample',
-    celltype_col: str = 'cell_type',
-    pseudobulk_output_dir: Optional[str] = None,
-    Save: bool = True,
-    n_features: int = 2000,
-    normalize: bool = True,
-    target_sum: float = 1e4,
-    atac: bool = False,
+    # ===== Visualization Parameters =====
+    modality_col='modality',
+    color_col='color',
+    target_modality='ATAC',
+    expression_key='X_DR_expression',
+    proportion_key='X_DR_proportion',
+    figsize=(20, 8),
+    point_size=60,
+    alpha=0.8,
+    colormap='viridis',
+    viz_output_dir=None,
+    show_sample_names=False,
+    force_data_type=None,
     
-    # ========================================
-    # PROCESS_ANNDATA_WITH_PCA FUNCTION PARAMETERS
-    # ========================================
-    pca_sample_col: str = 'sample',
-    n_expression_pcs: int = 10,
-    n_proportion_pcs: int = 10,
-    pca_output_dir: Optional[str] = None,
-    integrated_data: bool = False,
-    not_save: bool = False,
-    pca_atac: bool = False,
-    use_snapatac2_dimred: bool = False,
+    # ===== Optimal Resolution Parameters =====
+    optimization_target="rna",
+    dr_type="expression",
+    resolution_n_features=40000,
+    sev_col="sev.level",
+    resolution_batch_col=None,
+    resolution_sample_col="sample",
+    resolution_modality_col="modality",
+    resolution_use_rep='X_glue',
+    num_DR_components=30,
+    num_PCs=20,
+    num_pvalue_simulations=1000,
+    n_pcs=2,
+    compute_pvalues=True,
+    visualize_embeddings=True,
+    resolution_output_dir=None,
     
-    # ========================================
-    # VISUALIZE_MULTIMODAL_EMBEDDING FUNCTION PARAMETERS
-    # ========================================
-    modality_col: str = 'modality',
-    color_col: str = 'color',
-    target_modality: str = 'ATAC',
-    expression_key: str = 'X_DR_expression',
-    proportion_key: str = 'X_DR_proportion',
-    figsize: Tuple[int, int] = (20, 8),
-    point_size: int = 60,
-    alpha: float = 0.8,
-    colormap: str = 'viridis',
-    viz_output_dir: Optional[str] = None,
-    show_sample_names: bool = False,
-    force_data_type: Optional[str] = None,
+    # ===== Paths for Skipping Steps =====
+    integrated_h5ad_path=None,
+    pseudobulk_h5ad_path=None,
     
-    # ========================================
-    # FIND_OPTIMAL_CELL_RESOLUTION_INTEGRATION FUNCTION PARAMETERS
-    # ========================================
-    optimization_target: str = "rna",  # "rna" or "atac"
-    dr_type: str = "expression",  # "expression" or "proportion"
-    resolution_n_features: int = 40000,
-    sev_col: str = "sev.level",
-    resolution_batch_col: Optional[str] = None,
-    resolution_sample_col: str = "sample",
-    resolution_modality_col: str = "modality",
-    resolution_use_rep: str = 'X_glue',
-    num_DR_components: int = 30,
-    num_PCs: int = 20,
-    num_pvalue_simulations: int = 1000,
-    n_pcs: int = 2,
-    compute_pvalues: bool = True,
-    visualize_embeddings: bool = True,
-    resolution_output_dir: Optional[str] = None,
-    
-    # ========================================
-    # GLOBAL PARAMETERS
-    # ========================================
-    multiomics_verbose: bool = True,
-    save_intermediate: bool = True,
-    
-    # Alternative input paths (for skipping early steps)
-    integrated_h5ad_path: Optional[str] = None,
-    pseudobulk_h5ad_path: Optional[str] = None,
-    
-    # ========================================
-    # STATUS FLAGS (NEW ADDITION)
-    # ========================================
-    status_flags: Optional[Dict[str, Any]] = None,
-    
+    # ===== System Parameters =====
+    status_flags=None,
 ) -> Dict[str, Any]:
     """
     Comprehensive wrapper for multi-modal single-cell analysis pipeline with all parameters explicitly defined
@@ -216,7 +190,7 @@ def multiomics_wrapper(
         - All intermediate data objects
     """
 
-    if any(var is None for var in [rna_file, atac_file, rna_sample_meta_file, atac_sample_meta_file, multiomics_output_dir]):
+    if any(var is None for var in [rna_file, atac_file, multiomics_output_dir]):
         raise ValueError("All parameters must be provided (none can be None)")
     
     # Initialize status flags if not provided
