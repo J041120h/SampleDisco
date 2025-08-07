@@ -17,27 +17,13 @@ from trajectory_diff_gene import run_integrated_differential_analysis, summarize
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
-
 def atac_wrapper(
-    # File paths and directories
+    # ===== Required Parameters =====
     atac_count_data_path=None,
     atac_output_dir=None,
-    atac_metadata_path=None,
-    atac_pseudobulk_output_dir=None,
-    atac_dr_output_dir=None,
-    atac_cca_output_dir=None,
-    
-    # Column specifications
     atac_sample_col="sample",
-    atac_batch_col=None,
-    atac_cell_type_column="cell_type",
     
-    # Pipeline configuration
-    atac_pipeline_verbose=True,
-    use_snapatac2_dimred=False,
-    use_gpu=False,
-    
-    # Process control flags
+    # ===== Process Control Flags =====
     atac_preprocessing=True,
     atac_cell_type_cluster=True,
     atac_pseudobulk_dimensionality_reduction=True,
@@ -46,16 +32,23 @@ def atac_wrapper(
     sample_distance_calculation=True,
     atac_sample_cluster=True,
     cluster_DGE=True,
-    visualize_data=True,
     atac_visualization_processing=True,
     
-    # QC and filtering parameters
+    # ===== Basic Parameters =====
+    atac_batch_col=None,
+    atac_cell_type_column="cell_type",
+    atac_metadata_path=None,
+    grouping_columns=['sev.level'],
+    atac_pipeline_verbose=True,
+    use_gpu=False,
+    verbose=True,
+    
+    # ===== Preprocessing Parameters =====
+    use_snapatac2_dimred=False,
     atac_min_cells=3,
     atac_min_genes=2000,
     atac_max_genes=15000,
     atac_min_cells_per_sample=10,
-    
-    # Processing parameters
     atac_doublet=True,
     atac_tfidf_scale_factor=1e4,
     atac_num_features=40000,
@@ -64,34 +57,35 @@ def atac_wrapper(
     atac_harmony_max_iter=30,
     atac_n_neighbors=15,
     atac_n_pcs=30,
-    
-    # Leiden clustering parameters
-    atac_leiden_resolution=0.8,
-    atac_existing_cell_types=False,
-    atac_n_target_cell_clusters=None,
-    
-    # UMAP parameters
     atac_umap_min_dist=0.3,
     atac_umap_spread=1.0,
     atac_umap_random_state=42,
     atac_plot_dpi=300,
     
-    # Paths for skipping preprocessing
+    # ===== Cell Type Clustering Parameters =====
+    atac_leiden_resolution=0.8,
+    atac_existing_cell_types=False,
+    atac_n_target_cell_clusters=None,
+    
+    # ===== Paths for Skipping Preprocessing =====
     atac_cell_path=None,
     atac_sample_path=None,
     
-    # Pseudobulk parameters
+    # ===== Pseudobulk Parameters =====
+    atac_pseudobulk_output_dir=None,
     atac_pseudobulk_n_features=50000,
     atac_pseudobulk_verbose=True,
     
-    # PCA parameters
+    # ===== Dimensionality Reduction Parameters =====
+    atac_dr_output_dir=None,
     atac_dr_n_expression_components=30,
     atac_dr_n_proportion_components=30,
     atac_dr_verbose=True,
     
-    # Trajectory analysis parameters
+    # ===== Trajectory Analysis Parameters =====
     trajectory_supervised_atac=True,
-    n_components_for_cca_atac = 2,
+    n_components_for_cca_atac=2,
+    atac_cca_output_dir=None,
     sev_col_cca="sev.level",
     trajectory_verbose=True,
     cca_pvalue=False,
@@ -100,26 +94,25 @@ def atac_wrapper(
     TSCAN_origin=None,
     trajectory_visualization_label=['sev.level'],
     
-    # Trajectory differential analysis parameters
+    # ===== Trajectory Differential Gene Parameters =====
     fdr_threshold=0.05,
     effect_size_threshold=1,
     top_n_genes=100,
     trajectory_diff_gene_covariate=None,
     num_splines=5,
     spline_order=3,
+    atac_trajectory_diff_gene_output_dir=None,
     visualization_gene_list=None,
     visualize_all_deg=True,
     top_n_heatmap=50,
     trajectory_diff_gene_verbose=True,
     top_gene_number=30,
-    atac_trajectory_diff_gene_output_dir=None,
     
-    # Sample distance parameters
+    # ===== Sample Distance Parameters =====
     sample_distance_methods=None,
     summary_sample_csv_path=None,
-    grouping_columns=['sev.level'],
     
-    # Clustering parameters
+    # ===== Clustering Parameters =====
     Kmeans_based_cluster_flag=False,
     Tree_building_method=['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
     proportion_test=False,
@@ -128,7 +121,7 @@ def atac_wrapper(
     cluster_number=4,
     user_provided_sample_to_clade=None,
     
-    # Visualization parameters
+    # ===== Visualization Parameters =====
     atac_figsize=(10, 8),
     atac_point_size=50,
     atac_visualization_grouping_columns=['current_severity'],
@@ -148,20 +141,13 @@ def atac_wrapper(
     plot_pseudobulk_batch_test_expression_flag=False,
     plot_pseudobulk_batch_test_proportion_flag=False,
     
-    # Additional parameters for functions
+    # ===== System Parameters =====
     sample_col='sample',
-    batch_col='batch',
-    verbose=True,
     status_flags=None,
-    
-    # ===== Cell Type Annotation Parameters =====
-    cell_type_annotation=False,
-    atac_cell_type_annotation_model_name=None,
-    atac_cell_type_annotation_custom_model_path=None,
 ):
     # Validate input paths
-    if any(data is None for data in (atac_count_data_path, atac_output_dir, atac_metadata_path)):
-        raise ValueError("Please provide valid paths for atac_count_data_path, atac_output_dir, and atac_metadata_path.")
+    if any(data is None for data in (atac_count_data_path, atac_output_dir)):
+        raise ValueError("Please provide valid paths for atac_count_data_path, atac_output_dir.")
     
     # Set default sample distance methods if not provided
     if sample_distance_methods is None:

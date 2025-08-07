@@ -64,7 +64,6 @@ def rna_wrapper(
     existing_cell_types=False,
     n_target_cell_clusters=None,
     umap=False,
-    cell_type_save=True,
     
     # ===== Cell Type Assignment Parameters =====
     assign_save=True,
@@ -78,7 +77,6 @@ def rna_wrapper(
     celltype_col='cell_type',
     pseudobulk_output_dir=None,
     n_features=2000,
-    frac=0.3,
     pseudobulk_verbose=True,
     
     # ===== PCA Parameters =====
@@ -110,7 +108,6 @@ def rna_wrapper(
     visualize_all_deg=True,
     top_n_heatmap=50,
     trajectory_diff_gene_verbose=True,
-    top_gene_number=30,
     n_pcs_for_null=10,
     
     # ===== Paths for Skipping Preprocessing =====
