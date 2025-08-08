@@ -384,43 +384,35 @@ def rna_wrapper(
         )
         status_flags["rna"]["dimensionality_reduction"] = True
     else:
-        if (sample_distance_calculation or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE) and not status_flags["rna"]["dimensionality_reduction"]:
+        if (sample_distance_calculation or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE):
             if not pseudobulk_output_dir:
                 temp_pseudobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
             else:
                 temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
             if not os.path.exists(temp_pseudobulk_path):
                 raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
+            print("Reading Pseudobulk from default path")
             pseudobulk_anndata = sc.read(temp_pseudobulk_path)
-
-    # Step 5: Sample Distance Calculation
-        if sample_distance_calculation:
-            for method in sample_distance_methods:
-                print(f"\nRunning sample distance: {method}\n")
-                sample_distance(
-                    adata=pseudobulk_anndata,
-                    output_dir=os.path.join(rna_output_dir, 'Sample_distance'),
-                    method=method,
-                    grouping_columns=grouping_columns,
-                    summary_csv_path=summary_sample_csv_path,
-                    cell_adata=AnnData_cell,
-                    cell_type_column='cell_type',
-                    sample_column=sample_col,
-                    pseudobulk_adata=pseudobulk_anndata
-                )
-            status_flags["rna"]["sample_distance_calculation"] = True
-            if verbose:
-                print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample_distance')}")
-        
-    # Load pseudobulk data if needed for subsequent steps
-    if (trajectory_analysis or sample_distance_calculation or sample_cluster or cluster_DGE) and not DimensionalityReduction:
-        temp_pseuobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
-        if not os.path.exists(temp_pseuobulk_path):
-            raise ValueError("Pseudobulk data not found. Ensure dimensionality reduction is performed first.")
-        print("Loading pseudobulk data for trajectory analysis and clustering...")
-        pseudobulk_anndata = sc.read(temp_pseuobulk_path)
-        status_flags["rna"]["dimensionality_reduction"] = True
     
+    # Step 5: Sample Distance Calculation
+    if sample_distance_calculation:
+        for method in sample_distance_methods:
+            print(f"\nRunning sample distance: {method}\n")
+            sample_distance(
+                adata=pseudobulk_anndata,
+                output_dir=os.path.join(rna_output_dir, 'Sample_distance'),
+                method=method,
+                grouping_columns=grouping_columns,
+                summary_csv_path=summary_sample_csv_path,
+                cell_adata=AnnData_cell,
+                cell_type_column='cell_type',
+                sample_column=sample_col,
+                pseudobulk_adata=pseudobulk_anndata
+            )
+        status_flags["rna"]["sample_distance_calculation"] = True
+        if verbose:
+            print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample_distance')}")
+
     # Step 4: Trajectory Analysis
     if trajectory_analysis:
         print("Starting trajectory analysis...")
