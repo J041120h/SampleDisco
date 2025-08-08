@@ -105,7 +105,7 @@ def anndata_sample(
     return adata_sample_diff
 
 
-def harmony_linux(
+def preprocess_linux(
     h5ad_path,
     sample_meta_path,
     output_dir,
@@ -135,7 +135,7 @@ def harmony_linux(
         if verbose:
             print("Created output directory")
 
-    output_dir = os.path.join(output_dir, 'harmony')
+    output_dir = os.path.join(output_dir, 'preprocess')
     os.makedirs(output_dir, exist_ok=True)
 
     if verbose:
