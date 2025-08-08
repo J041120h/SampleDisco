@@ -147,7 +147,7 @@ def rna_wrapper(
         from linux.preprocess_linux import preprocess_linux
         from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
         from linux.CCA_test_linux import find_optimal_cell_resolution_linux
-        from pseudo_adata_linux import compute_pseudobulk_adata_linux
+        from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
 
     # Set default values for parameters
     if vars_to_regress is None:

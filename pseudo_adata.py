@@ -10,23 +10,11 @@ from tf_idf import tfidf_memory_efficient
 import contextlib
 import io
 
-import os
-import time
-import warnings
-import numpy as np
-import pandas as pd
-import scanpy as sc
-from scipy.sparse import issparse
-from typing import Tuple, Dict, List
-from tf_idf import tfidf_memory_efficient
-import contextlib
-import io
-
 def _extract_sample_metadata(
     cell_adata: sc.AnnData,
     sample_adata: sc.AnnData,
     sample_col: str,
-    exclude_cols: List[str] | None = None,
+    exclude_cols: list[str] | None = None,
 ) -> sc.AnnData:
     """Detect and copy sample‑level metadata.
 

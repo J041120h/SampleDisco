@@ -12,7 +12,7 @@ from pseudo_adata import compute_pseudobulk_adata  # Updated import
 from DR import dimension_reduction
 from CCA_test import * 
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
-from pseudo_adata_linux import compute_pseudobulk_adata_linux
+from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
 
 
 class TimeoutError(Exception):
