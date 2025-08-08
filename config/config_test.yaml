@@ -26,11 +26,11 @@ rna_sample_meta_path: "/dcl01/hongkai/data/data/hjiang/Test/sample_data.csv"
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: false
+rna_preprocessing: true
 rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: true
+rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
@@ -42,8 +42,7 @@ rna_grouping_columns:
   - "sev.level"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: 
-  - "batch"
+rna_batch_col: "batch"
 rna_markers: null
 rna_cluster_resolution: 0.92
 rna_num_pcs: 20

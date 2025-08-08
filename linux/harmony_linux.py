@@ -14,16 +14,10 @@ def anndata_cluster(
     adata_cluster,
     output_dir,
     sample_column = 'sample',
-    cell_type_column='cell_type',
-    cluster_resolution=0.8,
-    markers=None,
     num_features=2000,
     num_PCs=20,
     num_harmony=30,
     vars_to_regress_for_harmony=None,
-    method='average',
-    metric='euclidean',
-    distance_mode='centroid',
     verbose=True
 ):
     if verbose:
@@ -65,17 +59,10 @@ def anndata_cluster(
     sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
     return adata_cluster
 
-import os
-import scanpy as sc
-import rapids_singlecell as rsc
-from harmony import harmonize
-
 def anndata_sample(
     adata_sample_diff,
     output_dir,
     batch_key,
-    sample_column='sample',
-    num_features=2000,
     num_PCs=20,
     num_harmony=30,
     verbose=True
@@ -136,7 +123,6 @@ def harmony_linux(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    combat=True,
     method='average',
     metric='euclidean',
     distance_mode='centroid',
@@ -243,31 +229,25 @@ def harmony_linux(
     adata_cluster = adata.copy()
     adata_sample_diff = adata.copy()
 
+    # Updated function call for anndata_cluster - matching its actual signature
     adata_cluster = anndata_cluster(
         adata_cluster=adata_cluster,
         output_dir=output_dir,
-        sample_column = sample_column,
-        cell_type_column=cell_type_column,
-        cluster_resolution=cluster_resolution,
-        markers=markers,
+        sample_column=sample_column,
         num_features=num_features,
         num_PCs=num_PCs,
         num_harmony=num_harmony,
         vars_to_regress_for_harmony=vars_to_regress_for_harmony,
-        method=method,
-        metric=metric,
-        distance_mode=distance_mode,
         verbose=verbose
     )
 
+    # Updated function call for anndata_sample - matching its actual signature
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
         output_dir=output_dir,
-        sample_column=sample_column, 
-        num_features=num_features,
+        batch_key=batch_key,
         num_PCs=num_PCs,
         num_harmony=num_harmony,
-        batch_key=batch_key,
         verbose=verbose
     )
 
