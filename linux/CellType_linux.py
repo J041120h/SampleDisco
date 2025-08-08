@@ -509,7 +509,7 @@ def cell_types_linux(
         
         # Save results if requested - USING SAFE SAVING METHOD
         if Save and output_dir:
-            output_dir = os.path.join(output_dir, 'harmony')
+            output_dir = os.path.join(output_dir, 'preprocess')
             os.makedirs(output_dir, exist_ok=True)
             save_path = os.path.join(output_dir, 'adata_cell.h5ad')
             
@@ -711,7 +711,7 @@ def cell_type_assign_linux(adata_cluster, adata, Save=False, output_dir=None, ve
     adata = ensure_cpu_arrays(adata)
     
     if Save and output_dir:
-        output_dir = os.path.join(output_dir, 'harmony')
+        output_dir = os.path.join(output_dir, 'preprocess')
         os.makedirs(output_dir, exist_ok=True)
         save_path = os.path.join(output_dir, 'adata_sample.h5ad')
         

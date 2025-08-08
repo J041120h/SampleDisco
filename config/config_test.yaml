@@ -26,10 +26,10 @@ rna_sample_meta_path: "/dcl01/hongkai/data/data/hjiang/Test/sample_data.csv"
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: true
+rna_preprocessing: false
 rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
-rna_sample_distance_calculation: false
+rna_sample_distance_calculation: true
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
@@ -80,7 +80,7 @@ rna_pseudobulk_verbose: true
 rna_n_expression_components: 10
 rna_n_proportion_components: 10
 rna_dr_output_dir: null
-rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_sample.h5ad"
+rna_anndata_sample_path: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
@@ -108,7 +108,7 @@ rna_trajectory_diff_gene_verbose: true
 rna_n_pcs_for_null: 3
 
 # RNA Paths for Skipping Preprocessing
-rna_anndata_cell_path: "/dcl01/hongkai/data/data/hjiang/Test/result/harmony/adata_cell.h5ad"
+rna_anndata_cell_path: null
 
 # RNA Distance Methods
 rna_summary_sample_csv_path: null
