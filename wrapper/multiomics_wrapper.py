@@ -47,6 +47,14 @@ def multiomics_wrapper(
     random_state=42,
     
     # ===== GLUE Integration Parameters =====
+    # Process control flags for GLUE sub-steps
+    run_glue_preprocessing=True,
+    run_glue_training=True,
+    run_glue_gene_activity=True,
+    run_glue_cell_types=True,
+    run_glue_visualization=True,
+    
+    # GLUE preprocessing parameters
     ensembl_release=98,
     species="homo_sapiens",
     use_highly_variable=True,
@@ -59,11 +67,17 @@ def multiomics_wrapper(
     generate_umap=False,
     compression="gzip",
     metadata_sep=",",
+    
+    # GLUE training parameters
     consistency_threshold=0.05,
     save_prefix="glue",
+    
+    # GLUE gene activity parameters
     k_neighbors=10,
     use_rep="X_glue",
     metric="cosine",
+    
+    # GLUE cell type parameters
     existing_cell_types=False,
     n_target_clusters=10,
     cluster_resolution=0.8,
@@ -73,6 +87,8 @@ def multiomics_wrapper(
     metric_celltype='euclidean',
     distance_mode='centroid',
     generate_umap_celltype=True,
+    
+    # GLUE visualization parameters
     plot_columns=None,
     
     # ===== Integration Preprocessing Parameters =====
@@ -142,8 +158,8 @@ def multiomics_wrapper(
     status_flags=None,
 ) -> Dict[str, Any]:
     """
-    Comprehensive wrapper for multi-modal single-cell analysis pipeline with all parameters explicitly defined
-    and status flag tracking similar to the RNA wrapper.
+    Comprehensive wrapper for multi-modal single-cell analysis pipeline with separated GLUE sub-steps
+    and status flag tracking.
     
     Parameters:
     -----------
@@ -162,6 +178,18 @@ def multiomics_wrapper(
     run_find_optimal_resolution : bool, default False
         Whether to run the find_optimal_cell_resolution_integration function
     
+    GLUE SUB-STEP CONTROL:
+    run_glue_preprocessing : bool, default True
+        Whether to run GLUE preprocessing step
+    run_glue_training : bool, default True
+        Whether to run GLUE training step
+    run_glue_gene_activity : bool, default True
+        Whether to run GLUE gene activity computation step
+    run_glue_cell_types : bool, default True
+        Whether to run GLUE cell type assignment step
+    run_glue_visualization : bool, default True
+        Whether to run GLUE visualization step
+    
     STATUS FLAGS:
     status_flags : Dict[str, Any], optional
         Dictionary to track completion status of each pipeline step.
@@ -169,6 +197,11 @@ def multiomics_wrapper(
         Structure: {
             "multiomics": {
                 "glue_integration": False,
+                "glue_preprocessing": False,
+                "glue_training": False,
+                "glue_gene_activity": False,
+                "glue_cell_types": False,
+                "glue_visualization": False,
                 "integration_preprocessing": False,
                 "pseudobulk_computation": False,
                 "pca_processing": False,
@@ -196,6 +229,11 @@ def multiomics_wrapper(
         status_flags = {
             "multiomics": {
                 "glue_integration": False,
+                "glue_preprocessing": False,
+                "glue_training": False,
+                "glue_gene_activity": False,
+                "glue_cell_types": False,
+                "glue_visualization": False,
                 "integration_preprocessing": False,
                 "pseudobulk_computation": False,
                 "pca_processing": False,
@@ -208,6 +246,11 @@ def multiomics_wrapper(
     if "multiomics" not in status_flags:
         status_flags["multiomics"] = {
             "glue_integration": False,
+            "glue_preprocessing": False,
+            "glue_training": False,
+            "glue_gene_activity": False,
+            "glue_cell_types": False,
+            "glue_visualization": False,
             "integration_preprocessing": False,
             "pseudobulk_computation": False,
             "pca_processing": False,
@@ -236,10 +279,13 @@ def multiomics_wrapper(
     if resolution_output_dir is None:
         resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization"
     
-    # Step 1: GLUE integration
+    # Step 1: GLUE integration with sub-step control
     if run_glue:
         if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
+            print(f"  Sub-steps: Preprocessing={run_glue_preprocessing}, Training={run_glue_training}, "
+                  f"Gene Activity={run_glue_gene_activity}, Cell Types={run_glue_cell_types}, "
+                  f"Visualization={run_glue_visualization}")
         
         if not rna_file or not atac_file:
             raise ValueError("rna_file and atac_file must be provided when run_glue=True")
@@ -250,6 +296,14 @@ def multiomics_wrapper(
             atac_file=atac_file,
             rna_sample_meta_file=rna_sample_meta_file,
             atac_sample_meta_file=atac_sample_meta_file,
+            
+            # Process control flags for GLUE sub-steps
+            run_preprocessing=run_glue_preprocessing,
+            run_training=run_glue_training,
+            run_gene_activity=run_glue_gene_activity,
+            run_cell_types=run_glue_cell_types,
+            run_visualization=run_glue_visualization,
+            
             # Preprocessing parameters
             ensembl_release=ensembl_release,
             species=species,
@@ -266,15 +320,19 @@ def multiomics_wrapper(
             metadata_sep=metadata_sep,
             rna_sample_column=rna_sample_column,
             atac_sample_column=atac_sample_column,
+            
             # Training parameters
             consistency_threshold=consistency_threshold,
             save_prefix=save_prefix,
+            
             # Gene activity computation parameters
             k_neighbors=k_neighbors,
             use_rep=use_rep,
             metric=metric,
             use_gpu=use_gpu,
             verbose=multiomics_verbose,
+            
+            # Cell type assignment parameters
             existing_cell_types=existing_cell_types,
             n_target_clusters=n_target_clusters,
             cluster_resolution=cluster_resolution,
@@ -284,21 +342,40 @@ def multiomics_wrapper(
             metric_celltype=metric_celltype,
             distance_mode=distance_mode,
             generate_umap_celltype=generate_umap_celltype,
+            
             # Visualization parameters
             plot_columns=plot_columns,
+            
             # Output directory
             output_dir=multiomics_output_dir
         )
         
         results['glue'] = glue_result
+        
+        # Update status flags for completed GLUE sub-steps
         status_flags["multiomics"]["glue_integration"] = True
+        if run_glue_preprocessing:
+            status_flags["multiomics"]["glue_preprocessing"] = True
+        if run_glue_training:
+            status_flags["multiomics"]["glue_training"] = True
+        if run_glue_gene_activity:
+            status_flags["multiomics"]["glue_gene_activity"] = True
+        if run_glue_cell_types:
+            status_flags["multiomics"]["glue_cell_types"] = True
+        if run_glue_visualization:
+            status_flags["multiomics"]["glue_visualization"] = True
         
         # Set integrated h5ad path for next steps
         if h5ad_path is None:
-            h5ad_path = f"{multiomics_output_dir}/glue/atac_rna_integrated.h5ad"
+            h5ad_path = f"{multiomics_output_dir}/integration/glue/atac_rna_integrated.h5ad"
         
         if multiomics_verbose:
             print("✓ GLUE integration completed successfully")
+            completed_substeps = sum([
+                run_glue_preprocessing, run_glue_training, run_glue_gene_activity,
+                run_glue_cell_types, run_glue_visualization
+            ])
+            print(f"  Completed {completed_substeps}/5 GLUE sub-steps")
     else:
         # Load existing integrated data if available
         if not status_flags["multiomics"]["glue_integration"]:
@@ -307,7 +384,7 @@ def multiomics_wrapper(
                 if multiomics_verbose:
                     print(f"Skipping GLUE integration, using existing data: {h5ad_path}")
             else:
-                temp_integrated_path = f"{multiomics_output_dir}/glue/atac_rna_integrated.h5ad"
+                temp_integrated_path = f"{multiomics_output_dir}/integration/glue/atac_rna_integrated.h5ad"
                 if os.path.exists(temp_integrated_path):
                     h5ad_path = temp_integrated_path
                     if multiomics_verbose:
@@ -315,7 +392,7 @@ def multiomics_wrapper(
                 else:
                     raise ValueError("GLUE integration is skipped, but no integrated data found. "
                                    "Either set run_glue=True or provide integrated_h5ad_path.")
-    
+
     # Step 2: Integration preprocessing
     if run_integrate_preprocess:
         if multiomics_verbose:
@@ -571,5 +648,13 @@ def multiomics_wrapper(
         print(f"Results saved to: {multiomics_output_dir}")
         print(f"Available results: {list(results.keys())}")
         print(f"Final status flags: {status_flags['multiomics']}")
-        print(f"Completed steps: {sum(status_flags['multiomics'].values())}/{len(status_flags['multiomics'])}")
+        completed_steps = sum(status_flags['multiomics'].values())
+        total_steps = len(status_flags['multiomics'])
+        print(f"Completed steps: {completed_steps}/{total_steps}")
+        
+        # Show GLUE sub-step completion summary
+        glue_substeps = ['glue_preprocessing', 'glue_training', 'glue_gene_activity', 'glue_cell_types', 'glue_visualization']
+        completed_glue_substeps = sum(status_flags['multiomics'][step] for step in glue_substeps if step in status_flags['multiomics'])
+        print(f"GLUE sub-steps completed: {completed_glue_substeps}/5")
+        
     return results

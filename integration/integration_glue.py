@@ -631,51 +631,51 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     
     print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n")
 
-def compute_gene_activity_from_knn_with_celltype(
+def compute_gene_activity_from_knn(
     glue_dir: str,
     output_path: str,
-    raw_rna_path: str,  # New parameter for raw RNA counts
+    raw_rna_path: str,
     k_neighbors: int = 50,
     use_rep: str = "X_glue",
     metric: str = "cosine",
     use_gpu: bool = True,
     verbose: bool = True,
-    # Cell type assignment parameters
-    existing_cell_types: bool = False,
-    n_target_clusters: int = 3,
-    cluster_resolution: float = 0.8,
-    use_rep_celltype: str = "X_glue",
-    markers: list = None,
-    method: str = 'average',
-    metric_celltype: str = 'euclidean',
-    distance_mode: str = 'centroid',
-    num_PCs: int = 20,
-    generate_umap: bool = True,
 ) -> ad.AnnData:
     """
     Compute gene activity for ATAC cells using weighted k-nearest neighbors from RNA cells,
-    validate and correct the computed counts, merge with RNA data, assign cell types, 
-    and generate UMAP visualizations.
+    validate and correct the computed counts, and merge with RNA data.
     
-    This enhanced function:
+    This function:
     1. Uses raw RNA counts for gene activity computation and final merging
     2. Preserves embeddings and metadata from processed RNA file
     3. Computes gene activity for ATAC cells using k-NN from RNA cells with cosine similarity weights
     4. Validates and corrects the computed gene activity counts (NaN, Inf, negatives)
     5. Merges the gene activity data with original raw RNA data
-    6. Assigns cell types using the provided cell_types_linux function
-    7. Generates UMAP visualizations
-    8. Saves the final merged dataset
+    6. Saves the merged dataset (without cell type assignment)
     
     Parameters:
     -----------
+    glue_dir : str
+        Directory containing GLUE results
+    output_path : str
+        Path to save the merged dataset
     raw_rna_path : str
         Path to the raw RNA count matrix (not log-transformed or normalized)
+    k_neighbors : int
+        Number of nearest neighbors to use
+    use_rep : str
+        Representation to use for neighbor finding
+    metric : str
+        Distance metric for neighbor finding
+    use_gpu : bool
+        Whether to use GPU acceleration
+    verbose : bool
+        Whether to print progress information
     
     Returns:
     --------
     merged_adata : ad.AnnData
-        Merged AnnData object with validated gene activity, raw RNA data, cell types, and visualizations
+        Merged AnnData object with validated gene activity and raw RNA data
     """
     import anndata as ad
     import numpy as np
@@ -994,70 +994,28 @@ def compute_gene_activity_from_knn_with_celltype(
         print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
         print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}\n")
     
-    # Assign cell types using the cell_types_linux function
-    if verbose:
-        print("🏷️  Assigning cell types...")
-    
-    # Create output directory for intermediate files
-    output_dir = Path(output_path).parent
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Apply cell type assignment
-    if gpu_available:
-        merged_adata = cell_types_linux(
-            merged_adata,
-            cell_column='cell_type',
-            existing_cell_types=existing_cell_types,
-            n_target_clusters=n_target_clusters,
-            umap=False,  # We'll handle UMAP separately
-            Save=False,  # We'll save the final result
-            output_dir=str(output_dir),
-            cluster_resolution=cluster_resolution,
-            use_rep=use_rep_celltype,
-            markers=markers,
-            method=method,
-            metric=metric_celltype,
-            distance_mode=distance_mode,
-            num_PCs=num_PCs,
-            verbose=verbose
-        )
-    else:
-        merged_adata = cell_types(
-            merged_adata,
-            cell_column='cell_type',
-            existing_cell_types=existing_cell_types,
-            n_target_clusters=n_target_clusters,
-            umap=False,  # We'll handle UMAP separately
-            Save=False,  # We'll save the final result
-            output_dir=str(output_dir),
-            cluster_resolution=cluster_resolution,
-            use_rep=use_rep_celltype,
-            markers=markers,
-            method=method,
-            metric=metric_celltype,
-            distance_mode=distance_mode,
-            num_PCs=num_PCs,
-            verbose=verbose
-        )
-    
-    # Clean the object for savingd
+    # Clean the object for saving
     merged_adata = clean_anndata_for_saving(merged_adata, verbose=False)
-    merged_adata.write(os.path.join(output_path, "atac_rna_integrated.h5ad"), compression='gzip')
-    
+
+    output_dir = os.path.join(output_path, 'preprocess')
+    os.makedirs(output_dir, exist_ok=True)
+    output_path_anndata = os.path.join(output_dir, 'atac_rna_integrated.h5ad')
+
+    merged_adata.write(output_path_anndata, compression='gzip')
+
     if verbose:
         print(f"✅ Gene activity computation and merging complete!")
-        print(f"\n📊 Final Summary:")
+        print(f"\n📊 Summary:")
+        print(f"   Output path: {output_path_anndata}")
         print(f"   Merged dataset shape: {merged_adata.shape}")
         print(f"   Total cells: {merged_adata.n_obs}")
         print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
         print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
         print(f"   Genes: {merged_adata.n_vars}")
-        print(f"   Cell types identified: {merged_adata.obs['cell_type'].nunique()}")
         print(f"   GPU acceleration: {'Yes' if gpu_available else 'No'}")
         print(f"   Data corrections: {n_nan + n_inf + n_neg} total fixes applied")
         print(f"   Weight method: Cosine similarity")
         print(f"   Expression data: Raw RNA counts")
-        print(f"   UMAP visualizations: {'Generated' if generate_umap else 'Skipped'}")
     
     return merged_adata
 
@@ -1262,6 +1220,13 @@ def glue(
     rna_sample_meta_file: Optional[str] = None,
     atac_sample_meta_file: Optional[str] = None,
     
+    # Process control flags
+    run_preprocessing: bool = True,
+    run_training: bool = True,
+    run_gene_activity: bool = True,
+    run_cell_types: bool = True,
+    run_visualization: bool = True,
+    
     # Preprocessing parameters
     ensembl_release: int = 98,
     species: str = "homo_sapiens",
@@ -1289,6 +1254,8 @@ def glue(
     metric: str = "cosine",
     use_gpu: bool = True,
     verbose: bool = True,
+    
+    # Cell type assignment parameters
     existing_cell_types: bool = False,
     n_target_clusters: int = 10,
     cluster_resolution: float = 0.8,
@@ -1305,89 +1272,138 @@ def glue(
     # Output directory
     output_dir: str = "./glue_results",
 ):
-    """Complete GLUE pipeline that runs preprocessing, training, gene activity computation, and visualization."""
+    """Complete GLUE pipeline that runs preprocessing, training, gene activity computation, cell type assignment, and visualization.
+    
+    Use process flags to control which steps to run:
+    - run_preprocessing: Run data preprocessing
+    - run_training: Run model training
+    - run_gene_activity: Compute gene activity
+    - run_cell_types: Assign cell types
+    - run_visualization: Generate visualizations
+    """
     
     os.makedirs(output_dir, exist_ok=True)
-    output_dir = os.path.join(output_dir, "integration", "glue")
+    glue_output_dir = os.path.join(output_dir, "integration", "glue")
     start_time = time.time()
     
     # Step 1: Preprocessing
-    rna, atac, guidance = glue_preprocess_pipeline(
-        rna_file=rna_file,
-        atac_file=atac_file,
-        rna_sample_meta_file=rna_sample_meta_file,
-        atac_sample_meta_file=atac_sample_meta_file,
-        ensembl_release=ensembl_release,
-        species=species,
-        output_dir=output_dir,
-        use_highly_variable=use_highly_variable,
-        n_top_genes=n_top_genes,
-        n_pca_comps=n_pca_comps,
-        n_lsi_comps=n_lsi_comps,
-        lsi_n_iter=lsi_n_iter,
-        gtf_by=gtf_by,
-        flavor=flavor,
-        generate_umap=generate_umap,
-        compression=compression,
-        random_state=random_state,
-        metadata_sep=metadata_sep,
-        rna_sample_column=rna_sample_column,
-        atac_sample_column=atac_sample_column
-    )
+    if run_preprocessing:
+        print("Running preprocessing...")
+        rna, atac, guidance = glue_preprocess_pipeline(
+            rna_file=rna_file,
+            atac_file=atac_file,
+            rna_sample_meta_file=rna_sample_meta_file,
+            atac_sample_meta_file=atac_sample_meta_file,
+            ensembl_release=ensembl_release,
+            species=species,
+            output_dir=glue_output_dir,
+            use_highly_variable=use_highly_variable,
+            n_top_genes=n_top_genes,
+            n_pca_comps=n_pca_comps,
+            n_lsi_comps=n_lsi_comps,
+            lsi_n_iter=lsi_n_iter,
+            gtf_by=gtf_by,
+            flavor=flavor,
+            generate_umap=generate_umap,
+            compression=compression,
+            random_state=random_state,
+            metadata_sep=metadata_sep,
+            rna_sample_column=rna_sample_column,
+            atac_sample_column=atac_sample_column
+        )
+        print("Preprocessing completed.")
     
     # Step 2: Training
-    glue_train(
-        preprocess_output_dir=output_dir,
-        save_prefix=save_prefix,
-        consistency_threshold=consistency_threshold,
-        use_highly_variable=use_highly_variable,
-        output_dir=output_dir
-    )
+    if run_training:
+        print("Running training...")
+        glue_train(
+            preprocess_output_dir=glue_output_dir,
+            save_prefix=save_prefix,
+            consistency_threshold=consistency_threshold,
+            use_highly_variable=use_highly_variable,
+            output_dir=glue_output_dir
+        )
+        print("Training completed.")
     
     # Step 3: Memory management and gene activity computation
-    if use_gpu:
-        try:
-            import rmm
-            from rmm.allocators.cupy import rmm_cupy_allocator
-            import cupy as cp
-            
-            rmm.reinitialize(
-                managed_memory=True,
-                pool_allocator=False,
-            )
-            cp.cuda.set_allocator(rmm_cupy_allocator)
-        except:
-            pass
+    if run_gene_activity:
+        print("Computing gene activity...")
+        if use_gpu:
+            try:
+                import rmm
+                from rmm.allocators.cupy import rmm_cupy_allocator
+                import cupy as cp
+                
+                rmm.reinitialize(
+                    managed_memory=True,
+                    pool_allocator=False,
+                )
+                cp.cuda.set_allocator(rmm_cupy_allocator)
+            except:
+                pass
+        
+        merged_adata = compute_gene_activity_from_knn(
+            glue_dir=glue_output_dir,
+            output_path=output_dir,
+            raw_rna_path=rna_file,
+            k_neighbors=k_neighbors,
+            use_rep=use_rep,
+            metric=metric,
+            use_gpu=use_gpu,
+            verbose=verbose
+        )
+        print("Gene activity computation completed.")
+    else:
+        # If gene activity step is skipped, load the existing merged data
+        integrated_file = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad")
+        if os.path.exists(integrated_file):
+            merged_adata = ad.read_h5ad(integrated_file)
+        else:
+            raise FileNotFoundError(f"Integrated file not found: {integrated_file}. Run gene activity computation first.")
     
-    compute_gene_activity_from_knn_with_celltype(
-        glue_dir=output_dir,
-        output_path=output_dir,
-        raw_rna_path = rna_file,
-        k_neighbors=k_neighbors,
-        use_rep=use_rep,
-        metric=metric,
-        use_gpu=use_gpu,
-        verbose=verbose,
-        existing_cell_types=existing_cell_types,
-        n_target_clusters=n_target_clusters,
-        cluster_resolution=cluster_resolution,
-        use_rep_celltype=use_rep_celltype,
-        markers=markers,
-        method=method,
-        metric_celltype=metric_celltype,
-        distance_mode=distance_mode,
-        num_PCs=n_lsi_comps,
-        generate_umap=generate_umap_celltype
-    )
+    # Step 4: Cell type assignment
+    if run_cell_types:
+        print("Assigning cell types...")
     
-    # Step 4: Visualization
-    integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
-    glue_visualize(
-        integrated_path=integrated_file,
-        output_dir=output_dir,
-        plot_columns=plot_columns
-    )
+        # Apply cell type assignment
+        if use_gpu:
+                from linux.CellType_linux import cell_types_linux
+                merged_adata = cell_types_linux(
+                    merged_adata,
+                    cell_column='cell_type',
+                    existing_cell_types=existing_cell_types,
+                    n_target_clusters=n_target_clusters,
+                    umap=False,  # We'll handle UMAP separately
+                    Save=False,  # We'll save the final result
+                    output_dir=output_dir,
+                    defined_output_path = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad"),
+                    cluster_resolution=cluster_resolution,
+                    use_rep=use_rep_celltype,
+                    markers=markers,
+                    method=method,
+                    metric=metric_celltype,
+                    distance_mode=distance_mode,
+                    num_PCs=n_lsi_comps,
+                    verbose=verbose
+                )
+
+    # Step 5: Visualization
+    if run_visualization:
+        print("Running visualization...")
+        integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
+        glue_visualize(
+            integrated_path=integrated_file,
+            output_dir=output_dir,
+            plot_columns=plot_columns
+        )
+        print("Visualization completed.")
     
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
     print(f"\nTotal runtime: {elapsed_minutes:.2f} minutes")
+
+    # Return the merged data if it was computed in this run
+    if run_gene_activity or run_cell_types:
+        return merged_adata
+    else:
+        return None

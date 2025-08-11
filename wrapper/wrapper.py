@@ -280,13 +280,20 @@ def wrapper(
     # ========================================
     # MULTIOMICS PIPELINE PARAMETERS
     # ========================================
-    # Multiomics Control Flags
+    # Multiomics Main Control Flags
     multiomics_run_glue: bool = True,
     multiomics_run_integrate_preprocess: bool = True,
     multiomics_run_compute_pseudobulk: bool = True,
     multiomics_run_process_pca: bool = True,
     multiomics_run_visualize_embedding: bool = True,
     multiomics_run_find_optimal_resolution: bool = False,
+    
+    # Multiomics GLUE Sub-Step Control Flags
+    multiomics_run_glue_preprocessing: bool = True,
+    multiomics_run_glue_training: bool = True,
+    multiomics_run_glue_gene_activity: bool = True,
+    multiomics_run_glue_cell_types: bool = True,
+    multiomics_run_glue_visualization: bool = True,
     
     # Multiomics Required Parameters
     multiomics_rna_file: Optional[str] = None,
@@ -414,6 +421,16 @@ def wrapper(
         Whether to run ATAC-seq analysis pipeline
     run_multiomics_pipeline : bool
         Whether to run integrated multiomics pipeline
+    multiomics_run_glue_preprocessing : bool
+        Whether to run GLUE preprocessing sub-step
+    multiomics_run_glue_training : bool
+        Whether to run GLUE training sub-step
+    multiomics_run_glue_gene_activity : bool
+        Whether to run GLUE gene activity computation sub-step
+    multiomics_run_glue_cell_types : bool
+        Whether to run GLUE cell type assignment sub-step
+    multiomics_run_glue_visualization : bool
+        Whether to run GLUE visualization sub-step
     use_gpu : bool
         Whether to use GPU acceleration (Linux only)
     initialization : bool
@@ -493,6 +510,11 @@ def wrapper(
         },
         "multiomics": {
             "glue_integration": False,
+            "glue_preprocessing": False,
+            "glue_training": False,
+            "glue_gene_activity": False,
+            "glue_cell_types": False,
+            "glue_visualization": False,
             "integration_preprocessing": False,
             "pseudobulk_computation": False,
             "pca_processing": False,
@@ -919,6 +941,13 @@ def wrapper(
                 run_process_pca=multiomics_run_process_pca,
                 run_visualize_embedding=multiomics_run_visualize_embedding,
                 run_find_optimal_resolution=multiomics_run_find_optimal_resolution,
+                
+                # GLUE Sub-Step Control Flags
+                run_glue_preprocessing=multiomics_run_glue_preprocessing,
+                run_glue_training=multiomics_run_glue_training,
+                run_glue_gene_activity=multiomics_run_glue_gene_activity,
+                run_glue_cell_types=multiomics_run_glue_cell_types,
+                run_glue_visualization=multiomics_run_glue_visualization,
                 
                 # Basic Parameters
                 rna_sample_meta_file=multiomics_rna_sample_meta_file,

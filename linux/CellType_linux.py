@@ -249,6 +249,7 @@ def cell_types_linux(
     umap=True,
     Save=False,
     output_dir=None,
+    defined_output_path=None,
     cluster_resolution=0.8,
     use_rep='X_pca_harmony',
     markers=None, 
@@ -508,13 +509,16 @@ def cell_types_linux(
         adata = ensure_cpu_arrays(adata)
         
         # Save results if requested - USING SAFE SAVING METHOD
-        if Save and output_dir:
+        if Save and output_dir and not defined_output_path:
             output_dir = os.path.join(output_dir, 'preprocess')
             os.makedirs(output_dir, exist_ok=True)
             save_path = os.path.join(output_dir, 'adata_cell.h5ad')
             
             # Use safe saving method
             safe_h5ad_write(adata, save_path, verbose=verbose)
+        
+        if defined_output_path:
+            safe_h5ad_write(adata, defined_output_path, verbose=verbose)
         
         # Report total execution time
         if verbose:
