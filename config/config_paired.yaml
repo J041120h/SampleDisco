@@ -273,24 +273,24 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # ========================================
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
-# Multiomics Main Control Flags
-multiomics_run_glue: true
-multiomics_run_integrate_preprocess: false
-multiomics_run_compute_pseudobulk: false
-multiomics_run_process_pca: false
-multiomics_run_visualize_embedding: false
-multiomics_run_find_optimal_resolution: false
 
 # Multiomics Required Parameters
 multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/placenta.h5ad"
 multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
 multiomics_output_dir: null
 
+# Multiomics Main Control Flags
+multiomics_run_glue: false
+multiomics_run_integrate_preprocess: false
+multiomics_run_dimensionality_reduction: false  
+multiomics_run_visualize_embedding: true
+multiomics_run_find_optimal_resolution: false
+
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
-multiomics_run_glue_gene_activity: false
-multiomics_run_glue_cell_types: false
+multiomics_run_glue_gene_activity: true
+multiomics_run_glue_cell_types: true
 multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
@@ -337,15 +337,15 @@ multiomics_plot_columns: null
 
 # Multiomics Integration Preprocessing Parameters
 multiomics_integrate_output_dir: null
-multiomics_h5ad_path: null
 multiomics_min_cells_sample: 1
 multiomics_min_cell_gene: 10
 multiomics_min_features: 500
 multiomics_pct_mito_cutoff: 20
 multiomics_exclude_genes: null
-multiomics_doublet: true
+multiomics_doublet: false
 
-# Multiomics Pseudobulk Parameters
+# Multiomics Combined Dimensionality Reduction Parameters
+# Pseudobulk Parameters
 multiomics_pseudobulk_output_dir: null
 multiomics_save: true
 multiomics_n_features: 2000
@@ -353,7 +353,7 @@ multiomics_normalize: true
 multiomics_target_sum: 10000.0
 multiomics_atac: false
 
-# Multiomics PCA Parameters
+# PCA Parameters
 multiomics_pca_sample_col: "sample"
 multiomics_n_expression_pcs: 10
 multiomics_n_proportion_pcs: 10
@@ -374,7 +374,7 @@ multiomics_point_size: 60
 multiomics_alpha: 0.8
 multiomics_colormap: "viridis"
 multiomics_viz_output_dir: null
-multiomics_show_sample_names: false
+multiomics_show_sample_names: true
 multiomics_force_data_type: null
 
 # Multiomics Optimal Resolution Parameters

@@ -160,13 +160,6 @@ def preprocess(
         if verbose:
             print("Automatically generating output directory")
 
-    # Append 'preprocess' subdirectory
-    output_dir = os.path.join(output_dir, 'preprocess')
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        if verbose:
-            print("Automatically generating preprocess subdirectory")
-
     # 1. Read the raw count data from an existing H5AD
     if verbose:
         print('=== Read input dataset ===')

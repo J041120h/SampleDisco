@@ -283,8 +283,7 @@ def wrapper(
     # Multiomics Main Control Flags
     multiomics_run_glue: bool = True,
     multiomics_run_integrate_preprocess: bool = True,
-    multiomics_run_compute_pseudobulk: bool = True,
-    multiomics_run_process_pca: bool = True,
+    multiomics_run_dimensionality_reduction: bool = True,  # Combined pseudobulk + PCA
     multiomics_run_visualize_embedding: bool = True,
     multiomics_run_find_optimal_resolution: bool = False,
     
@@ -344,7 +343,6 @@ def wrapper(
     
     # Multiomics Integration Preprocessing Parameters
     multiomics_integrate_output_dir: Optional[str] = None,
-    multiomics_h5ad_path: Optional[str] = None,
     multiomics_min_cells_sample: int = 1,
     multiomics_min_cell_gene: int = 10,
     multiomics_min_features: int = 500,
@@ -352,7 +350,8 @@ def wrapper(
     multiomics_exclude_genes: Optional[List] = None,
     multiomics_doublet: bool = True,
     
-    # Multiomics Pseudobulk Parameters
+    # Multiomics Combined Dimensionality Reduction Parameters
+    # Pseudobulk Parameters
     multiomics_pseudobulk_output_dir: Optional[str] = None,
     multiomics_save: bool = True,
     multiomics_n_features: int = 2000,
@@ -360,7 +359,7 @@ def wrapper(
     multiomics_target_sum: float = 1e4,
     multiomics_atac: bool = False,
     
-    # Multiomics PCA Parameters
+    # PCA Parameters
     multiomics_pca_sample_col: str = 'sample',
     multiomics_n_expression_pcs: int = 10,
     multiomics_n_proportion_pcs: int = 10,
@@ -421,6 +420,8 @@ def wrapper(
         Whether to run ATAC-seq analysis pipeline
     run_multiomics_pipeline : bool
         Whether to run integrated multiomics pipeline
+    multiomics_run_dimensionality_reduction : bool
+        Whether to run combined pseudobulk computation and PCA processing
     multiomics_run_glue_preprocessing : bool
         Whether to run GLUE preprocessing sub-step
     multiomics_run_glue_training : bool
@@ -516,8 +517,7 @@ def wrapper(
             "glue_cell_types": False,
             "glue_visualization": False,
             "integration_preprocessing": False,
-            "pseudobulk_computation": False,
-            "pca_processing": False,
+            "dimensionality_reduction": False,  # Combined pseudobulk + PCA
             "embedding_visualization": False,
             "optimal_resolution": False
         },
@@ -937,8 +937,7 @@ def wrapper(
                 # Process Control Flags
                 run_glue=multiomics_run_glue,
                 run_integrate_preprocess=multiomics_run_integrate_preprocess,
-                run_compute_pseudobulk=multiomics_run_compute_pseudobulk,
-                run_process_pca=multiomics_run_process_pca,
+                run_dimensionality_reduction=multiomics_run_dimensionality_reduction,  # Updated to combined flag
                 run_visualize_embedding=multiomics_run_visualize_embedding,
                 run_find_optimal_resolution=multiomics_run_find_optimal_resolution,
                 
@@ -994,7 +993,6 @@ def wrapper(
                 
                 # Integration Preprocessing Parameters
                 integrate_output_dir=multiomics_integrate_output_dir,
-                h5ad_path=multiomics_h5ad_path,
                 min_cells_sample=multiomics_min_cells_sample,
                 min_cell_gene=multiomics_min_cell_gene,
                 min_features=multiomics_min_features,
@@ -1002,6 +1000,7 @@ def wrapper(
                 exclude_genes=multiomics_exclude_genes,
                 doublet=multiomics_doublet,
                 
+                # Combined Dimensionality Reduction Parameters
                 # Pseudobulk Parameters
                 pseudobulk_output_dir=multiomics_pseudobulk_output_dir,
                 Save=multiomics_save,

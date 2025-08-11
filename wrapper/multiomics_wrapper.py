@@ -8,9 +8,8 @@ from pathlib import Path
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from linux.CellType_linux import *
-from Cell_type import *
-
+from DR import dimension_reduction
+from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
 from integration.integration_glue import *
 from integration.integration_preprocess import *
 from integration.integration_CCA_test import *
@@ -27,8 +26,7 @@ def multiomics_wrapper(
     # ===== Process Control Flags =====
     run_glue=True,
     run_integrate_preprocess=True,
-    run_compute_pseudobulk=True,
-    run_process_pca=True,
+    run_dimensionality_reduction=True,  # Combined pseudobulk + PCA step
     run_visualize_embedding=True,
     run_find_optimal_resolution=False,
     
@@ -93,7 +91,6 @@ def multiomics_wrapper(
     
     # ===== Integration Preprocessing Parameters =====
     integrate_output_dir=None,
-    h5ad_path=None,
     min_cells_sample=1,
     min_cell_gene=10,
     min_features=500,
@@ -101,7 +98,8 @@ def multiomics_wrapper(
     exclude_genes=None,
     doublet=True,
     
-    # ===== Pseudobulk Parameters =====
+    # ===== Combined Dimensionality Reduction Parameters =====
+    # Pseudobulk Parameters
     pseudobulk_output_dir=None,
     Save=True,
     n_features=2000,
@@ -109,7 +107,7 @@ def multiomics_wrapper(
     target_sum=1e4,
     atac=False,
     
-    # ===== PCA Parameters =====
+    # PCA Parameters
     pca_sample_col='sample',
     n_expression_pcs=10,
     n_proportion_pcs=10,
@@ -158,8 +156,8 @@ def multiomics_wrapper(
     status_flags=None,
 ) -> Dict[str, Any]:
     """
-    Comprehensive wrapper for multi-modal single-cell analysis pipeline with separated GLUE sub-steps
-    and status flag tracking.
+    Comprehensive wrapper for multi-modal single-cell analysis pipeline with combined
+    dimensionality reduction step (pseudobulk + PCA) to match RNA wrapper structure.
     
     Parameters:
     -----------
@@ -169,10 +167,8 @@ def multiomics_wrapper(
         Whether to run the glue function
     run_integrate_preprocess : bool, default True
         Whether to run the integrate_preprocess function
-    run_compute_pseudobulk : bool, default True
-        Whether to run the compute_pseudobulk_adata function
-    run_process_pca : bool, default True
-        Whether to run the process_anndata_with_pca function
+    run_dimensionality_reduction : bool, default True
+        Whether to run the combined pseudobulk computation and PCA processing
     run_visualize_embedding : bool, default True
         Whether to run the visualize_multimodal_embedding function
     run_find_optimal_resolution : bool, default False
@@ -203,14 +199,11 @@ def multiomics_wrapper(
                 "glue_cell_types": False,
                 "glue_visualization": False,
                 "integration_preprocessing": False,
-                "pseudobulk_computation": False,
-                "pca_processing": False,
+                "dimensionality_reduction": False,  # Combined pseudobulk + PCA
                 "embedding_visualization": False,
                 "optimal_resolution": False
             }
         }
-    
-    [All other parameters remain the same as documented in original function]
     
     Returns:
     --------
@@ -235,8 +228,7 @@ def multiomics_wrapper(
                 "glue_cell_types": False,
                 "glue_visualization": False,
                 "integration_preprocessing": False,
-                "pseudobulk_computation": False,
-                "pca_processing": False,
+                "dimensionality_reduction": False,  # Combined step
                 "embedding_visualization": False,
                 "optimal_resolution": False
             }
@@ -252,8 +244,7 @@ def multiomics_wrapper(
             "glue_cell_types": False,
             "glue_visualization": False,
             "integration_preprocessing": False,
-            "pseudobulk_computation": False,
-            "pca_processing": False,
+            "dimensionality_reduction": False,  # Combined step
             "embedding_visualization": False,
             "optimal_resolution": False
         }
@@ -269,15 +260,18 @@ def multiomics_wrapper(
     
     # Set default subdirectories if not specified
     if integrate_output_dir is None:
-        integrate_output_dir = f"{multiomics_output_dir}/preprocess"
+        integrate_output_dir = multiomics_output_dir
     if pseudobulk_output_dir is None:
-        pseudobulk_output_dir = f"{multiomics_output_dir}/pseudobulk"
+        pseudobulk_output_dir = multiomics_output_dir
     if pca_output_dir is None:
-        pca_output_dir = f"{multiomics_output_dir}/pca"
+        pca_output_dir = multiomics_output_dir
     if viz_output_dir is None:
         viz_output_dir = f"{multiomics_output_dir}/visualization"
     if resolution_output_dir is None:
         resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization"
+    
+    # Initialize h5ad_path for downstream use
+    h5ad_path = None
     
     # Step 1: GLUE integration with sub-step control
     if run_glue:
@@ -364,11 +358,6 @@ def multiomics_wrapper(
             status_flags["multiomics"]["glue_cell_types"] = True
         if run_glue_visualization:
             status_flags["multiomics"]["glue_visualization"] = True
-        
-        # Set integrated h5ad path for next steps
-        if h5ad_path is None:
-            h5ad_path = f"{multiomics_output_dir}/integration/glue/atac_rna_integrated.h5ad"
-        
         if multiomics_verbose:
             print("✓ GLUE integration completed successfully")
             completed_substeps = sum([
@@ -376,23 +365,14 @@ def multiomics_wrapper(
                 run_glue_cell_types, run_glue_visualization
             ])
             print(f"  Completed {completed_substeps}/5 GLUE sub-steps")
-    else:
-        # Load existing integrated data if available
-        if not status_flags["multiomics"]["glue_integration"]:
-            if integrated_h5ad_path and os.path.exists(integrated_h5ad_path):
-                h5ad_path = integrated_h5ad_path
-                if multiomics_verbose:
-                    print(f"Skipping GLUE integration, using existing data: {h5ad_path}")
-            else:
-                temp_integrated_path = f"{multiomics_output_dir}/integration/glue/atac_rna_integrated.h5ad"
-                if os.path.exists(temp_integrated_path):
-                    h5ad_path = temp_integrated_path
-                    if multiomics_verbose:
-                        print(f"Using previously generated integrated data: {h5ad_path}")
-                else:
-                    raise ValueError("GLUE integration is skipped, but no integrated data found. "
-                                   "Either set run_glue=True or provide integrated_h5ad_path.")
 
+    if integrated_h5ad_path and os.path.exists(integrated_h5ad_path):
+        h5ad_path = integrated_h5ad_path
+        if multiomics_verbose:
+            print(f"Skipping GLUE integration, using existing data: {h5ad_path}")
+    else:
+        h5ad_path = f"{multiomics_output_dir}/preprocess/atac_rna_integrated.h5ad"
+        
     # Step 2: Integration preprocessing
     if run_integrate_preprocess:
         if multiomics_verbose:
@@ -426,32 +406,34 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("✓ Integration preprocessing completed successfully")
     else:
-        # Load preprocessed data if needed for subsequent steps
-        if (run_compute_pseudobulk or run_process_pca) and not status_flags["multiomics"]["integration_preprocessing"]:
-            temp_preprocessed_path = f"{integrate_output_dir}/adata_preprocessed.h5ad"
-            if os.path.exists(temp_preprocessed_path):
-                results['adata'] = sc.read(temp_preprocessed_path)
-                status_flags["multiomics"]["integration_preprocessing"] = True
-                if multiomics_verbose:
-                    print(f"Loaded preprocessed data from: {temp_preprocessed_path}")
-            else:
-                raise ValueError("Integration preprocessing is required for subsequent steps. "
-                               "Either set run_integrate_preprocess=True or ensure preprocessed data exists.")
+        temp_preprocessed_path = f"{integrate_output_dir}/preprocess/adata_sample.h5ad"
+        if os.path.exists(temp_preprocessed_path):
+            results['adata'] = sc.read(temp_preprocessed_path)
+            status_flags["multiomics"]["integration_preprocessing"] = True
+            if multiomics_verbose:
+                print(f"Loaded preprocessed data from: {temp_preprocessed_path}")
+        else:
+            raise ValueError("Integration preprocessing is required for subsequent steps. "
+                            "Either set run_integrate_preprocess=True or ensure preprocessed data exists.")
     
-    # Step 3: Compute pseudobulk
-    if run_compute_pseudobulk:
+    # Step 3: Combined Dimensionality Reduction (Pseudobulk + PCA)
+    if run_dimensionality_reduction:
         if multiomics_verbose:
-            print("Step 3: Computing pseudobulk...")
+            print("Step 3: Running dimensionality reduction (pseudobulk + PCA)...")
         
         if not status_flags["multiomics"]["integration_preprocessing"]:
-            raise ValueError("Integration preprocessing is required before pseudobulk computation.")
+            raise ValueError("Integration preprocessing is required before dimensionality reduction.")
         
-        adata_for_pseudobulk = results.get('adata')
-        if adata_for_pseudobulk is None:
-            raise ValueError("adata must be available from previous step when run_compute_pseudobulk=True")
+        adata_for_dr = results.get('adata')
+        if adata_for_dr is None:
+            raise ValueError("adata must be available from integration preprocessing when run_dimensionality_reduction=True")
         
-        atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
-            adata=adata_for_pseudobulk,
+        # Sub-step 3a: Compute pseudobulk
+        if multiomics_verbose:
+            print("  Sub-step 3a: Computing pseudobulk...")
+        
+        atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata_linux(
+            adata=adata_for_dr,
             batch_col=batch_col,
             sample_col=sample_col,
             celltype_col=celltype_col,
@@ -464,94 +446,69 @@ def multiomics_wrapper(
             verbose=multiomics_verbose
         )
         
-        results['atac_pseudobulk_df'] = atac_pseudobulk_df
-        results['pseudobulk_adata'] = pseudobulk_adata
-        status_flags["multiomics"]["pseudobulk_computation"] = True
-        
+        # Sub-step 3b: Process with PCA
         if multiomics_verbose:
-            print("✓ Pseudobulk computation completed successfully")
-    else:
-        # Load pseudobulk data if needed for subsequent steps
-        if run_process_pca and not status_flags["multiomics"]["pseudobulk_computation"]:
-            temp_pseudobulk_df_path = f"{pseudobulk_output_dir}/pseudobulk_df.csv"
-            temp_pseudobulk_adata_path = f"{pseudobulk_output_dir}/pseudobulk_adata.h5ad"
-            
-            if os.path.exists(temp_pseudobulk_df_path) and os.path.exists(temp_pseudobulk_adata_path):
-                import pandas as pd
-                results['atac_pseudobulk_df'] = pd.read_csv(temp_pseudobulk_df_path, index_col=0)
-                results['pseudobulk_adata'] = sc.read(temp_pseudobulk_adata_path)
-                status_flags["multiomics"]["pseudobulk_computation"] = True
-                if multiomics_verbose:
-                    print("Loaded pseudobulk data from existing files")
-            else:
-                raise ValueError("Pseudobulk computation is required for PCA processing. "
-                               "Either set run_compute_pseudobulk=True or ensure pseudobulk data exists.")
-    
-    # Step 4: Process with PCA
-    if run_process_pca:
-        if multiomics_verbose:
-            print("Step 4: Processing with PCA...")
+            print("  Sub-step 3b: Processing with PCA...")
         
-        if not status_flags["multiomics"]["pseudobulk_computation"]:
-            raise ValueError("Pseudobulk computation is required before PCA processing.")
-        
-        adata_for_pca = results.get('adata')
-        pseudobulk_for_pca = results.get('atac_pseudobulk_df')
-        pseudobulk_adata_for_pca = results.get('pseudobulk_adata')
-        
-        if not all([adata_for_pca is not None, pseudobulk_for_pca is not None, pseudobulk_adata_for_pca is not None]):
-            raise ValueError("adata, atac_pseudobulk_df, and pseudobulk_adata must be available from previous steps when run_process_pca=True")
-        
-        pseudobulk_anndata_processed = process_anndata_with_pca(
-            adata=adata_for_pca,
-            pseudobulk=pseudobulk_for_pca,
-            pseudobulk_anndata=pseudobulk_adata_for_pca,
+        pseudobulk_anndata_processed = dimension_reduction(
+            adata=adata_for_dr,
+            pseudobulk=atac_pseudobulk_df,
+            pseudobulk_anndata=pseudobulk_adata,
             sample_col=pca_sample_col,
-            n_expression_pcs=n_expression_pcs,
-            n_proportion_pcs=n_proportion_pcs,
+            n_expression_components=n_expression_pcs,
+            n_proportion_components=n_proportion_pcs,
             output_dir=pca_output_dir,
-            integrated_data=integrated_data,
-            not_save=not_save or not save_intermediate,
-            atac=pca_atac,
-            use_snapatac2_dimred=use_snapatac2_dimred,
             verbose=multiomics_verbose
         )
         
+        # Store results
+        results['atac_pseudobulk_df'] = atac_pseudobulk_df
+        results['pseudobulk_adata'] = pseudobulk_adata
         results['pseudobulk_anndata_processed'] = pseudobulk_anndata_processed
-        status_flags["multiomics"]["pca_processing"] = True
+        status_flags["multiomics"]["dimensionality_reduction"] = True
         
         if multiomics_verbose:
-            print("✓ PCA processing completed successfully")
-    
-    # Alternative: Load pseudobulk from file
-    if pseudobulk_h5ad_path and not run_process_pca:
-        if multiomics_verbose:
-            print(f"Loading pseudobulk data from: {pseudobulk_h5ad_path}")
-        results['pseudobulk_anndata_processed'] = sc.read_h5ad(pseudobulk_h5ad_path)
-        status_flags["multiomics"]["pca_processing"] = True
-    elif (run_visualize_embedding or run_find_optimal_resolution) and not status_flags["multiomics"]["pca_processing"]:
-        # Try to load from default location
-        temp_pca_path = f"{pca_output_dir}/pseudobulk_sample.h5ad"
-        if os.path.exists(temp_pca_path):
-            results['pseudobulk_anndata_processed'] = sc.read(temp_pca_path)
-            status_flags["multiomics"]["pca_processing"] = True
+            print("✓ Dimensionality reduction completed successfully")
+    else:
+        if pseudobulk_h5ad_path and os.path.exists(pseudobulk_h5ad_path):
+            results['pseudobulk_anndata_processed'] = sc.read_h5ad(pseudobulk_h5ad_path)
+            status_flags["multiomics"]["dimensionality_reduction"] = True
             if multiomics_verbose:
-                print(f"Loaded PCA-processed data from: {temp_pca_path}")
+                print(f"Loaded dimensionality reduction data from: {pseudobulk_h5ad_path}")
         else:
-            raise ValueError("PCA processing is required for subsequent steps. "
-                           "Either set run_process_pca=True or provide pseudobulk_h5ad_path.")
+            # Try to load from default locations
+            temp_pseudobulk_df_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "expression_hvg.csv")
+            temp_pseudobulk_adata_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+            
+            missing_files = []
+            if not os.path.exists(temp_pseudobulk_df_path):
+                missing_files.append(temp_pseudobulk_df_path)
+            if not os.path.exists(temp_pseudobulk_adata_path):
+                missing_files.append(temp_pseudobulk_adata_path)
+            
+            if not missing_files:
+                status_flags["multiomics"]["dimensionality_reduction"] = True
+                results['atac_pseudobulk_df'] = pd.read_csv(temp_pseudobulk_df_path, index_col=0)
+                results['pseudobulk_adata'] = sc.read(temp_pseudobulk_adata_path)
+                status_flags["multiomics"]["dimensionality_reduction"] = True
+                if multiomics_verbose:
+                    print("Loaded dimensionality reduction data from existing files")
+            else:
+                raise FileNotFoundError(
+                    "Dimensionality reduction is required for subsequent steps. "
+                    "Missing file(s):\n" + "\n".join(f" - {path}" for path in missing_files) +
+                    "\nEither set run_dimensionality_reduction=True or ensure required data exists."
+                )
     
-    # Step 5: Visualize multimodal embedding
+    # Step 4: Visualize multimodal embedding
     if run_visualize_embedding:
         if multiomics_verbose:
-            print("Step 5: Visualizing multimodal embedding...")
+            print("Step 4: Visualizing multimodal embedding...")
         
-        if not status_flags["multiomics"]["pca_processing"]:
-            raise ValueError("PCA processing is required before embedding visualization.")
+        if not status_flags["multiomics"]["dimensionality_reduction"]:
+            raise ValueError("Dimensionality reduction is required before embedding visualization.")
         
-        adata_for_viz = results.get('pseudobulk_anndata_processed')
-        if adata_for_viz is None:
-            raise ValueError("pseudobulk_anndata_processed must be available from previous step when run_visualize_embedding=True")
+        adata_for_viz = results.get('pseudobulk_adata')
         
         fig, axes = visualize_multimodal_embedding(
             adata=adata_for_viz,
@@ -576,10 +533,10 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("✓ Embedding visualization completed successfully")
     
-    # Step 6: Find optimal resolution (optional)
+    # Step 5: Find optimal resolution (optional)
     if run_find_optimal_resolution:
         if multiomics_verbose:
-            print("Step 6: Finding optimal cell resolution...")
+            print("Step 5: Finding optimal cell resolution...")
         
         # Setup GPU if available
         try:

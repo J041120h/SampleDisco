@@ -50,6 +50,7 @@ def integrate_preprocess(
     if doublet and min_cells_sample < 30:
         min_cells_sample = 30
         print("Minimum dimension requested by scrublet is 30, raise sample standard accordingly")
+    
     # 1. Read the raw count data from an existing H5AD
     if verbose:
         print('=== Read input dataset ===')
@@ -98,17 +99,61 @@ def integrate_preprocess(
 
     # Optional doublet detection
     if doublet:
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            sc.pp.scrublet(adata, batch_key=sample_column)
-            adata = adata[~adata.obs['predicted_doublet']].copy()
+        if verbose:
+            print(f"Running doublet detection with scrublet on {adata.n_obs} cells...")
+        
+        try:
+            # Store original cell count for comparison
+            original_n_cells = adata.n_obs
+            
+            # Create a copy for scrublet to avoid modifying original
+            adata_scrub = adata.copy()
+            
+            # Run scrublet with suppressed output
+            f = io.StringIO()
+            with contextlib.redirect_stdout(f):
+                sc.pp.scrublet(adata_scrub, batch_key=sample_column)
+            
+            # Check if scrublet results match our data
+            if 'predicted_doublet' not in adata_scrub.obs.columns:
+                if verbose:
+                    print("Warning: Scrublet did not add 'predicted_doublet' column. Skipping doublet removal.")
+            elif adata_scrub.n_obs != original_n_cells:
+                if verbose:
+                    print(f"Warning: Scrublet changed cell count from {original_n_cells} to {adata_scrub.n_obs}. Using original data without doublet removal.")
+            else:
+                # Successfully ran scrublet, now filter doublets
+                n_doublets = adata_scrub.obs['predicted_doublet'].sum()
+                if verbose:
+                    print(f"Detected {n_doublets} doublets out of {original_n_cells} cells")
+                
+                # Copy the scrublet results back to original adata
+                adata.obs['predicted_doublet'] = adata_scrub.obs['predicted_doublet']
+                adata.obs['doublet_score'] = adata_scrub.obs.get('doublet_score', 0)
+                
+                # Filter out doublets
+                adata = adata[~adata.obs['predicted_doublet']].copy()
+                
+                if verbose:
+                    print(f"After doublet removal: {adata.n_obs} cells remaining")
+        
+        except Exception as e:
+            if verbose:
+                print(f"Warning: Scrublet failed with error: {str(e)}")
+                print("Continuing without doublet detection...")
+            # Continue without doublet detection
 
     fill_obs_nan_with_unknown(adata)
     adata.raw = adata.copy()
     if verbose:
         print("Preprocessing complete!")
 
-    sc.write(h5ad_path, adata)
+    # Save to new file instead of overwriting original
+    output_h5ad_path = os.path.join(output_dir, 'adata_sample.h5ad')
+    sc.write(output_h5ad_path, adata)
+    if verbose:
+        print(f"Preprocessed data saved to: {output_h5ad_path}")
+    
     end_time = time.time()
     elapsed_time = end_time - start_time
 
@@ -147,7 +192,7 @@ def fill_obs_nan_with_unknown(
 
         # --- Handle everything else (string, numeric, mixed) --------------------
         else:
-            # Cast to object first if it’s numeric; keeps mixed dtypes safe
+            # Cast to object first if it's numeric; keeps mixed dtypes safe
             if pd.api.types.is_numeric_dtype(ser):
                 ser = ser.astype("object")
             ser = ser.fillna(fill_value)

@@ -546,78 +546,6 @@ def _compute_cell_proportions(
     
     return proportion_df
 
-
-# Main wrapper function matching CPU version signature exactly
-def compute_pseudobulk_adata(
-    adata: sc.AnnData,
-    batch_col: str = 'batch',
-    sample_col: str = 'sample',
-    celltype_col: str = 'cell_type',
-    output_dir: str = './',
-    Save: bool = True,
-    n_features: int = 2000,
-    normalize: bool = True,
-    target_sum: float = 1e4,
-    atac: bool = False,
-    verbose: bool = False
-) -> Tuple[Dict, sc.AnnData]:
-    """
-    GPU-accelerated backward compatibility wrapper matching CPU version exactly.
-    
-    Returns
-    -------
-    pseudobulk : dict
-        Dictionary containing expression and proportion DataFrames
-    final_adata : sc.AnnData
-        Final AnnData object with samples x genes (final HVGs only)
-    """
-    
-    # Call the GPU-accelerated function
-    cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu(
-        adata=adata,
-        batch_col=batch_col,
-        sample_col=sample_col,
-        celltype_col=celltype_col,
-        output_dir=output_dir,
-        n_features=n_features,
-        normalize=normalize,
-        target_sum=target_sum,
-        atac=atac,
-        verbose=verbose,
-        batch_size=100,
-        max_cells_per_batch=50000
-    )
-    
-    if Save:
-        pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
-        
-        # Extract sample metadata (matching CPU version)
-        final_adata = _extract_sample_metadata(
-            cell_adata=adata,
-            sample_adata=final_adata,
-            sample_col=sample_col,
-        )
-        
-        # Add cell proportions to uns
-        final_adata.uns['cell_proportions'] = cell_proportion_df
-        
-        # Save the final AnnData with same filename as CPU version
-        sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
-    
-    # Create backward-compatible dictionary matching original output exactly
-    pseudobulk = {
-        "cell_expression_corrected": cell_expression_hvg_df,  # Combat-corrected + HVG selected
-        "cell_proportion": cell_proportion_df.T  # Transpose to match original
-    }
-    
-    return pseudobulk, final_adata
-
-
-# Alternative name for Linux systems
-compute_pseudobulk_adata_linux = compute_pseudobulk_adata
-
-
-# For users who want explicit GPU control
 def compute_pseudobulk_adata_linux(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -660,19 +588,19 @@ def compute_pseudobulk_adata_linux(
         max_cells_per_batch=max_cells_per_batch
     )
     
+    # Extract sample metadata (matching CPU version - do this ALWAYS)
+    final_adata = _extract_sample_metadata(
+        cell_adata=adata,
+        sample_adata=final_adata,
+        sample_col=sample_col,
+    )
+    
+    # Add cell proportions (matching CPU version - do this ALWAYS)
+    final_adata.uns['cell_proportions'] = cell_proportion_df
+    
+    # Save only if requested
     if Save:
         pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
-        
-        # Extract sample metadata
-        final_adata = _extract_sample_metadata(
-            cell_adata=adata,
-            sample_adata=final_adata,
-            sample_col=sample_col,
-        )
-        
-        # Add cell proportions
-        final_adata.uns['cell_proportions'] = cell_proportion_df
-        
         # Save with same filename as CPU version
         sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
     
