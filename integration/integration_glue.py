@@ -1370,7 +1370,7 @@ def glue(
                 from linux.CellType_linux import cell_types_linux
                 merged_adata = cell_types_linux(
                     merged_adata,
-                    cell_column='cell_type',
+                    cell_type_column='cell_type',
                     existing_cell_types=existing_cell_types,
                     n_target_clusters=n_target_clusters,
                     umap=False,  # We'll handle UMAP separately
@@ -1390,10 +1390,10 @@ def glue(
     # Step 5: Visualization
     if run_visualization:
         print("Running visualization...")
-        integrated_file = os.path.join(output_dir, "atac_rna_integrated.h5ad")
+        integrated_file_path = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad")
         glue_visualize(
-            integrated_path=integrated_file,
-            output_dir=output_dir,
+            integrated_path=integrated_file_path,
+            output_dir=os.path.join(output_dir, "visualization"),
             plot_columns=plot_columns
         )
         print("Visualization completed.")

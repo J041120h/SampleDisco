@@ -289,9 +289,9 @@ multiomics_output_dir: null
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
-multiomics_run_glue_gene_activity: true
+multiomics_run_glue_gene_activity: false
 multiomics_run_glue_cell_types: false
-multiomics_run_glue_visualization: false
+multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null
