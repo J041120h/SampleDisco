@@ -7,7 +7,6 @@ import contextlib
 import io
 from Cell_type import *
 from integration_visualization import *
-from integrate_glue import *
 
 def integrate_preprocess(
     output_dir,
@@ -159,54 +158,3 @@ def fill_obs_nan_with_unknown(
 
         if verbose:
             print(f"✓ Filled NaNs in .obs['{col}'] with '{fill_value}'")
-
-
-
-if __name__ == "__main__":
-    glue(
-            rna_file = "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
-            atac_file = "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad",
-            rna_sample_meta_file = "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
-            atac_sample_meta_file= "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
-            output_dir = "/dcl01/hongkai/data/data/hjiang/result/k10",
-        )
-
-    adata = integrate_preprocess(
-        output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration_test/",
-        h5ad_path="/dcl01/hongkai/data/data/hjiang/result/integration_test/glue/atac_rna_integrated_test.h5ad",
-        sample_column = 'sample',
-        min_cells_sample=500,
-        min_cell_gene=500,
-        min_features=500,
-        pct_mito_cutoff=20,
-        exclude_genes=None,
-        doublet=True, 
-        verbose=True
-    )
-
-    atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
-                adata=adata,
-                batch_col='batch',
-                sample_col='sample',
-                output_dir="/dcl01/hongkai/data/data/hjiang/result/k10/integration"
-            )
-
-    pseudobulk_anndata = process_anndata_with_pca(
-        adata=adata,
-        pseudobulk=atac_pseudobulk_df,
-        pseudobulk_anndata = pseudobulk_adata,
-        sample_col = "sample",
-        output_dir= "/dcl01/hongkai/data/data/hjiang/result/k10/integration",
-        integrated_data = True
-    )
-    pseudobulk_anndata = sc.read_h5ad("/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad")
-
-
-    fig, axes = visualize_multimodal_embedding(
-        pseudobulk_anndata,
-        modality_col='modality',
-        color_col='sev.level',
-        target_modality='ATAC',
-        show_sample_names = True,
-        output_dir='/dcl01/hongkai/data/data/hjiang/result/integration'
-    )

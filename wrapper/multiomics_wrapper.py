@@ -2,19 +2,18 @@ import anndata as ad
 import networkx as nx
 import scanpy as sc
 import sys
-import scglue
 import numpy as np
 from typing import Optional, Tuple, List, Dict, Any
 from pathlib import Path
-import pyensembl
-import time
+
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from linux.CellType_linux import *
 from Cell_type import *
-from integration.integrate_glue import *
-from integration.integrate_preprocess import *
+
+from integration.integration_glue import *
+from integration.integration_preprocess import *
 from integration.integration_CCA_test import *
 from integration.integration_optimal_resolution import *
 from integration.integration_validation import *
@@ -574,5 +573,4 @@ def multiomics_wrapper(
         print(f"Available results: {list(results.keys())}")
         print(f"Final status flags: {status_flags['multiomics']}")
         print(f"Completed steps: {sum(status_flags['multiomics'].values())}/{len(status_flags['multiomics'])}")
-    
     return results

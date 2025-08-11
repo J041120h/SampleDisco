@@ -275,15 +275,15 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # ========================================
 # Multiomics Control Flags
 multiomics_run_glue: true
-multiomics_run_integrate_preprocess: true
-multiomics_run_compute_pseudobulk: true
-multiomics_run_process_pca: true
-multiomics_run_visualize_embedding: true
+multiomics_run_integrate_preprocess: false
+multiomics_run_compute_pseudobulk: false
+multiomics_run_process_pca: false
+multiomics_run_visualize_embedding: false
 multiomics_run_find_optimal_resolution: false
 
 # Multiomics Required Parameters
-multiomics_rna_file: null
-multiomics_atac_file: null
+multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/placenta.h5ad"
+multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
 multiomics_output_dir: null
 
 # Multiomics Basic Parameters

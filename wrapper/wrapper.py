@@ -431,7 +431,7 @@ def wrapper(
         - 'multiomics_results': Results from multiomics pipeline (if run)
         - 'system_info': System configuration information
     """
-    if run_multiomics_pipeline:
+    if run_multiomics_pipeline and use_gpu:
         from .multiomics_wrapper import multiomics_wrapper
     
     # Create main output directory
