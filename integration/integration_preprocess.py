@@ -6,7 +6,6 @@ import time
 import contextlib
 import io
 from Cell_type import *
-from integration_visualization import *
 
 def integrate_preprocess(
     output_dir,
