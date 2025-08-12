@@ -266,7 +266,7 @@ def multiomics_wrapper(
     if pca_output_dir is None:
         pca_output_dir = multiomics_output_dir
     if viz_output_dir is None:
-        viz_output_dir = f"{multiomics_output_dir}/visualization"
+        viz_output_dir = multiomics_output_dir
     if resolution_output_dir is None:
         resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization"
     
@@ -391,6 +391,7 @@ def multiomics_wrapper(
             output_dir=integrate_output_dir,
             h5ad_path=h5ad_path,
             sample_column=sample_column,
+            modality_col = modality_col,
             min_cells_sample=min_cells_sample,
             min_cell_gene=min_cell_gene,
             min_features=min_features,

@@ -76,5 +76,5 @@ def process_directory(directory_path):
 
 if __name__ == "__main__":
     
-    directory_path =  "/dcl01/hongkai/data/data/hjiang/Data/paired/atac"
-    process_directory(directory_path)
+    directory_path =  "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/adata_sample.h5ad"
+    analyze_h5ad(directory_path)

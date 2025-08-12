@@ -11,6 +11,7 @@ def integrate_preprocess(
     output_dir,
     h5ad_path = None,
     sample_column = 'sample',
+    modality_col = 'modality',
     min_cells_sample=1,
     min_cell_gene=10,
     min_features=500,
@@ -57,6 +58,12 @@ def integrate_preprocess(
     adata = sc.read_h5ad(h5ad_path)
     if verbose:
         print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+
+    # Modify sample IDs by adding modality information
+    if modality_col is not None and modality_col in adata.obs.columns:
+        adata.obs[sample_column] = adata.obs[sample_column].astype(str) + '_' + adata.obs[modality_col].astype(str)
+        if verbose:
+            print(f"Modified sample IDs by adding modality information from '{modality_col}' column")
 
     sc.pp.filter_cells(adata, min_genes=min_features)
     sc.pp.filter_genes(adata, min_cells=min_cell_gene)
