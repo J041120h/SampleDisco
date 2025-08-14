@@ -21,7 +21,7 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: /dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad"
 rna_sample_meta_path: null
 rna_output_dir: null
 
@@ -36,9 +36,15 @@ rna_sample_cluster: false
 rna_cluster_dge: false
 rna_visualize_data: true
 
+# RNA Paths for Skipping Processes (Added missing parameter)
+rna_anndata_cell_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/adata_sample.h5ad"
+rna_pseudobulk_adata_path: null
+
 # RNA Basic Parameters
 rna_sample_col: "sample"
-rna_grouping_columns: null
+rna_grouping_columns: 
+  - "sev.level"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: "batch"
@@ -52,7 +58,6 @@ rna_min_features: 500
 rna_pct_mito_cutoff: 20
 rna_exclude_genes: null
 rna_doublet: true
-rna_combat: true
 rna_method: "average"
 rna_metric: "euclidean"
 rna_distance_mode: "centroid"
@@ -79,14 +84,13 @@ rna_pseudobulk_verbose: true
 rna_n_expression_components: 10
 rna_n_proportion_components: 10
 rna_dr_output_dir: null
-rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/adata_sample.h5ad"
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
 rna_trajectory_supervised: true
-n_components_for_cca_rna: 2
+rna_n_components_for_cca: 2  # Fixed parameter name
 rna_cca_output_dir: null
-rna_sev_col_cca: null
+rna_sev_col_cca: "sev.level"  # Added default value
 rna_cca_optimal_cell_resolution: true
 rna_cca_pvalue: false
 rna_trajectory_verbose: true
@@ -106,18 +110,18 @@ rna_top_n_heatmap: 50
 rna_trajectory_diff_gene_verbose: true
 rna_n_pcs_for_null: 10
 
-# RNA Paths for Skipping Preprocessing
-rna_anndata_cell_path: /dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad
-
 # RNA Distance Methods
 rna_summary_sample_csv_path: null
-rna_sample_distance_methods: null
+rna_sample_distance_methods: 
+  - "cosine"
+  - "correlation"
 
 # RNA Visualization Parameters
 rna_verbose_visualization: true
-rna_trajectory_visualization_label: null
+rna_trajectory_visualization_label: 
+  - "sev.level"
 rna_age_bin_size: null
-rna_age_column: null
+rna_age_column: "age"
 rna_dot_size: 5
 rna_plot_dendrogram_flag: false
 rna_plot_umap_by_cell_type_flag: true
@@ -126,7 +130,11 @@ rna_plot_cell_type_expression_umap_flag: true
 
 # RNA Cluster Based DEG
 rna_kmeans_based_cluster_flag: true
-rna_tree_building_method: null
+rna_tree_building_method: 
+  - "HRA_VEC"
+  - "HRC_VEC"
+  - "NN"
+  - "UPGMA"
 rna_proportion_test: false
 rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
@@ -172,7 +180,7 @@ atac_min_cells_per_sample: 500
 
 # ATAC Processing parameters
 atac_doublet: true
-atac_tfidf_scale_factor: 10000
+atac_tfidf_scale_factor: 10000.0  # Added .0 for consistency
 atac_num_features: 40000
 atac_n_lsi_components: 30
 atac_drop_first_lsi: true
@@ -208,7 +216,7 @@ atac_dr_verbose: true
 
 # ATAC Trajectory analysis parameters
 atac_trajectory_supervised: true
-n_components_for_cca_atac: 2
+atac_n_components_for_cca: 2  # Fixed parameter name
 atac_cca_output_dir: null
 atac_sev_col_cca: "sev.level"
 atac_trajectory_verbose: true
@@ -234,12 +242,18 @@ atac_top_gene_number: 30
 atac_trajectory_diff_gene_output_dir: null
 
 # ATAC Sample distance parameters
-atac_sample_distance_methods: null
+atac_sample_distance_methods: 
+  - "cosine"
+  - "correlation"
 atac_summary_sample_csv_path: null
 
 # ATAC Clustering parameters
 atac_kmeans_based_cluster_flag: false
-atac_tree_building_method: null
+atac_tree_building_method: 
+  - "HRA_VEC"
+  - "HRC_VEC"
+  - "NN"
+  - "UPGMA"
 atac_proportion_test: false
 atac_raisin_analysis: false
 atac_cluster_distance_method: "cosine"

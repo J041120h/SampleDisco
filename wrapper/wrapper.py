@@ -743,9 +743,6 @@ def wrapper(
                 import traceback
                 traceback.print_exc()
     
-    # ========================================
-    # ATAC PIPELINE
-    # ========================================
     if run_atac_pipeline:
         print("\n" + "="*60)
         print("RUNNING ATAC PIPELINE")
@@ -915,9 +912,6 @@ def wrapper(
                 import traceback
                 traceback.print_exc()
     
-    # ========================================
-    # MULTIOMICS PIPELINE
-    # ========================================
     if run_multiomics_pipeline:
         print("\n" + "="*60)
         print("RUNNING MULTIOMICS PIPELINE")
@@ -1115,5 +1109,4 @@ def wrapper(
     with open(status_file_path, 'w') as f:
         json.dump(status_flags, f, indent=4)
     
-    # Return comprehensive results
     return results
