@@ -50,6 +50,11 @@ def wrapper(
     rna_cluster_dge: bool = True,
     rna_visualize_data: bool = True,
     
+    # RNA Paths for Skipping Processes
+    rna_anndata_cell_path: Optional[str] = None,
+    rna_anndata_sample_path: Optional[str] = None,
+    rna_pseudobulk_adata_path: Optional[str] = None,
+    
     # RNA Basic Parameters
     rna_sample_col: str = 'sample',
     rna_grouping_columns: List[str] = None,
@@ -66,7 +71,6 @@ def wrapper(
     rna_pct_mito_cutoff: int = 20,
     rna_exclude_genes: Optional[List] = None,
     rna_doublet: bool = True,
-    rna_combat: bool = True,
     rna_method: str = 'average',
     rna_metric: str = 'euclidean',
     rna_distance_mode: str = 'centroid',
@@ -93,12 +97,11 @@ def wrapper(
     rna_n_expression_components: int = 10,
     rna_n_proportion_components: int = 10,
     rna_dr_output_dir: Optional[str] = None,
-    rna_anndata_sample_path: Optional[str] = None,
     rna_dr_verbose: bool = True,
     
     # RNA Trajectory Analysis Parameters
     rna_trajectory_supervised: bool = False,
-    n_components_for_cca_rna: int = 2,
+    rna_n_components_for_cca: int = 2,
     rna_cca_output_dir: Optional[str] = None,
     rna_sev_col_cca: str = "sev.level",
     rna_cca_optimal_cell_resolution: bool = False,
@@ -119,9 +122,6 @@ def wrapper(
     rna_top_n_heatmap: int = 50,
     rna_trajectory_diff_gene_verbose: bool = True,
     rna_n_pcs_for_null: int = 10,
-    
-    # RNA Paths for Skipping Preprocessing
-    rna_anndata_cell_path: Optional[str] = None,
     
     # RNA Distance Methods
     rna_summary_sample_csv_path: Optional[str] = None,
@@ -220,7 +220,7 @@ def wrapper(
     
     # ATAC Trajectory analysis parameters
     atac_trajectory_supervised: bool = True,
-    n_components_for_cca_atac: int = 2,
+    atac_n_components_for_cca: int = 2,
     atac_cca_output_dir: Optional[str] = None,
     atac_sev_col_cca: str = "sev.level",
     atac_trajectory_verbose: bool = True,
@@ -600,12 +600,12 @@ def wrapper(
         
         try:
             rna_results = rna_wrapper(
-                # Required parameters
+                # ===== Required Parameters =====
                 rna_count_data_path=rna_count_data_path,
                 rna_output_dir=rna_output_dir,
                 sample_col=rna_sample_col,
                 
-                # Process control flags
+                # ===== Process Control Flags =====
                 preprocessing=rna_preprocessing,
                 cell_type_cluster=rna_cell_type_cluster,
                 DimensionalityReduction=rna_dimensionality_reduction,
@@ -616,7 +616,12 @@ def wrapper(
                 cluster_DGE=rna_cluster_dge,
                 visualize_data=rna_visualize_data,
                 
-                # Basic parameters
+                # ===== Paths for Skipping Processes =====
+                AnnData_cell_path=rna_anndata_cell_path,
+                AnnData_sample_path=rna_anndata_sample_path,
+                pseudobulk_adata_path=rna_pseudobulk_adata_path,
+                
+                # ===== Basic Parameters =====
                 rna_sample_meta_path=rna_sample_meta_path,
                 grouping_columns=rna_grouping_columns,
                 cell_type_column=rna_cell_type_column,
@@ -638,33 +643,34 @@ def wrapper(
                 vars_to_regress=rna_vars_to_regress,
                 verbose=verbose,
                 
-                # Cell type clustering parameters
+                # ===== Cell Type Clustering Parameters =====
                 existing_cell_types=rna_existing_cell_types,
                 n_target_cell_clusters=rna_n_target_cell_clusters,
                 umap=rna_umap,
+                
+                # ===== Cell Type Assignment Parameters =====
                 assign_save=rna_assign_save,
                 
-                # Cell type annotation parameters
+                # ===== Cell Type Annotation Parameters =====
                 cell_type_annotation=rna_cell_type_annotation,
                 rna_cell_type_annotation_model_name=rna_cell_type_annotation_model_name,
                 rna_cell_type_annotation_custom_model_path=rna_cell_type_annotation_custom_model_path,
                 
-                # Pseudobulk parameters
+                # ===== Pseudobulk Parameters =====
                 celltype_col=rna_celltype_col,
                 pseudobulk_output_dir=rna_pseudobulk_output_dir,
                 n_features=rna_pseudobulk_n_features,
                 pseudobulk_verbose=rna_pseudobulk_verbose,
                 
-                # PCA parameters
+                # ===== PCA Parameters =====
                 n_expression_components=rna_n_expression_components,
                 n_proportion_components=rna_n_proportion_components,
                 dr_output_dir=rna_dr_output_dir,
-                AnnData_sample_path=rna_anndata_sample_path,
                 dr_verbose=rna_dr_verbose,
                 
-                # Trajectory analysis parameters
+                # ===== Trajectory Analysis Parameters =====
                 trajectory_supervised=rna_trajectory_supervised,
-                n_components_for_cca_rna=n_components_for_cca_rna,
+                n_components_for_cca_rna=rna_n_components_for_cca,
                 cca_output_dir=rna_cca_output_dir,
                 sev_col_cca=rna_sev_col_cca,
                 cca_optimal_cell_resolution=rna_cca_optimal_cell_resolution,
@@ -672,7 +678,7 @@ def wrapper(
                 trajectory_verbose=rna_trajectory_verbose,
                 TSCAN_origin=rna_tscan_origin,
                 
-                # Trajectory differential gene parameters
+                # ===== Trajectory Differential Gene Parameters =====
                 fdr_threshold=rna_fdr_threshold,
                 effect_size_threshold=rna_effect_size_threshold,
                 top_n_genes=rna_top_n_genes,
@@ -686,25 +692,24 @@ def wrapper(
                 trajectory_diff_gene_verbose=rna_trajectory_diff_gene_verbose,
                 n_pcs_for_null=rna_n_pcs_for_null,
                 
-                # Paths for skipping preprocessing
-                AnnData_cell_path=rna_anndata_cell_path,
-                
-                # Distance methods
-                summary_sample_csv_path=rna_summary_sample_csv_path,
+                # ===== Distance Methods =====
                 sample_distance_methods=rna_sample_distance_methods,
+                summary_sample_csv_path=rna_summary_sample_csv_path,
                 
-                # Visualization parameters
+                # ===== Updated Visualization Parameters =====
                 verbose_Visualization=rna_verbose_visualization,
                 trajectory_visualization_label=rna_trajectory_visualization_label,
                 age_bin_size=rna_age_bin_size,
                 age_column=rna_age_column,
                 dot_size=rna_dot_size,
+                
+                # Updated visualization flags to match new function
                 plot_dendrogram_flag=rna_plot_dendrogram_flag,
                 plot_umap_by_cell_type_flag=rna_plot_umap_by_cell_type_flag,
                 plot_cell_type_proportions_pca_flag=rna_plot_cell_type_proportions_pca_flag,
                 plot_cell_type_expression_umap_flag=rna_plot_cell_type_expression_umap_flag,
                 
-                # Cluster based DEG
+                # ===== Cluster Based DEG =====
                 Kmeans_based_cluster_flag=rna_kmeans_based_cluster_flag,
                 Tree_building_method=rna_tree_building_method,
                 proportion_test=rna_proportion_test,
@@ -713,7 +718,7 @@ def wrapper(
                 cluster_number=rna_cluster_number,
                 user_provided_sample_to_clade=rna_user_provided_sample_to_clade,
                 
-                # System parameters
+                # ===== System Parameters (passed from main) =====
                 linux_system=linux_system,
                 use_gpu=use_gpu,
                 status_flags=status_flags
@@ -822,7 +827,7 @@ def wrapper(
                 
                 # Trajectory analysis parameters
                 trajectory_supervised_atac=atac_trajectory_supervised,
-                n_components_for_cca_atac=n_components_for_cca_atac,
+                n_components_for_cca_atac=atac_n_components_for_cca,
                 atac_cca_output_dir=atac_cca_output_dir,
                 sev_col_cca=atac_sev_col_cca,
                 trajectory_verbose=atac_trajectory_verbose,

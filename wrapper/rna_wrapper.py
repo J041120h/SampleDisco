@@ -284,6 +284,7 @@ def rna_wrapper(
             raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
 
         status_flags["rna"]["preprocessing"] = True
+        status_flags["rna"]["cell_type_cluster"] = True
         AnnData_cell_path = temp_cell_path
         AnnData_sample_path = temp_sample_path
         AnnData_cell = sc.read(AnnData_cell_path)
@@ -352,7 +353,7 @@ def rna_wrapper(
         
         status_flags["rna"]["cell_type_cluster"] = True
     
-    # Step 3: Pseudobulk and PCA - UNIFIED NAMING
+    # Step 3: Pseudobulk and PCA
     if DimensionalityReduction:
         print("Starting dimensionality reduction...")
         if not status_flags["rna"]["cell_type_cluster"]:
@@ -379,7 +380,6 @@ def rna_wrapper(
                 verbose=pseudobulk_verbose
             )
         
-        # Update the same object with dimension reduction results
         pseudobulk_adata = dimension_reduction(
             adata=AnnData_sample,
             pseudobulk=pseudobulk_df,
@@ -393,7 +393,7 @@ def rna_wrapper(
         status_flags["rna"]["dimensionality_reduction"] = True
     else:
         if not pseudobulk_adata_path:
-            temp_pseudobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+            temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         else:
             temp_pseudobulk_path = pseudobulk_adata_path
         if not os.path.exists(temp_pseudobulk_path):
@@ -662,7 +662,7 @@ def rna_wrapper(
         visualization(
             AnnData_cell=AnnData_cell,
             AnnData_sample=AnnData_sample,
-            pseudobulk_anndata=pseudobulk_adata,  # UNIFIED NAMING HERE
+            pseudobulk_anndata=pseudobulk_adata, 
             output_dir=rna_output_dir,
             grouping_columns=grouping_columns,
             age_bin_size=age_bin_size,
@@ -678,7 +678,6 @@ def rna_wrapper(
     
     print("RNA analysis completed successfully!")
     
-    # Return important objects and status - UNIFIED NAMING
     return {
         'AnnData_cell': AnnData_cell,
         'AnnData_sample': AnnData_sample,
