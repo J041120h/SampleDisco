@@ -317,11 +317,58 @@ def create_single_embedding_plot(adata, modality_col, color_col, target_modality
     
     return fig, ax
 
-def visualize_multimodal_embedding(adata, modality_col, color_col, target_modality,
+def plot_default_embedding(adata, embedding_key, ax, point_size=60, alpha=0.8, 
+                          show_sample_names=False, sample_color='steelblue'):
+    """
+    Plot embedding with all samples shown equally without modality separation or coloring.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Annotated data object
+    embedding_key : str
+        Key for embedding coordinates
+    ax : matplotlib axis
+        Axis to plot on
+    point_size : int
+        Size of scatter points
+    alpha : float
+        Transparency of points
+    show_sample_names : bool
+        Whether to show sample names
+    sample_color : str
+        Color for all samples
+    """
+    
+    x_coords, y_coords, sample_names, _ = get_embedding_data(adata, embedding_key, verbose=False)
+    
+    # Plot all samples with the same color
+    ax.scatter(x_coords, y_coords, 
+              c=sample_color, s=point_size, alpha=alpha,
+              edgecolors='black', linewidth=0.5, 
+              label='All samples', zorder=2)
+    
+    # Add sample labels if requested
+    if show_sample_names:
+        for i, sample in enumerate(sample_names):
+            ax.annotate(sample, (x_coords[i], y_coords[i]), 
+                       xytext=(5, 5), textcoords='offset points',
+                       fontsize=8, alpha=0.8)
+    
+    ax.set_xlabel('Dimension 1')
+    ax.set_ylabel('Dimension 2')
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='upper right')
+    
+    return ax
+
+
+def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, target_modality=None,
                                   expression_key='X_DR_expression', proportion_key='X_DR_proportion',
                                   figsize=(20, 8), point_size=60, alpha=0.8, 
                                   colormap='viridis', output_dir=None, 
-                                  show_sample_names=False, force_data_type=None, verbose=True):
+                                  show_sample_names=False, force_data_type=None, 
+                                  show_default=True, verbose=True):
     """
     Visualize multimodal embeddings with flexible coloring by any column.
     
@@ -329,12 +376,12 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
     -----------
     adata : AnnData
         Annotated data object containing embeddings and metadata
-    modality_col : str
-        Column name in adata.obs containing modality information
-    color_col : str
-        Column name in adata.obs to use for coloring points (numerical or categorical)
-    target_modality : str
-        Which modality to highlight in the visualization
+    modality_col : str or None
+        Column name in adata.obs containing modality information (None for default plot)
+    color_col : str or None
+        Column name in adata.obs to use for coloring points (None for default plot)
+    target_modality : str or None
+        Which modality to highlight in the visualization (None for default plot)
     expression_key : str
         Key for expression-based embedding (default: 'X_DR_expression')
     proportion_key : str
@@ -350,9 +397,11 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
     output_dir : str
         Directory or file path to save plots
     show_sample_names : bool
-        Whether to show sample names on plot (only for target modality, default: False)
+        Whether to show sample names on plot (default: False)
     force_data_type : str or None
         Force data type to 'numerical' or 'categorical' instead of auto-detection (default: None)
+    show_default : bool
+        If True, show default embedding without modality separation or coloring (default: False)
     verbose : bool
         Print progress messages (default: True)
     
@@ -362,23 +411,138 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
         The created visualization (None if saved separately)
     """
     
+    # Determine if we should show the default plot
+    if show_default or (modality_col is None and color_col is None and target_modality is None):
+        show_default = True
+        if verbose:
+            print("Creating default embedding visualization (all samples)")
+    else:
+        # Validate that all required parameters are provided for modality-specific plot
+        if modality_col is None or color_col is None or target_modality is None:
+            raise ValueError("For modality-specific plots, modality_col, color_col, and target_modality must all be provided. "
+                           "Set show_default=True or provide no parameters for default plot.")
+    
     if verbose:
-        print(f"Creating multimodal embedding visualization for {target_modality}")
-        print(f"Coloring by: {color_col}")
+        if not show_default:
+            print(f"Creating multimodal embedding visualization for {target_modality}")
+            print(f"Coloring by: {color_col}")
         print(f"Expression key: {expression_key}")
         print(f"Proportion key: {proportion_key}")
         if show_sample_names:
-            print(f"Sample names will be shown only for {target_modality} modality")
+            if show_default:
+                print("Sample names will be shown for all samples")
+            else:
+                print(f"Sample names will be shown only for {target_modality} modality")
     
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if output_dir:
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            if verbose:
+                print("Automatically generating output_dir")
+        output_dir = os.path.join(output_dir, 'visualization')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            if verbose:
+                print("Automatically generating visualization output_dir")
+    
+    # Check which embeddings are available
+    available_embeddings = []
+    
+    if expression_key in adata.obsm or expression_key in adata.uns:
+        available_embeddings.append(('Expression', expression_key))
+    else:
         if verbose:
-            print("Automatically generating output_dir")
-    output_dir = os.path.join(output_dir, 'visualization')
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+            print(f"Warning: Expression embedding '{expression_key}' not found")
+    
+    if proportion_key in adata.obsm or proportion_key in adata.uns:
+        available_embeddings.append(('Proportion', proportion_key))
+    else:
         if verbose:
-            print("Automatically generating visualization output_dir")
+            print(f"Warning: Proportion embedding '{proportion_key}' not found")
+    
+    if not available_embeddings:
+        available_obsm = list(adata.obsm.keys()) if hasattr(adata, 'obsm') else []
+        available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
+        raise ValueError(f"No embeddings found. Available in obsm: {available_obsm}, uns: {available_uns}")
+    
+    # Handle default plot case
+    if show_default:
+        # If both embeddings are available and output_dir is provided, save separately
+        if len(available_embeddings) == 2 and output_dir:
+            saved_files = []
+            
+            for embedding_type, embedding_key in available_embeddings:
+                fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+                
+                # Create default plot
+                ax = plot_default_embedding(
+                    adata, embedding_key, ax,
+                    point_size=point_size, alpha=alpha,
+                    show_sample_names=show_sample_names
+                )
+                
+                # Set title
+                title = f'{embedding_type} Embedding: All Samples'
+                ax.set_title(title, fontsize=14, fontweight='bold')
+                
+                plt.tight_layout()
+                
+                # Save plot
+                filename = f"all_samples_{embedding_type.lower()}.png"
+                save_path = os.path.join(output_dir, filename)
+                plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                saved_files.append(save_path)
+                
+                if verbose:
+                    print(f"{embedding_type} plot saved to: {save_path}")
+                
+                plt.close(fig)
+            
+            return None, None
+        
+        # Create combined plot for default view
+        n_plots = len(available_embeddings)
+        fig, axes = plt.subplots(1, n_plots, figsize=figsize, sharey=True)
+        
+        if n_plots == 1:
+            axes = [axes]
+        
+        for i, (embedding_type, embedding_key) in enumerate(available_embeddings):
+            ax = axes[i]
+            
+            ax = plot_default_embedding(
+                adata, embedding_key, ax,
+                point_size=point_size, alpha=alpha,
+                show_sample_names=show_sample_names
+            )
+            
+            # Set title based on embedding type
+            if embedding_type == 'Expression':
+                title = 'Expression Embedding'
+            else:
+                title = 'Cell Proportion Embedding'
+            
+            ax.set_title(title, fontsize=14, fontweight='bold')
+            ax.set_xlabel('Dimension 1')
+            if i == 0:
+                ax.set_ylabel('Dimension 2')
+        
+        # Add main title
+        fig.suptitle('Multi-modal Embedding: All Samples', fontsize=16, fontweight='bold', y=0.95)
+        
+        plt.tight_layout()
+        
+        # Save combined plot if requested
+        if output_dir:
+            save_path = os.path.join(output_dir, "all_samples_combined.png")
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            if verbose:
+                print(f"Combined plot saved to: {save_path}")
+        
+        return fig, axes
+    
+    # If not default plot, continue with the original modality-specific logic
+    # [Rest of the original function code remains the same from here...]
     
     # Detect data type early
     target_mask = adata.obs[modality_col].values == target_modality
@@ -400,26 +564,6 @@ def visualize_multimodal_embedding(adata, modality_col, color_col, target_modali
         print(f"\nDetected data type for {color_col}: {data_type}")
         if data_type == 'categorical':
             print(f"Categories found: {sorted(unique_values)}")
-    
-    # Check which embeddings are available
-    available_embeddings = []
-    
-    if expression_key in adata.obsm or expression_key in adata.uns:
-        available_embeddings.append(('Expression', expression_key))
-    else:
-        if verbose:
-            print(f"Warning: Expression embedding '{expression_key}' not found")
-    
-    if proportion_key in adata.obsm or proportion_key in adata.uns:
-        available_embeddings.append(('Proportion', proportion_key))
-    else:
-        if verbose:
-            print(f"Warning: Proportion embedding '{proportion_key}' not found")
-    
-    if not available_embeddings:
-        available_obsm = list(adata.obsm.keys()) if hasattr(adata, 'obsm') else []
-        available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
-        raise ValueError(f"No embeddings found. Available in obsm: {available_obsm}, uns: {available_uns}")
     
     # If both embeddings are available and output_dir is provided, save separately
     if len(available_embeddings) == 2 and output_dir:

@@ -21,8 +21,8 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad"
-rna_sample_meta_path: "/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv"
+rna_count_data_path: /dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad
+rna_sample_meta_path: null
 rna_output_dir: null
 
 # RNA Process Control Flags
@@ -30,16 +30,15 @@ rna_preprocessing: false
 rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: true
+rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
-rna_grouping_columns:
-  - "sev.level"
+rna_grouping_columns: null
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: "batch"
@@ -72,7 +71,7 @@ rna_cell_type_annotation_custom_model_path: null
 
 # RNA Pseudobulk Parameters
 rna_celltype_col: "cell_type"
-rna_pseudobulk_output_dir: null
+rna_pseudobulk_output_dir: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/pseudobulk"
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
 
@@ -80,14 +79,14 @@ rna_pseudobulk_verbose: true
 rna_n_expression_components: 10
 rna_n_proportion_components: 10
 rna_dr_output_dir: null
-rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_sample.h5ad"
+rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/adata_sample.h5ad"
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
 rna_trajectory_supervised: true
 n_components_for_cca_rna: 2
 rna_cca_output_dir: null
-rna_sev_col_cca: "sev.level"
+rna_sev_col_cca: null
 rna_cca_optimal_cell_resolution: true
 rna_cca_pvalue: false
 rna_trajectory_verbose: true
@@ -108,7 +107,7 @@ rna_trajectory_diff_gene_verbose: true
 rna_n_pcs_for_null: 10
 
 # RNA Paths for Skipping Preprocessing
-rna_anndata_cell_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad"
+rna_anndata_cell_path: /dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad
 
 # RNA Distance Methods
 rna_summary_sample_csv_path: null
@@ -116,15 +115,14 @@ rna_sample_distance_methods: null
 
 # RNA Visualization Parameters
 rna_verbose_visualization: true
-rna_trajectory_visualization_label: 
-  - "sev.level"
+rna_trajectory_visualization_label: null
 rna_age_bin_size: null
-rna_age_column: "age"
-rna_dot_size: 3
-rna_plot_dendrogram_flag: true
+rna_age_column: null
+rna_dot_size: 5
+rna_plot_dendrogram_flag: false
 rna_plot_umap_by_cell_type_flag: true
-rna_plot_cell_type_proportions_pca_flag: false
-rna_plot_cell_type_expression_umap_flag: false
+rna_plot_cell_type_proportions_pca_flag: true
+rna_plot_cell_type_expression_umap_flag: true
 
 # RNA Cluster Based DEG
 rna_kmeans_based_cluster_flag: true

@@ -272,18 +272,23 @@ def rna_wrapper(
         sample_col = 'sample'
         batch_col = 'batch'
     else:
-        # Load preprocessed data
-        if not status_flags["rna"]["preprocessing"]:
-            raise ValueError("RNA preprocessing is skipped, but no preprocessed data found.")
         if not AnnData_cell_path or not AnnData_sample_path:
             temp_cell_path = os.path.join(rna_output_dir, "preprocess", "adata_cell.h5ad")
             temp_sample_path = os.path.join(rna_output_dir, "preprocess", "adata_sample.h5ad")
-            if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
-                raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
-            AnnData_cell_path = temp_cell_path
-            AnnData_sample_path = temp_sample_path
+        else:
+            temp_cell_path = AnnData_cell_path
+            temp_sample_path = AnnData_sample_path
+        if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
+            raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
+
+        AnnData_cell_path = temp_cell_path
+        AnnData_sample_path = temp_sample_path
+        status_flags["rna"]["preprocessing"] = True
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
+    
+    if not status_flags["rna"]["preprocessing"]:
+            raise ValueError("RNA preprocessing is skipped, but no preprocessed data found.")
     
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
@@ -384,15 +389,15 @@ def rna_wrapper(
         )
         status_flags["rna"]["dimensionality_reduction"] = True
     else:
-        if (sample_distance_calculation or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE):
-            if not pseudobulk_output_dir:
-                temp_pseudobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
-            else:
-                temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
-            if not os.path.exists(temp_pseudobulk_path):
-                raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
-            print("Reading Pseudobulk from default path")
-            pseudobulk_anndata = sc.read(temp_pseudobulk_path)
+        if not pseudobulk_output_dir:
+            temp_pseudobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+        else:
+            temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk_sample.h5ad")
+        if not os.path.exists(temp_pseudobulk_path):
+            raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
+        status_flags["rna"]["dimensionality_reduction"] = True
+        print("Reading Pseudobulk from default path")
+        pseudobulk_anndata = sc.read(temp_pseudobulk_path)
     
     # Step 5: Sample Distance Calculation
     if sample_distance_calculation:

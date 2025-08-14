@@ -73,7 +73,7 @@ def visualization(
     AnnData_sample,
     pseudobulk_anndata,
     output_dir,
-    grouping_columns=['sev.level'],
+    grouping_columns=None,
     age_bin_size=None,
     age_column='age',
     verbose=True,
