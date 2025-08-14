@@ -37,6 +37,11 @@ def rna_wrapper(
     cluster_DGE=True,
     visualize_data=True,
     
+    # ===== Paths for Skipping Processes =====
+    AnnData_cell_path=None,
+    AnnData_sample_path=None,
+    pseudobulk_adata_path=None,
+    
     # ===== Basic Parameters =====
     rna_sample_meta_path=None,
     grouping_columns=['sev.level'],
@@ -82,7 +87,6 @@ def rna_wrapper(
     n_expression_components=10,
     n_proportion_components=10,
     dr_output_dir=None,
-    AnnData_sample_path=None,
     dr_verbose=True,
     
     # ===== Trajectory Analysis Parameters =====
@@ -109,12 +113,9 @@ def rna_wrapper(
     trajectory_diff_gene_verbose=True,
     n_pcs_for_null=10,
     
-    # ===== Paths for Skipping Preprocessing =====
-    AnnData_cell_path=None,
-    
     # ===== Distance Methods =====
-    summary_sample_csv_path=None,
     sample_distance_methods=None,
+    summary_sample_csv_path=None,
     
     # ===== Updated Visualization Parameters =====
     verbose_Visualization=True,
@@ -202,12 +203,11 @@ def rna_wrapper(
             "visualization": False
         }
 
-    # Initialize variables
+    # Initialize variables - UNIFIED NAMING
     AnnData_cell = None
     AnnData_sample = None
     pseudobulk_df = None
-    pseudobulk_adata = None
-    pseudobulk_anndata = None
+    pseudobulk_adata = None 
 
     # Step 1: Harmony Preprocessing
     if preprocessing:
@@ -271,7 +271,9 @@ def rna_wrapper(
             AnnData_sample.obs.rename(columns={batch_col: 'batch'}, inplace=True)
         sample_col = 'sample'
         batch_col = 'batch'
+
     else:
+        # We offer the option to skip preprocessing and use preprocessed data
         if not AnnData_cell_path or not AnnData_sample_path:
             temp_cell_path = os.path.join(rna_output_dir, "preprocess", "adata_cell.h5ad")
             temp_sample_path = os.path.join(rna_output_dir, "preprocess", "adata_sample.h5ad")
@@ -281,9 +283,9 @@ def rna_wrapper(
         if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
             raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
 
+        status_flags["rna"]["preprocessing"] = True
         AnnData_cell_path = temp_cell_path
         AnnData_sample_path = temp_sample_path
-        status_flags["rna"]["preprocessing"] = True
         AnnData_cell = sc.read(AnnData_cell_path)
         AnnData_sample = sc.read(AnnData_sample_path)
     
@@ -350,7 +352,7 @@ def rna_wrapper(
         
         status_flags["rna"]["cell_type_cluster"] = True
     
-    # Step 3: Pseudobulk and PCA
+    # Step 3: Pseudobulk and PCA - UNIFIED NAMING
     if DimensionalityReduction:
         print("Starting dimensionality reduction...")
         if not status_flags["rna"]["cell_type_cluster"]:
@@ -377,7 +379,8 @@ def rna_wrapper(
                 verbose=pseudobulk_verbose
             )
         
-        pseudobulk_anndata = dimension_reduction(
+        # Update the same object with dimension reduction results
+        pseudobulk_adata = dimension_reduction(
             adata=AnnData_sample,
             pseudobulk=pseudobulk_df,
             pseudobulk_anndata=pseudobulk_adata,
@@ -389,22 +392,22 @@ def rna_wrapper(
         )
         status_flags["rna"]["dimensionality_reduction"] = True
     else:
-        if not pseudobulk_output_dir:
+        if not pseudobulk_adata_path:
             temp_pseudobulk_path = os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         else:
-            temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk_sample.h5ad")
+            temp_pseudobulk_path = pseudobulk_adata_path
         if not os.path.exists(temp_pseudobulk_path):
             raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
         status_flags["rna"]["dimensionality_reduction"] = True
-        print("Reading Pseudobulk from default path")
-        pseudobulk_anndata = sc.read(temp_pseudobulk_path)
+        print("Reading Pseudobulk from provided or default path")
+        pseudobulk_adata = sc.read(temp_pseudobulk_path)
     
-    # Step 5: Sample Distance Calculation
+    # Step 5: Sample Distance Calculation - UNIFIED NAMING
     if sample_distance_calculation:
         for method in sample_distance_methods:
             print(f"\nRunning sample distance: {method}\n")
             sample_distance(
-                adata=pseudobulk_anndata,
+                adata=pseudobulk_adata,
                 output_dir=os.path.join(rna_output_dir, 'Sample_distance'),
                 method=method,
                 grouping_columns=grouping_columns,
@@ -412,24 +415,24 @@ def rna_wrapper(
                 cell_adata=AnnData_cell,
                 cell_type_column='cell_type',
                 sample_column=sample_col,
-                pseudobulk_adata=pseudobulk_anndata
+                pseudobulk_adata=pseudobulk_adata
             )
         status_flags["rna"]["sample_distance_calculation"] = True
         if verbose:
             print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample_distance')}")
 
-    # Step 4: Trajectory Analysis
+    # Step 4: Trajectory Analysis - UNIFIED NAMING
     if trajectory_analysis:
         print("Starting trajectory analysis...")
         if not status_flags["rna"]["dimensionality_reduction"]:
             raise ValueError("Dimensionality reduction is required before trajectory analysis.")
         
         if trajectory_supervised:
-            if sev_col_cca not in pseudobulk_anndata.obs.columns:
+            if sev_col_cca not in pseudobulk_adata.obs.columns:
                 raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
             
             first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression = CCA_Call(
-                adata=pseudobulk_anndata,
+                adata=pseudobulk_adata,
                 n_components = n_components_for_cca_rna,
                 output_dir=cca_output_dir,
                 sev_col=sev_col_cca,
@@ -439,7 +442,7 @@ def rna_wrapper(
             
             if cca_pvalue:
                 cca_pvalue_test(
-                    pseudo_adata=pseudobulk_anndata,
+                    pseudo_adata=pseudobulk_adata,
                     column="X_DR_proportion",
                     input_correlation=first_component_score_proportion,
                     output_directory=cca_output_dir,
@@ -448,7 +451,7 @@ def rna_wrapper(
                     verbose=trajectory_verbose
                 )
                 cca_pvalue_test(
-                    pseudo_adata=pseudobulk_anndata,
+                    pseudo_adata=pseudobulk_adata,
                     column="X_DR_expression",
                     input_correlation=first_component_score_expression,
                     output_directory=cca_output_dir,
@@ -500,7 +503,7 @@ def rna_wrapper(
         else:
             # Unsupervised trajectory analysis
             TSCAN_result_expression = TSCAN(
-                AnnData_sample=pseudobulk_anndata,
+                AnnData_sample=pseudobulk_adata,
                 column="X_DR_expression",
                 n_clusters=8,
                 output_dir=rna_output_dir,
@@ -509,7 +512,7 @@ def rna_wrapper(
                 origin=TSCAN_origin
             )
             TSCAN_result_proportion = TSCAN(
-                AnnData_sample=pseudobulk_anndata,
+                AnnData_sample=pseudobulk_adata,
                 column="X_DR_proportion",
                 n_clusters=8,
                 output_dir=rna_output_dir,
@@ -519,7 +522,7 @@ def rna_wrapper(
             )
             status_flags["rna"]["trajectory_analysis"] = True
 
-       # Trajectory differential gene analysis
+       # Trajectory differential gene analysis - UNIFIED NAMING
         if trajectory_DGE:
             print("Starting trajectory differential gene analysis...")
             
@@ -529,7 +532,7 @@ def rna_wrapper(
                 
                 results = run_integrated_differential_analysis(
                     trajectory_results= (first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression),
-                    pseudobulk_adata=pseudobulk_anndata,
+                    pseudobulk_adata=pseudobulk_adata,
                     trajectory_type="CCA",
                     sample_col=sample_col,
                     fdr_threshold=fdr_threshold,
@@ -550,7 +553,7 @@ def rna_wrapper(
                 print("Running TSCAN-based differential analysis...")
                 all_path_results = run_integrated_differential_analysis(
                     trajectory_results=TSCAN_result_expression,
-                    pseudobulk_adata=pseudobulk_anndata,
+                    pseudobulk_adata=pseudobulk_adata,
                     trajectory_type="TSCAN",
                     sample_col=sample_col,
                     fdr_threshold=fdr_threshold,
@@ -645,7 +648,7 @@ def rna_wrapper(
         
         status_flags["rna"]["cluster_dge"] = True
     
-    # Step 7: Visualization - UPDATED TO MATCH NEW FUNCTION SIGNATURE
+    # Step 7: Visualization - UNIFIED NAMING
     if visualize_data:
         print("Starting visualization...")
         if not status_flags["rna"]["cell_type_cluster"]:
@@ -659,7 +662,7 @@ def rna_wrapper(
         visualization(
             AnnData_cell=AnnData_cell,
             AnnData_sample=AnnData_sample,
-            pseudobulk_anndata=pseudobulk_anndata,
+            pseudobulk_anndata=pseudobulk_adata,  # UNIFIED NAMING HERE
             output_dir=rna_output_dir,
             grouping_columns=grouping_columns,
             age_bin_size=age_bin_size,
@@ -675,11 +678,11 @@ def rna_wrapper(
     
     print("RNA analysis completed successfully!")
     
-    # Return important objects and status
+    # Return important objects and status - UNIFIED NAMING
     return {
         'AnnData_cell': AnnData_cell,
         'AnnData_sample': AnnData_sample,
         'pseudobulk_df': pseudobulk_df,
-        'pseudobulk_anndata': pseudobulk_anndata,
+        'pseudobulk_adata': pseudobulk_adata,  # UNIFIED NAMING HERE
         'status_flags': status_flags
     }
