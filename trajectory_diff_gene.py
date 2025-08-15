@@ -861,7 +861,7 @@ def generate_gene_visualizations(
     
     # Import visualization function if available
     try:
-        from DEG_visualization import visualize_gene_expression
+        from visualization.DEG_visualization import visualize_gene_expression
         
         for gene in gene_list:
             if gene in gam_models and gene in Y.columns:
