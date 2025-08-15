@@ -35,6 +35,11 @@ def atac_wrapper(
     cluster_DGE=True,
     atac_visualization_processing=True,
     
+    # ===== Paths for Skipping Processes =====
+    atac_cell_path=None,
+    atac_sample_path=None,
+    atac_pseudobulk_adata_path=None,
+    
     # ===== Basic Parameters =====
     atac_batch_col=None,
     atac_cell_type_column="cell_type",
@@ -67,10 +72,6 @@ def atac_wrapper(
     atac_leiden_resolution=0.8,
     atac_existing_cell_types=False,
     atac_n_target_cell_clusters=None,
-    
-    # ===== Paths for Skipping Preprocessing =====
-    atac_cell_path=None,
-    atac_sample_path=None,
     
     # ===== Pseudobulk Parameters =====
     atac_pseudobulk_output_dir=None,
@@ -146,26 +147,25 @@ def atac_wrapper(
     sample_col='sample',
     status_flags=None,
 ):
-    # Validate input paths
+    # Validate required parameters
     if any(data is None for data in (atac_count_data_path, atac_output_dir)):
-        raise ValueError("Please provide valid paths for atac_count_data_path, atac_output_dir.")
+        raise ValueError("Required parameters atac_count_data_path and atac_output_dir must be provided.")
     
-    # Set default sample distance methods if not provided
+    # Set default values for parameters
     if sample_distance_methods is None:
         sample_distance_methods = ['cosine', 'correlation']
+    
     if atac_pseudobulk_output_dir is None:
         atac_pseudobulk_output_dir = atac_output_dir
+    
     if atac_dr_output_dir is None:
         atac_dr_output_dir = atac_output_dir
+    
     if atac_cca_output_dir is None:
         atac_cca_output_dir = atac_output_dir
+
     if atac_trajectory_diff_gene_output_dir is None:
         atac_trajectory_diff_gene_output_dir = os.path.join(atac_output_dir, 'trajectoryDEG')
-    
-    os.makedirs(atac_output_dir, exist_ok=True)
-    os.makedirs(atac_pseudobulk_output_dir, exist_ok=True)
-    os.makedirs(atac_dr_output_dir, exist_ok=True)
-    os.makedirs(atac_cca_output_dir, exist_ok=True)
     
     # Initialize status flags if not provided
     if status_flags is None:
@@ -195,17 +195,14 @@ def atac_wrapper(
             "visualization": False
         }
     
-    # Initialize variables
-    atac_sample = None
+    # Initialize variables - UNIFIED NAMING
     atac_cell = None
-    pseudobulk_anndata = None
-    atac_pseudobulk_df = None
+    atac_sample = None
+    pseudobulk_adata = None
     
     # Step 1: ATAC Preprocessing
     if atac_preprocessing:
-        if atac_pipeline_verbose:
-            print("Starting ATAC-seq preprocessing...")
-            
+        print("Starting ATAC preprocessing...")
         atac_sample, atac_cell = run_scatac_pipeline(
             filepath=atac_count_data_path,
             output_dir=atac_output_dir,
@@ -248,31 +245,44 @@ def atac_wrapper(
             umap_random_state=atac_umap_random_state,
         )
         status_flags["atac"]["preprocessing"] = True
+
+        # Standardize column names
+        if atac_sample_col != 'sample':
+            atac_sample.obs.rename(columns={atac_sample_col: 'sample'}, inplace=True)
+        if atac_batch_col and atac_batch_col != 'batch':
+            atac_sample.obs.rename(columns={atac_batch_col: 'batch'}, inplace=True)
+        atac_sample_col = 'sample'
+        atac_batch_col = 'batch'
+        
     else:
-        # Load preprocessed data
+        # We offer the option to skip preprocessing and use preprocessed data
         if not atac_cell_path or not atac_sample_path:
             temp_cell_path = os.path.join(atac_output_dir, "preprocess", "adata_cell.h5ad")
             temp_sample_path = os.path.join(atac_output_dir, "preprocess", "adata_sample.h5ad")
-            if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
-                raise ValueError("Preprocessed ATAC data paths are not provided and default files do not exist.")
-            atac_cell_path = temp_cell_path
-            atac_sample_path = temp_sample_path
+        else:
+            temp_cell_path = atac_cell_path
+            temp_sample_path = atac_sample_path
         
-        if atac_pipeline_verbose:
-            print(f"Loading preprocessed ATAC data from {atac_cell_path} and {atac_sample_path}")
-            
+        if not os.path.exists(temp_cell_path) or not os.path.exists(temp_sample_path):
+            raise ValueError("Preprocessed ATAC data paths are not provided and default files path do not exist.")
+        
+        status_flags["atac"]["preprocessing"] = True
+        status_flags["atac"]["cell_type_cluster"] = True
+        atac_cell_path = temp_cell_path
+        atac_sample_path = temp_sample_path
         atac_cell = sc.read(atac_cell_path)
         atac_sample = sc.read(atac_sample_path)
     
-    # Step 2: Cell Type Clustering
-    if atac_pipeline_verbose:
-        print("Performing cell type clustering for ATAC data...")
+    if not status_flags["atac"]["preprocessing"]:
+        raise ValueError("ATAC preprocessing is skipped, but no preprocessed data found.")
     
+    # Step 2: Cell Type Clustering
     if atac_cell_type_cluster:
+        print("Starting ATAC cell type clustering...")
         atac_sample = cell_types_atac(
             adata=atac_sample,
             cell_column=atac_cell_type_column,
-            Save = True,
+            Save=True,
             existing_cell_types=atac_existing_cell_types,
             n_target_clusters=atac_n_target_cell_clusters,
             cluster_resolution=atac_leiden_resolution,
@@ -286,11 +296,12 @@ def atac_wrapper(
         )
         status_flags["atac"]["cell_type_cluster"] = True
     
-    # Step 3: Pseudobulk and Dimensionality Reduction
+    # Step 3: Pseudobulk and PCA
     if atac_pseudobulk_dimensionality_reduction:
-        if atac_pipeline_verbose:
-            print("Computing pseudobulk and performing dimensionality reduction...")
-            
+        print("Starting ATAC dimensionality reduction...")
+        if not status_flags["atac"]["cell_type_cluster"]:
+            raise ValueError("Cell type clustering is required before dimension reduction.")
+        
         atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
             adata=atac_sample,
             batch_col=atac_batch_col,
@@ -302,7 +313,7 @@ def atac_wrapper(
             verbose=atac_pseudobulk_verbose
         )
         
-        pseudobulk_anndata = dimension_reduction(
+        pseudobulk_adata = dimension_reduction(
             adata=atac_sample,
             pseudobulk=atac_pseudobulk_df,
             pseudobulk_anndata=pseudobulk_adata,
@@ -315,33 +326,50 @@ def atac_wrapper(
             verbose=atac_dr_verbose
         )
         status_flags["atac"]["dimensionality_reduction"] = True
-
-    elif sample_distance_calculation or cluster_DGE or  trajectory_analysis_atac:
-        temp_pseuobulk_path = os.path.join(atac_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
-        if not os.path.exists(temp_pseuobulk_path):
-            raise ValueError("Pseudobulk data not found. Ensure dimensionality reduction is performed first.")
-        pseudobulk_anndata = sc.read(temp_pseuobulk_path)
+    else:
+        if not atac_pseudobulk_adata_path:
+            temp_pseudobulk_path = os.path.join(atac_pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+        else:
+            temp_pseudobulk_path = atac_pseudobulk_adata_path
+        
+        if not os.path.exists(temp_pseudobulk_path):
+            raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
+        
         status_flags["atac"]["dimensionality_reduction"] = True
-
-    # Step 4: Trajectory Analysis
+        print("Reading ATAC Pseudobulk from provided or default path")
+        pseudobulk_adata = sc.read(temp_pseudobulk_path)
+    
+    if sample_distance_calculation:
+        for method in sample_distance_methods:
+            print(f"\nRunning ATAC sample distance: {method}\n")
+            sample_distance(
+                adata=pseudobulk_adata,
+                output_dir=os.path.join(atac_output_dir, 'Sample_distance'),
+                method=method,
+                grouping_columns=grouping_columns,
+                summary_csv_path=summary_sample_csv_path,
+                cell_adata=atac_sample,
+                cell_type_column='cell_type',
+                sample_column=sample_col,
+                pseudobulk_adata=pseudobulk_adata
+            )
+        status_flags["atac"]["sample_distance_calculation"] = True
+        if verbose:
+            print(f"ATAC sample distance calculation completed. Results saved in {os.path.join(atac_output_dir, 'Sample_distance')}")
+    
+    # Step 5: Trajectory Analysis - UNIFIED NAMING
     if trajectory_analysis_atac:
+        print("Starting ATAC trajectory analysis...")
         if not status_flags["atac"]["dimensionality_reduction"]:
-            # Load pseudobulk data if not computed
-            pseudobulk_path = os.path.join(atac_pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
-            if not os.path.exists(pseudobulk_path):
-                raise ValueError(f"Pseudobulk data not found at {pseudobulk_path}. Please run pseudobulk dimensionality reduction first.")
-            pseudobulk_anndata = sc.read(pseudobulk_path)
+            raise ValueError("Dimensionality reduction is required before trajectory analysis.")
         
         if trajectory_supervised_atac:
-            if atac_pipeline_verbose:
-                print("Running supervised trajectory analysis...")
-                
-            if sev_col_cca not in pseudobulk_anndata.obs.columns:
-                raise ValueError(f"Severity column '{sev_col_cca}' not found in pseudobulk data.")
-                
+            if sev_col_cca not in pseudobulk_adata.obs.columns:
+                raise ValueError(f"Severity column '{sev_col_cca}' not found in ATAC pseudobulk data.")
+            
             first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression = CCA_Call(
-                adata=pseudobulk_anndata,
-                n_components = n_components_for_cca_atac,
+                adata=pseudobulk_adata,
+                n_components=n_components_for_cca_atac,
                 output_dir=atac_cca_output_dir,
                 sev_col=sev_col_cca,
                 ptime=True,
@@ -349,21 +377,8 @@ def atac_wrapper(
             )
             
             if cca_pvalue:
-                if trajectory_verbose:
-                    print("Computing CCA p-values...")
-                    
                 cca_pvalue_test(
-                    pseudo_adata=pseudobulk_anndata,
-                    column="X_DR_expression",
-                    input_correlation=first_component_score_expression,
-                    output_directory=atac_cca_output_dir,
-                    num_simulations=1000,
-                    sev_col=sev_col_cca,
-                    verbose=trajectory_verbose
-                )
-                
-                cca_pvalue_test(
-                    pseudo_adata=pseudobulk_anndata,
+                    pseudo_adata=pseudobulk_adata,
                     column="X_DR_proportion",
                     input_correlation=first_component_score_proportion,
                     output_directory=atac_cca_output_dir,
@@ -371,11 +386,17 @@ def atac_wrapper(
                     sev_col=sev_col_cca,
                     verbose=trajectory_verbose
                 )
+                cca_pvalue_test(
+                    pseudo_adata=pseudobulk_adata,
+                    column="X_DR_expression",
+                    input_correlation=first_component_score_expression,
+                    output_directory=atac_cca_output_dir,
+                    num_simulations=1000,
+                    sev_col=sev_col_cca,
+                    verbose=trajectory_verbose
+                )
             
             if atac_cca_optimal_cell_resolution:
-                if trajectory_verbose:
-                    print("Finding optimal cell resolution...")
-                    
                 find_optimal_cell_resolution_atac(
                     AnnData_cell=atac_cell,
                     AnnData_sample=atac_sample,
@@ -388,7 +409,6 @@ def atac_wrapper(
                     num_DMs=atac_n_lsi_components,
                     n_pcs=n_pcs_for_null_atac
                 )
-                
                 find_optimal_cell_resolution_atac(
                     AnnData_cell=atac_cell,
                     AnnData_sample=atac_sample,
@@ -401,13 +421,11 @@ def atac_wrapper(
                     num_DMs=atac_n_lsi_components,
                     n_pcs=n_pcs_for_null_atac
                 )
+            status_flags["atac"]["trajectory_analysis"] = True
         else:
-            # Unsupervised trajectory analysis using TSCAN
-            if atac_pipeline_verbose:
-                print("Running unsupervised trajectory analysis with TSCAN...")
-                
+            # Unsupervised trajectory analysis
             TSCAN_result_expression = TSCAN(
-                AnnData_sample=pseudobulk_anndata,
+                AnnData_sample=pseudobulk_adata,
                 column="X_DR_expression",
                 n_clusters=8,
                 output_dir=atac_output_dir,
@@ -415,9 +433,8 @@ def atac_wrapper(
                 verbose=trajectory_verbose,
                 origin=TSCAN_origin
             )
-            
             TSCAN_result_proportion = TSCAN(
-                AnnData_sample=pseudobulk_anndata,
+                AnnData_sample=pseudobulk_adata,
                 column="X_DR_proportion",
                 n_clusters=8,
                 output_dir=atac_output_dir,
@@ -425,131 +442,80 @@ def atac_wrapper(
                 verbose=trajectory_verbose,
                 origin=TSCAN_origin
             )
+            status_flags["atac"]["trajectory_analysis"] = True
         
-        status_flags["atac"]["trajectory_analysis"] = True
-        
-    if trajectory_DGE and trajectory_analysis_atac:
-        if atac_pipeline_verbose:
-            print("Starting trajectory differential analysis for ATAC data...")
-        
-        if trajectory_supervised_atac:
-            # CCA-based trajectory analysis for ATAC
-            print("Running CCA-based differential analysis for ATAC peaks...")
+        # Trajectory differential gene analysis - UNIFIED NAMING
+        if trajectory_DGE:
+            print("Starting ATAC trajectory differential gene analysis...")
             
-            # Assuming you have CCA_results_atac from running CCA on ATAC pseudobulk
-            results = run_integrated_differential_analysis(
-                trajectory_results=(first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression),
-                pseudobulk_adata=pseudobulk_anndata,  # ATAC pseudobulk AnnData
-                trajectory_type="CCA",
-                sample_col=atac_sample_col,
-                fdr_threshold=fdr_threshold,
-                effect_size_threshold=effect_size_threshold,
-                top_n_genes=top_n_genes, 
-                covariate_columns=trajectory_diff_gene_covariate,
-                num_splines=num_splines,
-                spline_order=spline_order,
-                base_output_dir=atac_trajectory_diff_gene_output_dir,
-                visualization_gene_list=visualization_gene_list,
-                visualize_all_deg=visualize_all_deg,
-                top_n_heatmap=top_n_heatmap,
-                verbose=trajectory_diff_gene_verbose
-            )
-            
-            if trajectory_diff_gene_verbose and "main_path" in results:
-                print("Generating summary for differential ATAC peaks...")
-                summarize_results(
-                    results=results["main_path"],
-                    top_n=top_gene_number,
-                    output_file=os.path.join(atac_trajectory_diff_gene_output_dir, "differential_peaks_summary.txt"),
+            if trajectory_supervised_atac:
+                # CCA-based trajectory analysis
+                print("Running CCA-based differential analysis for ATAC...")
+                
+                results = run_integrated_differential_analysis(
+                    trajectory_results=(first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression),
+                    pseudobulk_adata=pseudobulk_adata,
+                    trajectory_type="CCA",
+                    sample_col=atac_sample_col,
+                    fdr_threshold=fdr_threshold,
+                    effect_size_threshold=effect_size_threshold,
+                    top_n_genes=top_n_genes,
+                    covariate_columns=trajectory_diff_gene_covariate,
+                    num_splines=num_splines,
+                    spline_order=spline_order,
+                    base_output_dir=atac_trajectory_diff_gene_output_dir,
+                    visualization_gene_list=visualization_gene_list,
+                    visualize_all_deg=visualize_all_deg,
+                    top_n_heatmap=top_n_heatmap,
                     verbose=trajectory_diff_gene_verbose
                 )
-        
-        else:
-            # TSCAN-based trajectory analysis for ATAC
-            print("Running TSCAN-based differential analysis for ATAC peaks...")
+            else:
+                # TSCAN-based trajectory analysis
+                print("Running TSCAN-based differential analysis for ATAC...")
+                all_path_results = run_integrated_differential_analysis(
+                    trajectory_results=TSCAN_result_expression,
+                    pseudobulk_adata=pseudobulk_adata,
+                    trajectory_type="TSCAN",
+                    sample_col=atac_sample_col,
+                    fdr_threshold=fdr_threshold,
+                    effect_size_threshold=effect_size_threshold,
+                    top_n_genes=top_n_genes,
+                    covariate_columns=trajectory_diff_gene_covariate,
+                    num_splines=num_splines,
+                    spline_order=spline_order,
+                    base_output_dir=atac_trajectory_diff_gene_output_dir,
+                    visualization_gene_list=visualization_gene_list,
+                    visualize_all_deg=visualize_all_deg,
+                    top_n_heatmap=top_n_heatmap,
+                    verbose=trajectory_diff_gene_verbose
+                )
             
-            # Using the integrated function for TSCAN analysis
-            all_path_results = run_integrated_differential_analysis(
-                trajectory_results=TSCAN_result_expression,  # TSCAN results for ATAC data
-                pseudobulk_adata=pseudobulk_anndata,  # ATAC pseudobulk AnnData
-                trajectory_type="TSCAN",
-                sample_col=atac_sample_col,
-                fdr_threshold=fdr_threshold,
-                effect_size_threshold=effect_size_threshold,
-                top_n_genes=top_n_genes,  # This will be top peaks for ATAC
-                covariate_columns=trajectory_diff_gene_covariate,
-                num_splines=num_splines,
-                spline_order=spline_order,
-                base_output_dir=os.path.join(atac_output_dir, 'trajectoryDEG'),
-                visualization_gene_list=visualization_gene_list,
-                visualize_all_deg=visualize_all_deg,
-                top_n_heatmap=top_n_heatmap,
-                verbose=trajectory_diff_gene_verbose
-            )
-        
-        # Set status flag
-        status_flags["atac"]["trajectory_dge"] = True
-        
-        if atac_pipeline_verbose:
-            print("ATAC trajectory differential analysis completed!")
-        
-    # Step 5: Sample Distance Calculation (if enabled)
-    if sample_distance_calculation:
-        if atac_pipeline_verbose:
-            print("Starting sample distance calculation for ATAC data...")
-            
-        if not status_flags["atac"]["dimensionality_reduction"]:
-            raise ValueError("Pseudobulk dimensionality reduction is required before sample distance calculation.")
-        
-        # Ensure summary CSV path is set
-        if summary_sample_csv_path is None:
-            summary_sample_csv_path = os.path.join(atac_output_dir, 'summary_sample_atac.csv')
-        
-        # Clean up existing summary file
-        if os.path.exists(summary_sample_csv_path):
-            os.remove(summary_sample_csv_path)
-        for method in sample_distance_methods:
-            print(f"\nRunning sample distance: {method}\n")
-            sample_distance(
-                adata= pseudobulk_anndata,
-                output_dir=os.path.join(atac_output_dir, 'Sample_distance'),
-                method=method,
-                grouping_columns=grouping_columns,
-                summary_csv_path=summary_sample_csv_path,
-                cell_adata= atac_sample,
-                cell_type_column='cell_type',
-                sample_column=sample_col,
-                pseudobulk_adata=pseudobulk_anndata
-            )
-        status_flags["atac"]["sample_distance_calculation"] = True
-        
-        if atac_pipeline_verbose:
-            print(f"Sample distance calculation completed. Results saved in {os.path.join(atac_output_dir, 'Sample')}")
+            print("ATAC trajectory differential gene analysis completed!")
+            status_flags["atac"]["trajectory_dge"] = True
     
-    # Step 6: Clustering and Differential Analysis (if enabled)
+    # Clean up summary file if exists
+    if os.path.exists(summary_sample_csv_path):
+        os.remove(summary_sample_csv_path)
+    
+    # Step 6: Clustering and Differential Gene Expression
     if atac_sample_cluster:
-        if atac_pipeline_verbose:
-            print("Starting clustering and differential analysis for ATAC data...")
-            
+        print("Starting ATAC clustering and differential gene expression...")
         if cluster_distance_method not in sample_distance_methods:
             raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
         
         for method in sample_distance_methods:
             expr_results, prop_results = cluster(
-                generalFolder = atac_output_dir,
+                generalFolder=atac_output_dir,
                 Kmeans=Kmeans_based_cluster_flag,
                 methods=Tree_building_method,
                 prportion_test=proportion_test,
-                distance_method=method,
+                distance_method=sample_distance_methods,
                 number_of_clusters=cluster_number,
                 sample_to_clade_user=user_provided_sample_to_clade
             )
-        
-            if cluster_DGE:
-                if atac_pipeline_verbose:
-                    print("Running RAISIN analysis for ATAC data...")
-                    
-                # Expression-based RAISIN analysis
+            
+            if cluster_DGE and RAISIN_analysis:
+                print("Running RAISIN analysis for ATAC...")
                 if expr_results is not None:
                     unique_expr_clades = len(set(expr_results.values()))
                     if unique_expr_clades <= 1:
@@ -566,7 +532,7 @@ def atac_wrapper(
                         )
                         run_pairwise_raisin_analysis(
                             fit=fit,
-                            output_dir=os.path.join(atac_output_dir, 'raisin_results_expression'),
+                            output_dir=os.path.join(atac_output_dir, 'raisin_results_expression', method),
                             min_samples=2,
                             fdrmethod='fdr_bh',
                             n_permutations=10,
@@ -576,7 +542,6 @@ def atac_wrapper(
                 else:
                     print("No ATAC expression results available. Skipping RAISIN analysis.")
                 
-                # Proportion-based RAISIN analysis
                 if prop_results is not None:
                     unique_prop_clades = len(set(prop_results.values()))
                     if unique_prop_clades <= 1:
@@ -592,7 +557,7 @@ def atac_wrapper(
                         )
                         run_pairwise_raisin_analysis(
                             fit=fit,
-                            output_dir=os.path.join(atac_output_dir, 'raisin_results_proportion'),
+                            output_dir=os.path.join(atac_output_dir, 'raisin_results_proportion', method),
                             min_samples=2,
                             fdrmethod='fdr_bh',
                             n_permutations=10,
@@ -601,12 +566,20 @@ def atac_wrapper(
                         )
                 else:
                     print("No ATAC proportion results available. Skipping RAISIN analysis.")
+        
         status_flags["atac"]["cluster_dge"] = True
     
-    # Step 8: Visualization
+    # Step 7: Visualization - UNIFIED NAMING
     if atac_visualization_processing:
-        if atac_pipeline_verbose:
-            print("Creating ATAC visualizations...")
+        print("Starting ATAC visualization...")
+        if not status_flags["atac"]["cell_type_cluster"]:
+            if plot_dendrogram_flag:
+                raise ValueError("Cell type clustering is required before dendrogram visualization.")
+        
+        if not status_flags["atac"]["dimensionality_reduction"]:
+            if (plot_cell_type_proportions_pca_flag or plot_cell_type_expression_pca_flag):
+                raise ValueError("Dimensionality reduction is required before the requested visualization.")
+        
         # ATAC-specific visualization
         DR_visualization_all(
             atac_sample,
@@ -619,8 +592,14 @@ def atac_wrapper(
             show_sample_names=atac_show_sample_names,
             sample_col=atac_sample_col
         )
-
-    if atac_pipeline_verbose:
-        print("ATAC-seq analysis completed successfully!")
+        status_flags["atac"]["visualization"] = True
     
-    return atac_sample, atac_cell, pseudobulk_anndata
+    print("ATAC analysis completed successfully!")
+    
+    return {
+        'atac_cell': atac_cell,
+        'atac_sample': atac_sample,
+        'atac_pseudobulk_df': atac_pseudobulk_df,
+        'pseudobulk_adata': pseudobulk_adata,  # UNIFIED NAMING HERE
+        'status_flags': status_flags
+    }
