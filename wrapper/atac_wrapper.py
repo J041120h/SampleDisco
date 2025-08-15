@@ -1,9 +1,11 @@
 import os
 import scanpy as sc
 import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from ATAC_general_pipeline import run_scatac_pipeline
 from ATAC_cell_type import *
-from ATAC_visualization import DR_visualization_all
+from visualization.ATAC_visualization import DR_visualization_all
 from ATAC_CCA_test import find_optimal_cell_resolution_atac
 from pseudo_adata import compute_pseudobulk_adata
 from DR import dimension_reduction
@@ -13,8 +15,6 @@ from TSCAN import TSCAN
 from sample_distance.sample_distance import sample_distance
 from cluster import cluster
 from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
 
