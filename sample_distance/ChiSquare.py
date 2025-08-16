@@ -7,8 +7,11 @@ import seaborn as sns
 from anndata import AnnData
 import warnings
 from anndata._core.aligned_df import ImplicitModificationWarning
-from visualization_helper import plot_cell_type_abundances, visualizeDistanceMatrix
 from distance_test import distanceCheck
+
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from visualization.visualization_helper import visualizeDistanceMatrix
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 

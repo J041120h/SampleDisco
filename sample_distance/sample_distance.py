@@ -3,12 +3,15 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import pdist, squareform
-from visualization_helper import visualizeDistanceMatrix
 from typing import Optional, List
 from distance_test import distanceCheck
 from .EMD import EMD_distances
 from .ChiSquare import chi_square_distance
 from .jensenshannon import jensen_shannon_distance
+
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from visualization.visualization_helper import visualizeDistanceMatrix
 
 def calculate_sample_distances_DR(
     adata: AnnData,

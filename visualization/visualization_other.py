@@ -4,8 +4,11 @@ import numpy as np
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist
 import scanpy as sc
+
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Grouping import find_sample_grouping
-from visualization_emebedding import plot_proportion_embedding, plot_expression_embedding
+from visualization.visualization_emebedding import plot_proportion_embedding, plot_expression_embedding
 
 def _preprocessing(
     adata_sample_diff,

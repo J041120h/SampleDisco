@@ -7,9 +7,9 @@ output_dir: "/dcl01/hongkai/data/data/hjiang/result/paired"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
 use_gpu: true
@@ -29,17 +29,17 @@ rna_output_dir: null
 rna_preprocessing: false
 rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
-rna_sample_distance_calculation: false
+rna_sample_distance_calculation: true
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: true
+rna_visualize_data: false
 
 # RNA Paths for Skipping Processes (Added missing parameter)
 rna_anndata_cell_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad"
 rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/adata_sample.h5ad"
-rna_pseudobulk_adata_path: null
+rna_pseudobulk_adata_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/pseudobulk/pseudobulk_sample.h5ad"
 
 # RNA Basic Parameters
 rna_sample_col: "sample"

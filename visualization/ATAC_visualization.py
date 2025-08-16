@@ -1,4 +1,4 @@
-from visualization_helper import *
+from .visualization_helper import *
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd

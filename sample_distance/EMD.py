@@ -7,12 +7,15 @@ from scipy.cluster.hierarchy import linkage
 import seaborn as sns
 from pyemd import emd
 from anndata import AnnData
-from visualization_helper import visualizeDistanceMatrix,plot_cell_type_abundances
 from distance_test import distanceCheck
 import warnings
 from scipy.sparse import issparse
 from scipy.spatial.distance import cdist
 from anndata._core.aligned_df import ImplicitModificationWarning
+
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from visualization.visualization_helper import visualizeDistanceMatrix
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 

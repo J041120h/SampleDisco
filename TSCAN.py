@@ -11,7 +11,7 @@ from collections import defaultdict
 from scipy.spatial.distance import pdist, squareform
 from scipy.sparse.csgraph import minimum_spanning_tree
 from typing import Dict, List, Tuple, Optional, Union
-from visualization_helper import plot_clusters_by_cluster, plot_clusters_by_grouping
+from visualization.visualization_helper import plot_clusters_by_cluster, plot_clusters_by_grouping
 
 
 def find_sample_grouping(adata: sc.AnnData, samples: List[str], grouping_columns: List[str]) -> Dict[str, str]:

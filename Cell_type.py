@@ -7,7 +7,7 @@ from scipy.cluster.hierarchy import fcluster
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
-from visualization_helper import generate_umap_visualizations
+from visualization.visualization_helper import generate_umap_visualizations
 
 def cell_types(
     adata, 
