@@ -5,6 +5,7 @@ import seaborn as sns
 from scipy import stats
 from typing import Tuple, Dict, List
 import warnings
+import os
 warnings.filterwarnings('ignore')
 
 def parse_sample_names(df: pd.DataFrame) -> Tuple[Dict, Dict]:
@@ -111,111 +112,42 @@ def permutation_test(df: pd.DataFrame,
     
     return observed_mean, p_value, null_distribution, observed_distances
 
-def visualize_results(observed_mean: float, 
-                     p_value: float, 
-                     null_distribution: np.ndarray,
-                     observed_distances: List[float],
-                     output_prefix: str = "validation"):
+def create_pvalue_plot(observed_mean: float, 
+                      p_value: float, 
+                      null_distribution: np.ndarray,
+                      output_path: str):
     """
-    Create visualizations for the permutation test results.
+    Create and save p-value distribution plot.
     
     Args:
         observed_mean: Observed mean cross-modality distance
         p_value: P-value from permutation test
         null_distribution: Array of permuted mean distances
-        observed_distances: List of observed cross-modality distances
-        output_prefix: Prefix for output files
+        output_path: Path to save the plot
     """
-    fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+    plt.figure(figsize=(8, 6))
     
-    # 1. Histogram of null distribution with observed value
-    ax1 = axes[0, 0]
-    ax1.hist(null_distribution, bins=50, alpha=0.7, color='gray', 
+    # Histogram of null distribution
+    plt.hist(null_distribution, bins=50, alpha=0.7, color='gray', 
              edgecolor='black', label='Null distribution')
-    ax1.axvline(observed_mean, color='red', linestyle='--', linewidth=2,
+    
+    # Observed value line
+    plt.axvline(observed_mean, color='red', linestyle='--', linewidth=2,
                 label=f'Observed mean: {observed_mean:.4f}')
-    ax1.set_xlabel('Average Cross-Modality Distance')
-    ax1.set_ylabel('Frequency')
-    ax1.set_title(f'Permutation Test (p-value = {p_value:.4f})')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
     
-    # 2. Q-Q plot to check distribution
-    ax2 = axes[0, 1]
-    stats.probplot(null_distribution, dist="norm", plot=ax2)
-    ax2.set_title('Q-Q Plot of Null Distribution')
-    ax2.grid(True, alpha=0.3)
+    plt.xlabel('Average Cross-Modality Distance')
+    plt.ylabel('Frequency')
+    plt.title(f'Permutation Test (p-value = {p_value:.4f})')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
     
-    # 3. Box plot comparing observed vs null
-    ax3 = axes[1, 0]
-    box_data = [observed_distances, null_distribution]
-    box_positions = [1, 2]
-    bp = ax3.boxplot(box_data, positions=box_positions, widths=0.6,
-                      patch_artist=True, labels=['Observed\n(Same Sample)', 'Null\n(Shuffled)'])
-    bp['boxes'][0].set_facecolor('lightcoral')
-    bp['boxes'][1].set_facecolor('lightgray')
-    ax3.set_ylabel('Distance')
-    ax3.set_title('Distribution Comparison')
-    ax3.grid(True, alpha=0.3, axis='y')
-    
-    # Add statistical annotation
-    y_max = max(max(observed_distances), max(null_distribution))
-    if p_value < 0.001:
-        sig_text = '***'
-    elif p_value < 0.01:
-        sig_text = '**'
-    elif p_value < 0.05:
-        sig_text = '*'
-    else:
-        sig_text = 'ns'
-    ax3.text(1.5, y_max * 1.05, sig_text, ha='center', fontsize=14, fontweight='bold')
-    
-    # 4. Cumulative distribution comparison
-    ax4 = axes[1, 1]
-    
-    # Calculate empirical CDFs
-    observed_sorted = np.sort(observed_distances)
-    observed_cdf = np.arange(1, len(observed_sorted) + 1) / len(observed_sorted)
-    
-    null_sorted = np.sort(null_distribution)
-    null_cdf = np.arange(1, len(null_sorted) + 1) / len(null_sorted)
-    
-    ax4.plot(observed_sorted, observed_cdf, 'r-', linewidth=2, label='Observed')
-    ax4.plot(null_sorted, null_cdf, 'gray', linewidth=2, label='Null')
-    ax4.set_xlabel('Distance')
-    ax4.set_ylabel('Cumulative Probability')
-    ax4.set_title('Empirical CDF Comparison')
-    ax4.legend()
-    ax4.grid(True, alpha=0.3)
-    
-    plt.suptitle('Cross-Modality Distance Statistical Validation', fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(f'{output_prefix}_validation_plots.png', dpi=300, bbox_inches='tight')
-    plt.show()
-    
-    # Print summary statistics
-    print("=" * 60)
-    print("STATISTICAL VALIDATION RESULTS")
-    print("=" * 60)
-    print(f"Number of sample pairs: {len(observed_distances)}")
-    print(f"Observed mean distance: {observed_mean:.6f}")
-    print(f"Null distribution mean: {np.mean(null_distribution):.6f}")
-    print(f"Null distribution std: {np.std(null_distribution):.6f}")
-    print(f"Effect size (Cohen's d): {(observed_mean - np.mean(null_distribution)) / np.std(null_distribution):.4f}")
-    print(f"P-value: {p_value:.6f}")
-    
-    if p_value < 0.05:
-        print("\n✓ SIGNIFICANT: Same samples from different modalities are")
-        print("  significantly closer than expected by chance (p < 0.05)")
-    else:
-        print("\n✗ NOT SIGNIFICANT: No evidence that same samples from")
-        print("  different modalities are closer than expected by chance")
-    print("=" * 60)
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
 
 def validate_cross_modality_distance(csv_path: str, 
                                     n_permutations: int = 1000,
-                                    random_seed: int = 42,
-                                    output_prefix: str = "validation") -> Dict:
+                                    random_seed: int = 42) -> Dict:
     """
     Main function to validate cross-modality distances.
     
@@ -223,7 +155,6 @@ def validate_cross_modality_distance(csv_path: str,
         csv_path: Path to the distance matrix CSV file
         n_permutations: Number of permutations for the test
         random_seed: Random seed for reproducibility
-        output_prefix: Prefix for output files
     
     Returns:
         Dictionary containing test results
@@ -233,23 +164,15 @@ def validate_cross_modality_distance(csv_path: str,
     
     # Ensure the matrix is symmetric
     if not np.allclose(df.values, df.values.T, rtol=1e-5, atol=1e-8):
-        print("Warning: Distance matrix is not perfectly symmetric. Using average of upper and lower triangular.")
         df = (df + df.T) / 2
     
     # Parse sample names
     sample_to_modality, sample_pairs = parse_sample_names(df)
     
-    print(f"Found {len(sample_pairs)} unique samples with cross-modality measurements")
-    print(f"Total samples in matrix: {len(df)}")
-    
     # Perform permutation test
     observed_mean, p_value, null_distribution, observed_distances = permutation_test(
         df, sample_pairs, n_permutations, random_seed
     )
-    
-    # Create visualizations
-    visualize_results(observed_mean, p_value, null_distribution, 
-                     observed_distances, output_prefix)
     
     # Return results
     results = {
@@ -265,42 +188,273 @@ def validate_cross_modality_distance(csv_path: str,
     
     return results
 
+def validate_multiple_methods(sample_distance_path: str,
+                            methods: List[str],
+                            output_dir: str,
+                            n_permutations: int = 1000,
+                            random_seed: int = 42) -> Dict[str, Dict[str, Dict]]:
+    """
+    Validate cross-modality distances for multiple distance methods and both DR types.
+    
+    Args:
+        sample_distance_path: Path to the Sample_distance directory
+        methods: List of distance methods to test (e.g., ['cosine', 'correlation', 'euclidean'])
+        output_dir: Directory to save all output files
+        n_permutations: Number of permutations for the test
+        random_seed: Random seed for reproducibility
+    
+    Returns:
+        Nested dictionary: {method: {dr_type: results}}
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    all_results = {}
+    
+    # Process each method
+    for method in methods:
+        method_path = os.path.join(sample_distance_path, method)
+        
+        if not os.path.exists(method_path):
+            continue
+        
+        # Create method output directory
+        method_output_dir = os.path.join(output_dir, method)
+        os.makedirs(method_output_dir, exist_ok=True)
+        
+        # Run validation for this method
+        method_results = validate_directory(
+            base_dir=method_path,
+            output_dir=method_output_dir,
+            n_permutations=n_permutations,
+            random_seed=random_seed
+        )
+        
+        all_results[method] = method_results
+    
+    # Create comprehensive comparison
+    create_comprehensive_comparison(all_results, output_dir)
+    
+    return all_results
+
+def validate_directory(base_dir: str,
+                      output_dir: str,
+                      n_permutations: int = 1000,
+                      random_seed: int = 42) -> Dict[str, Dict]:
+    """
+    Validate cross-modality distances for both expression_DR and proportion_DR matrices
+    in a given directory.
+    
+    Args:
+        base_dir: Path to the base directory (e.g., 'Sample_distance/cosine')
+        output_dir: Directory to save output files
+        n_permutations: Number of permutations for the test
+        random_seed: Random seed for reproducibility
+    
+    Returns:
+        Dictionary containing results for both distance types
+    """
+    results_all = {}
+    
+    # Define the two distance types and their paths
+    distance_types = [
+        ('expression_DR', 'expression_DR_distance', 'distance_matrix_expression_DR.csv'),
+        ('proportion_DR', 'proportion_DR_distance', 'distance_matrix_proportion_DR.csv')
+    ]
+    
+    for dist_name, folder_name, matrix_file in distance_types:
+        # Construct full path to the distance matrix
+        matrix_path = os.path.join(base_dir, folder_name, matrix_file)
+        
+        # Check if file exists
+        if not os.path.exists(matrix_path):
+            continue
+        
+        try:
+            # Run validation for this distance matrix
+            results = validate_cross_modality_distance(
+                csv_path=matrix_path,
+                n_permutations=n_permutations,
+                random_seed=random_seed
+            )
+            
+            # Save p-value plot
+            plot_path = os.path.join(output_dir, f'pvalue_plot_{dist_name}.png')
+            create_pvalue_plot(
+                results['observed_mean'],
+                results['p_value'],
+                results['null_distribution'],
+                plot_path
+            )
+            
+            # Store results
+            results_all[dist_name] = results
+            
+        except Exception as e:
+            results_all[dist_name] = None
+    
+    # Save summary for this method
+    if any(r is not None for r in results_all.values()):
+        comparison_data = []
+        for dist_type, results in results_all.items():
+            if results is not None:
+                comparison_data.append({
+                    'Distance Type': dist_type,
+                    'P-value': results['p_value'],
+                    'Effect Size': results['effect_size'],
+                    'Observed Mean': results['observed_mean'],
+                    'Null Mean': results['null_mean'],
+                    'Significant': results['p_value'] < 0.05
+                })
+        
+        if comparison_data:
+            comparison_df = pd.DataFrame(comparison_data)
+            comparison_path = os.path.join(output_dir, 'validation_summary.csv')
+            comparison_df.to_csv(comparison_path, index=False)
+    
+    return results_all
+
+def create_comprehensive_comparison(all_results: Dict[str, Dict[str, Dict]], 
+                                   output_dir: str):
+    """
+    Create comprehensive comparison across all methods and DR types.
+    
+    Args:
+        all_results: Nested dictionary of all results
+        output_dir: Directory to save outputs
+    """
+    # Collect all results in a flat format
+    comparison_data = []
+    
+    for method, method_results in all_results.items():
+        for dr_type, results in method_results.items():
+            if results is not None:
+                comparison_data.append({
+                    'Method': method,
+                    'DR Type': dr_type,
+                    'P-value': results['p_value'],
+                    'Effect Size': results['effect_size'],
+                    'Observed Mean': results['observed_mean'],
+                    'Null Mean': results['null_mean'],
+                    'Significant': results['p_value'] < 0.05
+                })
+    
+    if not comparison_data:
+        return
+    
+    # Create DataFrame and save
+    df_comprehensive = pd.DataFrame(comparison_data)
+    comparison_path = os.path.join(output_dir, 'all_methods_comparison.csv')
+    df_comprehensive.to_csv(comparison_path, index=False)
+    
+    # Create comprehensive visualization
+    create_comprehensive_plots(df_comprehensive, output_dir)
+    
+    # Create statistical summary
+    summary_stats = {
+        'total_tests': len(df_comprehensive),
+        'significant_tests': df_comprehensive['Significant'].sum(),
+        'best_method': df_comprehensive.loc[df_comprehensive['Effect Size'].idxmax()]['Method'],
+        'best_dr_type': df_comprehensive.loc[df_comprehensive['Effect Size'].idxmax()]['DR Type'],
+        'best_effect_size': df_comprehensive['Effect Size'].max(),
+        'best_p_value': df_comprehensive.loc[df_comprehensive['Effect Size'].idxmax()]['P-value']
+    }
+    
+    # Save summary statistics
+    summary_path = os.path.join(output_dir, 'statistical_summary.txt')
+    with open(summary_path, 'w') as f:
+        for key, value in summary_stats.items():
+            f.write(f"{key}: {value}\n")
+
+def create_comprehensive_plots(df: pd.DataFrame, output_dir: str):
+    """
+    Create comprehensive visualization comparing all methods and DR types.
+    
+    Args:
+        df: DataFrame with all comparison results
+        output_dir: Directory to save plots
+    """
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+    
+    # 1. Heatmap of p-values
+    ax1 = axes[0, 0]
+    pivot_pval = df.pivot(index='Method', columns='DR Type', values='P-value')
+    sns.heatmap(pivot_pval, annot=True, fmt='.4f', cmap='RdYlGn_r', 
+                vmin=0, vmax=0.1, cbar_kws={'label': 'P-value'}, ax=ax1)
+    ax1.set_title('P-values Across Methods and DR Types')
+    
+    # 2. Heatmap of effect sizes
+    ax2 = axes[0, 1]
+    pivot_effect = df.pivot(index='Method', columns='DR Type', values='Effect Size')
+    sns.heatmap(pivot_effect, annot=True, fmt='.3f', cmap='coolwarm', center=0,
+                cbar_kws={'label': 'Effect Size'}, ax=ax2)
+    ax2.set_title('Effect Sizes Across Methods and DR Types')
+    
+    # 3. Bar plot comparing methods
+    ax3 = axes[1, 0]
+    methods = df['Method'].unique()
+    dr_types = df['DR Type'].unique()
+    x = np.arange(len(methods))
+    width = 0.35
+    
+    for i, dr_type in enumerate(dr_types):
+        dr_data = df[df['DR Type'] == dr_type]
+        effect_sizes = [dr_data[dr_data['Method'] == m]['Effect Size'].values[0] 
+                       if len(dr_data[dr_data['Method'] == m]) > 0 else 0 
+                       for m in methods]
+        bars = ax3.bar(x + i*width, effect_sizes, width, label=dr_type)
+        
+        # Add significance markers
+        for j, (method, es) in enumerate(zip(methods, effect_sizes)):
+            method_dr_data = df[(df['Method'] == method) & (df['DR Type'] == dr_type)]
+            if len(method_dr_data) > 0 and method_dr_data.iloc[0]['Significant']:
+                ax3.text(x[j] + i*width, es + 0.02, '*', ha='center', fontsize=14)
+    
+    ax3.set_xlabel('Method')
+    ax3.set_ylabel('Effect Size')
+    ax3.set_title('Effect Sizes by Method and DR Type (* = p<0.05)')
+    ax3.set_xticks(x + width/2)
+    ax3.set_xticklabels(methods)
+    ax3.legend()
+    ax3.grid(True, alpha=0.3, axis='y')
+    ax3.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
+    
+    # 4. Scatter plot of p-value vs effect size
+    ax4 = axes[1, 1]
+    for dr_type in dr_types:
+        dr_data = df[df['DR Type'] == dr_type]
+        ax4.scatter(dr_data['Effect Size'], -np.log10(dr_data['P-value']), 
+                   label=dr_type, s=100, alpha=0.7)
+    
+    # Add significance threshold line
+    ax4.axhline(y=-np.log10(0.05), color='red', linestyle='--', 
+               alpha=0.5, label='p=0.05')
+    ax4.set_xlabel('Effect Size')
+    ax4.set_ylabel('-log10(P-value)')
+    ax4.set_title('Volcano Plot: Effect Size vs Significance')
+    ax4.legend()
+    ax4.grid(True, alpha=0.3)
+    
+    # Add method labels to points
+    for _, row in df.iterrows():
+        ax4.annotate(row['Method'][:3], 
+                    (row['Effect Size'], -np.log10(row['P-value'])),
+                    fontsize=8, alpha=0.7)
+    
+    plt.suptitle('Comprehensive Cross-Modality Validation Results', fontsize=16)
+    plt.tight_layout()
+    
+    # Save figure
+    plot_path = os.path.join(output_dir, 'comprehensive_comparison_plots.png')
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
 # Example usage
 if __name__ == "__main__":
-    # Example: Generate synthetic data for testing
-    np.random.seed(42)
-    n_samples = 20
-    
-    # Create sample names
-    sample_names = []
-    for i in range(n_samples):
-        sample_names.append(f"sample_{i}_ATAC")
-        sample_names.append(f"sample_{i}_RNA")
-    
-    # Generate synthetic distance matrix
-    # Make same-sample cross-modality distances smaller
-    n_total = len(sample_names)
-    dist_matrix = np.random.uniform(0.5, 1.0, (n_total, n_total))
-    
-    # Make it symmetric
-    dist_matrix = (dist_matrix + dist_matrix.T) / 2
-    np.fill_diagonal(dist_matrix, 0)
-    
-    # Make same-sample cross-modality distances smaller
-    for i in range(n_samples):
-        atac_idx = i * 2
-        rna_idx = i * 2 + 1
-        # Set smaller distance for same sample
-        small_dist = np.random.uniform(0.1, 0.3)
-        dist_matrix[atac_idx, rna_idx] = small_dist
-        dist_matrix[rna_idx, atac_idx] = small_dist
-    
-    # Create DataFrame
-    df_synthetic = pd.DataFrame(dist_matrix, index=sample_names, columns=sample_names)
-    
-    # Save synthetic data
-    df_synthetic.to_csv('synthetic_distance_matrix.csv')
-    
-    # Run validation
-    results = validate_cross_modality_distance('synthetic_distance_matrix.csv', 
-                                              n_permutations=1000)
+    # Example: Validate multiple methods and save to output directory
+    results = validate_multiple_methods(
+        sample_distance_path='Sample_distance',
+        methods=['cosine', 'correlation', 'euclidean'],
+        output_dir='validation_results',
+        n_permutations=1000
+    )
