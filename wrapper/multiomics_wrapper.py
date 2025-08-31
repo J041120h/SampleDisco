@@ -26,10 +26,10 @@ def multiomics_wrapper(
     # ===== Process Control Flags =====
     run_glue=True,
     run_integrate_preprocess=True,
-    run_dimensionality_reduction=True,  # Combined pseudobulk + PCA step
+    run_dimensionality_reduction=True,
     run_visualize_embedding=True,
     run_find_optimal_resolution=False,
-    
+
     # ===== Basic Parameters =====
     rna_sample_meta_file=None,
     atac_sample_meta_file=None,
@@ -377,13 +377,10 @@ def multiomics_wrapper(
     if run_integrate_preprocess:
         if multiomics_verbose:
             print("Step 2: Running integration preprocessing...")
-        
         if not status_flags["multiomics"]["glue_integration"] and not h5ad_path:
             raise ValueError("GLUE integration is required before integration preprocessing.")
-        
         if h5ad_path is None and integrated_h5ad_path:
             h5ad_path = integrated_h5ad_path
-        
         if h5ad_path is None:
             raise ValueError("h5ad_path must be provided when run_integrate_preprocess=True")
         
@@ -400,10 +397,10 @@ def multiomics_wrapper(
             doublet=doublet,
             verbose=multiomics_verbose
         )
-        
+
         results['adata'] = adata
         status_flags["multiomics"]["integration_preprocessing"] = True
-        
+
         if multiomics_verbose:
             print("✓ Integration preprocessing completed successfully")
     else:

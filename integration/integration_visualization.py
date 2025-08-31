@@ -434,16 +434,24 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
             else:
                 print(f"Sample names will be shown only for {target_modality} modality")
     
+    # IMPROVED: Better output directory handling
     if output_dir:
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        # Ensure the base output directory exists
+        os.makedirs(os.path.dirname(output_dir) if os.path.dirname(output_dir) else '.', exist_ok=True)
+        
+        # If it's a directory path, create the visualization subdirectory
+        if os.path.isdir(output_dir) or (not os.path.splitext(output_dir)[1]):
+            output_dir = os.path.join(output_dir, 'visualization')
+            os.makedirs(output_dir, exist_ok=True)
             if verbose:
-                print("Automatically generating output_dir")
-        output_dir = os.path.join(output_dir, 'visualization')
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-            if verbose:
-                print("Automatically generating visualization output_dir")
+                print(f"Created/using visualization directory: {output_dir}")
+        else:
+            # If it's a file path, ensure the parent directory exists
+            parent_dir = os.path.dirname(output_dir)
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
+                if verbose:
+                    print(f"Created/using parent directory: {parent_dir}")
     
     # Check which embeddings are available
     available_embeddings = []
@@ -487,9 +495,13 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
                 
                 plt.tight_layout()
                 
-                # Save plot
+                # IMPROVED: Save plot with proper directory handling
                 filename = f"all_samples_{embedding_type.lower()}.png"
                 save_path = os.path.join(output_dir, filename)
+                
+                # Ensure directory exists before saving
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                
                 plt.savefig(save_path, dpi=300, bbox_inches='tight')
                 saved_files.append(save_path)
                 
@@ -532,9 +544,13 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
         
         plt.tight_layout()
         
-        # Save combined plot if requested
+        # IMPROVED: Save combined plot if requested
         if output_dir:
             save_path = os.path.join(output_dir, "all_samples_combined.png")
+            
+            # Ensure directory exists before saving
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             if verbose:
                 print(f"Combined plot saved to: {save_path}")
@@ -542,7 +558,6 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
         return fig, axes
     
     # If not default plot, continue with the original modality-specific logic
-    # [Rest of the original function code remains the same from here...]
     
     # Detect data type early
     target_mask = adata.obs[modality_col].values == target_modality
@@ -565,7 +580,7 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
         if data_type == 'categorical':
             print(f"Categories found: {sorted(unique_values)}")
     
-    # If both embeddings are available and output_dir is provided, save separately
+    # IMPROVED: If both embeddings are available and output_dir is provided, save separately
     if len(available_embeddings) == 2 and output_dir:
         # Check if output_dir is a directory or a file path
         if os.path.isdir(output_dir) or (not os.path.splitext(output_dir)[1]):
@@ -580,7 +595,7 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
             base_name = os.path.splitext(os.path.basename(output_dir))[0]
             extension = os.path.splitext(output_dir)[1] or '.png'
         
-        # Create output directory if it doesn't exist
+        # IMPROVED: Create output directory if it doesn't exist
         os.makedirs(save_dir, exist_ok=True)
         
         saved_files = []
@@ -597,6 +612,9 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
             # Create filename for this embedding type
             filename = f"{base_name}_{embedding_type.lower()}{extension}"
             separate_save_path = os.path.join(save_dir, filename)
+            
+            # IMPROVED: Ensure directory exists before saving
+            os.makedirs(os.path.dirname(separate_save_path), exist_ok=True)
             
             plt.savefig(separate_save_path, dpi=300, bbox_inches='tight')
             saved_files.append(separate_save_path)
@@ -682,11 +700,10 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
         else:
             plt.subplots_adjust(right=0.9)
     
-    # Save combined plot if requested and no separate plots were saved
+    # IMPROVED: Save combined plot if requested and no separate plots were saved
     if output_dir and not (len(available_embeddings) == 2):
-        save_dir = os.path.dirname(output_dir)
-        if save_dir:
-            os.makedirs(save_dir, exist_ok=True)
+        # Ensure directory exists before saving
+        os.makedirs(os.path.dirname(output_dir) if os.path.dirname(output_dir) else '.', exist_ok=True)
         
         plt.savefig(output_dir, dpi=300, bbox_inches='tight')
         if verbose:

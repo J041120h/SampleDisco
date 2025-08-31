@@ -682,6 +682,6 @@ def rna_wrapper(
         'AnnData_cell': AnnData_cell,
         'AnnData_sample': AnnData_sample,
         'pseudobulk_df': pseudobulk_df,
-        'pseudobulk_adata': pseudobulk_adata,  # UNIFIED NAMING HERE
+        'pseudobulk_adata': pseudobulk_adata,
         'status_flags': status_flags
     }

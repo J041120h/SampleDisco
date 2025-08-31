@@ -81,34 +81,45 @@ def permutation_test(df: pd.DataFrame,
     
     # Calculate observed statistic
     observed_mean, observed_distances = calculate_cross_modality_distance(df, sample_pairs)
+    print(f"    Observed mean cross-modality distance: {observed_mean:.4f}")
     
     # Get all sample names and their modalities
     all_samples = list(df.index)
     atac_samples = [s for s in all_samples if s.endswith('_ATAC')]
     rna_samples = [s for s in all_samples if s.endswith('_RNA')]
     
+    print(f"    Running {n_permutations} permutations...")
     # Permutation test
     null_distribution = []
     
-    for _ in range(n_permutations):
+    # Print progress for permutations
+    progress_points = [int(n_permutations * p) for p in [0.25, 0.5, 0.75]]
+    
+    for i in range(n_permutations):
+        if i in progress_points:
+            print(f"      {int(100 * i / n_permutations)}% complete ({i}/{n_permutations})")
+        
         # Shuffle the modality labels
         shuffled_atac = np.random.permutation(atac_samples)
         shuffled_rna = np.random.permutation(rna_samples)
         
         # Create new sample pairs based on shuffled labels
         shuffled_pairs = {}
-        for i, (atac, rna) in enumerate(zip(shuffled_atac, shuffled_rna)):
-            sample_id = f"shuffled_{i}"
+        for j, (atac, rna) in enumerate(zip(shuffled_atac, shuffled_rna)):
+            sample_id = f"shuffled_{j}"
             shuffled_pairs[sample_id] = [atac, rna]
         
         # Calculate mean distance for shuffled pairs
         shuffled_mean, _ = calculate_cross_modality_distance(df, shuffled_pairs)
         null_distribution.append(shuffled_mean)
     
+    print(f"      100% complete ({n_permutations}/{n_permutations})")
+    
     null_distribution = np.array(null_distribution)
     
     # Calculate p-value (two-tailed)
     p_value = np.mean(null_distribution <= observed_mean)
+    print(f"    P-value: {p_value:.4f}")
     
     return observed_mean, p_value, null_distribution, observed_distances
 
@@ -159,17 +170,24 @@ def validate_cross_modality_distance(csv_path: str,
     Returns:
         Dictionary containing test results
     """
+    print(f"  Loading distance matrix from: {csv_path}")
     # Load the distance matrix
     df = pd.read_csv(csv_path, index_col=0)
+    print(f"  Matrix shape: {df.shape}")
     
     # Ensure the matrix is symmetric
     if not np.allclose(df.values, df.values.T, rtol=1e-5, atol=1e-8):
+        print("  Symmetrizing distance matrix...")
         df = (df + df.T) / 2
     
     # Parse sample names
+    print("  Parsing sample names...")
     sample_to_modality, sample_pairs = parse_sample_names(df)
+    n_paired_samples = len([k for k, v in sample_pairs.items() if len(v) == 2])
+    print(f"  Found {n_paired_samples} paired samples")
     
     # Perform permutation test
+    print("  Starting permutation test...")
     observed_mean, p_value, null_distribution, observed_distances = permutation_test(
         df, sample_pairs, n_permutations, random_seed
     )
@@ -186,6 +204,7 @@ def validate_cross_modality_distance(csv_path: str,
         'observed_distances': observed_distances
     }
     
+    print(f"  Effect size: {results['effect_size']:.3f}")
     return results
 
 def validate_multiple_methods(sample_distance_path: str,
@@ -206,16 +225,22 @@ def validate_multiple_methods(sample_distance_path: str,
     Returns:
         Nested dictionary: {method: {dr_type: results}}
     """
+    print(f"\n=== Starting validation for {len(methods)} methods ===")
+    print(f"Methods: {methods}")
+    print(f"Output directory: {output_dir}")
+    
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
     all_results = {}
     
     # Process each method
-    for method in methods:
+    for i, method in enumerate(methods, 1):
+        print(f"\n--- Processing method {i}/{len(methods)}: {method} ---")
         method_path = os.path.join(sample_distance_path, method)
         
         if not os.path.exists(method_path):
+            print(f"  WARNING: Method directory not found: {method_path}")
             continue
         
         # Create method output directory
@@ -231,10 +256,13 @@ def validate_multiple_methods(sample_distance_path: str,
         )
         
         all_results[method] = method_results
+        print(f"  Completed method: {method}")
     
     # Create comprehensive comparison
+    print(f"\n--- Creating comprehensive comparison ---")
     create_comprehensive_comparison(all_results, output_dir)
     
+    print(f"\n=== Validation complete! Results saved to: {output_dir} ===")
     return all_results
 
 def validate_directory(base_dir: str,
@@ -263,11 +291,14 @@ def validate_directory(base_dir: str,
     ]
     
     for dist_name, folder_name, matrix_file in distance_types:
+        print(f"\n Processing {dist_name}...")
+        
         # Construct full path to the distance matrix
         matrix_path = os.path.join(base_dir, folder_name, matrix_file)
         
         # Check if file exists
         if not os.path.exists(matrix_path):
+            print(f"  File not found: {matrix_path}")
             continue
         
         try:
@@ -279,6 +310,7 @@ def validate_directory(base_dir: str,
             )
             
             # Save p-value plot
+            print(f"  Saving p-value plot...")
             plot_path = os.path.join(output_dir, f'pvalue_plot_{dist_name}.png')
             create_pvalue_plot(
                 results['observed_mean'],
@@ -289,12 +321,15 @@ def validate_directory(base_dir: str,
             
             # Store results
             results_all[dist_name] = results
+            print(f"  ✓ Completed {dist_name}")
             
         except Exception as e:
+            print(f"  ERROR processing {dist_name}: {str(e)}")
             results_all[dist_name] = None
     
     # Save summary for this method
     if any(r is not None for r in results_all.values()):
+        print(f" Saving validation summary...")
         comparison_data = []
         for dist_type, results in results_all.items():
             if results is not None:
@@ -323,6 +358,8 @@ def create_comprehensive_comparison(all_results: Dict[str, Dict[str, Dict]],
         all_results: Nested dictionary of all results
         output_dir: Directory to save outputs
     """
+    print(" Compiling results across all methods...")
+    
     # Collect all results in a flat format
     comparison_data = []
     
@@ -340,14 +377,19 @@ def create_comprehensive_comparison(all_results: Dict[str, Dict[str, Dict]],
                 })
     
     if not comparison_data:
+        print(" No valid results found for comparison")
         return
+    
+    print(f" Found {len(comparison_data)} valid results")
     
     # Create DataFrame and save
     df_comprehensive = pd.DataFrame(comparison_data)
     comparison_path = os.path.join(output_dir, 'all_methods_comparison.csv')
     df_comprehensive.to_csv(comparison_path, index=False)
+    print(f" Saved comprehensive comparison: {comparison_path}")
     
     # Create comprehensive visualization
+    print(" Creating comprehensive plots...")
     create_comprehensive_plots(df_comprehensive, output_dir)
     
     # Create statistical summary
@@ -365,6 +407,9 @@ def create_comprehensive_comparison(all_results: Dict[str, Dict[str, Dict]],
     with open(summary_path, 'w') as f:
         for key, value in summary_stats.items():
             f.write(f"{key}: {value}\n")
+    
+    print(f" Best method: {summary_stats['best_method']} ({summary_stats['best_dr_type']})")
+    print(f" Effect size: {summary_stats['best_effect_size']:.3f}, p-value: {summary_stats['best_p_value']:.4f}")
 
 def create_comprehensive_plots(df: pd.DataFrame, output_dir: str):
     """
@@ -448,13 +493,14 @@ def create_comprehensive_plots(df: pd.DataFrame, output_dir: str):
     plot_path = os.path.join(output_dir, 'comprehensive_comparison_plots.png')
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
+    print(f" Comprehensive plots saved: {plot_path}")
 
 # Example usage
 if __name__ == "__main__":
     # Example: Validate multiple methods and save to output directory
     results = validate_multiple_methods(
-        sample_distance_path='Sample_distance',
-        methods=['cosine', 'correlation', 'euclidean'],
-        output_dir='validation_results',
+        sample_distance_path='/dcl01/hongkai/data/data/hjiang/result/paired/rna/Sample_distance',
+        methods=['cosine', 'correlation'],
+        output_dir='/dcl01/hongkai/data/data/hjiang/result/paired/validation_results',
         n_permutations=1000
     )

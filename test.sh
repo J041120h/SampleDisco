@@ -11,8 +11,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16              # CPU count
 #SBATCH --gpus=1                        # Request 1 GPU
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=400GB                     # Memory allocation
+#SBATCH --time=3-00:00:00
+#SBATCH --mem=1000GB                     # Memory allocation
 #SBATCH --output=test.out
 #SBATCH --error=test.err
 #SBATCH --mail-type=ALL
@@ -66,6 +66,6 @@ export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 ############################################
 export PYTHONUNBUFFERED=1
 echo "Starting main.py..."
-python -u GenoDistance.py -m complex --config "/users/hjiang/GenoDistance/code/config/config_linux.yaml"
+python -u SampleDisc.py -m complex --config "/users/hjiang/GenoDistance/code/config/config_paired.yaml"
 echo "Finished main.py."
 echo "End Time: $(date)"

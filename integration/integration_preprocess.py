@@ -46,7 +46,7 @@ def integrate_preprocess(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
-            print("Automatically generating harmony subdirectory")
+            print("Automatically generating preprocess subdirectory")
 
     if doublet and min_cells_sample < 30:
         min_cells_sample = 30
