@@ -298,8 +298,8 @@ multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
-multiomics_run_glue_preprocessing: true
-multiomics_run_glue_training: true
+multiomics_run_glue_preprocessing: false
+multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: true
 multiomics_run_glue_cell_types: true
 multiomics_run_glue_visualization: true

@@ -162,7 +162,7 @@ def peak_to_gene_activity_weighted_gpu(
     min_peak_accessibility=0.01,
     n_gpu_workers=None,
     gpu_batch_size=None,
-    normalize_by='none',
+    normalize_by='total_weight',
     log_transform=False,
     scale_factors=None,
     verbose=True,
@@ -569,52 +569,6 @@ def peak_to_gene_activity_weighted_gpu(
     
     return adata_gene
 
-
-# Benchmark function
-def benchmark_gpu_vs_cpu(atac, annotation_results, output_dir, n_genes_test=1000):
-    """Benchmark GPU vs CPU performance."""
-    import time
-    
-    print("Running performance benchmark...")
-    print(f"Testing with {n_genes_test} genes")
-    
-    # Subset data for testing
-    atac_subset = atac[:, :min(atac.n_vars, 10000)]  # Use subset of peaks
-    
-    # CPU benchmark
-    print("\nCPU Processing:")
-    start_time = time.time()
-    adata_cpu = peak_to_gene_activity_weighted_gpu(
-        atac=atac_subset,
-        annotation_results=annotation_results,
-        output_dir=output_dir / "benchmark_cpu",
-        use_gpu=False,
-        verbose=False
-    )
-    cpu_time = time.time() - start_time
-    print(f"  Time: {cpu_time:.2f} seconds")
-    
-    # GPU benchmark
-    if GPU_AVAILABLE:
-        print("\nGPU Processing:")
-        start_time = time.time()
-        adata_gpu = peak_to_gene_activity_weighted_gpu(
-            atac=atac_subset,
-            annotation_results=annotation_results,
-            output_dir=output_dir / "benchmark_gpu",
-            use_gpu=True,
-            verbose=False
-        )
-        gpu_time = time.time() - start_time
-        print(f"  Time: {gpu_time:.2f} seconds")
-        print(f"  Speedup: {cpu_time/gpu_time:.2f}x")
-        
-        # Verify results match
-        diff = np.abs(adata_cpu.X - adata_gpu.X).max()
-        print(f"  Max difference: {diff:.2e}")
-        print(f"  Results match: {diff < 1e-5}")
-
-
 # Example usage
 if __name__ == "__main__":
     # Load data
@@ -631,9 +585,10 @@ if __name__ == "__main__":
         distance_threshold=100_000,
         weight_threshold=0.01,
         min_peak_accessibility=0.01,
-        normalize_by='archR',
+        normalize_by='total_weight',
         use_gpu=True,  # Enable GPU
         n_gpu_workers=4,  # Use 4 GPU workers
+        log_transform = False,
         gpu_batch_size=200,  # Process 200 genes per batch
         verbose=True
     )

@@ -15,12 +15,10 @@ import contextlib
 import io
 from scipy.sparse import csr_matrix
 from scipy.spatial.distance import pdist, squareform
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, chi2_contingency
 import warnings
-from CellType import *
-from ATAC_RNA_integration_test import *
-from RNA_name_convertor import *
-# from linux.CellType_linux import cell_types_linux
+from matplotlib.gridspec import GridSpec
+from copy import deepcopy
 
 def combine_rna_and_activity_data(
     adata_rna,
@@ -41,44 +39,7 @@ def combine_rna_and_activity_data(
 ):
     """
     Combine RNA and gene activity data into a single AnnData object.
-    
-    Parameters:
-    -----------
-    rna_h5ad_path : str
-        Path to RNA H5AD file
-    activity_h5ad_path : str
-        Path to gene activity H5AD file
-    rna_cell_meta_path : str, optional
-        Path to RNA cell metadata CSV (if None, will extract from obs_names)
-    activity_cell_meta_path : str, optional
-        Path to gene activity cell metadata CSV (if None, will extract from obs_names)
-    rna_sample_meta_path : str, optional
-        Path to RNA sample metadata CSV (if None, no additional sample metadata)
-    activity_sample_meta_path : str, optional
-        Path to gene activity sample metadata CSV (if None, no additional sample metadata)
-    rna_sample_column : str
-        Column name for sample identification in RNA data
-    activity_sample_column : str
-        Column name for sample identification in gene activity data
-    unified_sample_column : str
-        Column name for sample identification in combined data
-    rna_batch_key : str
-        Column name for batch identification in RNA data
-    activity_batch_key : str
-        Column name for batch identification in gene activity data
-    unified_batch_key : str
-        Column name for batch identification in combined data
-    rna_prefix : str
-        Prefix to add to RNA cell barcodes
-    activity_prefix : str
-        Prefix to add to gene activity cell barcodes
-    verbose : bool
-        Print progress messages
-    
-    Returns:
-    --------
-    adata_combined : AnnData
-        Combined AnnData object with both RNA and gene activity data
+    [Previous implementation remains the same]
     """
     
     if verbose:
@@ -92,42 +53,36 @@ def combine_rna_and_activity_data(
     # Handle RNA cell metadata
     if rna_cell_meta_path is not None:
         rna_cell_meta = pd.read_csv(rna_cell_meta_path)
-        # Ensure barcode column exists or create from index
         if 'barcode' not in rna_cell_meta.columns:
             rna_cell_meta['barcode'] = rna_cell_meta.index.astype(str)
     else:
-        # Create minimal cell metadata from obs_names
         if verbose:
             print("No RNA cell metadata provided, creating from obs_names")
         rna_cell_meta = pd.DataFrame({
             'barcode': adata_rna.obs_names.astype(str)
         })
-        # Extract sample from barcode if sample column not already in obs
         if rna_sample_column not in adata_rna.obs.columns:
             rna_cell_meta[rna_sample_column] = adata_rna.obs_names.str.split(':').str[0]
     
     # Handle gene activity cell metadata
     if activity_cell_meta_path is not None:
         activity_cell_meta = pd.read_csv(activity_cell_meta_path)
-        # Ensure barcode column exists or create from index
         if 'barcode' not in activity_cell_meta.columns:
             activity_cell_meta['barcode'] = activity_cell_meta.index.astype(str)
     else:
-        # Create minimal cell metadata from obs_names
         if verbose:
             print("No gene activity cell metadata provided, creating from obs_names")
         activity_cell_meta = pd.DataFrame({
             'barcode': adata_activity.obs_names.astype(str)
         })
-        # Extract sample from barcode if sample column not already in obs
         if activity_sample_column not in adata_activity.obs.columns:
             activity_cell_meta[activity_sample_column] = adata_activity.obs_names.str.split(':').str[0]
     
-    # Add data type column to distinguish RNA vs gene activity cells
+    # Add data type column
     rna_cell_meta['data_type'] = 'RNA'
     activity_cell_meta['data_type'] = 'Gene_Activity'
     
-    # Add prefixes to cell barcodes to make them unique
+    # Add prefixes to cell barcodes
     rna_cell_meta['barcode'] = rna_prefix + '_' + rna_cell_meta['barcode'].astype(str)
     activity_cell_meta['barcode'] = activity_prefix + '_' + activity_cell_meta['barcode'].astype(str)
     
@@ -142,7 +97,7 @@ def combine_rna_and_activity_data(
     adata_rna.obs = adata_rna.obs.join(rna_cell_meta, how='left')
     adata_activity.obs = adata_activity.obs.join(activity_cell_meta, how='left')
     
-    # Load sample metadata (optional)
+    # Load sample metadata
     if verbose:
         print("=== Loading Sample Metadata ===")
     
@@ -151,47 +106,31 @@ def combine_rna_and_activity_data(
         adata_rna.obs = adata_rna.obs.merge(rna_sample_meta, on=rna_sample_column, how='left')
         if verbose:
             print("RNA sample metadata loaded and merged")
-    else:
-        if verbose:
-            print("No RNA sample metadata provided")
     
     if activity_sample_meta_path is not None:
         activity_sample_meta = pd.read_csv(activity_sample_meta_path)
         adata_activity.obs = adata_activity.obs.merge(activity_sample_meta, on=activity_sample_column, how='left')
         if verbose:
             print("Gene activity sample metadata loaded and merged")
-    else:
-        if verbose:
-            print("No gene activity sample metadata provided")
     
-    # Standardize column names to unified names
+    # Standardize column names
     if verbose:
         print("=== Standardizing Column Names ===")
     
-    # Ensure required columns exist (create default values if needed)
-    # Handle sample column
+    # Ensure required columns exist
     if rna_sample_column not in adata_rna.obs.columns:
-        if verbose:
-            print(f"RNA sample column '{rna_sample_column}' not found, creating from data_type")
         adata_rna.obs[rna_sample_column] = 'RNA_sample'
     
     if activity_sample_column not in adata_activity.obs.columns:
-        if verbose:
-            print(f"Gene activity sample column '{activity_sample_column}' not found, creating from data_type")
         adata_activity.obs[activity_sample_column] = 'ATAC_sample'
     
-    # Handle batch column (create default if not provided)
     if rna_batch_key not in adata_rna.obs.columns:
-        if verbose:
-            print(f"RNA batch column '{rna_batch_key}' not found, creating default")
         adata_rna.obs[rna_batch_key] = 'RNA_batch'
     
     if activity_batch_key not in adata_activity.obs.columns:
-        if verbose:
-            print(f"Gene activity batch column '{activity_batch_key}' not found, creating default")
         adata_activity.obs[activity_batch_key] = 'ATAC_batch'
     
-    # Rename sample columns to unified name
+    # Rename columns to unified names
     if rna_sample_column != unified_sample_column:
         if unified_sample_column in adata_rna.obs.columns and unified_sample_column != rna_sample_column:
             adata_rna.obs.drop(columns=[unified_sample_column], inplace=True)
@@ -202,7 +141,6 @@ def combine_rna_and_activity_data(
             adata_activity.obs.drop(columns=[unified_sample_column], inplace=True)
         adata_activity.obs[unified_sample_column] = adata_activity.obs[activity_sample_column]
     
-    # Rename batch columns to unified name
     if rna_batch_key != unified_batch_key:
         if unified_batch_key in adata_rna.obs.columns and unified_batch_key != rna_batch_key:
             adata_rna.obs.drop(columns=[unified_batch_key], inplace=True)
@@ -218,8 +156,7 @@ def combine_rna_and_activity_data(
         print(f"RNA data shape: {adata_rna.shape}")
         print(f"Gene activity data shape: {adata_activity.shape}")
     
-    # Combine the datasets using scanpy concat with outer join
-    # This automatically handles missing genes by filling with zeros
+    # Combine datasets
     adata_combined = sc.concat([adata_rna, adata_activity], axis=0, join='outer')
     
     if verbose:
@@ -228,51 +165,246 @@ def combine_rna_and_activity_data(
         print(f"Gene activity cells: {sum(adata_combined.obs['data_type'] == 'Gene_Activity')}")
         print(f"Total unique genes: {adata_combined.n_vars}")
     
-    # Return the combined AnnData object
     return adata_combined
 
 
 def clean_obs_for_writing(adata):
     """
     Clean obs dataframe to ensure it can be written to H5AD format.
-    Converts problematic data types and handles missing values.
     """
-    import pandas as pd
-    import numpy as np
-    
-    # Create a copy of obs to avoid modifying the original
     obs_clean = adata.obs.copy()
     
     for col in obs_clean.columns:
-        # Check if column has object dtype
         if obs_clean[col].dtype == 'object':
-            # Replace NaN values with empty string
             obs_clean[col] = obs_clean[col].fillna('')
-            
-            # Convert all values to string
             obs_clean[col] = obs_clean[col].astype(str)
-            
-            # Replace 'nan' string with empty string
             obs_clean[col] = obs_clean[col].replace('nan', '')
-        
-        # Handle boolean columns
         elif obs_clean[col].dtype == 'bool':
-            # Convert to string representation
             obs_clean[col] = obs_clean[col].astype(str)
-        
-        # Handle any other problematic dtypes
         elif obs_clean[col].dtype.name.startswith('category'):
-            # Convert categorical to string
             obs_clean[col] = obs_clean[col].astype(str)
     
-    # Update the adata obs
     adata.obs = obs_clean
+    return adata
+
+
+def run_leiden_clustering(adata, resolution=1.0, key_added='leiden', random_state=42):
+    """
+    Run Leiden clustering on the integrated data.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Integrated AnnData object with computed neighbors
+    resolution : float
+        Resolution parameter for Leiden clustering
+    key_added : str
+        Key to add to adata.obs for cluster labels
+    random_state : int
+        Random seed for reproducibility
+    """
+    print(f"Running Leiden clustering with resolution={resolution}")
+    sc.tl.leiden(adata, resolution=resolution, key_added=key_added, random_state=random_state)
+    
+    # Print cluster statistics
+    cluster_counts = adata.obs[key_added].value_counts().sort_index()
+    print(f"Found {len(cluster_counts)} clusters")
+    print("Cluster sizes:")
+    for cluster, count in cluster_counts.items():
+        print(f"  Cluster {cluster}: {count} cells")
     
     return adata
 
 
+def visualize_integration_quality(adata, output_dir, integration_method='harmony', 
+                                 leiden_key='leiden', sample_key='sample', 
+                                 batch_key='batch', figsize=(20, 16)):
+    """
+    Create comprehensive visualizations to assess integration quality and modality mixing.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Integrated AnnData object
+    output_dir : str
+        Directory to save figures
+    integration_method : str
+        Name of integration method for labeling
+    leiden_key : str
+        Key in adata.obs containing Leiden clusters
+    sample_key : str
+        Key in adata.obs containing sample information
+    batch_key : str
+        Key in adata.obs containing batch information
+    """
+    
+    # Create visualization directory
+    vis_dir = os.path.join(output_dir, f'{integration_method}_visualizations')
+    if not os.path.exists(vis_dir):
+        os.makedirs(vis_dir)
+    
+    # Set style
+    plt.style.use('seaborn-v0_8-darkgrid')
+    
+    # 1. Main UMAP visualizations
+    fig = plt.figure(figsize=figsize)
+    gs = GridSpec(3, 3, figure=fig, hspace=0.3, wspace=0.3)
+    
+    # UMAP colored by modality
+    ax1 = fig.add_subplot(gs[0, 0])
+    sc.pl.umap(adata, color='data_type', ax=ax1, show=False, legend_loc='right margin',
+               title='UMAP by Modality', frameon=True)
+    
+    # UMAP colored by Leiden clusters
+    ax2 = fig.add_subplot(gs[0, 1])
+    sc.pl.umap(adata, color=leiden_key, ax=ax2, show=False, legend_loc='right margin',
+               title='UMAP by Leiden Clusters', frameon=True)
+    
+    # UMAP colored by sample
+    ax3 = fig.add_subplot(gs[0, 2])
+    sc.pl.umap(adata, color=sample_key, ax=ax3, show=False, legend_loc=None,
+               title='UMAP by Sample', frameon=True)
+    
+    # UMAP colored by batch
+    ax4 = fig.add_subplot(gs[1, 0])
+    sc.pl.umap(adata, color=batch_key, ax=ax4, show=False, legend_loc='right margin',
+               title='UMAP by Batch', frameon=True)
+    
+    # Split UMAP by modality
+    ax5 = fig.add_subplot(gs[1, 1:])
+    for i, modality in enumerate(['RNA', 'Gene_Activity']):
+        mask = adata.obs['data_type'] == modality
+        ax5.scatter(adata.obsm['X_umap'][mask, 0], 
+                   adata.obsm['X_umap'][mask, 1],
+                   s=1, alpha=0.5, label=modality)
+    ax5.set_xlabel('UMAP1')
+    ax5.set_ylabel('UMAP2')
+    ax5.set_title('UMAP Split by Modality')
+    ax5.legend()
+    
+    # Modality proportion per cluster
+    ax6 = fig.add_subplot(gs[2, :])
+    modality_props = pd.crosstab(adata.obs[leiden_key], adata.obs['data_type'], normalize='index')
+    modality_props.plot(kind='bar', stacked=True, ax=ax6, color=['#1f77b4', '#ff7f0e'])
+    ax6.set_xlabel('Leiden Cluster')
+    ax6.set_ylabel('Proportion')
+    ax6.set_title('Modality Proportions per Cluster')
+    ax6.legend(title='Modality', bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax6.set_xticklabels(ax6.get_xticklabels(), rotation=0)
+    
+    plt.suptitle(f'{integration_method.upper()} Integration Overview', fontsize=16, y=1.02)
+    plt.tight_layout()
+    plt.savefig(os.path.join(vis_dir, 'integration_overview.png'), dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    # 2. Detailed mixing metrics
+    fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+    
+    # Cluster composition heatmap
+    ax = axes[0, 0]
+    cluster_composition = pd.crosstab(adata.obs[leiden_key], adata.obs['data_type'])
+    sns.heatmap(cluster_composition.T, annot=True, fmt='d', cmap='YlOrRd', ax=ax, cbar_kws={'label': 'Cell Count'})
+    ax.set_title('Cell Count Heatmap: Clusters vs Modality')
+    ax.set_xlabel('Leiden Cluster')
+    ax.set_ylabel('Modality')
+    
+    # Mixing entropy per cluster
+    ax = axes[0, 1]
+    def calculate_entropy(props):
+        """Calculate Shannon entropy for mixing assessment"""
+        props = props[props > 0]
+        return -np.sum(props * np.log2(props))
+    
+    mixing_entropy = modality_props.apply(calculate_entropy, axis=1)
+    mixing_entropy.plot(kind='bar', ax=ax, color='steelblue')
+    ax.axhline(y=1, color='r', linestyle='--', alpha=0.5, label='Perfect mixing (entropy=1)')
+    ax.set_xlabel('Leiden Cluster')
+    ax.set_ylabel('Mixing Entropy')
+    ax.set_title('Modality Mixing Entropy per Cluster')
+    ax.legend()
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+    
+    # Sample distribution per modality
+    ax = axes[1, 0]
+    sample_modality = pd.crosstab(adata.obs[sample_key], adata.obs['data_type'])
+    sample_modality.plot(kind='bar', ax=ax, color=['#1f77b4', '#ff7f0e'])
+    ax.set_xlabel('Sample')
+    ax.set_ylabel('Cell Count')
+    ax.set_title('Sample Distribution by Modality')
+    ax.legend(title='Modality')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+    
+    # Chi-square test for independence
+    ax = axes[1, 1]
+    chi2, p_value, dof, expected = chi2_contingency(cluster_composition)
+    
+    # Plot observed vs expected
+    x = np.arange(len(cluster_composition))
+    width = 0.35
+    
+    observed_rna = cluster_composition['RNA'].values
+    observed_atac = cluster_composition['Gene_Activity'].values
+    expected_rna = expected[:, 0]
+    expected_atac = expected[:, 1]
+    
+    ax.bar(x - width/2, observed_rna, width, label='Observed RNA', alpha=0.8, color='#1f77b4')
+    ax.bar(x + width/2, observed_atac, width, label='Observed ATAC', alpha=0.8, color='#ff7f0e')
+    ax.plot(x - width/2, expected_rna, 'r--', marker='o', label='Expected RNA', alpha=0.7)
+    ax.plot(x + width/2, expected_atac, 'r--', marker='s', label='Expected ATAC', alpha=0.7)
+    
+    ax.set_xlabel('Leiden Cluster')
+    ax.set_ylabel('Cell Count')
+    ax.set_title(f'Observed vs Expected Distribution\n(χ² = {chi2:.2f}, p = {p_value:.2e})')
+    ax.set_xticks(x)
+    ax.set_xticklabels(cluster_composition.index)
+    ax.legend()
+    
+    plt.suptitle(f'{integration_method.upper()} Mixing Metrics', fontsize=14, y=1.02)
+    plt.tight_layout()
+    plt.savefig(os.path.join(vis_dir, 'mixing_metrics.png'), dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    # 3. Integration quality metrics summary
+    print(f"\n=== {integration_method.upper()} Integration Quality Metrics ===")
+    
+    # Calculate overall mixing score
+    overall_entropy = calculate_entropy(adata.obs['data_type'].value_counts(normalize=True))
+    print(f"Overall modality entropy: {overall_entropy:.3f} (max=1.0 for 2 modalities)")
+    
+    # Average cluster entropy
+    avg_cluster_entropy = mixing_entropy.mean()
+    print(f"Average cluster mixing entropy: {avg_cluster_entropy:.3f}")
+    
+    # Proportion of well-mixed clusters (entropy > 0.5)
+    well_mixed = (mixing_entropy > 0.5).sum() / len(mixing_entropy)
+    print(f"Proportion of well-mixed clusters: {well_mixed:.2%}")
+    
+    # Chi-square test results
+    print(f"Chi-square test for independence: χ² = {chi2:.2f}, p = {p_value:.2e}")
+    if p_value < 0.05:
+        print("  → Significant association between clusters and modality (poor mixing)")
+    else:
+        print("  → No significant association (good mixing)")
+    
+    # Save metrics to file
+    metrics_dict = {
+        'integration_method': integration_method,
+        'overall_entropy': overall_entropy,
+        'avg_cluster_entropy': avg_cluster_entropy,
+        'well_mixed_proportion': well_mixed,
+        'chi_square': chi2,
+        'p_value': p_value,
+        'n_clusters': len(cluster_composition),
+        'n_cells_rna': (adata.obs['data_type'] == 'RNA').sum(),
+        'n_cells_atac': (adata.obs['data_type'] == 'Gene_Activity').sum()
+    }
+    
+    metrics_df = pd.DataFrame([metrics_dict])
+    metrics_df.to_csv(os.path.join(vis_dir, 'integration_metrics.csv'), index=False)
+    
+    return metrics_dict
 
-def combined_harmony_analysis(
+def combined_integration_analysis(
     adata_rna,
     adata_activity,
     rna_cell_meta_path=None,
@@ -297,27 +429,26 @@ def combined_harmony_analysis(
     exclude_genes=None,
     doublet=False,
     vars_to_regress=[],
+    leiden_resolution=1.0,
+    run_combat=True,
     verbose=True
 ):
+    """
+    Enhanced pipeline with both Harmony and ComBat integration, Leiden clustering, and visualization.
+    """
     start_time = time.time()
     
-    # Create output directories (optional)
+    # Create output directories
     if output_dir is not None:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
             if verbose:
                 print("Created output directory")
-        
-        output_dir = os.path.join(output_dir, 'combined_harmony')
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-            if verbose:
-                print("Created combined_harmony subdirectory")
     
     # Step 1: Combine RNA and gene activity data
     adata_combined = combine_rna_and_activity_data(
-        adata_rna = adata_rna,
-        adata_activity = adata_activity,
+        adata_rna=adata_rna,
+        adata_activity=adata_activity,
         rna_cell_meta_path=rna_cell_meta_path,
         activity_cell_meta_path=activity_cell_meta_path,
         rna_sample_meta_path=rna_sample_meta_path,
@@ -333,18 +464,18 @@ def combined_harmony_analysis(
         verbose=verbose
     )
     
-    # Prepare vars_to_regress for harmony - automatically add data_type and sample
+    # Prepare vars_to_regress for harmony
     vars_to_regress_for_harmony = vars_to_regress.copy()
     if unified_sample_column not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append(unified_sample_column)
     if 'data_type' not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append('data_type')
     
-    # Error checking for required columns
+    # Error checking
     all_required_columns = vars_to_regress_for_harmony + [unified_batch_key]
     missing_vars = [col for col in all_required_columns if col not in adata_combined.obs.columns]
     if missing_vars:
-        raise KeyError(f"The following variables are missing from adata_combined.obs: {missing_vars}")
+        raise KeyError(f"Missing variables in adata_combined.obs: {missing_vars}")
     
     if verbose:
         print("=== Starting Quality Control and Filtering ===")
@@ -373,17 +504,11 @@ def combined_harmony_analysis(
     
     # Sample filtering
     cell_counts_per_sample = adata_combined.obs.groupby(unified_sample_column).size()
-    if verbose:
-        print("Sample counts before filtering:")
-        print(cell_counts_per_sample.sort_values(ascending=False))
-    
     samples_to_keep = cell_counts_per_sample[cell_counts_per_sample >= min_cells].index
     adata_combined = adata_combined[adata_combined.obs[unified_sample_column].isin(samples_to_keep)].copy()
     
     if verbose:
         print(f"Samples retained: {list(samples_to_keep)}")
-        print("Sample counts after filtering:")
-        print(adata_combined.obs[unified_sample_column].value_counts().sort_values(ascending=False))
     
     # Final gene filtering
     min_cells_for_gene = int(0.01 * adata_combined.n_obs)
@@ -406,10 +531,6 @@ def combined_harmony_analysis(
     # Save raw data
     adata_combined.raw = adata_combined.copy()
     
-    # Step 2: Preprocessing and Harmony integration
-    if verbose:
-        print('=== Processing Combined Data for Integration ===')
-    
     # Normalization and log transformation
     sc.pp.normalize_total(adata_combined, target_sum=1e4)
     sc.pp.log1p(adata_combined)
@@ -421,32 +542,104 @@ def combined_harmony_analysis(
         flavor='seurat_v3',
         batch_key=unified_sample_column
     )
-    adata_combined = adata_combined[:, adata_combined.var['highly_variable']].copy()
     
-    # PCA
-    sc.tl.pca(adata_combined, n_comps=num_PCs, svd_solver='arpack')
+    # Create a copy for parallel processing
+    adata_hvg = adata_combined[:, adata_combined.var['highly_variable']].copy()
     
+    # === HARMONY INTEGRATION ===
     if verbose:
-        print('=== Running Harmony Integration ===')
-        print(f'Variables to regress: {", ".join(vars_to_regress_for_harmony)}')
+        print('\n=== HARMONY INTEGRATION PIPELINE ===')
     
-    # Harmony integration
-
+    harmony_dir = os.path.join(output_dir, 'harmony_integration')
+    if not os.path.exists(harmony_dir):
+        os.makedirs(harmony_dir)
+    
+    # Make a copy for Harmony
+    adata_harmony = adata_hvg.copy()
+    
+    # PCA for Harmony
+    sc.tl.pca(adata_harmony, n_comps=num_PCs, svd_solver='arpack')
+    
+    # Run Harmony
+    if verbose:
+        print(f'Running Harmony with variables: {", ".join(vars_to_regress_for_harmony)}')
+    
     Z = harmonize(
-        adata_combined.obsm['X_pca'],
-        adata_combined.obs,
+        adata_harmony.obsm['X_pca'],
+        adata_harmony.obs,
         batch_key=vars_to_regress_for_harmony,
         max_iter_harmony=num_harmony,
         use_gpu=True
     )
-    adata_combined.obsm['X_pca_harmony'] = Z
+    adata_harmony.obsm['X_pca_harmony'] = Z
     
-    # Neighbors and UMAP (always compute these)
+    # Compute neighbors and UMAP for Harmony
+    sc.pp.neighbors(adata_harmony, use_rep='X_pca_harmony', n_neighbors=15)
+    sc.tl.umap(adata_harmony)
+    
+    # Run Leiden clustering for Harmony
+    adata_harmony = run_leiden_clustering(adata_harmony, resolution=leiden_resolution, 
+                                         key_added='leiden_harmony')
+    
+    # Visualize Harmony results
     if verbose:
-        print('=== Computing Neighbors and UMAP ===')
-
-    clean_obs_for_writing(adata_combined)
-    sc.write(os.path.join(output_dir, 'adata_combined.h5ad'), adata_combined)
+        print("Creating Harmony visualizations...")
+    harmony_metrics = visualize_integration_quality(
+        adata_harmony, harmony_dir, 'harmony', 
+        leiden_key='leiden_harmony',
+        sample_key=unified_sample_column,
+        batch_key=unified_batch_key
+    )
+    
+    # Save Harmony results
+    clean_obs_for_writing(adata_harmony)
+    adata_harmony.write(os.path.join(harmony_dir, 'adata_harmony.h5ad'))
+    
+    # === COMBAT INTEGRATION ===
+    if run_combat:
+        if verbose:
+            print('\n=== COMBAT INTEGRATION PIPELINE ===')
+        
+        combat_dir = os.path.join(output_dir, 'combat_integration')
+        if not os.path.exists(combat_dir):
+            os.makedirs(combat_dir)
+        
+        # Make a fresh copy for ComBat (to avoid contamination)
+        adata_combat = adata_hvg.copy()
+        sc.pp.combat(adata_combat, key=unified_batch_key)
+        
+        # PCA on ComBat-corrected data
+        sc.tl.pca(adata_combat, n_comps=num_PCs, svd_solver='arpack')
+        
+        # Compute neighbors and UMAP for ComBat
+        sc.pp.neighbors(adata_combat, use_rep='X_pca', n_neighbors=15)
+        sc.tl.umap(adata_combat)
+        
+        # Run Leiden clustering for ComBat
+        adata_combat = run_leiden_clustering(adata_combat, resolution=leiden_resolution,
+                                            key_added='leiden_combat')
+        
+        # Visualize ComBat results
+        if verbose:
+            print("Creating ComBat visualizations...")
+        combat_metrics = visualize_integration_quality(
+            adata_combat, combat_dir, 'combat',
+            leiden_key='leiden_combat',
+            sample_key=unified_sample_column,
+            batch_key=unified_batch_key
+        )
+        
+        # Save ComBat results
+        clean_obs_for_writing(adata_combat)
+        adata_combat.write(os.path.join(combat_dir, 'adata_combat.h5ad'))
+        
+        # === COMPARE INTEGRATION METHODS ===
+        if verbose:
+            print('\n=== INTEGRATION COMPARISON ===')
+        
+        compare_integration_methods(adata_harmony, adata_combat, output_dir, 
+                                   harmony_metrics, combat_metrics)
+    
     # Print summary
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -454,70 +647,178 @@ def combined_harmony_analysis(
     if verbose:
         print(f"\n=== Analysis Complete ===")
         print(f"Execution time: {elapsed_time:.2f} seconds")
-        print(f"Final data shape: {adata_combined.shape}")
-        
-    return adata_combined
+        print(f"Final data shape: {adata_harmony.shape}")
+        if run_combat:
+            print(f"Both Harmony and ComBat integration completed")
+        else:
+            print(f"Harmony integration completed")
+    
+    # Return both integrated objects
+    if run_combat:
+        return adata_harmony, adata_combat
+    else:
+        return adata_harmony, None
 
+
+def compare_integration_methods(adata_harmony, adata_combat, output_dir, 
+                               harmony_metrics, combat_metrics):
+    """
+    Compare Harmony and ComBat integration results.
+    
+    Parameters:
+    -----------
+    adata_harmony : AnnData
+        Harmony-integrated data
+    adata_combat : AnnData
+        ComBat-integrated data
+    output_dir : str
+        Output directory for comparison results
+    harmony_metrics : dict
+        Metrics from Harmony integration
+    combat_metrics : dict
+        Metrics from ComBat integration
+    """
+    
+    comparison_dir = os.path.join(output_dir, 'integration_comparison')
+    if not os.path.exists(comparison_dir):
+        os.makedirs(comparison_dir)
+    
+    # Create comparison plots
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+    
+    # Plot 1: Side-by-side UMAPs colored by modality
+    ax = axes[0, 0]
+    for i, modality in enumerate(['RNA', 'Gene_Activity']):
+        mask = adata_harmony.obs['data_type'] == modality
+        ax.scatter(adata_harmony.obsm['X_umap'][mask, 0],
+                  adata_harmony.obsm['X_umap'][mask, 1],
+                  s=0.5, alpha=0.5, label=modality)
+    ax.set_title('Harmony - Modality Distribution')
+    ax.set_xlabel('UMAP1')
+    ax.set_ylabel('UMAP2')
+    ax.legend()
+    
+    ax = axes[0, 1]
+    for i, modality in enumerate(['RNA', 'Gene_Activity']):
+        mask = adata_combat.obs['data_type'] == modality
+        ax.scatter(adata_combat.obsm['X_umap'][mask, 0],
+                  adata_combat.obsm['X_umap'][mask, 1],
+                  s=0.5, alpha=0.5, label=modality)
+    ax.set_title('ComBat - Modality Distribution')
+    ax.set_xlabel('UMAP1')
+    ax.set_ylabel('UMAP2')
+    ax.legend()
+    
+    # Plot 2: Metrics comparison
+    ax = axes[0, 2]
+    metrics_comparison = pd.DataFrame({
+        'Harmony': [harmony_metrics['overall_entropy'],
+                   harmony_metrics['avg_cluster_entropy'],
+                   harmony_metrics['well_mixed_proportion']],
+        'ComBat': [combat_metrics['overall_entropy'],
+                  combat_metrics['avg_cluster_entropy'],
+                  combat_metrics['well_mixed_proportion']]
+    }, index=['Overall Entropy', 'Avg Cluster Entropy', 'Well-Mixed Proportion'])
+    
+    metrics_comparison.plot(kind='bar', ax=ax, color=['#1f77b4', '#ff7f0e'])
+    ax.set_ylabel('Score')
+    ax.set_title('Integration Metrics Comparison')
+    ax.legend()
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+    
+    # Plot 3: Cluster counts
+    ax = axes[1, 0]
+    cluster_counts = pd.DataFrame({
+        'Harmony': [harmony_metrics['n_clusters']],
+        'ComBat': [combat_metrics['n_clusters']]
+    })
+    cluster_counts.plot(kind='bar', ax=ax, color=['#1f77b4', '#ff7f0e'])
+    ax.set_ylabel('Number of Clusters')
+    ax.set_title('Number of Leiden Clusters')
+    ax.set_xticklabels([''], rotation=0)
+    ax.legend()
+    
+    # Plot 4: Chi-square test p-values
+    ax = axes[1, 1]
+    p_values = pd.DataFrame({
+        'Method': ['Harmony', 'ComBat'],
+        'p-value': [harmony_metrics['p_value'], combat_metrics['p_value']]
+    })
+    bars = ax.bar(p_values['Method'], -np.log10(p_values['p-value']), 
+                  color=['#1f77b4', '#ff7f0e'])
+    ax.axhline(y=-np.log10(0.05), color='r', linestyle='--', alpha=0.5, 
+              label='p=0.05 threshold')
+    ax.set_ylabel('-log10(p-value)')
+    ax.set_title('Chi-square Test Results\n(Higher = Better Mixing)')
+    ax.legend()
+    
+    # Plot 5: Summary text
+    ax = axes[1, 2]
+    ax.axis('off')
+    
+    summary_text = f"""
+    Integration Summary:
+    
+    HARMONY:
+    • Clusters: {harmony_metrics['n_clusters']}
+    • Overall Entropy: {harmony_metrics['overall_entropy']:.3f}
+    • Avg Cluster Entropy: {harmony_metrics['avg_cluster_entropy']:.3f}
+    • Well-Mixed: {harmony_metrics['well_mixed_proportion']:.1%}
+    • χ² p-value: {harmony_metrics['p_value']:.2e}
+    
+    COMBAT:
+    • Clusters: {combat_metrics['n_clusters']}
+    • Overall Entropy: {combat_metrics['overall_entropy']:.3f}
+    • Avg Cluster Entropy: {combat_metrics['avg_cluster_entropy']:.3f}
+    • Well-Mixed: {combat_metrics['well_mixed_proportion']:.1%}
+    • χ² p-value: {combat_metrics['p_value']:.2e}
+    """
+    
+    ax.text(0.1, 0.5, summary_text, transform=ax.transAxes, 
+           fontsize=10, verticalalignment='center',
+           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    
+    plt.suptitle('Harmony vs ComBat Integration Comparison', fontsize=14, y=1.02)
+    plt.tight_layout()
+    plt.savefig(os.path.join(comparison_dir, 'methods_comparison.png'), 
+               dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    # Save comparison metrics
+    comparison_df = pd.DataFrame([harmony_metrics, combat_metrics])
+    comparison_df['method'] = ['Harmony', 'ComBat']
+    comparison_df.to_csv(os.path.join(comparison_dir, 'comparison_metrics.csv'), index=False)
+    
+    print("\n=== Integration Method Comparison ===")
+    print(comparison_df[['method', 'n_clusters', 'overall_entropy', 
+                         'avg_cluster_entropy', 'well_mixed_proportion', 'p_value']])
+    
+    # Determine which method performed better
+    harmony_score = (harmony_metrics['avg_cluster_entropy'] + 
+                    harmony_metrics['well_mixed_proportion']) / 2
+    combat_score = (combat_metrics['avg_cluster_entropy'] + 
+                   combat_metrics['well_mixed_proportion']) / 2
+    
+    if harmony_score > combat_score:
+        print(f"\n→ Harmony shows better integration (score: {harmony_score:.3f} vs {combat_score:.3f})")
+    else:
+        print(f"\n→ ComBat shows better integration (score: {combat_score:.3f} vs {harmony_score:.3f})")
 
 # Example usage:
 if __name__ == "__main__":
-    adata_rna = convert_rna_to_gene_ids(
-        adata_path="/Users/harry/Desktop/GenoDistance/Data/count_data.h5ad",
-        ensembl_release=98,
-        species="homo_sapiens",
-        handle_duplicates='first',
-        min_mapping_rate=0.7,
-        verbose=True
-    )
-    adata_activity = sc.read("/Users/harry/Desktop/GenoDistance/result/gene_activity_matrix.h5ad")
-    adata_integrated = combined_harmony_analysis(
+    # Load your data
+    adata_rna = sc.read("/dcl01/hongkai/data/data/hjiang/Test/gene_activity/rna_gene_id.h5ad")
+    adata_activity = sc.read("/dcl01/hongkai/data/data/hjiang/Test/gene_activity/gene_activity_weighted_gpu.h5ad")
+    
+    # Run the enhanced pipeline with both integration methods
+    adata_harmony, adata_combat = combined_integration_analysis(
         adata_rna,
         adata_activity,
+        unified_batch_key = 'sample',
         rna_cell_meta_path=None,
         activity_cell_meta_path=None,
-        rna_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/sample_data.csv",
-        activity_sample_meta_path="/Users/harry/Desktop/GenoDistance/Data/ATAC_Metadata.csv",
-        output_dir="/Users/harry/Desktop/GenoDistance/result/",
+        output_dir="/dcl01/hongkai/data/data/hjiang/Test/gene_activity/",
+        leiden_resolution=0.8,  # Adjust for more/fewer clusters
+        run_combat=True,  # Set to True to also run ComBat
         verbose=True
     )
-    cell_types(adata_integrated, Save = True, output_dir="/Users/harry/Desktop/GenoDistance/result/", verbose=True)
-    visualize_rna_atac_integration(adata_integrated, "/Users/harry/Desktop/GenoDistance/result/", quantitative_measures=False, verbose=True)
-    # adata_rna = convert_rna_to_gene_ids(
-    #     adata_path="/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad",
-    #     ensembl_release=98,
-    #     species="homo_sapiens",
-    #     handle_duplicates='first',
-    #     min_mapping_rate=0.7,
-    #     verbose=True
-    # )
-    # adata_activity = sc.read("/users/hjiang/GenoDistance/result/gene_activity/gene_activity_weighted.h5ad")
-    # adata_integrated = combined_harmony_analysis(
-    #     adata_rna,
-    #     adata_activity,
-    #     rna_cell_meta_path=None,
-    #     activity_cell_meta_path=None,
-    #     rna_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/sample_data.csv",
-    #     activity_sample_meta_path="/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv",
-    #     output_dir="/users/hjiang/GenoDistance/result",
-    #     verbose=True
-    # )
-    # adata_integrated = sc.read_h5ad("/users/hjiang/GenoDistance/result/combined_harmony/adata_combined.h5ad")
-    # import subprocess
-    # import sys
-    # subprocess.check_call([
-    #         sys.executable, "-m", "pip", "install",
-    #         "rapids-singlecell[rapids12]",
-    #         "--extra-index-url=https://pypi.nvidia.com"
-    #         ])
-    # import rmm
-    # from rmm.allocators.cupy import rmm_cupy_allocator
-    # import cupy as cp
-
-    # print("\n\nEnabling managed memory for RMM...\n\n")
-    # rmm.reinitialize(
-    #     managed_memory=True,
-    #     pool_allocator=False,
-    # )
-    # cp.cuda.set_allocator(rmm_cupy_allocator)
-    # cell_types_linux(adata_integrated, Save = True, output_dir="/users/hjiang/GenoDistance/result", verbose=True)
-    # visualize_rna_atac_integration(adata_integrated, "/users/hjiang/GenoDistance/result", quantitative_measures=False, verbose=True)
