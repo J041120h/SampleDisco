@@ -20,6 +20,263 @@ import warnings
 from matplotlib.gridspec import GridSpec
 from copy import deepcopy
 
+def align_gene_distributions(adata_rna, adata_activity, method='zero_aware_quantile', 
+                            scale_factor=10000, verbose=True):
+    """
+    Align gene distributions between RNA and gene activity data before integration.
+    
+    Parameters:
+    -----------
+    adata_rna : AnnData
+        RNA expression data (should be raw counts)
+    adata_activity : AnnData
+        Gene activity/accessibility data (should be raw scores)
+    method : str
+        Method for alignment: 'zero_aware_quantile', 'quantile', 'zscore', 'minmax', or 'rank'
+    scale_factor : float
+        Scaling factor for normalization (used in quantile methods)
+    verbose : bool
+        Print progress messages
+    
+    Returns:
+    --------
+    adata_rna_aligned, adata_activity_aligned : tuple of AnnData
+        Aligned datasets ready for concatenation
+    """
+    
+    if verbose:
+        print("=== Aligning Gene Distributions ===")
+        print(f"Method: {method}")
+    
+    # Create copies to avoid modifying original data
+    adata_rna_aligned = adata_rna.copy()
+    adata_activity_aligned = adata_activity.copy()
+    
+    # Find common genes
+    common_genes = list(set(adata_rna_aligned.var_names) & 
+                       set(adata_activity_aligned.var_names))
+    
+    if verbose:
+        print(f"Found {len(common_genes)} common genes between modalities")
+        print(f"RNA unique genes: {len(set(adata_rna_aligned.var_names) - set(common_genes))}")
+        print(f"ATAC unique genes: {len(set(adata_activity_aligned.var_names) - set(common_genes))}")
+    
+    # Store raw data before transformation
+    adata_rna_aligned.layers['raw'] = adata_rna_aligned.X.copy()
+    adata_activity_aligned.layers['raw'] = adata_activity_aligned.X.copy()
+    
+    if method == 'zero_aware_quantile':
+        # Zero-aware quantile normalization - NEW DEFAULT METHOD
+        from sklearn.preprocessing import QuantileTransformer
+        
+        if verbose:
+            print("Applying zero-aware quantile matching (preserves ATAC sparsity)")
+        
+        # First normalize by library size
+        sc.pp.normalize_total(adata_rna_aligned, target_sum=scale_factor)
+        sc.pp.normalize_total(adata_activity_aligned, target_sum=scale_factor)
+        
+        # Apply log transformation
+        sc.pp.log1p(adata_rna_aligned)
+        sc.pp.log1p(adata_activity_aligned)
+        
+        # Track alignment statistics
+        alignment_stats = {
+            'genes_processed': 0,
+            'genes_skipped_no_positive': 0,
+            'avg_atac_sparsity': 0,
+            'avg_rna_sparsity': 0
+        }
+        
+        # For common genes, apply zero-aware quantile matching
+        for gene in common_genes:
+            if gene in adata_rna_aligned.var_names and gene in adata_activity_aligned.var_names:
+                # Get gene expression vectors
+                rna_expr = adata_rna_aligned[:, gene].X.toarray().flatten()
+                atac_expr = adata_activity_aligned[:, gene].X.toarray().flatten()
+                
+                # Identify zero and non-zero values
+                atac_zero_mask = atac_expr == 0
+                atac_nonzero_mask = ~atac_zero_mask
+                rna_zero_mask = rna_expr == 0
+                rna_nonzero_mask = ~rna_zero_mask
+                
+                # Track sparsity
+                alignment_stats['avg_atac_sparsity'] += np.mean(atac_zero_mask)
+                alignment_stats['avg_rna_sparsity'] += np.mean(rna_zero_mask)
+                
+                # Only proceed if both modalities have some positive values
+                if np.sum(atac_nonzero_mask) > 1 and np.sum(rna_nonzero_mask) > 1:
+                    # Extract positive values only
+                    rna_positive = rna_expr[rna_nonzero_mask]
+                    atac_positive = atac_expr[atac_nonzero_mask]
+                    
+                    # Fit quantile transformer on RNA positive values (reference)
+                    qt_rna_to_uniform = QuantileTransformer(
+                        n_quantiles=min(1000, len(rna_positive)), 
+                        output_distribution='uniform', 
+                        random_state=42
+                    )
+                    qt_rna_to_uniform.fit(rna_positive.reshape(-1, 1))
+                    
+                    # Transform ATAC positive values to uniform distribution
+                    try:
+                        atac_uniform = qt_rna_to_uniform.transform(atac_positive.reshape(-1, 1))
+                        
+                        # Inverse transform to match RNA distribution
+                        qt_uniform_to_rna = QuantileTransformer(
+                            n_quantiles=min(1000, len(rna_positive)), 
+                            output_distribution='normal', 
+                            random_state=42
+                        )
+                        qt_uniform_to_rna.fit(rna_positive.reshape(-1, 1))
+                        atac_matched = qt_uniform_to_rna.inverse_transform(atac_uniform)
+                        
+                        # Reconstruct full ATAC expression vector
+                        atac_aligned = atac_expr.copy()
+                        atac_aligned[atac_nonzero_mask] = atac_matched.flatten()
+                        # Keep zeros as zeros: atac_aligned[atac_zero_mask] remains 0
+                        
+                        # Update ATAC expression
+                        adata_activity_aligned[:, gene].X = atac_aligned.reshape(-1, 1)
+                        alignment_stats['genes_processed'] += 1
+                        
+                    except Exception as e:
+                        if verbose and alignment_stats['genes_processed'] < 5:  # Only warn for first few
+                            print(f"  Warning: Could not align gene {gene}: {str(e)}")
+                        alignment_stats['genes_skipped_no_positive'] += 1
+                else:
+                    alignment_stats['genes_skipped_no_positive'] += 1
+        
+        # Calculate average sparsity
+        if len(common_genes) > 0:
+            alignment_stats['avg_atac_sparsity'] /= len(common_genes)
+            alignment_stats['avg_rna_sparsity'] /= len(common_genes)
+        
+        if verbose:
+            print(f"  Genes successfully aligned: {alignment_stats['genes_processed']}")
+            print(f"  Genes skipped (insufficient positive values): {alignment_stats['genes_skipped_no_positive']}")
+            print(f"  Average ATAC sparsity: {alignment_stats['avg_atac_sparsity']:.1%}")
+            print(f"  Average RNA sparsity: {alignment_stats['avg_rna_sparsity']:.1%}")
+    
+    elif method == 'quantile':
+        # Original quantile normalization (transforms all values including zeros)
+        from sklearn.preprocessing import QuantileTransformer
+        
+        if verbose:
+            print("Applying standard quantile matching (transforms all values)")
+        
+        # First normalize by library size
+        sc.pp.normalize_total(adata_rna_aligned, target_sum=scale_factor)
+        sc.pp.normalize_total(adata_activity_aligned, target_sum=scale_factor)
+        
+        # Apply log transformation
+        sc.pp.log1p(adata_rna_aligned)
+        sc.pp.log1p(adata_activity_aligned)
+        
+        # For common genes, apply quantile matching
+        for gene in common_genes:
+            if gene in adata_rna_aligned.var_names and gene in adata_activity_aligned.var_names:
+                # Get gene expression vectors
+                rna_expr = adata_rna_aligned[:, gene].X.toarray().flatten()
+                atac_expr = adata_activity_aligned[:, gene].X.toarray().flatten()
+                
+                # Fit quantile transformer on RNA data (reference)
+                qt = QuantileTransformer(n_quantiles=min(1000, len(rna_expr)), 
+                                        output_distribution='uniform', 
+                                        random_state=42)
+                qt.fit(rna_expr.reshape(-1, 1))
+                
+                # Transform ATAC to match RNA distribution
+                atac_transformed = qt.transform(atac_expr.reshape(-1, 1))
+                
+                # Inverse transform to get back to RNA scale
+                qt_rna = QuantileTransformer(n_quantiles=min(1000, len(rna_expr)), 
+                                            output_distribution='normal', 
+                                            random_state=42)
+                qt_rna.fit(rna_expr.reshape(-1, 1))
+                atac_matched = qt_rna.inverse_transform(atac_transformed)
+                
+                # Update ATAC expression
+                adata_activity_aligned[:, gene].X = atac_matched.reshape(-1, 1)
+    
+    elif method == 'zscore':
+        # Z-score normalization
+        sc.pp.normalize_total(adata_rna_aligned, target_sum=scale_factor)
+        sc.pp.normalize_total(adata_activity_aligned, target_sum=scale_factor)
+        sc.pp.log1p(adata_rna_aligned)
+        sc.pp.log1p(adata_activity_aligned)
+        
+        # Scale to unit variance and zero mean
+        sc.pp.scale(adata_rna_aligned, zero_center=True)
+        sc.pp.scale(adata_activity_aligned, zero_center=True)
+    
+    elif method == 'minmax':
+        # Min-max scaling to [0, 1] range
+        sc.pp.normalize_total(adata_rna_aligned, target_sum=scale_factor)
+        sc.pp.normalize_total(adata_activity_aligned, target_sum=scale_factor)
+        sc.pp.log1p(adata_rna_aligned)
+        sc.pp.log1p(adata_activity_aligned)
+        
+        from sklearn.preprocessing import MinMaxScaler
+        
+        # Apply min-max scaling per gene
+        for gene in common_genes:
+            if gene in adata_rna_aligned.var_names and gene in adata_activity_aligned.var_names:
+                scaler = MinMaxScaler()
+                
+                # Scale RNA
+                rna_expr = adata_rna_aligned[:, gene].X.toarray()
+                rna_scaled = scaler.fit_transform(rna_expr)
+                adata_rna_aligned[:, gene].X = rna_scaled
+                
+                # Scale ATAC
+                atac_expr = adata_activity_aligned[:, gene].X.toarray()
+                atac_scaled = scaler.fit_transform(atac_expr)
+                adata_activity_aligned[:, gene].X = atac_scaled
+    
+    elif method == 'rank':
+        # Rank-based transformation
+        from scipy.stats import rankdata
+        
+        sc.pp.normalize_total(adata_rna_aligned, target_sum=scale_factor)
+        sc.pp.normalize_total(adata_activity_aligned, target_sum=scale_factor)
+        sc.pp.log1p(adata_rna_aligned)
+        sc.pp.log1p(adata_activity_aligned)
+        
+        # Convert to ranks and normalize
+        for gene in common_genes:
+            if gene in adata_rna_aligned.var_names and gene in adata_activity_aligned.var_names:
+                # Rank transform RNA
+                rna_expr = adata_rna_aligned[:, gene].X.toarray().flatten()
+                rna_ranks = rankdata(rna_expr, method='average') / len(rna_expr)
+                adata_rna_aligned[:, gene].X = rna_ranks.reshape(-1, 1)
+                
+                # Rank transform ATAC
+                atac_expr = adata_activity_aligned[:, gene].X.toarray().flatten()
+                atac_ranks = rankdata(atac_expr, method='average') / len(atac_expr)
+                adata_activity_aligned[:, gene].X = atac_ranks.reshape(-1, 1)
+    
+    else:
+        raise ValueError(f"Unknown method: {method}. Choose 'zero_aware_quantile', 'quantile', 'zscore', 'minmax', or 'rank'")
+    
+    if verbose:
+        print(f"Alignment complete using {method} method")
+        
+        # Print distribution statistics for validation
+        print("\n=== Distribution Statistics (subset of common genes) ===")
+        sample_genes = common_genes[:min(5, len(common_genes))]
+        for gene in sample_genes:
+            if gene in adata_rna_aligned.var_names and gene in adata_activity_aligned.var_names:
+                rna_vals = adata_rna_aligned[:, gene].X.toarray().flatten()
+                atac_vals = adata_activity_aligned[:, gene].X.toarray().flatten()
+                print(f"{gene}:")
+                print(f"  RNA  - mean: {np.mean(rna_vals):.3f}, std: {np.std(rna_vals):.3f}, zeros: {np.mean(rna_vals==0):.1%}")
+                print(f"  ATAC - mean: {np.mean(atac_vals):.3f}, std: {np.std(atac_vals):.3f}, zeros: {np.mean(atac_vals==0):.1%}")
+    
+    return adata_rna_aligned, adata_activity_aligned
+
+
 def combine_rna_and_activity_data(
     adata_rna,
     adata_activity,
@@ -30,6 +287,8 @@ def combine_rna_and_activity_data(
     rna_sample_column='sample',
     activity_sample_column='sample',
     unified_sample_column='sample',
+    align_distributions=True,
+    alignment_method='zero_aware_quantile',  # Changed default to new method
     rna_batch_key='batch',
     activity_batch_key='batch',
     unified_batch_key='batch',
@@ -39,7 +298,7 @@ def combine_rna_and_activity_data(
 ):
     """
     Combine RNA and gene activity data into a single AnnData object.
-    [Previous implementation remains the same]
+    Now defaults to zero-aware quantile matching which preserves ATAC sparsity.
     """
     
     if verbose:
@@ -151,12 +410,20 @@ def combine_rna_and_activity_data(
             adata_activity.obs.drop(columns=[unified_batch_key], inplace=True)
         adata_activity.obs[unified_batch_key] = adata_activity.obs[activity_batch_key]
     
+    # Apply distribution alignment
+    if align_distributions:
+        adata_rna, adata_activity = align_gene_distributions(
+            adata_rna, 
+            adata_activity, 
+            method=alignment_method,
+            verbose=verbose
+        )
+
     if verbose:
         print("=== Combining Datasets ===")
         print(f"RNA data shape: {adata_rna.shape}")
         print(f"Gene activity data shape: {adata_activity.shape}")
-    
-    # Combine datasets
+
     adata_combined = sc.concat([adata_rna, adata_activity], axis=0, join='outer')
     
     if verbose:
@@ -413,6 +680,8 @@ def combined_integration_analysis(
     activity_sample_meta_path=None,
     output_dir=None,
     rna_sample_column='sample',
+    align_distributions=True,
+    alignment_method='zero_aware_quantile',  # Changed default to new method
     activity_sample_column='sample',
     unified_sample_column='sample',
     rna_batch_key='batch',
@@ -435,6 +704,7 @@ def combined_integration_analysis(
 ):
     """
     Enhanced pipeline with both Harmony and ComBat integration, Leiden clustering, and visualization.
+    Now defaults to zero-aware quantile matching for better modality alignment.
     """
     start_time = time.time()
     
@@ -451,6 +721,8 @@ def combined_integration_analysis(
         adata_activity=adata_activity,
         rna_cell_meta_path=rna_cell_meta_path,
         activity_cell_meta_path=activity_cell_meta_path,
+        align_distributions=align_distributions,
+        alignment_method=alignment_method,  # Pass through the new parameter
         rna_sample_meta_path=rna_sample_meta_path,
         activity_sample_meta_path=activity_sample_meta_path,
         rna_sample_column=rna_sample_column,
@@ -531,9 +803,16 @@ def combined_integration_analysis(
     # Save raw data
     adata_combined.raw = adata_combined.copy()
     
-    # Normalization and log transformation
-    sc.pp.normalize_total(adata_combined, target_sum=1e4)
-    sc.pp.log1p(adata_combined)
+    # Conditional normalization based on alignment method
+    if align_distributions and alignment_method == 'zero_aware_quantile':
+        if verbose:
+            print("=== Skipping normalization (data already aligned with zero-aware quantile) ===")
+    else:
+        if verbose:
+            print("=== Performing standard normalization ===")
+        # Standard normalization only if NOT aligned or using different method
+        sc.pp.normalize_total(adata_combined, target_sum=1e4)
+        sc.pp.log1p(adata_combined)
     
     # HVG selection
     sc.pp.highly_variable_genes(
@@ -549,6 +828,7 @@ def combined_integration_analysis(
     # === HARMONY INTEGRATION ===
     if verbose:
         print('\n=== HARMONY INTEGRATION PIPELINE ===')
+        print(f'Using alignment method: {alignment_method}')
     
     harmony_dir = os.path.join(output_dir, 'harmony_integration')
     if not os.path.exists(harmony_dir):
@@ -648,6 +928,7 @@ def combined_integration_analysis(
         print(f"\n=== Analysis Complete ===")
         print(f"Execution time: {elapsed_time:.2f} seconds")
         print(f"Final data shape: {adata_harmony.shape}")
+        print(f"Alignment method used: {alignment_method}")
         if run_combat:
             print(f"Both Harmony and ComBat integration completed")
         else:
@@ -810,14 +1091,16 @@ if __name__ == "__main__":
     adata_rna = sc.read("/dcl01/hongkai/data/data/hjiang/Test/gene_activity/rna_gene_id.h5ad")
     adata_activity = sc.read("/dcl01/hongkai/data/data/hjiang/Test/gene_activity/gene_activity_weighted_gpu.h5ad")
     
-    # Run the enhanced pipeline with both integration methods
+    # Run the enhanced pipeline with zero-aware quantile matching as default
     adata_harmony, adata_combat = combined_integration_analysis(
         adata_rna,
         adata_activity,
-        unified_batch_key = 'sample',
+        unified_batch_key='sample',
         rna_cell_meta_path=None,
         activity_cell_meta_path=None,
         output_dir="/dcl01/hongkai/data/data/hjiang/Test/gene_activity/",
+        align_distributions=True,  # Enable alignment (default True)
+        alignment_method='zero_aware_quantile',  # New default method
         leiden_resolution=0.8,  # Adjust for more/fewer clusters
         run_combat=True,  # Set to True to also run ComBat
         verbose=True
