@@ -593,14 +593,395 @@ def inspect_gene_activity(adata_path, n_genes_to_show=10, n_cells_to_show=100):
     
     return adata
 
-# Example usage:
+def fix_integrated_h5ad_with_obsm_varm(
+    integrated_h5ad_path: str,
+    glue_dir: str,
+    raw_rna_path: str,
+    output_path: str = None,
+    chunk_size: int = 10000,
+    enable_chunking: bool = True,
+    verbose: bool = True
+) -> ad.AnnData:
+    """
+    Fix an already generated integrated h5ad file by appending missing obsm and varm information.
+    Now supports chunked processing for memory efficiency.
+    
+    Parameters
+    ----------
+    integrated_h5ad_path : str
+        Path to the already generated integrated h5ad file
+    glue_dir : str
+        Directory containing the GLUE output files
+    raw_rna_path : str
+        Path to the raw RNA counts h5ad file
+    output_path : str, optional
+        Output path for the fixed file. If None, overwrites the input file
+    chunk_size : int, default 10000
+        Number of cells to process in each chunk
+    enable_chunking : bool, default True
+        Whether to use chunked processing (recommended for large datasets)
+    memory_threshold_gb : float, default 8.0
+        Estimated memory usage threshold (GB) to trigger chunked processing
+    verbose : bool
+        Whether to print progress messages
+    
+    Returns
+    -------
+    ad.AnnData
+        Fixed AnnData object with obsm and varm appended
+    """
+    import anndata as ad
+    import numpy as np
+    import pandas as pd
+    import os
+    import gc
+    import psutil
+    from scipy import sparse
+    from typing import Dict, Any, Tuple
+    
+    def process_obsm_chunk(
+        integrated_chunk: ad.AnnData,
+        source_adata: ad.AnnData,
+        source_cells: pd.Index,
+        chunk_cells: pd.Index,
+        cell_mapping: pd.Series,
+        obsm_key: str,
+        global_idx_offset: int
+    ) -> np.ndarray:
+        """Process obsm data for a chunk of cells"""
+        common_cells = chunk_cells.intersection(source_cells).intersection(source_adata.obs.index)
+        
+        if len(common_cells) == 0:
+            return None
+            
+        # Get source data for common cells
+        source_data = source_adata[common_cells].obsm[obsm_key]
+        
+        # Create chunk array
+        if len(source_data.shape) == 2:
+            chunk_array = np.zeros((len(chunk_cells), source_data.shape[1]), dtype=source_data.dtype)
+        else:
+            chunk_array = np.zeros((len(chunk_cells),) + source_data.shape[1:], dtype=source_data.dtype)
+        
+        # Fill in values
+        for i, cell_id in enumerate(common_cells):
+            if cell_id in cell_mapping.index:
+                local_idx = chunk_cells.get_loc(cell_id)
+                chunk_array[local_idx] = source_data[i]
+        
+        return chunk_array
+    
+    # Set output path
+    if output_path is None:
+        output_path = integrated_h5ad_path
+    
+    # Construct file paths
+    rna_processed_path = os.path.join(glue_dir, "glue-rna-emb.h5ad")
+    atac_path = os.path.join(glue_dir, "glue-atac-emb.h5ad")
+    
+    if verbose:
+        print("🔧 Fixing integrated h5ad file with missing obsm/varm...")
+        print(f"   Input: {integrated_h5ad_path}")
+        print(f"   Output: {output_path}")
+        print(f"   Chunked processing: {'Enabled' if enable_chunking else 'Disabled'}")
+        if enable_chunking:
+            print(f"   Chunk size: {chunk_size:,} cells")
+    
+    # Load integrated data (check if we should use backed mode)
+    if verbose:
+        print("\n📂 Loading integrated data...")
+    
+    # First, get basic info about the dataset
+    integrated_info = ad.read_h5ad(integrated_h5ad_path, backed='r')
+    n_obs, n_vars = integrated_info.shape
+    
+    if verbose:
+        print(f"   Dataset size: {n_obs:,} cells × {n_vars:,} features")
+    
+    if enable_chunking:
+        if verbose:
+            print("   Using chunked processing for memory efficiency")
+        integrated = integrated_info  # Keep in backed mode
+    else:
+        if verbose:
+            print("   Loading full dataset into memory")
+        integrated_info.file.close()
+        integrated = ad.read_h5ad(integrated_h5ad_path)
+    
+    # Identify RNA and ATAC cells
+    rna_mask = integrated.obs['modality'] == 'RNA'
+    atac_mask = integrated.obs['modality'] == 'ATAC'
+    rna_cells = integrated.obs.index[rna_mask]
+    atac_cells = integrated.obs.index[atac_mask]
+    
+    if verbose:
+        print(f"   Found {rna_mask.sum():,} RNA cells and {atac_mask.sum():,} ATAC cells")
+    
+    # Create cell mappings
+    rna_cell_mapping = pd.Series(range(len(rna_cells)), index=rna_cells)
+    atac_cell_mapping = pd.Series(
+        range(len(rna_cells), len(rna_cells) + len(atac_cells)), 
+        index=atac_cells
+    )
+    
+    # Load source data files
+    if verbose:
+        print("\n📂 Loading source embeddings...")
+    
+    rna_processed = ad.read_h5ad(rna_processed_path)
+    atac_processed = ad.read_h5ad(atac_path)
+    
+    # Collect all obsm keys to process
+    all_obsm_keys = set()
+    if hasattr(rna_processed, 'obsm'):
+        all_obsm_keys.update(rna_processed.obsm.keys())
+    if hasattr(atac_processed, 'obsm'):
+        all_obsm_keys.update(atac_processed.obsm.keys())
+    
+    # Initialize output arrays
+    obsm_arrays = {}
+    
+    if enable_chunking:
+        # Process in chunks
+        n_chunks = (n_obs + chunk_size - 1) // chunk_size
+        if verbose:
+            print(f"\n🔄 Processing {n_chunks} chunks...")
+        
+        # Initialize arrays for each obsm key
+        for key in all_obsm_keys:
+            # Determine array dimensions from source data
+            if key in rna_processed.obsm:
+                sample_shape = rna_processed.obsm[key].shape[1:]
+                dtype = rna_processed.obsm[key].dtype
+            elif key in atac_processed.obsm:
+                sample_shape = atac_processed.obsm[key].shape[1:]
+                dtype = atac_processed.obsm[key].dtype
+            else:
+                continue
+                
+            if key not in integrated.obsm or key == 'X_umap':
+                obsm_arrays[key] = np.zeros((n_obs,) + sample_shape, dtype=dtype)
+            else:
+                obsm_arrays[key] = integrated.obsm[key].copy()
+        
+        # Process chunks
+        for chunk_idx in range(n_chunks):
+            start_idx = chunk_idx * chunk_size
+            end_idx = min((chunk_idx + 1) * chunk_size, n_obs)
+            
+            if verbose and chunk_idx % max(1, n_chunks // 10) == 0:
+                print(f"   Processing chunk {chunk_idx + 1}/{n_chunks} "
+                      f"(cells {start_idx:,}-{end_idx-1:,})")
+            
+            # Get chunk cell indices
+            chunk_cells = integrated.obs.index[start_idx:end_idx]
+            chunk_rna_cells = chunk_cells.intersection(rna_cells)
+            chunk_atac_cells = chunk_cells.intersection(atac_cells)
+            
+            # Process RNA obsm for this chunk
+            for key in rna_processed.obsm.keys():
+                if key in obsm_arrays:
+                    chunk_data = process_obsm_chunk(
+                        None, rna_processed, rna_cells, chunk_rna_cells,
+                        rna_cell_mapping, key, start_idx
+                    )
+                    if chunk_data is not None:
+                        # Map chunk data to global indices
+                        for i, cell_id in enumerate(chunk_rna_cells):
+                            global_idx = rna_cell_mapping[cell_id]
+                            obsm_arrays[key][global_idx] = chunk_data[i]
+            
+            # Process ATAC obsm for this chunk
+            for key in atac_processed.obsm.keys():
+                if key in obsm_arrays:
+                    chunk_data = process_obsm_chunk(
+                        None, atac_processed, atac_cells, chunk_atac_cells,
+                        atac_cell_mapping, key, start_idx
+                    )
+                    if chunk_data is not None:
+                        # Map chunk data to global indices
+                        for i, cell_id in enumerate(chunk_atac_cells):
+                            global_idx = atac_cell_mapping[cell_id]
+                            obsm_arrays[key][global_idx] = chunk_data[i]
+            
+            # Trigger garbage collection periodically
+            if chunk_idx % 10 == 0:
+                gc.collect()
+        
+        # Convert to full AnnData object for final processing
+        if verbose:
+            print("\n📝 Converting to full AnnData object...")
+        
+        integrated.file.close()
+        integrated = ad.read_h5ad(integrated_h5ad_path)
+        
+        # Add processed obsm arrays
+        for key, array in obsm_arrays.items():
+            integrated.obsm[key] = array
+            if verbose:
+                print(f"   Added obsm['{key}'] with shape {array.shape}")
+    
+    else:
+        # Non-chunked processing (original logic)
+        if verbose:
+            print("\n🔄 Processing RNA embeddings...")
+        
+        common_rna_cells = rna_cells.intersection(rna_processed.obs.index)
+        if len(common_rna_cells) > 0:
+            for key in rna_processed.obsm.keys():
+                if key not in integrated.obsm or key == 'X_umap':
+                    if verbose:
+                        print(f"   Adding RNA obsm['{key}'] with shape {rna_processed.obsm[key].shape}")
+                    
+                    rna_data = rna_processed[common_rna_cells].obsm[key]
+                    
+                    if len(rna_data.shape) == 2:
+                        full_array = np.zeros((integrated.n_obs, rna_data.shape[1]), dtype=rna_data.dtype)
+                    else:
+                        full_array = np.zeros((integrated.n_obs,) + rna_data.shape[1:], dtype=rna_data.dtype)
+                    
+                    for i, cell_id in enumerate(common_rna_cells):
+                        if cell_id in rna_cell_mapping.index:
+                            full_idx = rna_cell_mapping[cell_id]
+                            full_array[full_idx] = rna_data[i]
+                    
+                    integrated.obsm[key] = full_array
+        
+        if verbose:
+            print("\n🔄 Processing ATAC embeddings...")
+        
+        common_atac_cells = atac_cells.intersection(atac_processed.obs.index)
+        if len(common_atac_cells) > 0:
+            for key in atac_processed.obsm.keys():
+                if key not in integrated.obsm:
+                    if verbose:
+                        print(f"   Adding ATAC obsm['{key}'] with shape {atac_processed.obsm[key].shape}")
+                    
+                    atac_data = atac_processed[common_atac_cells].obsm[key]
+                    
+                    if len(atac_data.shape) == 2:
+                        full_array = np.zeros((integrated.n_obs, atac_data.shape[1]), dtype=atac_data.dtype)
+                    else:
+                        full_array = np.zeros((integrated.n_obs,) + atac_data.shape[1:], dtype=atac_data.dtype)
+                    
+                    for i, cell_id in enumerate(common_atac_cells):
+                        if cell_id in atac_cell_mapping.index:
+                            full_idx = atac_cell_mapping[cell_id]
+                            full_array[full_idx] = atac_data[i]
+                    
+                    integrated.obsm[key] = full_array
+                elif key != 'X_umap':
+                    if verbose:
+                        print(f"   Updating ATAC portion of obsm['{key}']")
+                    
+                    atac_data = atac_processed[common_atac_cells].obsm[key]
+                    
+                    for i, cell_id in enumerate(common_atac_cells):
+                        if cell_id in atac_cell_mapping.index:
+                            full_idx = atac_cell_mapping[cell_id]
+                            integrated.obsm[key][full_idx] = atac_data[i]
+    
+    # Process varm (same for both chunked and non-chunked)
+    if verbose:
+        print("\n📝 Processing varm data...")
+    
+    # Extract RNA varm
+    rna_varm_dict = {}
+    if hasattr(rna_processed, 'varm'):
+        for key in rna_processed.varm.keys():
+            if verbose:
+                print(f"   Storing RNA varm['{key}'] with shape {rna_processed.varm[key].shape}")
+            rna_varm_dict[key] = rna_processed.varm[key].copy()
+    
+    # Extract ATAC varm
+    atac_varm_dict = {}
+    if hasattr(atac_processed, 'varm'):
+        for key in atac_processed.varm.keys():
+            if verbose:
+                print(f"   Storing ATAC varm['{key}'] with shape {atac_processed.varm[key].shape}")
+            atac_varm_dict[key] = atac_processed.varm[key].copy()
+    
+    # Clean up source data
+    del rna_processed, atac_processed
+    gc.collect()
+    
+    # Load raw RNA for varm
+    if verbose:
+        print("\n📂 Loading raw RNA for varm...")
+    try:
+        rna_raw = ad.read_h5ad(raw_rna_path, backed='r')
+        
+        if hasattr(rna_raw, 'varm'):
+            for key in rna_raw.varm.keys():
+                if verbose:
+                    print(f"   Storing raw RNA varm['{key}'] with shape {rna_raw.varm[key].shape}")
+                rna_varm_dict[key] = rna_raw.varm[key].copy()
+        
+        rna_raw.file.close()
+        del rna_raw
+    except Exception as e:
+        if verbose:
+            print(f"   Warning: Could not load raw RNA varm: {e}")
+    
+    # Apply varm to integrated data
+    all_varm = {**atac_varm_dict, **rna_varm_dict}  # RNA takes precedence
+    
+    if verbose and len(all_varm) > 0:
+        print("\n📝 Applying varm to integrated data...")
+    
+    for key, value in all_varm.items():
+        if value.shape[0] == integrated.n_vars:
+            integrated.varm[key] = value
+            if verbose:
+                print(f"   Added varm['{key}'] with shape {value.shape}")
+        else:
+            if verbose:
+                print(f"   Skipped varm['{key}'] - dimension mismatch "
+                      f"(expected {integrated.n_vars}, got {value.shape[0]})")
+    
+    # Final garbage collection
+    gc.collect()
+    
+    # Save the fixed file
+    if verbose:
+        print(f"\n💾 Saving fixed integrated data to {output_path}...")
+    
+    # Use chunked writing for large datasets
+    if n_obs > 50000:
+        if verbose:
+            print("   Using optimized writing for large dataset...")
+        integrated.write(output_path, compression='gzip', compression_opts=4)
+    else:
+        integrated.write(output_path, compression='gzip', compression_opts=4)
+    
+    if verbose:
+        print("\n✅ Fix complete!")
+        print(f"\n📊 Summary:")
+        print(f"   Total cells: {integrated.n_obs:,}")
+        print(f"   Total genes: {integrated.n_vars:,}")
+        print(f"   obsm keys: {list(integrated.obsm.keys())}")
+        print(f"   varm keys: {list(integrated.varm.keys())}")
+        print(f"   obs columns: {list(integrated.obs.columns)}")
+        print(f"   var columns: {list(integrated.var.columns)}")
+    
+    return integrated
+
 if __name__ == "__main__":
-    # Replace with your h5ad file path
-    filepath = "/dcl01/hongkai/data/data/hjiang/Test/gene_activity/rna_gene_id.h5ad"
-    gene_activity_path = "/dcl01/hongkai/data/data/hjiang/Test/gene_activity/gene_activity_weighted_gpu.h5ad"
-    adata = inspect_gene_activity(filepath)
+    # fix_integrated_h5ad_with_obsm_varm(
+    #     integrated_h5ad_path="/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad",
+    #     glue_dir="/dcs07/hongkai/data/harry/result/multiomics/integration/glue",
+    #     raw_rna_path="/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad",
+    #     output_path="/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated_fixed.h5ad",
+    #     chunk_size=10000,  # Use chunked processing with 10K cells per chunk
+    #     enable_chunking=True,  # Enable chunking (default)
+    #     verbose=True
+    # )
+
+    # filepath = "/dcl01/hongkai/data/data/hjiang/Test/gene_activity/rna_gene_id.h5ad"
+    # adata = inspect_gene_activity(filepath)
+
     # Comprehensive inspection
-    # results = inspect_h5ad_file(filepath, verbose=True)
+    results = inspect_h5ad_file("/dcs07/hongkai/data/harry/result/heart/multiomics/pseudobulk/pseudobulk_sample.h5ad", verbose=True)
     
     # Quick inspection
     # quick_inspect_h5ad(filepath)

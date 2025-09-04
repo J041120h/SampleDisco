@@ -1,175 +1,121 @@
-======================================
- Job ID:            21727968
- Job Name:          test
- Partition:         gpu
- Node List:         compute-170
- CPUs per Task:     16
- Memory Alloc:      1024000
- GPU Requested:     1
- Start Time:        Tue Sep  2 12:07:00 AM EDT 2025
-======================================
-Checking GPU status...
-Tue Sep  2 00:07:27 2025       
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
-|-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA H100 NVL                Off |   00000000:D1:00.0 Off |                    0 |
-| N/A   41C    P0             90W /  400W |       1MiB /  95830MiB |      3%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-                                                                                         
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|  No running processes found                                                             |
-+-----------------------------------------------------------------------------------------+
-Starting main.py...
-RNA data shape: (16572, 19362)
-Gene activity data shape: (30373, 18608)
-=== Loading Cell Metadata ===
-No RNA cell metadata provided, creating from obs_names
-No gene activity cell metadata provided, creating from obs_names
-=== Loading Sample Metadata ===
-=== Standardizing Column Names ===
-=== Aligning Gene Distributions ===
-Method: zero_aware_quantile
-Found 14750 common genes between modalities
-RNA unique genes: 4612
-ATAC unique genes: 3858
-Applying zero-aware quantile matching (preserves ATAC sparsity)
-  Genes successfully aligned: 14202
-  Genes skipped (insufficient positive values): 548
-  Average ATAC sparsity: 53.1%
-  Average RNA sparsity: 93.2%
-Alignment complete using zero_aware_quantile method
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
-=== Distribution Statistics (subset of common genes) ===
-ENSG00000135919:
-  RNA  - mean: 0.013, std: 0.143, zeros: 99.1%
-  ATAC - mean: 0.576, std: 0.745, zeros: 62.5%
-ENSG00000168779:
-  RNA  - mean: 0.001, std: 0.043, zeros: 99.9%
-  ATAC - mean: 0.403, std: 0.685, zeros: 74.3%
-ENSG00000081148:
-  RNA  - mean: 0.001, std: 0.035, zeros: 99.9%
-  ATAC - mean: 0.152, std: 0.473, zeros: 90.6%
-ENSG00000137309:
-  RNA  - mean: 0.310, std: 0.649, zeros: 80.4%
-  ATAC - mean: 0.979, std: 0.751, zeros: 37.0%
-ENSG00000163519:
-  RNA  - mean: 0.160, std: 0.500, zeros: 90.2%
-  ATAC - mean: 0.199, std: 0.530, zeros: 87.6%
-=== Combining Datasets ===
-RNA data shape: (16572, 19362)
-Gene activity data shape: (30373, 18608)
-Combined data shape: (46945, 23220)
-RNA cells: 16572
-Gene activity cells: 30373
-Total unique genes: 23220
-=== Starting Quality Control and Filtering ===
-After basic filtering -- Cells: 46825, Genes: 18432
-After MT filtering -- Cells: 46825, Genes: 18432
-Samples retained: ['ATAC_batch', 'RNA_batch']
-Final dimensions -- Cells: 46825, Genes: 18432
-=== Skipping normalization (data already aligned with zero-aware quantile) ===
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multiomics
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
+Step 1: Running GLUE integration...
+  Sub-steps: Preprocessing=False, Training=False, Gene Activity=True, Cell Types=True, Visualization=True
+Computing gene activity...
 
-=== HARMONY INTEGRATION PIPELINE ===
-Using alignment method: zero_aware_quantile
-Running Harmony with variables: sample, data_type
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-Reach convergence after 8 iteration(s).
-Running Leiden clustering with resolution=0.8
-Found 17 clusters
-Cluster sizes:
-  Cluster 0: 6356 cells
-  Cluster 1: 6251 cells
-  Cluster 2: 4993 cells
-  Cluster 3: 4046 cells
-  Cluster 4: 3880 cells
-  Cluster 5: 3541 cells
-  Cluster 6: 3013 cells
-  Cluster 7: 2746 cells
-  Cluster 8: 2706 cells
-  Cluster 9: 2314 cells
-  Cluster 10: 2110 cells
-  Cluster 11: 1371 cells
-  Cluster 12: 1353 cells
-  Cluster 13: 910 cells
-  Cluster 14: 782 cells
-  Cluster 15: 299 cells
-  Cluster 16: 154 cells
-Creating Harmony visualizations...
+🧬 Computing gene activity using raw RNA counts (highly optimized)...
+   k_neighbors: 10
+   metric: cosine
+   GPU acceleration: enabled
+   Available GPU memory: 33.75 GB
+   Available CPU memory: 802.39 GB
+📂 Loading processed RNA embeddings...
+📂 Loading ATAC embeddings...
+📂 Loading raw RNA counts...
+   RNA cells: 430595, ATAC cells: 430595, Genes: 36601
 
-=== HARMONY Integration Quality Metrics ===
-Overall modality entropy: 0.935 (max=1.0 for 2 modalities)
-Average cluster mixing entropy: 0.293
-Proportion of well-mixed clusters: 23.53%
-Chi-square test for independence: χ² = 33969.00, p = 0.00e+00
-  → Significant association between clusters and modality (poor mixing)
+🔍 Finding k-nearest RNA neighbors (GPU-accelerated)...
+   k-NN search completed in 6.26 seconds
 
-=== COMBAT INTEGRATION PIPELINE ===
-Running Leiden clustering with resolution=0.8
-Found 20 clusters
-Cluster sizes:
-  Cluster 0: 4961 cells
-  Cluster 1: 4640 cells
-  Cluster 2: 4470 cells
-  Cluster 3: 4148 cells
-  Cluster 4: 3694 cells
-  Cluster 5: 3455 cells
-  Cluster 6: 2922 cells
-  Cluster 7: 2872 cells
-  Cluster 8: 2680 cells
-  Cluster 9: 2511 cells
-  Cluster 10: 2246 cells
-  Cluster 11: 2192 cells
-  Cluster 12: 2024 cells
-  Cluster 13: 1146 cells
-  Cluster 14: 932 cells
-  Cluster 15: 781 cells
-  Cluster 16: 618 cells
-  Cluster 17: 380 cells
-  Cluster 18: 145 cells
-  Cluster 19: 8 cells
-Creating ComBat visualizations...
+📐 Computing similarity weights on GPU...
 
-=== COMBAT Integration Quality Metrics ===
-Overall modality entropy: 0.935 (max=1.0 for 2 modalities)
-Average cluster mixing entropy: 0.004
-Proportion of well-mixed clusters: 0.00%
-Chi-square test for independence: χ² = 46728.62, p = 0.00e+00
-  → Significant association between clusters and modality (poor mixing)
+🧮 Computing weighted gene activity...
+   Optimal batch size: 10000
+   Progress: 9.1% (4/44 batches)
+   Progress: 18.2% (8/44 batches)
+   Progress: 27.3% (12/44 batches)
+   Progress: 36.4% (16/44 batches)
+   Progress: 45.5% (20/44 batches)
+   Progress: 54.5% (24/44 batches)
+   Progress: 63.6% (28/44 batches)
+   Progress: 72.7% (32/44 batches)
+   Progress: 81.8% (36/44 batches)
+   Progress: 90.9% (40/44 batches)
+   Progress: 100.0% (44/44 batches)
+   Gene activity computation completed in 32523.78 seconds
 
-=== INTEGRATION COMPARISON ===
+🔍 Validating gene activity counts...
 
-=== Integration Method Comparison ===
-    method  n_clusters  ...  well_mixed_proportion  p_value
-0  Harmony          17  ...               0.235294      0.0
-1   ComBat          20  ...               0.000000      0.0
+🔗 Preparing RNA data for merging...
+🔗 Merging gene activity with RNA data...
 
-[2 rows x 6 columns]
+✅ Gene activity computation and merging complete!
 
-→ Harmony shows better integration (score: 0.264 vs 0.002)
+📊 Summary:
+   Output path: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+   Merged dataset shape: (861190, 36601)
+   RNA cells: 430595
+   ATAC cells: 430595
+   Optimization: GPU vectorization + dynamic batching
+   Batch processing: 44 batches of size 10000
+Gene activity computation completed.
+Assigning cell types...
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
 
-=== Analysis Complete ===
-Execution time: 7022.31 seconds
-Final data shape: (46825, 2000)
-Alignment method used: zero_aware_quantile
-Both Harmony and ComBat integration completed
-Finished main.py.
-End Time: Tue Sep  2 02:04:44 AM EDT 2025
+✗ Multiomics pipeline failed with error: Did not find X_glue in `.obsm.keys()`. You need to compute it first.
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+Multiomics Pipeline: ⚠ PARTIAL
+  - glue_integration: ✗
+  - glue_preprocessing: ✗
+  - glue_training: ✗
+  - glue_gene_activity: ✗
+  - glue_cell_types: ✗
+  - glue_visualization: ✗
+  - integration_preprocessing: ✗
+  - dimensionality_reduction: ✗
+  - embedding_visualization: ✗
+  - optimal_resolution: ✗
+
+Results saved to: /dcs07/hongkai/data/harry/result
+Status file: /dcs07/hongkai/data/harry/result/sys_log/main_process_status.json

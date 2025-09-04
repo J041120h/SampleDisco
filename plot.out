@@ -1,106 +1,67 @@
 ======================================
- Job ID:            17711993
+ Job ID:            21816307
  Job Name:          plot
  Partition:         shared
- Node List:         compute-115
+ Node List:         compute-129
  CPUs per Task:     16
- Memory Alloc:      102400
+ Memory Alloc:      819200
  GPU Requested:     None
- Start Time:        Sat Jun 21 05:02:50 PM EDT 2025
+ Start Time:        Thu Sep  4 01:29:59 PM EDT 2025
 ======================================
 Starting plot script...
-RNA X_DR_expression: filtered DataFrame from (64, 10) to (40, 10)
-RNA X_DR_proportion: filtered DataFrame from (64, 10) to (40, 10)
-ATAC X_DR_expression: filtered DataFrame from (64, 10) to (24, 10)
-ATAC X_DR_proportion: filtered DataFrame from (64, 10) to (24, 10)
-RNA samples: 40
-ATAC samples: 24
-RNA obsm shapes: [('X_DR_expression', (40, 10)), ('X_DR_proportion', (40, 10)), ('X_pca_expression_method', (40, 10))]
-ATAC obsm shapes: [('X_DR_expression', (24, 10)), ('X_DR_proportion', (24, 10)), ('X_pca_expression_method', (24, 10))]
+🔧 Fixing integrated h5ad file with missing obsm/varm...
+   Input: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+   Output: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated_fixed.h5ad
+   Chunked processing: Enabled
+   Chunk size: 10,000 cells
 
-RNA PCA coordinates in .uns:
-  X_DR_expression shape: (40, 10)
-  X_DR_proportion shape: (40, 10)
+📂 Loading integrated data...
+   Dataset size: 861,190 cells × 36,601 features
+   Using chunked processing for memory efficiency
+   Found 430,595 RNA cells and 430,595 ATAC cells
 
-ATAC PCA coordinates in .uns:
-  X_DR_expression shape: (24, 10)
-  X_DR_proportion shape: (24, 10)
+📂 Loading source embeddings...
 
-RNA validation:
-  n_obs: 40
-  severity column length: 40
-  X_DR_expression shape: (40, 10)
-  X_DR_proportion shape: (40, 10)
-  X_pca_expression_method shape: (40, 10)
+🔄 Processing 87 chunks...
+   Processing chunk 1/87 (cells 0-9,999)
+   Processing chunk 9/87 (cells 80,000-89,999)
+   Processing chunk 17/87 (cells 160,000-169,999)
+   Processing chunk 25/87 (cells 240,000-249,999)
+   Processing chunk 33/87 (cells 320,000-329,999)
+   Processing chunk 41/87 (cells 400,000-409,999)
+   Processing chunk 49/87 (cells 480,000-489,999)
+   Processing chunk 57/87 (cells 560,000-569,999)
+   Processing chunk 65/87 (cells 640,000-649,999)
+   Processing chunk 73/87 (cells 720,000-729,999)
+   Processing chunk 81/87 (cells 800,000-809,999)
 
-ATAC validation:
-  n_obs: 24
-  severity column length: 24
-  X_DR_expression shape: (24, 10)
-  X_DR_proportion shape: (24, 10)
-  X_pca_expression_method shape: (24, 10)
-✓ RNA X_DR_expression validation passed: 40 rows
-✓ RNA X_DR_proportion validation passed: 40 rows
-✓ ATAC X_DR_expression validation passed: 24 rows
-✓ ATAC X_DR_proportion validation passed: 24 rows
+📝 Converting to full AnnData object...
+   Added obsm['X_pca'] with shape (861190, 50)
+   Added obsm['X_lsi'] with shape (861190, 50)
+   Added obsm['X_glue'] with shape (861190, 50)
 
-=== Processing RNA modality ===
-Processing X_DR_proportion...
+📝 Processing varm data...
+   Storing RNA varm['PCs'] with shape (36591, 50)
+   Storing RNA varm['X_glue'] with shape (36591, 50)
+   Storing ATAC varm['X_glue'] with shape (3576085, 50)
 
-The CCA score for X_DR_proportion is 0.4674
+📂 Loading raw RNA for varm...
 
-Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/CCA/pca_2d_cca_proportion.pdf
-Processing X_DR_expression...
+📝 Applying varm to integrated data...
+   Skipped varm['X_glue'] - dimension mismatch (expected 36601, got 36591)
+   Skipped varm['PCs'] - dimension mismatch (expected 36601, got 36591)
 
-The CCA score for X_DR_expression is 0.1367
+💾 Saving fixed integrated data to /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated_fixed.h5ad...
+   Using optimized writing for large dataset...
 
-Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/CCA/pca_2d_cca_expression.pdf
-CCA analysis completed.
+✅ Fix complete!
 
-[CCA] Total runtime: 1.48 seconds
-
-RNA CCA analysis completed successfully
-
-=== Processing ATAC modality ===
-Processing X_DR_proportion...
-
-The CCA score for X_DR_proportion is 0.2226
-
-Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/CCA/pca_2d_cca_proportion.pdf
-Processing X_DR_expression...
-
-The CCA score for X_DR_expression is 0.0754
-
-Saved CCA plot to: //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/CCA/pca_2d_cca_expression.pdf
-CCA analysis completed.
-
-[CCA] Total runtime: 1.10 seconds
-
-ATAC CCA analysis completed successfully
-
-=== Running RNA p-value tests ===
-P-value for observed correlation 0.46741173530590213: 0.011
-[CCA p-test] Runtime: 2.90 seconds
-RNA proportion p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/proportion
-P-value for observed correlation 0.13673778808248002: 0.695
-[CCA p-test] Runtime: 2.91 seconds
-RNA expression p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/RNA/expression
-
-=== Running ATAC p-value tests ===
-P-value for observed correlation 0.2225621673356608: 0.572
-[CCA p-test] Runtime: 2.89 seconds
-ATAC proportion p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/proportion
-P-value for observed correlation 0.07542955652466325: 0.937
-[CCA p-test] Runtime: 2.90 seconds
-ATAC expression p-value test completed. Results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test/ATAC/expression
-
-=== CCA Integration Test Summary ===
-RNA CCA: ✓
-- RNA proportion test: ✓
-- RNA expression test: ✓
-ATAC CCA: ✓
-- ATAC proportion test: ✓
-- ATAC expression test: ✓
-All results saved to //dcl01/hongkai/data/data/hjiang/result/integration_test/CCA_test
+📊 Summary:
+   Total cells: 861,190
+   Total genes: 36,601
+   obsm keys: ['X_pca', 'X_lsi', 'X_glue']
+   varm keys: []
+   obs columns: ['sample', 'tissue', 'balancing_weight', 'modality']
+   var columns: []
 Finished plot script.
-End Time: Sat Jun 21 05:03:34 PM EDT 2025
+End Time: Thu Sep  4 02:26:29 PM EDT 2025

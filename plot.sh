@@ -9,8 +9,8 @@
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16              # Reduced CPU count
-#SBATCH --time=1:00:00                  # 1 hour
-#SBATCH --mem=100GB                     # Reduced memory
+#SBATCH --time=10:00:00                  # 1 hour
+#SBATCH --mem=800GB                     # Reduced memory
 #SBATCH --output=plot.out
 #SBATCH --error=plot.err
 #SBATCH --mail-type=ALL
@@ -53,6 +53,6 @@ export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 ############################################
 export PYTHONUNBUFFERED=1
 echo "Starting plot script..."
-python integration_CCA_test.py
+python 1.py
 echo "Finished plot script."
 echo "End Time: $(date)"

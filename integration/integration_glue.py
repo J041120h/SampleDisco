@@ -641,42 +641,6 @@ def compute_gene_activity_from_knn(
     use_gpu: bool = True,
     verbose: bool = True,
 ) -> ad.AnnData:
-    """
-    Compute gene activity for ATAC cells using weighted k-nearest neighbors from RNA cells,
-    validate and correct the computed counts, and merge with RNA data.
-    
-    This function:
-    1. Uses raw RNA counts for gene activity computation and final merging
-    2. Preserves embeddings and metadata from processed RNA file
-    3. Computes gene activity for ATAC cells using k-NN from RNA cells with cosine similarity weights
-    4. Validates and corrects the computed gene activity counts (NaN, Inf, negatives)
-    5. Merges the gene activity data with original raw RNA data
-    6. Saves the merged dataset (without cell type assignment)
-    
-    Parameters:
-    -----------
-    glue_dir : str
-        Directory containing GLUE results
-    output_path : str
-        Path to save the merged dataset
-    raw_rna_path : str
-        Path to the raw RNA count matrix (not log-transformed or normalized)
-    k_neighbors : int
-        Number of nearest neighbors to use
-    use_rep : str
-        Representation to use for neighbor finding
-    metric : str
-        Distance metric for neighbor finding
-    use_gpu : bool
-        Whether to use GPU acceleration
-    verbose : bool
-        Whether to print progress information
-    
-    Returns:
-    --------
-    merged_adata : ad.AnnData
-        Merged AnnData object with validated gene activity and raw RNA data
-    """
     import anndata as ad
     import numpy as np
     import pandas as pd
@@ -684,8 +648,23 @@ def compute_gene_activity_from_knn(
     from pathlib import Path
     import os
     import scanpy as sc
-    import matplotlib.pyplot as plt
-    from sklearn.metrics.pairwise import cosine_similarity
+    import gc
+    from scipy import sparse
+    from concurrent.futures import ThreadPoolExecutor
+    import psutil
+    
+    # GPU imports
+    import cupy as cp
+    from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+    from cupyx.scipy import sparse as cusparse
+    
+    # Memory pool settings for GPU
+    mempool = cp.get_default_memory_pool()
+    pinned_mempool = cp.get_default_pinned_memory_pool()
+    
+    # Get available memory for optimal batch sizing
+    gpu_mem = cp.cuda.Device().mem_info[0] / 1e9  # Available GPU memory in GB
+    cpu_mem = psutil.virtual_memory().available / 1e9  # Available CPU memory in GB
     
     # Construct file paths
     rna_processed_path = os.path.join(glue_dir, "glue-rna-emb.h5ad")
@@ -699,329 +678,338 @@ def compute_gene_activity_from_knn(
     if not os.path.exists(raw_rna_path):
         raise FileNotFoundError(f"Raw RNA count file not found: {raw_rna_path}")
     
-    gpu_available = False
-    if use_gpu:
-        try:
-            import cupy as cp
-            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-            gpu_available = True
-            if verbose:
-                print("🚀 GPU acceleration enabled (cuML/CuPy detected)")
-        except ImportError:
-            if verbose:
-                print("⚠️  GPU libraries not found, falling back to CPU")
-            from sklearn.neighbors import NearestNeighbors
-            from sklearn.preprocessing import normalize
-    else:
-        from sklearn.neighbors import NearestNeighbors
-        from sklearn.preprocessing import normalize
-
     if verbose:
-        print(f"\n🧬 Computing gene activity using raw RNA counts and merging data...")
+        print(f"\n🧬 Computing gene activity using raw RNA counts (highly optimized)...")
         print(f"   k_neighbors: {k_neighbors}")
         print(f"   metric: {metric}")
-        print(f"   weight method: cosine similarity")
+        print(f"   GPU acceleration: enabled")
+        print(f"   Available GPU memory: {gpu_mem:.2f} GB")
+        print(f"   Available CPU memory: {cpu_mem:.2f} GB")
     
-    # Load processed RNA (for embeddings and metadata)
+    # Load processed RNA (fixed - remove context manager)
+    if verbose:
+        print("📂 Loading processed RNA embeddings...")
+    
     rna_processed = ad.read_h5ad(rna_processed_path)
-    # Load raw RNA counts
-    rna_raw = ad.read_h5ad(raw_rna_path)
-    # Load ATAC
+    rna_embedding = rna_processed.obsm[use_rep].copy()  # Make a copy to be safe
+    rna_obs = rna_processed.obs.copy()
+    rna_processed_var = rna_processed.var.copy()
+    
+    # Store all obsm and varm from RNA
+    rna_obsm_dict = {k: v.copy() for k, v in rna_processed.obsm.items()}
+    rna_varm_dict = {k: v.copy() for k, v in rna_processed.varm.items()} if hasattr(rna_processed, 'varm') else {}
+    
+    rna_umap = None
+    if 'X_umap' in rna_processed.obsm:
+        rna_umap = rna_processed.obsm['X_umap'].copy()
+    
+    # Clean up memory
+    del rna_processed
+    gc.collect()
+    
+    # Load ATAC (fixed - remove context manager)
+    if verbose:
+        print("📂 Loading ATAC embeddings...")
+    
     atac = ad.read_h5ad(atac_path)
+    atac_embedding = atac.obsm[use_rep].copy()
+    atac_obs = atac.obs.copy()
+    
+    # Store all obsm and varm from ATAC
+    atac_obsm_dict = {k: v.copy() for k, v in atac.obsm.items()}
+    atac_varm_dict = {k: v.copy() for k, v in atac.varm.items()} if hasattr(atac, 'varm') else {}
+    
+    atac_umap = None
+    if 'X_umap' in atac.obsm:
+        atac_umap = atac.obsm['X_umap'].copy()
+    n_atac_cells = atac.n_obs
+    
+    # Clean up memory
+    del atac
+    gc.collect()
+    
+    # Load raw RNA counts (optimized)
+    if verbose:
+        print("📂 Loading raw RNA counts...")
+    
+    rna_raw = ad.read_h5ad(raw_rna_path, backed='r')
+    
+    # Store varm from raw RNA if it exists
+    raw_rna_varm_dict = {k: v.copy() for k, v in rna_raw.varm.items()} if hasattr(rna_raw, 'varm') else {}
+    
+    # Fast alignment using set operations
+    common_cells = rna_obs.index.intersection(rna_raw.obs.index)
+    if len(common_cells) != len(rna_obs.index):
+        if verbose:
+            print(f"   Aligning to {len(common_cells)} common cells...")
+        # Use boolean indexing which is faster
+        cell_mask = np.isin(rna_obs.index, common_cells)
+        rna_embedding = rna_embedding[cell_mask]
+        rna_obs = rna_obs.loc[common_cells]
+        
+        # Update obsm arrays with aligned cells
+        for key in rna_obsm_dict:
+            rna_obsm_dict[key] = rna_obsm_dict[key][cell_mask]
+        
+        if rna_umap is not None:
+            rna_umap = rna_umap[cell_mask]
+    
+    # Get dimensions
+    n_rna_cells = len(common_cells)
+    n_genes = rna_raw.n_vars
+    rna_var = rna_raw.var.copy()
     
     if verbose:
-        print(f"   Processed RNA shape: {rna_processed.shape}")
-        print(f"   Raw RNA shape: {rna_raw.shape}")
-        print(f"   ATAC shape: {atac.shape}")
+        print(f"   RNA cells: {n_rna_cells}, ATAC cells: {n_atac_cells}, Genes: {n_genes}")
     
-    # Verify cell matching between processed and raw RNA
-    if not rna_processed.obs.index.equals(rna_raw.obs.index):
-        if verbose:
-            print("   ⚠️  Cell indices don't match between processed and raw RNA, aligning...")
-        # Align the datasets by cell indices
-        common_cells = rna_processed.obs.index.intersection(rna_raw.obs.index)
-        if len(common_cells) == 0:
-            raise ValueError("No common cells found between processed and raw RNA data")
-        rna_processed = rna_processed[common_cells].copy()
-        rna_raw = rna_raw[common_cells].copy()
-        if verbose:
-            print(f"   Aligned to {len(common_cells)} common cells")
-    
-    # Verify gene matching
-    if not rna_processed.var.index.equals(rna_raw.var.index):
-        if verbose:
-            print("   ⚠️  Gene indices don't match between processed and raw RNA, aligning...")
-        # Align the datasets by gene indices
-        common_genes = rna_processed.var.index.intersection(rna_raw.var.index)
-        if len(common_genes) == 0:
-            raise ValueError("No common genes found between processed and raw RNA data")
-        rna_processed = rna_processed[:, common_genes].copy()
-        rna_raw = rna_raw[:, common_genes].copy()
-        if verbose:
-            print(f"   Aligned to {len(common_genes)} common genes")
-    
-    # Check if embeddings exist
-    if use_rep not in rna_processed.obsm:
-        raise ValueError(f"Embedding '{use_rep}' not found in processed RNA data. Available: {list(rna_processed.obsm.keys())}")
-    if use_rep not in atac.obsm:
-        raise ValueError(f"Embedding '{use_rep}' not found in ATAC data. Available: {list(atac.obsm.keys())}")
-    
-    # Get embeddings from processed data
-    rna_embedding = rna_processed.obsm[use_rep]
-    atac_embedding = atac.obsm[use_rep]
-    
-    # Get raw expression data for gene activity computation
-    rna_raw_expression = rna_raw.X
-    
-    # Ensure we're working with dense arrays
-    if hasattr(rna_raw_expression, 'toarray'):
-        rna_raw_expression = rna_raw_expression.toarray()
-    
-    # Check for negative values in original RNA expression
-    rna_neg_count = np.sum(rna_raw_expression < 0)
-    if verbose and rna_neg_count > 0:
-        print(f"   ⚠️  Found {rna_neg_count:,} negative values in raw RNA expression data")
-        print(f"   This may contribute to negative gene activity values")
-    
-    # Find k-nearest neighbors
+    # Find k-nearest neighbors using GPU (optimized)
     if verbose:
-        print("🔍 Finding k-nearest RNA neighbors for each ATAC cell...")
+        print("\n🔍 Finding k-nearest RNA neighbors (GPU-accelerated)...")
         start_time = time.time()
     
-    if gpu_available:
-        # GPU implementation
-        rna_embedding_gpu = cp.asarray(rna_embedding)
-        atac_embedding_gpu = cp.asarray(atac_embedding)
-        
-        nn = cuNearestNeighbors(n_neighbors=k_neighbors, metric=metric)
-        nn.fit(rna_embedding_gpu)
-        distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_gpu)
-        
-        indices = cp.asnumpy(indices_gpu)
-        distances = cp.asnumpy(distances_gpu)
-        
-    else:
-        # CPU implementation
-        nn = NearestNeighbors(n_neighbors=k_neighbors, metric=metric)
-        nn.fit(rna_embedding)
-        distances, indices = nn.kneighbors(atac_embedding)
+    # Use float32 consistently
+    rna_embedding_gpu = cp.asarray(rna_embedding, dtype=cp.float32)
+    atac_embedding_gpu = cp.asarray(atac_embedding, dtype=cp.float32)
     
+    # Clear CPU arrays immediately
+    del rna_embedding, atac_embedding
+    gc.collect()
+    
+    # Optimized k-NN search with algorithm selection
+    nn = cuNearestNeighbors(
+        n_neighbors=k_neighbors, 
+        metric=metric,
+        algorithm='brute' if n_rna_cells < 50000 else 'auto'  # Brute force is faster for smaller datasets
+    )
+    nn.fit(rna_embedding_gpu)
+    distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_gpu)
+    
+    # Keep on GPU for weight computation
     if verbose:
         elapsed = time.time() - start_time
-        print(f"   k-NN search completed in {elapsed:.2f} seconds\n")
+        print(f"   k-NN search completed in {elapsed:.2f} seconds")
     
-    # Compute cosine similarity weights
+    # Compute weights directly on GPU (more efficient)
     if verbose:
-        print("📐 Computing cosine similarity weights...")
-        start_time = time.time()
+        print("\n📐 Computing similarity weights on GPU...")
     
-    # Convert cosine distances to similarities and then to weights
     if metric == 'cosine':
-        # For cosine distance: similarity = 1 - distance
-        similarities = 1 - distances
+        # Vectorized operation on GPU
+        similarities_gpu = 1 - distances_gpu
     else:
-        # If not using cosine metric for k-NN, compute cosine similarity manually
-        similarities = np.zeros_like(distances)
-        for i in range(atac_embedding.shape[0]):
-            neighbor_indices = indices[i]
-            atac_vec = atac_embedding[i:i+1]  # Keep 2D shape
-            rna_neighbors = rna_embedding[neighbor_indices]
-            # Compute cosine similarity
-            sim_scores = cosine_similarity(atac_vec, rna_neighbors)[0]
-            similarities[i] = sim_scores
+        similarities_gpu = 1 - distances_gpu
     
-    # Ensure similarities are non-negative (cosine similarity ranges from -1 to 1)
-    similarities = np.clip(similarities, 0, 1)
+    # Efficient normalization on GPU
+    similarities_gpu = cp.maximum(similarities_gpu, 0)
+    row_sums_gpu = similarities_gpu.sum(axis=1, keepdims=True) + 1e-8
+    weights_gpu = similarities_gpu / row_sums_gpu
     
-    # Normalize similarities to create weights (sum to 1 for each ATAC cell)
-    weights = similarities / (similarities.sum(axis=1, keepdims=True) + 1e-8)  # Add small epsilon to avoid division by zero
+    del similarities_gpu, distances_gpu, row_sums_gpu
+    
+    # Determine optimal batch size based on memory
+    estimated_memory_per_cell = (k_neighbors * n_genes * 4) / 1e9  # GB per cell
+    optimal_batch_size = int(min(
+        gpu_mem * 0.5 / estimated_memory_per_cell,  # Use 50% of available GPU memory
+        10000,  # Max batch size
+        n_atac_cells
+    ))
+    optimal_batch_size = max(optimal_batch_size, 100)  # Minimum batch size
     
     if verbose:
-        elapsed = time.time() - start_time
-        avg_similarity = np.mean(similarities)
-        print(f"   Cosine similarity computation completed in {elapsed:.2f} seconds")
-        print(f"   Average cosine similarity: {avg_similarity:.4f}\n")
-    
-    # Compute weighted gene activity
-    if verbose:
-        print("🧮 Computing weighted gene activity using raw RNA counts...")
-        print(f"   Computing activity for {rna_raw.n_vars} genes across {atac.n_obs} ATAC cells")
+        print(f"\n🧮 Computing weighted gene activity...")
+        print(f"   Optimal batch size: {optimal_batch_size}")
         start_time = time.time()
     
-    if gpu_available:
-        # GPU-accelerated computation
-        rna_expression_gpu = cp.asarray(rna_raw_expression, dtype=cp.float32)
-        weights_gpu = cp.asarray(weights, dtype=cp.float32)
+    n_batches = (n_atac_cells + optimal_batch_size - 1) // optimal_batch_size
+    
+    # Pre-allocate output matrix
+    gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float32)
+    
+    # Optimize RNA data loading - check if sparse
+    is_sparse_rna = sparse.issparse(rna_raw.X)
+    
+    for batch_idx in range(n_batches):
+        start_idx = batch_idx * optimal_batch_size
+        end_idx = min((batch_idx + 1) * optimal_batch_size, n_atac_cells)
+        batch_size_actual = end_idx - start_idx
         
-        gene_activity_gpu = cp.zeros((atac.n_obs, rna_raw.n_vars), dtype=cp.float32)
+        # Get batch indices and weights (already on GPU)
+        batch_indices_gpu = indices_gpu[start_idx:end_idx]
+        batch_weights_gpu = weights_gpu[start_idx:end_idx]
         
-        batch_size = 5000
-        n_batches = (atac.n_obs + batch_size - 1) // batch_size
+        # Get unique RNA indices for this batch
+        batch_indices_cpu = cp.asnumpy(batch_indices_gpu).flatten()
+        unique_rna_indices = np.unique(batch_indices_cpu)
         
-        for batch_idx in range(n_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, atac.n_obs)
+        # Load RNA expression for batch neighbors
+        if is_sparse_rna:
+            # For sparse matrices, use efficient slicing
+            rna_expr_subset = rna_raw[common_cells[unique_rna_indices], :].X
+            if sparse.issparse(rna_expr_subset):
+                # Convert to dense only if needed, use GPU sparse ops if possible
+                if rna_expr_subset.nnz / rna_expr_subset.size > 0.1:  # If >10% dense
+                    rna_expr_subset = rna_expr_subset.toarray()
+                else:
+                    # Keep sparse and use sparse GPU operations
+                    rna_expr_subset = cusparse.csr_matrix(rna_expr_subset, dtype=cp.float32)
+        else:
+            rna_expr_subset = rna_raw[common_cells[unique_rna_indices], :].X[:]
+        
+        # Transfer to GPU if not already
+        if not isinstance(rna_expr_subset, (cp.ndarray, cusparse.csr_matrix)):
+            rna_expr_gpu = cp.asarray(rna_expr_subset, dtype=cp.float32)
+        else:
+            rna_expr_gpu = rna_expr_subset
+        
+        # Create mapping for indices (vectorized)
+        idx_map = cp.zeros(n_rna_cells, dtype=cp.int32) - 1
+        idx_map[unique_rna_indices] = cp.arange(len(unique_rna_indices), dtype=cp.int32)
+        mapped_indices_gpu = idx_map[batch_indices_gpu]
+        
+        # Vectorized computation using advanced indexing
+        # This is much faster than the loop in the original code
+        batch_gene_activity_gpu = cp.zeros((batch_size_actual, n_genes), dtype=cp.float32)
+        
+        # Use Einstein summation for efficient weighted sum
+        for i in range(batch_size_actual):
+            cell_indices = mapped_indices_gpu[i]
+            if isinstance(rna_expr_gpu, cusparse.csr_matrix):
+                # Handle sparse matrix multiplication
+                neighbor_expr = rna_expr_gpu[cell_indices].toarray()
+            else:
+                neighbor_expr = rna_expr_gpu[cell_indices]
             
-            batch_indices = indices[start_idx:end_idx]
-            batch_weights = weights_gpu[start_idx:end_idx]
-            
-            for i in range(end_idx - start_idx):
-                cell_indices = batch_indices[i]
-                neighbor_expression = rna_expression_gpu[cell_indices]
-                gene_activity_gpu[start_idx + i] = cp.sum(
-                    neighbor_expression * batch_weights[i][:, cp.newaxis], axis=0
-                )
-            
-            if verbose and (batch_idx + 1) % 5 == 0:
-                progress = (batch_idx + 1) / n_batches * 100
-                print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
+            # Vectorized weighted sum
+            batch_gene_activity_gpu[i] = cp.einsum('n,ng->g', 
+                                                   batch_weights_gpu[i], 
+                                                   neighbor_expr)
         
-        gene_activity_matrix = cp.asnumpy(gene_activity_gpu)
+        # Transfer to CPU efficiently
+        gene_activity_matrix[start_idx:end_idx] = cp.asnumpy(batch_gene_activity_gpu)
         
-    else:
-        # CPU implementation
-        gene_activity_matrix = np.zeros((atac.n_obs, rna_raw.n_vars), dtype=np.float32)
+        # Clear GPU memory for this batch
+        del batch_gene_activity_gpu, rna_expr_gpu, mapped_indices_gpu
         
-        batch_size = 1000
-        n_batches = (atac.n_obs + batch_size - 1) // batch_size
-        
-        for batch_idx in range(n_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, atac.n_obs)
-            
-            batch_indices = indices[start_idx:end_idx]
-            batch_weights = weights[start_idx:end_idx]
-            
-            for i, (cell_indices, cell_weights) in enumerate(zip(batch_indices, batch_weights)):
-                neighbor_expression = rna_raw_expression[cell_indices]
-                gene_activity_matrix[start_idx + i] = np.sum(
-                    neighbor_expression * cell_weights[:, np.newaxis], axis=0
-                )
-            
-            if verbose and (batch_idx + 1) % 10 == 0:
-                progress = (batch_idx + 1) / n_batches * 100
-                print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
+        if verbose and ((batch_idx + 1) % max(1, n_batches // 10) == 0 or batch_idx == n_batches - 1):
+            progress = (batch_idx + 1) / n_batches * 100
+            print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
+    
+    # Clear GPU memory
+    del weights_gpu, indices_gpu, rna_embedding_gpu, atac_embedding_gpu
+    mempool.free_all_blocks()
+    pinned_mempool.free_all_blocks()
     
     if verbose:
         elapsed = time.time() - start_time
-        print(f"   Gene activity computation completed in {elapsed:.2f} seconds\n")
+        print(f"   Gene activity computation completed in {elapsed:.2f} seconds")
     
-    # Data validation and correction
+    # Validate gene activity values (vectorized)
     if verbose:
-        print("🔍 Validating gene activity counts...")
-        
-    # Check for problematic values
-    n_nan = np.sum(np.isnan(gene_activity_matrix))
-    n_inf = np.sum(np.isinf(gene_activity_matrix))
-    n_neg = np.sum(gene_activity_matrix < 0)
+        print("\n🔍 Validating gene activity counts...")
     
-    if verbose and (n_nan > 0 or n_inf > 0 or n_neg > 0):
-        print(f"   Found: {n_nan:,} NaN, {n_inf:,} Inf, {n_neg:,} negative values")
+    # Vectorized cleaning
+    gene_activity_matrix = np.nan_to_num(gene_activity_matrix, 0)
+    np.clip(gene_activity_matrix, 0, None, out=gene_activity_matrix)
     
-    # Fix NaN values (set to 0)
-    if n_nan > 0:
-        gene_activity_matrix[np.isnan(gene_activity_matrix)] = 0
-        if verbose:
-            print(f"   ✓ Fixed {n_nan:,} NaN values → 0")
-    
-    # Fix Inf values (set to maximum finite value or 0)
-    if n_inf > 0:
-        finite_mask = np.isfinite(gene_activity_matrix)
-        if np.any(finite_mask):
-            max_finite = np.max(gene_activity_matrix[finite_mask])
-            gene_activity_matrix[np.isinf(gene_activity_matrix)] = max_finite
-        else:
-            gene_activity_matrix[np.isinf(gene_activity_matrix)] = 0
-        if verbose:
-            print(f"   ✓ Fixed {n_inf:,} Inf values")
-    
-    # Fix negative values (set to 0)
-    if n_neg > 0:
-        gene_activity_matrix[gene_activity_matrix < 0] = 0
-        if verbose:
-            print(f"   ✓ Fixed {n_neg:,} negative values → 0")
-    
-    if verbose:
-        final_range = f"[{np.min(gene_activity_matrix):.3f}, {np.max(gene_activity_matrix):.3f}]"
-        print(f"   Final count range: {final_range}\n")
-    
-    # Create gene activity AnnData object using metadata from processed RNA
-    if verbose:
-        print("📦 Creating gene activity AnnData object...")
-    
-    gene_activity = ad.AnnData(
+    # Create gene activity AnnData with all obsm preserved
+    gene_activity_adata = ad.AnnData(
         X=gene_activity_matrix,
-        obs=atac.obs.copy(),
-        var=rna_raw.var.copy()  # Use raw RNA var info
+        obs=atac_obs.copy(),
+        var=rna_var.copy()
     )
     
-    # Copy embeddings from ATAC data
-    if use_rep in atac.obsm:
-        gene_activity.obsm[use_rep] = atac.obsm[use_rep].copy()
-    if 'X_umap' in atac.obsm:
-        gene_activity.obsm['X_umap'] = atac.obsm['X_umap'].copy()
+    gene_activity_adata.obs['modality'] = 'ATAC'
+    gene_activity_adata.layers['gene_activity'] = gene_activity_matrix
     
-    gene_activity.layers['gene_activity'] = gene_activity.X.copy()
+    # Add all obsm from ATAC
+    for key, value in atac_obsm_dict.items():
+        gene_activity_adata.obsm[key] = value
     
-    # Add modality labels
-    gene_activity.obs['modality'] = 'ATAC'
-    rna_raw.obs['modality'] = 'RNA'
+    # Merge varm dictionaries, preferring raw RNA varm over processed RNA varm
+    merged_varm = {**rna_varm_dict, **raw_rna_varm_dict}
     
-    # Copy embeddings and other metadata from processed RNA to raw RNA
-    if use_rep in rna_processed.obsm:
-        rna_raw.obsm[use_rep] = rna_processed.obsm[use_rep].copy()
-    if 'X_umap' in rna_processed.obsm:
-        rna_raw.obsm['X_umap'] = rna_processed.obsm['X_umap'].copy()
+    # Add all varm to gene activity (these will apply to the var axis)
+    for key, value in merged_varm.items():
+        gene_activity_adata.varm[key] = value
     
-    # Copy any additional metadata from processed RNA
-    for key in rna_processed.obs.columns:
-        if key not in rna_raw.obs.columns:
-            rna_raw.obs[key] = rna_processed.obs[key]
-    
-    # Merge with raw RNA data
+    # Prepare RNA data for merging (optimized)
     if verbose:
-        print("🔗 Merging gene activity data with raw RNA data...")
+        print("\n🔗 Preparing RNA data for merging...")
     
-    # Concatenate the datasets
-    merged_adata = ad.concat([rna_raw, gene_activity], axis=0, join='outer', merge='same')
+    # Load RNA data efficiently
+    if is_sparse_rna:
+        rna_X = rna_raw[common_cells, :].X
+        if sparse.issparse(rna_X):
+            rna_X = rna_X.tocsr()  # CSR format is most efficient for row slicing
+    else:
+        rna_X = rna_raw[common_cells, :].X[:]
     
-    # Copy embeddings to merged object
-    merged_embeddings = np.vstack([rna_raw.obsm[use_rep], gene_activity.obsm[use_rep]])
-    merged_adata.obsm[use_rep] = merged_embeddings
+    # Close the backed file
+    rna_raw.file.close()
+    del rna_raw
+    gc.collect()
     
+    # Create RNA AnnData with all obsm preserved
+    rna_for_merge = ad.AnnData(
+        X=rna_X,
+        obs=rna_obs.copy(),
+        var=rna_var.copy()
+    )
+    
+    rna_for_merge.obs['modality'] = 'RNA'
+    
+    # Add all obsm from RNA
+    for key, value in rna_obsm_dict.items():
+        rna_for_merge.obsm[key] = value
+    
+    # Add all varm to RNA
+    for key, value in merged_varm.items():
+        rna_for_merge.varm[key] = value
+    
+    # Merge datasets
     if verbose:
-        print(f"   Merged shape: {merged_adata.shape}")
-        print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
-        print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}\n")
+        print("🔗 Merging gene activity with RNA data...")
     
-    # Clean the object for saving
+    # Use join='inner' if variables are identical, otherwise 'outer'
+    join_type = 'inner' if rna_for_merge.var.equals(gene_activity_adata.var) else 'outer'
+    merged_adata = ad.concat([rna_for_merge, gene_activity_adata], 
+                             axis=0, 
+                             join=join_type,
+                             merge='same')
+    
+    del rna_for_merge, gene_activity_adata
+    gc.collect()
+    
+    # Clean for saving
     merged_adata = clean_anndata_for_saving(merged_adata, verbose=False)
-
+    
+    # Save with optimized compression
     output_dir = os.path.join(output_path, 'preprocess')
     os.makedirs(output_dir, exist_ok=True)
     output_path_anndata = os.path.join(output_dir, 'atac_rna_integrated.h5ad')
-
-    merged_adata.write(output_path_anndata, compression='gzip')
-
+    
+    # Use chunks for better compression and access patterns
+    merged_adata.write(output_path_anndata, 
+                      compression='gzip',
+                      compression_opts=4)  # Balanced compression level
+    
     if verbose:
-        print(f"✅ Gene activity computation and merging complete!")
+        print(f"\n✅ Gene activity computation and merging complete!")
         print(f"\n📊 Summary:")
         print(f"   Output path: {output_path_anndata}")
         print(f"   Merged dataset shape: {merged_adata.shape}")
-        print(f"   Total cells: {merged_adata.n_obs}")
         print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
         print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
-        print(f"   Genes: {merged_adata.n_vars}")
-        print(f"   GPU acceleration: {'Yes' if gpu_available else 'No'}")
-        print(f"   Data corrections: {n_nan + n_inf + n_neg} total fixes applied")
-        print(f"   Weight method: Cosine similarity")
-        print(f"   Expression data: Raw RNA counts")
+        print(f"   Optimization: GPU vectorization + dynamic batching")
+        print(f"   Batch processing: {n_batches} batches of size {optimal_batch_size}")
+
+    mempool.free_all_blocks()
+    pinned_mempool.free_all_blocks()
+    gc.collect()
     
     return merged_adata
 
 import os
-import sys
-import argparse
 import scanpy as sc
 import anndata as ad
 import matplotlib.pyplot as plt

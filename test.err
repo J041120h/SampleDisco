@@ -1,35 +1,27 @@
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: `flavor='seurat_v3'` expects raw count data, but non-integers were found.
-  return fn(*args_all, **kw)
-2025-09-02 02:02:48.382345: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-09-02 02:02:48.393858: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-09-03 20:35:28.155614: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-09-03 20:35:28.172710: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1756792968.407010  383894 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1756792968.410916  383894 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1756792968.421410  383894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1756792968.421426  383894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1756792968.421429  383894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1756792968.421430  383894 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-09-02 02:02:48.424543: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:474: FutureWarning: In the future, the default backend for leiden will be igraph instead of leidenalg.
-
- To achieve the future defaults please pass: flavor="igraph" and n_iterations=2.  directed must also be False to work with igraph's implementation.
-  sc.tl.leiden(adata, resolution=resolution, key_added=key_added, random_state=random_state)
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:563: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
-  plt.tight_layout()
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:565: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
-  plt.show()
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:632: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
-  plt.show()
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scanpy/preprocessing/_combat.py:343: RuntimeWarning: divide by zero encountered in divide
-  (abs(g_new - g_old) / g_old).max(), (abs(d_new - d_old) / d_old).max()
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:563: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
-  plt.tight_layout()
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:565: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
-  plt.show()
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:632: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
-  plt.show()
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/arraylike.py:399: RuntimeWarning: divide by zero encountered in log10
-  result = getattr(ufunc, method)(*inputs, **kwargs)
-/users/hjiang/GenoDistance/code/gene_activity/ATAC_RNA_harmony.py:1066: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
-  plt.show()
+E0000 00:00:1756946128.192084  718244 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1756946128.198045  718244 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1756946128.213865  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1756946128.213890  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1756946128.213892  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1756946128.213894  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-03 20:35:28.218383: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 930, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 287, in multiomics_wrapper
+    glue_result = glue(
+  File "/users/hjiang/GenoDistance/code/integration/integration_glue.py", line 1329, in glue
+    existing_cell_types=existing_cell_types,
+  File "/users/hjiang/GenoDistance/code/linux/CellType_linux.py", line 374, in cell_types_linux
+    rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/preprocessing/_neighbors.py", line 475, in neighbors
+    X = _choose_representation(adata, use_rep=use_rep, n_pcs=n_pcs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/tools/_utils.py", line 43, in _choose_representation
+    raise ValueError(
+ValueError: Did not find X_glue in `.obsm.keys()`. You need to compute it first.
