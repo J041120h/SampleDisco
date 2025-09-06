@@ -53,6 +53,6 @@ export NUMEXPR_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 ############################################
 export PYTHONUNBUFFERED=1
 echo "Starting plot script..."
-python 1.py
+python -u SampleDisc.py -m complex --config "/users/hjiang/GenoDistance/code/config/config_test.yaml"
 echo "Finished plot script."
 echo "End Time: $(date)"

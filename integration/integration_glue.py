@@ -1315,21 +1315,7 @@ def glue(
     
     # Step 3: Memory management and gene activity computation
     if run_gene_activity:
-        print("Computing gene activity...")
-        if use_gpu:
-            try:
-                import rmm
-                from rmm.allocators.cupy import rmm_cupy_allocator
-                import cupy as cp
-                
-                rmm.reinitialize(
-                    managed_memory=True,
-                    pool_allocator=False,
-                )
-                cp.cuda.set_allocator(rmm_cupy_allocator)
-            except:
-                pass
-        
+        print("Computing gene activity...")        
         merged_adata = compute_gene_activity_from_knn(
             glue_dir=glue_output_dir,
             output_path=output_dir,
@@ -1356,6 +1342,9 @@ def glue(
         # Apply cell type assignment
         if use_gpu:
                 from linux.CellType_linux import cell_types_linux
+
+                print(" Using Linux Cell Type Assignment for cell type assignment...")
+
                 merged_adata = cell_types_linux(
                     merged_adata,
                     cell_type_column='cell_type',

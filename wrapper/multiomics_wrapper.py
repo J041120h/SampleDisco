@@ -9,6 +9,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from DR import dimension_reduction
+from utils.batch_mixer import get_mixed_batch_column
 from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
 from integration.integration_glue import *
 from integration.integration_preprocess import *
@@ -41,6 +42,7 @@ def multiomics_wrapper(
     celltype_col='cell_type',
     multiomics_verbose=True,
     save_intermediate=True,
+    large_data_need_extra_memory=False,
     use_gpu=True,
     random_state=42,
     
@@ -214,6 +216,26 @@ def multiomics_wrapper(
         - All intermediate data objects
     """
 
+    #memory management for large datasets, enable managed memory if needed
+    if large_data_need_extra_memory:
+        # Enable `managed_memory`
+        import rmm
+        import cupy as cp
+        from rmm.allocators.cupy import rmm_cupy_allocator
+
+        rmm.reinitialize(managed_memory=True, pool_allocator=False)
+        cp.cuda.set_allocator(rmm_cupy_allocator)
+    else:
+        # Enable `pool_allocator`
+        import rmm
+        import cupy as cp
+        from rmm.allocators.cupy import rmm_cupy_allocator
+        rmm.reinitialize(
+            managed_memory=False,
+            pool_allocator=True,
+        )
+        cp.cuda.set_allocator(rmm_cupy_allocator)
+    
     if any(var is None for var in [rna_file, atac_file, multiomics_output_dir]):
         raise ValueError("All parameters must be provided (none can be None)")
     
@@ -372,7 +394,7 @@ def multiomics_wrapper(
             print(f"Skipping GLUE integration, using existing data: {h5ad_path}")
     else:
         h5ad_path = f"{multiomics_output_dir}/preprocess/atac_rna_integrated.h5ad"
-        
+    
     # Step 2: Integration preprocessing
     if run_integrate_preprocess:
         if multiomics_verbose:
@@ -430,6 +452,8 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("  Sub-step 3a: Computing pseudobulk...")
         
+        adata_for_dr, batch_col = get_mixed_batch_column(adata_for_dr, batch_column=batch_col)
+
         atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata_linux(
             adata=adata_for_dr,
             batch_col=batch_col,
@@ -535,18 +559,6 @@ def multiomics_wrapper(
     if run_find_optimal_resolution:
         if multiomics_verbose:
             print("Step 5: Finding optimal cell resolution...")
-        
-        # Setup GPU if available
-        try:
-            import rmm
-            from rmm.allocators.cupy import rmm_cupy_allocator
-            import cupy as cp
-            rmm.reinitialize(managed_memory=True, pool_allocator=False)
-            cp.cuda.set_allocator(rmm_cupy_allocator)
-        except:
-            if multiomics_verbose:
-                print("GPU setup failed, continuing with CPU")
-        
         import torch
         if torch.cuda.is_available() and multiomics_verbose:
             print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")

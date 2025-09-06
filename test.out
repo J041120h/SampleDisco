@@ -47,60 +47,91 @@ RUNNING MULTIOMICS PIPELINE
 Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multiomics
 Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
 Step 1: Running GLUE integration...
-  Sub-steps: Preprocessing=False, Training=False, Gene Activity=True, Cell Types=True, Visualization=True
-Computing gene activity...
-
-🧬 Computing gene activity using raw RNA counts (highly optimized)...
-   k_neighbors: 10
-   metric: cosine
-   GPU acceleration: enabled
-   Available GPU memory: 33.75 GB
-   Available CPU memory: 802.39 GB
-📂 Loading processed RNA embeddings...
-📂 Loading ATAC embeddings...
-📂 Loading raw RNA counts...
-   RNA cells: 430595, ATAC cells: 430595, Genes: 36601
-
-🔍 Finding k-nearest RNA neighbors (GPU-accelerated)...
-   k-NN search completed in 6.26 seconds
-
-📐 Computing similarity weights on GPU...
-
-🧮 Computing weighted gene activity...
-   Optimal batch size: 10000
-   Progress: 9.1% (4/44 batches)
-   Progress: 18.2% (8/44 batches)
-   Progress: 27.3% (12/44 batches)
-   Progress: 36.4% (16/44 batches)
-   Progress: 45.5% (20/44 batches)
-   Progress: 54.5% (24/44 batches)
-   Progress: 63.6% (28/44 batches)
-   Progress: 72.7% (32/44 batches)
-   Progress: 81.8% (36/44 batches)
-   Progress: 90.9% (40/44 batches)
-   Progress: 100.0% (44/44 batches)
-   Gene activity computation completed in 32523.78 seconds
-
-🔍 Validating gene activity counts...
-
-🔗 Preparing RNA data for merging...
-🔗 Merging gene activity with RNA data...
-
-✅ Gene activity computation and merging complete!
-
-📊 Summary:
-   Output path: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
-   Merged dataset shape: (861190, 36601)
-   RNA cells: 430595
-   ATAC cells: 430595
-   Optimization: GPU vectorization + dynamic batching
-   Batch processing: 44 batches of size 10000
-Gene activity computation completed.
+  Sub-steps: Preprocessing=False, Training=False, Gene Activity=False, Cell Types=True, Visualization=True
 Assigning cell types...
+ Using Linux Cell Type Assignment for cell type assignment...
+[cell_types] Starting cell type assignment (recursion depth: 0)...
+[cell_types] Target clusters: 10
+[cell_types] Data shape: (861190, 36601)
+[cell_types] Progress: Moving data to GPU...
+[cell_types] Progress: Data successfully moved to GPU
 [cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Progress: Starting de novo clustering...
 [cell_types] Building neighborhood graph...
+[cell_types] Progress: Computing neighbors...
+[cell_types] Progress: Neighborhood graph completed
+[cell_types] Target: 10 clusters. Trying resolution: 0.5
+[cell_types] Progress: Running Leiden clustering...
+[cell_types] Progress: Leiden clustering completed, processing results...
+[cell_types] Leiden clustering produced 24 clusters.
+[cell_types] Progress: Evaluating clustering result against target...
+[cell_types] Got 24 clusters (>= target). Recursing with existing_cell_types=True...
+[cell_types] Progress: Initiating recursive aggregation...
+  [cell_types] Starting cell type assignment (recursion depth: 1)...
+  [cell_types] Target clusters: 10
+  [cell_types] Data shape: (861190, 36601)
+  [cell_types] Progress: Processing existing cell type annotations...
+  [cell_types] Current number of cell types: 24
+  [cell_types] Aggregating 24 cell types into 10 clusters using dendrogram.
+  [cell_types] Using dimension reduction (X_glue) for dendrogram construction...
+  [cell_types] Progress: Starting dendrogram clustering...
+=== Preparing data for dendrogram (using X_glue) ===
+Using all 50 components from X_glue
+=== Computing centroids of cell types in X_glue space ===
+Calculated centroids for 24 cell types.
+Centroid shape: (24, 50)
+=== Computing distance matrix between centroids using euclidean distance ===
+=== Performing hierarchical clustering on X_glue centroids ===
+Linkage method: average, Distance metric: euclidean
+=== Aggregating cell types into 10 clusters ===
+Successfully created 10 clusters
 
-✗ Multiomics pipeline failed with error: Did not find X_glue in `.obsm.keys()`. You need to compute it first.
+=== Cluster Composition ===
+Cluster 1: 20
+Cluster 10: 23
+Cluster 2: 3
+Cluster 3: 12
+Cluster 4: 1, 10, 11, 13, 16, 17, 19, 21, 22, 24, 4, 6, 7, 8, 9
+Cluster 5: 2
+Cluster 6: 14
+Cluster 7: 15
+Cluster 8: 18
+Cluster 9: 5
+
+=== Cluster Quality Metrics ===
+Cluster 4: Average within-cluster distance = 3.3026
+
+Function execution time: 0.62 seconds
+  [cell_types] Successfully aggregated to 10 cell types.
+  [cell_types] Progress: Dendrogram clustering completed
+[cell_types] Progress: Returned from recursive aggregation
+[cell_types] Progress: Starting final processing...
+[cell_types] Finished assigning cell types.
+[cell_types] Converting GPU arrays to CPU...
+[cell_types] Progress: Starting GPU to CPU conversion...
+[cell_types] Progress: Basic GPU to CPU conversion completed
+[cell_types] Progress: Ensuring complete CPU conversion...
+[cell_types] Progress: Complete CPU conversion finished
+[cell_types] Progress: Saving to defined path /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 5 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+[cell_types] Progress: File saved successfully
+[cell_types] Total runtime: 2014.90 seconds
+[cell_types] Progress: Function execution completed successfully
+Running visualization...
+Loading integrated RNA-ATAC data...
+Computing UMAP from scGLUE embeddings...
+Generating visualizations for columns: ['modality', 'cell_type']
+Error plotting modality: [Errno 2] No such file or directory: '/dcs07/hongkai/data/harry/result/multiomics/visualization/scglue_umap_modality.png'
+Error plotting cell_type: [Errno 2] No such file or directory: '/dcs07/hongkai/data/harry/result/multiomics/visualization/scglue_umap_cell_type.png'
+
+Creating modality-cell type distribution heatmap...
+
+✗ Multiomics pipeline failed with error: [Errno 2] No such file or directory: '/dcs07/hongkai/data/harry/result/multiomics/visualization/scglue_modality_celltype_heatmap.png'
 
 ============================================================
 PIPELINE EXECUTION SUMMARY

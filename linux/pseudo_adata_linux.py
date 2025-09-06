@@ -84,17 +84,6 @@ def compute_pseudobulk_layers_gpu(
     """
     start_time = time.time() if verbose else None
     
-    # Check GPU availability
-    if not torch.cuda.is_available():
-        if verbose:
-            print("CUDA not available, falling back to CPU implementation")
-        # Fall back to CPU version
-        from compute_pseudobulk_cpu import compute_pseudobulk_layers
-        return compute_pseudobulk_layers(
-            adata, batch_col, sample_col, celltype_col, 
-            output_dir, n_features, normalize, target_sum, atac, verbose
-        )
-    
     device = torch.device('cuda')
     clear_gpu_memory()
     

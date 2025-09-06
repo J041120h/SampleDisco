@@ -309,6 +309,7 @@ def wrapper(
     multiomics_batch_col: str = 'batch',
     multiomics_celltype_col: str = 'cell_type',
     multiomics_verbose: bool = True,
+    large_data_need_extra_memory: bool = False,
     multiomics_use_gpu: bool = True,
     multiomics_random_state: int = 42,
     
@@ -958,6 +959,7 @@ def wrapper(
                 celltype_col=multiomics_celltype_col,
                 multiomics_verbose=multiomics_verbose,
                 save_intermediate=save_intermediate,
+                large_data_need_extra_memory = large_data_need_extra_memory,
                 use_gpu=multiomics_use_gpu,
                 random_state=multiomics_random_state,
                 

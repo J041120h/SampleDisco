@@ -315,6 +315,7 @@ multiomics_batch_col: "batch"
 multiomics_celltype_col: "cell_type"
 multiomics_verbose: true
 multiomics_use_gpu: true
+large_data_need_extra_memory: true
 multiomics_random_state: 42
 
 # Multiomics GLUE Integration Parameters

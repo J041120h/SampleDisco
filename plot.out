@@ -1,67 +1,85 @@
 ======================================
- Job ID:            21816307
+ Job ID:            21841035
  Job Name:          plot
  Partition:         shared
- Node List:         compute-129
+ Node List:         compute-164
  CPUs per Task:     16
  Memory Alloc:      819200
  GPU Requested:     None
- Start Time:        Thu Sep  4 01:29:59 PM EDT 2025
+ Start Time:        Fri Sep  5 01:03:05 AM EDT 2025
 ======================================
 Starting plot script...
-🔧 Fixing integrated h5ad file with missing obsm/varm...
-   Input: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
-   Output: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated_fixed.h5ad
-   Chunked processing: Enabled
-   Chunk size: 10,000 cells
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": true,
+        "dimensionality_reduction": true,
+        "embedding_visualization": true,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
-📂 Loading integrated data...
-   Dataset size: 861,190 cells × 36,601 features
-   Using chunked processing for memory efficiency
-   Found 430,595 RNA cells and 430,595 ATAC cells
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/heart/multiomics
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/adata_sample.h5ad
+Step 3: Running dimensionality reduction (pseudobulk + PCA)...
+  Sub-step 3a: Computing pseudobulk...
+Warning: batch column 'batch' not found in adata.obs
 
-📂 Loading source embeddings...
+✗ Multiomics pipeline failed with error: Found no NVIDIA driver on your system. Please check that you have an NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
 
-🔄 Processing 87 chunks...
-   Processing chunk 1/87 (cells 0-9,999)
-   Processing chunk 9/87 (cells 80,000-89,999)
-   Processing chunk 17/87 (cells 160,000-169,999)
-   Processing chunk 25/87 (cells 240,000-249,999)
-   Processing chunk 33/87 (cells 320,000-329,999)
-   Processing chunk 41/87 (cells 400,000-409,999)
-   Processing chunk 49/87 (cells 480,000-489,999)
-   Processing chunk 57/87 (cells 560,000-569,999)
-   Processing chunk 65/87 (cells 640,000-649,999)
-   Processing chunk 73/87 (cells 720,000-729,999)
-   Processing chunk 81/87 (cells 800,000-809,999)
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+Multiomics Pipeline: ⚠ PARTIAL
+  - glue_integration: ✗
+  - glue_preprocessing: ✗
+  - glue_training: ✗
+  - glue_gene_activity: ✗
+  - glue_cell_types: ✗
+  - glue_visualization: ✗
+  - integration_preprocessing: ✓
+  - dimensionality_reduction: ✓
+  - embedding_visualization: ✓
+  - optimal_resolution: ✗
 
-📝 Converting to full AnnData object...
-   Added obsm['X_pca'] with shape (861190, 50)
-   Added obsm['X_lsi'] with shape (861190, 50)
-   Added obsm['X_glue'] with shape (861190, 50)
-
-📝 Processing varm data...
-   Storing RNA varm['PCs'] with shape (36591, 50)
-   Storing RNA varm['X_glue'] with shape (36591, 50)
-   Storing ATAC varm['X_glue'] with shape (3576085, 50)
-
-📂 Loading raw RNA for varm...
-
-📝 Applying varm to integrated data...
-   Skipped varm['X_glue'] - dimension mismatch (expected 36601, got 36591)
-   Skipped varm['PCs'] - dimension mismatch (expected 36601, got 36591)
-
-💾 Saving fixed integrated data to /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated_fixed.h5ad...
-   Using optimized writing for large dataset...
-
-✅ Fix complete!
-
-📊 Summary:
-   Total cells: 861,190
-   Total genes: 36,601
-   obsm keys: ['X_pca', 'X_lsi', 'X_glue']
-   varm keys: []
-   obs columns: ['sample', 'tissue', 'balancing_weight', 'modality']
-   var columns: []
+Results saved to: /dcs07/hongkai/data/harry/result/heart
+Status file: /dcs07/hongkai/data/harry/result/heart/sys_log/main_process_status.json
 Finished plot script.
-End Time: Thu Sep  4 02:26:29 PM EDT 2025
+End Time: Fri Sep  5 01:12:26 AM EDT 2025

@@ -240,7 +240,7 @@ def safe_h5ad_write(adata, filepath, verbose=True):
                         print(f"    Examples: {non_string[:3]}")
         
         raise e
-
+    
 def cell_types_linux(
     adata, 
     cell_type_column='cell_type', 

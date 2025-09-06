@@ -966,6 +966,21 @@ def fix_integrated_h5ad_with_obsm_varm(
     
     return integrated
 
+def consume_memory():
+    """
+    WARNING: This will consume all available RAM and likely crash your system.
+    Use only in VMs or controlled environments.
+    """
+    memory_hog = []
+    try:
+        while True:
+            # Allocate 100MB chunks
+            chunk = bytearray(100 * 1024 * 1024)  # 100MB
+            memory_hog.append(chunk)
+            print(f"Allocated {len(memory_hog) * 100}MB")
+    except MemoryError:
+        print("Memory exhausted!")
+
 if __name__ == "__main__":
     # fix_integrated_h5ad_with_obsm_varm(
     #     integrated_h5ad_path="/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad",
@@ -977,11 +992,11 @@ if __name__ == "__main__":
     #     verbose=True
     # )
 
-    # filepath = "/dcl01/hongkai/data/data/hjiang/Test/gene_activity/rna_gene_id.h5ad"
+    filepath = "/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/adata_sample.h5ad"
     # adata = inspect_gene_activity(filepath)
 
     # Comprehensive inspection
-    results = inspect_h5ad_file("/dcs07/hongkai/data/harry/result/heart/multiomics/pseudobulk/pseudobulk_sample.h5ad", verbose=True)
+    results = inspect_h5ad_file(filepath, verbose=True)
     
     # Quick inspection
     # quick_inspect_h5ad(filepath)

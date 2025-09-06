@@ -1,27 +1,39 @@
-2025-09-03 20:35:28.155614: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2025-09-03 20:35:28.172710: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-09-06 02:00:20.305416: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1756946128.192084  718244 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1756946128.198045  718244 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1756946128.213865  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1756946128.213890  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1756946128.213892  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1756946128.213894  718244 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-09-03 20:35:28.218383: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+E0000 00:00:1757138420.318175  644061 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1757138420.322075  644061 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1757138420.334691  644061 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757138420.334706  644061 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757138420.334708  644061 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757138420.334710  644061 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-06 02:00:20.337919: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
+2025-09-06 02:11:26 - INFO - init
 Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 930, in wrapper
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 931, in wrapper
     multiomics_results = multiomics_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 287, in multiomics_wrapper
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 309, in multiomics_wrapper
     glue_result = glue(
-  File "/users/hjiang/GenoDistance/code/integration/integration_glue.py", line 1329, in glue
-    existing_cell_types=existing_cell_types,
-  File "/users/hjiang/GenoDistance/code/linux/CellType_linux.py", line 374, in cell_types_linux
-    rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/preprocessing/_neighbors.py", line 475, in neighbors
-    X = _choose_representation(adata, use_rep=use_rep, n_pcs=n_pcs)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/tools/_utils.py", line 43, in _choose_representation
-    raise ValueError(
-ValueError: Did not find X_glue in `.obsm.keys()`. You need to compute it first.
+  File "/users/hjiang/GenoDistance/code/integration/integration_glue.py", line 1371, in glue
+    glue_visualize(
+  File "/users/hjiang/GenoDistance/code/integration/integration_glue.py", line 1137, in glue_visualize
+    plt.savefig(heatmap_plot_path, dpi=300, bbox_inches='tight')
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/matplotlib/pyplot.py", line 1251, in savefig
+    res = fig.savefig(*args, **kwargs)  # type: ignore[func-returns-value]
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/matplotlib/figure.py", line 3490, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/matplotlib/backend_bases.py", line 2184, in print_figure
+    result = print_method(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/matplotlib/backend_bases.py", line 2040, in <lambda>
+    print_method = functools.wraps(meth)(lambda *args, **kwargs: meth(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/matplotlib/backends/backend_agg.py", line 481, in print_png
+    self._print_pil(filename_or_obj, "png", pil_kwargs, metadata)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/matplotlib/backends/backend_agg.py", line 430, in _print_pil
+    mpl.image.imsave(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/matplotlib/image.py", line 1657, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/PIL/Image.py", line 2576, in save
+    fp = builtins.open(filename, "w+b")
+FileNotFoundError: [Errno 2] No such file or directory: '/dcs07/hongkai/data/harry/result/multiomics/visualization/scglue_modality_celltype_heatmap.png'
