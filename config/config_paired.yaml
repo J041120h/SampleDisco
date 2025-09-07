@@ -311,7 +311,7 @@ multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"
 multiomics_sample_col: "sample"
-multiomics_batch_col: "batch"
+multiomics_batch_col: null
 multiomics_celltype_col: "cell_type"
 multiomics_verbose: true
 multiomics_use_gpu: true

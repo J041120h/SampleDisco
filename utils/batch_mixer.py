@@ -33,6 +33,7 @@ def get_mixed_batch_column(adata, batch_column=None):
             adata.obs[batch_column].astype(str) + "_" + 
             adata.obs['modality'].astype(str)
         )
+        print(f"Created mixed batch column '{mixed_column_name}' by combining '{batch_column}' and 'modality'.")
     else:
         # Handle missing columns gracefully
         if batch_column not in adata.obs.columns:

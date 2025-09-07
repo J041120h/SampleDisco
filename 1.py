@@ -1392,94 +1392,132 @@ def inspect_h5ad_memory(filepath: str) -> None:
     print("END OF REPORT")
     print("=" * 80)
 
-def suggest_optimization_code(filepath: str) -> None:
+import scanpy as sc
+import numpy as np
+from scipy.sparse import csc_matrix
+import os
+import time
+
+def convert_X_to_sparse_csc(filepath: str, overwrite: bool = True) -> None:
     """
-    Generate code suggestions for optimizing the h5ad file.
+    Convert the dense .X matrix in an h5ad file to sparse CSC format.
     
     Parameters:
     -----------
     filepath : str
         Path to the h5ad file
+    overwrite : bool
+        If True, overwrites the original file. If False, creates a backup.
     """
     
-    print("\n" + "=" * 80)
-    print("OPTIMIZATION CODE SUGGESTIONS")
-    print("=" * 80)
+    print("=" * 60)
+    print("CONVERTING DENSE MATRIX TO SPARSE CSC FORMAT")
+    print("=" * 60)
     
-    print("""
-# Here's example code to optimize your h5ad file:
-
-import scanpy as sc
-import numpy as np
-from scipy.sparse import csr_matrix
-
-# Load the original file
-adata = sc.read_h5ad('{filepath}')
-
-# 1. Convert main matrix to float32 if using float64
-if hasattr(adata.X, 'dtype') and adata.X.dtype == np.float64:
-    if issparse(adata.X):
-        adata.X = adata.X.astype(np.float32)
+    # Get file info
+    original_size = os.path.getsize(filepath)
+    print(f"\nOriginal file: {filepath}")
+    print(f"Original file size: {original_size / (1024**3):.2f} GB")
+    
+    # Create backup path if not overwriting
+    if not overwrite:
+        backup_path = filepath.replace('.h5ad', '_backup.h5ad')
+        import shutil
+        print(f"\nCreating backup at: {backup_path}")
+        shutil.copy2(filepath, backup_path)
+    
+    # Load the file
+    print("\nLoading file...")
+    start_time = time.time()
+    adata = sc.read_h5ad(filepath)
+    load_time = time.time() - start_time
+    print(f"File loaded in {load_time:.1f} seconds")
+    
+    # Check current X format
+    print("\nCurrent .X format:")
+    print(f"  Type: {type(adata.X)}")
+    print(f"  Shape: {adata.X.shape}")
+    print(f"  Data type: {adata.X.dtype}")
+    
+    if isinstance(adata.X, np.ndarray):
+        # Calculate sparsity
+        total_elements = adata.X.size
+        zero_elements = np.sum(adata.X == 0)
+        sparsity = zero_elements / total_elements
+        print(f"  Sparsity: {sparsity:.1%} zeros")
+        print(f"  Memory usage (estimated): {adata.X.nbytes / (1024**3):.2f} GB")
+        
+        # Convert to sparse CSC
+        print("\nConverting to sparse CSC format...")
+        start_time = time.time()
+        
+        # Convert to CSC matrix maintaining float64 dtype
+        adata.X = csc_matrix(adata.X, dtype=np.float64)
+        
+        conversion_time = time.time() - start_time
+        print(f"Conversion completed in {conversion_time:.1f} seconds")
+        
+        # Verify conversion
+        print("\nNew .X format:")
+        print(f"  Type: {type(adata.X)}")
+        print(f"  Shape: {adata.X.shape}")
+        print(f"  Data type: {adata.X.dtype}")
+        print(f"  Number of stored values: {adata.X.nnz:,}")
+        print(f"  Density: {(adata.X.nnz / (adata.X.shape[0] * adata.X.shape[1])):.1%}")
+        
+        # Estimate memory usage of sparse matrix
+        sparse_memory = (adata.X.data.nbytes + 
+                        adata.X.indices.nbytes + 
+                        adata.X.indptr.nbytes)
+        print(f"  Memory usage (estimated): {sparse_memory / (1024**3):.2f} GB")
+        
+        # Calculate savings
+        original_memory = total_elements * 8  # 8 bytes per float64
+        savings_ratio = 1 - (sparse_memory / original_memory)
+        print(f"\nEstimated memory savings: {savings_ratio:.1%}")
+        
     else:
-        adata.X = adata.X.astype(np.float32)
-    print("Converted X to float32")
-
-# 2. Convert dense matrix to sparse if mostly zeros
-if isinstance(adata.X, np.ndarray):
-    zero_fraction = np.sum(adata.X == 0) / adata.X.size
-    if zero_fraction > 0.5:
-        adata.X = csr_matrix(adata.X)
-        print(f"Converted X to sparse ({{zero_fraction:.1%}} zeros)")
-
-# 3. Optimize layers
-for layer_name in list(adata.layers.keys()):
-    layer = adata.layers[layer_name]
+        print(f"\nWarning: .X is already in {type(adata.X)} format, not a dense numpy array.")
+        print("No conversion needed.")
+        return
     
-    # Convert to float32
-    if hasattr(layer, 'dtype') and layer.dtype == np.float64:
-        adata.layers[layer_name] = layer.astype(np.float32)
+    # Save the file
+    print(f"\nSaving file to: {filepath}")
+    start_time = time.time()
     
-    # Convert to sparse if beneficial
-    if isinstance(layer, np.ndarray):
-        zero_fraction = np.sum(layer == 0) / layer.size
-        if zero_fraction > 0.5:
-            adata.layers[layer_name] = csr_matrix(layer)
+    # Save with compression for better disk space usage
+    adata.write_h5ad(filepath, compression='gzip')
+    
+    save_time = time.time() - start_time
+    print(f"File saved in {save_time:.1f} seconds")
+    
+    # Check new file size
+    new_size = os.path.getsize(filepath)
+    print(f"\nNew file size: {new_size / (1024**3):.2f} GB")
+    size_reduction = (1 - new_size/original_size) * 100
+    print(f"File size reduction: {size_reduction:.1f}%")
+    
+    print("\n" + "=" * 60)
+    print("CONVERSION COMPLETED SUCCESSFULLY")
+    print("=" * 60)
+    
+    # Verification step
+    print("\nVerifying saved file...")
+    adata_verify = sc.read_h5ad(filepath)
+    print(f"Verified .X type: {type(adata_verify.X)}")
+    print(f"Verified .X dtype: {adata_verify.X.dtype}")
+    print(f"Verified shape: {adata_verify.X.shape}")
+    
+    print("\n✅ File has been successfully converted and saved!")
 
-# 4. Optimize embeddings
-for key in adata.obsm.keys():
-    if hasattr(adata.obsm[key], 'dtype') and adata.obsm[key].dtype == np.float64:
-        adata.obsm[key] = adata.obsm[key].astype(np.float32)
 
-# 5. Convert string columns to categorical
-for col in adata.obs.columns:
-    if adata.obs[col].dtype == 'object':
-        unique_ratio = len(adata.obs[col].unique()) / len(adata.obs[col])
-        if unique_ratio < 0.5:  # Less than 50% unique values
-            adata.obs[col] = adata.obs[col].astype('category')
-
-for col in adata.var.columns:
-    if adata.var[col].dtype == 'object':
-        unique_ratio = len(adata.var[col].unique()) / len(adata.var[col])
-        if unique_ratio < 0.5:
-            adata.var[col] = adata.var[col].astype('category')
-
-# 6. Remove unnecessary data from uns
-# Review what's in adata.uns and remove unneeded items
-# Example: del adata.uns['some_large_unnecessary_key']
-
-# 7. Save optimized file
-output_path = '{filepath}'.replace('.h5ad', '_optimized.h5ad')
-adata.write_h5ad(output_path, compression='gzip')
-print(f"Saved optimized file to: {{output_path}}")
-""".format(filepath=filepath))
-
-# Example usage
+# Main execution
 if __name__ == "__main__":
-    # Replace with your file path
-    filepath = "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad"
+    # Replace with your actual file path
+    filepath = "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
     
-    # Run the inspection
-    inspect_h5ad_memory(filepath)
+    # Run the conversion (this will overwrite the original file)
+    convert_X_to_sparse_csc(filepath, overwrite=True)
     
-    # Get optimization code suggestions
-    suggest_optimization_code(filepath)
+    # If you want to keep a backup, use:
+    # convert_X_to_sparse_csc(filepath, overwrite=False)

@@ -1,189 +1,350 @@
-================================================================================
-H5AD MEMORY INSPECTION REPORT
-File: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
-File size on disk: 18.89 GB
-================================================================================
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
-Loading file...
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multiomics
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
+Step 2: Running integration preprocessing...
+=== Read input dataset ===
+Dimension of raw data (cells x genes): 861190 x 36601
+Modified sample IDs by adding modality information from 'modality' column
+After basic filtering -- Cells remaining: 846341, Genes remaining: 35329
+After remove MT_gene and user input cell -- Cells remaining: 846341, Genes remaining: 35316
+Sample counts BEFORE filtering:
+sample
+ENCSR568QKW_ATAC    17817
+ENCSR568QKW_RNA     16919
+ENCSR618WVK_ATAC    16452
+ENCSR618WVK_RNA     16288
+ENCSR245BNT_ATAC    16151
+                    ...  
+ENCSR636WIB_ATAC     5354
+ENCSR694BTU_RNA      5219
+ENCSR636WIB_RNA      5128
+ENCSR033MDU_ATAC     4666
+ENCSR033MDU_RNA      4470
+Length: 88, dtype: int64
 
-Basic Information:
-  Number of observations (cells): 861,190
-  Number of variables (genes): 36,601
+Samples retained (>= 1 cells): ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC', 'ENCSR158DQA_RNA', 'ENCSR201BHG_ATAC', 'ENCSR201BHG_RNA', 'ENCSR212VKB_ATAC', 'ENCSR212VKB_RNA', 'ENCSR222ZFD_ATAC', 'ENCSR222ZFD_RNA', 'ENCSR233SQG_ATAC', 'ENCSR233SQG_RNA', 'ENCSR245BNT_ATAC', 'ENCSR245BNT_RNA', 'ENCSR255POA_ATAC', 'ENCSR255POA_RNA', 'ENCSR264JIX_ATAC', 'ENCSR264JIX_RNA', 'ENCSR265ZRW_ATAC', 'ENCSR265ZRW_RNA', 'ENCSR284PXA_ATAC', 'ENCSR284PXA_RNA', 'ENCSR300BCB_ATAC', 'ENCSR300BCB_RNA', 'ENCSR316WAS_ATAC', 'ENCSR316WAS_RNA', 'ENCSR320RLS_ATAC', 'ENCSR320RLS_RNA', 'ENCSR351CSQ_ATAC', 'ENCSR351CSQ_RNA', 'ENCSR420IUS_ATAC', 'ENCSR420IUS_RNA', 'ENCSR449VCG_ATAC', 'ENCSR449VCG_RNA', 'ENCSR488VFJ_ATAC', 'ENCSR488VFJ_RNA', 'ENCSR508WRP_ATAC', 'ENCSR508WRP_RNA', 'ENCSR511RDV_ATAC', 'ENCSR511RDV_RNA', 'ENCSR534YJW_ATAC', 'ENCSR534YJW_RNA', 'ENCSR549KDX_ATAC', 'ENCSR549KDX_RNA', 'ENCSR568QKW_ATAC', 'ENCSR568QKW_RNA', 'ENCSR573DJW_ATAC', 'ENCSR573DJW_RNA', 'ENCSR613LBN_ATAC', 'ENCSR613LBN_RNA', 'ENCSR618WVK_ATAC', 'ENCSR618WVK_RNA', 'ENCSR636WIB_ATAC', 'ENCSR636WIB_RNA', 'ENCSR662XCU_ATAC', 'ENCSR662XCU_RNA', 'ENCSR694BTU_ATAC', 'ENCSR694BTU_RNA', 'ENCSR727WGO_ATAC', 'ENCSR727WGO_RNA', 'ENCSR768WQT_ATAC', 'ENCSR768WQT_RNA', 'ENCSR775AZP_ATAC', 'ENCSR775AZP_RNA', 'ENCSR788DZO_ATAC', 'ENCSR788DZO_RNA', 'ENCSR793DNM_ATAC', 'ENCSR793DNM_RNA', 'ENCSR808RAT_ATAC', 'ENCSR808RAT_RNA', 'ENCSR822CXI_ATAC', 'ENCSR822CXI_RNA', 'ENCSR823KSL_ATAC', 'ENCSR823KSL_RNA', 'ENCSR851GBP_ATAC', 'ENCSR851GBP_RNA', 'ENCSR923FKN_ATAC', 'ENCSR923FKN_RNA', 'ENCSR925IHI_ATAC', 'ENCSR925IHI_RNA', 'ENCSR975IXL_ATAC', 'ENCSR975IXL_RNA', 'ENCSR980AFI_ATAC', 'ENCSR980AFI_RNA', 'ENCSR987VTJ_ATAC', 'ENCSR987VTJ_RNA']
 
-----------------------------------------
-1. MAIN DATA MATRIX (X)
-----------------------------------------
-  Memory usage: 234.85 GB
-  Type: <class 'numpy.ndarray'>
-  Data type: float64
-  Shape: (861190, 36601)
-  ⚠️  Issues found:
-    - Dense matrix with 86.0% zeros
-    - Using float64 precision
-  💡 Recommendations:
-    - Convert to sparse format (could save ~86% memory)
-    - Consider float32 if precision allows
+Sample counts AFTER filtering:
+sample
+ENCSR568QKW_ATAC    17817
+ENCSR568QKW_RNA     16919
+ENCSR618WVK_ATAC    16452
+ENCSR618WVK_RNA     16288
+ENCSR245BNT_ATAC    16151
+                    ...  
+ENCSR636WIB_ATAC     5354
+ENCSR694BTU_RNA      5219
+ENCSR636WIB_RNA      5128
+ENCSR033MDU_ATAC     4666
+ENCSR033MDU_RNA      4470
+Name: count, Length: 88, dtype: int64
+Final filtering -- Cells remaining: 846341, Genes remaining: 23575
+Preprocessing complete!
+Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/adata_sample.h5ad
+Function execution time: 2368.36 seconds
+✓ Integration preprocessing completed successfully
+Step 3: Running dimensionality reduction (pseudobulk + PCA)...
+  Sub-step 3a: Computing pseudobulk...
+Warning: batch column 'batch' not found in adata.obs
+Using PyTorch with GPU: NVIDIA L40S
+Initial GPU memory: 0.00/0.00 GB allocated/reserved
+Processing 24 cell types across 88 samples
+Creating layer for 1
+Creating layer for 10
+Creating layer for 11
+Creating layer for 12
+Creating layer for 13
+Creating layer for 14
+Creating layer for 15
+Creating layer for 16
+Creating layer for 17
+Creating layer for 18
+Creating layer for 19
+Creating layer for 2
+Creating layer for 20
+Creating layer for 21
+Creating layer for 22
+Creating layer for 23
+Creating layer for 24
+Creating layer for 3
+Creating layer for 4
+Creating layer for 5
+Creating layer for 6
+Creating layer for 7
+Creating layer for 8
+Creating layer for 9
 
-----------------------------------------
-2. LAYERS
-----------------------------------------
-  No layers found
+Processing cell type: 1
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-----------------------------------------
-3. OBSERVATIONS METADATA (obs)
-----------------------------------------
-  Total memory: 120.75 MB
-  Number of columns: 6
+Processing cell type: 10
+  Applying batch correction on 23544 genes
+  Combat completed successfully, 23544 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-  Top memory-consuming columns:
-    'balancing_weight': 116.63 MB (dtype: float64)
-    'sample': 110.89 MB (dtype: category)
-    'cell_type': 110.88 MB (dtype: category)
-    'cell_type_original': 110.88 MB (dtype: category)
-    'tissue': 110.88 MB (dtype: category)
-    'modality': 110.88 MB (dtype: category)
+Processing cell type: 11
+  Applying batch correction on 23569 genes
+  Combat completed successfully, 23569 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-----------------------------------------
-4. VARIABLES METADATA (var)
-----------------------------------------
-  Total memory: 3.26 MB
-  Number of columns: 0
+Processing cell type: 12
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-----------------------------------------
-5. DIMENSIONAL REDUCTIONS (obsm)
-----------------------------------------
-  'X_glue':
-    Memory: 164.26 MB
-    Shape: (861190, 50)
-    Data type: float32
-  'X_lsi':
-    Memory: 328.52 MB
-    Shape: (861190, 50)
-    Data type: float64
-    💡 Consider float32 for embeddings
-  'X_pca':
-    Memory: 164.26 MB
-    Shape: (861190, 50)
-    Data type: float32
+Processing cell type: 13
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-  Total obsm memory: 657.04 MB
+Processing cell type: 14
+  Applying batch correction on 23531 genes
+  Combat completed successfully, 23531 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-----------------------------------------
-6. VARIABLE EMBEDDINGS (varm)
-----------------------------------------
-  No variable embeddings found
+Processing cell type: 15
+  Applying batch correction on 23567 genes
+  Combat completed successfully, 23567 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-----------------------------------------
-7. UNSTRUCTURED DATA (uns)
-----------------------------------------
-  Total memory: 1.38 KB
+Processing cell type: 16
+  Applying batch correction on 23567 genes
+  Combat completed successfully, 23567 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-  Top memory-consuming items:
-    'cell_type_linkage': 736.00 B (ndarray)
-    'neighbors': 385.00 B (dict)
-    'cluster_mapping': 192.00 B (dict)
-    'leiden': 96.00 B (dict)
+Processing cell type: 17
+  Applying batch correction on 23473 genes
+  Combat completed successfully, 23473 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-----------------------------------------
-8. PAIRWISE MATRICES
-----------------------------------------
-  Observation pairwise (obsp):
-    'connectivities': 152.87 MB
-    'distances': 101.84 MB
-  No variable pairwise matrices found
+Processing cell type: 18
+  Applying batch correction on 23567 genes
+  Combat completed successfully, 23567 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-================================================================================
-MEMORY SUMMARY
-================================================================================
+Processing cell type: 19
+  Applying batch correction on 23574 genes
+  Combat completed successfully, 23574 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-Total estimated memory in RAM: 235.86 GB
+Processing cell type: 2
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-Breakdown by component:
-  X         :    234.85 GB ( 99.6%)
-  obsm      :    657.04 MB (  0.3%)
-  obsp      :    254.71 MB (  0.1%)
-  obs       :    120.75 MB (  0.0%)
-  var       :      3.26 MB (  0.0%)
-  uns       :      1.38 KB (  0.0%)
+Processing cell type: 20
+  Applying batch correction on 23565 genes
+  Combat completed successfully, 23565 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-================================================================================
-OPTIMIZATION RECOMMENDATIONS
-================================================================================
+Processing cell type: 21
+  Applying batch correction on 23567 genes
+  Combat completed successfully, 23567 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-1. Convert main matrix X from float64 to float32 (save ~117.42 GB)
+Processing cell type: 22
+  Applying batch correction on 23091 genes
+  Combat completed successfully, 23091 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-2. Convert embeddings to float32: X_lsi
+Processing cell type: 23
+  Applying batch correction on 23182 genes
+  Combat completed successfully, 23182 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-================================================================================
-END OF REPORT
-================================================================================
+Processing cell type: 24
+  Applying batch correction on 22928 genes
+  Combat completed successfully, 22928 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-================================================================================
-OPTIMIZATION CODE SUGGESTIONS
-================================================================================
+Processing cell type: 3
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-# Here's example code to optimize your h5ad file:
+Processing cell type: 4
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-import scanpy as sc
-import numpy as np
-from scipy.sparse import csr_matrix
+Processing cell type: 5
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-# Load the original file
-adata = sc.read_h5ad('/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad')
+Processing cell type: 6
+  Applying batch correction on 23552 genes
+  Combat completed successfully, 23552 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-# 1. Convert main matrix to float32 if using float64
-if hasattr(adata.X, 'dtype') and adata.X.dtype == np.float64:
-    if issparse(adata.X):
-        adata.X = adata.X.astype(np.float32)
-    else:
-        adata.X = adata.X.astype(np.float32)
-    print("Converted X to float32")
+Processing cell type: 7
+  Applying batch correction on 23570 genes
+  Combat completed successfully, 23570 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-# 2. Convert dense matrix to sparse if mostly zeros
-if isinstance(adata.X, np.ndarray):
-    zero_fraction = np.sum(adata.X == 0) / adata.X.size
-    if zero_fraction > 0.5:
-        adata.X = csr_matrix(adata.X)
-        print(f"Converted X to sparse ({zero_fraction:.1%} zeros)")
+Processing cell type: 8
+  Applying batch correction on 23575 genes
+  Combat completed successfully, 23575 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-# 3. Optimize layers
-for layer_name in list(adata.layers.keys()):
-    layer = adata.layers[layer_name]
-    
-    # Convert to float32
-    if hasattr(layer, 'dtype') and layer.dtype == np.float64:
-        adata.layers[layer_name] = layer.astype(np.float32)
-    
-    # Convert to sparse if beneficial
-    if isinstance(layer, np.ndarray):
-        zero_fraction = np.sum(layer == 0) / layer.size
-        if zero_fraction > 0.5:
-            adata.layers[layer_name] = csr_matrix(layer)
+Processing cell type: 9
+  Applying batch correction on 23574 genes
+  Combat completed successfully, 23574 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
 
-# 4. Optimize embeddings
-for key in adata.obsm.keys():
-    if hasattr(adata.obsm[key], 'dtype') and adata.obsm[key].dtype == np.float64:
-        adata.obsm[key] = adata.obsm[key].astype(np.float32)
+Concatenating all cell type HVGs into single AnnData
+Applying final HVG selection on 48000 concatenated genes
+Final HVG selection: 2000 genes
 
-# 5. Convert string columns to categorical
-for col in adata.obs.columns:
-    if adata.obs[col].dtype == 'object':
-        unique_ratio = len(adata.obs[col].unique()) / len(adata.obs[col])
-        if unique_ratio < 0.5:  # Less than 50% unique values
-            adata.obs[col] = adata.obs[col].astype('category')
+Creating final HVG expression matrix
 
-for col in adata.var.columns:
-    if adata.var[col].dtype == 'object':
-        unique_ratio = len(adata.var[col].unique()) / len(adata.var[col])
-        if unique_ratio < 0.5:
-            adata.var[col] = adata.var[col].astype('category')
+Total runtime: 8164.91 seconds
+Final HVG matrix shape: (24, 88)
+Final AnnData shape: (88, 2000)
+  Sub-step 3b: Processing with PCA...
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - count_output_dir: /dcs07/hongkai/data/harry/result/multiomics/preprocess
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/multiomics/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(88, 2000), proportion=(88, 24)
+[DimRed] Computing PCA for RNA data with 10 components on (88, 2000) data
+[PCA] Success. Shape: (88, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (88, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (88, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Dimension reduction on cell proportions completed.
+Stored results as X_DR_proportion in both adata and pseudobulk_anndata with shape: (88, 10)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file paths:
+  - adata: /dcs07/hongkai/data/harry/result/multiomics/preprocess/adata_sample.h5ad
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving adata to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/adata_sample.h5ad
+[Save] ✓ Successfully saved adata (39786.4 MB)
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (1.1 MB)
+[process_anndata_with_dimension_reduction] ✓ All files saved successfully
 
-# 6. Remove unnecessary data from uns
-# Review what's in adata.uns and remove unneeded items
-# Example: del adata.uns['some_large_unnecessary_key']
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 2151.76 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ✓ ATTEMPTED
+✓ Dimensionality reduction completed successfully
+Step 4: Visualizing multimodal embedding...
+Creating default embedding visualization (all samples)
+Expression key: X_DR_expression
+Proportion key: X_DR_proportion
+Sample names will be shown for all samples
+Created/using visualization directory: /dcs07/hongkai/data/harry/result/multiomics/visualization
+Expression plot saved to: /dcs07/hongkai/data/harry/result/multiomics/visualization/all_samples_expression.png
+Proportion plot saved to: /dcs07/hongkai/data/harry/result/multiomics/visualization/all_samples_proportion.png
+✓ Embedding visualization completed successfully
 
-# 7. Save optimized file
-output_path = '/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad'.replace('.h5ad', '_optimized.h5ad')
-adata.write_h5ad(output_path, compression='gzip')
-print(f"Saved optimized file to: {output_path}")
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multiomics
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
+Final status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Completed steps: 3/10
+GLUE sub-steps completed: 0/5
 
+✓ Multiomics pipeline completed successfully!
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+Multiomics Pipeline: ⚠ PARTIAL
+  - glue_integration: ✗
+  - glue_preprocessing: ✗
+  - glue_training: ✗
+  - glue_gene_activity: ✗
+  - glue_cell_types: ✗
+  - glue_visualization: ✗
+  - integration_preprocessing: ✓
+  - dimensionality_reduction: ✓
+  - embedding_visualization: ✓
+  - optimal_resolution: ✗
+
+Results saved to: /dcs07/hongkai/data/harry/result
+Status file: /dcs07/hongkai/data/harry/result/sys_log/main_process_status.json
