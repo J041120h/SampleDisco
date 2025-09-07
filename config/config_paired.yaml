@@ -291,7 +291,7 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: true
+multiomics_run_glue: false
 multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: true
@@ -301,8 +301,8 @@ multiomics_run_find_optimal_resolution: false
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: false
-multiomics_run_glue_cell_types: true
-multiomics_run_glue_visualization: true
+multiomics_run_glue_cell_types: false
+multiomics_run_glue_visualization: false
 
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null
@@ -337,7 +337,7 @@ multiomics_k_neighbors: 10
 multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
-multiomics_n_target_clusters: 10
+multiomics_n_target_clusters: null
 multiomics_cluster_resolution: 0.5
 multiomics_use_rep_celltype: "X_glue"
 multiomics_markers: null

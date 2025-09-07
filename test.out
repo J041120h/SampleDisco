@@ -1,152 +1,189 @@
-Linux system detected with GPU enabled.
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
-}
+================================================================================
+H5AD MEMORY INSPECTION REPORT
+File: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+File size on disk: 18.89 GB
+================================================================================
 
-============================================================
-RUNNING MULTIOMICS PIPELINE
-============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multiomics
-Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
-Step 1: Running GLUE integration...
-  Sub-steps: Preprocessing=False, Training=False, Gene Activity=False, Cell Types=True, Visualization=True
-Assigning cell types...
- Using Linux Cell Type Assignment for cell type assignment...
-[cell_types] Starting cell type assignment (recursion depth: 0)...
-[cell_types] Target clusters: 10
-[cell_types] Data shape: (861190, 36601)
-[cell_types] Progress: Moving data to GPU...
-[cell_types] Progress: Data successfully moved to GPU
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Progress: Starting de novo clustering...
-[cell_types] Building neighborhood graph...
-[cell_types] Progress: Computing neighbors...
-[cell_types] Progress: Neighborhood graph completed
-[cell_types] Target: 10 clusters. Trying resolution: 0.5
-[cell_types] Progress: Running Leiden clustering...
-[cell_types] Progress: Leiden clustering completed, processing results...
-[cell_types] Leiden clustering produced 24 clusters.
-[cell_types] Progress: Evaluating clustering result against target...
-[cell_types] Got 24 clusters (>= target). Recursing with existing_cell_types=True...
-[cell_types] Progress: Initiating recursive aggregation...
-  [cell_types] Starting cell type assignment (recursion depth: 1)...
-  [cell_types] Target clusters: 10
-  [cell_types] Data shape: (861190, 36601)
-  [cell_types] Progress: Processing existing cell type annotations...
-  [cell_types] Current number of cell types: 24
-  [cell_types] Aggregating 24 cell types into 10 clusters using dendrogram.
-  [cell_types] Using dimension reduction (X_glue) for dendrogram construction...
-  [cell_types] Progress: Starting dendrogram clustering...
-=== Preparing data for dendrogram (using X_glue) ===
-Using all 50 components from X_glue
-=== Computing centroids of cell types in X_glue space ===
-Calculated centroids for 24 cell types.
-Centroid shape: (24, 50)
-=== Computing distance matrix between centroids using euclidean distance ===
-=== Performing hierarchical clustering on X_glue centroids ===
-Linkage method: average, Distance metric: euclidean
-=== Aggregating cell types into 10 clusters ===
-Successfully created 10 clusters
+Loading file...
 
-=== Cluster Composition ===
-Cluster 1: 20
-Cluster 10: 23
-Cluster 2: 3
-Cluster 3: 12
-Cluster 4: 1, 10, 11, 13, 16, 17, 19, 21, 22, 24, 4, 6, 7, 8, 9
-Cluster 5: 2
-Cluster 6: 14
-Cluster 7: 15
-Cluster 8: 18
-Cluster 9: 5
+Basic Information:
+  Number of observations (cells): 861,190
+  Number of variables (genes): 36,601
 
-=== Cluster Quality Metrics ===
-Cluster 4: Average within-cluster distance = 3.3026
+----------------------------------------
+1. MAIN DATA MATRIX (X)
+----------------------------------------
+  Memory usage: 234.85 GB
+  Type: <class 'numpy.ndarray'>
+  Data type: float64
+  Shape: (861190, 36601)
+  ⚠️  Issues found:
+    - Dense matrix with 86.0% zeros
+    - Using float64 precision
+  💡 Recommendations:
+    - Convert to sparse format (could save ~86% memory)
+    - Consider float32 if precision allows
 
-Function execution time: 0.62 seconds
-  [cell_types] Successfully aggregated to 10 cell types.
-  [cell_types] Progress: Dendrogram clustering completed
-[cell_types] Progress: Returned from recursive aggregation
-[cell_types] Progress: Starting final processing...
-[cell_types] Finished assigning cell types.
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Progress: Starting GPU to CPU conversion...
-[cell_types] Progress: Basic GPU to CPU conversion completed
-[cell_types] Progress: Ensuring complete CPU conversion...
-[cell_types] Progress: Complete CPU conversion finished
-[cell_types] Progress: Saving to defined path /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 5 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
-[cell_types] Progress: File saved successfully
-[cell_types] Total runtime: 2014.90 seconds
-[cell_types] Progress: Function execution completed successfully
-Running visualization...
-Loading integrated RNA-ATAC data...
-Computing UMAP from scGLUE embeddings...
-Generating visualizations for columns: ['modality', 'cell_type']
-Error plotting modality: [Errno 2] No such file or directory: '/dcs07/hongkai/data/harry/result/multiomics/visualization/scglue_umap_modality.png'
-Error plotting cell_type: [Errno 2] No such file or directory: '/dcs07/hongkai/data/harry/result/multiomics/visualization/scglue_umap_cell_type.png'
+----------------------------------------
+2. LAYERS
+----------------------------------------
+  No layers found
 
-Creating modality-cell type distribution heatmap...
+----------------------------------------
+3. OBSERVATIONS METADATA (obs)
+----------------------------------------
+  Total memory: 120.75 MB
+  Number of columns: 6
 
-✗ Multiomics pipeline failed with error: [Errno 2] No such file or directory: '/dcs07/hongkai/data/harry/result/multiomics/visualization/scglue_modality_celltype_heatmap.png'
+  Top memory-consuming columns:
+    'balancing_weight': 116.63 MB (dtype: float64)
+    'sample': 110.89 MB (dtype: category)
+    'cell_type': 110.88 MB (dtype: category)
+    'cell_type_original': 110.88 MB (dtype: category)
+    'tissue': 110.88 MB (dtype: category)
+    'modality': 110.88 MB (dtype: category)
 
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-Multiomics Pipeline: ⚠ PARTIAL
-  - glue_integration: ✗
-  - glue_preprocessing: ✗
-  - glue_training: ✗
-  - glue_gene_activity: ✗
-  - glue_cell_types: ✗
-  - glue_visualization: ✗
-  - integration_preprocessing: ✗
-  - dimensionality_reduction: ✗
-  - embedding_visualization: ✗
-  - optimal_resolution: ✗
+----------------------------------------
+4. VARIABLES METADATA (var)
+----------------------------------------
+  Total memory: 3.26 MB
+  Number of columns: 0
 
-Results saved to: /dcs07/hongkai/data/harry/result
-Status file: /dcs07/hongkai/data/harry/result/sys_log/main_process_status.json
+----------------------------------------
+5. DIMENSIONAL REDUCTIONS (obsm)
+----------------------------------------
+  'X_glue':
+    Memory: 164.26 MB
+    Shape: (861190, 50)
+    Data type: float32
+  'X_lsi':
+    Memory: 328.52 MB
+    Shape: (861190, 50)
+    Data type: float64
+    💡 Consider float32 for embeddings
+  'X_pca':
+    Memory: 164.26 MB
+    Shape: (861190, 50)
+    Data type: float32
+
+  Total obsm memory: 657.04 MB
+
+----------------------------------------
+6. VARIABLE EMBEDDINGS (varm)
+----------------------------------------
+  No variable embeddings found
+
+----------------------------------------
+7. UNSTRUCTURED DATA (uns)
+----------------------------------------
+  Total memory: 1.38 KB
+
+  Top memory-consuming items:
+    'cell_type_linkage': 736.00 B (ndarray)
+    'neighbors': 385.00 B (dict)
+    'cluster_mapping': 192.00 B (dict)
+    'leiden': 96.00 B (dict)
+
+----------------------------------------
+8. PAIRWISE MATRICES
+----------------------------------------
+  Observation pairwise (obsp):
+    'connectivities': 152.87 MB
+    'distances': 101.84 MB
+  No variable pairwise matrices found
+
+================================================================================
+MEMORY SUMMARY
+================================================================================
+
+Total estimated memory in RAM: 235.86 GB
+
+Breakdown by component:
+  X         :    234.85 GB ( 99.6%)
+  obsm      :    657.04 MB (  0.3%)
+  obsp      :    254.71 MB (  0.1%)
+  obs       :    120.75 MB (  0.0%)
+  var       :      3.26 MB (  0.0%)
+  uns       :      1.38 KB (  0.0%)
+
+================================================================================
+OPTIMIZATION RECOMMENDATIONS
+================================================================================
+
+1. Convert main matrix X from float64 to float32 (save ~117.42 GB)
+
+2. Convert embeddings to float32: X_lsi
+
+================================================================================
+END OF REPORT
+================================================================================
+
+================================================================================
+OPTIMIZATION CODE SUGGESTIONS
+================================================================================
+
+# Here's example code to optimize your h5ad file:
+
+import scanpy as sc
+import numpy as np
+from scipy.sparse import csr_matrix
+
+# Load the original file
+adata = sc.read_h5ad('/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad')
+
+# 1. Convert main matrix to float32 if using float64
+if hasattr(adata.X, 'dtype') and adata.X.dtype == np.float64:
+    if issparse(adata.X):
+        adata.X = adata.X.astype(np.float32)
+    else:
+        adata.X = adata.X.astype(np.float32)
+    print("Converted X to float32")
+
+# 2. Convert dense matrix to sparse if mostly zeros
+if isinstance(adata.X, np.ndarray):
+    zero_fraction = np.sum(adata.X == 0) / adata.X.size
+    if zero_fraction > 0.5:
+        adata.X = csr_matrix(adata.X)
+        print(f"Converted X to sparse ({zero_fraction:.1%} zeros)")
+
+# 3. Optimize layers
+for layer_name in list(adata.layers.keys()):
+    layer = adata.layers[layer_name]
+    
+    # Convert to float32
+    if hasattr(layer, 'dtype') and layer.dtype == np.float64:
+        adata.layers[layer_name] = layer.astype(np.float32)
+    
+    # Convert to sparse if beneficial
+    if isinstance(layer, np.ndarray):
+        zero_fraction = np.sum(layer == 0) / layer.size
+        if zero_fraction > 0.5:
+            adata.layers[layer_name] = csr_matrix(layer)
+
+# 4. Optimize embeddings
+for key in adata.obsm.keys():
+    if hasattr(adata.obsm[key], 'dtype') and adata.obsm[key].dtype == np.float64:
+        adata.obsm[key] = adata.obsm[key].astype(np.float32)
+
+# 5. Convert string columns to categorical
+for col in adata.obs.columns:
+    if adata.obs[col].dtype == 'object':
+        unique_ratio = len(adata.obs[col].unique()) / len(adata.obs[col])
+        if unique_ratio < 0.5:  # Less than 50% unique values
+            adata.obs[col] = adata.obs[col].astype('category')
+
+for col in adata.var.columns:
+    if adata.var[col].dtype == 'object':
+        unique_ratio = len(adata.var[col].unique()) / len(adata.var[col])
+        if unique_ratio < 0.5:
+            adata.var[col] = adata.var[col].astype('category')
+
+# 6. Remove unnecessary data from uns
+# Review what's in adata.uns and remove unneeded items
+# Example: del adata.uns['some_large_unnecessary_key']
+
+# 7. Save optimized file
+output_path = '/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad'.replace('.h5ad', '_optimized.h5ad')
+adata.write_h5ad(output_path, compression='gzip')
+print(f"Saved optimized file to: {output_path}")
+

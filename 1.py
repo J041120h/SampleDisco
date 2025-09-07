@@ -980,27 +980,506 @@ def consume_memory():
             print(f"Allocated {len(memory_hog) * 100}MB")
     except MemoryError:
         print("Memory exhausted!")
+    
+import scanpy as sc
+import anndata as ad
+import numpy as np
+import pandas as pd
+from scipy.sparse import issparse, csr_matrix, csc_matrix
+import h5py
+import os
+from typing import Dict, Any, List, Tuple
+import warnings
 
+def format_bytes(bytes_size: float) -> str:
+    """Convert bytes to human-readable format."""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if bytes_size < 1024.0:
+            return f"{bytes_size:.2f} {unit}"
+        bytes_size /= 1024.0
+    return f"{bytes_size:.2f} PB"
+
+def get_object_memory(obj: Any) -> int:
+    """Estimate memory usage of an object."""
+    if obj is None:
+        return 0
+    elif issparse(obj):
+        # For sparse matrices
+        return obj.data.nbytes + obj.indices.nbytes + obj.indptr.nbytes
+    elif isinstance(obj, np.ndarray):
+        return obj.nbytes
+    elif isinstance(obj, pd.DataFrame):
+        return obj.memory_usage(deep=True).sum()
+    elif isinstance(obj, pd.Series):
+        return obj.memory_usage(deep=True)
+    elif isinstance(obj, dict):
+        return sum(get_object_memory(v) for v in obj.values())
+    elif isinstance(obj, (list, tuple)):
+        return sum(get_object_memory(item) for item in obj)
+    else:
+        # Rough estimate for other objects
+        import sys
+        return sys.getsizeof(obj)
+
+def analyze_matrix_efficiency(matrix: Any, name: str) -> Dict[str, Any]:
+    """Analyze if a matrix is stored efficiently."""
+    analysis = {
+        'name': name,
+        'issues': [],
+        'recommendations': []
+    }
+    
+    if matrix is None:
+        return analysis
+    
+    # Check if dense matrix could be sparse
+    if isinstance(matrix, np.ndarray):
+        total_elements = matrix.size
+        if total_elements > 0:
+            zero_fraction = np.sum(matrix == 0) / total_elements
+            analysis['zero_fraction'] = zero_fraction
+            
+            if zero_fraction > 0.5:
+                analysis['issues'].append(f"Dense matrix with {zero_fraction:.1%} zeros")
+                analysis['recommendations'].append(f"Convert to sparse format (could save ~{zero_fraction:.0%} memory)")
+                
+        # Check data type
+        if matrix.dtype == np.float64:
+            analysis['issues'].append("Using float64 precision")
+            analysis['recommendations'].append("Consider float32 if precision allows")
+            
+    elif issparse(matrix):
+        # Check sparse matrix format
+        if not isinstance(matrix, csr_matrix) and not isinstance(matrix, csc_matrix):
+            analysis['issues'].append(f"Using {type(matrix).__name__} sparse format")
+            analysis['recommendations'].append("Consider CSR or CSC format for better performance")
+            
+        # Check if sparse matrix is actually dense
+        density = matrix.nnz / (matrix.shape[0] * matrix.shape[1])
+        analysis['density'] = density
+        if density > 0.5:
+            analysis['issues'].append(f"Sparse matrix with {density:.1%} density")
+            analysis['recommendations'].append("Consider dense format for better performance")
+    
+    return analysis
+
+def inspect_h5ad_memory(filepath: str) -> None:
+    """
+    Comprehensive h5ad file memory inspection and optimization suggestions.
+    
+    Parameters:
+    -----------
+    filepath : str
+        Path to the h5ad file
+    """
+    
+    print("=" * 80)
+    print(f"H5AD MEMORY INSPECTION REPORT")
+    print(f"File: {filepath}")
+    print(f"File size on disk: {format_bytes(os.path.getsize(filepath))}")
+    print("=" * 80)
+    
+    # Load the anndata object
+    print("\nLoading file...")
+    adata = sc.read_h5ad(filepath)
+    
+    # Basic information
+    print(f"\nBasic Information:")
+    print(f"  Number of observations (cells): {adata.n_obs:,}")
+    print(f"  Number of variables (genes): {adata.n_vars:,}")
+    
+    # Memory breakdown
+    memory_breakdown = {}
+    
+    # 1. Main data matrix (X)
+    print("\n" + "-" * 40)
+    print("1. MAIN DATA MATRIX (X)")
+    print("-" * 40)
+    x_memory = get_object_memory(adata.X)
+    memory_breakdown['X'] = x_memory
+    print(f"  Memory usage: {format_bytes(x_memory)}")
+    print(f"  Type: {type(adata.X)}")
+    if hasattr(adata.X, 'dtype'):
+        print(f"  Data type: {adata.X.dtype}")
+    if hasattr(adata.X, 'shape'):
+        print(f"  Shape: {adata.X.shape}")
+    
+    x_analysis = analyze_matrix_efficiency(adata.X, 'X')
+    if x_analysis['issues']:
+        print(f"  ⚠️  Issues found:")
+        for issue in x_analysis['issues']:
+            print(f"    - {issue}")
+        print(f"  💡 Recommendations:")
+        for rec in x_analysis['recommendations']:
+            print(f"    - {rec}")
+    
+    # 2. Layers
+    print("\n" + "-" * 40)
+    print("2. LAYERS")
+    print("-" * 40)
+    if adata.layers:
+        total_layers_memory = 0
+        for layer_name, layer_data in adata.layers.items():
+            layer_memory = get_object_memory(layer_data)
+            total_layers_memory += layer_memory
+            memory_breakdown[f'layer_{layer_name}'] = layer_memory
+            print(f"  '{layer_name}':")
+            print(f"    Memory: {format_bytes(layer_memory)}")
+            print(f"    Type: {type(layer_data)}")
+            
+            layer_analysis = analyze_matrix_efficiency(layer_data, layer_name)
+            if layer_analysis['issues']:
+                print(f"    ⚠️  Issues:")
+                for issue in layer_analysis['issues']:
+                    print(f"      - {issue}")
+        
+        memory_breakdown['layers_total'] = total_layers_memory
+        print(f"\n  Total layers memory: {format_bytes(total_layers_memory)}")
+        
+        # Check for duplicate layers
+        if len(adata.layers) > 1:
+            print("\n  Checking for duplicate layers...")
+            duplicates = []
+            layer_names = list(adata.layers.keys())
+            for i in range(len(layer_names)):
+                for j in range(i+1, len(layer_names)):
+                    layer1 = adata.layers[layer_names[i]]
+                    layer2 = adata.layers[layer_names[j]]
+                    if type(layer1) == type(layer2):
+                        if issparse(layer1) and issparse(layer2):
+                            if (layer1 != layer2).nnz == 0:
+                                duplicates.append((layer_names[i], layer_names[j]))
+                        elif isinstance(layer1, np.ndarray) and isinstance(layer2, np.ndarray):
+                            if np.array_equal(layer1, layer2):
+                                duplicates.append((layer_names[i], layer_names[j]))
+            
+            if duplicates:
+                print(f"  ⚠️  Found duplicate layers:")
+                for dup in duplicates:
+                    print(f"    - '{dup[0]}' and '{dup[1]}' are identical")
+    else:
+        print("  No layers found")
+    
+    # 3. Observations metadata (obs)
+    print("\n" + "-" * 40)
+    print("3. OBSERVATIONS METADATA (obs)")
+    print("-" * 40)
+    obs_memory = get_object_memory(adata.obs)
+    memory_breakdown['obs'] = obs_memory
+    print(f"  Total memory: {format_bytes(obs_memory)}")
+    print(f"  Number of columns: {len(adata.obs.columns)}")
+    
+    if len(adata.obs.columns) > 0:
+        print("\n  Top memory-consuming columns:")
+        col_memories = []
+        for col in adata.obs.columns:
+            col_memory = adata.obs[col].memory_usage(deep=True)
+            col_memories.append((col, col_memory))
+        
+        col_memories.sort(key=lambda x: x[1], reverse=True)
+        for col, mem in col_memories[:10]:
+            dtype = str(adata.obs[col].dtype)
+            print(f"    '{col}': {format_bytes(mem)} (dtype: {dtype})")
+            
+            # Check for optimization opportunities
+            if adata.obs[col].dtype == 'object':
+                unique_ratio = len(adata.obs[col].unique()) / len(adata.obs[col])
+                if unique_ratio < 0.5:
+                    print(f"      💡 Consider converting to categorical (unique ratio: {unique_ratio:.1%})")
+    
+    # 4. Variables metadata (var)
+    print("\n" + "-" * 40)
+    print("4. VARIABLES METADATA (var)")
+    print("-" * 40)
+    var_memory = get_object_memory(adata.var)
+    memory_breakdown['var'] = var_memory
+    print(f"  Total memory: {format_bytes(var_memory)}")
+    print(f"  Number of columns: {len(adata.var.columns)}")
+    
+    if len(adata.var.columns) > 0:
+        print("\n  Top memory-consuming columns:")
+        col_memories = []
+        for col in adata.var.columns:
+            col_memory = adata.var[col].memory_usage(deep=True)
+            col_memories.append((col, col_memory))
+        
+        col_memories.sort(key=lambda x: x[1], reverse=True)
+        for col, mem in col_memories[:10]:
+            dtype = str(adata.var[col].dtype)
+            print(f"    '{col}': {format_bytes(mem)} (dtype: {dtype})")
+    
+    # 5. Dimensional reductions (obsm)
+    print("\n" + "-" * 40)
+    print("5. DIMENSIONAL REDUCTIONS (obsm)")
+    print("-" * 40)
+    if adata.obsm:
+        total_obsm_memory = 0
+        for key, value in adata.obsm.items():
+            obsm_memory = get_object_memory(value)
+            total_obsm_memory += obsm_memory
+            memory_breakdown[f'obsm_{key}'] = obsm_memory
+            print(f"  '{key}':")
+            print(f"    Memory: {format_bytes(obsm_memory)}")
+            if hasattr(value, 'shape'):
+                print(f"    Shape: {value.shape}")
+            if hasattr(value, 'dtype'):
+                print(f"    Data type: {value.dtype}")
+                if value.dtype == np.float64:
+                    print(f"    💡 Consider float32 for embeddings")
+        
+        memory_breakdown['obsm_total'] = total_obsm_memory
+        print(f"\n  Total obsm memory: {format_bytes(total_obsm_memory)}")
+    else:
+        print("  No dimensional reductions found")
+    
+    # 6. Variable embeddings (varm)
+    print("\n" + "-" * 40)
+    print("6. VARIABLE EMBEDDINGS (varm)")
+    print("-" * 40)
+    if adata.varm:
+        total_varm_memory = 0
+        for key, value in adata.varm.items():
+            varm_memory = get_object_memory(value)
+            total_varm_memory += varm_memory
+            memory_breakdown[f'varm_{key}'] = varm_memory
+            print(f"  '{key}': {format_bytes(varm_memory)}")
+        
+        memory_breakdown['varm_total'] = total_varm_memory
+        print(f"\n  Total varm memory: {format_bytes(total_varm_memory)}")
+    else:
+        print("  No variable embeddings found")
+    
+    # 7. Unstructured data (uns)
+    print("\n" + "-" * 40)
+    print("7. UNSTRUCTURED DATA (uns)")
+    print("-" * 40)
+    if adata.uns:
+        def explore_uns(uns_dict, prefix=""):
+            items = []
+            for key, value in uns_dict.items():
+                mem = get_object_memory(value)
+                full_key = f"{prefix}{key}"
+                items.append((full_key, mem, type(value).__name__))
+                
+                if isinstance(value, dict) and mem > 1024*1024:  # Explore large nested dicts
+                    nested_items = explore_uns(value, f"{full_key}.")
+                    items.extend(nested_items)
+            return items
+        
+        uns_items = explore_uns(adata.uns)
+        uns_items.sort(key=lambda x: x[1], reverse=True)
+        
+        total_uns_memory = sum(item[1] for item in uns_items if '.' not in item[0])
+        memory_breakdown['uns_total'] = total_uns_memory
+        
+        print(f"  Total memory: {format_bytes(total_uns_memory)}")
+        print(f"\n  Top memory-consuming items:")
+        for key, mem, dtype in uns_items[:15]:
+            print(f"    '{key}': {format_bytes(mem)} ({dtype})")
+    else:
+        print("  No unstructured data found")
+    
+    # 8. Pairwise matrices (obsp, varp)
+    print("\n" + "-" * 40)
+    print("8. PAIRWISE MATRICES")
+    print("-" * 40)
+    
+    if adata.obsp:
+        print("  Observation pairwise (obsp):")
+        total_obsp_memory = 0
+        for key, value in adata.obsp.items():
+            obsp_memory = get_object_memory(value)
+            total_obsp_memory += obsp_memory
+            memory_breakdown[f'obsp_{key}'] = obsp_memory
+            print(f"    '{key}': {format_bytes(obsp_memory)}")
+        memory_breakdown['obsp_total'] = total_obsp_memory
+    else:
+        print("  No observation pairwise matrices found")
+    
+    if adata.varp:
+        print("  Variable pairwise (varp):")
+        total_varp_memory = 0
+        for key, value in adata.varp.items():
+            varp_memory = get_object_memory(value)
+            total_varp_memory += varp_memory
+            memory_breakdown[f'varp_{key}'] = varp_memory
+            print(f"    '{key}': {format_bytes(varp_memory)}")
+        memory_breakdown['varp_total'] = total_varp_memory
+    else:
+        print("  No variable pairwise matrices found")
+    
+    # Summary
+    print("\n" + "=" * 80)
+    print("MEMORY SUMMARY")
+    print("=" * 80)
+    
+    # Sort components by memory usage
+    main_components = [
+        ('X', memory_breakdown.get('X', 0)),
+        ('layers', memory_breakdown.get('layers_total', 0)),
+        ('obs', memory_breakdown.get('obs', 0)),
+        ('var', memory_breakdown.get('var', 0)),
+        ('obsm', memory_breakdown.get('obsm_total', 0)),
+        ('varm', memory_breakdown.get('varm_total', 0)),
+        ('uns', memory_breakdown.get('uns_total', 0)),
+        ('obsp', memory_breakdown.get('obsp_total', 0)),
+        ('varp', memory_breakdown.get('varp_total', 0)),
+    ]
+    
+    main_components.sort(key=lambda x: x[1], reverse=True)
+    
+    total_memory = sum(x[1] for x in main_components)
+    
+    print(f"\nTotal estimated memory in RAM: {format_bytes(total_memory)}")
+    print(f"\nBreakdown by component:")
+    for name, mem in main_components:
+        if mem > 0:
+            percentage = (mem / total_memory) * 100
+            print(f"  {name:10s}: {format_bytes(mem):>12s} ({percentage:5.1f}%)")
+    
+    # General recommendations
+    print("\n" + "=" * 80)
+    print("OPTIMIZATION RECOMMENDATIONS")
+    print("=" * 80)
+    
+    recommendations = []
+    
+    # Check overall data type usage
+    if adata.X is not None and hasattr(adata.X, 'dtype'):
+        if adata.X.dtype == np.float64:
+            potential_savings = x_memory * 0.5
+            recommendations.append(
+                f"Convert main matrix X from float64 to float32 (save ~{format_bytes(potential_savings)})"
+            )
+    
+    # Check for large uns data
+    if 'uns_total' in memory_breakdown and memory_breakdown['uns_total'] > total_memory * 0.2:
+        recommendations.append(
+            "Large 'uns' data detected (>20% of total). Consider:\n" +
+            "    - Removing intermediate analysis results\n" +
+            "    - Storing large plots/figures separately\n" +
+            "    - Cleaning up temporary computation data"
+        )
+    
+    # Check for multiple large layers
+    if 'layers_total' in memory_breakdown and len(adata.layers) > 3:
+        if memory_breakdown['layers_total'] > memory_breakdown.get('X', 0):
+            recommendations.append(
+                "Layers consume more memory than main matrix. Consider:\n" +
+                "    - Keeping only essential layers\n" +
+                "    - Storing layers in separate files if rarely used"
+            )
+    
+    # Check embedding precision
+    high_precision_embeddings = []
+    for key in adata.obsm.keys():
+        if hasattr(adata.obsm[key], 'dtype') and adata.obsm[key].dtype == np.float64:
+            high_precision_embeddings.append(key)
+    
+    if high_precision_embeddings:
+        recommendations.append(
+            f"Convert embeddings to float32: {', '.join(high_precision_embeddings)}"
+        )
+    
+    # Print recommendations
+    if recommendations:
+        for i, rec in enumerate(recommendations, 1):
+            print(f"\n{i}. {rec}")
+    else:
+        print("\nNo major optimization opportunities detected.")
+    
+    print("\n" + "=" * 80)
+    print("END OF REPORT")
+    print("=" * 80)
+
+def suggest_optimization_code(filepath: str) -> None:
+    """
+    Generate code suggestions for optimizing the h5ad file.
+    
+    Parameters:
+    -----------
+    filepath : str
+        Path to the h5ad file
+    """
+    
+    print("\n" + "=" * 80)
+    print("OPTIMIZATION CODE SUGGESTIONS")
+    print("=" * 80)
+    
+    print("""
+# Here's example code to optimize your h5ad file:
+
+import scanpy as sc
+import numpy as np
+from scipy.sparse import csr_matrix
+
+# Load the original file
+adata = sc.read_h5ad('{filepath}')
+
+# 1. Convert main matrix to float32 if using float64
+if hasattr(adata.X, 'dtype') and adata.X.dtype == np.float64:
+    if issparse(adata.X):
+        adata.X = adata.X.astype(np.float32)
+    else:
+        adata.X = adata.X.astype(np.float32)
+    print("Converted X to float32")
+
+# 2. Convert dense matrix to sparse if mostly zeros
+if isinstance(adata.X, np.ndarray):
+    zero_fraction = np.sum(adata.X == 0) / adata.X.size
+    if zero_fraction > 0.5:
+        adata.X = csr_matrix(adata.X)
+        print(f"Converted X to sparse ({{zero_fraction:.1%}} zeros)")
+
+# 3. Optimize layers
+for layer_name in list(adata.layers.keys()):
+    layer = adata.layers[layer_name]
+    
+    # Convert to float32
+    if hasattr(layer, 'dtype') and layer.dtype == np.float64:
+        adata.layers[layer_name] = layer.astype(np.float32)
+    
+    # Convert to sparse if beneficial
+    if isinstance(layer, np.ndarray):
+        zero_fraction = np.sum(layer == 0) / layer.size
+        if zero_fraction > 0.5:
+            adata.layers[layer_name] = csr_matrix(layer)
+
+# 4. Optimize embeddings
+for key in adata.obsm.keys():
+    if hasattr(adata.obsm[key], 'dtype') and adata.obsm[key].dtype == np.float64:
+        adata.obsm[key] = adata.obsm[key].astype(np.float32)
+
+# 5. Convert string columns to categorical
+for col in adata.obs.columns:
+    if adata.obs[col].dtype == 'object':
+        unique_ratio = len(adata.obs[col].unique()) / len(adata.obs[col])
+        if unique_ratio < 0.5:  # Less than 50% unique values
+            adata.obs[col] = adata.obs[col].astype('category')
+
+for col in adata.var.columns:
+    if adata.var[col].dtype == 'object':
+        unique_ratio = len(adata.var[col].unique()) / len(adata.var[col])
+        if unique_ratio < 0.5:
+            adata.var[col] = adata.var[col].astype('category')
+
+# 6. Remove unnecessary data from uns
+# Review what's in adata.uns and remove unneeded items
+# Example: del adata.uns['some_large_unnecessary_key']
+
+# 7. Save optimized file
+output_path = '{filepath}'.replace('.h5ad', '_optimized.h5ad')
+adata.write_h5ad(output_path, compression='gzip')
+print(f"Saved optimized file to: {{output_path}}")
+""".format(filepath=filepath))
+
+# Example usage
 if __name__ == "__main__":
-    # fix_integrated_h5ad_with_obsm_varm(
-    #     integrated_h5ad_path="/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad",
-    #     glue_dir="/dcs07/hongkai/data/harry/result/multiomics/integration/glue",
-    #     raw_rna_path="/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad",
-    #     output_path="/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated_fixed.h5ad",
-    #     chunk_size=10000,  # Use chunked processing with 10K cells per chunk
-    #     enable_chunking=True,  # Enable chunking (default)
-    #     verbose=True
-    # )
-
-    filepath = "/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/adata_sample.h5ad"
-    # adata = inspect_gene_activity(filepath)
-
-    # Comprehensive inspection
-    results = inspect_h5ad_file(filepath, verbose=True)
+    # Replace with your file path
+    filepath = "/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad"
     
-    # Quick inspection
-    # quick_inspect_h5ad(filepath)
+    # Run the inspection
+    inspect_h5ad_memory(filepath)
     
-    # Access specific information from results dictionary
-    # print(f"Number of cells: {results['basic_info']['n_obs']}")
-    # print(f"Cell types: {results['observations']['categorical_info'].get('cell_type', {}).get('values', [])}")
+    # Get optimization code suggestions
+    suggest_optimization_code(filepath)

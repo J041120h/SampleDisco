@@ -767,7 +767,7 @@ def compute_gene_activity_from_knn(
         print("\n🔍 Finding k-nearest RNA neighbors (GPU-accelerated)...")
         start_time = time.time()
     
-    # Use float32 consistently
+    # Use float32 for k-NN computation (faster on GPU)
     rna_embedding_gpu = cp.asarray(rna_embedding, dtype=cp.float32)
     atac_embedding_gpu = cp.asarray(atac_embedding, dtype=cp.float32)
     
@@ -807,7 +807,7 @@ def compute_gene_activity_from_knn(
     del similarities_gpu, distances_gpu, row_sums_gpu
     
     # Determine optimal batch size based on memory
-    estimated_memory_per_cell = (k_neighbors * n_genes * 4) / 1e9  # GB per cell
+    estimated_memory_per_cell = (k_neighbors * n_genes * 8) / 1e9  # GB per cell (using float64)
     optimal_batch_size = int(min(
         gpu_mem * 0.5 / estimated_memory_per_cell,  # Use 50% of available GPU memory
         10000,  # Max batch size
@@ -822,8 +822,8 @@ def compute_gene_activity_from_knn(
     
     n_batches = (n_atac_cells + optimal_batch_size - 1) // optimal_batch_size
     
-    # Pre-allocate output matrix
-    gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float32)
+    # Pre-allocate output matrix as float64 for final precision
+    gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float64)
     
     # Optimize RNA data loading - check if sparse
     is_sparse_rna = sparse.issparse(rna_raw.X)
@@ -867,7 +867,6 @@ def compute_gene_activity_from_knn(
         mapped_indices_gpu = idx_map[batch_indices_gpu]
         
         # Vectorized computation using advanced indexing
-        # This is much faster than the loop in the original code
         batch_gene_activity_gpu = cp.zeros((batch_size_actual, n_genes), dtype=cp.float32)
         
         # Use Einstein summation for efficient weighted sum
@@ -884,8 +883,8 @@ def compute_gene_activity_from_knn(
                                                    batch_weights_gpu[i], 
                                                    neighbor_expr)
         
-        # Transfer to CPU efficiently
-        gene_activity_matrix[start_idx:end_idx] = cp.asnumpy(batch_gene_activity_gpu)
+        # Transfer to CPU and convert to float64
+        gene_activity_matrix[start_idx:end_idx] = cp.asnumpy(batch_gene_activity_gpu).astype(np.float64)
         
         # Clear GPU memory for this batch
         del batch_gene_activity_gpu, rna_expr_gpu, mapped_indices_gpu
@@ -911,15 +910,28 @@ def compute_gene_activity_from_knn(
     gene_activity_matrix = np.nan_to_num(gene_activity_matrix, 0)
     np.clip(gene_activity_matrix, 0, None, out=gene_activity_matrix)
     
-    # Create gene activity AnnData with all obsm preserved
+    # Convert to sparse CSC matrix (efficient for column operations)
+    if verbose:
+        print("📦 Converting gene activity to sparse CSC matrix...")
+        nnz_before = np.count_nonzero(gene_activity_matrix)
+        sparsity = 1 - (nnz_before / gene_activity_matrix.size)
+        print(f"   Sparsity: {sparsity:.1%} zeros")
+    
+    gene_activity_sparse = sparse.csc_matrix(gene_activity_matrix, dtype=np.float64)
+    
+    # Clear dense matrix
+    del gene_activity_matrix
+    gc.collect()
+    
+    # Create gene activity AnnData with sparse matrix
     gene_activity_adata = ad.AnnData(
-        X=gene_activity_matrix,
+        X=gene_activity_sparse,
         obs=atac_obs.copy(),
         var=rna_var.copy()
     )
     
     gene_activity_adata.obs['modality'] = 'ATAC'
-    gene_activity_adata.layers['gene_activity'] = gene_activity_matrix
+    gene_activity_adata.layers['gene_activity'] = gene_activity_sparse.copy()
     
     # Add all obsm from ATAC
     for key, value in atac_obsm_dict.items():
@@ -940,9 +952,29 @@ def compute_gene_activity_from_knn(
     if is_sparse_rna:
         rna_X = rna_raw[common_cells, :].X
         if sparse.issparse(rna_X):
-            rna_X = rna_X.tocsr()  # CSR format is most efficient for row slicing
+            # Convert to CSC and ensure float64
+            rna_X = rna_X.tocsc().astype(np.float64)
+            if verbose:
+                rna_sparsity = 1 - (rna_X.nnz / (rna_X.shape[0] * rna_X.shape[1]))
+                print(f"   RNA sparsity: {rna_sparsity:.1%} zeros")
+        else:
+            # If dense, convert to sparse CSC if beneficial
+            rna_X = rna_X[:].astype(np.float64)
+            nnz = np.count_nonzero(rna_X)
+            sparsity = 1 - (nnz / rna_X.size)
+            if sparsity > 0.5:  # If more than 50% sparse, convert to sparse
+                if verbose:
+                    print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
+                rna_X = sparse.csc_matrix(rna_X, dtype=np.float64)
     else:
-        rna_X = rna_raw[common_cells, :].X[:]
+        rna_X = rna_raw[common_cells, :].X[:].astype(np.float64)
+        # Check if it should be sparse
+        nnz = np.count_nonzero(rna_X)
+        sparsity = 1 - (nnz / rna_X.size)
+        if sparsity > 0.5:  # If more than 50% sparse, convert to sparse
+            if verbose:
+                print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
+            rna_X = sparse.csc_matrix(rna_X, dtype=np.float64)
     
     # Close the backed file
     rna_raw.file.close()
@@ -980,6 +1012,20 @@ def compute_gene_activity_from_knn(
     del rna_for_merge, gene_activity_adata
     gc.collect()
     
+    # Ensure the merged matrix is sparse CSC
+    if not sparse.issparse(merged_adata.X):
+        if verbose:
+            print("📦 Converting merged matrix to sparse CSC...")
+        merged_adata.X = sparse.csc_matrix(merged_adata.X, dtype=np.float64)
+    elif not isinstance(merged_adata.X, sparse.csc_matrix):
+        if verbose:
+            print("📦 Converting to CSC format...")
+        merged_adata.X = merged_adata.X.tocsc().astype(np.float64)
+    else:
+        # Ensure float64 dtype
+        if merged_adata.X.dtype != np.float64:
+            merged_adata.X = merged_adata.X.astype(np.float64)
+    
     # Clean for saving
     merged_adata = clean_anndata_for_saving(merged_adata, verbose=False)
     
@@ -1000,7 +1046,21 @@ def compute_gene_activity_from_knn(
         print(f"   Merged dataset shape: {merged_adata.shape}")
         print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
         print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
-        print(f"   Optimization: GPU vectorization + dynamic batching")
+        
+        # Report matrix format
+        if sparse.issparse(merged_adata.X):
+            matrix_type = type(merged_adata.X).__name__
+            sparsity = 1 - (merged_adata.X.nnz / (merged_adata.X.shape[0] * merged_adata.X.shape[1]))
+            print(f"   Matrix format: {matrix_type} (sparse)")
+            print(f"   Data type: {merged_adata.X.dtype}")
+            print(f"   Sparsity: {sparsity:.1%} zeros")
+            print(f"   Memory usage: {merged_adata.X.data.nbytes / 1e6:.2f} MB (sparse)")
+        else:
+            print(f"   Matrix format: dense numpy array")
+            print(f"   Data type: {merged_adata.X.dtype}")
+            print(f"   Memory usage: {merged_adata.X.nbytes / 1e6:.2f} MB")
+        
+        print(f"   Optimization: GPU vectorization + dynamic batching + sparse matrices")
         print(f"   Batch processing: {n_batches} batches of size {optimal_batch_size}")
 
     mempool.free_all_blocks()
@@ -1040,6 +1100,8 @@ def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
     # Set output directory
     if output_dir is None:
         output_dir = os.path.dirname(integrated_path)
+    
+    os.makedirs(output_dir, exist_ok=True)
     
     # Check if scGLUE embeddings exist
     if "X_glue" not in combined.obsm:

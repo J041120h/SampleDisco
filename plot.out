@@ -1,85 +1,158 @@
-======================================
- Job ID:            21841035
- Job Name:          plot
- Partition:         shared
- Node List:         compute-164
- CPUs per Task:     16
- Memory Alloc:      819200
- GPU Requested:     None
- Start Time:        Fri Sep  5 01:03:05 AM EDT 2025
-======================================
-Starting plot script...
-Linux system detected with GPU enabled.
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
-        "sample_distance_calculation": true,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": true,
-        "dimensionality_reduction": true,
-        "embedding_visualization": true,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
-}
+================================================================================
+H5AD MEMORY INSPECTION REPORT
+File: /dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad
+File size on disk: 1.96 GB
+================================================================================
 
-============================================================
-RUNNING MULTIOMICS PIPELINE
-============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/heart/multiomics
-Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/adata_sample.h5ad
-Step 3: Running dimensionality reduction (pseudobulk + PCA)...
-  Sub-step 3a: Computing pseudobulk...
-Warning: batch column 'batch' not found in adata.obs
+Loading file...
 
-✗ Multiomics pipeline failed with error: Found no NVIDIA driver on your system. Please check that you have an NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
+Basic Information:
+  Number of observations (cells): 898,489
+  Number of variables (genes): 14,881
 
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-Multiomics Pipeline: ⚠ PARTIAL
-  - glue_integration: ✗
-  - glue_preprocessing: ✗
-  - glue_training: ✗
-  - glue_gene_activity: ✗
-  - glue_cell_types: ✗
-  - glue_visualization: ✗
-  - integration_preprocessing: ✓
-  - dimensionality_reduction: ✓
-  - embedding_visualization: ✓
-  - optimal_resolution: ✗
+----------------------------------------
+1. MAIN DATA MATRIX (X)
+----------------------------------------
+  Memory usage: 11.97 GB
+  Type: <class 'scipy.sparse._csc.csc_matrix'>
+  Data type: float64
+  Shape: (898489, 14881)
 
-Results saved to: /dcs07/hongkai/data/harry/result/heart
-Status file: /dcs07/hongkai/data/harry/result/heart/sys_log/main_process_status.json
-Finished plot script.
-End Time: Fri Sep  5 01:12:26 AM EDT 2025
+----------------------------------------
+2. LAYERS
+----------------------------------------
+  No layers found
+
+----------------------------------------
+3. OBSERVATIONS METADATA (obs)
+----------------------------------------
+  Total memory: 106.27 MB
+  Number of columns: 4
+
+  Top memory-consuming columns:
+    'sample': 103.69 MB (dtype: category)
+    'celltype': 102.79 MB (dtype: category)
+    'old': 102.79 MB (dtype: category)
+    'large': 102.79 MB (dtype: category)
+
+----------------------------------------
+4. VARIABLES METADATA (var)
+----------------------------------------
+  Total memory: 1.39 MB
+  Number of columns: 0
+
+----------------------------------------
+5. DIMENSIONAL REDUCTIONS (obsm)
+----------------------------------------
+  No dimensional reductions found
+
+----------------------------------------
+6. VARIABLE EMBEDDINGS (varm)
+----------------------------------------
+  No variable embeddings found
+
+----------------------------------------
+7. UNSTRUCTURED DATA (uns)
+----------------------------------------
+  Total memory: 55.00 B
+
+  Top memory-consuming items:
+    'X_name': 55.00 B (str)
+
+----------------------------------------
+8. PAIRWISE MATRICES
+----------------------------------------
+  No observation pairwise matrices found
+  No variable pairwise matrices found
+
+================================================================================
+MEMORY SUMMARY
+================================================================================
+
+Total estimated memory in RAM: 12.07 GB
+
+Breakdown by component:
+  X         :     11.97 GB ( 99.1%)
+  obs       :    106.27 MB (  0.9%)
+  var       :      1.39 MB (  0.0%)
+  uns       :      55.00 B (  0.0%)
+
+================================================================================
+OPTIMIZATION RECOMMENDATIONS
+================================================================================
+
+1. Convert main matrix X from float64 to float32 (save ~5.98 GB)
+
+================================================================================
+END OF REPORT
+================================================================================
+
+================================================================================
+OPTIMIZATION CODE SUGGESTIONS
+================================================================================
+
+# Here's example code to optimize your h5ad file:
+
+import scanpy as sc
+import numpy as np
+from scipy.sparse import csr_matrix
+
+# Load the original file
+adata = sc.read_h5ad('/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad')
+
+# 1. Convert main matrix to float32 if using float64
+if hasattr(adata.X, 'dtype') and adata.X.dtype == np.float64:
+    if issparse(adata.X):
+        adata.X = adata.X.astype(np.float32)
+    else:
+        adata.X = adata.X.astype(np.float32)
+    print("Converted X to float32")
+
+# 2. Convert dense matrix to sparse if mostly zeros
+if isinstance(adata.X, np.ndarray):
+    zero_fraction = np.sum(adata.X == 0) / adata.X.size
+    if zero_fraction > 0.5:
+        adata.X = csr_matrix(adata.X)
+        print(f"Converted X to sparse ({zero_fraction:.1%} zeros)")
+
+# 3. Optimize layers
+for layer_name in list(adata.layers.keys()):
+    layer = adata.layers[layer_name]
+    
+    # Convert to float32
+    if hasattr(layer, 'dtype') and layer.dtype == np.float64:
+        adata.layers[layer_name] = layer.astype(np.float32)
+    
+    # Convert to sparse if beneficial
+    if isinstance(layer, np.ndarray):
+        zero_fraction = np.sum(layer == 0) / layer.size
+        if zero_fraction > 0.5:
+            adata.layers[layer_name] = csr_matrix(layer)
+
+# 4. Optimize embeddings
+for key in adata.obsm.keys():
+    if hasattr(adata.obsm[key], 'dtype') and adata.obsm[key].dtype == np.float64:
+        adata.obsm[key] = adata.obsm[key].astype(np.float32)
+
+# 5. Convert string columns to categorical
+for col in adata.obs.columns:
+    if adata.obs[col].dtype == 'object':
+        unique_ratio = len(adata.obs[col].unique()) / len(adata.obs[col])
+        if unique_ratio < 0.5:  # Less than 50% unique values
+            adata.obs[col] = adata.obs[col].astype('category')
+
+for col in adata.var.columns:
+    if adata.var[col].dtype == 'object':
+        unique_ratio = len(adata.var[col].unique()) / len(adata.var[col])
+        if unique_ratio < 0.5:
+            adata.var[col] = adata.var[col].astype('category')
+
+# 6. Remove unnecessary data from uns
+# Review what's in adata.uns and remove unneeded items
+# Example: del adata.uns['some_large_unnecessary_key']
+
+# 7. Save optimized file
+output_path = '/dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad'.replace('.h5ad', '_optimized.h5ad')
+adata.write_h5ad(output_path, compression='gzip')
+print(f"Saved optimized file to: {output_path}")
+
