@@ -144,6 +144,8 @@ def rna_wrapper(
     use_gpu=False,
     status_flags=None
 ):
+    print("Starting RNA wrapper function with provided parameters...")
+    
     if linux_system and use_gpu:
         from linux.preprocess_linux import preprocess_linux
         from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
@@ -287,8 +289,9 @@ def rna_wrapper(
         status_flags["rna"]["cell_type_cluster"] = True
         AnnData_cell_path = temp_cell_path
         AnnData_sample_path = temp_sample_path
-        AnnData_cell = sc.read(AnnData_cell_path)
-        AnnData_sample = sc.read(AnnData_sample_path)
+        if cell_type_cluster or DimensionalityReduction or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE:
+            AnnData_cell = sc.read(AnnData_cell_path)
+            AnnData_sample = sc.read(AnnData_sample_path)
     
     if not status_flags["rna"]["preprocessing"]:
             raise ValueError("RNA preprocessing is skipped, but no preprocessed data found.")

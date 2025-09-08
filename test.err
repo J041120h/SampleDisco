@@ -1,39 +1,10 @@
-2025-09-07 18:52:49.047905: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-09-07 23:15:25.849412: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1757285569.060269  781598 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1757285569.064037  781598 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1757285569.075576  781598 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757285569.075588  781598 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757285569.075591  781598 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757285569.075593  781598 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-09-07 18:52:49.078641: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1757301325.861996  794276 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1757301325.865875  794276 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1757301325.877587  794276 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757301325.877602  794276 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757301325.877604  794276 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757301325.877606  794276 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-07 23:15:25.880709: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
-  from torch.distributed.optim import ZeroRedundancyOptimizer
-... storing 'sample' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'modality' as categorical
-... storing 'tissue' as categorical
-... storing 'modality' as categorical
