@@ -7,9 +7,9 @@ output_dir: "/dcs07/hongkai/data/harry/result"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
 use_gpu: true
@@ -21,7 +21,7 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_count_data_path: "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
 rna_sample_meta_path: null
 rna_output_dir: null
 
@@ -29,22 +29,23 @@ rna_output_dir: null
 rna_preprocessing: false
 rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
-rna_sample_distance_calculation: true
+rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Paths for Skipping Processes (Added missing parameter)
-rna_anndata_cell_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/atac_rna_integrated.h5ad"
-rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/preprocess/adata_sample.h5ad"
-rna_pseudobulk_adata_path: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/pseudobulk/pseudobulk_sample.h5ad"
+rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/multiomics/preprocess/adata_sample.h5ad"
+rna_pseudobulk_adata_path: "/dcs07/hongkai/data/harry/result/multiomics/pseudobulk/pseudobulk_sample.h5ad"
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-  - "sev.level"
+  - "modality"
+  - "tissue"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: "batch"
@@ -124,7 +125,7 @@ rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 5
 rna_plot_dendrogram_flag: false
-rna_plot_umap_by_cell_type_flag: true
+rna_plot_umap_by_cell_type_flag: false
 rna_plot_cell_type_proportions_pca_flag: true
 rna_plot_cell_type_expression_umap_flag: true
 

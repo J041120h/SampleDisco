@@ -28,9 +28,9 @@ Resuming process from previous progress:
         "glue_gene_activity": false,
         "glue_cell_types": false,
         "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
+        "integration_preprocessing": true,
+        "dimensionality_reduction": true,
+        "embedding_visualization": true,
         "optimal_resolution": false
     },
     "system_info": {
@@ -45,7 +45,7 @@ Resuming process from previous progress:
 RUNNING MULTIOMICS PIPELINE
 ============================================================
 Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multiomics
-Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
 Step 2: Running integration preprocessing...
 === Read input dataset ===
 Dimension of raw data (cells x genes): 861190 x 36601
@@ -86,11 +86,11 @@ Name: count, Length: 88, dtype: int64
 Final filtering -- Cells remaining: 846341, Genes remaining: 23575
 Preprocessing complete!
 Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/adata_sample.h5ad
-Function execution time: 2368.36 seconds
+Function execution time: 2384.69 seconds
 ✓ Integration preprocessing completed successfully
 Step 3: Running dimensionality reduction (pseudobulk + PCA)...
   Sub-step 3a: Computing pseudobulk...
-Warning: batch column 'batch' not found in adata.obs
+No batch column specified, using 'modality' as the batch column.
 Using PyTorch with GPU: NVIDIA L40S
 Initial GPU memory: 0.00/0.00 GB allocated/reserved
 Processing 24 cell types across 88 samples
@@ -269,7 +269,7 @@ Final HVG selection: 2000 genes
 
 Creating final HVG expression matrix
 
-Total runtime: 8164.91 seconds
+Total runtime: 7714.86 seconds
 Final HVG matrix shape: (24, 88)
 Final AnnData shape: (88, 2000)
   Sub-step 3b: Processing with PCA...
@@ -304,7 +304,7 @@ Stored results as X_DR_proportion in both adata and pseudobulk_anndata with shap
 [process_anndata_with_dimension_reduction] ✓ All files saved successfully
 
 [process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 2151.76 seconds
+Total runtime: 1984.62 seconds
 Expression dimension reduction: ✓ SUCCESS
 Proportion dimension reduction: ✓ SUCCESS
 Results available under unified keys:
