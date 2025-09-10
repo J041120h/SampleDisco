@@ -499,8 +499,8 @@ def create_comprehensive_plots(df: pd.DataFrame, output_dir: str):
 if __name__ == "__main__":
     # Example: Validate multiple methods and save to output directory
     results = validate_multiple_methods(
-        sample_distance_path='/dcl01/hongkai/data/data/hjiang/result/paired/rna/Sample_distance',
+        sample_distance_path='/dcs07/hongkai/data/harry/result/rna/Sample_distance',
         methods=['cosine', 'correlation'],
-        output_dir='/dcl01/hongkai/data/data/hjiang/result/paired/validation_results',
+        output_dir='/dcs07/hongkai/data/harry/result/rna/validation_results',
         n_permutations=1000
     )
