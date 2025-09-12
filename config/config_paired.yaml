@@ -7,9 +7,9 @@ output_dir: "/dcs07/hongkai/data/harry/result"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
 use_gpu: true
@@ -37,9 +37,9 @@ rna_cluster_dge: false
 rna_visualize_data: false
 
 # RNA Paths for Skipping Processes (Added missing parameter)
-rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
-rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/multiomics/preprocess/adata_sample.h5ad"
-rna_pseudobulk_adata_path: "/dcs07/hongkai/data/harry/result/multiomics/pseudobulk/pseudobulk_sample.h5ad"
+rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/adata_sample.h5ad"
+rna_pseudobulk_adata_path: "/dcs07/hongkai/data/harry/result/heart/multiomics/pseudobulk/pseudobulk_sample.h5ad"
 
 # RNA Basic Parameters
 rna_sample_col: "sample"

@@ -402,7 +402,7 @@ def rna_wrapper(
         if not os.path.exists(temp_pseudobulk_path):
             raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
         status_flags["rna"]["dimensionality_reduction"] = True
-        print("Reading Pseudobulk from provided or default path")
+        print(f"Reading Pseudobulk from provided or default path: {temp_pseudobulk_path}")
         pseudobulk_adata = sc.read(temp_pseudobulk_path)
     
     # Step 5: Sample Distance Calculation - UNIFIED NAMING

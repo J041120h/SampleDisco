@@ -1513,11 +1513,12 @@ def convert_X_to_sparse_csc(filepath: str, overwrite: bool = True) -> None:
 
 # Main execution
 if __name__ == "__main__":
-    # Replace with your actual file path
-    filepath = "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
+    # # Replace with your actual file path
+    # filepath = "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
     
-    # Run the conversion (this will overwrite the original file)
-    convert_X_to_sparse_csc(filepath, overwrite=True)
+    # # Run the conversion (this will overwrite the original file)
+    # convert_X_to_sparse_csc(filepath, overwrite=True)
     
     # If you want to keep a backup, use:
     # convert_X_to_sparse_csc(filepath, overwrite=False)
+    consume_memory()
