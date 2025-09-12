@@ -86,6 +86,7 @@ def rna_wrapper(
     # ===== PCA Parameters =====
     n_expression_components=10,
     n_proportion_components=10,
+    rna_harmony_for_proportion = True,
     dr_output_dir=None,
     dr_verbose=True,
     
@@ -390,6 +391,8 @@ def rna_wrapper(
             sample_col=sample_col,
             n_expression_components=n_expression_components,
             n_proportion_components=n_proportion_components,
+            batch_col = batch_col,
+            harmony_for_proportion = rna_harmony_for_proportion,
             output_dir=dr_output_dir,
             verbose=dr_verbose
         )

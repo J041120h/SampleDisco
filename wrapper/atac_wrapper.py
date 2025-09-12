@@ -82,6 +82,7 @@ def atac_wrapper(
     atac_dr_output_dir=None,
     atac_dr_n_expression_components=30,
     atac_dr_n_proportion_components=30,
+    atac_harmony_for_proportion = True,
     atac_dr_verbose=True,
     
     # ===== Trajectory Analysis Parameters =====
@@ -320,6 +321,8 @@ def atac_wrapper(
             sample_col=sample_col,
             n_expression_components=atac_dr_n_expression_components,
             n_proportion_components=atac_dr_n_proportion_components,
+            batch_col=atac_batch_col,
+            harmony_for_proportion = atac_harmony_for_proportion,
             output_dir=atac_dr_output_dir,
             atac=True,
             use_snapatac2_dimred=use_snapatac2_dimred,

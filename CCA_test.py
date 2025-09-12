@@ -771,6 +771,8 @@ def find_optimal_cell_resolution(
                 sample_col=sample_col,
                 n_expression_components=num_DR_components,
                 n_proportion_components=num_DR_components,
+                batch_col=batch_col,
+                harmony_for_proportion = True,
                 atac=False,  # RNA-seq data
                 output_dir=resolution_dir,
                 not_save=True,
@@ -967,6 +969,8 @@ def find_optimal_cell_resolution(
                 sample_col=sample_col,
                 n_expression_components=num_DR_components,
                 n_proportion_components=num_DR_components,
+                batch_col=batch_col,
+                harmony_for_proportion = True,
                 atac=False,
                 output_dir=resolution_dir,
                 not_save=True,

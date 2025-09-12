@@ -113,6 +113,7 @@ def multiomics_wrapper(
     pca_sample_col='sample',
     n_expression_pcs=10,
     n_proportion_pcs=10,
+    multiomics_harmony_for_proportion = True,
     pca_output_dir=None,
     integrated_data=False,
     not_save=False,
@@ -479,6 +480,8 @@ def multiomics_wrapper(
             sample_col=pca_sample_col,
             n_expression_components=n_expression_pcs,
             n_proportion_components=n_proportion_pcs,
+            batch_col=batch_col,
+            harmony_for_proportion=multiomics_harmony_for_proportion,
             output_dir=pca_output_dir,
             verbose=multiomics_verbose
         )
