@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/Benchmark/pseudobulk_then_directly_scglue.py", line 235, in <module>
+    # pseudobulk_hvg = compute_naive_pseudobulk(
+  File "/users/hjiang/GenoDistance/code/Benchmark/pseudobulk_then_directly_scglue.py", line 152, in compute_naive_pseudobulk
+    clear_gpu_memory()
+  File "/users/hjiang/GenoDistance/code/Benchmark/pseudobulk_then_directly_scglue.py", line 16, in clear_gpu_memory
+    gc.collect()
+KeyboardInterrupt

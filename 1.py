@@ -1605,22 +1605,4 @@ def compare_gene_overlap(file1_path, file2_path, output_file=None):
 
 # Example usage:
 if __name__ == "__main__":
-    # Replace with your actual file paths
-    file1 = "/dcl01/hongkai/data/data/hjiang/result/Benchmark/unique_gene_names.txt"
-    file2 = "/dcl01/hongkai/data/data/hjiang/result/pseudobulk/unique_gene_names.txt"
-    
-    # Basic comparison
-    results = compare_gene_overlap(file1, file2)
-    
-    # Save overlapping genes to a file
-    # results = compare_gene_overlap(file1, file2, output_file="overlapping_genes.txt")
-    
-    # Access specific results if needed
-    if results:
-        print(f"\nQuick summary:")
-        print(f"Overlap: {results['overlapping_genes']} genes ({results['overlap_percentage']:.1f}%)")
-        
-        # You can also access the lists:
-        # overlapping_genes = results['overlap_list']
-        # genes_only_in_file1 = results['unique_to_file1_list']
-        # genes_only_in_file2 = results['unique_to_file2_list']
+    consume_memory()
