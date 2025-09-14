@@ -1,7 +1,0 @@
-Loading AnnData from /dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
-Loaded data: 430595 cells × 3576085 genes
-Samples: 44
-Using GPU: NVIDIA L40S
-
-Creating naive pseudobulk for 44 samples
-  Processing sample 1/44

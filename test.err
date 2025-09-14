@@ -1,11 +1,33 @@
-2025-09-14 13:27:38.053066: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-09-14 13:54:54.558219: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1757870858.065304 1567917 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1757870858.069165 1567917 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1757870858.080559 1567917 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757870858.080572 1567917 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757870858.080575 1567917 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757870858.080577 1567917 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-09-14 13:27:38.083688: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1757872494.570478 1568866 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1757872494.574252 1568866 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1757872494.585508 1568866 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757872494.585520 1568866 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757872494.585523 1568866 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757872494.585525 1568866 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-14 13:54:54.588682: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-Error: Unexpected parameter in config: 'rna_combat'
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 603, in wrapper
+    rna_results = rna_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 219, in rna_wrapper
+    AnnData_cell, AnnData_sample = preprocess_linux(
+  File "/users/hjiang/GenoDistance/code/linux/preprocess_linux.py", line 195, in preprocess_linux
+    rsc.get.anndata_to_GPU(adata)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/get/_anndata.py", line 71, in anndata_to_GPU
+    X = X_to_GPU(X, warning=error)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/get/_anndata.py", line 103, in X_to_GPU
+    X = cp.array(X)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/cupy/_creation/from_data.py", line 53, in array
+    return _core.array(obj, dtype, copy, order, subok, ndmin, blocking)
+  File "cupy/_core/core.pyx", line 2455, in cupy._core.core.array
+  File "cupy/_core/core.pyx", line 2482, in cupy._core.core.array
+  File "cupy/_core/core.pyx", line 2625, in cupy._core.core._array_default
+  File "cupy/_core/core.pyx", line 151, in cupy._core.core.ndarray.__new__
+  File "cupy/_core/core.pyx", line 239, in cupy._core.core._ndarray_base._init
+  File "cupy/cuda/memory.pyx", line 738, in cupy.cuda.memory.alloc
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rmm/allocators/cupy.py", line 37, in rmm_cupy_allocator
+    buf = pylibrmm.device_buffer.DeviceBuffer(size=nbytes, stream=stream)
+  File "device_buffer.pyx", line 102, in rmm.pylibrmm.device_buffer.DeviceBuffer.__cinit__
+MemoryError: std::bad_alloc: out_of_memory: CUDA error (failed to allocate 63040830384 bytes) at: /tmp/pip-build-env-rstxswsq/normal/lib/python3.10/site-packages/librmm/include/rmm/mr/device/cuda_memory_resource.hpp:62: cudaErrorMemoryAllocation out of memory

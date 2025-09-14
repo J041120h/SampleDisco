@@ -216,26 +216,6 @@ def multiomics_wrapper(
         - Updated status_flags tracking completion
         - All intermediate data objects
     """
-
-    #memory management for large datasets, enable managed memory if needed
-    if large_data_need_extra_memory:
-        # Enable `managed_memory`
-        import rmm
-        import cupy as cp
-        from rmm.allocators.cupy import rmm_cupy_allocator
-
-        rmm.reinitialize(managed_memory=True, pool_allocator=False)
-        cp.cuda.set_allocator(rmm_cupy_allocator)
-    else:
-        # Enable `pool_allocator`
-        import rmm
-        import cupy as cp
-        from rmm.allocators.cupy import rmm_cupy_allocator
-        rmm.reinitialize(
-            managed_memory=False,
-            pool_allocator=True,
-        )
-        cp.cuda.set_allocator(rmm_cupy_allocator)
     
     if any(var is None for var in [rna_file, atac_file, multiomics_output_dir]):
         raise ValueError("All parameters must be provided (none can be None)")

@@ -45,7 +45,7 @@ def anndata_cluster(
     Z = harmonize(
         adata_cluster.obsm['X_pca'],
         adata_cluster.obs,
-        batch_key=vars_to_regress_for_harmony,
+        batch_key=vars_to_regress_for_harmony,  # allow list (covariates) or a single key
         max_iter_harmony=num_harmony,
         use_gpu=True
     )
@@ -126,7 +126,7 @@ def preprocess_linux(
     method='average',
     metric='euclidean',
     distance_mode='centroid',
-    vars_to_regress=[],
+    vars_to_regress=None,     # <-- non-mutable default
     verbose=True
 ):
     start_time = time.time()
@@ -145,12 +145,24 @@ def preprocess_linux(
     if verbose:
         print(f'Raw shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
-    vars_to_regress_for_harmony = vars_to_regress.copy()
+    # ---------- Normalize vars_to_regress, build Harmony covariates ----------
+    if vars_to_regress is None:
+        vars_to_regress = []
+    # Flatten and coerce to strings (guards against arrays/lists)
+    flat_vars = []
+    for v in vars_to_regress:
+        if isinstance(v, (list, tuple, np.ndarray, pd.Index)):
+            flat_vars.extend(map(str, list(v)))
+        else:
+            flat_vars.append(str(v))
+
+    vars_to_regress_for_harmony = flat_vars.copy()
     if sample_column not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append(sample_column)
 
+    # ---------- Attach metadata ----------
     if cell_meta_path is None:
-        if sample_column not in adata.obs.columns: 
+        if sample_column not in adata.obs.columns:
             adata.obs[sample_column] = adata.obs_names.str.split(':').str[0]
     else:
         cell_meta = pd.read_csv(cell_meta_path)
@@ -161,8 +173,13 @@ def preprocess_linux(
         sample_meta = pd.read_csv(sample_meta_path)
         adata.obs = adata.obs.merge(sample_meta, on=sample_column, how='left')
 
-    all_required_columns = vars_to_regress + [batch_key]
-    missing_vars = [col for col in all_required_columns if col not in adata.obs.columns]
+    # ---------- Required columns check (robust to None/unhashables) ----------
+    required = flat_vars.copy()
+    if batch_key:
+        required.append(str(batch_key))
+    # De-duplicate while preserving order
+    required = list(dict.fromkeys(required))
+    missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
     if missing_vars:
         raise KeyError(f"The following variables are missing from adata.obs: {missing_vars}")
     else:
@@ -217,10 +234,10 @@ def preprocess_linux(
         print(f'Processed shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
     if doublet:
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
+        # Run scrublet quietly and APPLY the filter
+        with contextlib.redirect_stdout(io.StringIO()):
             rsc.pp.scrublet(adata, batch_key=sample_column)
-            adata[~adata.obs['predicted_doublet']].copy()
+        adata = adata[~adata.obs['predicted_doublet']].copy()
 
     adata.raw = adata.copy()
     if verbose:

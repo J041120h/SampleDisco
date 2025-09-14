@@ -1,0 +1,73 @@
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
+
+============================================================
+RUNNING RNA PIPELINE
+============================================================
+Starting RNA wrapper function with provided parameters...
+Starting preprocessing...
+=== Reading input dataset ===
+Raw shape: 430595 cells × 36601 genes
+All required columns are present in adata.obs.
+Before GPU conversion. Type of adata.X: <class 'numpy.ndarray'>
+adata.X dtype: float64
+adata.X is sparse: False
+Converting adata.X from float64 to float32
+
+✗ RNA pipeline failed with error: std::bad_alloc: out_of_memory: CUDA error (failed to allocate 63040830384 bytes) at: /tmp/pip-build-env-rstxswsq/normal/lib/python3.10/site-packages/librmm/include/rmm/mr/device/cuda_memory_resource.hpp:62: cudaErrorMemoryAllocation out of memory
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✗
+  - cell_type_cluster: ✗
+  - dimensionality_reduction: ✗
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✗
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✗
+
+Results saved to: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing
+Status file: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/sys_log/main_process_status.json
