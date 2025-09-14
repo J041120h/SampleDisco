@@ -1510,15 +1510,117 @@ def convert_X_to_sparse_csc(filepath: str, overwrite: bool = True) -> None:
     
     print("\n✅ File has been successfully converted and saved!")
 
+def compare_gene_overlap(file1_path, file2_path, output_file=None):
+    """
+    Compare gene name overlap between two text files.
+    
+    Parameters:
+    -----------
+    file1_path : str
+        Path to the first gene names text file
+    file2_path : str
+        Path to the second gene names text file
+    output_file : str, optional
+        If provided, save overlapping genes to this file
+    
+    Returns:
+    --------
+    dict : Dictionary containing comparison results
+    """
+    try:
+        # Read gene names from first file
+        with open(file1_path, 'r') as f:
+            genes1 = set(line.strip() for line in f if line.strip())
+        
+        # Read gene names from second file
+        with open(file2_path, 'r') as f:
+            genes2 = set(line.strip() for line in f if line.strip())
+        
+        # Find overlapping genes
+        overlap = genes1.intersection(genes2)
+        
+        # Find unique genes in each file
+        unique_to_file1 = genes1 - genes2
+        unique_to_file2 = genes2 - genes1
+        
+        # Calculate statistics
+        total_unique_genes = len(genes1.union(genes2))
+        overlap_percentage = (len(overlap) / total_unique_genes) * 100 if total_unique_genes > 0 else 0
+        
+        # Print results
+        print("=" * 60)
+        print("GENE OVERLAP COMPARISON RESULTS")
+        print("=" * 60)
+        print(f"File 1: {file1_path}")
+        print(f"  - Total genes: {len(genes1)}")
+        print(f"File 2: {file2_path}")
+        print(f"  - Total genes: {len(genes2)}")
+        print("-" * 60)
+        print(f"Overlapping genes: {len(overlap)}")
+        print(f"Unique to file 1: {len(unique_to_file1)}")
+        print(f"Unique to file 2: {len(unique_to_file2)}")
+        print(f"Total unique genes: {total_unique_genes}")
+        print(f"Overlap percentage: {overlap_percentage:.2f}%")
+        print("-" * 60)
+        
+        # Show some examples of overlapping genes
+        if overlap:
+            print("Sample overlapping genes:")
+            for i, gene in enumerate(sorted(overlap)[:10], 1):
+                print(f"  {i:2d}: {gene}")
+            if len(overlap) > 10:
+                print(f"  ... and {len(overlap) - 10} more")
+        else:
+            print("No overlapping genes found!")
+        
+        # Save overlapping genes to file if requested
+        if output_file and overlap:
+            with open(output_file, 'w') as f:
+                for gene in sorted(overlap):
+                    f.write(f"{gene}\n")
+            print(f"\nOverlapping genes saved to: {output_file}")
+        
+        # Return results as dictionary
+        results = {
+            'file1_genes': len(genes1),
+            'file2_genes': len(genes2),
+            'overlapping_genes': len(overlap),
+            'unique_to_file1': len(unique_to_file1),
+            'unique_to_file2': len(unique_to_file2),
+            'total_unique_genes': total_unique_genes,
+            'overlap_percentage': overlap_percentage,
+            'overlap_list': sorted(overlap),
+            'unique_to_file1_list': sorted(unique_to_file1),
+            'unique_to_file2_list': sorted(unique_to_file2)
+        }
+        
+        return results
+        
+    except FileNotFoundError as e:
+        print(f"Error: File not found - {e}")
+        return None
+    except Exception as e:
+        print(f"Error comparing files: {e}")
+        return None
 
-# Main execution
+# Example usage:
 if __name__ == "__main__":
-    # # Replace with your actual file path
-    # filepath = "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
+    # Replace with your actual file paths
+    file1 = "/dcl01/hongkai/data/data/hjiang/result/Benchmark/unique_gene_names.txt"
+    file2 = "/dcl01/hongkai/data/data/hjiang/result/pseudobulk/unique_gene_names.txt"
     
-    # # Run the conversion (this will overwrite the original file)
-    # convert_X_to_sparse_csc(filepath, overwrite=True)
+    # Basic comparison
+    results = compare_gene_overlap(file1, file2)
     
-    # If you want to keep a backup, use:
-    # convert_X_to_sparse_csc(filepath, overwrite=False)
-    consume_memory()
+    # Save overlapping genes to a file
+    # results = compare_gene_overlap(file1, file2, output_file="overlapping_genes.txt")
+    
+    # Access specific results if needed
+    if results:
+        print(f"\nQuick summary:")
+        print(f"Overlap: {results['overlapping_genes']} genes ({results['overlap_percentage']:.1f}%)")
+        
+        # You can also access the lists:
+        # overlapping_genes = results['overlap_list']
+        # genes_only_in_file1 = results['unique_to_file1_list']
+        # genes_only_in_file2 = results['unique_to_file2_list']

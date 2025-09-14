@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result"
+output_dir: "/dcs07/hongkai/data/harry/result/all"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,7 +21,7 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_count_data_path: "/dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad"
 rna_sample_meta_path: null
 rna_output_dir: null
 
@@ -36,10 +36,10 @@ rna_sample_cluster: false
 rna_cluster_dge: false
 rna_visualize_data: false
 
-# RNA Paths for Skipping Processes (Added missing parameter)
-rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/atac_rna_integrated.h5ad"
-rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/adata_sample.h5ad"
-rna_pseudobulk_adata_path: "/dcs07/hongkai/data/harry/result/heart/multiomics/pseudobulk/pseudobulk_sample.h5ad"
+# RNA Paths for Skipping Processes
+rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/all/multiomics/preprocess/adata_sample.h5ad"
+rna_pseudobulk_adata_path: "/dcs07/hongkai/data/harry/result/all/multiomics/pseudobulk/pseudobulk_sample.h5ad"
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
@@ -77,21 +77,22 @@ rna_cell_type_annotation_custom_model_path: null
 
 # RNA Pseudobulk Parameters
 rna_celltype_col: "cell_type"
-rna_pseudobulk_output_dir: "/dcl01/hongkai/data/data/hjiang/result/paired/multiomics/pseudobulk"
+rna_pseudobulk_output_dir: "/dcs07/hongkai/data/harry/result/all/multiomics/pseudobulk"
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
 rna_n_proportion_components: 10
+rna_harmony_for_proportion: true  # ADDED: Missing harmony parameter for proportion PCA
 rna_dr_output_dir: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
 rna_trajectory_supervised: true
-rna_n_components_for_cca: 2  # Fixed parameter name
+rna_n_components_for_cca: 2
 rna_cca_output_dir: null
-rna_sev_col_cca: "sev.level"  # Added default value
+rna_sev_col_cca: "sev.level"
 rna_cca_optimal_cell_resolution: true
 rna_cca_pvalue: false
 rna_trajectory_verbose: true
@@ -161,6 +162,11 @@ atac_sample_cluster: false
 atac_cluster_dge: false
 atac_trajectory_dge: false
 
+# ATAC Paths for Skipping Processes
+atac_cell_path: null
+atac_sample_path: null
+atac_pseudobulk_adata_path: null  # ADDED: Missing pseudobulk path parameter
+
 # ATAC Column specifications
 atac_sample_col: "sample"
 atac_batch_col: null
@@ -181,7 +187,7 @@ atac_min_cells_per_sample: 500
 
 # ATAC Processing parameters
 atac_doublet: true
-atac_tfidf_scale_factor: 10000.0  # Added .0 for consistency
+atac_tfidf_scale_factor: 10000.0
 atac_num_features: 40000
 atac_n_lsi_components: 30
 atac_drop_first_lsi: true
@@ -200,10 +206,6 @@ atac_umap_spread: 1.0
 atac_umap_random_state: 42
 atac_plot_dpi: 300
 
-# ATAC Paths for skipping preprocessing
-atac_cell_path: null
-atac_sample_path: null
-
 # ATAC Pseudobulk parameters
 atac_pseudobulk_output_dir: null
 atac_pseudobulk_n_features: 40000
@@ -213,11 +215,12 @@ atac_pseudobulk_verbose: true
 atac_dr_output_dir: null
 atac_dr_n_expression_components: 30
 atac_dr_n_proportion_components: 30
+atac_harmony_for_proportion: true  # ADDED: Missing harmony parameter for proportion PCA
 atac_dr_verbose: true
 
 # ATAC Trajectory analysis parameters
 atac_trajectory_supervised: true
-atac_n_components_for_cca: 2  # Fixed parameter name
+atac_n_components_for_cca: 2
 atac_cca_output_dir: null
 atac_sev_col_cca: "sev.level"
 atac_trajectory_verbose: true
@@ -287,15 +290,15 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
 # Multiomics Required Parameters
-multiomics_rna_file: '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/placenta.h5ad'
-multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
+multiomics_rna_file: '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
+multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad"
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: true
+multiomics_run_glue: false
 multiomics_run_integrate_preprocess: false
-multiomics_run_dimensionality_reduction: false
-multiomics_run_visualize_embedding: false
+multiomics_run_dimensionality_reduction: true
+multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
@@ -370,6 +373,7 @@ multiomics_atac: false
 multiomics_pca_sample_col: "sample"
 multiomics_n_expression_pcs: 10
 multiomics_n_proportion_pcs: 10
+multiomics_harmony_for_proportion: true  # ADDED: Missing harmony parameter for proportion PCA
 multiomics_pca_output_dir: null
 multiomics_integrated_data: false
 multiomics_not_save: false

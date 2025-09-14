@@ -470,118 +470,104 @@ def run_dimension_reduction_proportion(
     verbose: bool = False
 ) -> None:
     """
-    Performs dimension reduction on cell proportion data and stores the results under the unified key
-    'X_DR_proportion' in both AnnData objects. Optionally applies Harmony integration on PCA results.
-    
-    Parameters:
-    -----------
-    adata : sc.AnnData
-        Original AnnData object
-    pseudobulk : dict
-        Dictionary containing pseudobulk data with 'cell_proportion' key
-    pseudobulk_anndata : sc.AnnData, optional
-        AnnData object with samples as observations (contains batch info in .obs)
-    sample_col : str, default 'sample'
-        Column name for sample identification
-    batch_col : str, optional
-        Column name for batch information (required if harmony_for_proportion=True)
-    harmony_for_proportion : bool, default False
-        If True, apply Harmony integration on PCA results
-    n_components : int, default 10
-        Number of PCA components to compute
-    verbose : bool, default False
-        Whether to print verbose output
+    Performs dimension reduction on cell proportion data with small dataset handling.
     """
     if "cell_proportion" not in pseudobulk:
         raise KeyError("Missing 'cell_proportion' key in pseudobulk dictionary.")
     
     proportion_df = pseudobulk["cell_proportion"].copy()
-    
-    # Normalize sample index formatting
     proportion_df.index = proportion_df.index.astype(str).str.strip().str.lower()
     proportion_df = proportion_df.fillna(0)
     
-    # Check if there are enough dimensions for dimension reduction
+    # Validate components
     n_samples, n_features = proportion_df.shape
-    max_components = min(n_samples, n_features)
+    max_components = min(n_samples - 1, n_features)  # n_samples - 1 for PCA
+    
     if n_components > max_components:
         if verbose:
-            print(f"[run_dimension_reduction_proportion] Warning: Requested n_components={n_components} exceeds maximum possible ({max_components}). Using {max_components} components.")
+            print(f"[run_dimension_reduction_proportion] Adjusting n_components from {n_components} to {max_components}")
         n_components = max_components
     
     if n_components <= 0:
-        raise ValueError(f"Cannot perform dimension reduction: insufficient data dimensions (samples={n_samples}, features={n_features}).")
+        raise ValueError(f"Insufficient data dimensions (samples={n_samples}, features={n_features})")
     
-    # Step 1: Perform PCA
+    # Check if dataset is too small for Harmony
+    MIN_SAMPLES_FOR_HARMONY = 10
+    if harmony_for_proportion and n_samples < MIN_SAMPLES_FOR_HARMONY:
+        if verbose:
+            print(f"[run_dimension_reduction_proportion] Warning: Only {n_samples} samples. "
+                  f"Skipping Harmony (requires >={MIN_SAMPLES_FOR_HARMONY} samples)")
+        harmony_for_proportion = False
+    
+    # Step 1: PCA
     if verbose:
         print(f"[run_dimension_reduction_proportion] Computing PCA with {n_components} components...")
     
+    from sklearn.decomposition import PCA
     pca = PCA(n_components=n_components)
     pca_coords = pca.fit_transform(proportion_df)
     
-    pseudobulk_anndata.obsm['X_pca_proportion'] = pca_coords
-    pseudobulk_anndata.uns['pca_proportion_variance_ratio'] = pca.explained_variance_ratio_
+    if pseudobulk_anndata is not None:
+        pseudobulk_anndata.obsm['X_pca_proportion'] = pca_coords
+        pseudobulk_anndata.uns['pca_proportion_variance_ratio'] = pca.explained_variance_ratio_
     
-    # Step 2: Apply Harmony if requested
-    if harmony_for_proportion and batch_col is not None:
+    # Step 2: Harmony (if applicable)
+    final_coords = pca_coords
+    
+    if harmony_for_proportion and batch_col and pseudobulk_anndata is not None:
         if batch_col not in pseudobulk_anndata.obs.columns:
             if verbose:
-                print(f"[run_dimension_reduction_proportion] Warning: batch column '{batch_col}' not found in pseudobulk_anndata.obs. Using PCA results without Harmony.")
-            final_coords = pca_coords
+                print(f"[run_dimension_reduction_proportion] Warning: batch column '{batch_col}' not found")
         else:
-            import harmonypy as hm
-            
-            if verbose:
-                print(f"[run_dimension_reduction_proportion] Applying Harmony integration using batch column: {batch_col}")
-            
-            # Run Harmony directly on the stored PCA coordinates
-            harmony_out = hm.run_harmony(
-                pseudobulk_anndata.obsm['X_pca_proportion'].T,  # Harmony expects features x samples
-                pseudobulk_anndata.obs,
-                batch_col,
-                max_iter_harmony=30
-            )
-            
-            # Store harmonized coordinates
-            final_coords = harmony_out.Z_corr.T  # Transpose back to samples x components
-            pseudobulk_anndata.obsm['X_DR_proportion'] = final_coords
-            
-            if verbose:
-                print(f"[run_dimension_reduction_proportion] Harmony integration completed. Output shape: {final_coords.shape}")
-    else:
-        if harmony_for_proportion and verbose:
-            print("[run_dimension_reduction_proportion] harmony_for_proportion=True but batch_col is None. Using PCA only.")
-        final_coords = pca_coords
+            try:
+                import harmonypy as hm
+                
+                if verbose:
+                    print(f"[run_dimension_reduction_proportion] Applying Harmony with batch: {batch_col}")
+                
+                # Check unique batches
+                n_batches = pseudobulk_anndata.obs[batch_col].nunique()
+                if n_batches < 2:
+                    if verbose:
+                        print(f"[run_dimension_reduction_proportion] Skipping Harmony: only {n_batches} batch(es)")
+                else:
+                    harmony_out = hm.run_harmony(
+                        pca_coords.T,
+                        pseudobulk_anndata.obs,
+                        batch_col,
+                        max_iter_harmony=30,
+                        nclust=max(2, min(n_batches, n_samples // 2))  # Ensure valid cluster number
+                    )
+                    final_coords = harmony_out.Z_corr.T
+                    
+                    if verbose:
+                        print(f"[run_dimension_reduction_proportion] Harmony completed. Shape: {final_coords.shape}")
+                        
+            except Exception as e:
+                if verbose:
+                    print(f"[run_dimension_reduction_proportion] Harmony failed: {e}. Using PCA only.")
+                final_coords = pca_coords
     
-    # Step 3: Create final DataFrame for storage in .uns
+    # Step 3: Create DataFrame
+    import pandas as pd
     final_df = pd.DataFrame(
         data=final_coords,
         index=proportion_df.index,
         columns=[f"PC{i+1}" for i in range(final_coords.shape[1])]
     )
     
-    # Step 4: Store results in both objects with unified key
-    # Store in main adata object
+    # Step 4: Store results
     adata.uns["X_DR_proportion"] = final_df
     adata.uns["X_DR_proportion_variance_ratio"] = pca.explained_variance_ratio_
     
-    # Store in pseudobulk_anndata if provided
     if pseudobulk_anndata is not None:
         pseudobulk_anndata.uns["X_DR_proportion"] = final_df
         pseudobulk_anndata.obsm["X_DR_proportion"] = final_coords
         pseudobulk_anndata.uns["X_DR_proportion_variance_ratio"] = pca.explained_variance_ratio_
-        
-        if verbose:
-            # Determine if Harmony was actually applied
-            harmony_applied = (harmony_for_proportion and batch_col is not None and 
-                             batch_col in pseudobulk_anndata.obs.columns)
-            method_used = "Harmony-integrated PCA" if harmony_applied else "PCA"
-            print(f"[run_dimension_reduction_proportion] Dimension reduction on cell proportions completed using {method_used}.")
-            print(f"Stored results as X_DR_proportion in both adata and pseudobulk_anndata with shape: {final_df.shape}")
-    else:
-        if verbose:
-            print(f"[run_dimension_reduction_proportion] Dimension reduction on cell proportions completed using PCA.")
-            print(f"Stored results in adata.uns['X_DR_proportion'] with shape: {final_df.shape}")
+    
+    if verbose:
+        method = "Harmony-integrated PCA" if (final_coords is not pca_coords) else "PCA"
+        print(f"[run_dimension_reduction_proportion] Completed using {method}. Shape: {final_df.shape}")
 
 def _save_anndata_with_detailed_error_handling(file_path, adata, object_name, verbose=False):
     """

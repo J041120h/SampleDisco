@@ -585,9 +585,9 @@ if __name__ == "__main__":
     # Example: Validate multiple methods and save to output directory
     print("Starting example validation...")
     results = validate_multiple_methods(
-        sample_distance_path='/dcs07/hongkai/data/harry/result/rna/Sample_distance',
+        sample_distance_path='/dcs07/hongkai/data/harry/result/all/rna/Sample_distance',
         methods=['cosine', 'correlation'],
-        output_dir='/dcs07/hongkai/data/harry/result/rna/validation_results',
+        output_dir='/dcs07/hongkai/data/harry/result/all/rna/validation_results',
         n_permutations=1000
     )
     

@@ -1,238 +1,29 @@
-=== CROSS-MODALITY VALIDATION SCRIPT ===
-This script validates cross-modality distances using permutation testing.
+============================================================
+GENE OVERLAP COMPARISON RESULTS
+============================================================
+File 1: /dcl01/hongkai/data/data/hjiang/result/Benchmark/unique_gene_names.txt
+  - Total genes: 2000
+File 2: /dcl01/hongkai/data/data/hjiang/result/pseudobulk/unique_gene_names.txt
+  - Total genes: 1698
+------------------------------------------------------------
+Overlapping genes: 1030
+Unique to file 1: 970
+Unique to file 2: 668
+Total unique genes: 2668
+Overlap percentage: 38.61%
+------------------------------------------------------------
+Sample overlapping genes:
+   1: ABCA1
+   2: ABCA7
+   3: ABCC3
+   4: ABI3
+   5: ABLIM1
+   6: AC004556.1
+   7: ACCS
+   8: ACP5
+   9: ACRBP
+  10: ACSL1
+  ... and 1020 more
 
-Starting example validation...
-
-=== Starting validation for 2 methods ===
-Methods: ['cosine', 'correlation']
-Sample distance path: /dcs07/hongkai/data/harry/result/rna/Sample_distance
-Output directory: /dcs07/hongkai/data/harry/result/rna/validation_results
-Permutations per test: 1000
-Random seed: 42
-
-Preparing output directory...
-Output directory ready: /dcs07/hongkai/data/harry/result/rna/validation_results
-
---- Processing method 1/2: cosine ---
-Looking for method directory: /dcs07/hongkai/data/harry/result/rna/Sample_distance/cosine
-  ✓ Method directory found
-  Creating method output directory: /dcs07/hongkai/data/harry/result/rna/validation_results/cosine
-  Starting validation for method: cosine
-
-  Validating directory: /dcs07/hongkai/data/harry/result/rna/Sample_distance/cosine
-  Output will be saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/cosine
-  Will process 2 distance types:
-    - expression_DR
-    - proportion_DR
-
- Processing expression_DR (1/2)...
-  Looking for matrix file: /dcs07/hongkai/data/harry/result/rna/Sample_distance/cosine/expression_DR_distance/distance_matrix_expression_DR.csv
-  ✓ Matrix file found
-  Starting validation for expression_DR...
-  Loading distance matrix from: /dcs07/hongkai/data/harry/result/rna/Sample_distance/cosine/expression_DR_distance/distance_matrix_expression_DR.csv
-  Matrix shape: (36, 36)
-  Checking matrix symmetry...
-  Matrix is already symmetric
-  Parsing sample names...
-    Parsing sample names and identifying modalities...
-    Found 36 total samples across modalities
-    Identified modalities: ['RNA', 'ATAC']
-  Found 18 paired samples
-  Starting permutation test...
-    Setting up permutation test...
-    Calculating observed cross-modality distances...
-    Observed mean cross-modality distance: 0.4639
-    Preparing sample lists for permutation...
-    ATAC samples: 18, RNA samples: 18
-    Running 1000 permutations...
-      25% complete (250/1000)
-      50% complete (500/1000)
-      75% complete (750/1000)
-      100% complete (1000/1000)
-    Calculating p-value from null distribution...
-    P-value: 0.0000
-  Calculating final statistics...
-  Effect size: -4.118
-  ✓ Validation complete for this matrix
-  Saving p-value plot...
-    Generating p-value visualization...
-    Plot saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/cosine/pvalue_plot_expression_DR.png
-  ✓ Completed expression_DR
-    - P-value: 0.0000
-    - Effect size: -4.118
-    - Significant: Yes
-
- Processing proportion_DR (2/2)...
-  Looking for matrix file: /dcs07/hongkai/data/harry/result/rna/Sample_distance/cosine/proportion_DR_distance/distance_matrix_proportion_DR.csv
-  ✓ Matrix file found
-  Starting validation for proportion_DR...
-  Loading distance matrix from: /dcs07/hongkai/data/harry/result/rna/Sample_distance/cosine/proportion_DR_distance/distance_matrix_proportion_DR.csv
-  Matrix shape: (36, 36)
-  Checking matrix symmetry...
-  Matrix is already symmetric
-  Parsing sample names...
-    Parsing sample names and identifying modalities...
-    Found 36 total samples across modalities
-    Identified modalities: ['RNA', 'ATAC']
-  Found 18 paired samples
-  Starting permutation test...
-    Setting up permutation test...
-    Calculating observed cross-modality distances...
-    Observed mean cross-modality distance: 0.2716
-    Preparing sample lists for permutation...
-    ATAC samples: 18, RNA samples: 18
-    Running 1000 permutations...
-      25% complete (250/1000)
-      50% complete (500/1000)
-      75% complete (750/1000)
-      100% complete (1000/1000)
-    Calculating p-value from null distribution...
-    P-value: 0.0000
-  Calculating final statistics...
-  Effect size: -7.175
-  ✓ Validation complete for this matrix
-  Saving p-value plot...
-    Generating p-value visualization...
-    Plot saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/cosine/pvalue_plot_proportion_DR.png
-  ✓ Completed proportion_DR
-    - P-value: 0.0000
-    - Effect size: -7.175
-    - Significant: Yes
-
-  Directory summary: 2/2 distance types processed
- Saving validation summary...
-  Summary saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/cosine/validation_summary.csv
-  ✓ Completed method: cosine
-  Summary: 2/2 distance types processed successfully
-
---- Processing method 2/2: correlation ---
-Looking for method directory: /dcs07/hongkai/data/harry/result/rna/Sample_distance/correlation
-  ✓ Method directory found
-  Creating method output directory: /dcs07/hongkai/data/harry/result/rna/validation_results/correlation
-  Starting validation for method: correlation
-
-  Validating directory: /dcs07/hongkai/data/harry/result/rna/Sample_distance/correlation
-  Output will be saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/correlation
-  Will process 2 distance types:
-    - expression_DR
-    - proportion_DR
-
- Processing expression_DR (1/2)...
-  Looking for matrix file: /dcs07/hongkai/data/harry/result/rna/Sample_distance/correlation/expression_DR_distance/distance_matrix_expression_DR.csv
-  ✓ Matrix file found
-  Starting validation for expression_DR...
-  Loading distance matrix from: /dcs07/hongkai/data/harry/result/rna/Sample_distance/correlation/expression_DR_distance/distance_matrix_expression_DR.csv
-  Matrix shape: (36, 36)
-  Checking matrix symmetry...
-  Matrix is already symmetric
-  Parsing sample names...
-    Parsing sample names and identifying modalities...
-    Found 36 total samples across modalities
-    Identified modalities: ['RNA', 'ATAC']
-  Found 18 paired samples
-  Starting permutation test...
-    Setting up permutation test...
-    Calculating observed cross-modality distances...
-    Observed mean cross-modality distance: 0.4722
-    Preparing sample lists for permutation...
-    ATAC samples: 18, RNA samples: 18
-    Running 1000 permutations...
-      25% complete (250/1000)
-      50% complete (500/1000)
-      75% complete (750/1000)
-      100% complete (1000/1000)
-    Calculating p-value from null distribution...
-    P-value: 0.0000
-  Calculating final statistics...
-  Effect size: -3.843
-  ✓ Validation complete for this matrix
-  Saving p-value plot...
-    Generating p-value visualization...
-    Plot saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/correlation/pvalue_plot_expression_DR.png
-  ✓ Completed expression_DR
-    - P-value: 0.0000
-    - Effect size: -3.843
-    - Significant: Yes
-
- Processing proportion_DR (2/2)...
-  Looking for matrix file: /dcs07/hongkai/data/harry/result/rna/Sample_distance/correlation/proportion_DR_distance/distance_matrix_proportion_DR.csv
-  ✓ Matrix file found
-  Starting validation for proportion_DR...
-  Loading distance matrix from: /dcs07/hongkai/data/harry/result/rna/Sample_distance/correlation/proportion_DR_distance/distance_matrix_proportion_DR.csv
-  Matrix shape: (36, 36)
-  Checking matrix symmetry...
-  Matrix is already symmetric
-  Parsing sample names...
-    Parsing sample names and identifying modalities...
-    Found 36 total samples across modalities
-    Identified modalities: ['RNA', 'ATAC']
-  Found 18 paired samples
-  Starting permutation test...
-    Setting up permutation test...
-    Calculating observed cross-modality distances...
-    Observed mean cross-modality distance: 0.2107
-    Preparing sample lists for permutation...
-    ATAC samples: 18, RNA samples: 18
-    Running 1000 permutations...
-      25% complete (250/1000)
-      50% complete (500/1000)
-      75% complete (750/1000)
-      100% complete (1000/1000)
-    Calculating p-value from null distribution...
-    P-value: 0.0000
-  Calculating final statistics...
-  Effect size: -7.607
-  ✓ Validation complete for this matrix
-  Saving p-value plot...
-    Generating p-value visualization...
-    Plot saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/correlation/pvalue_plot_proportion_DR.png
-  ✓ Completed proportion_DR
-    - P-value: 0.0000
-    - Effect size: -7.607
-    - Significant: Yes
-
-  Directory summary: 2/2 distance types processed
- Saving validation summary...
-  Summary saved to: /dcs07/hongkai/data/harry/result/rna/validation_results/correlation/validation_summary.csv
-  ✓ Completed method: correlation
-  Summary: 2/2 distance types processed successfully
-
---- Method processing complete ---
-Overall: 4/4 validations completed successfully
-
---- Creating comprehensive comparison ---
- Compiling results across all methods...
- Processing results from each method...
-   Processing method: cosine
-     Adding expression_DR results
-     Adding proportion_DR results
-   Processing method: correlation
-     Adding expression_DR results
-     Adding proportion_DR results
- ✓ Found 4 valid results for comparison
- Creating comprehensive comparison table...
- ✓ Comprehensive comparison saved: /dcs07/hongkai/data/harry/result/rna/validation_results/all_methods_comparison.csv
- Creating comprehensive plots...
-   Setting up comprehensive visualization...
-   Creating 4-panel comparison plot...
-     Panel 1: P-value heatmap...
-     Panel 2: Effect size heatmap...
-     Panel 3: Method comparison bar plot...
-     Panel 4: Volcano plot...
-   Saving comprehensive plot...
-   ✓ Comprehensive plots saved: /dcs07/hongkai/data/harry/result/rna/validation_results/comprehensive_comparison_plots.png
- Generating statistical summary...
- Saving statistical summary...
- ✓ Statistical summary saved: /dcs07/hongkai/data/harry/result/rna/validation_results/statistical_summary.txt
-
- ✓ Best performing combination:
-   Method: correlation
-   DR Type: expression_DR
-   Effect size: -3.843
-   P-value: 0.0000
- ✓ Significant results: 4/4
-
-=== Validation complete! Results saved to: /dcs07/hongkai/data/harry/result/rna/validation_results ===
-
-=== VALIDATION SCRIPT COMPLETE ===
-Check the output directory for detailed results and visualizations.
+Quick summary:
+Overlap: 1030 genes (38.6%)
