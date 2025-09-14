@@ -1,13 +1,7 @@
-Loading AnnData from /dcl01/hongkai/data/data/hjiang/Data/count_data.h5ad
-Loaded data: 898489 cells × 14881 genes
-Samples: 405
-Loading HVG list from /dcl01/hongkai/data/data/hjiang/result/pseudobulk/unique_gene_names.txt
-Found 1698 genes in HVG file
-Keeping 1698 HVG genes out of 1698 requested
+Loading AnnData from /dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
+Loaded data: 430595 cells × 3576085 genes
+Samples: 44
 Using GPU: NVIDIA L40S
 
-Creating naive pseudobulk for 405 samples
-  Processing sample 1/405
-  Processing sample 11/405
-  Processing sample 21/405
-  Processing sample 31/405
+Creating naive pseudobulk for 44 samples
+  Processing sample 1/44

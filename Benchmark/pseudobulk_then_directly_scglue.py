@@ -224,8 +224,8 @@ def compute_naive_pseudobulk(
 if __name__ == "__main__":
     # Example call without HVG filtering
     pseudobulk = compute_naive_pseudobulk(
-        adata_path="/path/to/your/data.h5ad",
-        output_dir="/path/to/output/",
+        adata_path="/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad",
+        output_dir="/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing",
         sample_col='sample',
         use_gpu=True,
         verbose=True
