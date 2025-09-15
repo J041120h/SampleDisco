@@ -153,10 +153,11 @@ def glue_preprocess_pipeline(
     atac_file: str,
     rna_sample_meta_file: Optional[str] = None,
     atac_sample_meta_file: Optional[str] = None,
+    additional_hvg_file: Optional[str] = None,
     ensembl_release: int = 98,
     species: str = "homo_sapiens",
     output_dir: str = "./",
-    use_highly_variable: bool = True,  # NEW PARAMETER
+    use_highly_variable: bool = True,
     n_top_genes: int = 2000,
     n_pca_comps: int = 100,
     n_lsi_comps: int = 100,
@@ -183,6 +184,10 @@ def glue_preprocess_pipeline(
         Path to RNA sample metadata CSV
     atac_sample_meta_file : str, optional
         Path to ATAC sample metadata CSV
+    additional_hvg_file : str, optional
+        Path to txt file containing additional genes to be considered during multiomics integration.
+        Each line should contain one gene name. These genes will be marked as HVG in addition
+        to the ones selected by scanpy.
     ensembl_release : int
         Ensembl database release version
     species : str
@@ -226,6 +231,7 @@ def glue_preprocess_pipeline(
     import scglue
     import pyensembl
     import networkx as nx
+    import numpy as np
     from pathlib import Path
     from typing import Optional, Tuple
     
@@ -315,6 +321,37 @@ def glue_preprocess_pipeline(
     if use_highly_variable:
         print(f"   Selecting {n_top_genes} highly variable genes")
         sc.pp.highly_variable_genes(rna, n_top_genes=n_top_genes, flavor=flavor)
+        
+        # Load and process additional HVG genes if provided
+        if additional_hvg_file:
+            print(f"\n📝 Processing additional HVG genes from: {additional_hvg_file}")
+            
+            try:
+                # Read the additional genes from file
+                with open(additional_hvg_file, 'r') as f:
+                    additional_genes = [line.strip() for line in f if line.strip()]
+                
+                print(f"   Found {len(additional_genes)} genes in additional HVG file")
+                
+                # Find which genes are present in the RNA data
+                genes_in_data = [gene for gene in additional_genes if gene in rna.var_names]
+                genes_not_found = [gene for gene in additional_genes if gene not in rna.var_names]
+                
+                # Simply mark all found genes as HVG (whether already HVG or not)
+                for gene in genes_in_data:
+                    gene_idx = rna.var_names.get_loc(gene)
+                    rna.var.iloc[gene_idx, rna.var.columns.get_loc('highly_variable')] = True
+                
+                print(f"   Statistics for additional HVG genes:")
+                print(f"     - Genes found and marked as HVG: {len(genes_in_data)}/{len(additional_genes)}")
+                
+                if genes_not_found:
+                    print(f"     - Genes not found in RNA data: {len(genes_not_found)}")
+
+            except Exception as e:
+                print(f"   ⚠️ Error reading additional HVG file: {e}")
+                print(f"   Continuing with scanpy-selected HVG only")
+        
     else:
         print(f"   Using all {rna.n_vars} genes")
         # Mark all genes as highly variable for compatibility
@@ -323,6 +360,10 @@ def glue_preprocess_pipeline(
         rna.var['means'] = np.array(rna.X.mean(axis=0)).flatten()
         rna.var['dispersions'] = np.array(rna.X.var(axis=0)).flatten()
         rna.var['dispersions_norm'] = rna.var['dispersions'] / rna.var['means']
+        
+        # Note: When use_highly_variable=False, additional_hvg_file is ignored
+        if additional_hvg_file:
+            print(f"   Note: additional_hvg_file is ignored when use_highly_variable=False")
     
     print(f"   Computing {n_pca_comps} PCA components")
     sc.pp.normalize_total(rna)
@@ -1245,6 +1286,7 @@ def glue(
     atac_file: str,
     rna_sample_meta_file: Optional[str] = None,
     atac_sample_meta_file: Optional[str] = None,
+    additional_hvg_file: Optional[str] = None,
     
     # Process control flags
     run_preprocessing: bool = True,
@@ -1320,6 +1362,7 @@ def glue(
             atac_file=atac_file,
             rna_sample_meta_file=rna_sample_meta_file,
             atac_sample_meta_file=atac_sample_meta_file,
+            additional_hvg_file = additional_hvg_file,
             ensembl_release=ensembl_release,
             species=species,
             output_dir=glue_output_dir,

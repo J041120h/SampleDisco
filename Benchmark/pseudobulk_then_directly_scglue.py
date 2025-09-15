@@ -524,8 +524,9 @@ def compute_naive_pseudobulk_memory_efficient(
 
 if __name__ == "__main__":
     pseudobulk = compute_naive_pseudobulk(
-        adata_path="/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad",
+        adata_path="/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad",
         output_dir="/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing",
+        hvg_file_path="/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt",
         sample_col='sample',
         use_gpu=True,
         sample_batch_size=1,

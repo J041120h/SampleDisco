@@ -34,6 +34,7 @@ def multiomics_wrapper(
     # ===== Basic Parameters =====
     rna_sample_meta_file=None,
     atac_sample_meta_file=None,
+    additional_hvg_file = None,
     rna_sample_column="sample",
     atac_sample_column="sample",
     sample_column='sample',
@@ -293,6 +294,7 @@ def multiomics_wrapper(
             atac_file=atac_file,
             rna_sample_meta_file=rna_sample_meta_file,
             atac_sample_meta_file=atac_sample_meta_file,
+            additional_hvg_file = additional_hvg_file,
             
             # Process control flags for GLUE sub-steps
             run_preprocessing=run_glue_preprocessing,

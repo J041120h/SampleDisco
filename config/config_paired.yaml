@@ -311,6 +311,7 @@ multiomics_run_glue_visualization: true
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null
 multiomics_atac_sample_meta_file: null
+multiomics_additional_hvg_file : null
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"

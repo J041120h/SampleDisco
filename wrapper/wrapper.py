@@ -305,6 +305,7 @@ def wrapper(
     # Basic Parameters
     multiomics_rna_sample_meta_file: Optional[str] = None,
     multiomics_atac_sample_meta_file: Optional[str] = None,
+    multiomics_additional_hvg_file : Optional[str] = None,
     multiomics_rna_sample_column: str = "sample",
     multiomics_atac_sample_column: str = "sample",
     multiomics_sample_column: str = 'sample',
@@ -974,6 +975,7 @@ def wrapper(
                 # ===== Basic Parameters =====
                 rna_sample_meta_file=multiomics_rna_sample_meta_file,
                 atac_sample_meta_file=multiomics_atac_sample_meta_file,
+                additional_hvg_file = multiomics_additional_hvg_file,
                 rna_sample_column=multiomics_rna_sample_column,
                 atac_sample_column=multiomics_atac_sample_column,
                 sample_column=multiomics_sample_column,
