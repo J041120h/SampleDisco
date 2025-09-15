@@ -596,7 +596,7 @@ def wrapper(
     if rna_grouping_columns is None:
         rna_grouping_columns = ['sev.level']
     if rna_batch_col is None:
-        rna_batch_col = []
+        rna_batch_col = None
     if rna_trajectory_visualization_label is None:
         rna_trajectory_visualization_label = ['sev.level']
     if rna_tree_building_method is None:

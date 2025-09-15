@@ -95,24 +95,6 @@ def anndata_sample(
     sc.pp.log1p(adata_sample_diff)
     sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
 
-    # # Step B2: Harmony on 'batch'
-    if verbose:
-        print('=== Begin Harmony ===')
-    
-    if batch_key not in adata_sample_diff.obs.columns:
-        raise KeyError(f"Batch key '{batch_key}' not found in adata_sample_diff.obs. Please ensure it is present.")
-    Z = harmonize(
-        adata_sample_diff.obsm['X_pca'],
-        adata_sample_diff.obs,
-        batch_key = [batch_key],
-        max_iter_harmony=num_harmony,
-        use_gpu = True
-    )
-    adata_sample_diff.obsm['X_pca_harmony'] = Z
-
-    # Step B3: Neighbors + UMAP using Harmony embedding
-    sc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_pcs=num_PCs, n_neighbors=15, metric='cosine')
-    sc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
     adata_sample_diff.X = adata_sample_diff.layers["counts"].copy() # Restore original counts as we will normalize later after pseudobulk
     del adata_sample_diff.layers["counts"]
     # Write out final

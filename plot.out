@@ -1,0 +1,149 @@
+Loading AnnData from /dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
+Loaded data: 430595 cells × 3576085 genes
+Samples: 44
+Using GPU: NVIDIA L40S
+GPU Memory - Total: 44.43 GB, Free: 44.43 GB
+Warning: Requested batch size would need 66.61 GB, reducing to 2000
+
+Creating naive pseudobulk for 44 samples
+Sample batch size: 1
+Cell batch size: 2000
+
+Processing batch 1/44 (samples 1-1)
+      Sample has 4666 cells, processing in 3 chunks
+
+Processing batch 2/44 (samples 2-2)
+      Sample has 7028 cells, processing in 4 chunks
+
+Processing batch 3/44 (samples 3-3)
+      Sample has 14869 cells, processing in 8 chunks
+
+Processing batch 4/44 (samples 4-4)
+      Sample has 11751 cells, processing in 6 chunks
+
+Processing batch 5/44 (samples 5-5)
+      Sample has 9189 cells, processing in 5 chunks
+
+Processing batch 6/44 (samples 6-6)
+      Sample has 7073 cells, processing in 4 chunks
+
+Processing batch 7/44 (samples 7-7)
+      Sample has 10706 cells, processing in 6 chunks
+
+Processing batch 8/44 (samples 8-8)
+      Sample has 16151 cells, processing in 9 chunks
+
+Processing batch 9/44 (samples 9-9)
+      Sample has 6415 cells, processing in 4 chunks
+
+Processing batch 10/44 (samples 10-10)
+      Sample has 6296 cells, processing in 4 chunks
+
+Processing batch 11/44 (samples 11-11)
+      Sample has 15759 cells, processing in 8 chunks
+
+Processing batch 12/44 (samples 12-12)
+      Sample has 6885 cells, processing in 4 chunks
+
+Processing batch 13/44 (samples 13-13)
+      Sample has 8095 cells, processing in 5 chunks
+
+Processing batch 14/44 (samples 14-14)
+      Sample has 5930 cells, processing in 3 chunks
+
+Processing batch 15/44 (samples 15-15)
+      Sample has 11765 cells, processing in 6 chunks
+
+Processing batch 16/44 (samples 16-16)
+      Sample has 6340 cells, processing in 4 chunks
+
+Processing batch 17/44 (samples 17-17)
+      Sample has 8889 cells, processing in 5 chunks
+
+Processing batch 18/44 (samples 18-18)
+      Sample has 11834 cells, processing in 6 chunks
+
+Processing batch 19/44 (samples 19-19)
+      Sample has 12999 cells, processing in 7 chunks
+
+Processing batch 20/44 (samples 20-20)
+      Sample has 14790 cells, processing in 8 chunks
+
+Processing batch 21/44 (samples 21-21)
+      Sample has 8745 cells, processing in 5 chunks
+
+Processing batch 22/44 (samples 22-22)
+      Sample has 9699 cells, processing in 5 chunks
+
+Processing batch 23/44 (samples 23-23)
+      Sample has 6701 cells, processing in 4 chunks
+
+Processing batch 24/44 (samples 24-24)
+      Sample has 17817 cells, processing in 9 chunks
+
+Processing batch 25/44 (samples 25-25)
+      Sample has 7218 cells, processing in 4 chunks
+
+Processing batch 26/44 (samples 26-26)
+      Sample has 9729 cells, processing in 5 chunks
+
+Processing batch 27/44 (samples 27-27)
+      Sample has 16452 cells, processing in 9 chunks
+
+Processing batch 28/44 (samples 28-28)
+      Sample has 5354 cells, processing in 3 chunks
+
+Processing batch 29/44 (samples 29-29)
+      Sample has 13247 cells, processing in 7 chunks
+
+Processing batch 30/44 (samples 30-30)
+      Sample has 5517 cells, processing in 3 chunks
+
+Processing batch 31/44 (samples 31-31)
+      Sample has 9307 cells, processing in 5 chunks
+
+Processing batch 32/44 (samples 32-32)
+      Sample has 8453 cells, processing in 5 chunks
+
+Processing batch 33/44 (samples 33-33)
+      Sample has 6686 cells, processing in 4 chunks
+
+Processing batch 34/44 (samples 34-34)
+      Sample has 7569 cells, processing in 4 chunks
+
+Processing batch 35/44 (samples 35-35)
+      Sample has 12075 cells, processing in 7 chunks
+
+Processing batch 36/44 (samples 36-36)
+      Sample has 5644 cells, processing in 3 chunks
+
+Processing batch 37/44 (samples 37-37)
+      Sample has 11022 cells, processing in 6 chunks
+
+Processing batch 38/44 (samples 38-38)
+      Sample has 9006 cells, processing in 5 chunks
+
+Processing batch 39/44 (samples 39-39)
+      Sample has 11530 cells, processing in 6 chunks
+
+Processing batch 40/44 (samples 40-40)
+      Sample has 9212 cells, processing in 5 chunks
+
+Processing batch 41/44 (samples 41-41)
+      Sample has 12465 cells, processing in 7 chunks
+
+Processing batch 42/44 (samples 42-42)
+      Sample has 6791 cells, processing in 4 chunks
+
+Processing batch 43/44 (samples 43-43)
+      Sample has 11510 cells, processing in 6 chunks
+
+Processing batch 44/44 (samples 44-44)
+      Sample has 11416 cells, processing in 6 chunks
+
+Pseudobulk shape: (44, 3576085)
+Cell counts per sample: min=4666, max=17817, mean=9786.2
+
+Saved naive pseudobulk to /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/naive_pseudobulk.h5ad
+
+Total runtime: 3188.98 seconds

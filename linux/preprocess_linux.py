@@ -79,23 +79,6 @@ def anndata_sample(
     rsc.pp.log1p(adata_sample_diff)
     rsc.pp.pca(adata_sample_diff, n_comps=num_PCs)
 
-    if verbose:
-        print('=== [GPU] Begin Harmony ===')
-
-    # Harmony batch correction on GPU
-    Z = harmonize(
-        adata_sample_diff.obsm['X_pca'],
-        adata_sample_diff.obs,
-        batch_key=[batch_key],
-        max_iter_harmony=num_harmony,
-        use_gpu=True
-    )
-    adata_sample_diff.obsm['X_pca_harmony'] = Z
-
-    # Neighbors and UMAP using Harmony representation
-    rsc.pp.neighbors(adata_sample_diff, use_rep='X_pca_harmony', n_neighbors=15, metric='cosine')
-    rsc.tl.umap(adata_sample_diff, min_dist=0.3, spread=1.0)
-
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_sample_diff)
     adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
