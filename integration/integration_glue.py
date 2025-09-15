@@ -543,6 +543,7 @@ def glue_preprocess_pipeline(
 
 def glue_train(preprocess_output_dir, output_dir="glue_output", 
                save_prefix="glue", consistency_threshold=0.05,
+               treat_sample_as_sample=True,
                use_highly_variable=True):
     """
     Train SCGLUE model for single-cell multi-omics integration.
@@ -593,14 +594,24 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     
     # 2. Configure datasets with negative binomial distribution
     print("\n\n\n⚙️ Configuring datasets...\n\n\n")
-    scglue.models.configure_dataset(
-        rna, "NB", use_highly_variable=use_highly_variable, 
-        use_layer="counts", use_rep="X_pca", use_batch='sample'
-    )
-    scglue.models.configure_dataset(
-        atac, "NB", use_highly_variable=use_highly_variable, 
-        use_rep="X_lsi", use_batch='sample'
-    )
+    if treat_sample_as_sample:
+        scglue.models.configure_dataset(
+            rna, "NB", use_highly_variable=use_highly_variable, 
+            use_layer="counts", use_rep="X_pca", use_batch='sample'
+        )
+        scglue.models.configure_dataset(
+            atac, "NB", use_highly_variable=use_highly_variable, 
+            use_rep="X_lsi", use_batch='sample'
+        )
+    else:
+        scglue.models.configure_dataset(
+            rna, "NB", use_highly_variable=use_highly_variable, 
+            use_layer="counts", use_rep="X_pca"
+        )
+        scglue.models.configure_dataset(
+            atac, "NB", use_highly_variable=use_highly_variable, 
+            use_rep="X_lsi"
+        )
     
     # 3. Extract subgraph based on feature selection strategy
     if use_highly_variable:

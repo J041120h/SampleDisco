@@ -3,8 +3,8 @@ Resuming process from previous progress:
 {
     "rna": {
         "preprocessing": true,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
         "sample_distance_calculation": false,
         "trajectory_analysis": false,
         "trajectory_dge": false,
@@ -42,278 +42,38 @@ Resuming process from previous progress:
 }
 
 ============================================================
-RUNNING RNA PIPELINE
+RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting RNA wrapper function with provided parameters...
-Starting preprocessing...
-=== Reading input dataset ===
-Raw shape: 430595 cells × 36601 genes
-All required columns are present in adata.obs.
-Before GPU conversion. Type of adata.X: <class 'scipy.sparse._csr.csr_matrix'>
-adata.X dtype: float64
-adata.X is sparse: True
-Converting adata.X from float64 to float32
-Converted to GPU. Type of adata.X: <class 'cupyx.scipy.sparse._csr.csr_matrix'>
-filtered out 11690 genes that are detected in less than 500 cells
-filtered out 14930 cells that have less than 500 genes expressed
-After initial filtering: 415665 cells × 24911 genes
-After mitochondrial filtering: 415665 cells × 24911 genes
-After gene exclusion filtering: 415665 cells × 24898 genes
-After sample filtering: 415665 cells × 24898 genes
-Number of samples remaining: 44
-filtered out 7561 genes that are detected in less than 4156 cells
-After final gene filtering: 415665 cells × 17337 genes
-Processed shape: 415665 cells × 17337 genes
-Preprocessing complete!
-=== [GPU] Processing data for clustering ===
-=== [GPU] Running Harmony integration ===
-Variables to regress: sample
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-	Completed 9 / 30 iteration(s).
-	Completed 10 / 30 iteration(s).
-	Completed 11 / 30 iteration(s).
-Reach convergence after 11 iteration(s).
-End of harmony for adata_cluster.
-=== [GPU] Processing data for sample differences ===
-Total runtime: 565.58 seconds
-Starting cell type clustering...
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.6)...
-[cell_types] Found 29 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Total runtime: 12.74 seconds
-[safe_h5ad_write] Preparing to save to: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 4 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/preprocess/adata_sample.h5ad
-Starting dimensionality reduction...
-Using PyTorch with GPU: NVIDIA L40S
-Initial GPU memory: 0.01/0.02 GB allocated/reserved
-Processing 29 cell types across 44 samples
-Creating layer for 1
-Creating layer for 10
-Creating layer for 11
-Creating layer for 12
-Creating layer for 13
-Creating layer for 14
-Creating layer for 15
-Creating layer for 16
-Creating layer for 17
-Creating layer for 18
-Creating layer for 19
-Creating layer for 2
-Creating layer for 20
-Creating layer for 21
-Creating layer for 22
-Creating layer for 23
-Creating layer for 24
-Creating layer for 25
-Creating layer for 26
-Creating layer for 27
-Creating layer for 28
-Creating layer for 29
-Creating layer for 3
-Creating layer for 4
-Creating layer for 5
-Creating layer for 6
-Creating layer for 7
-Creating layer for 8
-Creating layer for 9
+Starting multi-modal pipeline with output directory: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/multiomics
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
+Step 1: Running GLUE integration...
+  Sub-steps: Preprocessing=True, Training=True, Gene Activity=False, Cell Types=False, Visualization=False
+Running preprocessing...
 
-Processing cell type: 1
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
+🚀 Starting GLUE preprocessing pipeline...
 
-Processing cell type: 10
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
+   Feature selection mode: All Features
 
-Processing cell type: 11
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
+📊 Loading data files...
+   RNA: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna_pseudobulk.h5ad
+   ATAC: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/atac_pseudobulk.h5ad
+✅ Data loaded successfully
+   RNA shape: (44, 1624)
+   ATAC shape: (44, 3575859)
 
-Processing cell type: 12
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
+📋 Standardizing existing sample columns...
+✅ Sample column standardization complete
 
-Processing cell type: 13
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
+🧬 Setting up Ensembl annotation...
+   Release: 98
+   Species: homo_sapiens
+✅ Ensembl annotation ready
 
-Processing cell type: 14
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
+🧬 Preprocessing scRNA-seq data...
+   Using all 1624 genes
+   Computing 10 PCA components
+✅ RNA preprocessing complete
 
-Processing cell type: 15
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 16
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 17
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 18
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 19
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 2
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 20
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 21
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 22
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 23
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 24
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 25
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 26
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 27
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 28
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 29
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 3
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 4
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 5
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 6
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 7
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 8
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 9
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Concatenating all cell type HVGs into single AnnData
-Applying final HVG selection on 58000 concatenated genes
-Final HVG selection: 2000 genes
-
-Creating final HVG expression matrix
-
-Total runtime: 13.65 seconds
-Final HVG matrix shape: (29, 44)
-Final AnnData shape: (44, 2000)
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - count_output_dir: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/preprocess
-  - pseudobulk_output_dir: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(44, 2000), proportion=(44, 29)
-[DimRed] Computing PCA for RNA data with 10 components on (44, 2000) data
-[PCA] Success. Shape: (44, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (44, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (44, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Computing PCA with 10 components...
-[run_dimension_reduction_proportion] Warning: batch column 'batch' not found
-[run_dimension_reduction_proportion] Completed using PCA. Shape: (44, 10)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file paths:
-  - adata: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/preprocess/adata_sample.h5ad
-  - pseudobulk_anndata: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving adata to: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/preprocess/adata_sample.h5ad
-[Save] ✓ Successfully saved adata (3306.3 MB)
-[Save] Saving pseudobulk_anndata to: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (0.4 MB)
-[process_anndata_with_dimension_reduction] ✓ All files saved successfully
-
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 197.29 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ✓ ATTEMPTED
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
-
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✗
-  - trajectory_analysis: ✗
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✗
-
-Results saved to: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing
-Status file: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/sys_log/main_process_status.json
+🏔️ Preprocessing scATAC-seq data...
+   Using all 3575859 peaks
+   Computing 50 LSI components (15 iterations)

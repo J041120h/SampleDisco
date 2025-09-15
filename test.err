@@ -1,15 +1,15 @@
-2025-09-14 19:43:21.167467: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-09-14 23:27:54.426398: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1757893401.179612 1587217 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1757893401.183344 1587217 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1757893401.194378 1587217 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757893401.194393 1587217 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757893401.194396 1587217 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1757893401.194398 1587217 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-09-14 19:43:21.197439: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1757906874.439095 1857242 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1757906874.442975 1857242 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1757906874.455334 1857242 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757906874.455348 1857242 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757906874.455351 1857242 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757906874.455353 1857242 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-14 23:27:54.458496: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-... storing 'tissue' as categorical
-... storing 'sample' as categorical
-... storing 'tissue' as categorical
-2025-09-14 19:53:03 - INFO - init
-... storing 'tissue' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+2025-09-14 23:28:14 - INFO - Loaded sequence dictionary from /users/hjiang/.cache/pyensembl/GRCh38/ensembl98/Homo_sapiens.GRCh38.cdna.all.fa.gz.pickle
+2025-09-14 23:28:14 - INFO - Loaded sequence dictionary from /users/hjiang/.cache/pyensembl/GRCh38/ensembl98/Homo_sapiens.GRCh38.ncrna.fa.gz.pickle
+2025-09-14 23:28:14 - INFO - Loaded sequence dictionary from /users/hjiang/.cache/pyensembl/GRCh38/ensembl98/Homo_sapiens.GRCh38.pep.all.fa.gz.pickle

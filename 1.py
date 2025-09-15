@@ -1485,6 +1485,76 @@ def compare_gene_overlap(file1_path, file2_path, output_file=None):
         print(f"Error comparing files: {e}")
         return None
 
+import numpy as np
+import scipy.sparse as sp
+import scanpy as sc
+
+def clean_and_save_atac(atac_path: str, output_path: str = None):
+    """
+    Clean an ATAC AnnData object for LSI preprocessing and save it.
+
+    Steps:
+      1. Drop cells/peaks with zero counts.
+      2. Replace NaN/Inf with 0.
+      3. Clip negative values to 0.
+      4. Save back to the same path (or new output_path if given).
+
+    Parameters
+    ----------
+    atac_path : str
+        Path to the input ATAC AnnData file (.h5ad).
+    output_path : str, optional
+        Path to save the cleaned file. If None, overwrites atac_path.
+
+    Returns
+    -------
+    adata : sc.AnnData
+        Cleaned AnnData object.
+    """
+    adata = sc.read_h5ad(atac_path)
+    X = adata.X
+
+    # 1) Drop all-zero cells/peaks
+    if sp.issparse(X):
+        cell_sums = np.asarray(X.sum(axis=1)).ravel()
+        peak_sums = np.asarray(X.sum(axis=0)).ravel()
+    else:
+        cell_sums = X.sum(axis=1)
+        peak_sums = X.sum(axis=0)
+
+    keep_cells = cell_sums > 0
+    keep_peaks = peak_sums > 0
+    if (~keep_cells).any() or (~keep_peaks).any():
+        adata._inplace_subset_obs(keep_cells)
+        adata._inplace_subset_var(keep_peaks)
+        X = adata.X
+
+    # 2) Replace NaN/Inf with 0
+    if sp.issparse(X):
+        data = X.data
+        bad = ~np.isfinite(data)
+        if bad.any():
+            data[bad] = 0.0
+            X.data = data
+            X.eliminate_zeros()
+        adata.X = X
+    else:
+        X = np.asarray(X, dtype=float)
+        X[~np.isfinite(X)] = 0.0
+        adata.X = X
+
+    # 3) Clip negatives
+    if sp.issparse(adata.X):
+        adata.X.data = np.clip(adata.X.data, 0, None)
+    else:
+        np.clip(adata.X, 0, None, out=adata.X)
+
+    # 4) Save
+    save_path = output_path if output_path else atac_path
+    adata.write_h5ad(save_path)
+    print('finish clean')
+    return adata
+
 # Example usage:
 if __name__ == "__main__":
-    consume_memory()
+    clean_and_save_atac('/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/atac_pseudobulk.h5ad')
