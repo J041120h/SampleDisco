@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -289,28 +289,28 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
 # Multiomics Required Parameters
-multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna_pseudobulk.h5ad"
-multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/atac_pseudobulk.h5ad"
+multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad"
+multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad"
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
 multiomics_run_glue: true
-multiomics_run_integrate_preprocess: false
-multiomics_run_dimensionality_reduction: false
-multiomics_run_visualize_embedding: false
+multiomics_run_integrate_preprocess: true
+multiomics_run_dimensionality_reduction: true
+multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: true
 multiomics_run_glue_training: true
-multiomics_run_glue_gene_activity: false
-multiomics_run_glue_cell_types: false
-multiomics_run_glue_visualization: false
+multiomics_run_glue_gene_activity: true
+multiomics_run_glue_cell_types: true
+multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null
 multiomics_atac_sample_meta_file: null
-multiomics_additional_hvg_file : null
+multiomics_additional_hvg_file : '/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt'
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"
@@ -336,6 +336,7 @@ multiomics_generate_umap: false
 multiomics_compression: "gzip"
 multiomics_metadata_sep: ","
 multiomics_consistency_threshold: 0.05
+treat_sample_as_batch: False
 multiomics_save_prefix: "glue"
 multiomics_k_neighbors: 10
 multiomics_use_rep: "X_glue"

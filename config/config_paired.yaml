@@ -337,6 +337,7 @@ multiomics_generate_umap: false
 multiomics_compression: "gzip"
 multiomics_metadata_sep: ","
 multiomics_consistency_threshold: 0.05
+treat_sample_as_batch: True
 multiomics_save_prefix: "glue"
 multiomics_k_neighbors: 10
 multiomics_use_rep: "X_glue"

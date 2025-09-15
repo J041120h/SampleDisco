@@ -333,6 +333,7 @@ def wrapper(
     
     # GLUE training parameters
     multiomics_consistency_threshold: float = 0.05,
+    treat_sample_as_batch: bool = True,
     multiomics_save_prefix: str = "glue",
     
     # GLUE gene activity parameters
@@ -1004,6 +1005,7 @@ def wrapper(
                 
                 # ===== GLUE training parameters =====
                 consistency_threshold=multiomics_consistency_threshold,
+                treat_sample_as_batch = treat_sample_as_batch,
                 save_prefix=multiomics_save_prefix,
                 
                 # ===== GLUE gene activity parameters =====

@@ -1554,7 +1554,160 @@ def clean_and_save_atac(atac_path: str, output_path: str = None):
     adata.write_h5ad(save_path)
     print('finish clean')
     return adata
+#!/usr/bin/env python3
+"""
+Compare observation names between two h5ad files.
 
-# Example usage:
+This script loads two h5ad files and compares how many observation names
+(typically cell barcodes) are shared between them.
+"""
+
+import argparse
+import sys
+from pathlib import Path
+try:
+    import anndata as ad
+except ImportError:
+    print("Error: anndata package is required. Install with: pip install anndata")
+    sys.exit(1)
+
+
+def compare_obs_names(file1_path, file2_path, verbose=False):
+    """
+    Compare observation names between two h5ad files.
+    
+    Parameters:
+    -----------
+    file1_path : str or Path
+        Path to the first h5ad file
+    file2_path : str or Path  
+        Path to the second h5ad file
+    verbose : bool
+        If True, print additional details about the comparison
+        
+    Returns:
+    --------
+    dict : Dictionary containing comparison results
+    """
+    
+    # Load the h5ad files
+    print(f"Loading {file1_path}...")
+    try:
+        adata1 = ad.read_h5ad(file1_path)
+    except Exception as e:
+        print(f"Error loading {file1_path}: {e}")
+        return None
+        
+    print(f"Loading {file2_path}...")
+    try:
+        adata2 = ad.read_h5ad(file2_path)
+    except Exception as e:
+        print(f"Error loading {file2_path}: {e}")
+        return None
+    
+    # Get observation names
+    obs_names1 = set(adata1.obs_names)
+    obs_names2 = set(adata2.obs_names)
+    
+    # Calculate intersections and differences
+    common_obs = obs_names1.intersection(obs_names2)
+    unique_to_file1 = obs_names1 - obs_names2
+    unique_to_file2 = obs_names2 - obs_names1
+    
+    # Prepare results
+    results = {
+        'file1_path': str(file1_path),
+        'file2_path': str(file2_path),
+        'file1_obs_count': len(obs_names1),
+        'file2_obs_count': len(obs_names2),
+        'common_obs_count': len(common_obs),
+        'unique_to_file1_count': len(unique_to_file1),
+        'unique_to_file2_count': len(unique_to_file2),
+        'common_obs': common_obs,
+        'unique_to_file1': unique_to_file1,
+        'unique_to_file2': unique_to_file2
+    }
+    
+    # Print summary
+    print("\n" + "="*60)
+    print("COMPARISON SUMMARY")
+    print("="*60)
+    print(f"File 1: {Path(file1_path).name}")
+    print(f"  Total observations: {results['file1_obs_count']:,}")
+    print(f"File 2: {Path(file2_path).name}")
+    print(f"  Total observations: {results['file2_obs_count']:,}")
+    print()
+    print(f"Common observations: {results['common_obs_count']:,}")
+    print(f"Unique to file 1: {results['unique_to_file1_count']:,}")
+    print(f"Unique to file 2: {results['unique_to_file2_count']:,}")
+    print()
+    
+    if results['file1_obs_count'] > 0:
+        overlap_pct1 = (results['common_obs_count'] / results['file1_obs_count']) * 100
+        print(f"Overlap with file 1: {overlap_pct1:.1f}%")
+    
+    if results['file2_obs_count'] > 0:
+        overlap_pct2 = (results['common_obs_count'] / results['file2_obs_count']) * 100
+        print(f"Overlap with file 2: {overlap_pct2:.1f}%")
+    
+    # Print detailed information if verbose
+    if verbose and len(common_obs) > 0:
+        print(f"\nFirst 10 common observation names:")
+        for i, obs_name in enumerate(sorted(common_obs)[:10]):
+            print(f"  {i+1}. {obs_name}")
+        if len(common_obs) > 10:
+            print(f"  ... and {len(common_obs) - 10} more")
+    
+    if verbose and len(unique_to_file1) > 0:
+        print(f"\nFirst 10 observations unique to file 1:")
+        for i, obs_name in enumerate(sorted(unique_to_file1)[:10]):
+            print(f"  {i+1}. {obs_name}")
+        if len(unique_to_file1) > 10:
+            print(f"  ... and {len(unique_to_file1) - 10} more")
+    
+    if verbose and len(unique_to_file2) > 0:
+        print(f"\nFirst 10 observations unique to file 2:")
+        for i, obs_name in enumerate(sorted(unique_to_file2)[:10]):
+            print(f"  {i+1}. {obs_name}")
+        if len(unique_to_file2) > 10:
+            print(f"  ... and {len(unique_to_file2) - 10} more")
+    
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Compare observation names between two h5ad files",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python compare_h5ad.py file1.h5ad file2.h5ad
+  python compare_h5ad.py file1.h5ad file2.h5ad --verbose
+        """
+    )
+    
+    parser.add_argument('file1', help='Path to the first h5ad file')
+    parser.add_argument('file2', help='Path to the second h5ad file')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                       help='Print detailed information about the comparison')
+    
+    args = parser.parse_args()
+    
+    # Check if files exist
+    if not Path(args.file1).exists():
+        print(f"Error: File '{args.file1}' does not exist.")
+        sys.exit(1)
+    
+    if not Path(args.file2).exists():
+        print(f"Error: File '{args.file2}' does not exist.")
+        sys.exit(1)
+    
+    # Perform comparison
+    results = compare_obs_names(args.file1, args.file2, args.verbose)
+    
+    if results is None:
+        sys.exit(1)
+
+
 if __name__ == "__main__":
-    clean_and_save_atac('/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/atac_pseudobulk.h5ad')
+    main()

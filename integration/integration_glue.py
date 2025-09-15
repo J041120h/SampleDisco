@@ -543,7 +543,7 @@ def glue_preprocess_pipeline(
 
 def glue_train(preprocess_output_dir, output_dir="glue_output", 
                save_prefix="glue", consistency_threshold=0.05,
-               treat_sample_as_sample=True,
+               treat_sample_as_batch=True,
                use_highly_variable=True):
     """
     Train SCGLUE model for single-cell multi-omics integration.
@@ -594,7 +594,8 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     
     # 2. Configure datasets with negative binomial distribution
     print("\n\n\n⚙️ Configuring datasets...\n\n\n")
-    if treat_sample_as_sample:
+
+    if treat_sample_as_batch:
         scglue.models.configure_dataset(
             rna, "NB", use_highly_variable=use_highly_variable, 
             use_layer="counts", use_rep="X_pca", use_batch='sample'
@@ -1325,6 +1326,7 @@ def glue(
     
     # Training parameters
     consistency_threshold: float = 0.05,
+    treat_sample_as_batch: bool = True,
     save_prefix: str = "glue",
     
     # Gene activity computation parameters
@@ -1400,6 +1402,7 @@ def glue(
             preprocess_output_dir=glue_output_dir,
             save_prefix=save_prefix,
             consistency_threshold=consistency_threshold,
+            treat_sample_as_batch = treat_sample_as_batch,
             use_highly_variable=use_highly_variable,
             output_dir=glue_output_dir
         )
