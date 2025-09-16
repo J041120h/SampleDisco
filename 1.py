@@ -1675,39 +1675,31 @@ def compare_obs_names(file1_path, file2_path, verbose=False):
     return results
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Compare observation names between two h5ad files",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python compare_h5ad.py file1.h5ad file2.h5ad
-  python compare_h5ad.py file1.h5ad file2.h5ad --verbose
-        """
-    )
-    
-    parser.add_argument('file1', help='Path to the first h5ad file')
-    parser.add_argument('file2', help='Path to the second h5ad file')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                       help='Print detailed information about the comparison')
-    
-    args = parser.parse_args()
-    
-    # Check if files exist
-    if not Path(args.file1).exists():
-        print(f"Error: File '{args.file1}' does not exist.")
-        sys.exit(1)
-    
-    if not Path(args.file2).exists():
-        print(f"Error: File '{args.file2}' does not exist.")
-        sys.exit(1)
-    
-    # Perform comparison
-    results = compare_obs_names(args.file1, args.file2, args.verbose)
-    
-    if results is None:
-        sys.exit(1)
+import anndata as ad
+import scipy.sparse as sp
 
+def check_x_storage(h5ad_path: str):
+    """
+    Check whether the .X matrix in an AnnData (.h5ad) file is stored
+    as sparse or dense.
 
+    Args:
+        h5ad_path (str): Path to the .h5ad file
+    """
+    # Load the AnnData object
+    adata = ad.read_h5ad(h5ad_path, backed=None)  # load fully into memory
+
+    X = adata.X
+    if sp.issparse(X):
+        print(f"{h5ad_path}: .X is stored as a sparse matrix ({type(X)})")
+    elif isinstance(X, (np.ndarray,)):
+        print(f"{h5ad_path}: .X is stored as a dense NumPy array ({X.dtype})")
+    else:
+        print(f"{h5ad_path}: .X is stored as type {type(X)}")
+
+    return type(X)
+
+# Example usage
 if __name__ == "__main__":
-    main()
+    path = "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/rna_pseudobulk.h5ad"  # replace with your file path
+    inspect_h5ad_file(path)

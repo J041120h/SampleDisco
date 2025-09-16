@@ -356,10 +356,6 @@ def glue_preprocess_pipeline(
         print(f"   Using all {rna.n_vars} genes")
         # Mark all genes as highly variable for compatibility
         rna.var['highly_variable'] = True
-        rna.var['highly_variable_rank'] = range(1, rna.n_vars + 1)
-        rna.var['means'] = np.array(rna.X.mean(axis=0)).flatten()
-        rna.var['dispersions'] = np.array(rna.X.var(axis=0)).flatten()
-        rna.var['dispersions_norm'] = rna.var['dispersions'] / rna.var['means']
         
         # Note: When use_highly_variable=False, additional_hvg_file is ignored
         if additional_hvg_file:
@@ -633,18 +629,13 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     
     print(f"\n\n\n🤖 Training GLUE model...\n\n\n")
     glue = scglue.models.fit_SCGLUE(
-        {"rna": rna, "atac": atac}, guidance_hvf,
-        fit_kws={"directory": train_dir}
+    {"rna": rna, "atac": atac},
+    guidance_hvf,
+    fit_kws={
+        "directory": train_dir,
+        "max_epochs": 500
+        }
     )
-    
-    # 5. Check integration consistency
-    print(f"\n\n\n📊 Checking integration consistency...\n\n\n")
-    consistency_scores = scglue.models.integration_consistency(
-        glue, {"rna": rna, "atac": atac}, guidance_hvf
-    )
-    min_consistency = consistency_scores['consistency'].min()
-    mean_consistency = consistency_scores['consistency'].mean()
-    print(f"\n\n\nConsistency scores - Min: {min_consistency:.4f}, Mean: {mean_consistency:.4f}\n\n\n")
     
     # 6. Generate embeddings
     print(f"\n\n\n🎨 Generating embeddings...\n\n\n")
@@ -670,6 +661,14 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     os.remove(rna_path)
     os.remove(atac_path)
     
+    # 5. Check integration consistency
+    print(f"\n\n\n📊 Checking integration consistency...\n\n\n")
+    consistency_scores = scglue.models.integration_consistency(
+        glue, {"rna": rna, "atac": atac}, guidance_hvf
+    )
+    min_consistency = consistency_scores['consistency'].min()
+    mean_consistency = consistency_scores['consistency'].mean()
+    print(f"\n\n\nConsistency scores - Min: {min_consistency:.4f}, Mean: {mean_consistency:.4f}\n\n\n")
     # Check if integration is reliable
     is_reliable = min_consistency > consistency_threshold
     status = "✅ RELIABLE" if is_reliable else "❌ UNRELIABLE"
