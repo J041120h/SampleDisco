@@ -683,6 +683,106 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     
     print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n")
 
+def clean_anndata_for_saving(adata, verbose=False):
+    """Clean AnnData object for saving - handles large matrices with int64 when needed"""
+    import anndata as ad
+    import numpy as np
+    from scipy import sparse
+    
+    if verbose:
+        print("\n🧹 Cleaning AnnData for saving...")
+        print(f"   Input shape: {adata.shape}")
+    
+    # Ensure X is CSR
+    if sparse.issparse(adata.X):
+        if not isinstance(adata.X, sparse.csr_matrix):
+            if verbose:
+                print(f"   Converting X from {adata.X.format} to CSR...")
+            adata.X = adata.X.tocsr()
+        
+        # Ensure proper operations
+        adata.X.sum_duplicates()
+        adata.X.sort_indices()
+        
+        # Check if we need int64 (for matrices with >2B non-zero elements)
+        max_nnz = adata.X.shape[0] * adata.X.shape[1]
+        needs_int64 = adata.X.nnz > np.iinfo(np.int32).max or max_nnz > np.iinfo(np.int32).max
+        
+        if needs_int64:
+            if verbose:
+                print(f"   Large matrix detected (nnz={adata.X.nnz:,}), keeping int64 indices")
+            # Keep int64 for large matrices
+            adata.X.indices = adata.X.indices.astype(np.int64, copy=False)
+            adata.X.indptr = adata.X.indptr.astype(np.int64, copy=False)
+        else:
+            if verbose:
+                print(f"   Using int32 indices (nnz={adata.X.nnz:,})")
+            # Use int32 for smaller matrices
+            adata.X.indices = adata.X.indices.astype(np.int32, copy=False)
+            adata.X.indptr = adata.X.indptr.astype(np.int32, copy=False)
+        
+        if verbose:
+            print(f"   X matrix: CSR, dtype={adata.X.dtype}, nnz={adata.X.nnz:,}")
+    elif adata.X is not None:
+        if verbose:
+            print(f"   X is dense, shape={adata.X.shape}")
+    
+    # Check and clean layers
+    if adata.layers:
+        if verbose:
+            print(f"   Cleaning {len(adata.layers)} layers...")
+        for layer_name in list(adata.layers.keys()):
+            layer = adata.layers[layer_name]
+            if sparse.issparse(layer):
+                if not isinstance(layer, sparse.csr_matrix):
+                    if verbose:
+                        print(f"     Converting layer '{layer_name}' from {layer.format} to CSR...")
+                    adata.layers[layer_name] = layer.tocsr()
+                
+                # Ensure proper operations
+                adata.layers[layer_name].sum_duplicates()
+                adata.layers[layer_name].sort_indices()
+                
+                # Check if we need int64
+                layer_max_nnz = layer.shape[0] * layer.shape[1]
+                layer_needs_int64 = layer.nnz > np.iinfo(np.int32).max or layer_max_nnz > np.iinfo(np.int32).max
+                
+                if layer_needs_int64:
+                    if verbose:
+                        print(f"     Layer '{layer_name}': keeping int64 (nnz={layer.nnz:,})")
+                    adata.layers[layer_name].indices = layer.indices.astype(np.int64, copy=False)
+                    adata.layers[layer_name].indptr = layer.indptr.astype(np.int64, copy=False)
+                else:
+                    if verbose:
+                        print(f"     Layer '{layer_name}': using int32 (nnz={layer.nnz:,})")
+                    adata.layers[layer_name].indices = layer.indices.astype(np.int32, copy=False)
+                    adata.layers[layer_name].indptr = layer.indptr.astype(np.int32, copy=False)
+    
+    # Remove any None values in obsm/varm
+    if hasattr(adata, 'obsm'):
+        for key in list(adata.obsm.keys()):
+            if adata.obsm[key] is None:
+                if verbose:
+                    print(f"   Removing None value from obsm['{key}']")
+                del adata.obsm[key]
+    
+    if hasattr(adata, 'varm'):
+        for key in list(adata.varm.keys()):
+            if adata.varm[key] is None:
+                if verbose:
+                    print(f"   Removing None value from varm['{key}']")
+                del adata.varm[key]
+    
+    # Ensure obs and var indices are strings
+    adata.obs_names = adata.obs_names.astype(str)
+    adata.var_names = adata.var_names.astype(str)
+    
+    if verbose:
+        print(f"   Cleaning complete!")
+    
+    return adata
+
+
 def compute_gene_activity_from_knn(
     glue_dir: str,
     output_path: str,
@@ -709,7 +809,40 @@ def compute_gene_activity_from_knn(
     import cupy as cp
     from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
     from cupyx.scipy import sparse as cusparse
-    
+
+    # --- Helper to keep X safe for Scanpy (CSR, sorted, deduped, with appropriate index dtype) ---
+    def _sanitize_to_cpu_csr(X, dtype=np.float64):
+        """Convert matrix to CSR format with appropriate index dtype"""
+        if hasattr(X, "get"):              # CuPy sparse -> CPU
+            X = X.get()
+        
+        # Convert to CSR if needed
+        if not sparse.issparse(X):
+            X = sparse.csr_matrix(X, dtype=dtype)
+        elif not isinstance(X, sparse.csr_matrix):
+            X = X.tocsr()
+        
+        X = sparse.csr_matrix(X, dtype=dtype, copy=False)
+        X.sum_duplicates()
+        X.sort_indices()
+        
+        # Determine appropriate index dtype based on matrix size
+        max_possible_nnz = X.shape[0] * X.shape[1]
+        needs_int64 = X.nnz > np.iinfo(np.int32).max or max_possible_nnz > np.iinfo(np.int32).max
+        
+        if needs_int64:
+            # Keep int64 for large matrices
+            X.indices = X.indices.astype(np.int64, copy=False)
+            X.indptr = X.indptr.astype(np.int64, copy=False)
+            if verbose:
+                print(f"   Using int64 indices (nnz={X.nnz:,} elements)")
+        else:
+            # Use int32 for smaller matrices
+            X.indices = X.indices.astype(np.int32, copy=False)
+            X.indptr = X.indptr.astype(np.int32, copy=False)
+        
+        return X
+
     # Memory pool settings for GPU
     mempool = cp.get_default_memory_pool()
     pinned_mempool = cp.get_default_pinned_memory_pool()
@@ -731,7 +864,7 @@ def compute_gene_activity_from_knn(
         raise FileNotFoundError(f"Raw RNA count file not found: {raw_rna_path}")
     
     if verbose:
-        print(f"\n🧬 Computing gene activity using raw RNA counts (highly optimized)...")
+        print(f"\n🧬 Computing gene activity using raw RNA counts (optimized for large matrices)...")
         print(f"   k_neighbors: {k_neighbors}")
         print(f"   metric: {metric}")
         print(f"   GPU acceleration: enabled")
@@ -774,7 +907,7 @@ def compute_gene_activity_from_knn(
     if verbose:
         print("📂 Loading raw RNA counts...")
     
-    rna_raw = ad.read_h5ad(raw_rna_path, backed='r')
+    rna_raw = ad.read_h5ad(raw_rna_path)
     
     # Get raw RNA metadata
     raw_rna_obs = rna_raw.obs.copy()
@@ -785,7 +918,7 @@ def compute_gene_activity_from_knn(
     common_cells = processed_rna_cells.intersection(raw_rna_obs.index)
     if len(common_cells) != len(processed_rna_cells):
         if verbose:
-            print(f"   Aligning to {len(common_cells)} common cells...")
+            print(f"   Aligning to {len(common_cells):,} common cells...")
         # Align embeddings
         embedding_mask = np.isin(processed_rna_cells, common_cells)
         rna_embedding = rna_embedding[embedding_mask]
@@ -802,7 +935,7 @@ def compute_gene_activity_from_knn(
     n_genes = rna_raw.n_vars
     
     if verbose:
-        print(f"   RNA cells: {n_rna_cells}, ATAC cells: {n_atac_cells}, Genes: {n_genes}")
+        print(f"   RNA cells: {n_rna_cells:,}, ATAC cells: {n_atac_cells:,}, Genes: {n_genes:,}")
     
     # Find k-nearest neighbors using GPU
     if verbose:
@@ -857,7 +990,7 @@ def compute_gene_activity_from_knn(
     
     if verbose:
         print(f"\n🧮 Computing weighted gene activity...")
-        print(f"   Optimal batch size: {optimal_batch_size}")
+        print(f"   Optimal batch size: {optimal_batch_size:,}")
         start_time = time.time()
     
     n_batches = (n_atac_cells + optimal_batch_size - 1) // optimal_batch_size
@@ -947,14 +1080,15 @@ def compute_gene_activity_from_knn(
     gene_activity_matrix = np.nan_to_num(gene_activity_matrix, 0)
     np.clip(gene_activity_matrix, 0, None, out=gene_activity_matrix)
     
-    # Convert to sparse CSC matrix
+    # Convert to sparse CSR matrix
     if verbose:
-        print("📦 Converting gene activity to sparse CSC matrix...")
+        print("📦 Converting gene activity to sparse CSR matrix...")
         nnz_before = np.count_nonzero(gene_activity_matrix)
         sparsity = 1 - (nnz_before / gene_activity_matrix.size)
+        print(f"   Non-zeros: {nnz_before:,} elements")
         print(f"   Sparsity: {sparsity:.1%} zeros")
     
-    gene_activity_sparse = sparse.csc_matrix(gene_activity_matrix, dtype=np.float64)
+    gene_activity_sparse = _sanitize_to_cpu_csr(gene_activity_matrix, dtype=np.float64)
     
     # Clear dense matrix
     del gene_activity_matrix
@@ -986,26 +1120,16 @@ def compute_gene_activity_from_knn(
     if is_sparse_rna:
         rna_X = rna_raw[common_cells, :].X
         if sparse.issparse(rna_X):
-            rna_X = rna_X.tocsc().astype(np.float64)
+            rna_X = _sanitize_to_cpu_csr(rna_X, dtype=np.float64)
             if verbose:
                 rna_sparsity = 1 - (rna_X.nnz / (rna_X.shape[0] * rna_X.shape[1]))
                 print(f"   RNA sparsity: {rna_sparsity:.1%} zeros")
         else:
-            rna_X = rna_X[:].astype(np.float64)
-            nnz = np.count_nonzero(rna_X)
-            sparsity = 1 - (nnz / rna_X.size)
-            if sparsity > 0.5:
-                if verbose:
-                    print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
-                rna_X = sparse.csc_matrix(rna_X, dtype=np.float64)
+            rna_X = sparse.csr_matrix(rna_X[:].astype(np.float64))
+            rna_X = _sanitize_to_cpu_csr(rna_X, dtype=np.float64)
     else:
-        rna_X = rna_raw[common_cells, :].X[:].astype(np.float64)
-        nnz = np.count_nonzero(rna_X)
-        sparsity = 1 - (nnz / rna_X.size)
-        if sparsity > 0.5:
-            if verbose:
-                print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
-            rna_X = sparse.csc_matrix(rna_X, dtype=np.float64)
+        rna_X = sparse.csr_matrix(rna_raw[common_cells, :].X[:].astype(np.float64))
+        rna_X = _sanitize_to_cpu_csr(rna_X, dtype=np.float64)
     
     # Close the backed file
     rna_raw.file.close()
@@ -1042,21 +1166,24 @@ def compute_gene_activity_from_knn(
     del rna_for_merge, gene_activity_adata
     gc.collect()
     
-    # Ensure the merged matrix is sparse CSC
+    # Ensure the merged matrix is CSR and properly formatted
     if not sparse.issparse(merged_adata.X):
         if verbose:
-            print("📦 Converting merged matrix to sparse CSC...")
-        merged_adata.X = sparse.csc_matrix(merged_adata.X, dtype=np.float64)
-    elif not isinstance(merged_adata.X, sparse.csc_matrix):
+            print("📦 Converting merged matrix to sparse CSR...")
+        merged_adata.X = sparse.csr_matrix(merged_adata.X, dtype=np.float64)
+    elif not isinstance(merged_adata.X, sparse.csr_matrix):
         if verbose:
-            print("📦 Converting to CSC format...")
-        merged_adata.X = merged_adata.X.tocsc().astype(np.float64)
+            print("📦 Converting to CSR format...")
+        merged_adata.X = merged_adata.X.tocsr().astype(np.float64)
     else:
         if merged_adata.X.dtype != np.float64:
             merged_adata.X = merged_adata.X.astype(np.float64)
+
+    # Final sanitize for safety
+    merged_adata.X = _sanitize_to_cpu_csr(merged_adata.X, dtype=np.float64)
     
     # Clean for saving
-    merged_adata = clean_anndata_for_saving(merged_adata, verbose=False)
+    merged_adata = clean_anndata_for_saving(merged_adata, verbose=verbose)
     
     # Save with optimized compression
     output_dir = os.path.join(output_path, 'preprocess')
@@ -1072,16 +1199,18 @@ def compute_gene_activity_from_knn(
         print(f"\n📊 Summary:")
         print(f"   Output path: {output_path_anndata}")
         print(f"   Merged dataset shape: {merged_adata.shape}")
-        print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
-        print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
+        print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum():,}")
+        print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum():,}")
         
         # Report matrix format
         if sparse.issparse(merged_adata.X):
             matrix_type = type(merged_adata.X).__name__
             sparsity = 1 - (merged_adata.X.nnz / (merged_adata.X.shape[0] * merged_adata.X.shape[1]))
-            print(f"   Matrix format: {matrix_type} (sparse)")
+            print(f"   Matrix format: {matrix_type} (sparse, CSR)")
             print(f"   Data type: {merged_adata.X.dtype}")
+            print(f"   Index dtype: {merged_adata.X.indices.dtype}")
             print(f"   Sparsity: {sparsity:.1%} zeros")
+            print(f"   Non-zeros: {merged_adata.X.nnz:,} elements")
             print(f"   Memory usage: {merged_adata.X.data.nbytes / 1e6:.2f} MB (sparse)")
         else:
             print(f"   Matrix format: dense numpy array")
@@ -1089,7 +1218,7 @@ def compute_gene_activity_from_knn(
             print(f"   Memory usage: {merged_adata.X.nbytes / 1e6:.2f} MB")
         
         print(f"   Optimization: GPU vectorization + dynamic batching + sparse matrices")
-        print(f"   Batch processing: {n_batches} batches of size {optimal_batch_size}")
+        print(f"   Batch processing: {n_batches} batches of size {optimal_batch_size:,}")
 
     mempool.free_all_blocks()
     pinned_mempool.free_all_blocks()
