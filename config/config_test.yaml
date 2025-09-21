@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/placenta"
+output_dir: "/dcs07/hongkai/data/harry/result"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -289,15 +289,15 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
 # Multiomics Required Parameters
-multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad"
-multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad"
+multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/rna/placenta.h5ad"
+multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: false
+multiomics_run_glue: true
 multiomics_run_integrate_preprocess: true
-multiomics_run_dimensionality_reduction: true
-multiomics_run_visualize_embedding: true
+multiomics_run_dimensionality_reduction: false
+multiomics_run_visualize_embedding: false
 multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
@@ -305,7 +305,7 @@ multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: true
 multiomics_run_glue_cell_types: true
-multiomics_run_glue_visualization: true
+multiomics_run_glue_visualization: false
 
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null

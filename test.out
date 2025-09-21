@@ -2,9 +2,9 @@ Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
         "sample_distance_calculation": false,
         "trajectory_analysis": false,
         "trajectory_dge": false,
@@ -44,237 +44,98 @@ Resuming process from previous progress:
 ============================================================
 RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/multiomics
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/Benchmark/multiomics
 Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
 Step 1: Running GLUE integration...
-  Sub-steps: Preprocessing=False, Training=True, Gene Activity=True, Cell Types=True, Visualization=True
-Running training...
+  Sub-steps: Preprocessing=False, Training=False, Gene Activity=True, Cell Types=True, Visualization=False
+Computing gene activity...
 
+🧬 Computing gene activity using raw RNA counts (CPU-optimized)...
+   k_neighbors: 10
+   metric: cosine
+   CPU cores: 48
+   Available memory: 1037.77 GB
 
+📂 Loading and standardizing raw RNA to CSR format...
+   Raw RNA standardized to CSR: (430595, 36601), sparsity: 94.6%
 
-🚀 Starting GLUE training pipeline...
+📂 Loading processed RNA embeddings...
+📂 Loading ATAC embeddings...
+   RNA cells: 430595, ATAC cells: 430595, Genes: 36601
 
+🔍 Finding k-nearest RNA neighbors (CPU-optimized)...
+   Processing in 87 batches of size 5000
+      k-NN progress: 9.2%
+      k-NN progress: 18.4%
+      k-NN progress: 27.6%
+      k-NN progress: 36.8%
+      k-NN progress: 46.0%
+      k-NN progress: 55.2%
+      k-NN progress: 64.4%
+      k-NN progress: 73.6%
+      k-NN progress: 82.8%
+      k-NN progress: 92.0%
+   k-NN search completed in 2124.98 seconds
 
+📐 Computing similarity weights...
 
-   Feature mode: All Features
-   Output directory: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/multiomics/integration/glue
+🧮 Computing weighted gene activity...
+   Processing in 431 batches of size 1000
+   Progress: 10.0% (43/431 batches, ETA: 97.1s)
+   Progress: 20.0% (86/431 batches, ETA: 84.1s)
+   Progress: 29.9% (129/431 batches, ETA: 73.8s)
+   Progress: 39.9% (172/431 batches, ETA: 62.3s)
+   Progress: 49.9% (215/431 batches, ETA: 51.7s)
+   Progress: 59.9% (258/431 batches, ETA: 41.5s)
+   Progress: 69.8% (301/431 batches, ETA: 30.8s)
+   Progress: 79.8% (344/431 batches, ETA: 20.4s)
+   Progress: 89.8% (387/431 batches, ETA: 10.3s)
+   Progress: 99.8% (430/431 batches, ETA: 0.2s)
+   Progress: 100.0% (431/431 batches, ETA: 0.0s)
+   Gene activity computation completed in 100.77 seconds
 
+🔍 Creating sparse CSR matrices for integration...
+   Gene activity sparsity: 76.3% zeros
 
+🔗 Preparing RNA data for merging (keeping CSR format)...
+🔗 Merging gene activity with RNA data (maintaining CSR format)...
 
+💾 Saving integrated dataset...
 
-📊 Loading preprocessed data from /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/multiomics/integration/glue...
+✅ Gene activity computation and merging complete!
 
+📊 Summary:
+   Output path: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad
+   Merged dataset shape: (861190, 36601)
+   RNA cells: 430595
+   ATAC cells: 430595
+   Matrix format: csr_matrix (CSR sparse)
+   Data type: float64
+   Sparsity: 85.5% zeros
+   Memory usage: 73327.91 MB (sparse)
+   Optimization: CPU-optimized with efficient batching and sparse operations
+Gene activity computation completed.
+Assigning cell types...
+ Using Linux Cell Type Assignment for cell type assignment...
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.8)...
+[cell_types] Found 32 clusters after Leiden clustering.
+[cell_types] Finished assigning cell types.
+[cell_types] Converting GPU arrays to CPU...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 4 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad
+[cell_types] Total runtime: 179.92 seconds
 
-
-
-
-
-Data loaded - RNA: (44, 1624), ATAC: (44, 3575859), Graph: 3577483 nodes
-
-
-
-
-
-
-⚙️ Configuring datasets...
-
-
-
-
-
-
-🔍 Using full feature graph...
-
-
-
-Full graph: 3577483 nodes, 4062607 edges
-
-
-
-
-
-
-🤖 Training GLUE model...
-
-
-
-[INFO] fit_SCGLUE: Pretraining SCGLUE model...
-[INFO] autodevice: Using GPU 0 as computation device.
-[INFO] check_graph: Checking variable coverage...
-[INFO] check_graph: Checking edge attributes...
-[INFO] check_graph: Checking self-loops...
-[INFO] check_graph: Checking graph symmetry...
-[INFO] check_graph: All checks passed!
-[INFO] SCGLUEModel: Setting `graph_batch_size` = 1396522
-[INFO] SCGLUEModel: Setting `patience` = 3233
-[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 1617
-[INFO] SCGLUETrainer: Using training directory: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/multiomics/integration/glue/training/pretrain"
-[INFO] SCGLUETrainer: [Epoch 10] train={'g_nll': 0.827, 'g_kl': 0.0, 'g_elbo': 0.827, 'x_rna_nll': 3176.396, 'x_rna_kl': 0.023, 'x_rna_elbo': 3176.419, 'x_atac_nll': 17.997, 'x_atac_kl': 0.0, 'x_atac_elbo': 17.997, 'dsc_loss': 0.673, 'vae_loss': 3194.449, 'gen_loss': 3194.415}, val={'g_nll': 0.814, 'g_kl': 0.0, 'g_elbo': 0.814, 'x_rna_nll': 233.879, 'x_rna_kl': 0.007, 'x_rna_elbo': 233.886, 'x_atac_nll': 10.398, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.398, 'dsc_loss': 0.678, 'vae_loss': 244.316, 'gen_loss': 244.282}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 20] train={'g_nll': 0.771, 'g_kl': 0.0, 'g_elbo': 0.771, 'x_rna_nll': 96.956, 'x_rna_kl': 0.013, 'x_rna_elbo': 96.969, 'x_atac_nll': 10.899, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.899, 'dsc_loss': 0.662, 'vae_loss': 107.899, 'gen_loss': 107.866}, val={'g_nll': 0.769, 'g_kl': 0.0, 'g_elbo': 0.769, 'x_rna_nll': 29.085, 'x_rna_kl': 0.006, 'x_rna_elbo': 29.09, 'x_atac_nll': 25.751, 'x_atac_kl': 0.0, 'x_atac_elbo': 25.751, 'dsc_loss': 0.672, 'vae_loss': 54.872, 'gen_loss': 54.838}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 30] train={'g_nll': 0.76, 'g_kl': 0.0, 'g_elbo': 0.76, 'x_rna_nll': 60.872, 'x_rna_kl': 0.012, 'x_rna_elbo': 60.884, 'x_atac_nll': 10.644, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.644, 'dsc_loss': 0.638, 'vae_loss': 71.558, 'gen_loss': 71.526}, val={'g_nll': 0.756, 'g_kl': 0.0, 'g_elbo': 0.756, 'x_rna_nll': 22.682, 'x_rna_kl': 0.006, 'x_rna_elbo': 22.688, 'x_atac_nll': 46.513, 'x_atac_kl': 0.0, 'x_atac_elbo': 46.513, 'dsc_loss': 0.656, 'vae_loss': 69.231, 'gen_loss': 69.198}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 40] train={'g_nll': 0.751, 'g_kl': 0.0, 'g_elbo': 0.751, 'x_rna_nll': 36.314, 'x_rna_kl': 0.012, 'x_rna_elbo': 36.325, 'x_atac_nll': 11.457, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.457, 'dsc_loss': 0.623, 'vae_loss': 47.812, 'gen_loss': 47.781}, val={'g_nll': 0.748, 'g_kl': 0.0, 'g_elbo': 0.748, 'x_rna_nll': 21.091, 'x_rna_kl': 0.006, 'x_rna_elbo': 21.097, 'x_atac_nll': 53.771, 'x_atac_kl': 0.0, 'x_atac_elbo': 53.771, 'dsc_loss': 0.597, 'vae_loss': 74.898, 'gen_loss': 74.868}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 50] train={'g_nll': 0.746, 'g_kl': 0.0, 'g_elbo': 0.746, 'x_rna_nll': 31.838, 'x_rna_kl': 0.011, 'x_rna_elbo': 31.849, 'x_atac_nll': 8.343, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.343, 'dsc_loss': 0.646, 'vae_loss': 40.222, 'gen_loss': 40.19}, val={'g_nll': 0.744, 'g_kl': 0.0, 'g_elbo': 0.744, 'x_rna_nll': 19.147, 'x_rna_kl': 0.007, 'x_rna_elbo': 19.154, 'x_atac_nll': 60.782, 'x_atac_kl': 0.0, 'x_atac_elbo': 60.782, 'dsc_loss': 0.601, 'vae_loss': 79.966, 'gen_loss': 79.936}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 60] train={'g_nll': 0.738, 'g_kl': 0.0, 'g_elbo': 0.738, 'x_rna_nll': 25.124, 'x_rna_kl': 0.011, 'x_rna_elbo': 25.135, 'x_atac_nll': 11.437, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.437, 'dsc_loss': 0.649, 'vae_loss': 36.602, 'gen_loss': 36.57}, val={'g_nll': 0.739, 'g_kl': 0.0, 'g_elbo': 0.739, 'x_rna_nll': 16.262, 'x_rna_kl': 0.008, 'x_rna_elbo': 16.269, 'x_atac_nll': 92.257, 'x_atac_kl': 0.0, 'x_atac_elbo': 92.257, 'dsc_loss': 0.551, 'vae_loss': 108.556, 'gen_loss': 108.529}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 70] train={'g_nll': 0.739, 'g_kl': 0.0, 'g_elbo': 0.739, 'x_rna_nll': 27.595, 'x_rna_kl': 0.012, 'x_rna_elbo': 27.607, 'x_atac_nll': 9.647, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.647, 'dsc_loss': 0.575, 'vae_loss': 37.283, 'gen_loss': 37.254}, val={'g_nll': 0.738, 'g_kl': 0.0, 'g_elbo': 0.738, 'x_rna_nll': 15.007, 'x_rna_kl': 0.007, 'x_rna_elbo': 15.014, 'x_atac_nll': 43.32, 'x_atac_kl': 0.0, 'x_atac_elbo': 43.32, 'dsc_loss': 0.495, 'vae_loss': 58.364, 'gen_loss': 58.339}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 80] train={'g_nll': 0.733, 'g_kl': 0.0, 'g_elbo': 0.733, 'x_rna_nll': 23.847, 'x_rna_kl': 0.012, 'x_rna_elbo': 23.858, 'x_atac_nll': 9.265, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.265, 'dsc_loss': 0.583, 'vae_loss': 33.153, 'gen_loss': 33.124}, val={'g_nll': 0.734, 'g_kl': 0.0, 'g_elbo': 0.734, 'x_rna_nll': 12.463, 'x_rna_kl': 0.008, 'x_rna_elbo': 12.47, 'x_atac_nll': 96.286, 'x_atac_kl': 0.0, 'x_atac_elbo': 96.286, 'dsc_loss': 0.494, 'vae_loss': 108.785, 'gen_loss': 108.761}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 90] train={'g_nll': 0.728, 'g_kl': 0.0, 'g_elbo': 0.728, 'x_rna_nll': 17.673, 'x_rna_kl': 0.011, 'x_rna_elbo': 17.684, 'x_atac_nll': 10.685, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.685, 'dsc_loss': 0.597, 'vae_loss': 28.398, 'gen_loss': 28.368}, val={'g_nll': 0.727, 'g_kl': 0.0, 'g_elbo': 0.727, 'x_rna_nll': 13.628, 'x_rna_kl': 0.008, 'x_rna_elbo': 13.636, 'x_atac_nll': 52.412, 'x_atac_kl': 0.0, 'x_atac_elbo': 52.412, 'dsc_loss': 0.484, 'vae_loss': 66.077, 'gen_loss': 66.053}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 100] train={'g_nll': 0.727, 'g_kl': 0.0, 'g_elbo': 0.727, 'x_rna_nll': 18.104, 'x_rna_kl': 0.012, 'x_rna_elbo': 18.116, 'x_atac_nll': 11.162, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.162, 'dsc_loss': 0.568, 'vae_loss': 29.307, 'gen_loss': 29.279}, val={'g_nll': 0.724, 'g_kl': 0.0, 'g_elbo': 0.724, 'x_rna_nll': 13.527, 'x_rna_kl': 0.009, 'x_rna_elbo': 13.536, 'x_atac_nll': 52.16, 'x_atac_kl': 0.0, 'x_atac_elbo': 52.16, 'dsc_loss': 0.492, 'vae_loss': 65.725, 'gen_loss': 65.7}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 110] train={'g_nll': 0.726, 'g_kl': 0.0, 'g_elbo': 0.726, 'x_rna_nll': 17.4, 'x_rna_kl': 0.012, 'x_rna_elbo': 17.412, 'x_atac_nll': 12.349, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.35, 'dsc_loss': 0.59, 'vae_loss': 29.79, 'gen_loss': 29.761}, val={'g_nll': 0.722, 'g_kl': 0.0, 'g_elbo': 0.722, 'x_rna_nll': 13.388, 'x_rna_kl': 0.007, 'x_rna_elbo': 13.396, 'x_atac_nll': 48.513, 'x_atac_kl': 0.0, 'x_atac_elbo': 48.513, 'dsc_loss': 0.477, 'vae_loss': 61.938, 'gen_loss': 61.914}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 120] train={'g_nll': 0.722, 'g_kl': 0.0, 'g_elbo': 0.722, 'x_rna_nll': 21.62, 'x_rna_kl': 0.012, 'x_rna_elbo': 21.632, 'x_atac_nll': 10.794, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.794, 'dsc_loss': 0.532, 'vae_loss': 32.455, 'gen_loss': 32.428}, val={'g_nll': 0.718, 'g_kl': 0.0, 'g_elbo': 0.718, 'x_rna_nll': 13.081, 'x_rna_kl': 0.008, 'x_rna_elbo': 13.089, 'x_atac_nll': 126.244, 'x_atac_kl': 0.0, 'x_atac_elbo': 126.244, 'dsc_loss': 0.46, 'vae_loss': 139.362, 'gen_loss': 139.339}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 130] train={'g_nll': 0.72, 'g_kl': 0.0, 'g_elbo': 0.72, 'x_rna_nll': 19.427, 'x_rna_kl': 0.011, 'x_rna_elbo': 19.438, 'x_atac_nll': 10.787, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.787, 'dsc_loss': 0.558, 'vae_loss': 30.254, 'gen_loss': 30.226}, val={'g_nll': 0.718, 'g_kl': 0.0, 'g_elbo': 0.718, 'x_rna_nll': 15.517, 'x_rna_kl': 0.006, 'x_rna_elbo': 15.522, 'x_atac_nll': 54.869, 'x_atac_kl': 0.0, 'x_atac_elbo': 54.869, 'dsc_loss': 0.46, 'vae_loss': 70.42, 'gen_loss': 70.397}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 140] train={'g_nll': 0.715, 'g_kl': 0.0, 'g_elbo': 0.715, 'x_rna_nll': 19.861, 'x_rna_kl': 0.012, 'x_rna_elbo': 19.873, 'x_atac_nll': 12.831, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.831, 'dsc_loss': 0.573, 'vae_loss': 32.732, 'gen_loss': 32.704}, val={'g_nll': 0.713, 'g_kl': 0.0, 'g_elbo': 0.713, 'x_rna_nll': 12.354, 'x_rna_kl': 0.007, 'x_rna_elbo': 12.361, 'x_atac_nll': 60.572, 'x_atac_kl': 0.0, 'x_atac_elbo': 60.572, 'dsc_loss': 0.46, 'vae_loss': 72.962, 'gen_loss': 72.939}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 150] train={'g_nll': 0.712, 'g_kl': 0.0, 'g_elbo': 0.712, 'x_rna_nll': 14.429, 'x_rna_kl': 0.012, 'x_rna_elbo': 14.441, 'x_atac_nll': 14.295, 'x_atac_kl': 0.0, 'x_atac_elbo': 14.295, 'dsc_loss': 0.627, 'vae_loss': 28.765, 'gen_loss': 28.733}, val={'g_nll': 0.714, 'g_kl': 0.0, 'g_elbo': 0.714, 'x_rna_nll': 10.7, 'x_rna_kl': 0.008, 'x_rna_elbo': 10.708, 'x_atac_nll': 106.217, 'x_atac_kl': 0.0, 'x_atac_elbo': 106.217, 'dsc_loss': 0.508, 'vae_loss': 116.953, 'gen_loss': 116.928}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 160] train={'g_nll': 0.711, 'g_kl': 0.0, 'g_elbo': 0.711, 'x_rna_nll': 14.641, 'x_rna_kl': 0.012, 'x_rna_elbo': 14.653, 'x_atac_nll': 7.523, 'x_atac_kl': 0.0, 'x_atac_elbo': 7.523, 'dsc_loss': 0.595, 'vae_loss': 22.205, 'gen_loss': 22.175}, val={'g_nll': 0.71, 'g_kl': 0.0, 'g_elbo': 0.71, 'x_rna_nll': 12.016, 'x_rna_kl': 0.008, 'x_rna_elbo': 12.024, 'x_atac_nll': 119.15, 'x_atac_kl': 0.0, 'x_atac_elbo': 119.15, 'dsc_loss': 0.433, 'vae_loss': 131.202, 'gen_loss': 131.18}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 170] train={'g_nll': 0.706, 'g_kl': 0.0, 'g_elbo': 0.706, 'x_rna_nll': 16.806, 'x_rna_kl': 0.012, 'x_rna_elbo': 16.818, 'x_atac_nll': 10.435, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.435, 'dsc_loss': 0.587, 'vae_loss': 27.282, 'gen_loss': 27.252}, val={'g_nll': 0.707, 'g_kl': 0.0, 'g_elbo': 0.707, 'x_rna_nll': 11.832, 'x_rna_kl': 0.007, 'x_rna_elbo': 11.839, 'x_atac_nll': 50.869, 'x_atac_kl': 0.0, 'x_atac_elbo': 50.869, 'dsc_loss': 0.443, 'vae_loss': 62.737, 'gen_loss': 62.714}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 180] train={'g_nll': 0.707, 'g_kl': 0.0, 'g_elbo': 0.707, 'x_rna_nll': 17.696, 'x_rna_kl': 0.012, 'x_rna_elbo': 17.708, 'x_atac_nll': 8.934, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.934, 'dsc_loss': 0.536, 'vae_loss': 26.67, 'gen_loss': 26.644}, val={'g_nll': 0.703, 'g_kl': 0.0, 'g_elbo': 0.703, 'x_rna_nll': 10.908, 'x_rna_kl': 0.008, 'x_rna_elbo': 10.916, 'x_atac_nll': 147.744, 'x_atac_kl': 0.0, 'x_atac_elbo': 147.744, 'dsc_loss': 0.44, 'vae_loss': 158.688, 'gen_loss': 158.666}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 190] train={'g_nll': 0.703, 'g_kl': 0.0, 'g_elbo': 0.703, 'x_rna_nll': 14.243, 'x_rna_kl': 0.012, 'x_rna_elbo': 14.255, 'x_atac_nll': 12.794, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.794, 'dsc_loss': 0.531, 'vae_loss': 27.077, 'gen_loss': 27.05}, val={'g_nll': 0.707, 'g_kl': 0.0, 'g_elbo': 0.707, 'x_rna_nll': 13.159, 'x_rna_kl': 0.008, 'x_rna_elbo': 13.167, 'x_atac_nll': 56.658, 'x_atac_kl': 0.0, 'x_atac_elbo': 56.658, 'dsc_loss': 0.558, 'vae_loss': 69.854, 'gen_loss': 69.826}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 200] train={'g_nll': 0.7, 'g_kl': 0.0, 'g_elbo': 0.7, 'x_rna_nll': 14.182, 'x_rna_kl': 0.012, 'x_rna_elbo': 14.194, 'x_atac_nll': 9.188, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.189, 'dsc_loss': 0.514, 'vae_loss': 23.411, 'gen_loss': 23.385}, val={'g_nll': 0.699, 'g_kl': 0.0, 'g_elbo': 0.699, 'x_rna_nll': 11.595, 'x_rna_kl': 0.01, 'x_rna_elbo': 11.605, 'x_atac_nll': 235.001, 'x_atac_kl': 0.0, 'x_atac_elbo': 235.001, 'dsc_loss': 0.578, 'vae_loss': 246.634, 'gen_loss': 246.605}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 210] train={'g_nll': 0.699, 'g_kl': 0.0, 'g_elbo': 0.699, 'x_rna_nll': 13.016, 'x_rna_kl': 0.012, 'x_rna_elbo': 13.028, 'x_atac_nll': 14.225, 'x_atac_kl': 0.0, 'x_atac_elbo': 14.225, 'dsc_loss': 0.457, 'vae_loss': 27.281, 'gen_loss': 27.258}, val={'g_nll': 0.696, 'g_kl': 0.0, 'g_elbo': 0.696, 'x_rna_nll': 11.607, 'x_rna_kl': 0.008, 'x_rna_elbo': 11.615, 'x_atac_nll': 168.867, 'x_atac_kl': 0.0, 'x_atac_elbo': 168.867, 'dsc_loss': 0.442, 'vae_loss': 180.51, 'gen_loss': 180.488}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 220] train={'g_nll': 0.7, 'g_kl': 0.0, 'g_elbo': 0.7, 'x_rna_nll': 14.137, 'x_rna_kl': 0.012, 'x_rna_elbo': 14.148, 'x_atac_nll': 9.109, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.11, 'dsc_loss': 0.538, 'vae_loss': 23.286, 'gen_loss': 23.259}, val={'g_nll': 0.697, 'g_kl': 0.0, 'g_elbo': 0.697, 'x_rna_nll': 11.139, 'x_rna_kl': 0.008, 'x_rna_elbo': 11.147, 'x_atac_nll': 62.387, 'x_atac_kl': 0.0, 'x_atac_elbo': 62.387, 'dsc_loss': 0.522, 'vae_loss': 73.562, 'gen_loss': 73.536}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 230] train={'g_nll': 0.696, 'g_kl': 0.0, 'g_elbo': 0.696, 'x_rna_nll': 13.012, 'x_rna_kl': 0.012, 'x_rna_elbo': 13.024, 'x_atac_nll': 8.816, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.817, 'dsc_loss': 0.568, 'vae_loss': 21.868, 'gen_loss': 21.84}, val={'g_nll': 0.696, 'g_kl': 0.0, 'g_elbo': 0.696, 'x_rna_nll': 10.374, 'x_rna_kl': 0.009, 'x_rna_elbo': 10.383, 'x_atac_nll': 61.164, 'x_atac_kl': 0.0, 'x_atac_elbo': 61.164, 'dsc_loss': 0.643, 'vae_loss': 71.574, 'gen_loss': 71.542}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 240] train={'g_nll': 0.696, 'g_kl': 0.0, 'g_elbo': 0.696, 'x_rna_nll': 12.918, 'x_rna_kl': 0.012, 'x_rna_elbo': 12.93, 'x_atac_nll': 8.766, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.766, 'dsc_loss': 0.503, 'vae_loss': 21.724, 'gen_loss': 21.699}, val={'g_nll': 0.694, 'g_kl': 0.0, 'g_elbo': 0.694, 'x_rna_nll': 10.119, 'x_rna_kl': 0.009, 'x_rna_elbo': 10.128, 'x_atac_nll': 63.092, 'x_atac_kl': 0.0, 'x_atac_elbo': 63.092, 'dsc_loss': 0.566, 'vae_loss': 73.248, 'gen_loss': 73.22}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 250] train={'g_nll': 0.694, 'g_kl': 0.0, 'g_elbo': 0.694, 'x_rna_nll': 11.417, 'x_rna_kl': 0.012, 'x_rna_elbo': 11.429, 'x_atac_nll': 10.886, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.887, 'dsc_loss': 0.48, 'vae_loss': 22.343, 'gen_loss': 22.319}, val={'g_nll': 0.693, 'g_kl': 0.0, 'g_elbo': 0.693, 'x_rna_nll': 10.071, 'x_rna_kl': 0.008, 'x_rna_elbo': 10.078, 'x_atac_nll': 62.493, 'x_atac_kl': 0.0, 'x_atac_elbo': 62.493, 'dsc_loss': 0.372, 'vae_loss': 72.599, 'gen_loss': 72.58}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 260] train={'g_nll': 0.692, 'g_kl': 0.0, 'g_elbo': 0.692, 'x_rna_nll': 11.497, 'x_rna_kl': 0.013, 'x_rna_elbo': 11.51, 'x_atac_nll': 12.089, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.089, 'dsc_loss': 0.467, 'vae_loss': 23.627, 'gen_loss': 23.603}, val={'g_nll': 0.691, 'g_kl': 0.0, 'g_elbo': 0.691, 'x_rna_nll': 10.382, 'x_rna_kl': 0.009, 'x_rna_elbo': 10.392, 'x_atac_nll': 56.105, 'x_atac_kl': 0.0, 'x_atac_elbo': 56.105, 'dsc_loss': 0.557, 'vae_loss': 66.524, 'gen_loss': 66.497}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 270] train={'g_nll': 0.689, 'g_kl': 0.0, 'g_elbo': 0.689, 'x_rna_nll': 11.427, 'x_rna_kl': 0.012, 'x_rna_elbo': 11.439, 'x_atac_nll': 10.498, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.499, 'dsc_loss': 0.514, 'vae_loss': 21.966, 'gen_loss': 21.94}, val={'g_nll': 0.689, 'g_kl': 0.0, 'g_elbo': 0.689, 'x_rna_nll': 10.559, 'x_rna_kl': 0.009, 'x_rna_elbo': 10.567, 'x_atac_nll': 111.645, 'x_atac_kl': 0.0, 'x_atac_elbo': 111.645, 'dsc_loss': 0.721, 'vae_loss': 122.24, 'gen_loss': 122.204}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 280] train={'g_nll': 0.689, 'g_kl': 0.0, 'g_elbo': 0.689, 'x_rna_nll': 12.087, 'x_rna_kl': 0.013, 'x_rna_elbo': 12.1, 'x_atac_nll': 7.263, 'x_atac_kl': 0.0, 'x_atac_elbo': 7.263, 'dsc_loss': 0.479, 'vae_loss': 19.391, 'gen_loss': 19.367}, val={'g_nll': 0.687, 'g_kl': 0.0, 'g_elbo': 0.687, 'x_rna_nll': 10.112, 'x_rna_kl': 0.008, 'x_rna_elbo': 10.12, 'x_atac_nll': 63.876, 'x_atac_kl': 0.0, 'x_atac_elbo': 63.876, 'dsc_loss': 0.545, 'vae_loss': 74.024, 'gen_loss': 73.997}, 27.7s elapsed
-[INFO] SCGLUETrainer: [Epoch 290] train={'g_nll': 0.687, 'g_kl': 0.0, 'g_elbo': 0.687, 'x_rna_nll': 12.061, 'x_rna_kl': 0.013, 'x_rna_elbo': 12.074, 'x_atac_nll': 13.547, 'x_atac_kl': 0.0, 'x_atac_elbo': 13.547, 'dsc_loss': 0.482, 'vae_loss': 25.648, 'gen_loss': 25.624}, val={'g_nll': 0.687, 'g_kl': 0.0, 'g_elbo': 0.687, 'x_rna_nll': 10.018, 'x_rna_kl': 0.01, 'x_rna_elbo': 10.028, 'x_atac_nll': 115.727, 'x_atac_kl': 0.0, 'x_atac_elbo': 115.727, 'dsc_loss': 0.615, 'vae_loss': 125.783, 'gen_loss': 125.752}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 300] train={'g_nll': 0.684, 'g_kl': 0.0, 'g_elbo': 0.684, 'x_rna_nll': 11.05, 'x_rna_kl': 0.013, 'x_rna_elbo': 11.063, 'x_atac_nll': 12.648, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.648, 'dsc_loss': 0.468, 'vae_loss': 23.738, 'gen_loss': 23.715}, val={'g_nll': 0.685, 'g_kl': 0.0, 'g_elbo': 0.685, 'x_rna_nll': 9.248, 'x_rna_kl': 0.009, 'x_rna_elbo': 9.257, 'x_atac_nll': 57.932, 'x_atac_kl': 0.0, 'x_atac_elbo': 57.932, 'dsc_loss': 0.524, 'vae_loss': 67.217, 'gen_loss': 67.19}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 310] train={'g_nll': 0.682, 'g_kl': 0.0, 'g_elbo': 0.682, 'x_rna_nll': 11.952, 'x_rna_kl': 0.013, 'x_rna_elbo': 11.965, 'x_atac_nll': 8.692, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.692, 'dsc_loss': 0.629, 'vae_loss': 20.684, 'gen_loss': 20.653}, val={'g_nll': 0.681, 'g_kl': 0.0, 'g_elbo': 0.681, 'x_rna_nll': 9.461, 'x_rna_kl': 0.008, 'x_rna_elbo': 9.47, 'x_atac_nll': 117.346, 'x_atac_kl': 0.0, 'x_atac_elbo': 117.346, 'dsc_loss': 0.431, 'vae_loss': 126.843, 'gen_loss': 126.821}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 320] train={'g_nll': 0.682, 'g_kl': 0.0, 'g_elbo': 0.682, 'x_rna_nll': 10.631, 'x_rna_kl': 0.013, 'x_rna_elbo': 10.644, 'x_atac_nll': 10.48, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.48, 'dsc_loss': 0.422, 'vae_loss': 21.152, 'gen_loss': 21.131}, val={'g_nll': 0.681, 'g_kl': 0.0, 'g_elbo': 0.681, 'x_rna_nll': 9.59, 'x_rna_kl': 0.009, 'x_rna_elbo': 9.599, 'x_atac_nll': 174.477, 'x_atac_kl': 0.0, 'x_atac_elbo': 174.477, 'dsc_loss': 0.519, 'vae_loss': 184.103, 'gen_loss': 184.077}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 330] train={'g_nll': 0.681, 'g_kl': 0.0, 'g_elbo': 0.681, 'x_rna_nll': 10.772, 'x_rna_kl': 0.013, 'x_rna_elbo': 10.785, 'x_atac_nll': 10.497, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.498, 'dsc_loss': 0.41, 'vae_loss': 21.31, 'gen_loss': 21.29}, val={'g_nll': 0.682, 'g_kl': 0.0, 'g_elbo': 0.682, 'x_rna_nll': 9.424, 'x_rna_kl': 0.01, 'x_rna_elbo': 9.434, 'x_atac_nll': 55.321, 'x_atac_kl': 0.0, 'x_atac_elbo': 55.321, 'dsc_loss': 0.692, 'vae_loss': 64.782, 'gen_loss': 64.748}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 340] train={'g_nll': 0.68, 'g_kl': 0.0, 'g_elbo': 0.68, 'x_rna_nll': 10.881, 'x_rna_kl': 0.013, 'x_rna_elbo': 10.894, 'x_atac_nll': 10.147, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.147, 'dsc_loss': 0.428, 'vae_loss': 21.069, 'gen_loss': 21.048}, val={'g_nll': 0.679, 'g_kl': 0.0, 'g_elbo': 0.679, 'x_rna_nll': 9.825, 'x_rna_kl': 0.008, 'x_rna_elbo': 9.833, 'x_atac_nll': 99.296, 'x_atac_kl': 0.0, 'x_atac_elbo': 99.296, 'dsc_loss': 0.614, 'vae_loss': 109.157, 'gen_loss': 109.126}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 350] train={'g_nll': 0.678, 'g_kl': 0.0, 'g_elbo': 0.678, 'x_rna_nll': 10.458, 'x_rna_kl': 0.013, 'x_rna_elbo': 10.472, 'x_atac_nll': 7.207, 'x_atac_kl': 0.0, 'x_atac_elbo': 7.207, 'dsc_loss': 0.523, 'vae_loss': 17.706, 'gen_loss': 17.68}, val={'g_nll': 0.677, 'g_kl': 0.0, 'g_elbo': 0.677, 'x_rna_nll': 9.119, 'x_rna_kl': 0.01, 'x_rna_elbo': 9.129, 'x_atac_nll': 62.139, 'x_atac_kl': 0.0, 'x_atac_elbo': 62.139, 'dsc_loss': 0.516, 'vae_loss': 71.295, 'gen_loss': 71.269}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 360] train={'g_nll': 0.674, 'g_kl': 0.0, 'g_elbo': 0.674, 'x_rna_nll': 10.483, 'x_rna_kl': 0.014, 'x_rna_elbo': 10.497, 'x_atac_nll': 8.623, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.623, 'dsc_loss': 0.443, 'vae_loss': 19.147, 'gen_loss': 19.125}, val={'g_nll': 0.676, 'g_kl': 0.0, 'g_elbo': 0.676, 'x_rna_nll': 9.002, 'x_rna_kl': 0.01, 'x_rna_elbo': 9.012, 'x_atac_nll': 63.052, 'x_atac_kl': 0.0, 'x_atac_elbo': 63.052, 'dsc_loss': 0.843, 'vae_loss': 72.091, 'gen_loss': 72.049}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 370] train={'g_nll': 0.674, 'g_kl': 0.0, 'g_elbo': 0.674, 'x_rna_nll': 10.557, 'x_rna_kl': 0.014, 'x_rna_elbo': 10.571, 'x_atac_nll': 12.229, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.229, 'dsc_loss': 0.5, 'vae_loss': 22.827, 'gen_loss': 22.802}, val={'g_nll': 0.671, 'g_kl': 0.0, 'g_elbo': 0.671, 'x_rna_nll': 9.06, 'x_rna_kl': 0.008, 'x_rna_elbo': 9.068, 'x_atac_nll': 113.61, 'x_atac_kl': 0.0, 'x_atac_elbo': 113.61, 'dsc_loss': 0.592, 'vae_loss': 122.705, 'gen_loss': 122.675}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 380] train={'g_nll': 0.675, 'g_kl': 0.0, 'g_elbo': 0.675, 'x_rna_nll': 9.905, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.918, 'x_atac_nll': 11.645, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.645, 'dsc_loss': 0.414, 'vae_loss': 21.59, 'gen_loss': 21.57}, val={'g_nll': 0.673, 'g_kl': 0.0, 'g_elbo': 0.673, 'x_rna_nll': 8.959, 'x_rna_kl': 0.009, 'x_rna_elbo': 8.968, 'x_atac_nll': 91.452, 'x_atac_kl': 0.0, 'x_atac_elbo': 91.452, 'dsc_loss': 0.666, 'vae_loss': 100.447, 'gen_loss': 100.414}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 390] train={'g_nll': 0.671, 'g_kl': 0.0, 'g_elbo': 0.671, 'x_rna_nll': 10.263, 'x_rna_kl': 0.013, 'x_rna_elbo': 10.277, 'x_atac_nll': 8.565, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.565, 'dsc_loss': 0.421, 'vae_loss': 18.868, 'gen_loss': 18.847}, val={'g_nll': 0.672, 'g_kl': 0.0, 'g_elbo': 0.672, 'x_rna_nll': 9.789, 'x_rna_kl': 0.011, 'x_rna_elbo': 9.8, 'x_atac_nll': 116.886, 'x_atac_kl': 0.0, 'x_atac_elbo': 116.886, 'dsc_loss': 0.893, 'vae_loss': 126.713, 'gen_loss': 126.669}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 400] train={'g_nll': 0.673, 'g_kl': 0.0, 'g_elbo': 0.673, 'x_rna_nll': 10.235, 'x_rna_kl': 0.014, 'x_rna_elbo': 10.248, 'x_atac_nll': 11.874, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.874, 'dsc_loss': 0.379, 'vae_loss': 22.149, 'gen_loss': 22.13}, val={'g_nll': 0.67, 'g_kl': 0.0, 'g_elbo': 0.67, 'x_rna_nll': 9.344, 'x_rna_kl': 0.009, 'x_rna_elbo': 9.353, 'x_atac_nll': 36.558, 'x_atac_kl': 0.0, 'x_atac_elbo': 36.558, 'dsc_loss': 0.563, 'vae_loss': 45.937, 'gen_loss': 45.909}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 410] train={'g_nll': 0.671, 'g_kl': 0.0, 'g_elbo': 0.671, 'x_rna_nll': 9.667, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.681, 'x_atac_nll': 12.14, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.14, 'dsc_loss': 0.418, 'vae_loss': 21.848, 'gen_loss': 21.827}, val={'g_nll': 0.671, 'g_kl': 0.0, 'g_elbo': 0.671, 'x_rna_nll': 8.839, 'x_rna_kl': 0.009, 'x_rna_elbo': 8.848, 'x_atac_nll': 116.824, 'x_atac_kl': 0.0, 'x_atac_elbo': 116.824, 'dsc_loss': 0.566, 'vae_loss': 125.699, 'gen_loss': 125.67}, 27.6s elapsed
-[INFO] SCGLUETrainer: [Epoch 420] train={'g_nll': 0.668, 'g_kl': 0.0, 'g_elbo': 0.668, 'x_rna_nll': 9.669, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.684, 'x_atac_nll': 10.657, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.658, 'dsc_loss': 0.43, 'vae_loss': 20.368, 'gen_loss': 20.346}, val={'g_nll': 0.669, 'g_kl': 0.0, 'g_elbo': 0.669, 'x_rna_nll': 9.451, 'x_rna_kl': 0.008, 'x_rna_elbo': 9.459, 'x_atac_nll': 61.958, 'x_atac_kl': 0.0, 'x_atac_elbo': 61.958, 'dsc_loss': 0.553, 'vae_loss': 71.444, 'gen_loss': 71.417}, 27.6s elapsed
-[INFO] SCGLUETrainer: [Epoch 430] train={'g_nll': 0.667, 'g_kl': 0.0, 'g_elbo': 0.667, 'x_rna_nll': 9.73, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.744, 'x_atac_nll': 12.136, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.137, 'dsc_loss': 0.405, 'vae_loss': 21.907, 'gen_loss': 21.887}, val={'g_nll': 0.667, 'g_kl': 0.0, 'g_elbo': 0.667, 'x_rna_nll': 9.119, 'x_rna_kl': 0.011, 'x_rna_elbo': 9.13, 'x_atac_nll': 112.783, 'x_atac_kl': 0.0, 'x_atac_elbo': 112.783, 'dsc_loss': 0.753, 'vae_loss': 121.939, 'gen_loss': 121.902}, 27.6s elapsed
-[INFO] SCGLUETrainer: [Epoch 440] train={'g_nll': 0.662, 'g_kl': 0.0, 'g_elbo': 0.662, 'x_rna_nll': 9.66, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.674, 'x_atac_nll': 12.146, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.146, 'dsc_loss': 0.422, 'vae_loss': 21.846, 'gen_loss': 21.825}, val={'g_nll': 0.664, 'g_kl': 0.0, 'g_elbo': 0.664, 'x_rna_nll': 9.232, 'x_rna_kl': 0.009, 'x_rna_elbo': 9.241, 'x_atac_nll': 103.339, 'x_atac_kl': 0.0, 'x_atac_elbo': 103.339, 'dsc_loss': 0.637, 'vae_loss': 112.607, 'gen_loss': 112.575}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 450] train={'g_nll': 0.664, 'g_kl': 0.0, 'g_elbo': 0.664, 'x_rna_nll': 9.357, 'x_rna_kl': 0.015, 'x_rna_elbo': 9.372, 'x_atac_nll': 7.071, 'x_atac_kl': 0.0, 'x_atac_elbo': 7.072, 'dsc_loss': 0.356, 'vae_loss': 16.47, 'gen_loss': 16.452}, val={'g_nll': 0.667, 'g_kl': 0.0, 'g_elbo': 0.667, 'x_rna_nll': 8.928, 'x_rna_kl': 0.009, 'x_rna_elbo': 8.937, 'x_atac_nll': 62.498, 'x_atac_kl': 0.0, 'x_atac_elbo': 62.498, 'dsc_loss': 0.616, 'vae_loss': 71.462, 'gen_loss': 71.431}, 27.6s elapsed
-[INFO] SCGLUETrainer: [Epoch 460] train={'g_nll': 0.663, 'g_kl': 0.0, 'g_elbo': 0.663, 'x_rna_nll': 9.488, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.502, 'x_atac_nll': 8.522, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.522, 'dsc_loss': 0.447, 'vae_loss': 18.05, 'gen_loss': 18.028}, val={'g_nll': 0.665, 'g_kl': 0.0, 'g_elbo': 0.665, 'x_rna_nll': 8.666, 'x_rna_kl': 0.009, 'x_rna_elbo': 8.675, 'x_atac_nll': 104.041, 'x_atac_kl': 0.0, 'x_atac_elbo': 104.041, 'dsc_loss': 0.569, 'vae_loss': 112.743, 'gen_loss': 112.714}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 470] train={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 9.497, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.51, 'x_atac_nll': 8.53, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.53, 'dsc_loss': 0.329, 'vae_loss': 18.067, 'gen_loss': 18.05}, val={'g_nll': 0.666, 'g_kl': 0.0, 'g_elbo': 0.666, 'x_rna_nll': 8.858, 'x_rna_kl': 0.011, 'x_rna_elbo': 8.87, 'x_atac_nll': 59.572, 'x_atac_kl': 0.0, 'x_atac_elbo': 59.572, 'dsc_loss': 0.86, 'vae_loss': 68.468, 'gen_loss': 68.425}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 480] train={'g_nll': 0.66, 'g_kl': 0.0, 'g_elbo': 0.66, 'x_rna_nll': 9.445, 'x_rna_kl': 0.015, 'x_rna_elbo': 9.46, 'x_atac_nll': 10.345, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.345, 'dsc_loss': 0.49, 'vae_loss': 19.832, 'gen_loss': 19.807}, val={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 8.617, 'x_rna_kl': 0.011, 'x_rna_elbo': 8.629, 'x_atac_nll': 174.748, 'x_atac_kl': 0.0, 'x_atac_elbo': 174.748, 'dsc_loss': 0.582, 'vae_loss': 183.403, 'gen_loss': 183.374}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 490] train={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 9.059, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.074, 'x_atac_nll': 7.061, 'x_atac_kl': 0.0, 'x_atac_elbo': 7.061, 'dsc_loss': 0.377, 'vae_loss': 16.161, 'gen_loss': 16.142}, val={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.773, 'x_rna_kl': 0.011, 'x_rna_elbo': 8.784, 'x_atac_nll': 62.487, 'x_atac_kl': 0.0, 'x_atac_elbo': 62.487, 'dsc_loss': 0.556, 'vae_loss': 71.297, 'gen_loss': 71.269}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 500] train={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 9.238, 'x_rna_kl': 0.014, 'x_rna_elbo': 9.252, 'x_atac_nll': 8.784, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.785, 'dsc_loss': 0.384, 'vae_loss': 18.063, 'gen_loss': 18.044}, val={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.883, 'x_rna_kl': 0.012, 'x_rna_elbo': 8.894, 'x_atac_nll': 61.691, 'x_atac_kl': 0.0, 'x_atac_elbo': 61.691, 'dsc_loss': 0.719, 'vae_loss': 70.612, 'gen_loss': 70.576}, 27.4s elapsed
-[INFO] EarlyStopping: No usable checkpoint found. Skipping checkpoint restoration.
-[INFO] fit_SCGLUE: Estimating balancing weight...
-[INFO] estimate_balancing_weight: Clustering cells...
-[INFO] estimate_balancing_weight: Matching clusters...
-[INFO] estimate_balancing_weight: Matching array shape = (4, 5)...
-[INFO] estimate_balancing_weight: Estimating balancing weight...
-[INFO] fit_SCGLUE: Fine-tuning SCGLUE model...
-[INFO] check_graph: Checking variable coverage...
-[INFO] check_graph: Checking edge attributes...
-[INFO] check_graph: Checking self-loops...
-[INFO] check_graph: Checking graph symmetry...
-[INFO] check_graph: All checks passed!
-[INFO] SCGLUEModel: Setting `graph_batch_size` = 1396522
-[INFO] SCGLUEModel: Setting `align_burnin` = 6465
-[INFO] SCGLUEModel: Setting `patience` = 3233
-[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 1617
-[INFO] SCGLUETrainer: Using training directory: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/multiomics/integration/glue/training/fine-tune"
-[INFO] SCGLUETrainer: [Epoch 10] train={'g_nll': 0.668, 'g_kl': 0.0, 'g_elbo': 0.668, 'x_rna_nll': 38.524, 'x_rna_kl': 0.042, 'x_rna_elbo': 38.566, 'x_atac_nll': 10.194, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.194, 'dsc_loss': 0.342, 'vae_loss': 48.787, 'gen_loss': 48.77}, val={'g_nll': 0.668, 'g_kl': 0.0, 'g_elbo': 0.668, 'x_rna_nll': 17.129, 'x_rna_kl': 0.042, 'x_rna_elbo': 17.171, 'x_atac_nll': 4.091, 'x_atac_kl': 0.0, 'x_atac_elbo': 4.091, 'dsc_loss': 0.032, 'vae_loss': 21.288, 'gen_loss': 21.287}, 27.1s elapsed
-[INFO] SCGLUETrainer: [Epoch 20] train={'g_nll': 0.664, 'g_kl': 0.0, 'g_elbo': 0.664, 'x_rna_nll': 15.377, 'x_rna_kl': 0.041, 'x_rna_elbo': 15.418, 'x_atac_nll': 10.694, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.694, 'dsc_loss': 0.403, 'vae_loss': 26.138, 'gen_loss': 26.118}, val={'g_nll': 0.663, 'g_kl': 0.0, 'g_elbo': 0.663, 'x_rna_nll': 10.561, 'x_rna_kl': 0.039, 'x_rna_elbo': 10.6, 'x_atac_nll': 3.94, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.94, 'dsc_loss': 0.078, 'vae_loss': 14.566, 'gen_loss': 14.563}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 30] train={'g_nll': 0.662, 'g_kl': 0.0, 'g_elbo': 0.662, 'x_rna_nll': 12.34, 'x_rna_kl': 0.039, 'x_rna_elbo': 12.378, 'x_atac_nll': 10.348, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.348, 'dsc_loss': 0.279, 'vae_loss': 22.753, 'gen_loss': 22.739}, val={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 9.406, 'x_rna_kl': 0.041, 'x_rna_elbo': 9.447, 'x_atac_nll': 3.955, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.955, 'dsc_loss': 0.005, 'vae_loss': 13.428, 'gen_loss': 13.428}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 40] train={'g_nll': 0.662, 'g_kl': 0.0, 'g_elbo': 0.662, 'x_rna_nll': 10.059, 'x_rna_kl': 0.039, 'x_rna_elbo': 10.097, 'x_atac_nll': 12.038, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.039, 'dsc_loss': 0.171, 'vae_loss': 22.163, 'gen_loss': 22.154}, val={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 9.908, 'x_rna_kl': 0.039, 'x_rna_elbo': 9.947, 'x_atac_nll': 3.913, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.913, 'dsc_loss': 0.048, 'vae_loss': 13.887, 'gen_loss': 13.884}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 50] train={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 10.537, 'x_rna_kl': 0.038, 'x_rna_elbo': 10.575, 'x_atac_nll': 8.522, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.522, 'dsc_loss': 0.192, 'vae_loss': 19.124, 'gen_loss': 19.114}, val={'g_nll': 0.662, 'g_kl': 0.0, 'g_elbo': 0.662, 'x_rna_nll': 10.994, 'x_rna_kl': 0.042, 'x_rna_elbo': 11.036, 'x_atac_nll': 3.851, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.851, 'dsc_loss': 0.005, 'vae_loss': 14.913, 'gen_loss': 14.913}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 60] train={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 9.68, 'x_rna_kl': 0.038, 'x_rna_elbo': 9.717, 'x_atac_nll': 9.97, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.97, 'dsc_loss': 0.234, 'vae_loss': 19.714, 'gen_loss': 19.702}, val={'g_nll': 0.66, 'g_kl': 0.0, 'g_elbo': 0.66, 'x_rna_nll': 12.193, 'x_rna_kl': 0.039, 'x_rna_elbo': 12.231, 'x_atac_nll': 3.87, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.87, 'dsc_loss': 0.026, 'vae_loss': 16.128, 'gen_loss': 16.127}, 27.1s elapsed
-[INFO] SCGLUETrainer: [Epoch 70] train={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 10.074, 'x_rna_kl': 0.037, 'x_rna_elbo': 10.111, 'x_atac_nll': 13.798, 'x_atac_kl': 0.0, 'x_atac_elbo': 13.798, 'dsc_loss': 0.157, 'vae_loss': 23.935, 'gen_loss': 23.928}, val={'g_nll': 0.662, 'g_kl': 0.0, 'g_elbo': 0.662, 'x_rna_nll': 8.687, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.721, 'x_atac_nll': 3.772, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.772, 'dsc_loss': 0.024, 'vae_loss': 12.519, 'gen_loss': 12.518}, 27.1s elapsed
-[INFO] SCGLUETrainer: [Epoch 80] train={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 9.592, 'x_rna_kl': 0.037, 'x_rna_elbo': 9.63, 'x_atac_nll': 11.72, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.72, 'dsc_loss': 0.191, 'vae_loss': 21.376, 'gen_loss': 21.366}, val={'g_nll': 0.66, 'g_kl': 0.0, 'g_elbo': 0.66, 'x_rna_nll': 8.969, 'x_rna_kl': 0.038, 'x_rna_elbo': 9.008, 'x_atac_nll': 3.763, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.763, 'dsc_loss': 0.089, 'vae_loss': 12.797, 'gen_loss': 12.793}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 90] train={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 10.018, 'x_rna_kl': 0.038, 'x_rna_elbo': 10.056, 'x_atac_nll': 11.477, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.477, 'dsc_loss': 0.149, 'vae_loss': 21.559, 'gen_loss': 21.552}, val={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 8.554, 'x_rna_kl': 0.04, 'x_rna_elbo': 8.595, 'x_atac_nll': 3.782, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.782, 'dsc_loss': 0.051, 'vae_loss': 12.403, 'gen_loss': 12.401}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 100] train={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 9.112, 'x_rna_kl': 0.036, 'x_rna_elbo': 9.148, 'x_atac_nll': 8.48, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.481, 'dsc_loss': 0.149, 'vae_loss': 17.655, 'gen_loss': 17.647}, val={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.657, 'x_rna_kl': 0.038, 'x_rna_elbo': 8.695, 'x_atac_nll': 3.897, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.897, 'dsc_loss': 0.009, 'vae_loss': 12.619, 'gen_loss': 12.618}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 110] train={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 9.546, 'x_rna_kl': 0.038, 'x_rna_elbo': 9.583, 'x_atac_nll': 10.266, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.266, 'dsc_loss': 0.281, 'vae_loss': 19.876, 'gen_loss': 19.862}, val={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 9.188, 'x_rna_kl': 0.041, 'x_rna_elbo': 9.229, 'x_atac_nll': 3.808, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.808, 'dsc_loss': 0.01, 'vae_loss': 13.064, 'gen_loss': 13.064}, 27.1s elapsed
-[INFO] SCGLUETrainer: [Epoch 120] train={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.994, 'x_rna_kl': 0.037, 'x_rna_elbo': 9.031, 'x_atac_nll': 8.43, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.43, 'dsc_loss': 0.17, 'vae_loss': 17.487, 'gen_loss': 17.479}, val={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.394, 'x_rna_kl': 0.04, 'x_rna_elbo': 8.434, 'x_atac_nll': 3.739, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.739, 'dsc_loss': 0.03, 'vae_loss': 12.199, 'gen_loss': 12.198}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 130] train={'g_nll': 0.66, 'g_kl': 0.0, 'g_elbo': 0.66, 'x_rna_nll': 9.16, 'x_rna_kl': 0.037, 'x_rna_elbo': 9.197, 'x_atac_nll': 11.412, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.412, 'dsc_loss': 0.122, 'vae_loss': 20.635, 'gen_loss': 20.629}, val={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.542, 'x_rna_kl': 0.041, 'x_rna_elbo': 8.583, 'x_atac_nll': 3.73, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.731, 'dsc_loss': 0.044, 'vae_loss': 12.34, 'gen_loss': 12.337}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 140] train={'g_nll': 0.66, 'g_kl': 0.0, 'g_elbo': 0.66, 'x_rna_nll': 8.73, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.766, 'x_atac_nll': 11.689, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.689, 'dsc_loss': 0.182, 'vae_loss': 20.482, 'gen_loss': 20.473}, val={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.22, 'x_rna_kl': 0.039, 'x_rna_elbo': 8.259, 'x_atac_nll': 3.791, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.791, 'dsc_loss': 0.006, 'vae_loss': 12.076, 'gen_loss': 12.076}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 150] train={'g_nll': 0.66, 'g_kl': 0.0, 'g_elbo': 0.66, 'x_rna_nll': 8.798, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.834, 'x_atac_nll': 10.217, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.217, 'dsc_loss': 0.112, 'vae_loss': 19.078, 'gen_loss': 19.072}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.657, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.693, 'x_atac_nll': 3.805, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.805, 'dsc_loss': 0.045, 'vae_loss': 12.525, 'gen_loss': 12.522}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 160] train={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.791, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.827, 'x_atac_nll': 8.698, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.698, 'dsc_loss': 0.298, 'vae_loss': 17.552, 'gen_loss': 17.537}, val={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.204, 'x_rna_kl': 0.033, 'x_rna_elbo': 8.237, 'x_atac_nll': 3.874, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.874, 'dsc_loss': 0.064, 'vae_loss': 12.137, 'gen_loss': 12.134}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 170] train={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.925, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.96, 'x_atac_nll': 14.953, 'x_atac_kl': 0.0, 'x_atac_elbo': 14.954, 'dsc_loss': 0.326, 'vae_loss': 23.94, 'gen_loss': 23.924}, val={'g_nll': 0.661, 'g_kl': 0.0, 'g_elbo': 0.661, 'x_rna_nll': 8.172, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.207, 'x_atac_nll': 3.72, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.72, 'dsc_loss': 0.139, 'vae_loss': 11.954, 'gen_loss': 11.947}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 180] train={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.893, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.93, 'x_atac_nll': 10.497, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.497, 'dsc_loss': 0.059, 'vae_loss': 19.453, 'gen_loss': 19.45}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.254, 'x_rna_kl': 0.039, 'x_rna_elbo': 8.294, 'x_atac_nll': 3.867, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.867, 'dsc_loss': 0.085, 'vae_loss': 12.187, 'gen_loss': 12.183}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 190] train={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.658, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.693, 'x_atac_nll': 8.732, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.732, 'dsc_loss': 0.085, 'vae_loss': 17.452, 'gen_loss': 17.447}, val={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 8.084, 'x_rna_kl': 0.037, 'x_rna_elbo': 8.121, 'x_atac_nll': 3.848, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.848, 'dsc_loss': 0.017, 'vae_loss': 11.995, 'gen_loss': 11.994}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 200] train={'g_nll': 0.659, 'g_kl': 0.0, 'g_elbo': 0.659, 'x_rna_nll': 8.806, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.842, 'x_atac_nll': 8.688, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.688, 'dsc_loss': 0.11, 'vae_loss': 17.556, 'gen_loss': 17.551}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.178, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.214, 'x_atac_nll': 3.569, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.569, 'dsc_loss': 0.029, 'vae_loss': 11.81, 'gen_loss': 11.808}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 210] train={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.425, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.461, 'x_atac_nll': 8.663, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.663, 'dsc_loss': 0.12, 'vae_loss': 17.151, 'gen_loss': 17.145}, val={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.166, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.202, 'x_atac_nll': 3.774, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.774, 'dsc_loss': 0.053, 'vae_loss': 12.002, 'gen_loss': 12.0}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 220] train={'g_nll': 0.655, 'g_kl': 0.0, 'g_elbo': 0.655, 'x_rna_nll': 8.516, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.551, 'x_atac_nll': 8.381, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.381, 'dsc_loss': 0.163, 'vae_loss': 16.959, 'gen_loss': 16.95}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 7.972, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.007, 'x_atac_nll': 3.835, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.835, 'dsc_loss': 0.089, 'vae_loss': 11.868, 'gen_loss': 11.864}, 27.0s elapsed
-[INFO] SCGLUETrainer: [Epoch 230] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.519, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.556, 'x_atac_nll': 8.598, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.598, 'dsc_loss': 0.18, 'vae_loss': 17.18, 'gen_loss': 17.171}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.028, 'x_rna_kl': 0.037, 'x_rna_elbo': 8.065, 'x_atac_nll': 3.764, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.764, 'dsc_loss': 0.028, 'vae_loss': 11.856, 'gen_loss': 11.854}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 240] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.544, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.581, 'x_atac_nll': 8.362, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.362, 'dsc_loss': 0.118, 'vae_loss': 16.969, 'gen_loss': 16.963}, val={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.027, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.063, 'x_atac_nll': 3.825, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.825, 'dsc_loss': 0.013, 'vae_loss': 11.914, 'gen_loss': 11.913}, 27.7s elapsed
-[INFO] SCGLUETrainer: [Epoch 250] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.691, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.727, 'x_atac_nll': 13.965, 'x_atac_kl': 0.0, 'x_atac_elbo': 13.966, 'dsc_loss': 0.271, 'vae_loss': 22.719, 'gen_loss': 22.706}, val={'g_nll': 0.658, 'g_kl': 0.0, 'g_elbo': 0.658, 'x_rna_nll': 8.034, 'x_rna_kl': 0.037, 'x_rna_elbo': 8.071, 'x_atac_nll': 3.745, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.745, 'dsc_loss': 0.008, 'vae_loss': 11.842, 'gen_loss': 11.842}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 260] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.488, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.523, 'x_atac_nll': 10.085, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.085, 'dsc_loss': 0.192, 'vae_loss': 18.635, 'gen_loss': 18.625}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 7.998, 'x_rna_kl': 0.039, 'x_rna_elbo': 8.038, 'x_atac_nll': 3.676, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.676, 'dsc_loss': 0.007, 'vae_loss': 11.74, 'gen_loss': 11.74}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 270] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.451, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.486, 'x_atac_nll': 12.165, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.165, 'dsc_loss': 0.128, 'vae_loss': 20.678, 'gen_loss': 20.671}, val={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 7.933, 'x_rna_kl': 0.037, 'x_rna_elbo': 7.969, 'x_atac_nll': 3.745, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.745, 'dsc_loss': 0.002, 'vae_loss': 11.74, 'gen_loss': 11.74}, 27.1s elapsed
-[INFO] SCGLUETrainer: [Epoch 280] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.375, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.41, 'x_atac_nll': 12.126, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.126, 'dsc_loss': 0.16, 'vae_loss': 20.563, 'gen_loss': 20.555}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.143, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.179, 'x_atac_nll': 3.805, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.805, 'dsc_loss': 0.003, 'vae_loss': 12.01, 'gen_loss': 12.01}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 290] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.324, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.359, 'x_atac_nll': 8.649, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.649, 'dsc_loss': 0.159, 'vae_loss': 17.034, 'gen_loss': 17.026}, val={'g_nll': 0.655, 'g_kl': 0.0, 'g_elbo': 0.655, 'x_rna_nll': 8.063, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.099, 'x_atac_nll': 3.59, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.59, 'dsc_loss': 0.005, 'vae_loss': 11.715, 'gen_loss': 11.715}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 300] train={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 8.504, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.538, 'x_atac_nll': 8.646, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.647, 'dsc_loss': 0.232, 'vae_loss': 17.211, 'gen_loss': 17.199}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.019, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.056, 'x_atac_nll': 3.722, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.722, 'dsc_loss': 0.395, 'vae_loss': 11.804, 'gen_loss': 11.785}, 26.9s elapsed
-[INFO] SCGLUETrainer: [Epoch 310] train={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 8.359, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.394, 'x_atac_nll': 6.871, 'x_atac_kl': 0.0, 'x_atac_elbo': 6.871, 'dsc_loss': 0.503, 'vae_loss': 15.292, 'gen_loss': 15.267}, val={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 8.028, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.064, 'x_atac_nll': 3.712, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.712, 'dsc_loss': 0.001, 'vae_loss': 11.802, 'gen_loss': 11.802}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 320] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.401, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.436, 'x_atac_nll': 8.338, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.338, 'dsc_loss': 0.142, 'vae_loss': 16.801, 'gen_loss': 16.794}, val={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 7.942, 'x_rna_kl': 0.036, 'x_rna_elbo': 7.978, 'x_atac_nll': 3.648, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.648, 'dsc_loss': 0.141, 'vae_loss': 11.653, 'gen_loss': 11.646}, 26.9s elapsed
-[INFO] SCGLUETrainer: [Epoch 330] train={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 8.395, 'x_rna_kl': 0.034, 'x_rna_elbo': 8.429, 'x_atac_nll': 11.292, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.293, 'dsc_loss': 0.112, 'vae_loss': 19.748, 'gen_loss': 19.742}, val={'g_nll': 0.655, 'g_kl': 0.0, 'g_elbo': 0.655, 'x_rna_nll': 7.928, 'x_rna_kl': 0.034, 'x_rna_elbo': 7.961, 'x_atac_nll': 3.58, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.58, 'dsc_loss': 0.009, 'vae_loss': 11.567, 'gen_loss': 11.567}, 26.8s elapsed
-[INFO] SCGLUETrainer: [Epoch 340] train={'g_nll': 0.654, 'g_kl': 0.0, 'g_elbo': 0.655, 'x_rna_nll': 8.291, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.327, 'x_atac_nll': 9.769, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.769, 'dsc_loss': 0.258, 'vae_loss': 18.122, 'gen_loss': 18.109}, val={'g_nll': 0.657, 'g_kl': 0.0, 'g_elbo': 0.657, 'x_rna_nll': 7.919, 'x_rna_kl': 0.033, 'x_rna_elbo': 7.952, 'x_atac_nll': 3.712, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.712, 'dsc_loss': 0.007, 'vae_loss': 11.69, 'gen_loss': 11.69}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 350] train={'g_nll': 0.655, 'g_kl': 0.0, 'g_elbo': 0.655, 'x_rna_nll': 8.225, 'x_rna_kl': 0.036, 'x_rna_elbo': 8.261, 'x_atac_nll': 11.803, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.803, 'dsc_loss': 0.099, 'vae_loss': 20.09, 'gen_loss': 20.085}, val={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 7.931, 'x_rna_kl': 0.038, 'x_rna_elbo': 7.97, 'x_atac_nll': 3.714, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.714, 'dsc_loss': 0.016, 'vae_loss': 11.71, 'gen_loss': 11.71}, 26.9s elapsed
-[INFO] SCGLUETrainer: [Epoch 360] train={'g_nll': 0.653, 'g_kl': 0.0, 'g_elbo': 0.653, 'x_rna_nll': 9.087, 'x_rna_kl': 0.035, 'x_rna_elbo': 9.122, 'x_atac_nll': 12.121, 'x_atac_kl': 0.0, 'x_atac_elbo': 12.121, 'dsc_loss': 0.046, 'vae_loss': 21.27, 'gen_loss': 21.267}, val={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 7.92, 'x_rna_kl': 0.033, 'x_rna_elbo': 7.953, 'x_atac_nll': 3.63, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.63, 'dsc_loss': 0.008, 'vae_loss': 11.609, 'gen_loss': 11.609}, 26.8s elapsed
-[INFO] SCGLUETrainer: [Epoch 370] train={'g_nll': 0.655, 'g_kl': 0.0, 'g_elbo': 0.655, 'x_rna_nll': 8.248, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.283, 'x_atac_nll': 8.284, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.284, 'dsc_loss': 0.11, 'vae_loss': 16.594, 'gen_loss': 16.588}, val={'g_nll': 0.655, 'g_kl': 0.0, 'g_elbo': 0.655, 'x_rna_nll': 7.85, 'x_rna_kl': 0.037, 'x_rna_elbo': 7.887, 'x_atac_nll': 3.621, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.621, 'dsc_loss': 0.013, 'vae_loss': 11.534, 'gen_loss': 11.533}, 27.3s elapsed
-[INFO] SCGLUETrainer: [Epoch 380] train={'g_nll': 0.656, 'g_kl': 0.0, 'g_elbo': 0.656, 'x_rna_nll': 8.25, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.285, 'x_atac_nll': 13.32, 'x_atac_kl': 0.0, 'x_atac_elbo': 13.321, 'dsc_loss': 0.151, 'vae_loss': 21.632, 'gen_loss': 21.624}, val={'g_nll': 0.654, 'g_kl': 0.0, 'g_elbo': 0.654, 'x_rna_nll': 7.801, 'x_rna_kl': 0.038, 'x_rna_elbo': 7.839, 'x_atac_nll': 3.619, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.619, 'dsc_loss': 0.001, 'vae_loss': 11.484, 'gen_loss': 11.484}, 26.8s elapsed
-[INFO] SCGLUETrainer: [Epoch 390] train={'g_nll': 0.654, 'g_kl': 0.0, 'g_elbo': 0.654, 'x_rna_nll': 8.176, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.211, 'x_atac_nll': 6.796, 'x_atac_kl': 0.0, 'x_atac_elbo': 6.796, 'dsc_loss': 0.085, 'vae_loss': 15.033, 'gen_loss': 15.029}, val={'g_nll': 0.653, 'g_kl': 0.0, 'g_elbo': 0.653, 'x_rna_nll': 7.927, 'x_rna_kl': 0.033, 'x_rna_elbo': 7.96, 'x_atac_nll': 3.626, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.626, 'dsc_loss': 0.128, 'vae_loss': 11.613, 'gen_loss': 11.606}, 26.9s elapsed
-[INFO] SCGLUETrainer: [Epoch 400] train={'g_nll': 0.654, 'g_kl': 0.0, 'g_elbo': 0.654, 'x_rna_nll': 8.203, 'x_rna_kl': 0.034, 'x_rna_elbo': 8.237, 'x_atac_nll': 6.746, 'x_atac_kl': 0.0, 'x_atac_elbo': 6.747, 'dsc_loss': 0.14, 'vae_loss': 15.01, 'gen_loss': 15.003}, val={'g_nll': 0.654, 'g_kl': 0.0, 'g_elbo': 0.654, 'x_rna_nll': 7.937, 'x_rna_kl': 0.038, 'x_rna_elbo': 7.975, 'x_atac_nll': 3.687, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.687, 'dsc_loss': 0.002, 'vae_loss': 11.688, 'gen_loss': 11.688}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 410] train={'g_nll': 0.653, 'g_kl': 0.0, 'g_elbo': 0.653, 'x_rna_nll': 8.229, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.264, 'x_atac_nll': 8.579, 'x_atac_kl': 0.0, 'x_atac_elbo': 8.58, 'dsc_loss': 0.185, 'vae_loss': 16.87, 'gen_loss': 16.86}, val={'g_nll': 0.653, 'g_kl': 0.0, 'g_elbo': 0.653, 'x_rna_nll': 7.831, 'x_rna_kl': 0.033, 'x_rna_elbo': 7.864, 'x_atac_nll': 3.754, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.754, 'dsc_loss': 0.017, 'vae_loss': 11.644, 'gen_loss': 11.643}, 27.6s elapsed
-[INFO] SCGLUETrainer: [Epoch 420] train={'g_nll': 0.652, 'g_kl': 0.0, 'g_elbo': 0.652, 'x_rna_nll': 8.085, 'x_rna_kl': 0.034, 'x_rna_elbo': 8.119, 'x_atac_nll': 9.73, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.73, 'dsc_loss': 0.077, 'vae_loss': 17.876, 'gen_loss': 17.872}, val={'g_nll': 0.653, 'g_kl': 0.0, 'g_elbo': 0.653, 'x_rna_nll': 7.826, 'x_rna_kl': 0.036, 'x_rna_elbo': 7.862, 'x_atac_nll': 3.668, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.668, 'dsc_loss': 0.009, 'vae_loss': 11.556, 'gen_loss': 11.555}, 26.8s elapsed
-[INFO] SCGLUETrainer: [Epoch 430] train={'g_nll': 0.653, 'g_kl': 0.0, 'g_elbo': 0.653, 'x_rna_nll': 8.11, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.145, 'x_atac_nll': 14.718, 'x_atac_kl': 0.0, 'x_atac_elbo': 14.719, 'dsc_loss': 0.108, 'vae_loss': 22.89, 'gen_loss': 22.884}, val={'g_nll': 0.652, 'g_kl': 0.0, 'g_elbo': 0.652, 'x_rna_nll': 7.794, 'x_rna_kl': 0.03, 'x_rna_elbo': 7.824, 'x_atac_nll': 3.541, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.541, 'dsc_loss': 0.025, 'vae_loss': 11.392, 'gen_loss': 11.39}, 26.8s elapsed
-[INFO] SCGLUETrainer: [Epoch 440] train={'g_nll': 0.652, 'g_kl': 0.0, 'g_elbo': 0.652, 'x_rna_nll': 8.062, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.097, 'x_atac_nll': 10.271, 'x_atac_kl': 0.0, 'x_atac_elbo': 10.271, 'dsc_loss': 0.142, 'vae_loss': 18.394, 'gen_loss': 18.387}, val={'g_nll': 0.653, 'g_kl': 0.0, 'g_elbo': 0.653, 'x_rna_nll': 7.85, 'x_rna_kl': 0.035, 'x_rna_elbo': 7.885, 'x_atac_nll': 3.674, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.674, 'dsc_loss': 0.006, 'vae_loss': 11.585, 'gen_loss': 11.585}, 27.0s elapsed
-[INFO] SCGLUETrainer: [Epoch 450] train={'g_nll': 0.651, 'g_kl': 0.0, 'g_elbo': 0.651, 'x_rna_nll': 8.081, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.116, 'x_atac_nll': 10.297, 'x_atac_kl': 0.001, 'x_atac_elbo': 10.298, 'dsc_loss': 0.078, 'vae_loss': 18.439, 'gen_loss': 18.436}, val={'g_nll': 0.65, 'g_kl': 0.0, 'g_elbo': 0.65, 'x_rna_nll': 7.836, 'x_rna_kl': 0.034, 'x_rna_elbo': 7.87, 'x_atac_nll': 3.671, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.671, 'dsc_loss': 0.003, 'vae_loss': 11.567, 'gen_loss': 11.567}, 27.1s elapsed
-[INFO] SCGLUETrainer: [Epoch 460] train={'g_nll': 0.651, 'g_kl': 0.0, 'g_elbo': 0.651, 'x_rna_nll': 8.064, 'x_rna_kl': 0.034, 'x_rna_elbo': 8.099, 'x_atac_nll': 9.937, 'x_atac_kl': 0.0, 'x_atac_elbo': 9.938, 'dsc_loss': 0.057, 'vae_loss': 18.062, 'gen_loss': 18.059}, val={'g_nll': 0.651, 'g_kl': 0.0, 'g_elbo': 0.651, 'x_rna_nll': 7.776, 'x_rna_kl': 0.032, 'x_rna_elbo': 7.809, 'x_atac_nll': 3.668, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.668, 'dsc_loss': 0.108, 'vae_loss': 11.503, 'gen_loss': 11.497}, 27.2s elapsed
-[INFO] SCGLUETrainer: [Epoch 470] train={'g_nll': 0.65, 'g_kl': 0.0, 'g_elbo': 0.65, 'x_rna_nll': 8.151, 'x_rna_kl': 0.034, 'x_rna_elbo': 8.185, 'x_atac_nll': 11.484, 'x_atac_kl': 0.0, 'x_atac_elbo': 11.484, 'dsc_loss': 0.137, 'vae_loss': 19.695, 'gen_loss': 19.688}, val={'g_nll': 0.649, 'g_kl': 0.0, 'g_elbo': 0.649, 'x_rna_nll': 7.802, 'x_rna_kl': 0.039, 'x_rna_elbo': 7.841, 'x_atac_nll': 3.645, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.645, 'dsc_loss': 0.015, 'vae_loss': 11.512, 'gen_loss': 11.511}, 26.7s elapsed
-[INFO] SCGLUETrainer: [Epoch 480] train={'g_nll': 0.648, 'g_kl': 0.0, 'g_elbo': 0.648, 'x_rna_nll': 8.113, 'x_rna_kl': 0.035, 'x_rna_elbo': 8.148, 'x_atac_nll': 10.015, 'x_atac_kl': 0.001, 'x_atac_elbo': 10.015, 'dsc_loss': 0.305, 'vae_loss': 18.189, 'gen_loss': 18.174}, val={'g_nll': 0.647, 'g_kl': 0.0, 'g_elbo': 0.647, 'x_rna_nll': 7.842, 'x_rna_kl': 0.036, 'x_rna_elbo': 7.879, 'x_atac_nll': 3.65, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.65, 'dsc_loss': 0.001, 'vae_loss': 11.555, 'gen_loss': 11.555}, 27.5s elapsed
-[INFO] SCGLUETrainer: [Epoch 490] train={'g_nll': 0.648, 'g_kl': 0.0, 'g_elbo': 0.648, 'x_rna_nll': 7.958, 'x_rna_kl': 0.035, 'x_rna_elbo': 7.993, 'x_atac_nll': 13.25, 'x_atac_kl': 0.0, 'x_atac_elbo': 13.251, 'dsc_loss': 0.271, 'vae_loss': 21.269, 'gen_loss': 21.256}, val={'g_nll': 0.648, 'g_kl': 0.0, 'g_elbo': 0.648, 'x_rna_nll': 7.776, 'x_rna_kl': 0.039, 'x_rna_elbo': 7.815, 'x_atac_nll': 3.759, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.759, 'dsc_loss': 0.014, 'vae_loss': 11.6, 'gen_loss': 11.599}, 27.4s elapsed
-[INFO] SCGLUETrainer: [Epoch 500] train={'g_nll': 0.647, 'g_kl': 0.0, 'g_elbo': 0.647, 'x_rna_nll': 7.98, 'x_rna_kl': 0.034, 'x_rna_elbo': 8.015, 'x_atac_nll': 6.657, 'x_atac_kl': 0.001, 'x_atac_elbo': 6.658, 'dsc_loss': 0.146, 'vae_loss': 14.698, 'gen_loss': 14.691}, val={'g_nll': 0.645, 'g_kl': 0.0, 'g_elbo': 0.645, 'x_rna_nll': 7.783, 'x_rna_kl': 0.038, 'x_rna_elbo': 7.821, 'x_atac_nll': 3.728, 'x_atac_kl': 0.0, 'x_atac_elbo': 3.728, 'dsc_loss': 0.012, 'vae_loss': 11.574, 'gen_loss': 11.574}, 27.5s elapsed
-[INFO] EarlyStopping: No usable checkpoint found. Skipping checkpoint restoration.
-
-
-
-🎨 Generating embeddings...
-
-
-
-
-
-
-💾 Saving results to /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/multiomics/integration/glue...
-
-
-
-
-
-
-📊 Checking integration consistency...
-
-
-
-[INFO] integration_consistency: Using layer "counts" for modality "rna"
-[INFO] integration_consistency: Selecting aggregation "sum" for modality "rna"
-[INFO] integration_consistency: Selecting aggregation "sum" for modality "atac"
-[INFO] integration_consistency: Selecting log-norm preprocessing for modality "rna"
-[INFO] integration_consistency: Selecting log-norm preprocessing for modality "atac"
-[INFO] get_metacells: Clustering metacells...
-[INFO] get_metacells: Aggregating metacells...
-[INFO] metacell_corr: Computing correlation on 3 common metacells...
-[INFO] get_metacells: Clustering metacells...
-[INFO] get_metacells: Aggregating metacells...
-
-✗ Multiomics pipeline failed with error: No common metacells found!
-
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-Multiomics Pipeline: ⚠ PARTIAL
-  - glue_integration: ✗
-  - glue_preprocessing: ✗
-  - glue_training: ✗
-  - glue_gene_activity: ✗
-  - glue_cell_types: ✗
-  - glue_visualization: ✗
-  - integration_preprocessing: ✗
-  - dimensionality_reduction: ✗
-  - embedding_visualization: ✗
-  - optimal_resolution: ✗
-
-Results saved to: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing
-Status file: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/sys_log/main_process_status.json
+Total runtime: 64.48 minutes
+✓ GLUE integration completed successfully
+  Completed 2/5 GLUE sub-steps
+Step 2: Running integration preprocessing...
+Minimum dimension requested by scrublet is 30, raise sample standard accordingly
+=== Read input dataset ===
+Dimension of raw data (cells x genes): 861190 x 36601
+Modified sample IDs by adding modality information from 'modality' column

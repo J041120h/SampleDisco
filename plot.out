@@ -1,60 +1,33 @@
-Linux system detected with GPU enabled.
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
-}
+================================================================================
+H5AD INSPECT (X + indices): /dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad
+================================================================================
 
-============================================================
-RUNNING MULTIOMICS PIPELINE
-============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/Benchmark/multiomics
-Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
-Step 2: Running integration preprocessing...
-Minimum dimension requested by scrublet is 30, raised min_cells_sample accordingly
-=== Reading input dataset ===
-Input file: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad
-Dimension of raw data (cells x genes): 861,190 x 36,601
+[.X]
+  shape        : (861190, 36601)
+  dtype        : float64
+  sparse?      : True
+  format       : CSC
+  nnz          : 4,414,883,945
+  density      : 14.0064%
+  indices fmt  : CSC
+  indices dtype: int64
+  indptr dtype : int64
+  indptr length: 36602
+  sample stats : min=0, max=51, mean=0.11743
+                 NaN=0, Inf=0, block=(1000, 1000)
 
-=== Sanitizing sparse matrix ===
-   Sanitizing sparse matrix...
-     Format: csr
-     Shape: (861190, 36601)
-     NNZ: 287,599,094
-     Removing duplicates...
+[obs_names]
+  length       : 861,190
+  dtype        : object
+  unique       : False | monotonic: False
+  head         : ['adrenal_gland_ENCSR212VKB_AAACAGCCAAAGGTAC-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCAACAGGAT-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACAACAAA-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACATTGCA-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACCAGCAT-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCAGCACGTT-1']
+  tail         : ['psoas_muscle_ENCSR851GBP_TTTGTGTTCTTACTCG-1', 'psoas_muscle_ENCSR851GBP_TTTGTTGGTAAGTCGC-1', 'psoas_muscle_ENCSR851GBP_TTTGTTGGTAGCAGCT-1', 'psoas_muscle_ENCSR851GBP_TTTGTTGGTCCTAGTT-1', 'psoas_muscle_ENCSR851GBP_TTTGTTGGTTAGGATT-1', 'psoas_muscle_ENCSR851GBP_TTTGTTGGTTGTTGCT-1']
+
+[var_names]
+  length       : 36,601
+  dtype        : object
+  unique       : True | monotonic: False
+  head         : ['MIR1302-2HG', 'FAM138A', 'OR4F5', 'AL627309.1', 'AL627309.3', 'AL627309.2']
+  tail         : ['AC136616.2', 'AC141272.1', 'AC023491.2', 'AC007325.1', 'AC007325.4', 'AC007325.2']
+
+Done.
