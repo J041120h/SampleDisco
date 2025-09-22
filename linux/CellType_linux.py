@@ -261,7 +261,13 @@ def cell_types_linux(
     max_resolution=5.0,
     resolution_step=0.5,
     _recursion_depth=0,  # Internal parameter to track recursion
-    verbose=True
+    verbose=True,
+    # New parameters for UMAP visualization
+    generate_plots=True,
+    figsize=(12, 8),
+    point_size=20,
+    dpi=300,
+    plot_palette="tab20"
 ):
     """
     Linux/GPU version of cell_types function using rapids_singlecell.
@@ -270,6 +276,7 @@ def cell_types_linux(
     
     IMPROVED: Now uses dimension reduction (X_pca_harmony) for dendrogram construction instead of marker genes.
     Also includes proper GPU to CPU array conversion to prevent errors.
+    UPDATED: Integrated UMAP visualization generation with existing neighborhood graph.
 
     Parameters:
     - adata: AnnData object
@@ -279,6 +286,7 @@ def cell_types_linux(
     - umap: Boolean, whether to compute UMAP
     - Save: Boolean, whether to save the output
     - output_dir: Directory to save the output if Save=True
+    - defined_output_path: Alternative output path for saving
     - cluster_resolution: Starting resolution for Leiden clustering
     - use_rep: Representation to use for neighborhood graph (default: 'X_pca_harmony')
     - markers: List of markers for mapping numeric IDs to names
@@ -288,6 +296,9 @@ def cell_types_linux(
     - resolution_step: Step size for increasing resolution
     - _recursion_depth: Internal parameter (do not set manually)
     - verbose: Whether to print progress messages
+    - generate_plots: Boolean, whether to generate UMAP plots
+    - figsize, point_size, dpi: Plot appearance parameters
+    - plot_palette: Color palette for UMAP plots
 
     Returns:
     - Updated AnnData object with assigned cell types
@@ -421,7 +432,8 @@ def cell_types_linux(
                         use_rep=use_rep,
                         num_PCs=num_PCs,
                         _recursion_depth=_recursion_depth + 1,
-                        verbose=verbose
+                        verbose=verbose,
+                        generate_plots=False  # Don't generate plots in recursion
                     )
             
             else:  # num_clusters < n_target_clusters
@@ -454,7 +466,8 @@ def cell_types_linux(
                         max_resolution=max_resolution,
                         resolution_step=resolution_step,
                         _recursion_depth=_recursion_depth + 1,
-                        verbose=verbose
+                        verbose=verbose,
+                        generate_plots=False  # Don't generate plots in recursion
                     )
         
         else:
@@ -501,13 +514,28 @@ def cell_types_linux(
                 print("[cell_types] Computing UMAP...")
             rsc.tl.umap(adata, min_dist=0.5)
         
-        # Move back to CPU before saving - IMPROVED conversion
+        # Move back to CPU before saving and visualization - IMPROVED conversion
         if verbose:
             print("[cell_types] Converting GPU arrays to CPU...")
         rsc.get.anndata_to_CPU(adata)
         
         # Ensure complete CPU conversion
         adata = ensure_cpu_arrays(adata)
+        
+        # Generate UMAP visualization plots if requested
+        if generate_plots and umap and output_dir:
+            if verbose:
+                print("[cell_types] Generating UMAP visualizations...")
+            adata = generate_umap_visualizations(
+                adata=adata,
+                output_dir=output_dir,
+                groupby='cell_type',
+                figsize=figsize,
+                point_size=point_size,
+                dpi=dpi,
+                palette=plot_palette,
+                verbose=verbose
+            )
         
         # Save results if requested - USING SAFE SAVING METHOD
         if Save and output_dir and not defined_output_path:
