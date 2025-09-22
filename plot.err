@@ -244,3 +244,78 @@ To enable the following instructions: AVX2 FMA, in other operations, rebuild Ten
 2025-09-22 13:41:59 - INFO - Epoch[14] Complete. Time taken: 00:02:55.197
 2025-09-22 13:41:59 - INFO - Engine run finished. Time taken: 00:03:02.348
 2025-09-22 13:41:59 - INFO - Epoch[14] Complete. Time taken: 00:30:13.372
+2025-09-22 14:09:14 - INFO - Engine run resuming from iteration 9422, epoch 14 until 15 epochs
+2025-09-22 14:12:17 - INFO - Epoch[15] Complete. Time taken: 00:02:55.071
+2025-09-22 14:12:17 - INFO - Engine run finished. Time taken: 00:03:02.329
+2025-09-22 14:12:17 - INFO - Learning rate reduction: step 1
+2025-09-22 14:12:18 - INFO - Epoch[15] Complete. Time taken: 00:30:18.608
+2025-09-22 14:39:39 - INFO - Engine run resuming from iteration 10095, epoch 15 until 16 epochs
+2025-09-22 14:42:42 - INFO - Epoch[16] Complete. Time taken: 00:02:56.212
+2025-09-22 14:42:42 - INFO - Engine run finished. Time taken: 00:03:03.369
+2025-09-22 14:42:44 - INFO - Epoch[16] Complete. Time taken: 00:30:25.821
+2025-09-22 15:10:06 - INFO - Engine run resuming from iteration 10768, epoch 16 until 17 epochs
+2025-09-22 15:13:09 - INFO - Epoch[17] Complete. Time taken: 00:02:56.390
+2025-09-22 15:13:09 - INFO - Engine run finished. Time taken: 00:03:03.643
+2025-09-22 15:13:11 - INFO - Epoch[17] Complete. Time taken: 00:30:27.263
+2025-09-22 15:40:29 - INFO - Engine run resuming from iteration 11441, epoch 17 until 18 epochs
+2025-09-22 15:43:32 - INFO - Epoch[18] Complete. Time taken: 00:02:55.287
+2025-09-22 15:43:32 - INFO - Engine run finished. Time taken: 00:03:02.453
+2025-09-22 15:43:33 - INFO - Epoch[18] Complete. Time taken: 00:30:21.947
+2025-09-22 16:10:54 - INFO - Engine run resuming from iteration 12114, epoch 18 until 19 epochs
+2025-09-22 16:13:58 - INFO - Epoch[19] Complete. Time taken: 00:02:56.085
+2025-09-22 16:13:58 - INFO - Engine run finished. Time taken: 00:03:03.345
+2025-09-22 16:13:59 - INFO - Epoch[19] Complete. Time taken: 00:30:26.148
+2025-09-22 16:41:21 - INFO - Engine run resuming from iteration 12787, epoch 19 until 20 epochs
+2025-09-22 16:44:25 - INFO - Epoch[20] Complete. Time taken: 00:02:56.680
+2025-09-22 16:44:25 - INFO - Engine run finished. Time taken: 00:03:03.903
+2025-09-22 16:44:25 - INFO - [Epoch 20] train={'g_nll': 0.392, 'g_kl': 0.0, 'g_elbo': 0.392, 'x_rna_nll': 0.263, 'x_rna_kl': 0.01, 'x_rna_elbo': 0.273, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.684, 'vae_loss': 0.3, 'gen_loss': 0.266}, val={'g_nll': 0.392, 'g_kl': 0.0, 'g_elbo': 0.392, 'x_rna_nll': 0.26, 'x_rna_kl': 0.01, 'x_rna_elbo': 0.27, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.67, 'vae_loss': 0.297, 'gen_loss': 0.264}, 1641.5s elapsed
+2025-09-22 16:44:26 - INFO - Epoch[20] Complete. Time taken: 00:30:26.853
+2025-09-22 17:11:46 - INFO - Engine run resuming from iteration 13460, epoch 20 until 21 epochs
+2025-09-22 17:14:48 - INFO - Epoch[21] Complete. Time taken: 00:02:54.984
+2025-09-22 17:14:48 - INFO - Engine run finished. Time taken: 00:03:02.366
+2025-09-22 17:14:48 - INFO - Epoch[21] Complete. Time taken: 00:30:22.331
+2025-09-22 17:42:11 - INFO - Engine run resuming from iteration 14133, epoch 21 until 22 epochs
+2025-09-22 17:45:13 - INFO - Epoch[22] Complete. Time taken: 00:02:55.060
+2025-09-22 17:45:13 - INFO - Engine run finished. Time taken: 00:03:02.237
+2025-09-22 17:45:13 - INFO - Epoch[22] Complete. Time taken: 00:30:24.756
+2025-09-22 18:12:35 - INFO - Engine run resuming from iteration 14806, epoch 22 until 23 epochs
+2025-09-22 18:15:39 - INFO - Epoch[23] Complete. Time taken: 00:02:56.317
+2025-09-22 18:15:39 - INFO - Engine run finished. Time taken: 00:03:03.598
+2025-09-22 18:15:39 - INFO - Learning rate reduction: step 2
+2025-09-22 18:15:40 - INFO - Epoch[23] Complete. Time taken: 00:30:27.192
+2025-09-22 18:43:04 - INFO - Engine run resuming from iteration 15479, epoch 23 until 24 epochs
+2025-09-22 18:46:07 - INFO - Epoch[24] Complete. Time taken: 00:02:56.263
+2025-09-22 18:46:07 - INFO - Engine run finished. Time taken: 00:03:03.356
+2025-09-22 18:46:07,594 ignite.handlers.early_stopping.EarlyStopping INFO: EarlyStopping: Stop training
+2025-09-22 18:46:07 - INFO - Terminate signaled. Engine will stop after current iteration is finished.
+2025-09-22 18:46:07 - INFO - Restoring checkpoint "23"...
+2025-09-22 18:46:09 - INFO - Restoring checkpoint "23"...
+2025-09-22 18:46:09 - INFO - Engine run finished. Time taken: 12:11:54.521
+2025-09-22 18:46:15 - DEBUG - Joined background process: 2727262
+2025-09-22 18:46:17 - DEBUG - Generating random xuid...
+2025-09-22 18:46:20 - DEBUG - Generating random xuid...
+2025-09-22 19:15:55 - DEBUG - Generating random xuid...
+2025-09-22 19:15:58 - DEBUG - Generating random xuid...
+2025-09-22 19:16:01 - INFO - Using layer "counts" for modality "rna"
+2025-09-22 19:16:01 - INFO - Selecting aggregation "sum" for modality "rna"
+2025-09-22 19:16:01 - INFO - Selecting aggregation "sum" for modality "atac"
+2025-09-22 19:16:01 - INFO - Selecting log-norm preprocessing for modality "rna"
+2025-09-22 19:16:01 - INFO - Selecting log-norm preprocessing for modality "atac"
+2025-09-22 19:16:02 - INFO - Clustering metacells...
+2025-09-22 19:18:01 - INFO - Loading faiss with AVX2 support.
+2025-09-22 19:18:01 - INFO - Successfully loaded faiss with AVX2 support.
+2025-09-22 19:18:01 - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2025-09-22 19:18:01 - INFO - Aggregating metacells...
+2025-09-22 19:18:32 - INFO - Computing correlation on 10 common metacells...
+2025-09-22 19:21:36 - INFO - Clustering metacells...
+2025-09-22 19:23:40 - INFO - Aggregating metacells...
+2025-09-22 19:24:13 - INFO - Computing correlation on 20 common metacells...
+2025-09-22 19:27:14 - INFO - Clustering metacells...
+2025-09-22 19:29:14 - INFO - Aggregating metacells...
+2025-09-22 19:29:53 - INFO - Computing correlation on 50 common metacells...
+2025-09-22 19:33:07 - INFO - Clustering metacells...
+2025-09-22 19:35:07 - INFO - Aggregating metacells...
+2025-09-22 19:35:55 - INFO - Computing correlation on 100 common metacells...
+2025-09-22 19:39:15 - INFO - Clustering metacells...
+2025-09-22 19:41:17 - INFO - Aggregating metacells...
+2025-09-22 19:42:15 - INFO - Computing correlation on 197 common metacells...

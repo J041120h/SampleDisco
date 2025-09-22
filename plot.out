@@ -212,3 +212,87 @@ HVF graph: 478989 nodes, 1449835 edges
 [INFO] SCGLUEModel: Setting `reduce_lr_patience` = 2
 [INFO] SCGLUETrainer: Using training directory: "/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue/training/fine-tune"
 [INFO] SCGLUETrainer: [Epoch 10] train={'g_nll': 0.394, 'g_kl': 0.0, 'g_elbo': 0.395, 'x_rna_nll': 0.265, 'x_rna_kl': 0.01, 'x_rna_elbo': 0.275, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.673, 'vae_loss': 0.302, 'gen_loss': 0.268}, val={'g_nll': 0.395, 'g_kl': 0.0, 'g_elbo': 0.395, 'x_rna_nll': 0.262, 'x_rna_kl': 0.01, 'x_rna_elbo': 0.272, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.68, 'vae_loss': 0.299, 'gen_loss': 0.265}, 1644.4s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 1
+[INFO] SCGLUETrainer: [Epoch 20] train={'g_nll': 0.392, 'g_kl': 0.0, 'g_elbo': 0.392, 'x_rna_nll': 0.263, 'x_rna_kl': 0.01, 'x_rna_elbo': 0.273, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.684, 'vae_loss': 0.3, 'gen_loss': 0.266}, val={'g_nll': 0.392, 'g_kl': 0.0, 'g_elbo': 0.392, 'x_rna_nll': 0.26, 'x_rna_kl': 0.01, 'x_rna_elbo': 0.27, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.67, 'vae_loss': 0.297, 'gen_loss': 0.264}, 1641.5s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 2
+[INFO] EarlyStopping: Restoring checkpoint "23"...
+[INFO] EarlyStopping: Restoring checkpoint "23"...
+
+
+
+🎨 Generating embeddings...
+
+
+
+
+
+
+💾 Saving results to /dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue...
+
+
+
+
+
+
+📊 Checking integration consistency...
+
+
+
+[INFO] integration_consistency: Using layer "counts" for modality "rna"
+[INFO] integration_consistency: Selecting aggregation "sum" for modality "rna"
+[INFO] integration_consistency: Selecting aggregation "sum" for modality "atac"
+[INFO] integration_consistency: Selecting log-norm preprocessing for modality "rna"
+[INFO] integration_consistency: Selecting log-norm preprocessing for modality "atac"
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 10 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 20 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 50 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 100 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 197 common metacells...
+
+
+
+Consistency scores - Min: 0.1559, Mean: 0.2713
+
+
+
+
+
+
+📈 Integration Assessment:
+Feature mode: Highly Variable
+Consistency threshold: 0.05
+Minimum consistency: 0.1559
+Status: ✅ RELIABLE
+
+
+
+
+
+
+🎉 GLUE training pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue
+
+
+
+Training completed.
+Computing gene activity...
+
+🧬 Computing gene activity using raw RNA counts (optimized for large matrices)...
+   k_neighbors: 200
+   metric: cosine
+   GPU acceleration: enabled
+   Available GPU memory: 45.75 GB
+   Available CPU memory: 712.60 GB
+📂 Loading processed RNA embeddings...
+📂 Loading ATAC embeddings...
+📂 Loading raw RNA counts...

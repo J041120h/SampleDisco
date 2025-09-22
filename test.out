@@ -56,8 +56,8 @@ Starting cell type clustering...
 [cell_types] Generating UMAP visualizations...
 [generate_umap_visualizations] Generating UMAP plots...
 [generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (11 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/umap_cell_type.png
-[cell_types] Total runtime: 3.21 seconds
+[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/umap_cell_type.png
+[cell_types] Total runtime: 3.25 seconds
 [safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad
 [clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
 [clean_obs_for_saving] Cleaning completed successfully
@@ -89,4 +89,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample
 Status file: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/sys_log/main_process_status.json
-Execution time: 24.2906 seconds
+Execution time: 24.8057 seconds
