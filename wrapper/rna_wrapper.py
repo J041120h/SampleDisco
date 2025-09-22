@@ -667,7 +667,6 @@ def rna_wrapper(
         
         visualization(
             AnnData_cell=AnnData_cell,
-            AnnData_sample=AnnData_sample,
             pseudobulk_anndata=pseudobulk_adata, 
             output_dir=rna_output_dir,
             grouping_columns=grouping_columns,
@@ -676,7 +675,6 @@ def rna_wrapper(
             verbose=verbose_Visualization,
             dot_size=dot_size,
             plot_dendrogram_flag=plot_dendrogram_flag,
-            plot_umap_by_cell_type_flag=plot_umap_by_cell_type_flag,
             plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
             plot_cell_type_expression_umap_flag=plot_cell_type_expression_umap_flag
         )

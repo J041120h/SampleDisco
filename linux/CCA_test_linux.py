@@ -8,17 +8,14 @@ import matplotlib.pyplot as plt
 import time
 import signal
 from contextlib import contextmanager
-from pseudo_adata import compute_pseudobulk_adata  # Updated import
 from DR import dimension_reduction
 from CCA_test import * 
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
 
-
 class TimeoutError(Exception):
     """Custom timeout exception"""
     pass
-
 
 @contextmanager
 def timeout(seconds):
@@ -36,7 +33,6 @@ def timeout(seconds):
         # Restore the old signal handler
         signal.signal(signal.SIGALRM, old_handler)
         signal.alarm(0)
-
 
 def cca_pvalue_test_linux(
     pseudo_adata,

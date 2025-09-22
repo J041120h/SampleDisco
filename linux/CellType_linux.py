@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import os
 import scanpy as sc
+from visualization.visualization_helper import generate_umap_visualizations
 
 
 def clean_obs_for_saving(adata, verbose=True):
@@ -513,7 +514,7 @@ def cell_types_linux(
             output_dir = os.path.join(output_dir, 'preprocess')
             os.makedirs(output_dir, exist_ok=True)
             save_path = os.path.join(output_dir, 'adata_cell.h5ad')
-            
+
             # Use safe saving method
             safe_h5ad_write(adata, save_path, verbose=verbose)
         
@@ -722,90 +723,4 @@ def cell_type_assign_linux(adata_cluster, adata, Save=False, output_dir=None, ve
         # Use safe saving method
         safe_h5ad_write(adata, save_path, verbose=verbose)
 
-    return adata
-
-
-def generate_umap_visualizations(
-    adata,
-    output_dir: str,
-    groupby: str = 'cell_type',
-    figsize: tuple = (12, 8),
-    point_size: float = 20,
-    dpi: int = 300,
-    verbose: bool = True
-):
-    """
-    Generate UMAP visualizations for cell types and save to specified directory.
-    
-    This function complements the cell_types() function by creating UMAP plots
-    and saving essential outputs.
-    
-    Parameters
-    ----------
-    adata : AnnData
-        Annotated data object with cell type assignments
-    output_dir : str
-        Directory to save the UMAP plots and related files
-    groupby : str, default 'cell_type'
-        Column in adata.obs to use for coloring the UMAP
-    figsize : tuple, default (12, 8)
-        Figure size as (width, height)
-    point_size : float, default 20
-        Size of points in the scatter plot
-    dpi : int, default 300
-        Resolution for saved plots
-    verbose : bool, default True
-        Whether to print progress messages
-        
-    Returns
-    -------
-    adata : AnnData
-        Updated AnnData object with UMAP coordinates
-    """
-    
-    if verbose:
-        print(f"[generate_umap_visualizations] Starting UMAP visualization...")
-    
-    # Ensure data is on CPU
-    adata = ensure_cpu_arrays(adata)
-    
-    # Validate groupby column
-    if groupby not in adata.obs.columns:
-        raise ValueError(f"Column '{groupby}' not found in adata.obs")
-    
-    # Compute UMAP if needed
-    if 'X_umap' not in adata.obsm:
-        if verbose:
-            print("[generate_umap_visualizations] Computing UMAP coordinates...")
-        sc.tl.umap(adata, min_dist=0.5, n_neighbors=15, random_state=42)
-    
-    # Set scanpy figure parameters
-    sc.settings.set_figure_params(dpi=dpi, facecolor='white', figsize=figsize)
-    
-    # Create UMAP plot
-    if verbose:
-        print(f"[generate_umap_visualizations] Creating UMAP plot colored by {groupby}...")
-    
-    sc.pl.umap(
-        adata, 
-        color=groupby, 
-        palette='tab20',
-        size=point_size,
-        alpha=0.8,
-        legend_loc='right margin',
-        legend_fontsize=10,
-        title=f'UMAP - {groupby.replace("_", " ").title()}',
-        show=False,
-        save=False
-    )
-    
-    # Save UMAP plot
-    os.makedirs(output_dir, exist_ok=True)
-    umap_path = os.path.join(output_dir, f'umap_{groupby}.png')
-    plt.savefig(umap_path, dpi=dpi, bbox_inches='tight', facecolor='white')
-    plt.close()
-    
-    if verbose:
-        print(f"[generate_umap_visualizations] Saved UMAP plot: {umap_path}")
-    
     return adata

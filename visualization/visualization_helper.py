@@ -59,10 +59,6 @@ def generate_umap_visualizations(
     if "X_umap" not in adata.obsm:
         raise ValueError("UMAP coordinates not found. Please run UMAP computation first.")
     
-    # Create output directory
-    output_dir = os.path.join(output_dir, "preprocess")
-    os.makedirs(output_dir, exist_ok=True)
-    
     # Set figure parameters
     sc.settings.set_figure_params(dpi=dpi, facecolor="white", figsize=figsize)
     

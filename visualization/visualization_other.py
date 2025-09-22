@@ -73,7 +73,6 @@ def plot_dendrogram(AnnData_cell, output_dir, verbose=True):
 
 def visualization(
     AnnData_cell,
-    AnnData_sample,
     pseudobulk_anndata,
     output_dir,
     grouping_columns=None,
@@ -83,7 +82,6 @@ def visualization(
     dot_size=3,
 
     plot_dendrogram_flag=True,
-    plot_umap_by_cell_type_flag=True,
     plot_cell_type_proportions_pca_flag=False,
     plot_cell_type_expression_umap_flag=False,
 ):
