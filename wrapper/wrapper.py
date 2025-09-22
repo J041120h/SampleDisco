@@ -2,6 +2,7 @@ import os
 import json
 import sys
 import platform
+import time
 import shutil
 import subprocess
 from pathlib import Path
@@ -452,6 +453,8 @@ def wrapper(
         - 'multiomics_results': Results from multiomics pipeline (if run)
         - 'system_info': System configuration information
     """
+    start_time = time.time()
+
     if run_multiomics_pipeline and use_gpu:
         from .multiomics_wrapper import multiomics_wrapper
     
@@ -1146,5 +1149,8 @@ def wrapper(
     # Save final status
     with open(status_file_path, 'w') as f:
         json.dump(status_flags, f, indent=4)
+
+    end_time = time.time()     # record end
+    print(f"Execution time: {end_time - start_time:.4f} seconds")
     
     return results

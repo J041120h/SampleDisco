@@ -258,7 +258,6 @@ def find_optimal_cell_resolution_linux(
                     "  🧬 Cell clustering",
                     cell_types_linux,
                     AnnData_cell,
-                    cell_column='cell_type',
                     Save=False,
                     output_dir=resolution_dir,
                     cluster_resolution=resolution,

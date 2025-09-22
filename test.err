@@ -1,53 +1,491 @@
-2025-09-21 02:10:43.237705: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-09-22 12:16:24.636226: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1758435043.250110 2245153 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1758435043.254380 2245153 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1758435043.266075 2245153 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1758435043.266089 2245153 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1758435043.266092 2245153 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1758435043.266094 2245153 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-09-21 02:10:43.269155: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1758557784.648809 2404969 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758557784.652645 2404969 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758557784.664193 2404969 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758557784.664208 2404969 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758557784.664211 2404969 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758557784.664213 2404969 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-22 12:16:24.667325: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
-  from torch.distributed.optim import ZeroRedundancyOptimizer
-... storing 'modality' as categorical
-2025-09-21 03:13:54 - INFO - init
-[compute-173:2245153:0:2245153] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x7f4334125000)
-==== backtrace (tid:2245153) ====
- 0  /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/libucx/lib/libucs.so(ucs_handle_error+0x294) [0x7f43d3a012f4]
- 1  /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/libucx/lib/libucs.so(+0x324af) [0x7f43d3a014af]
- 2  /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/libucx/lib/libucs.so(+0x32776) [0x7f43d3a01776]
- 3  /lib64/libc.so.6(+0x54db0) [0x7f48ac454db0]
- 4  /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_sparsetools.cpython-310-x86_64-linux-gnu.so(+0x2504a0) [0x7f489bc724a0]
- 5  /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_sparsetools.cpython-310-x86_64-linux-gnu.so(+0x265a74) [0x7f489bc87a74]
- 6  /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_sparsetools.cpython-310-x86_64-linux-gnu.so(+0x337bba) [0x7f489bd59bba]
- 7  python(+0x144468) [0x558807da7468]
- 8  python(_PyObject_MakeTpCall+0x26b) [0x558807da097b]
- 9  python(_PyEval_EvalFrameDefault+0x54b6) [0x558807d9c8c6]
-10  python(_PyFunction_Vectorcall+0x6c) [0x558807da78cc]
-11  python(_PyEval_EvalFrameDefault+0x72c) [0x558807d97b3c]
-12  python(_PyFunction_Vectorcall+0x6c) [0x558807da78cc]
-13  python(_PyEval_EvalFrameDefault+0x13cc) [0x558807d987dc]
-14  python(_PyFunction_Vectorcall+0x6c) [0x558807da78cc]
-15  python(_PyEval_EvalFrameDefault+0x13cc) [0x558807d987dc]
-16  python(_PyFunction_Vectorcall+0x6c) [0x558807da78cc]
-17  python(PyObject_Call+0xbc) [0x558807db3d9c]
-18  python(_PyEval_EvalFrameDefault+0x2d84) [0x558807d9a194]
-19  python(_PyFunction_Vectorcall+0x6c) [0x558807da78cc]
-20  python(PyObject_Call+0xbc) [0x558807db3d9c]
-21  python(_PyEval_EvalFrameDefault+0x2d84) [0x558807d9a194]
-22  python(_PyFunction_Vectorcall+0x6c) [0x558807da78cc]
-23  python(_PyEval_EvalFrameDefault+0x320) [0x558807d97730]
-24  python(+0x1d7870) [0x558807e3a870]
-25  python(PyEval_EvalCode+0x87) [0x558807e3a7b7]
-26  python(+0x207d1a) [0x558807e6ad1a]
-27  python(+0x203123) [0x558807e66123]
-28  python(+0x9a4d1) [0x558807cfd4d1]
-29  python(_PyRun_SimpleFileObject+0x1ae) [0x558807e6060e]
-30  python(_PyRun_AnyFileObject+0x44) [0x558807e601a4]
-31  python(Py_RunMain+0x38b) [0x558807e5d39b]
-32  python(Py_BytesMain+0x37) [0x558807e2de17]
-33  /lib64/libc.so.6(+0x3feb0) [0x7f48ac43feb0]
-34  /lib64/libc.so.6(__libc_start_main+0x80) [0x7f48ac43ff60]
-35  python(+0x1cad11) [0x558807e2dd11]
-=================================
+2025-09-22 12:16:40 - INFO - init
+2025-09-22 12:16:48,563 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:16:48 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:16:48,627 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:16:48 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:16:48,627 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:16:48 - INFO - Iteration 1 of 30
+2025-09-22 12:16:48,645 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:16:48 - INFO - Iteration 2 of 30
+2025-09-22 12:16:48,665 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:16:48 - INFO - Iteration 3 of 30
+2025-09-22 12:16:48,684 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:16:48 - INFO - Iteration 4 of 30
+2025-09-22 12:16:48,693 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:16:48 - INFO - Iteration 5 of 30
+2025-09-22 12:16:48,712 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:16:48 - INFO - Iteration 6 of 30
+2025-09-22 12:16:48,732 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:16:48 - INFO - Converged after 6 iterations
+2025-09-22 12:17:02,998 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:02 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:03,006 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:03 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:03,006 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:17:03 - INFO - Iteration 1 of 30
+2025-09-22 12:17:03,022 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:17:03 - INFO - Iteration 2 of 30
+2025-09-22 12:17:03,041 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:17:03 - INFO - Iteration 3 of 30
+2025-09-22 12:17:03,047 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:17:03 - INFO - Converged after 3 iterations
+2025-09-22 12:17:17,269 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:17 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:17,277 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:17 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:17,277 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:17:17 - INFO - Iteration 1 of 30
+2025-09-22 12:17:17,290 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:17:17 - INFO - Iteration 2 of 30
+2025-09-22 12:17:17,306 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:17:17 - INFO - Iteration 3 of 30
+2025-09-22 12:17:17,312 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:17:17 - INFO - Converged after 3 iterations
+2025-09-22 12:17:34,819 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:34 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:34,827 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:34 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:34,827 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:17:34 - INFO - Iteration 1 of 30
+2025-09-22 12:17:34,837 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:17:34 - INFO - Iteration 2 of 30
+2025-09-22 12:17:34,855 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:17:34 - INFO - Iteration 3 of 30
+2025-09-22 12:17:34,865 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:17:34 - INFO - Converged after 3 iterations
+2025-09-22 12:17:55,542 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:55 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:17:55,550 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:55 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:17:55,550 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:17:55 - INFO - Iteration 1 of 30
+2025-09-22 12:17:55,559 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:17:55 - INFO - Iteration 2 of 30
+2025-09-22 12:17:55,565 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:17:55 - INFO - Iteration 3 of 30
+2025-09-22 12:17:55,570 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:17:55 - INFO - Iteration 4 of 30
+2025-09-22 12:17:55,576 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:17:55 - INFO - Iteration 5 of 30
+2025-09-22 12:17:55,581 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:17:55 - INFO - Iteration 6 of 30
+2025-09-22 12:17:55,586 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:17:55 - INFO - Iteration 7 of 30
+2025-09-22 12:17:55,591 - harmonypy - INFO - Converged after 7 iterations
+2025-09-22 12:17:55 - INFO - Converged after 7 iterations
+2025-09-22 12:18:16,325 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:18:16 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:18:16,333 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:18:16 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:18:16,333 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:18:16 - INFO - Iteration 1 of 30
+2025-09-22 12:18:16,342 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:18:16 - INFO - Iteration 2 of 30
+2025-09-22 12:18:16,348 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:18:16 - INFO - Iteration 3 of 30
+2025-09-22 12:18:16,353 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:18:16 - INFO - Iteration 4 of 30
+2025-09-22 12:18:16,358 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:18:16 - INFO - Iteration 5 of 30
+2025-09-22 12:18:16,363 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:18:16 - INFO - Iteration 6 of 30
+2025-09-22 12:18:16,368 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:18:16 - INFO - Converged after 6 iterations
+2025-09-22 12:18:39,055 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:18:39 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:18:39,062 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:18:39 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:18:39,062 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:18:39 - INFO - Iteration 1 of 30
+2025-09-22 12:18:39,072 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:18:39 - INFO - Iteration 2 of 30
+2025-09-22 12:18:39,077 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:18:39 - INFO - Iteration 3 of 30
+2025-09-22 12:18:39,083 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:18:39 - INFO - Iteration 4 of 30
+2025-09-22 12:18:39,088 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:18:39 - INFO - Iteration 5 of 30
+2025-09-22 12:18:39,093 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:18:39 - INFO - Iteration 6 of 30
+2025-09-22 12:18:39,098 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:18:39 - INFO - Iteration 7 of 30
+2025-09-22 12:18:39,103 - harmonypy - INFO - Converged after 7 iterations
+2025-09-22 12:18:39 - INFO - Converged after 7 iterations
+2025-09-22 12:19:03,811 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:19:03 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:19:03,819 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:19:03 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:19:03,819 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:19:03 - INFO - Iteration 1 of 30
+2025-09-22 12:19:03,839 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:19:03 - INFO - Iteration 2 of 30
+2025-09-22 12:19:03,847 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:19:03 - INFO - Iteration 3 of 30
+2025-09-22 12:19:03,852 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:19:03 - INFO - Iteration 4 of 30
+2025-09-22 12:19:03,857 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:19:03 - INFO - Iteration 5 of 30
+2025-09-22 12:19:03,862 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:19:03 - INFO - Iteration 6 of 30
+2025-09-22 12:19:03,867 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:19:03 - INFO - Converged after 6 iterations
+2025-09-22 12:19:27,594 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:19:27 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:19:27,602 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:19:27 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:19:27,602 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:19:27 - INFO - Iteration 1 of 30
+2025-09-22 12:19:27,622 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:19:27 - INFO - Iteration 2 of 30
+2025-09-22 12:19:27,627 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:19:27 - INFO - Iteration 3 of 30
+2025-09-22 12:19:27,633 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:19:27 - INFO - Iteration 4 of 30
+2025-09-22 12:19:27,638 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:19:27 - INFO - Iteration 5 of 30
+2025-09-22 12:19:27,644 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:19:27 - INFO - Iteration 6 of 30
+2025-09-22 12:19:27,649 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:19:27 - INFO - Iteration 7 of 30
+2025-09-22 12:19:27,654 - harmonypy - INFO - Iteration 8 of 30
+2025-09-22 12:19:27 - INFO - Iteration 8 of 30
+2025-09-22 12:19:27,659 - harmonypy - INFO - Converged after 8 iterations
+2025-09-22 12:19:27 - INFO - Converged after 8 iterations
+2025-09-22 12:19:55,055 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:19:55 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:19:55,063 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:19:55 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:19:55,063 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:19:55 - INFO - Iteration 1 of 30
+2025-09-22 12:19:55,078 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:19:55 - INFO - Iteration 2 of 30
+2025-09-22 12:19:55,084 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:19:55 - INFO - Iteration 3 of 30
+2025-09-22 12:19:55,089 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:19:55 - INFO - Iteration 4 of 30
+2025-09-22 12:19:55,094 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:19:55 - INFO - Iteration 5 of 30
+2025-09-22 12:19:55,099 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:19:55 - INFO - Iteration 6 of 30
+2025-09-22 12:19:55,104 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:19:55 - INFO - Converged after 6 iterations
+2025-09-22 12:20:19,685 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:20:19 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:20:19,693 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:20:19 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:20:19,693 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:20:19 - INFO - Iteration 1 of 30
+2025-09-22 12:20:19,711 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:20:19 - INFO - Iteration 2 of 30
+2025-09-22 12:20:19,716 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:20:19 - INFO - Iteration 3 of 30
+2025-09-22 12:20:19,721 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:20:19 - INFO - Iteration 4 of 30
+2025-09-22 12:20:19,726 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:20:19 - INFO - Iteration 5 of 30
+2025-09-22 12:20:19,732 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:20:19 - INFO - Iteration 6 of 30
+2025-09-22 12:20:19,737 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:20:19 - INFO - Converged after 6 iterations
+2025-09-22 12:20:44,371 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:20:44 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:20:44,379 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:20:44 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:20:44,379 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:20:44 - INFO - Iteration 1 of 30
+2025-09-22 12:20:44,398 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:20:44 - INFO - Iteration 2 of 30
+2025-09-22 12:20:44,406 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:20:44 - INFO - Iteration 3 of 30
+2025-09-22 12:20:44,411 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:20:44 - INFO - Iteration 4 of 30
+2025-09-22 12:20:44,416 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:20:44 - INFO - Iteration 5 of 30
+2025-09-22 12:20:44,421 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:20:44 - INFO - Iteration 6 of 30
+2025-09-22 12:20:44,426 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:20:44 - INFO - Converged after 6 iterations
+2025-09-22 12:21:08,295 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:21:08 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:21:08,303 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:21:08 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:21:08,303 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:21:08 - INFO - Iteration 1 of 30
+2025-09-22 12:21:08,323 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:21:08 - INFO - Iteration 2 of 30
+2025-09-22 12:21:08,331 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:21:08 - INFO - Iteration 3 of 30
+2025-09-22 12:21:08,336 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:21:08 - INFO - Iteration 4 of 30
+2025-09-22 12:21:08,341 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:21:08 - INFO - Iteration 5 of 30
+2025-09-22 12:21:08,346 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:21:08 - INFO - Iteration 6 of 30
+2025-09-22 12:21:08,351 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:21:08 - INFO - Iteration 7 of 30
+2025-09-22 12:21:08,356 - harmonypy - INFO - Iteration 8 of 30
+2025-09-22 12:21:08 - INFO - Iteration 8 of 30
+2025-09-22 12:21:08,361 - harmonypy - INFO - Converged after 8 iterations
+2025-09-22 12:21:08 - INFO - Converged after 8 iterations
+2025-09-22 12:21:31,422 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:21:31 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:21:31,430 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:21:31 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:21:31,430 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:21:31 - INFO - Iteration 1 of 30
+2025-09-22 12:21:31,447 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:21:31 - INFO - Iteration 2 of 30
+2025-09-22 12:21:31,458 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:21:31 - INFO - Iteration 3 of 30
+2025-09-22 12:21:31,464 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:21:31 - INFO - Iteration 4 of 30
+2025-09-22 12:21:31,469 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:21:31 - INFO - Iteration 5 of 30
+2025-09-22 12:21:31,474 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:21:31 - INFO - Iteration 6 of 30
+2025-09-22 12:21:31,479 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:21:31 - INFO - Iteration 7 of 30
+2025-09-22 12:21:31,484 - harmonypy - INFO - Converged after 7 iterations
+2025-09-22 12:21:31 - INFO - Converged after 7 iterations
+2025-09-22 12:21:46,952 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:21:46 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:21:46,960 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:21:46 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:21:46,960 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:21:46 - INFO - Iteration 1 of 30
+2025-09-22 12:21:46,979 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:21:46 - INFO - Iteration 2 of 30
+2025-09-22 12:21:46,998 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:21:46 - INFO - Iteration 3 of 30
+2025-09-22 12:21:47,017 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:21:47 - INFO - Iteration 4 of 30
+2025-09-22 12:21:47,026 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:21:47 - INFO - Iteration 5 of 30
+2025-09-22 12:21:47,045 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:21:47 - INFO - Iteration 6 of 30
+2025-09-22 12:21:47,065 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:21:47 - INFO - Converged after 6 iterations
+2025-09-22 12:22:01,712 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:01 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:01,720 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:01 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:01,720 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:22:01 - INFO - Iteration 1 of 30
+2025-09-22 12:22:01,736 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:22:01 - INFO - Iteration 2 of 30
+2025-09-22 12:22:01,755 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:22:01 - INFO - Iteration 3 of 30
+2025-09-22 12:22:01,761 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:22:01 - INFO - Converged after 3 iterations
+2025-09-22 12:22:16,324 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:16 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:16,332 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:16 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:16,332 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:22:16 - INFO - Iteration 1 of 30
+2025-09-22 12:22:16,345 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:22:16 - INFO - Iteration 2 of 30
+2025-09-22 12:22:16,361 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:22:16 - INFO - Iteration 3 of 30
+2025-09-22 12:22:16,367 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:22:16 - INFO - Converged after 3 iterations
+2025-09-22 12:22:34,966 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:34 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:34,974 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:34 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:34,974 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:22:34 - INFO - Iteration 1 of 30
+2025-09-22 12:22:34,989 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:22:34 - INFO - Iteration 2 of 30
+2025-09-22 12:22:34,995 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:22:34 - INFO - Iteration 3 of 30
+2025-09-22 12:22:35,005 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:22:35 - INFO - Iteration 4 of 30
+2025-09-22 12:22:35,010 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:22:35 - INFO - Iteration 5 of 30
+2025-09-22 12:22:35,015 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:22:35 - INFO - Iteration 6 of 30
+2025-09-22 12:22:35,021 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:22:35 - INFO - Iteration 7 of 30
+2025-09-22 12:22:35,026 - harmonypy - INFO - Iteration 8 of 30
+2025-09-22 12:22:35 - INFO - Iteration 8 of 30
+2025-09-22 12:22:35,032 - harmonypy - INFO - Iteration 9 of 30
+2025-09-22 12:22:35 - INFO - Iteration 9 of 30
+2025-09-22 12:22:35,037 - harmonypy - INFO - Converged after 9 iterations
+2025-09-22 12:22:35 - INFO - Converged after 9 iterations
+2025-09-22 12:22:56,238 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:56 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:22:56,246 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:56 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:22:56,246 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:22:56 - INFO - Iteration 1 of 30
+2025-09-22 12:22:56,255 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:22:56 - INFO - Iteration 2 of 30
+2025-09-22 12:22:56,261 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:22:56 - INFO - Iteration 3 of 30
+2025-09-22 12:22:56,266 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:22:56 - INFO - Iteration 4 of 30
+2025-09-22 12:22:56,271 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:22:56 - INFO - Iteration 5 of 30
+2025-09-22 12:22:56,276 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:22:56 - INFO - Iteration 6 of 30
+2025-09-22 12:22:56,281 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:22:56 - INFO - Iteration 7 of 30
+2025-09-22 12:22:56,286 - harmonypy - INFO - Converged after 7 iterations
+2025-09-22 12:22:56 - INFO - Converged after 7 iterations
+2025-09-22 12:23:17,503 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:23:17 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:23:17,511 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:23:17 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:23:17,511 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:23:17 - INFO - Iteration 1 of 30
+2025-09-22 12:23:17,520 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:23:17 - INFO - Iteration 2 of 30
+2025-09-22 12:23:17,526 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:23:17 - INFO - Iteration 3 of 30
+2025-09-22 12:23:17,531 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:23:17 - INFO - Iteration 4 of 30
+2025-09-22 12:23:17,536 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:23:17 - INFO - Iteration 5 of 30
+2025-09-22 12:23:17,541 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:23:17 - INFO - Iteration 6 of 30
+2025-09-22 12:23:17,546 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:23:17 - INFO - Converged after 6 iterations
+2025-09-22 12:23:40,837 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:23:40 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:23:40,845 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:23:40 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:23:40,845 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:23:40 - INFO - Iteration 1 of 30
+2025-09-22 12:23:40,855 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:23:40 - INFO - Iteration 2 of 30
+2025-09-22 12:23:40,860 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:23:40 - INFO - Iteration 3 of 30
+2025-09-22 12:23:40,865 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:23:40 - INFO - Iteration 4 of 30
+2025-09-22 12:23:40,870 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:23:40 - INFO - Iteration 5 of 30
+2025-09-22 12:23:40,875 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:23:40 - INFO - Iteration 6 of 30
+2025-09-22 12:23:40,880 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:23:40 - INFO - Iteration 7 of 30
+2025-09-22 12:23:40,885 - harmonypy - INFO - Converged after 7 iterations
+2025-09-22 12:23:40 - INFO - Converged after 7 iterations
+2025-09-22 12:24:06,009 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:24:06 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:24:06,016 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:24:06 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:24:06,016 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:24:06 - INFO - Iteration 1 of 30
+2025-09-22 12:24:06,036 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:24:06 - INFO - Iteration 2 of 30
+2025-09-22 12:24:06,044 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:24:06 - INFO - Iteration 3 of 30
+2025-09-22 12:24:06,049 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:24:06 - INFO - Iteration 4 of 30
+2025-09-22 12:24:06,054 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:24:06 - INFO - Iteration 5 of 30
+2025-09-22 12:24:06,058 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:24:06 - INFO - Iteration 6 of 30
+2025-09-22 12:24:06,063 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:24:06 - INFO - Converged after 6 iterations
+2025-09-22 12:24:30,455 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:24:30 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:24:30,463 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:24:30 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:24:30,463 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:24:30 - INFO - Iteration 1 of 30
+2025-09-22 12:24:30,483 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:24:30 - INFO - Iteration 2 of 30
+2025-09-22 12:24:30,487 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:24:30 - INFO - Iteration 3 of 30
+2025-09-22 12:24:30,493 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:24:30 - INFO - Iteration 4 of 30
+2025-09-22 12:24:30,498 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:24:30 - INFO - Iteration 5 of 30
+2025-09-22 12:24:30,504 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:24:30 - INFO - Iteration 6 of 30
+2025-09-22 12:24:30,509 - harmonypy - INFO - Iteration 7 of 30
+2025-09-22 12:24:30 - INFO - Iteration 7 of 30
+2025-09-22 12:24:30,514 - harmonypy - INFO - Iteration 8 of 30
+2025-09-22 12:24:30 - INFO - Iteration 8 of 30
+2025-09-22 12:24:30,519 - harmonypy - INFO - Converged after 8 iterations
+2025-09-22 12:24:30 - INFO - Converged after 8 iterations
+2025-09-22 12:24:58,563 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:24:58 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:24:58,571 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:24:58 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:24:58,571 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:24:58 - INFO - Iteration 1 of 30
+2025-09-22 12:24:58,585 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:24:58 - INFO - Iteration 2 of 30
+2025-09-22 12:24:58,591 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:24:58 - INFO - Iteration 3 of 30
+2025-09-22 12:24:58,596 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:24:58 - INFO - Iteration 4 of 30
+2025-09-22 12:24:58,601 - harmonypy - INFO - Iteration 5 of 30
+2025-09-22 12:24:58 - INFO - Iteration 5 of 30
+2025-09-22 12:24:58,606 - harmonypy - INFO - Iteration 6 of 30
+2025-09-22 12:24:58 - INFO - Iteration 6 of 30
+2025-09-22 12:24:58,611 - harmonypy - INFO - Converged after 6 iterations
+2025-09-22 12:24:58 - INFO - Converged after 6 iterations
+2025-09-22 12:25:13,490 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:25:13 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:25:13,497 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:25:13 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:25:13,497 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:25:13 - INFO - Iteration 1 of 30
+2025-09-22 12:25:13,510 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:25:13 - INFO - Iteration 2 of 30
+2025-09-22 12:25:13,522 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:25:13 - INFO - Iteration 3 of 30
+2025-09-22 12:25:13,533 - harmonypy - INFO - Iteration 4 of 30
+2025-09-22 12:25:13 - INFO - Iteration 4 of 30
+2025-09-22 12:25:13,547 - harmonypy - INFO - Converged after 4 iterations
+2025-09-22 12:25:13 - INFO - Converged after 4 iterations
+2025-09-22 12:25:28,993 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:25:28 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:25:29,000 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:25:29 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:25:29,000 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:25:29 - INFO - Iteration 1 of 30
+2025-09-22 12:25:29,014 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:25:29 - INFO - Iteration 2 of 30
+2025-09-22 12:25:29,030 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:25:29 - INFO - Iteration 3 of 30
+2025-09-22 12:25:29,035 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:25:29 - INFO - Converged after 3 iterations
+2025-09-22 12:25:45,496 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:25:45 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:25:45,504 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:25:45 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:25:45,504 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:25:45 - INFO - Iteration 1 of 30
+2025-09-22 12:25:45,520 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:25:45 - INFO - Iteration 2 of 30
+2025-09-22 12:25:45,533 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:25:45 - INFO - Iteration 3 of 30
+2025-09-22 12:25:45,541 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:25:45 - INFO - Converged after 3 iterations
+2025-09-22 12:26:02,822 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:26:02 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-09-22 12:26:02,829 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:26:02 - INFO - sklearn.KMeans initialization complete.
+2025-09-22 12:26:02,830 - harmonypy - INFO - Iteration 1 of 30
+2025-09-22 12:26:02 - INFO - Iteration 1 of 30
+2025-09-22 12:26:02,842 - harmonypy - INFO - Iteration 2 of 30
+2025-09-22 12:26:02 - INFO - Iteration 2 of 30
+2025-09-22 12:26:02,861 - harmonypy - INFO - Iteration 3 of 30
+2025-09-22 12:26:02 - INFO - Iteration 3 of 30
+2025-09-22 12:26:02,873 - harmonypy - INFO - Converged after 3 iterations
+2025-09-22 12:26:02 - INFO - Converged after 3 iterations
