@@ -236,3 +236,11 @@ To enable the following instructions: AVX2 FMA, in other operations, rebuild Ten
 2025-09-22 12:41:33 - INFO - Epoch[12] Complete. Time taken: 00:02:55.338
 2025-09-22 12:41:33 - INFO - Engine run finished. Time taken: 00:03:02.442
 2025-09-22 12:41:33 - INFO - Epoch[12] Complete. Time taken: 00:30:20.434
+2025-09-22 13:08:43 - INFO - Engine run resuming from iteration 8076, epoch 12 until 13 epochs
+2025-09-22 13:11:46 - INFO - Epoch[13] Complete. Time taken: 00:02:55.588
+2025-09-22 13:11:46 - INFO - Engine run finished. Time taken: 00:03:02.831
+2025-09-22 13:11:46 - INFO - Epoch[13] Complete. Time taken: 00:30:13.003
+2025-09-22 13:38:57 - INFO - Engine run resuming from iteration 8749, epoch 13 until 14 epochs
+2025-09-22 13:41:59 - INFO - Epoch[14] Complete. Time taken: 00:02:55.197
+2025-09-22 13:41:59 - INFO - Engine run finished. Time taken: 00:03:02.348
+2025-09-22 13:41:59 - INFO - Epoch[14] Complete. Time taken: 00:30:13.372

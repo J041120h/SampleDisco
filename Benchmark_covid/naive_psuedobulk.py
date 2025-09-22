@@ -1,14 +1,28 @@
+"""
+Pseudobulk Preprocessing Pipeline
+
+This module performs single-cell data preprocessing and pseudobulk analysis with PCA,
+using enhanced visualization methods for comprehensive analysis.
+"""
+
 import os
 import numpy as np
 import pandas as pd
 import scanpy as sc
+import anndata as ad
 import matplotlib.pyplot as plt
+import sys
 import seaborn as sns
 import time
 import contextlib
 import io
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+import warnings
+
+# Add parent directory to path for imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from visualization.visualization_emebedding import visualize_single_omics_embedding, create_multi_panel_embedding
 
 def pseudobulk_samples(adata, sample_column='sample', min_cells_per_sample=10):
     """
@@ -53,6 +67,10 @@ def pseudobulk_samples(adata, sample_column='sample', min_cells_per_sample=10):
         else:
             pseudobulk_expr = sample_cells.X.sum(axis=0)
         
+        # Ensure it's a 1D array
+        if pseudobulk_expr.ndim > 1:
+            pseudobulk_expr = np.asarray(pseudobulk_expr).flatten()
+            
         pseudobulk_data.append(pseudobulk_expr)
         
         # Collect sample metadata (take first row as representative)
@@ -152,17 +170,74 @@ def perform_pca(normalized_df, n_components=20, scale=True):
         'scaler': scaler if scale else None
     }
 
+def create_pseudobulk_anndata(pca_result, sample_metadata, normalized_df):
+    """
+    Create an AnnData object from pseudobulk results for visualization.
+    
+    Parameters:
+    -----------
+    pca_result : dict
+        PCA results from perform_pca()
+    sample_metadata : DataFrame
+        Sample metadata
+    normalized_df : DataFrame
+        Normalized expression matrix
+        
+    Returns:
+    --------
+    adata_vis : AnnData
+        AnnData object for visualization
+    """
+    # Create AnnData object with normalized expression as main matrix
+    adata_vis = ad.AnnData(X=normalized_df.values)
+    
+    # Add sample metadata to obs
+    adata_vis.obs = sample_metadata.set_index('sample').loc[normalized_df.index].copy()
+    adata_vis.obs_names = normalized_df.index
+    
+    # Add gene names to var
+    adata_vis.var_names = normalized_df.columns
+    
+    # Store PCA coordinates as embedding
+    pca_coords = pca_result['coords'].values
+    adata_vis.obsm['X_pca'] = pca_coords
+    
+    # Store first 2 PCs as default embedding for visualization
+    adata_vis.obsm['X_embedding'] = pca_coords[:, :2]
+    
+    # Store additional PC pairs for multi-dimensional visualization
+    if pca_coords.shape[1] >= 3:
+        adata_vis.obsm['X_pca_2_3'] = pca_coords[:, 1:3]
+    if pca_coords.shape[1] >= 4:
+        adata_vis.obsm['X_pca_1_3'] = pca_coords[:, [0, 2]]
+        adata_vis.obsm['X_pca_1_4'] = pca_coords[:, [0, 3]]
+        adata_vis.obsm['X_pca_3_4'] = pca_coords[:, [2, 3]]
+    
+    # Store variance explained
+    adata_vis.uns['pca'] = {
+        'variance_ratio': pca_result['explained_variance'],
+        'variance': pca_result['explained_variance'] * 100
+    }
+    
+    return adata_vis
+
 def visualize_pseudobulk_results(
     pseudobulk_df,
     normalized_df,
     pca_result,
     sample_metadata,
     output_dir,
-    color_by=None,
-    top_n_genes=50
+    color_columns=None,
+    highlight_samples=None,
+    annotate_samples=None,
+    visualization_style='modern',
+    show_density=False,
+    show_ellipses=False,
+    top_n_genes=50,
+    additional_pc_pairs=True
 ):
     """
-    Generate visualizations for pseudobulk analysis.
+    Generate enhanced visualizations for pseudobulk analysis.
     
     Parameters:
     -----------
@@ -176,175 +251,355 @@ def visualize_pseudobulk_results(
         Sample metadata
     output_dir : str
         Directory to save plots
-    color_by : str
-        Column in sample_metadata to use for coloring PCA plot
+    color_columns : list
+        List of columns to create separate PCA plots for
+    highlight_samples : list
+        Samples to highlight in plots
+    annotate_samples : list
+        Samples to annotate in plots
+    visualization_style : str
+        Style for plots ('modern', 'classic', 'minimal')
+    show_density : bool
+        Add density contours to PCA plots
+    show_ellipses : bool
+        Add confidence ellipses for groups
     top_n_genes : int
-        Number of top variable genes to show in heatmap
+        Number of top variable genes to show
+    additional_pc_pairs : bool
+        Create plots for additional PC combinations
     """
+    
     # Create figure directory
     fig_dir = os.path.join(output_dir, 'figures')
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
     
-    # Set style
-    plt.style.use('seaborn-v0_8-darkgrid')
+    # Create pseudo-AnnData object for visualization
+    adata_vis = create_pseudobulk_anndata(pca_result, sample_metadata, normalized_df)
     
-    # 1. PCA Scree plot
-    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-    variance_explained = pca_result['explained_variance'] * 100
-    ax.bar(range(1, len(variance_explained)+1), variance_explained)
-    ax.set_xlabel('Principal Component')
-    ax.set_ylabel('Variance Explained (%)')
-    ax.set_title('PCA Scree Plot')
-    ax.set_xticks(range(1, min(21, len(variance_explained)+1)))
-    plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, 'pca_scree_plot.png'), dpi=300)
-    plt.close()
+    # If no color columns specified, intelligently select metadata columns
+    if color_columns is None:
+        # Get potentially interesting columns (exclude sample name and purely numeric columns)
+        potential_cols = []
+        for col in sample_metadata.columns:
+            if col == 'sample':
+                continue
+            # Check if column has meaningful variation
+            unique_vals = sample_metadata[col].nunique()
+            if 1 < unique_vals < len(sample_metadata) * 0.9:  # Not all unique, not all same
+                potential_cols.append(col)
+        
+        # Prioritize categorical columns, then n_cells
+        categorical_cols = [col for col in potential_cols if sample_metadata[col].dtype == 'object']
+        numeric_cols = [col for col in potential_cols if col not in categorical_cols]
+        
+        color_columns = categorical_cols[:3] + numeric_cols[:2]
+        if 'n_cells' not in color_columns and 'n_cells' in sample_metadata.columns:
+            color_columns.append('n_cells')
+        
+        if not color_columns:
+            color_columns = ['n_cells'] if 'n_cells' in sample_metadata.columns else []
     
-    # 2. PCA scatter plots (PC1 vs PC2, PC2 vs PC3, etc.)
-    pca_coords = pca_result['coords']
+    print(f"Creating visualizations for columns: {color_columns}")
     
-    # Merge with metadata for coloring
-    plot_data = pca_coords.merge(sample_metadata, left_index=True, right_on='sample')
-    
-    # Create multiple PCA plots
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-    
-    pc_pairs = [(1, 2), (1, 3), (2, 3), (1, 4)]
-    
-    for ax, (pc1, pc2) in zip(axes.flat, pc_pairs):
-        if f'PC{pc2}' not in pca_coords.columns:
-            ax.axis('off')
+    # 1. Create individual PCA plots for each metadata column
+    for color_col in color_columns:
+        if color_col not in adata_vis.obs.columns:
+            print(f"Warning: Column '{color_col}' not found in metadata, skipping...")
             continue
-            
-        if color_by and color_by in plot_data.columns:
-            # Color by specified column
-            unique_vals = plot_data[color_by].unique()
-            colors = plt.cm.Set1(np.linspace(0, 1, len(unique_vals)))
-            
-            for i, val in enumerate(unique_vals):
-                mask = plot_data[color_by] == val
-                ax.scatter(
-                    plot_data.loc[mask, f'PC{pc1}'],
-                    plot_data.loc[mask, f'PC{pc2}'],
-                    label=val,
-                    alpha=0.7,
-                    s=100,
-                    color=colors[i]
-                )
-            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        else:
-            ax.scatter(
-                plot_data[f'PC{pc1}'],
-                plot_data[f'PC{pc2}'],
-                alpha=0.7,
-                s=100
-            )
         
-        # Add sample labels
-        for idx, row in plot_data.iterrows():
-            ax.annotate(
-                row['sample'],
-                (row[f'PC{pc1}'], row[f'PC{pc2}']),
-                fontsize=8,
-                alpha=0.5
-            )
+        # PC1 vs PC2 (main plot)
+        fig, ax = visualize_single_omics_embedding(
+            adata_vis,
+            color_col=color_col,
+            embedding_key='X_embedding',
+            title=f'PCA: {color_col} (PC1 vs PC2)',
+            figsize=(10, 8),
+            point_size=120,
+            alpha=0.8,
+            show_density=show_density,
+            show_ellipses=show_ellipses,
+            highlight_samples=highlight_samples,
+            annotate_samples=annotate_samples,
+            style=visualization_style,
+            output_path=os.path.join(fig_dir, f'pca_pc1_pc2_{color_col}.png'),
+            show_legend=True,
+            show_colorbar=True
+        )
+        plt.close()
         
-        ax.set_xlabel(f'PC{pc1} ({pca_result["explained_variance"][pc1-1]*100:.1f}%)')
-        ax.set_ylabel(f'PC{pc2} ({pca_result["explained_variance"][pc2-1]*100:.1f}%)')
-        ax.set_title(f'PC{pc1} vs PC{pc2}')
+        # Additional PC combinations if requested and available
+        if additional_pc_pairs:
+            pc_combinations = [
+                ('X_pca_2_3', 'PC2 vs PC3', 'pca_pc2_pc3'),
+                ('X_pca_1_3', 'PC1 vs PC3', 'pca_pc1_pc3'),
+                ('X_pca_1_4', 'PC1 vs PC4', 'pca_pc1_pc4'),
+                ('X_pca_3_4', 'PC3 vs PC4', 'pca_pc3_pc4')
+            ]
+            
+            for embedding_key, title_suffix, file_prefix in pc_combinations:
+                if embedding_key in adata_vis.obsm:
+                    fig, ax = visualize_single_omics_embedding(
+                        adata_vis,
+                        color_col=color_col,
+                        embedding_key=embedding_key,
+                        title=f'PCA: {color_col} ({title_suffix})',
+                        figsize=(10, 8),
+                        point_size=100,
+                        alpha=0.8,
+                        style=visualization_style,
+                        output_path=os.path.join(fig_dir, f'{file_prefix}_{color_col}.png'),
+                        show_legend=True,
+                        show_colorbar=True
+                    )
+                    plt.close()
     
-    plt.suptitle('PCA of Pseudobulk Samples', fontsize=14, y=1.02)
+    # 2. Create multi-panel visualization comparing different metadata
+    if len(color_columns) > 1:
+        # Main multi-panel for PC1 vs PC2
+        fig, axes = create_multi_panel_embedding(
+            adata_vis,
+            color_cols=color_columns[:min(6, len(color_columns))],
+            embedding_key='X_embedding',
+            n_cols=3 if len(color_columns) > 2 else 2,
+            figsize_per_panel=(6, 5),
+            main_title='PCA of Pseudobulk Samples: Multiple Metadata Views (PC1 vs PC2)',
+            output_path=os.path.join(fig_dir, 'pca_multi_panel_pc1_pc2.png'),
+            point_size=80,
+            alpha=0.8,
+            show_legend=True,
+            show_colorbar=True
+        )
+        plt.close()
+        
+        # Additional multi-panel for other PC combinations if available
+        if additional_pc_pairs and 'X_pca_2_3' in adata_vis.obsm:
+            fig, axes = create_multi_panel_embedding(
+                adata_vis,
+                color_cols=color_columns[:min(4, len(color_columns))],
+                embedding_key='X_pca_2_3',
+                n_cols=2,
+                figsize_per_panel=(6, 5),
+                main_title='PCA of Pseudobulk Samples: Multiple Metadata Views (PC2 vs PC3)',
+                output_path=os.path.join(fig_dir, 'pca_multi_panel_pc2_pc3.png'),
+                point_size=80,
+                alpha=0.8
+            )
+            plt.close()
+    
+    # 3. Enhanced PCA Scree plot
+    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+    variance_explained = pca_result['explained_variance'] * 100
+    
+    # Create bar plot with gradient colors
+    colors = plt.cm.viridis(np.linspace(0.3, 0.9, len(variance_explained)))
+    bars = ax.bar(range(1, len(variance_explained)+1), variance_explained, 
+                  color=colors, edgecolor='navy', linewidth=1.5)
+    
+    # Add cumulative variance line
+    cumulative_var = np.cumsum(variance_explained)
+    ax2 = ax.twinx()
+    line = ax2.plot(range(1, len(variance_explained)+1), cumulative_var, 
+                   'ro-', linewidth=2, markersize=8, label='Cumulative', 
+                   markerfacecolor='red', markeredgecolor='darkred')
+    ax2.set_ylabel('Cumulative Variance Explained (%)', fontsize=12, fontweight='bold')
+    ax2.set_ylim([0, 105])
+    ax2.grid(False)
+    
+    # Add threshold lines
+    ax2.axhline(y=80, color='orange', linestyle='--', alpha=0.5, label='80% threshold')
+    ax2.axhline(y=90, color='red', linestyle='--', alpha=0.5, label='90% threshold')
+    
+    ax.set_xlabel('Principal Component', fontsize=13, fontweight='bold')
+    ax.set_ylabel('Variance Explained (%)', fontsize=13, fontweight='bold')
+    ax.set_title('PCA Scree Plot with Cumulative Variance', fontsize=15, fontweight='bold', pad=20)
+    ax.set_xticks(range(1, min(21, len(variance_explained)+1)))
+    ax.grid(True, alpha=0.3, linestyle='--', axis='y')
+    
+    # Add value labels on bars for first 10 PCs
+    for i in range(min(10, len(bars))):
+        height = bars[i].get_height()
+        ax.text(bars[i].get_x() + bars[i].get_width()/2., height + 0.5,
+                f'{height:.1f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+    
+    # Add legend
+    ax2.legend(loc='center right')
+    
     plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, 'pca_plots.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(fig_dir, 'pca_scree_plot_enhanced.png'), dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 3. Sample correlation heatmap
-    fig, ax = plt.subplots(figsize=(10, 8))
+    # 4. Sample correlation heatmap with annotations
+    fig, ax = plt.subplots(figsize=(14, 12))
     sample_corr = normalized_df.T.corr()
-    sns.heatmap(
+    
+    # Create custom colormap
+    cmap = sns.diverging_palette(250, 10, as_cmap=True)
+    
+    # Create clustermap with dendrograms
+    g = sns.clustermap(
         sample_corr,
-        cmap='RdBu_r',
+        cmap=cmap,
         center=0,
         vmin=-1,
         vmax=1,
         square=True,
-        ax=ax,
-        cbar_kws={'label': 'Correlation'}
+        linewidths=0.5,
+        cbar_kws={'label': 'Pearson Correlation', 'shrink': 0.8, 'orientation': 'horizontal'},
+        figsize=(14, 12),
+        dendrogram_ratio=(0.1, 0.1),
+        cbar_pos=(0.02, 0.83, 0.05, 0.015),
+        annot=True if len(sample_corr) <= 15 else False,
+        fmt='.2f' if len(sample_corr) <= 15 else '',
+        annot_kws={'size': 8} if len(sample_corr) <= 15 else {}
     )
-    ax.set_title('Sample-Sample Correlation')
-    plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, 'sample_correlation.png'), dpi=300)
+    
+    g.ax_heatmap.set_xlabel('Samples', fontsize=13, fontweight='bold')
+    g.ax_heatmap.set_ylabel('Samples', fontsize=13, fontweight='bold')
+    plt.suptitle('Sample-Sample Correlation with Hierarchical Clustering', 
+                fontsize=15, fontweight='bold', y=0.98)
+    plt.savefig(os.path.join(fig_dir, 'sample_correlation_clustered.png'), 
+                dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 4. Top variable genes heatmap
+    # 5. Top variable genes heatmap with enhanced annotations
     gene_var = normalized_df.var(axis=0)
     top_var_genes = gene_var.nlargest(top_n_genes).index
     
-    fig, ax = plt.subplots(figsize=(12, 8))
-    
     # Z-score normalize for visualization
     top_genes_data = normalized_df[top_var_genes].T
-    z_scores = (top_genes_data - top_genes_data.mean(axis=1, keepdims=True)) / top_genes_data.std(axis=1, keepdims=True)
+    z_scores = (top_genes_data - top_genes_data.mean(axis=1, keepdims=True)) / \
+               (top_genes_data.std(axis=1, keepdims=True) + 1e-8)
     
-    sns.heatmap(
+    # Create clustermap with custom parameters
+    g = sns.clustermap(
         z_scores,
         cmap='RdBu_r',
         center=0,
-        yticklabels=True,
-        xticklabels=True,
-        ax=ax,
-        cbar_kws={'label': 'Z-score'}
+        row_cluster=True,
+        col_cluster=True,
+        linewidths=0,
+        cbar_kws={'label': 'Z-score', 'shrink': 0.5, 'orientation': 'vertical'},
+        figsize=(16, 12),
+        vmin=-3,
+        vmax=3,
+        dendrogram_ratio=(0.1, 0.15),
+        yticklabels=True if top_n_genes <= 50 else False,
+        xticklabels=True
     )
-    ax.set_title(f'Top {top_n_genes} Variable Genes (Z-score normalized)')
-    ax.set_xlabel('Samples')
-    ax.set_ylabel('Genes')
-    plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, 'top_variable_genes.png'), dpi=300)
+    
+    g.ax_heatmap.set_xlabel('Samples', fontsize=13, fontweight='bold')
+    g.ax_heatmap.set_ylabel('Genes', fontsize=13, fontweight='bold')
+    plt.suptitle(f'Top {top_n_genes} Variable Genes (Z-score normalized)', 
+                fontsize=15, fontweight='bold', y=1.0)
+    plt.savefig(os.path.join(fig_dir, 'top_variable_genes_clustered.png'), 
+                dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 5. Sample statistics plot
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    # 6. Enhanced sample statistics dashboard
+    fig = plt.figure(figsize=(18, 12))
+    gs = fig.add_gridspec(3, 3, hspace=0.35, wspace=0.35)
+    
+    # Set consistent style
+    bar_color_palette = sns.color_palette("husl", len(sample_metadata))
     
     # Total counts per sample
+    ax1 = fig.add_subplot(gs[0, :2])
     total_counts = pseudobulk_df.sum(axis=1)
-    axes[0, 0].bar(range(len(total_counts)), total_counts.values)
-    axes[0, 0].set_xticks(range(len(total_counts)))
-    axes[0, 0].set_xticklabels(total_counts.index, rotation=45, ha='right')
-    axes[0, 0].set_ylabel('Total Counts')
-    axes[0, 0].set_title('Total Counts per Sample')
+    bars = ax1.bar(range(len(total_counts)), total_counts.values, 
+                   color=bar_color_palette, edgecolor='navy', linewidth=1.5)
+    ax1.set_xticks(range(len(total_counts)))
+    ax1.set_xticklabels(total_counts.index, rotation=45, ha='right', fontsize=9)
+    ax1.set_ylabel('Total Counts (millions)', fontsize=11, fontweight='bold')
+    ax1.set_title('Total Counts per Sample', fontsize=12, fontweight='bold')
+    ax1.grid(True, alpha=0.3, axis='y')
     
-    # Number of detected genes per sample
+    # Format y-axis to show millions
+    ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e6:.1f}M'))
+    
+    # Number of detected genes
+    ax2 = fig.add_subplot(gs[1, :2])
     detected_genes = (pseudobulk_df > 0).sum(axis=1)
-    axes[0, 1].bar(range(len(detected_genes)), detected_genes.values)
-    axes[0, 1].set_xticks(range(len(detected_genes)))
-    axes[0, 1].set_xticklabels(detected_genes.index, rotation=45, ha='right')
-    axes[0, 1].set_ylabel('Number of Genes')
-    axes[0, 1].set_title('Detected Genes per Sample')
+    bars = ax2.bar(range(len(detected_genes)), detected_genes.values,
+                   color=bar_color_palette, edgecolor='darkgreen', linewidth=1.5)
+    ax2.set_xticks(range(len(detected_genes)))
+    ax2.set_xticklabels(detected_genes.index, rotation=45, ha='right', fontsize=9)
+    ax2.set_ylabel('Number of Genes', fontsize=11, fontweight='bold')
+    ax2.set_title('Detected Genes per Sample', fontsize=12, fontweight='bold')
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    # Add mean line
+    ax2.axhline(y=detected_genes.mean(), color='red', linestyle='--', 
+               alpha=0.5, label=f'Mean: {detected_genes.mean():.0f}')
+    ax2.legend()
     
     # Number of cells per sample
     if 'n_cells' in sample_metadata.columns:
+        ax3 = fig.add_subplot(gs[2, :2])
         n_cells = sample_metadata.set_index('sample')['n_cells']
-        axes[1, 0].bar(range(len(n_cells)), n_cells.values)
-        axes[1, 0].set_xticks(range(len(n_cells)))
-        axes[1, 0].set_xticklabels(n_cells.index, rotation=45, ha='right')
-        axes[1, 0].set_ylabel('Number of Cells')
-        axes[1, 0].set_title('Cells per Sample')
-    else:
-        axes[1, 0].axis('off')
+        bars = ax3.bar(range(len(n_cells)), n_cells.values,
+                      color=bar_color_palette, edgecolor='darkred', linewidth=1.5)
+        ax3.set_xticks(range(len(n_cells)))
+        ax3.set_xticklabels(n_cells.index, rotation=45, ha='right', fontsize=9)
+        ax3.set_ylabel('Number of Cells', fontsize=11, fontweight='bold')
+        ax3.set_title('Cells per Sample', fontsize=12, fontweight='bold')
+        ax3.grid(True, alpha=0.3, axis='y')
+        
+        # Add mean line
+        ax3.axhline(y=n_cells.mean(), color='red', linestyle='--', 
+                   alpha=0.5, label=f'Mean: {n_cells.mean():.0f}')
+        ax3.legend()
     
-    # Distribution of library sizes
-    axes[1, 1].hist(np.log10(total_counts.values + 1), bins=20, edgecolor='black')
-    axes[1, 1].set_xlabel('Log10(Total Counts + 1)')
-    axes[1, 1].set_ylabel('Frequency')
-    axes[1, 1].set_title('Distribution of Library Sizes')
+    # Distribution plots with KDE
+    ax4 = fig.add_subplot(gs[0, 2])
+    log_counts = np.log10(total_counts.values + 1)
+    ax4.hist(log_counts, bins=20, color='skyblue', edgecolor='black', 
+            alpha=0.7, density=True)
+    # Add KDE
+    from scipy import stats
+    kde = stats.gaussian_kde(log_counts)
+    x_range = np.linspace(log_counts.min(), log_counts.max(), 100)
+    ax4.plot(x_range, kde(x_range), 'r-', linewidth=2, label='KDE')
+    ax4.set_xlabel('Log10(Total Counts + 1)', fontsize=10)
+    ax4.set_ylabel('Density', fontsize=10)
+    ax4.set_title('Library Size Distribution', fontsize=11, fontweight='bold')
+    ax4.grid(True, alpha=0.3)
+    ax4.legend()
     
-    plt.suptitle('Sample Statistics', fontsize=14)
-    plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, 'sample_statistics.png'), dpi=300)
+    ax5 = fig.add_subplot(gs[1, 2])
+    ax5.hist(detected_genes.values, bins=20, color='lightgreen', 
+            edgecolor='black', alpha=0.7, density=True)
+    # Add KDE
+    kde = stats.gaussian_kde(detected_genes.values)
+    x_range = np.linspace(detected_genes.min(), detected_genes.max(), 100)
+    ax5.plot(x_range, kde(x_range), 'darkgreen', linewidth=2, label='KDE')
+    ax5.set_xlabel('Number of Genes', fontsize=10)
+    ax5.set_ylabel('Density', fontsize=10)
+    ax5.set_title('Gene Detection Distribution', fontsize=11, fontweight='bold')
+    ax5.grid(True, alpha=0.3)
+    ax5.legend()
+    
+    if 'n_cells' in sample_metadata.columns:
+        ax6 = fig.add_subplot(gs[2, 2])
+        ax6.hist(n_cells.values, bins=20, color='salmon', 
+                edgecolor='black', alpha=0.7, density=True)
+        # Add KDE
+        kde = stats.gaussian_kde(n_cells.values)
+        x_range = np.linspace(n_cells.min(), n_cells.max(), 100)
+        ax6.plot(x_range, kde(x_range), 'darkred', linewidth=2, label='KDE')
+        ax6.set_xlabel('Number of Cells', fontsize=10)
+        ax6.set_ylabel('Density', fontsize=10)
+        ax6.set_title('Cell Count Distribution', fontsize=11, fontweight='bold')
+        ax6.grid(True, alpha=0.3)
+        ax6.legend()
+    
+    plt.suptitle('Sample Statistics Dashboard', fontsize=18, fontweight='bold')
+    plt.savefig(os.path.join(fig_dir, 'sample_statistics_dashboard_enhanced.png'), 
+                dpi=300, bbox_inches='tight')
     plt.close()
     
-    print(f"Visualizations saved to {fig_dir}")
+    print(f"All visualizations successfully saved to {fig_dir}")
+    print(f"Generated {len(color_columns)} individual PCA plots and multiple comparative visualizations")
 
 def preprocess_pseudobulk(
     h5ad_path,
@@ -360,7 +615,12 @@ def preprocess_pseudobulk(
     doublet=True,
     normalization_method='log1p_CPM',
     n_pcs=20,
-    color_by=None,
+    color_columns=None,
+    highlight_samples=None,
+    annotate_samples=None,
+    visualization_style='modern',
+    show_density=False,
+    show_ellipses=False,
     verbose=True
 ):
     """
@@ -371,13 +631,58 @@ def preprocess_pseudobulk(
       2. Performs pseudobulking by sample
       3. Normalizes pseudobulk data
       4. Performs PCA
-      5. Generates visualizations
+      5. Generates enhanced visualizations
+      
+    Parameters:
+    -----------
+    h5ad_path : str
+        Path to input H5AD file
+    sample_meta_path : str
+        Path to sample metadata CSV
+    output_dir : str
+        Output directory for results
+    sample_column : str
+        Column name for sample identifiers
+    cell_meta_path : str, optional
+        Path to cell metadata CSV
+    batch_key : str
+        Batch key for metadata
+    min_cells : int
+        Minimum cells per sample
+    min_features : int
+        Minimum features per cell
+    pct_mito_cutoff : float
+        Maximum mitochondrial percentage
+    exclude_genes : list
+        Genes to exclude
+    doublet : bool
+        Perform doublet detection
+    normalization_method : str
+        Method for normalizing pseudobulk ('CPM', 'log1p_CPM')
+    n_pcs : int
+        Number of principal components
+    color_columns : list
+        Metadata columns to visualize in PCA
+    highlight_samples : list
+        Samples to highlight in plots
+    annotate_samples : list
+        Samples to annotate in plots
+    visualization_style : str
+        Style for visualizations ('modern', 'classic', 'minimal')
+    show_density : bool
+        Show density contours in PCA
+    show_ellipses : bool
+        Show confidence ellipses in PCA
+    verbose : bool
+        Print progress messages
       
     Returns:
+    --------
       - adata: Preprocessed single-cell data
       - pseudobulk_df: Raw pseudobulk counts
       - normalized_df: Normalized pseudobulk expression
       - pca_result: PCA results
+      - adata_vis: AnnData object for visualization
     """
     # Start timing
     start_time = time.time()
@@ -489,21 +794,37 @@ def preprocess_pseudobulk(
     # Print variance explained
     if verbose:
         print("\nVariance explained by top PCs:")
-        for i in range(min(5, len(pca_result['explained_variance']))):
-            print(f"  PC{i+1}: {pca_result['explained_variance'][i]*100:.2f}%")
-        print(f"  Total (first {n_pcs} PCs): {sum(pca_result['explained_variance'])*100:.2f}%")
+        cumulative = 0
+        for i in range(min(10, len(pca_result['explained_variance']))):
+            var_exp = pca_result['explained_variance'][i]*100
+            cumulative += var_exp
+            print(f"  PC{i+1}: {var_exp:.2f}% (Cumulative: {cumulative:.2f}%)")
+        print(f"\n  Total variance explained by first {n_pcs} PCs: {sum(pca_result['explained_variance'])*100:.2f}%")
     
     # Generate visualizations
     if verbose:
-        print("\n=== Generating Visualizations ===")
-    visualize_pseudobulk_results(
-        pseudobulk_df=pseudobulk_df,
-        normalized_df=normalized_df,
-        pca_result=pca_result,
-        sample_metadata=sample_metadata,
-        output_dir=output_dir,
-        color_by=color_by
-    )
+        print("\n=== Generating Enhanced Visualizations ===")
+    
+    try:
+        visualize_pseudobulk_results(
+            pseudobulk_df=pseudobulk_df,
+            normalized_df=normalized_df,
+            pca_result=pca_result,
+            sample_metadata=sample_metadata,
+            output_dir=output_dir,
+            color_columns=color_columns,
+            highlight_samples=highlight_samples,
+            annotate_samples=annotate_samples,
+            visualization_style=visualization_style,
+            show_density=show_density,
+            show_ellipses=show_ellipses
+        )
+    except Exception as e:
+        print(f"Warning: Some visualizations may have failed: {e}")
+        print("Continuing with data saving...")
+    
+    # Create AnnData object for visualization (for potential reuse)
+    adata_vis = create_pseudobulk_anndata(pca_result, sample_metadata, normalized_df)
     
     # Save results
     if verbose:
@@ -526,9 +847,13 @@ def preprocess_pseudobulk(
     # Save variance explained
     var_explained_df = pd.DataFrame({
         'PC': [f'PC{i+1}' for i in range(len(pca_result['explained_variance']))],
-        'Variance_Explained': pca_result['explained_variance']
+        'Variance_Explained': pca_result['explained_variance'],
+        'Cumulative_Variance': np.cumsum(pca_result['explained_variance'])
     })
     var_explained_df.to_csv(os.path.join(output_dir, 'pca_variance_explained.csv'), index=False)
+    
+    # Save visualization AnnData
+    adata_vis.write(os.path.join(output_dir, 'adata_visualization.h5ad'))
     
     # End timing
     end_time = time.time()
@@ -537,27 +862,34 @@ def preprocess_pseudobulk(
     if verbose:
         print(f"\n=== Function execution time: {elapsed_time:.2f} seconds ===")
         print(f"Results saved to: {output_dir}")
+        print("\nOutput files:")
+        print(f"  - adata_processed.h5ad: Preprocessed single-cell data")
+        print(f"  - adata_visualization.h5ad: Visualization-ready AnnData")
+        print(f"  - pseudobulk_counts.csv: Raw pseudobulk counts")
+        print(f"  - pseudobulk_normalized.csv: Normalized pseudobulk expression")
+        print(f"  - pca_coordinates.csv: PCA coordinates")
+        print(f"  - pca_loadings.csv: PCA gene loadings")
+        print(f"  - sample_metadata.csv: Sample metadata")
+        print(f"  - pca_variance_explained.csv: Variance explained by PCs")
+        print(f"  - figures/: Visualization outputs")
     
-    return adata, pseudobulk_df, normalized_df, pca_result
+    return adata, pseudobulk_df, normalized_df, pca_result, adata_vis
 
 if __name__ == "__main__":
-    # Example usage
-    h5ad_path = 'path/to/input_data.h5ad'
-    sample_meta_path = 'path/to/sample_metadata.csv'  # Optional
-    output_dir = 'path/to/output_directory'
+    # Example usage with enhanced parameters
+    h5ad_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_25samples.h5ad"
+    sample_meta_path = '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
+    output_dir = '/dcs07/hongkai/data/harry/result/naive_pseudobulk'
     
-    adata, pseudobulk_df, normalized_df, pca_result = preprocess_pseudobulk(
+    # Run with enhanced visualizations
+    adata, pseudobulk_df, normalized_df, pca_result, adata_vis = preprocess_pseudobulk(
         h5ad_path=h5ad_path,
         sample_meta_path=sample_meta_path,
         output_dir=output_dir,
-        sample_column='sample',
-        min_cells=500,
-        min_features=500,
-        pct_mito_cutoff=20,
-        exclude_genes=None,
-        doublet=True,
         normalization_method='log1p_CPM',
         n_pcs=20,
-        color_by='condition',  # Column in sample metadata for coloring PCA
+        visualization_style='modern',
+        show_density=False,
+        show_ellipses=True,
         verbose=True
     )
