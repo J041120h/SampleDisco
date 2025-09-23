@@ -1,92 +1,14 @@
-Linux system detected with GPU enabled.
-Resuming process from previous progress:
 {
-    "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
-        "sample_distance_calculation": true,
-        "trajectory_analysis": true,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": true
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
+  "label": "sampledisco",
+  "wall_s": null,
+  "cpu_user_s": null,
+  "cpu_sys_s": null,
+  "cpu_total_s": 0,
+  "peak_ram_mb_exact": null,
+  "avg_ram_mb_sampled": 2935.78,
+  "rss_timeseries_csv": "logs_bench/sampledisco_rss_timeseries.csv",
+  "stdout": "logs_bench/sampledisco.out",
+  "stderr": "logs_bench/sampledisco.err",
+  "cycles_C": null,
+  "nsys_kernel_csv": null
 }
-
-============================================================
-RUNNING RNA PIPELINE
-============================================================
-Starting RNA wrapper function with provided parameters...
-Starting cell type clustering...
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.6)...
-[cell_types] Found 11 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Generating UMAP visualizations...
-[generate_umap_visualizations] Generating UMAP plots...
-[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (11 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/umap_cell_type.png
-[cell_types] Total runtime: 3.25 seconds
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 11 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/pseudobulk/pseudobulk_sample.h5ad
-Starting visualization...
-[_preprocessing] Verified required columns in pseudobulk AnnData: ['sev.level']
-Found 11 unique cell types.
-Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/visualization/cell_type_dendrogram.png
-[visualization] All requested visualizations saved.
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
-
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✓
-  - trajectory_analysis: ✓
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✓
-
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample
-Status file: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/sys_log/main_process_status.json
-Execution time: 24.8057 seconds
