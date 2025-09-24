@@ -1,0 +1,579 @@
+2025-09-23 11:39:42.024218: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758641982.036577 2849405 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758641982.040322 2849405 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758641982.052191 2849405 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758641982.052206 2849405 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758641982.052209 2849405 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758641982.052211 2849405 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-23 11:39:42.055271: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+2025-09-23 11:40:09 - INFO - Loaded sequence dictionary from /users/hjiang/.cache/pyensembl/GRCh38/ensembl98/Homo_sapiens.GRCh38.cdna.all.fa.gz.pickle
+2025-09-23 11:40:09 - INFO - Loaded sequence dictionary from /users/hjiang/.cache/pyensembl/GRCh38/ensembl98/Homo_sapiens.GRCh38.ncrna.fa.gz.pickle
+2025-09-23 11:40:09 - INFO - Loaded sequence dictionary from /users/hjiang/.cache/pyensembl/GRCh38/ensembl98/Homo_sapiens.GRCh38.pep.all.fa.gz.pickle
+window_graph:   0%|          | 0/36591 [00:00<?, ?it/s]window_graph:   0%|          | 1/36591 [00:00<3:05:05,  3.29it/s]window_graph:   1%|          | 194/36591 [00:00<01:01, 592.60it/s]window_graph:   1%|          | 340/36591 [00:00<00:43, 841.13it/s]window_graph:   1%|▏         | 483/36591 [00:00<00:35, 1012.90it/s]window_graph:   2%|▏         | 647/36591 [00:00<00:30, 1195.85it/s]window_graph:   2%|▏         | 787/36591 [00:00<00:29, 1228.48it/s]window_graph:   3%|▎         | 927/36591 [00:00<00:27, 1278.29it/s]window_graph:   3%|▎         | 1065/36591 [00:01<00:27, 1279.48it/s]window_graph:   3%|▎         | 1200/36591 [00:01<00:30, 1161.09it/s]window_graph:   4%|▎         | 1323/36591 [00:01<00:34, 1028.92it/s]window_graph:   4%|▍         | 1433/36591 [00:01<00:37, 943.92it/s] window_graph:   4%|▍         | 1533/36591 [00:01<00:37, 925.35it/s]window_graph:   5%|▍         | 1668/36591 [00:01<00:33, 1030.90it/s]window_graph:   5%|▍         | 1790/36591 [00:01<00:32, 1080.93it/s]window_graph:   6%|▌         | 2090/36591 [00:01<00:21, 1607.46it/s]window_graph:   6%|▋         | 2318/36591 [00:01<00:19, 1795.73it/s]window_graph:   7%|▋         | 2505/36591 [00:02<00:21, 1574.68it/s]window_graph:   7%|▋         | 2672/36591 [00:02<00:26, 1262.19it/s]window_graph:   8%|▊         | 2814/36591 [00:02<00:28, 1190.56it/s]window_graph:   8%|▊         | 2944/36591 [00:02<00:28, 1196.29it/s]window_graph:   8%|▊         | 3072/36591 [00:02<00:29, 1121.65it/s]window_graph:   9%|▊         | 3193/36591 [00:02<00:29, 1141.99it/s]window_graph:   9%|▉         | 3312/36591 [00:02<00:30, 1075.26it/s]window_graph:   9%|▉         | 3448/36591 [00:03<00:29, 1142.75it/s]window_graph:  10%|▉         | 3566/36591 [00:03<00:29, 1111.23it/s]window_graph:  10%|█         | 3680/36591 [00:03<00:32, 1011.14it/s]window_graph:  10%|█         | 3784/36591 [00:03<00:34, 959.04it/s] window_graph:  11%|█         | 3912/36591 [00:03<00:31, 1040.89it/s]window_graph:  11%|█         | 4019/36591 [00:03<00:36, 882.75it/s] window_graph:  11%|█▏        | 4131/36591 [00:03<00:35, 923.52it/s]window_graph:  12%|█▏        | 4228/36591 [00:03<00:37, 858.90it/s]window_graph:  12%|█▏        | 4352/36591 [00:04<00:33, 952.84it/s]window_graph:  12%|█▏        | 4497/36591 [00:04<00:29, 1081.81it/s]window_graph:  13%|█▎        | 4610/36591 [00:04<00:33, 962.38it/s] window_graph:  13%|█▎        | 4712/36591 [00:04<00:34, 933.03it/s]window_graph:  13%|█▎        | 4809/36591 [00:04<00:34, 926.07it/s]window_graph:  14%|█▍        | 5053/36591 [00:04<00:23, 1328.27it/s]window_graph:  14%|█▍        | 5193/36591 [00:04<00:25, 1252.20it/s]window_graph:  15%|█▍        | 5324/36591 [00:04<00:29, 1073.76it/s]window_graph:  15%|█▍        | 5439/36591 [00:05<00:30, 1009.46it/s]window_graph:  15%|█▌        | 5661/36591 [00:05<00:23, 1304.13it/s]window_graph:  16%|█▌        | 5913/36591 [00:05<00:18, 1618.22it/s]window_graph:  17%|█▋        | 6088/36591 [00:05<00:18, 1648.43it/s]window_graph:  17%|█▋        | 6262/36591 [00:05<00:20, 1478.95it/s]window_graph:  18%|█▊        | 6420/36591 [00:05<00:25, 1204.68it/s]window_graph:  18%|█▊        | 6555/36591 [00:05<00:26, 1129.69it/s]window_graph:  18%|█▊        | 6680/36591 [00:05<00:25, 1155.50it/s]window_graph:  19%|█▊        | 6808/36591 [00:06<00:25, 1184.60it/s]window_graph:  19%|█▉        | 6933/36591 [00:06<00:27, 1072.31it/s]window_graph:  19%|█▉        | 7112/36591 [00:06<00:23, 1251.00it/s]window_graph:  20%|█▉        | 7245/36591 [00:06<00:23, 1228.13it/s]window_graph:  20%|██        | 7373/36591 [00:06<00:24, 1178.58it/s]window_graph:  20%|██        | 7495/36591 [00:06<00:26, 1116.05it/s]window_graph:  21%|██        | 7693/36591 [00:06<00:21, 1342.06it/s]window_graph:  22%|██▏       | 7901/36591 [00:06<00:18, 1531.95it/s]window_graph:  22%|██▏       | 8060/36591 [00:07<00:21, 1328.77it/s]window_graph:  22%|██▏       | 8201/36591 [00:08<01:11, 397.72it/s] window_graph:  23%|██▎       | 8304/36591 [00:08<01:02, 455.11it/s]window_graph:  23%|██▎       | 8410/36591 [00:08<00:53, 527.66it/s]window_graph:  23%|██▎       | 8520/36591 [00:08<00:45, 611.44it/s]window_graph:  24%|██▎       | 8664/36591 [00:08<00:37, 753.06it/s]window_graph:  24%|██▍       | 8809/36591 [00:08<00:31, 890.81it/s]window_graph:  24%|██▍       | 8934/36591 [00:08<00:29, 923.91it/s]window_graph:  25%|██▍       | 9052/36591 [00:08<00:31, 871.95it/s]window_graph:  25%|██▌       | 9158/36591 [00:08<00:30, 898.71it/s]window_graph:  25%|██▌       | 9262/36591 [00:09<00:32, 834.92it/s]window_graph:  26%|██▌       | 9356/36591 [00:09<00:33, 819.16it/s]window_graph:  26%|██▌       | 9445/36591 [00:09<00:33, 807.01it/s]window_graph:  26%|██▌       | 9532/36591 [00:09<00:32, 821.38it/s]window_graph:  27%|██▋       | 9876/36591 [00:09<00:17, 1510.50it/s]window_graph:  27%|██▋       | 10039/36591 [00:09<00:19, 1344.66it/s]window_graph:  28%|██▊       | 10185/36591 [00:09<00:20, 1259.13it/s]window_graph:  28%|██▊       | 10320/36591 [00:09<00:22, 1153.32it/s]window_graph:  29%|██▊       | 10442/36591 [00:10<00:23, 1127.98it/s]window_graph:  29%|██▉       | 10560/36591 [00:10<00:24, 1048.27it/s]window_graph:  29%|██▉       | 10669/36591 [00:10<00:25, 999.18it/s] window_graph:  29%|██▉       | 10783/36591 [00:10<00:24, 1034.31it/s]window_graph:  30%|███       | 11124/36591 [00:10<00:15, 1659.78it/s]window_graph:  31%|███       | 11301/36591 [00:10<00:17, 1409.98it/s]window_graph:  31%|███▏      | 11486/36591 [00:10<00:16, 1506.95it/s]window_graph:  32%|███▏      | 11648/36591 [00:10<00:17, 1391.55it/s]window_graph:  32%|███▏      | 11796/36591 [00:11<00:19, 1249.44it/s]window_graph:  33%|███▎      | 11929/36591 [00:11<00:19, 1264.33it/s]window_graph:  33%|███▎      | 12062/36591 [00:11<00:19, 1229.37it/s]window_graph:  33%|███▎      | 12189/36591 [00:11<00:20, 1218.64it/s]window_graph:  34%|███▎      | 12314/36591 [00:11<00:21, 1139.71it/s]window_graph:  34%|███▍      | 12609/36591 [00:11<00:14, 1612.62it/s]window_graph:  35%|███▍      | 12779/36591 [00:11<00:16, 1426.58it/s]window_graph:  35%|███▌      | 12941/36591 [00:11<00:16, 1474.41it/s]window_graph:  36%|███▌      | 13225/36591 [00:12<00:12, 1832.69it/s]window_graph:  37%|███▋      | 13418/36591 [00:12<00:14, 1636.61it/s]window_graph:  37%|███▋      | 13592/36591 [00:12<00:14, 1637.97it/s]window_graph:  38%|███▊      | 13763/36591 [00:12<00:15, 1444.60it/s]window_graph:  38%|███▊      | 13916/36591 [00:12<00:16, 1394.15it/s]window_graph:  39%|███▊      | 14094/36591 [00:12<00:15, 1487.30it/s]window_graph:  39%|███▉      | 14305/36591 [00:12<00:13, 1637.66it/s]window_graph:  40%|███▉      | 14475/36591 [00:12<00:13, 1593.31it/s]window_graph:  40%|████      | 14664/36591 [00:12<00:13, 1671.93it/s]window_graph:  41%|████      | 14838/36591 [00:13<00:12, 1686.46it/s]window_graph:  41%|████      | 15090/36591 [00:13<00:11, 1921.81it/s]window_graph:  42%|████▏     | 15286/36591 [00:13<00:11, 1930.90it/s]window_graph:  42%|████▏     | 15482/36591 [00:13<00:12, 1633.53it/s]window_graph:  43%|████▎     | 15655/36591 [00:13<00:15, 1378.94it/s]window_graph:  43%|████▎     | 15808/36591 [00:13<00:14, 1413.92it/s]window_graph:  44%|████▎     | 15997/36591 [00:13<00:13, 1532.12it/s]window_graph:  44%|████▍     | 16159/36591 [00:13<00:14, 1395.06it/s]window_graph:  45%|████▍     | 16307/36591 [00:14<00:15, 1290.00it/s]window_graph:  45%|████▍     | 16443/36591 [00:14<00:19, 1048.72it/s]window_graph:  45%|████▌     | 16558/36591 [00:14<00:19, 1012.78it/s]window_graph:  46%|████▌     | 16666/36591 [00:14<00:19, 1015.18it/s]window_graph:  46%|████▌     | 16856/36591 [00:14<00:16, 1228.72it/s]window_graph:  47%|████▋     | 17088/36591 [00:14<00:12, 1508.18it/s]window_graph:  47%|████▋     | 17357/36591 [00:14<00:10, 1826.40it/s]window_graph:  48%|████▊     | 17604/36591 [00:14<00:09, 2002.95it/s]window_graph:  49%|████▊     | 17813/36591 [00:15<00:09, 1899.27it/s]window_graph:  49%|████▉     | 18083/36591 [00:15<00:08, 2119.59it/s]window_graph:  50%|█████     | 18341/36591 [00:15<00:08, 2247.66it/s]window_graph:  51%|█████     | 18661/36591 [00:15<00:07, 2520.79it/s]window_graph:  52%|█████▏    | 18919/36591 [00:15<00:08, 2093.31it/s]window_graph:  52%|█████▏    | 19144/36591 [00:15<00:11, 1529.80it/s]window_graph:  53%|█████▎    | 19328/36591 [00:16<00:13, 1240.08it/s]window_graph:  53%|█████▎    | 19480/36591 [00:16<00:16, 1048.62it/s]window_graph:  54%|█████▎    | 19607/36591 [00:17<00:50, 339.56it/s] window_graph:  54%|█████▍    | 19704/36591 [00:17<00:43, 385.89it/s]window_graph:  54%|█████▍    | 19921/36591 [00:17<00:30, 555.30it/s]window_graph:  55%|█████▍    | 20051/36591 [00:17<00:26, 634.58it/s]window_graph:  55%|█████▌    | 20177/36591 [00:18<00:24, 682.48it/s]window_graph:  55%|█████▌    | 20292/36591 [00:18<00:22, 727.95it/s]window_graph:  56%|█████▌    | 20400/36591 [00:18<00:23, 689.10it/s]window_graph:  56%|█████▌    | 20493/36591 [00:18<00:23, 686.44it/s]window_graph:  56%|█████▋    | 20589/36591 [00:18<00:21, 740.45it/s]window_graph:  57%|█████▋    | 20678/36591 [00:18<00:21, 739.19it/s]window_graph:  57%|█████▋    | 20763/36591 [00:18<00:20, 758.40it/s]window_graph:  57%|█████▋    | 20868/36591 [00:18<00:19, 826.90it/s]window_graph:  57%|█████▋    | 20958/36591 [00:19<00:19, 815.74it/s]window_graph:  58%|█████▊    | 21087/36591 [00:19<00:16, 939.18it/s]window_graph:  58%|█████▊    | 21186/36591 [00:19<00:16, 950.50it/s]window_graph:  58%|█████▊    | 21285/36591 [00:19<00:16, 915.33it/s]window_graph:  59%|█████▊    | 21444/36591 [00:19<00:13, 1099.54it/s]window_graph:  59%|█████▉    | 21558/36591 [00:19<00:15, 955.51it/s] window_graph:  59%|█████▉    | 21714/36591 [00:19<00:13, 1110.21it/s]window_graph:  60%|█████▉    | 21855/36591 [00:19<00:12, 1190.64it/s]window_graph:  60%|██████    | 21982/36591 [00:19<00:12, 1205.97it/s]window_graph:  60%|██████    | 22107/36591 [00:20<00:12, 1136.36it/s]window_graph:  61%|██████    | 22226/36591 [00:20<00:12, 1149.32it/s]window_graph:  61%|██████    | 22402/36591 [00:20<00:10, 1320.40it/s]window_graph:  62%|██████▏   | 22542/36591 [00:20<00:10, 1341.39it/s]window_graph:  62%|██████▏   | 22679/36591 [00:20<00:11, 1202.68it/s]window_graph:  63%|██████▎   | 22874/36591 [00:20<00:09, 1399.59it/s]window_graph:  63%|██████▎   | 23141/36591 [00:20<00:07, 1747.58it/s]window_graph:  64%|██████▎   | 23322/36591 [00:20<00:09, 1373.45it/s]window_graph:  64%|██████▍   | 23476/36591 [00:20<00:09, 1390.02it/s]window_graph:  65%|██████▍   | 23627/36591 [00:21<00:09, 1364.84it/s]window_graph:  65%|██████▍   | 23772/36591 [00:21<00:10, 1239.52it/s]window_graph:  65%|██████▌   | 23903/36591 [00:21<00:11, 1142.53it/s]window_graph:  66%|██████▌   | 24023/36591 [00:21<00:13, 898.64it/s] window_graph:  66%|██████▌   | 24124/36591 [00:21<00:13, 917.59it/s]window_graph:  66%|██████▋   | 24294/36591 [00:21<00:11, 1093.36it/s]window_graph:  67%|██████▋   | 24414/36591 [00:21<00:11, 1091.02it/s]window_graph:  67%|██████▋   | 24531/36591 [00:22<00:14, 818.68it/s] window_graph:  67%|██████▋   | 24628/36591 [00:22<00:14, 812.93it/s]window_graph:  68%|██████▊   | 24720/36591 [00:22<00:14, 808.97it/s]window_graph:  68%|██████▊   | 24810/36591 [00:22<00:14, 825.43it/s]window_graph:  68%|██████▊   | 24898/36591 [00:22<00:13, 836.65it/s]window_graph:  68%|██████▊   | 24986/36591 [00:22<00:13, 837.62it/s]window_graph:  69%|██████▊   | 25073/36591 [00:22<00:13, 837.64it/s]window_graph:  69%|██████▉   | 25180/36591 [00:22<00:12, 892.73it/s]window_graph:  69%|██████▉   | 25271/36591 [00:23<00:13, 855.13it/s]window_graph:  69%|██████▉   | 25358/36591 [00:23<00:14, 791.87it/s]window_graph:  70%|██████▉   | 25482/36591 [00:23<00:12, 911.51it/s]window_graph:  70%|██████▉   | 25576/36591 [00:23<00:12, 895.55it/s]window_graph:  70%|███████   | 25722/36591 [00:23<00:10, 1046.39it/s]window_graph:  71%|███████   | 25829/36591 [00:23<00:10, 1002.99it/s]window_graph:  71%|███████   | 25932/36591 [00:23<00:11, 888.26it/s] window_graph:  71%|███████   | 26025/36591 [00:23<00:11, 886.77it/s]window_graph:  71%|███████▏  | 26127/36591 [00:23<00:11, 913.77it/s]window_graph:  72%|███████▏  | 26237/36591 [00:24<00:10, 964.53it/s]window_graph:  72%|███████▏  | 26336/36591 [00:24<00:10, 971.16it/s]window_graph:  72%|███████▏  | 26435/36591 [00:24<00:11, 879.64it/s]window_graph:  72%|███████▏  | 26526/36591 [00:24<00:11, 880.25it/s]window_graph:  73%|███████▎  | 26616/36591 [00:24<00:11, 871.26it/s]window_graph:  73%|███████▎  | 26705/36591 [00:24<00:11, 853.56it/s]window_graph:  73%|███████▎  | 26792/36591 [00:24<00:11, 841.63it/s]window_graph:  73%|███████▎  | 26877/36591 [00:24<00:11, 839.22it/s]window_graph:  74%|███████▎  | 26962/36591 [00:24<00:11, 830.26it/s]window_graph:  74%|███████▍  | 27046/36591 [00:25<00:11, 832.96it/s]window_graph:  74%|███████▍  | 27167/36591 [00:25<00:10, 942.12it/s]window_graph:  75%|███████▍  | 27285/36591 [00:25<00:09, 1010.79it/s]window_graph:  75%|███████▍  | 27387/36591 [00:25<00:09, 932.13it/s] window_graph:  75%|███████▌  | 27482/36591 [00:25<00:10, 909.69it/s]window_graph:  75%|███████▌  | 27585/36591 [00:25<00:09, 935.28it/s]window_graph:  76%|███████▌  | 27680/36591 [00:25<00:09, 899.12it/s]window_graph:  76%|███████▌  | 27793/36591 [00:25<00:09, 959.07it/s]window_graph:  76%|███████▌  | 27890/36591 [00:25<00:09, 952.61it/s]window_graph:  76%|███████▋  | 27986/36591 [00:26<00:09, 900.13it/s]window_graph:  77%|███████▋  | 28077/36591 [00:26<00:10, 829.70it/s]window_graph:  77%|███████▋  | 28162/36591 [00:26<00:10, 824.43it/s]window_graph:  77%|███████▋  | 28246/36591 [00:26<00:10, 815.67it/s]window_graph:  77%|███████▋  | 28343/36591 [00:26<00:09, 857.31it/s]window_graph:  78%|███████▊  | 28505/36591 [00:26<00:07, 1066.07it/s]window_graph:  78%|███████▊  | 28617/36591 [00:26<00:07, 1071.28it/s]window_graph:  79%|███████▊  | 28726/36591 [00:26<00:08, 929.50it/s] window_graph:  79%|███████▉  | 28823/36591 [00:26<00:08, 895.65it/s]window_graph:  79%|███████▉  | 28989/36591 [00:27<00:06, 1096.06it/s]window_graph:  80%|███████▉  | 29104/36591 [00:27<00:07, 1026.86it/s]window_graph:  80%|███████▉  | 29211/36591 [00:27<00:08, 884.89it/s] window_graph:  81%|████████  | 29516/36591 [00:27<00:05, 1408.91it/s]window_graph:  81%|████████  | 29673/36591 [00:27<00:04, 1410.32it/s]window_graph:  82%|████████▏ | 29825/36591 [00:27<00:04, 1358.12it/s]window_graph:  82%|████████▏ | 29969/36591 [00:27<00:05, 1150.97it/s]window_graph:  82%|████████▏ | 30094/36591 [00:27<00:05, 1090.29it/s]window_graph:  83%|████████▎ | 30210/36591 [00:28<00:06, 958.65it/s] window_graph:  83%|████████▎ | 30313/36591 [00:28<00:06, 907.54it/s]window_graph:  83%|████████▎ | 30408/36591 [00:30<00:33, 184.03it/s]window_graph:  83%|████████▎ | 30487/36591 [00:30<00:27, 221.97it/s]window_graph:  84%|████████▎ | 30569/36591 [00:30<00:22, 270.26it/s]window_graph:  84%|████████▎ | 30643/36591 [00:30<00:18, 318.71it/s]window_graph:  84%|████████▍ | 30728/36591 [00:30<00:15, 386.75it/s]window_graph:  84%|████████▍ | 30861/36591 [00:30<00:10, 533.39it/s]window_graph:  85%|████████▍ | 30954/36591 [00:30<00:09, 596.84it/s]window_graph:  85%|████████▍ | 31045/36591 [00:30<00:08, 617.78it/s]window_graph:  85%|████████▌ | 31144/36591 [00:30<00:07, 697.49it/s]window_graph:  85%|████████▌ | 31234/36591 [00:31<00:07, 735.03it/s]window_graph:  86%|████████▌ | 31322/36591 [00:31<00:06, 759.76it/s]window_graph:  86%|████████▌ | 31449/36591 [00:31<00:05, 888.98it/s]window_graph:  86%|████████▌ | 31547/36591 [00:31<00:05, 890.62it/s]window_graph:  86%|████████▋ | 31643/36591 [00:31<00:06, 806.98it/s]window_graph:  87%|████████▋ | 31796/36591 [00:31<00:04, 990.86it/s]window_graph:  87%|████████▋ | 31903/36591 [00:31<00:05, 917.29it/s]window_graph:  87%|████████▋ | 32001/36591 [00:31<00:05, 868.85it/s]window_graph:  88%|████████▊ | 32092/36591 [00:31<00:05, 868.52it/s]window_graph:  88%|████████▊ | 32182/36591 [00:32<00:05, 869.96it/s]window_graph:  89%|████████▊ | 32398/36591 [00:32<00:03, 1207.85it/s]window_graph:  89%|████████▉ | 32523/36591 [00:32<00:03, 1078.42it/s]window_graph:  89%|████████▉ | 32656/36591 [00:32<00:03, 1142.47it/s]window_graph:  90%|████████▉ | 32775/36591 [00:32<00:03, 1080.59it/s]window_graph:  90%|████████▉ | 32887/36591 [00:32<00:03, 1076.58it/s]window_graph:  90%|█████████ | 32997/36591 [00:32<00:03, 1066.30it/s]window_graph:  90%|█████████ | 33106/36591 [00:32<00:03, 1042.36it/s]window_graph:  91%|█████████ | 33212/36591 [00:32<00:03, 1022.54it/s]window_graph:  91%|█████████ | 33315/36591 [00:33<00:03, 988.86it/s] window_graph:  91%|█████████▏| 33415/36591 [00:33<00:03, 959.58it/s]window_graph:  92%|█████████▏| 33512/36591 [00:33<00:03, 942.01it/s]window_graph:  92%|█████████▏| 33607/36591 [00:33<00:03, 917.61it/s]window_graph:  92%|█████████▏| 33699/36591 [00:33<00:03, 825.64it/s]window_graph:  92%|█████████▏| 33784/36591 [00:33<00:03, 766.98it/s]window_graph:  93%|█████████▎| 33863/36591 [00:33<00:03, 736.59it/s]window_graph:  93%|█████████▎| 34023/36591 [00:33<00:02, 960.01it/s]window_graph:  93%|█████████▎| 34124/36591 [00:34<00:02, 828.10it/s]window_graph:  94%|█████████▎| 34259/36591 [00:34<00:02, 957.17it/s]window_graph:  94%|█████████▍| 34449/36591 [00:34<00:01, 1201.23it/s]window_graph:  94%|█████████▍| 34578/36591 [00:34<00:02, 1003.37it/s]window_graph:  95%|█████████▍| 34690/36591 [00:34<00:01, 985.83it/s] window_graph:  95%|█████████▌| 34796/36591 [00:34<00:01, 922.38it/s]window_graph:  95%|█████████▌| 34894/36591 [00:34<00:01, 874.02it/s]window_graph:  96%|█████████▌| 34986/36591 [00:34<00:01, 881.50it/s]window_graph:  96%|█████████▌| 35123/36591 [00:35<00:01, 1007.00it/s]window_graph:  96%|█████████▋| 35289/36591 [00:35<00:01, 1177.34it/s]window_graph:  97%|█████████▋| 35412/36591 [00:35<00:01, 1129.59it/s]window_graph:  97%|█████████▋| 35529/36591 [00:35<00:01, 1039.79it/s]window_graph:  97%|█████████▋| 35637/36591 [00:35<00:00, 985.58it/s] window_graph:  98%|█████████▊| 35831/36591 [00:35<00:00, 1233.25it/s]window_graph:  98%|█████████▊| 35960/36591 [00:35<00:00, 1177.17it/s]window_graph:  99%|█████████▊| 36102/36591 [00:35<00:00, 1238.25it/s]window_graph:  99%|█████████▉| 36230/36591 [00:35<00:00, 1177.41it/s]window_graph:  99%|█████████▉| 36371/36591 [00:36<00:00, 1234.88it/s]window_graph: 100%|██████████| 36591/36591 [00:36<00:00, 1012.79it/s]
+2025-09-23 11:46:48 - INFO - Checking variable coverage...
+2025-09-23 11:46:49 - INFO - Checking edge attributes...
+2025-09-23 11:47:00 - INFO - Checking self-loops...
+2025-09-23 11:47:02 - INFO - Checking graph symmetry...
+2025-09-23 11:47:06 - INFO - All checks passed!
+2025-09-23 11:55:09 - INFO - Pretraining SCGLUE model...
+2025-09-23 11:55:09 - INFO - Using GPU 0 as computation device.
+2025-09-23 11:55:10 - DEBUG - Generating random xuid...
+2025-09-23 11:55:10 - DEBUG - Generating random xuid...
+2025-09-23 11:55:10 - INFO - Checking variable coverage...
+2025-09-23 11:55:10 - INFO - Checking edge attributes...
+2025-09-23 11:55:12 - INFO - Checking self-loops...
+2025-09-23 11:55:13 - INFO - Checking graph symmetry...
+2025-09-23 11:55:28 - INFO - Setting `graph_batch_size` = 686132
+2025-09-23 11:55:28 - INFO - Setting `patience` = 12
+2025-09-23 11:55:28 - INFO - Setting `reduce_lr_patience` = 6
+2025-09-23 11:55:28 - DEBUG - Started background process: 2850977
+2025-09-23 11:55:28 - INFO - Using training directory: "/dcs07/hongkai/data/harry/result/multiomics/integration/glue/training/pretrain"
+2025-09-23 11:55:29 - INFO - Engine run starting with max_epochs=500.
+2025-09-23 11:56:48 - INFO - Engine run starting with max_epochs=1.
+2025-09-23 11:57:01 - INFO - Epoch[1] Complete. Time taken: 00:00:05.694
+2025-09-23 11:57:01 - INFO - Engine run finished. Time taken: 00:00:13.130
+2025-09-23 11:57:01 - INFO - Epoch[1] Complete. Time taken: 00:01:19.406
+2025-09-23 11:58:14 - INFO - Engine run resuming from iteration 20, epoch 1 until 2 epochs
+2025-09-23 11:58:27 - INFO - Epoch[2] Complete. Time taken: 00:00:05.895
+2025-09-23 11:58:27 - INFO - Engine run finished. Time taken: 00:00:13.524
+2025-09-23 11:58:27 - INFO - Epoch[2] Complete. Time taken: 00:01:26.352
+2025-09-23 11:59:39 - INFO - Engine run resuming from iteration 40, epoch 2 until 3 epochs
+2025-09-23 11:59:52 - INFO - Epoch[3] Complete. Time taken: 00:00:05.543
+2025-09-23 11:59:52 - INFO - Engine run finished. Time taken: 00:00:13.090
+2025-09-23 11:59:52 - INFO - Epoch[3] Complete. Time taken: 00:01:25.261
+2025-09-23 12:01:05 - INFO - Engine run resuming from iteration 60, epoch 3 until 4 epochs
+2025-09-23 12:01:18 - INFO - Epoch[4] Complete. Time taken: 00:00:05.549
+2025-09-23 12:01:18 - INFO - Engine run finished. Time taken: 00:00:12.990
+2025-09-23 12:01:18 - INFO - Epoch[4] Complete. Time taken: 00:01:25.621
+2025-09-23 12:02:31 - INFO - Engine run resuming from iteration 80, epoch 4 until 5 epochs
+2025-09-23 12:02:44 - INFO - Epoch[5] Complete. Time taken: 00:00:05.592
+2025-09-23 12:02:44 - INFO - Engine run finished. Time taken: 00:00:13.100
+2025-09-23 12:02:44 - INFO - Epoch[5] Complete. Time taken: 00:01:25.880
+2025-09-23 12:03:57 - INFO - Engine run resuming from iteration 100, epoch 5 until 6 epochs
+2025-09-23 12:04:10 - INFO - Epoch[6] Complete. Time taken: 00:00:05.627
+2025-09-23 12:04:10 - INFO - Engine run finished. Time taken: 00:00:13.045
+2025-09-23 12:04:10 - INFO - Epoch[6] Complete. Time taken: 00:01:25.727
+2025-09-23 12:05:22 - INFO - Engine run resuming from iteration 120, epoch 6 until 7 epochs
+2025-09-23 12:05:35 - INFO - Epoch[7] Complete. Time taken: 00:00:05.597
+2025-09-23 12:05:35 - INFO - Engine run finished. Time taken: 00:00:13.124
+2025-09-23 12:05:35 - INFO - Epoch[7] Complete. Time taken: 00:01:25.742
+2025-09-23 12:06:48 - INFO - Engine run resuming from iteration 140, epoch 7 until 8 epochs
+2025-09-23 12:07:01 - INFO - Epoch[8] Complete. Time taken: 00:00:05.546
+2025-09-23 12:07:01 - INFO - Engine run finished. Time taken: 00:00:13.100
+2025-09-23 12:07:01 - INFO - Epoch[8] Complete. Time taken: 00:01:25.690
+2025-09-23 12:08:14 - INFO - Engine run resuming from iteration 160, epoch 8 until 9 epochs
+2025-09-23 12:08:27 - INFO - Epoch[9] Complete. Time taken: 00:00:05.620
+2025-09-23 12:08:27 - INFO - Engine run finished. Time taken: 00:00:13.156
+2025-09-23 12:08:27 - INFO - Epoch[9] Complete. Time taken: 00:01:25.956
+2025-09-23 12:09:40 - INFO - Engine run resuming from iteration 180, epoch 9 until 10 epochs
+2025-09-23 12:09:53 - INFO - Epoch[10] Complete. Time taken: 00:00:05.575
+2025-09-23 12:09:53 - INFO - Engine run finished. Time taken: 00:00:12.998
+2025-09-23 12:09:53 - INFO - [Epoch 10] train={'g_nll': 0.421, 'g_kl': 0.0, 'g_elbo': 0.421, 'x_rna_nll': 0.257, 'x_rna_kl': 0.007, 'x_rna_elbo': 0.264, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.69, 'vae_loss': 0.293, 'gen_loss': 0.259}, val={'g_nll': 0.421, 'g_kl': 0.0, 'g_elbo': 0.421, 'x_rna_nll': 0.268, 'x_rna_kl': 0.007, 'x_rna_elbo': 0.275, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.693, 'vae_loss': 0.304, 'gen_loss': 0.269}, 72.5s elapsed
+2025-09-23 12:09:53 - INFO - Epoch[10] Complete. Time taken: 00:01:25.527
+2025-09-23 12:11:06 - INFO - Engine run resuming from iteration 200, epoch 10 until 11 epochs
+2025-09-23 12:11:19 - INFO - Epoch[11] Complete. Time taken: 00:00:05.706
+2025-09-23 12:11:19 - INFO - Engine run finished. Time taken: 00:00:13.243
+2025-09-23 12:11:19 - INFO - Epoch[11] Complete. Time taken: 00:01:26.666
+2025-09-23 12:12:33 - INFO - Engine run resuming from iteration 220, epoch 11 until 12 epochs
+2025-09-23 12:12:46 - INFO - Epoch[12] Complete. Time taken: 00:00:05.674
+2025-09-23 12:12:46 - INFO - Engine run finished. Time taken: 00:00:13.093
+2025-09-23 12:12:46 - INFO - Epoch[12] Complete. Time taken: 00:01:26.354
+2025-09-23 12:13:59 - INFO - Engine run resuming from iteration 240, epoch 12 until 13 epochs
+2025-09-23 12:14:12 - INFO - Epoch[13] Complete. Time taken: 00:00:05.667
+2025-09-23 12:14:12 - INFO - Engine run finished. Time taken: 00:00:13.165
+2025-09-23 12:14:12 - INFO - Epoch[13] Complete. Time taken: 00:01:26.486
+2025-09-23 12:15:25 - INFO - Engine run resuming from iteration 260, epoch 13 until 14 epochs
+2025-09-23 12:15:38 - INFO - Epoch[14] Complete. Time taken: 00:00:05.693
+2025-09-23 12:15:38 - INFO - Engine run finished. Time taken: 00:00:13.059
+2025-09-23 12:15:38 - INFO - Epoch[14] Complete. Time taken: 00:01:26.384
+2025-09-23 12:16:52 - INFO - Engine run resuming from iteration 280, epoch 14 until 15 epochs
+2025-09-23 12:17:05 - INFO - Epoch[15] Complete. Time taken: 00:00:05.669
+2025-09-23 12:17:05 - INFO - Engine run finished. Time taken: 00:00:13.177
+2025-09-23 12:17:05 - INFO - Epoch[15] Complete. Time taken: 00:01:26.424
+2025-09-23 12:18:18 - INFO - Engine run resuming from iteration 300, epoch 15 until 16 epochs
+2025-09-23 12:18:31 - INFO - Epoch[16] Complete. Time taken: 00:00:05.641
+2025-09-23 12:18:31 - INFO - Engine run finished. Time taken: 00:00:12.962
+2025-09-23 12:18:31 - INFO - Epoch[16] Complete. Time taken: 00:01:26.205
+2025-09-23 12:19:44 - INFO - Engine run resuming from iteration 320, epoch 16 until 17 epochs
+2025-09-23 12:19:57 - INFO - Epoch[17] Complete. Time taken: 00:00:05.703
+2025-09-23 12:19:57 - INFO - Engine run finished. Time taken: 00:00:13.047
+2025-09-23 12:19:57 - INFO - Epoch[17] Complete. Time taken: 00:01:26.283
+2025-09-23 12:21:11 - INFO - Engine run resuming from iteration 340, epoch 17 until 18 epochs
+2025-09-23 12:21:24 - INFO - Epoch[18] Complete. Time taken: 00:00:05.667
+2025-09-23 12:21:24 - INFO - Engine run finished. Time taken: 00:00:12.944
+2025-09-23 12:21:24 - INFO - Epoch[18] Complete. Time taken: 00:01:26.109
+2025-09-23 12:22:37 - INFO - Engine run resuming from iteration 360, epoch 18 until 19 epochs
+2025-09-23 12:22:50 - INFO - Epoch[19] Complete. Time taken: 00:00:05.685
+2025-09-23 12:22:50 - INFO - Engine run finished. Time taken: 00:00:13.063
+2025-09-23 12:22:50 - INFO - Epoch[19] Complete. Time taken: 00:01:26.269
+2025-09-23 12:24:03 - INFO - Engine run resuming from iteration 380, epoch 19 until 20 epochs
+2025-09-23 12:24:16 - INFO - Epoch[20] Complete. Time taken: 00:00:05.617
+2025-09-23 12:24:16 - INFO - Engine run finished. Time taken: 00:00:12.896
+2025-09-23 12:24:16 - INFO - [Epoch 20] train={'g_nll': 0.415, 'g_kl': 0.0, 'g_elbo': 0.415, 'x_rna_nll': 0.252, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.259, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.691, 'vae_loss': 0.287, 'gen_loss': 0.253}, val={'g_nll': 0.414, 'g_kl': 0.0, 'g_elbo': 0.415, 'x_rna_nll': 0.259, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.265, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.693, 'vae_loss': 0.293, 'gen_loss': 0.259}, 73.1s elapsed
+2025-09-23 12:24:16 - INFO - Epoch[20] Complete. Time taken: 00:01:25.962
+2025-09-23 12:25:29 - INFO - Engine run resuming from iteration 400, epoch 20 until 21 epochs
+2025-09-23 12:25:42 - INFO - Epoch[21] Complete. Time taken: 00:00:05.785
+2025-09-23 12:25:42 - INFO - Engine run finished. Time taken: 00:00:13.123
+2025-09-23 12:25:42 - INFO - Learning rate reduction: step 1
+2025-09-23 12:25:45 - INFO - Epoch[21] Complete. Time taken: 00:01:28.979
+2025-09-23 12:26:55 - INFO - Engine run resuming from iteration 420, epoch 21 until 22 epochs
+2025-09-23 12:27:08 - INFO - Epoch[22] Complete. Time taken: 00:00:05.677
+2025-09-23 12:27:08 - INFO - Engine run finished. Time taken: 00:00:13.062
+2025-09-23 12:27:11 - INFO - Epoch[22] Complete. Time taken: 00:01:26.007
+2025-09-23 12:28:21 - INFO - Engine run resuming from iteration 440, epoch 22 until 23 epochs
+2025-09-23 12:28:34 - INFO - Epoch[23] Complete. Time taken: 00:00:05.678
+2025-09-23 12:28:34 - INFO - Engine run finished. Time taken: 00:00:13.095
+2025-09-23 12:28:36 - INFO - Epoch[23] Complete. Time taken: 00:01:25.536
+2025-09-23 12:29:47 - INFO - Engine run resuming from iteration 460, epoch 23 until 24 epochs
+2025-09-23 12:30:00 - INFO - Epoch[24] Complete. Time taken: 00:00:05.635
+2025-09-23 12:30:00 - INFO - Engine run finished. Time taken: 00:00:12.987
+2025-09-23 12:30:02 - INFO - Epoch[24] Complete. Time taken: 00:01:25.464
+2025-09-23 12:31:13 - INFO - Engine run resuming from iteration 480, epoch 24 until 25 epochs
+2025-09-23 12:31:26 - INFO - Epoch[25] Complete. Time taken: 00:00:05.634
+2025-09-23 12:31:26 - INFO - Engine run finished. Time taken: 00:00:13.064
+2025-09-23 12:31:28 - INFO - Epoch[25] Complete. Time taken: 00:01:26.125
+2025-09-23 12:32:38 - INFO - Engine run resuming from iteration 500, epoch 25 until 26 epochs
+2025-09-23 12:32:51 - INFO - Epoch[26] Complete. Time taken: 00:00:05.629
+2025-09-23 12:32:51 - INFO - Engine run finished. Time taken: 00:00:12.977
+2025-09-23 12:32:54 - INFO - Epoch[26] Complete. Time taken: 00:01:25.894
+2025-09-23 12:34:04 - INFO - Engine run resuming from iteration 520, epoch 26 until 27 epochs
+2025-09-23 12:34:17 - INFO - Epoch[27] Complete. Time taken: 00:00:05.651
+2025-09-23 12:34:17 - INFO - Engine run finished. Time taken: 00:00:13.052
+2025-09-23 12:34:20 - INFO - Epoch[27] Complete. Time taken: 00:01:25.909
+2025-09-23 12:35:30 - INFO - Engine run resuming from iteration 540, epoch 27 until 28 epochs
+2025-09-23 12:35:43 - INFO - Epoch[28] Complete. Time taken: 00:00:05.625
+2025-09-23 12:35:43 - INFO - Engine run finished. Time taken: 00:00:12.928
+2025-09-23 12:35:43 - INFO - Epoch[28] Complete. Time taken: 00:01:22.978
+2025-09-23 12:36:55 - INFO - Engine run resuming from iteration 560, epoch 28 until 29 epochs
+2025-09-23 12:37:08 - INFO - Epoch[29] Complete. Time taken: 00:00:05.629
+2025-09-23 12:37:08 - INFO - Engine run finished. Time taken: 00:00:13.039
+2025-09-23 12:37:08 - INFO - Epoch[29] Complete. Time taken: 00:01:25.794
+2025-09-23 12:38:21 - INFO - Engine run resuming from iteration 580, epoch 29 until 30 epochs
+2025-09-23 12:38:34 - INFO - Epoch[30] Complete. Time taken: 00:00:05.616
+2025-09-23 12:38:34 - INFO - Engine run finished. Time taken: 00:00:12.956
+2025-09-23 12:38:34 - INFO - [Epoch 30] train={'g_nll': 0.412, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.249, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.255, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.284, 'gen_loss': 0.249}, val={'g_nll': 0.412, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.258, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.264, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.293, 'gen_loss': 0.258}, 72.7s elapsed
+2025-09-23 12:38:34 - INFO - Epoch[30] Complete. Time taken: 00:01:25.705
+2025-09-23 12:39:47 - INFO - Engine run resuming from iteration 600, epoch 30 until 31 epochs
+2025-09-23 12:40:00 - INFO - Epoch[31] Complete. Time taken: 00:00:05.616
+2025-09-23 12:40:00 - INFO - Engine run finished. Time taken: 00:00:13.001
+2025-09-23 12:40:00 - INFO - Epoch[31] Complete. Time taken: 00:01:25.575
+2025-09-23 12:41:12 - INFO - Engine run resuming from iteration 620, epoch 31 until 32 epochs
+2025-09-23 12:41:25 - INFO - Epoch[32] Complete. Time taken: 00:00:05.645
+2025-09-23 12:41:25 - INFO - Engine run finished. Time taken: 00:00:12.999
+2025-09-23 12:41:27 - INFO - Epoch[32] Complete. Time taken: 00:01:27.577
+2025-09-23 12:42:38 - INFO - Engine run resuming from iteration 640, epoch 32 until 33 epochs
+2025-09-23 12:42:51 - INFO - Epoch[33] Complete. Time taken: 00:00:05.643
+2025-09-23 12:42:51 - INFO - Engine run finished. Time taken: 00:00:12.988
+2025-09-23 12:42:51 - INFO - Epoch[33] Complete. Time taken: 00:01:23.804
+2025-09-23 12:44:04 - INFO - Engine run resuming from iteration 660, epoch 33 until 34 epochs
+2025-09-23 12:44:17 - INFO - Epoch[34] Complete. Time taken: 00:00:05.629
+2025-09-23 12:44:17 - INFO - Engine run finished. Time taken: 00:00:12.953
+2025-09-23 12:44:17 - INFO - Epoch[34] Complete. Time taken: 00:01:25.740
+2025-09-23 12:45:30 - INFO - Engine run resuming from iteration 680, epoch 34 until 35 epochs
+2025-09-23 12:45:43 - INFO - Epoch[35] Complete. Time taken: 00:00:05.647
+2025-09-23 12:45:43 - INFO - Engine run finished. Time taken: 00:00:12.992
+2025-09-23 12:45:43 - INFO - Epoch[35] Complete. Time taken: 00:01:25.742
+2025-09-23 12:46:55 - INFO - Engine run resuming from iteration 700, epoch 35 until 36 epochs
+2025-09-23 12:47:08 - INFO - Epoch[36] Complete. Time taken: 00:00:05.571
+2025-09-23 12:47:08 - INFO - Engine run finished. Time taken: 00:00:12.825
+2025-09-23 12:47:08 - INFO - Epoch[36] Complete. Time taken: 00:01:25.460
+2025-09-23 12:48:21 - INFO - Engine run resuming from iteration 720, epoch 36 until 37 epochs
+2025-09-23 12:48:34 - INFO - Epoch[37] Complete. Time taken: 00:00:05.620
+2025-09-23 12:48:34 - INFO - Engine run finished. Time taken: 00:00:13.038
+2025-09-23 12:48:34 - INFO - Epoch[37] Complete. Time taken: 00:01:25.743
+2025-09-23 12:49:47 - INFO - Engine run resuming from iteration 740, epoch 37 until 38 epochs
+2025-09-23 12:50:00 - INFO - Epoch[38] Complete. Time taken: 00:00:05.642
+2025-09-23 12:50:00 - INFO - Engine run finished. Time taken: 00:00:13.009
+2025-09-23 12:50:02 - INFO - Epoch[38] Complete. Time taken: 00:01:27.732
+2025-09-23 12:51:13 - INFO - Engine run resuming from iteration 760, epoch 38 until 39 epochs
+2025-09-23 12:51:26 - INFO - Epoch[39] Complete. Time taken: 00:00:05.603
+2025-09-23 12:51:26 - INFO - Engine run finished. Time taken: 00:00:13.039
+2025-09-23 12:51:26 - INFO - Learning rate reduction: step 2
+2025-09-23 12:51:28 - INFO - Epoch[39] Complete. Time taken: 00:01:25.991
+2025-09-23 12:52:38 - INFO - Engine run resuming from iteration 780, epoch 39 until 40 epochs
+2025-09-23 12:52:51 - INFO - Epoch[40] Complete. Time taken: 00:00:05.588
+2025-09-23 12:52:51 - INFO - Engine run finished. Time taken: 00:00:12.949
+2025-09-23 12:52:51 - INFO - [Epoch 40] train={'g_nll': 0.411, 'g_kl': 0.0, 'g_elbo': 0.411, 'x_rna_nll': 0.248, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.254, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.283, 'gen_loss': 0.248}, val={'g_nll': 0.411, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.259, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.265, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.294, 'gen_loss': 0.259}, 70.9s elapsed
+2025-09-23 12:52:51 - INFO - Epoch[40] Complete. Time taken: 00:01:23.897
+2025-09-23 12:54:04 - INFO - Engine run resuming from iteration 800, epoch 40 until 41 epochs
+2025-09-23 12:54:17 - INFO - Epoch[41] Complete. Time taken: 00:00:05.589
+2025-09-23 12:54:17 - INFO - Engine run finished. Time taken: 00:00:13.073
+2025-09-23 12:54:17 - INFO - Epoch[41] Complete. Time taken: 00:01:25.742
+2025-09-23 12:55:30 - INFO - Engine run resuming from iteration 820, epoch 41 until 42 epochs
+2025-09-23 12:55:43 - INFO - Epoch[42] Complete. Time taken: 00:00:05.643
+2025-09-23 12:55:43 - INFO - Engine run finished. Time taken: 00:00:12.930
+2025-09-23 12:55:43 - INFO - Epoch[42] Complete. Time taken: 00:01:25.660
+2025-09-23 12:56:56 - INFO - Engine run resuming from iteration 840, epoch 42 until 43 epochs
+2025-09-23 12:57:08 - INFO - Epoch[43] Complete. Time taken: 00:00:05.603
+2025-09-23 12:57:08 - INFO - Engine run finished. Time taken: 00:00:12.859
+2025-09-23 12:57:08 - INFO - Epoch[43] Complete. Time taken: 00:01:25.590
+2025-09-23 12:58:21 - INFO - Engine run resuming from iteration 860, epoch 43 until 44 epochs
+2025-09-23 12:58:34 - INFO - Epoch[44] Complete. Time taken: 00:00:05.605
+2025-09-23 12:58:34 - INFO - Engine run finished. Time taken: 00:00:12.775
+2025-09-23 12:58:34,403 ignite.handlers.early_stopping.EarlyStopping INFO: EarlyStopping: Stop training
+2025-09-23 12:58:34 - INFO - Terminate signaled. Engine will stop after current iteration is finished.
+2025-09-23 12:58:34 - INFO - Restoring checkpoint "39"...
+2025-09-23 12:58:35 - INFO - Restoring checkpoint "39"...
+2025-09-23 12:58:36 - INFO - Engine run finished. Time taken: 01:03:06.964
+2025-09-23 12:58:41 - DEBUG - Joined background process: 2850977
+2025-09-23 12:58:44 - INFO - Estimating balancing weight...
+2025-09-23 12:58:44 - DEBUG - Generating random xuid...
+2025-09-23 12:58:44 - DEBUG - Generating random xuid...
+2025-09-23 12:58:44 - INFO - Clustering cells...
+2025-09-23 12:59:29 - INFO - Matching clusters...
+2025-09-23 12:59:29 - INFO - Matching array shape = (22, 17)...
+2025-09-23 12:59:29 - INFO - Estimating balancing weight...
+2025-09-23 12:59:29 - INFO - Fine-tuning SCGLUE model...
+2025-09-23 12:59:29 - DEBUG - Copied: g2v.vrepr
+2025-09-23 12:59:29 - DEBUG - Copied: g2v.loc.weight
+2025-09-23 12:59:29 - DEBUG - Copied: g2v.loc.bias
+2025-09-23 12:59:29 - DEBUG - Copied: g2v.std_lin.weight
+2025-09-23 12:59:29 - DEBUG - Copied: g2v.std_lin.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.linear_0.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.linear_0.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_0.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_0.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.linear_1.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.linear_1.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_1.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_1.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.loc.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.loc.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.std_lin.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.std_lin.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.linear_0.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.linear_0.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_0.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_0.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.linear_1.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.linear_1.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_1.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_1.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.loc.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.loc.bias
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.std_lin.weight
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.std_lin.bias
+2025-09-23 12:59:29 - DEBUG - Copied: u2x.rna.scale_lin
+2025-09-23 12:59:29 - DEBUG - Copied: u2x.rna.bias
+2025-09-23 12:59:29 - DEBUG - Copied: u2x.rna.log_theta
+2025-09-23 12:59:29 - DEBUG - Copied: u2x.atac.scale_lin
+2025-09-23 12:59:29 - DEBUG - Copied: u2x.atac.bias
+2025-09-23 12:59:29 - DEBUG - Copied: u2x.atac.log_theta
+2025-09-23 12:59:29 - DEBUG - Copied: du.linear_0.weight
+2025-09-23 12:59:29 - DEBUG - Copied: du.linear_0.bias
+2025-09-23 12:59:29 - DEBUG - Copied: du.linear_1.weight
+2025-09-23 12:59:29 - DEBUG - Copied: du.linear_1.bias
+2025-09-23 12:59:29 - DEBUG - Copied: du.pred.weight
+2025-09-23 12:59:29 - DEBUG - Copied: du.pred.bias
+2025-09-23 12:59:29 - DEBUG - Copied: rna_idx
+2025-09-23 12:59:29 - DEBUG - Copied: atac_idx
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_0.running_mean
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_0.running_var
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_0.num_batches_tracked
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_1.running_mean
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_1.running_var
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.rna.bn_1.num_batches_tracked
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_0.running_mean
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_0.running_var
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_0.num_batches_tracked
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_1.running_mean
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_1.running_var
+2025-09-23 12:59:29 - DEBUG - Copied: x2u.atac.bn_1.num_batches_tracked
+2025-09-23 12:59:29 - DEBUG - Copied: prior.loc
+2025-09-23 12:59:29 - DEBUG - Copied: prior.std
+2025-09-23 12:59:29 - DEBUG - Increasing random seed by 1 to prevent idential data order...
+2025-09-23 12:59:29 - DEBUG - Generating random xuid...
+2025-09-23 12:59:29 - DEBUG - Generating random xuid...
+2025-09-23 12:59:30 - INFO - Checking variable coverage...
+2025-09-23 12:59:30 - INFO - Checking edge attributes...
+2025-09-23 12:59:32 - INFO - Checking self-loops...
+2025-09-23 12:59:32 - INFO - Checking graph symmetry...
+2025-09-23 12:59:49 - INFO - Setting `graph_batch_size` = 686132
+2025-09-23 12:59:49 - INFO - Setting `align_burnin` = 23
+2025-09-23 12:59:49 - INFO - Setting `patience` = 12
+2025-09-23 12:59:49 - INFO - Setting `reduce_lr_patience` = 6
+2025-09-23 12:59:49 - DEBUG - Started background process: 2855891
+2025-09-23 12:59:49 - INFO - Using training directory: "/dcs07/hongkai/data/harry/result/multiomics/integration/glue/training/fine-tune"
+2025-09-23 12:59:49 - INFO - Engine run starting with max_epochs=500.
+2025-09-23 13:01:09 - INFO - Engine run starting with max_epochs=1.
+2025-09-23 13:01:22 - INFO - Epoch[1] Complete. Time taken: 00:00:05.627
+2025-09-23 13:01:22 - INFO - Engine run finished. Time taken: 00:00:13.111
+2025-09-23 13:01:22 - INFO - Epoch[1] Complete. Time taken: 00:01:19.469
+2025-09-23 13:02:35 - INFO - Engine run resuming from iteration 20, epoch 1 until 2 epochs
+2025-09-23 13:02:48 - INFO - Epoch[2] Complete. Time taken: 00:00:05.583
+2025-09-23 13:02:48 - INFO - Engine run finished. Time taken: 00:00:13.112
+2025-09-23 13:02:48 - INFO - Epoch[2] Complete. Time taken: 00:01:26.070
+2025-09-23 13:04:01 - INFO - Engine run resuming from iteration 40, epoch 2 until 3 epochs
+2025-09-23 13:04:14 - INFO - Epoch[3] Complete. Time taken: 00:00:05.610
+2025-09-23 13:04:14 - INFO - Engine run finished. Time taken: 00:00:13.030
+2025-09-23 13:04:14 - INFO - Epoch[3] Complete. Time taken: 00:01:25.909
+2025-09-23 13:05:27 - INFO - Engine run resuming from iteration 60, epoch 3 until 4 epochs
+2025-09-23 13:05:40 - INFO - Epoch[4] Complete. Time taken: 00:00:05.640
+2025-09-23 13:05:40 - INFO - Engine run finished. Time taken: 00:00:13.183
+2025-09-23 13:05:40 - INFO - Epoch[4] Complete. Time taken: 00:01:26.098
+2025-09-23 13:06:53 - INFO - Engine run resuming from iteration 80, epoch 4 until 5 epochs
+2025-09-23 13:07:06 - INFO - Epoch[5] Complete. Time taken: 00:00:05.594
+2025-09-23 13:07:06 - INFO - Engine run finished. Time taken: 00:00:13.098
+2025-09-23 13:07:06 - INFO - Epoch[5] Complete. Time taken: 00:01:25.891
+2025-09-23 13:08:18 - INFO - Engine run resuming from iteration 100, epoch 5 until 6 epochs
+2025-09-23 13:08:32 - INFO - Epoch[6] Complete. Time taken: 00:00:05.604
+2025-09-23 13:08:32 - INFO - Engine run finished. Time taken: 00:00:13.245
+2025-09-23 13:08:32 - INFO - Epoch[6] Complete. Time taken: 00:01:26.019
+2025-09-23 13:09:44 - INFO - Engine run resuming from iteration 120, epoch 6 until 7 epochs
+2025-09-23 13:09:58 - INFO - Epoch[7] Complete. Time taken: 00:00:05.585
+2025-09-23 13:09:58 - INFO - Engine run finished. Time taken: 00:00:13.055
+2025-09-23 13:09:58 - INFO - Epoch[7] Complete. Time taken: 00:01:25.890
+2025-09-23 13:11:11 - INFO - Engine run resuming from iteration 140, epoch 7 until 8 epochs
+2025-09-23 13:11:24 - INFO - Epoch[8] Complete. Time taken: 00:00:05.626
+2025-09-23 13:11:24 - INFO - Engine run finished. Time taken: 00:00:13.213
+2025-09-23 13:11:24 - INFO - Epoch[8] Complete. Time taken: 00:01:26.495
+2025-09-23 13:12:37 - INFO - Engine run resuming from iteration 160, epoch 8 until 9 epochs
+2025-09-23 13:12:50 - INFO - Epoch[9] Complete. Time taken: 00:00:05.636
+2025-09-23 13:12:50 - INFO - Engine run finished. Time taken: 00:00:13.135
+2025-09-23 13:12:50 - INFO - Epoch[9] Complete. Time taken: 00:01:26.236
+2025-09-23 13:14:03 - INFO - Engine run resuming from iteration 180, epoch 9 until 10 epochs
+2025-09-23 13:14:16 - INFO - Epoch[10] Complete. Time taken: 00:00:05.569
+2025-09-23 13:14:16 - INFO - Engine run finished. Time taken: 00:00:13.142
+2025-09-23 13:14:16 - INFO - [Epoch 10] train={'g_nll': 0.411, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.253, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.259, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.691, 'vae_loss': 0.287, 'gen_loss': 0.253}, val={'g_nll': 0.412, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.248, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.254, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.696, 'vae_loss': 0.282, 'gen_loss': 0.248}, 73.1s elapsed
+2025-09-23 13:14:16 - INFO - Epoch[10] Complete. Time taken: 00:01:26.206
+2025-09-23 13:15:30 - INFO - Engine run resuming from iteration 200, epoch 10 until 11 epochs
+2025-09-23 13:15:43 - INFO - Epoch[11] Complete. Time taken: 00:00:05.623
+2025-09-23 13:15:43 - INFO - Engine run finished. Time taken: 00:00:13.067
+2025-09-23 13:15:43 - INFO - Epoch[11] Complete. Time taken: 00:01:26.365
+2025-09-23 13:16:56 - INFO - Engine run resuming from iteration 220, epoch 11 until 12 epochs
+2025-09-23 13:17:09 - INFO - Epoch[12] Complete. Time taken: 00:00:05.621
+2025-09-23 13:17:09 - INFO - Engine run finished. Time taken: 00:00:13.200
+2025-09-23 13:17:09 - INFO - Epoch[12] Complete. Time taken: 00:01:26.467
+2025-09-23 13:18:22 - INFO - Engine run resuming from iteration 240, epoch 12 until 13 epochs
+2025-09-23 13:18:35 - INFO - Epoch[13] Complete. Time taken: 00:00:05.630
+2025-09-23 13:18:35 - INFO - Engine run finished. Time taken: 00:00:13.065
+2025-09-23 13:18:35 - INFO - Epoch[13] Complete. Time taken: 00:01:26.168
+2025-09-23 13:19:49 - INFO - Engine run resuming from iteration 260, epoch 13 until 14 epochs
+2025-09-23 13:20:02 - INFO - Epoch[14] Complete. Time taken: 00:00:05.663
+2025-09-23 13:20:02 - INFO - Engine run finished. Time taken: 00:00:13.134
+2025-09-23 13:20:02 - INFO - Epoch[14] Complete. Time taken: 00:01:26.218
+2025-09-23 13:21:15 - INFO - Engine run resuming from iteration 280, epoch 14 until 15 epochs
+2025-09-23 13:21:28 - INFO - Epoch[15] Complete. Time taken: 00:00:05.631
+2025-09-23 13:21:28 - INFO - Engine run finished. Time taken: 00:00:13.013
+2025-09-23 13:21:28 - INFO - Epoch[15] Complete. Time taken: 00:01:26.149
+2025-09-23 13:22:41 - INFO - Engine run resuming from iteration 300, epoch 15 until 16 epochs
+2025-09-23 13:22:54 - INFO - Epoch[16] Complete. Time taken: 00:00:05.634
+2025-09-23 13:22:54 - INFO - Engine run finished. Time taken: 00:00:13.088
+2025-09-23 13:22:54 - INFO - Epoch[16] Complete. Time taken: 00:01:26.228
+2025-09-23 13:24:07 - INFO - Engine run resuming from iteration 320, epoch 16 until 17 epochs
+2025-09-23 13:24:20 - INFO - Epoch[17] Complete. Time taken: 00:00:05.636
+2025-09-23 13:24:20 - INFO - Engine run finished. Time taken: 00:00:13.070
+2025-09-23 13:24:20 - INFO - Epoch[17] Complete. Time taken: 00:01:26.276
+2025-09-23 13:25:34 - INFO - Engine run resuming from iteration 340, epoch 17 until 18 epochs
+2025-09-23 13:25:47 - INFO - Epoch[18] Complete. Time taken: 00:00:05.660
+2025-09-23 13:25:47 - INFO - Engine run finished. Time taken: 00:00:13.139
+2025-09-23 13:25:47 - INFO - Epoch[18] Complete. Time taken: 00:01:26.448
+2025-09-23 13:27:00 - INFO - Engine run resuming from iteration 360, epoch 18 until 19 epochs
+2025-09-23 13:27:13 - INFO - Epoch[19] Complete. Time taken: 00:00:05.586
+2025-09-23 13:27:13 - INFO - Engine run finished. Time taken: 00:00:13.072
+2025-09-23 13:27:13 - INFO - Epoch[19] Complete. Time taken: 00:01:26.358
+2025-09-23 13:28:27 - INFO - Engine run resuming from iteration 380, epoch 19 until 20 epochs
+2025-09-23 13:28:40 - INFO - Epoch[20] Complete. Time taken: 00:00:05.642
+2025-09-23 13:28:40 - INFO - Engine run finished. Time taken: 00:00:13.225
+2025-09-23 13:28:40 - INFO - [Epoch 20] train={'g_nll': 0.409, 'g_kl': 0.0, 'g_elbo': 0.409, 'x_rna_nll': 0.25, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.256, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.686, 'vae_loss': 0.284, 'gen_loss': 0.25}, val={'g_nll': 0.409, 'g_kl': 0.0, 'g_elbo': 0.409, 'x_rna_nll': 0.244, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.25, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.688, 'vae_loss': 0.279, 'gen_loss': 0.244}, 73.5s elapsed
+2025-09-23 13:28:40 - INFO - Epoch[20] Complete. Time taken: 00:01:26.747
+2025-09-23 13:29:53 - INFO - Engine run resuming from iteration 400, epoch 20 until 21 epochs
+2025-09-23 13:30:07 - INFO - Epoch[21] Complete. Time taken: 00:00:05.623
+2025-09-23 13:30:07 - INFO - Engine run finished. Time taken: 00:00:13.159
+2025-09-23 13:30:07 - INFO - Epoch[21] Complete. Time taken: 00:01:26.755
+2025-09-23 13:31:20 - INFO - Engine run resuming from iteration 420, epoch 21 until 22 epochs
+2025-09-23 13:31:33 - INFO - Epoch[22] Complete. Time taken: 00:00:05.675
+2025-09-23 13:31:33 - INFO - Engine run finished. Time taken: 00:00:13.204
+2025-09-23 13:31:33 - INFO - Epoch[22] Complete. Time taken: 00:01:26.714
+2025-09-23 13:32:47 - INFO - Engine run resuming from iteration 440, epoch 22 until 23 epochs
+2025-09-23 13:33:00 - INFO - Epoch[23] Complete. Time taken: 00:00:05.658
+2025-09-23 13:33:00 - INFO - Engine run finished. Time taken: 00:00:13.153
+2025-09-23 13:33:00 - INFO - Epoch[23] Complete. Time taken: 00:01:26.508
+2025-09-23 13:34:13 - INFO - Engine run resuming from iteration 460, epoch 23 until 24 epochs
+2025-09-23 13:34:26 - INFO - Epoch[24] Complete. Time taken: 00:00:05.614
+2025-09-23 13:34:26 - INFO - Engine run finished. Time taken: 00:00:13.142
+2025-09-23 13:34:26 - INFO - Epoch[24] Complete. Time taken: 00:01:26.492
+2025-09-23 13:35:40 - INFO - Engine run resuming from iteration 480, epoch 24 until 25 epochs
+2025-09-23 13:35:53 - INFO - Epoch[25] Complete. Time taken: 00:00:05.661
+2025-09-23 13:35:53 - INFO - Engine run finished. Time taken: 00:00:13.108
+2025-09-23 13:35:53 - INFO - Epoch[25] Complete. Time taken: 00:01:26.426
+2025-09-23 13:37:06 - INFO - Engine run resuming from iteration 500, epoch 25 until 26 epochs
+2025-09-23 13:37:19 - INFO - Epoch[26] Complete. Time taken: 00:00:05.610
+2025-09-23 13:37:19 - INFO - Engine run finished. Time taken: 00:00:13.184
+2025-09-23 13:37:19 - INFO - Epoch[26] Complete. Time taken: 00:01:26.409
+2025-09-23 13:38:32 - INFO - Engine run resuming from iteration 520, epoch 26 until 27 epochs
+2025-09-23 13:38:46 - INFO - Epoch[27] Complete. Time taken: 00:00:05.628
+2025-09-23 13:38:46 - INFO - Engine run finished. Time taken: 00:00:13.166
+2025-09-23 13:38:46 - INFO - Epoch[27] Complete. Time taken: 00:01:26.465
+2025-09-23 13:39:59 - INFO - Engine run resuming from iteration 540, epoch 27 until 28 epochs
+2025-09-23 13:40:12 - INFO - Epoch[28] Complete. Time taken: 00:00:05.627
+2025-09-23 13:40:12 - INFO - Engine run finished. Time taken: 00:00:13.213
+2025-09-23 13:40:12 - INFO - Epoch[28] Complete. Time taken: 00:01:26.491
+2025-09-23 13:41:25 - INFO - Engine run resuming from iteration 560, epoch 28 until 29 epochs
+2025-09-23 13:41:38 - INFO - Epoch[29] Complete. Time taken: 00:00:05.639
+2025-09-23 13:41:38 - INFO - Engine run finished. Time taken: 00:00:13.194
+2025-09-23 13:41:38 - INFO - Epoch[29] Complete. Time taken: 00:01:26.332
+2025-09-23 13:42:52 - INFO - Engine run resuming from iteration 580, epoch 29 until 30 epochs
+2025-09-23 13:43:05 - INFO - Epoch[30] Complete. Time taken: 00:00:05.644
+2025-09-23 13:43:05 - INFO - Engine run finished. Time taken: 00:00:13.187
+2025-09-23 13:43:05 - INFO - [Epoch 30] train={'g_nll': 0.407, 'g_kl': 0.0, 'g_elbo': 0.407, 'x_rna_nll': 0.251, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.257, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.686, 'vae_loss': 0.285, 'gen_loss': 0.251}, val={'g_nll': 0.406, 'g_kl': 0.0, 'g_elbo': 0.406, 'x_rna_nll': 0.245, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.251, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.69, 'vae_loss': 0.279, 'gen_loss': 0.245}, 73.3s elapsed
+2025-09-23 13:43:05 - INFO - Epoch[30] Complete. Time taken: 00:01:26.449
+2025-09-23 13:44:18 - INFO - Engine run resuming from iteration 600, epoch 30 until 31 epochs
+2025-09-23 13:44:31 - INFO - Epoch[31] Complete. Time taken: 00:00:05.618
+2025-09-23 13:44:31 - INFO - Engine run finished. Time taken: 00:00:13.146
+2025-09-23 13:44:31 - INFO - Epoch[31] Complete. Time taken: 00:01:26.427
+2025-09-23 13:45:45 - INFO - Engine run resuming from iteration 620, epoch 31 until 32 epochs
+2025-09-23 13:45:58 - INFO - Epoch[32] Complete. Time taken: 00:00:05.629
+2025-09-23 13:45:58 - INFO - Engine run finished. Time taken: 00:00:13.210
+2025-09-23 13:45:58 - INFO - Epoch[32] Complete. Time taken: 00:01:26.462
+2025-09-23 13:47:11 - INFO - Engine run resuming from iteration 640, epoch 32 until 33 epochs
+2025-09-23 13:47:24 - INFO - Epoch[33] Complete. Time taken: 00:00:05.660
+2025-09-23 13:47:24 - INFO - Engine run finished. Time taken: 00:00:13.187
+2025-09-23 13:47:24 - INFO - Epoch[33] Complete. Time taken: 00:01:26.435
+2025-09-23 13:48:38 - INFO - Engine run resuming from iteration 660, epoch 33 until 34 epochs
+2025-09-23 13:48:51 - INFO - Epoch[34] Complete. Time taken: 00:00:05.645
+2025-09-23 13:48:51 - INFO - Engine run finished. Time taken: 00:00:13.254
+2025-09-23 13:48:51 - INFO - Learning rate reduction: step 1
+2025-09-23 13:48:53 - INFO - Epoch[34] Complete. Time taken: 00:01:28.358
+2025-09-23 13:50:04 - INFO - Engine run resuming from iteration 680, epoch 34 until 35 epochs
+2025-09-23 13:50:17 - INFO - Epoch[35] Complete. Time taken: 00:00:05.622
+2025-09-23 13:50:17 - INFO - Engine run finished. Time taken: 00:00:13.148
+2025-09-23 13:50:19 - INFO - Epoch[35] Complete. Time taken: 00:01:26.695
+2025-09-23 13:51:30 - INFO - Engine run resuming from iteration 700, epoch 35 until 36 epochs
+2025-09-23 13:51:43 - INFO - Epoch[36] Complete. Time taken: 00:00:05.609
+2025-09-23 13:51:43 - INFO - Engine run finished. Time taken: 00:00:13.255
+2025-09-23 13:51:45 - INFO - Epoch[36] Complete. Time taken: 00:01:25.927
+2025-09-23 13:52:56 - INFO - Engine run resuming from iteration 720, epoch 36 until 37 epochs
+2025-09-23 13:53:09 - INFO - Epoch[37] Complete. Time taken: 00:00:05.532
+2025-09-23 13:53:09 - INFO - Engine run finished. Time taken: 00:00:13.189
+2025-09-23 13:53:09 - INFO - Epoch[37] Complete. Time taken: 00:01:24.205
+2025-09-23 13:54:23 - INFO - Engine run resuming from iteration 740, epoch 37 until 38 epochs
+2025-09-23 13:54:36 - INFO - Epoch[38] Complete. Time taken: 00:00:05.561
+2025-09-23 13:54:36 - INFO - Engine run finished. Time taken: 00:00:13.162
+2025-09-23 13:54:36 - INFO - Epoch[38] Complete. Time taken: 00:01:26.319
+2025-09-23 13:55:49 - INFO - Engine run resuming from iteration 760, epoch 38 until 39 epochs
+2025-09-23 13:56:02 - INFO - Epoch[39] Complete. Time taken: 00:00:05.568
+2025-09-23 13:56:02 - INFO - Engine run finished. Time taken: 00:00:13.168
+2025-09-23 13:56:04 - INFO - Epoch[39] Complete. Time taken: 00:01:27.970
+2025-09-23 13:57:15 - INFO - Engine run resuming from iteration 780, epoch 39 until 40 epochs
+2025-09-23 13:57:28 - INFO - Epoch[40] Complete. Time taken: 00:00:05.637
+2025-09-23 13:57:28 - INFO - Engine run finished. Time taken: 00:00:13.292
+2025-09-23 13:57:28 - INFO - [Epoch 40] train={'g_nll': 0.404, 'g_kl': 0.0, 'g_elbo': 0.404, 'x_rna_nll': 0.25, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.256, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.69, 'vae_loss': 0.284, 'gen_loss': 0.25}, val={'g_nll': 0.404, 'g_kl': 0.0, 'g_elbo': 0.404, 'x_rna_nll': 0.246, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.252, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.688, 'vae_loss': 0.28, 'gen_loss': 0.246}, 71.2s elapsed
+2025-09-23 13:57:28 - INFO - Epoch[40] Complete. Time taken: 00:01:24.472
+2025-09-23 13:58:41 - INFO - Engine run resuming from iteration 800, epoch 40 until 41 epochs
+2025-09-23 13:58:54 - INFO - Epoch[41] Complete. Time taken: 00:00:05.613
+2025-09-23 13:58:54 - INFO - Engine run finished. Time taken: 00:00:13.150
+2025-09-23 13:58:56 - INFO - Epoch[41] Complete. Time taken: 00:01:27.908
+2025-09-23 14:00:07 - INFO - Engine run resuming from iteration 820, epoch 41 until 42 epochs
+2025-09-23 14:00:21 - INFO - Epoch[42] Complete. Time taken: 00:00:05.603
+2025-09-23 14:00:21 - INFO - Engine run finished. Time taken: 00:00:13.234
+2025-09-23 14:00:22 - INFO - Epoch[42] Complete. Time taken: 00:01:26.302
+2025-09-23 14:01:34 - INFO - Engine run resuming from iteration 840, epoch 42 until 43 epochs
+2025-09-23 14:01:47 - INFO - Epoch[43] Complete. Time taken: 00:00:05.571
+2025-09-23 14:01:47 - INFO - Engine run finished. Time taken: 00:00:13.089
+2025-09-23 14:01:47 - INFO - Epoch[43] Complete. Time taken: 00:01:24.455
+2025-09-23 14:03:00 - INFO - Engine run resuming from iteration 860, epoch 43 until 44 epochs
+2025-09-23 14:03:13 - INFO - Epoch[44] Complete. Time taken: 00:00:05.610
+2025-09-23 14:03:13 - INFO - Engine run finished. Time taken: 00:00:13.280
+2025-09-23 14:03:13 - INFO - Epoch[44] Complete. Time taken: 00:01:26.368
+2025-09-23 14:04:26 - INFO - Engine run resuming from iteration 880, epoch 44 until 45 epochs
+2025-09-23 14:04:39 - INFO - Epoch[45] Complete. Time taken: 00:00:05.572
+2025-09-23 14:04:39 - INFO - Engine run finished. Time taken: 00:00:13.120
+2025-09-23 14:04:39 - INFO - Epoch[45] Complete. Time taken: 00:01:26.232
+2025-09-23 14:05:52 - INFO - Engine run resuming from iteration 900, epoch 45 until 46 epochs
+2025-09-23 14:06:06 - INFO - Epoch[46] Complete. Time taken: 00:00:05.588
+2025-09-23 14:06:06 - INFO - Engine run finished. Time taken: 00:00:13.217
+2025-09-23 14:06:06 - INFO - Learning rate reduction: step 2
+2025-09-23 14:06:07 - INFO - Epoch[46] Complete. Time taken: 00:01:27.965
+2025-09-23 14:07:19 - INFO - Engine run resuming from iteration 920, epoch 46 until 47 epochs
+2025-09-23 14:07:32 - INFO - Epoch[47] Complete. Time taken: 00:00:05.612
+2025-09-23 14:07:32 - INFO - Engine run finished. Time taken: 00:00:13.176
+2025-09-23 14:07:34 - INFO - Epoch[47] Complete. Time taken: 00:01:26.409
+2025-09-23 14:08:45 - INFO - Engine run resuming from iteration 940, epoch 47 until 48 epochs
+2025-09-23 14:08:58 - INFO - Epoch[48] Complete. Time taken: 00:00:05.634
+2025-09-23 14:08:58 - INFO - Engine run finished. Time taken: 00:00:13.277
+2025-09-23 14:08:58 - INFO - Epoch[48] Complete. Time taken: 00:01:24.295
+2025-09-23 14:10:11 - INFO - Engine run resuming from iteration 960, epoch 48 until 49 epochs
+2025-09-23 14:10:24 - INFO - Epoch[49] Complete. Time taken: 00:00:05.578
+2025-09-23 14:10:24 - INFO - Engine run finished. Time taken: 00:00:13.131
+2025-09-23 14:10:24 - INFO - Epoch[49] Complete. Time taken: 00:01:26.196
+2025-09-23 14:11:37 - INFO - Engine run resuming from iteration 980, epoch 49 until 50 epochs
+2025-09-23 14:11:51 - INFO - Epoch[50] Complete. Time taken: 00:00:05.627
+2025-09-23 14:11:51 - INFO - Engine run finished. Time taken: 00:00:13.159
+2025-09-23 14:11:51 - INFO - [Epoch 50] train={'g_nll': 0.403, 'g_kl': 0.0, 'g_elbo': 0.403, 'x_rna_nll': 0.249, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.255, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.689, 'vae_loss': 0.283, 'gen_loss': 0.248}, val={'g_nll': 0.403, 'g_kl': 0.0, 'g_elbo': 0.403, 'x_rna_nll': 0.246, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.252, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.689, 'vae_loss': 0.28, 'gen_loss': 0.246}, 73.1s elapsed
+2025-09-23 14:11:51 - INFO - Epoch[50] Complete. Time taken: 00:01:26.284
+2025-09-23 14:13:04 - INFO - Engine run resuming from iteration 1000, epoch 50 until 51 epochs
+2025-09-23 14:13:17 - INFO - Epoch[51] Complete. Time taken: 00:00:05.566
+2025-09-23 14:13:17 - INFO - Engine run finished. Time taken: 00:00:13.056
+2025-09-23 14:13:17 - INFO - Epoch[51] Complete. Time taken: 00:01:26.245
+2025-09-23 14:14:30 - INFO - Engine run resuming from iteration 1020, epoch 51 until 52 epochs
+2025-09-23 14:14:43 - INFO - Epoch[52] Complete. Time taken: 00:00:05.626
+2025-09-23 14:14:43 - INFO - Engine run finished. Time taken: 00:00:13.246
+2025-09-23 14:14:43 - INFO - Epoch[52] Complete. Time taken: 00:01:26.515
+2025-09-23 14:15:57 - INFO - Engine run resuming from iteration 1040, epoch 52 until 53 epochs
+2025-09-23 14:16:10 - INFO - Epoch[53] Complete. Time taken: 00:00:05.624
+2025-09-23 14:16:10 - INFO - Engine run finished. Time taken: 00:00:13.117
+2025-09-23 14:16:10 - INFO - Epoch[53] Complete. Time taken: 00:01:26.327
+2025-09-23 14:17:23 - INFO - Engine run resuming from iteration 1060, epoch 53 until 54 epochs
+2025-09-23 14:17:36 - INFO - Epoch[54] Complete. Time taken: 00:00:05.641
+2025-09-23 14:17:36 - INFO - Engine run finished. Time taken: 00:00:13.174
+2025-09-23 14:17:36 - INFO - Learning rate reduction: step 3
+2025-09-23 14:17:38 - INFO - Epoch[54] Complete. Time taken: 00:01:28.344
+2025-09-23 14:18:49 - INFO - Engine run resuming from iteration 1080, epoch 54 until 55 epochs
+2025-09-23 14:19:02 - INFO - Epoch[55] Complete. Time taken: 00:00:05.619
+2025-09-23 14:19:02 - INFO - Engine run finished. Time taken: 00:00:13.124
+2025-09-23 14:19:02 - INFO - Epoch[55] Complete. Time taken: 00:01:24.235
+2025-09-23 14:20:15 - INFO - Engine run resuming from iteration 1100, epoch 55 until 56 epochs
+2025-09-23 14:20:28 - INFO - Epoch[56] Complete. Time taken: 00:00:05.654
+2025-09-23 14:20:28 - INFO - Engine run finished. Time taken: 00:00:13.083
+2025-09-23 14:20:28 - INFO - Epoch[56] Complete. Time taken: 00:01:26.056
+2025-09-23 14:21:42 - INFO - Engine run resuming from iteration 1120, epoch 56 until 57 epochs
+2025-09-23 14:21:55 - INFO - Epoch[57] Complete. Time taken: 00:00:05.620
+2025-09-23 14:21:55 - INFO - Engine run finished. Time taken: 00:00:13.143
+2025-09-23 14:21:55 - INFO - Epoch[57] Complete. Time taken: 00:01:26.312
+2025-09-23 14:23:08 - INFO - Engine run resuming from iteration 1140, epoch 57 until 58 epochs
+2025-09-23 14:23:21 - INFO - Epoch[58] Complete. Time taken: 00:00:05.626
+2025-09-23 14:23:21 - INFO - Engine run finished. Time taken: 00:00:13.171
+2025-09-23 14:23:21 - INFO - Epoch[58] Complete. Time taken: 00:01:26.246
+2025-09-23 14:24:34 - INFO - Engine run resuming from iteration 1160, epoch 58 until 59 epochs
+2025-09-23 14:24:47 - INFO - Epoch[59] Complete. Time taken: 00:00:05.636
+2025-09-23 14:24:47 - INFO - Engine run finished. Time taken: 00:00:13.120
+2025-09-23 14:24:47,533 ignite.handlers.early_stopping.EarlyStopping INFO: EarlyStopping: Stop training
+2025-09-23 14:24:47 - INFO - Terminate signaled. Engine will stop after current iteration is finished.
+2025-09-23 14:24:47 - INFO - Restoring checkpoint "54"...
+2025-09-23 14:24:50 - INFO - Restoring checkpoint "54"...
+2025-09-23 14:24:50 - INFO - Engine run finished. Time taken: 01:25:00.473
+2025-09-23 14:24:54 - DEBUG - Joined background process: 2855891
+2025-09-23 14:24:57 - DEBUG - Generating random xuid...
+2025-09-23 14:24:58 - DEBUG - Generating random xuid...
+2025-09-23 14:27:16 - DEBUG - Generating random xuid...
+2025-09-23 14:27:16 - DEBUG - Generating random xuid...
+2025-09-23 14:27:16 - INFO - Using layer "counts" for modality "rna"
+2025-09-23 14:27:16 - INFO - Selecting aggregation "sum" for modality "rna"
+2025-09-23 14:27:16 - INFO - Selecting aggregation "sum" for modality "atac"
+2025-09-23 14:27:16 - INFO - Selecting log-norm preprocessing for modality "rna"
+2025-09-23 14:27:16 - INFO - Selecting log-norm preprocessing for modality "atac"
+2025-09-23 14:27:16 - INFO - Clustering metacells...
+2025-09-23 14:27:20 - INFO - Loading faiss with AVX2 support.
+2025-09-23 14:27:20 - INFO - Successfully loaded faiss with AVX2 support.
+2025-09-23 14:27:20 - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2025-09-23 14:27:20 - INFO - Aggregating metacells...
+2025-09-23 14:27:22 - INFO - Computing correlation on 10 common metacells...
+2025-09-23 14:30:32 - INFO - Clustering metacells...
+2025-09-23 14:30:35 - INFO - Aggregating metacells...
+2025-09-23 14:30:38 - INFO - Computing correlation on 20 common metacells...
+2025-09-23 14:33:57 - INFO - Clustering metacells...
+2025-09-23 14:34:00 - INFO - Aggregating metacells...
+2025-09-23 14:34:03 - INFO - Computing correlation on 49 common metacells...
+2025-09-23 14:37:17 - INFO - Clustering metacells...
+2025-09-23 14:37:20 - INFO - Aggregating metacells...
+2025-09-23 14:37:23 - INFO - Computing correlation on 99 common metacells...
+2025-09-23 14:40:54 - INFO - Clustering metacells...
+2025-09-23 14:40:57 - INFO - Aggregating metacells...
+2025-09-23 14:41:01 - INFO - Computing correlation on 197 common metacells...
+2025-09-23 14:47:02 - INFO - init
+... storing 'sample' as categorical

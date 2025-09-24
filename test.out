@@ -1,14 +1,421 @@
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
 {
-  "label": "sampledisco",
-  "wall_s": null,
-  "cpu_user_s": null,
-  "cpu_sys_s": null,
-  "cpu_total_s": 0,
-  "peak_ram_mb_exact": null,
-  "avg_ram_mb_sampled": 2935.78,
-  "rss_timeseries_csv": "logs_bench/sampledisco_rss_timeseries.csv",
-  "stdout": "logs_bench/sampledisco.out",
-  "stderr": "logs_bench/sampledisco.err",
-  "cycles_C": null,
-  "nsys_kernel_csv": null
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": true
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": true,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": true,
+        "glue_cell_types": true,
+        "glue_visualization": true,
+        "integration_preprocessing": true,
+        "dimensionality_reduction": true,
+        "embedding_visualization": true,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
 }
+
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multiomics
+Initial status flags: {'glue_integration': True, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Step 1: Running GLUE integration...
+  Sub-steps: Preprocessing=True, Training=True, Gene Activity=True, Cell Types=True, Visualization=False
+Running preprocessing...
+
+🚀 Starting GLUE preprocessing pipeline...
+
+   Feature selection mode: Highly Variable
+
+📊 Loading data files...
+   RNA: /dcl01/hongkai/data/data/hjiang/Data/paired/rna/placenta.h5ad
+   ATAC: /dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad
+✅ Data loaded successfully
+   RNA shape: (12402, 36601)
+   ATAC shape: (12402, 3576085)
+
+📋 Standardizing existing sample columns...
+✅ Sample column standardization complete
+
+🧬 Setting up Ensembl annotation...
+   Release: 98
+   Species: homo_sapiens
+✅ Ensembl annotation ready
+
+🧬 Preprocessing scRNA-seq data...
+   Selecting 1500 highly variable genes
+
+📝 Processing additional HVG genes from: /dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt
+   Found 1624 genes in additional HVG file
+   Statistics for additional HVG genes:
+     - Genes found and marked as HVG: 1624/1624
+   Computing 50 PCA components
+✅ RNA preprocessing complete
+
+🏔️ Preprocessing scATAC-seq data...
+   Computing feature statistics for peak selection
+   Selected 50000 highly accessible peaks
+   Computing 50 LSI components (15 iterations)
+✅ ATAC preprocessing complete
+
+🗺️ Processing gene coordinates...
+   Processing 36601 genes...
+   ⚠️ Could not find coordinates for genes: TBCE.1, LINC01238.1, CYB561D2.1, MATR3.1, LINC01505.1, HSPA14.1, GOLGA8M.1, GGT1.1, ARMCX5-GPRASP2.1, TMSB15B.1
+   Filtered out 10 genes without coordinates
+✅ Gene coordinate processing complete
+   36591 genes retained
+   Final RNA shape: (12402, 36591)
+
+🏔️ Processing ATAC peak coordinates...
+   Processing 3576085 peaks...
+✅ ATAC peak coordinates extracted successfully
+
+🕸️ Constructing guidance graph...
+   Using highly variable features for graph construction
+[INFO] check_graph: Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+[INFO] check_graph: All checks passed!
+✅ Guidance graph constructed successfully
+   Nodes: 3,612,676
+   Edges: 9,027,876
+
+🧹 Preparing data for saving...
+🧹 Cleaning AnnData object for HDF5 compatibility...
+   Processing column: sample
+✅ AnnData cleaning complete
+🧹 Cleaning AnnData object for HDF5 compatibility...
+   Processing column: sample
+✅ AnnData cleaning complete
+💾 Saving preprocessed data...
+   Output directory: /dcs07/hongkai/data/harry/result/multiomics/integration/glue
+   Saving RNA data...
+   Saving ATAC data...
+   Saving guidance graph...
+
+🎉 GLUE preprocessing pipeline completed successfully!
+
+Preprocessing completed.
+Running training...
+
+
+
+🚀 Starting GLUE training pipeline...
+
+
+
+   Feature mode: Highly Variable Only
+   Output directory: /dcs07/hongkai/data/harry/result/multiomics/integration/glue
+
+
+
+
+📊 Loading preprocessed data from /dcs07/hongkai/data/harry/result/multiomics/integration/glue...
+
+
+
+
+
+
+Data loaded - RNA: (12402, 36591), ATAC: (12402, 3576085), Graph: 3612676 nodes
+
+
+
+
+
+
+⚙️ Configuring datasets...
+
+
+
+
+
+
+🔍 Extracting highly variable feature subgraph...
+
+
+
+HVF subgraph extracted - RNA HVF: 2904, ATAC HVF: 657058
+HVF graph: 659962 nodes, 1996018 edges
+
+
+
+
+
+
+🤖 Training GLUE model...
+
+
+
+[INFO] fit_SCGLUE: Pretraining SCGLUE model...
+[INFO] autodevice: Using GPU 0 as computation device.
+[INFO] check_graph: Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+[INFO] SCGLUEModel: Setting `graph_batch_size` = 686132
+[INFO] SCGLUEModel: Setting `patience` = 12
+[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 6
+[INFO] SCGLUETrainer: Using training directory: "/dcs07/hongkai/data/harry/result/multiomics/integration/glue/training/pretrain"
+[INFO] SCGLUETrainer: [Epoch 10] train={'g_nll': 0.421, 'g_kl': 0.0, 'g_elbo': 0.421, 'x_rna_nll': 0.257, 'x_rna_kl': 0.007, 'x_rna_elbo': 0.264, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.69, 'vae_loss': 0.293, 'gen_loss': 0.259}, val={'g_nll': 0.421, 'g_kl': 0.0, 'g_elbo': 0.421, 'x_rna_nll': 0.268, 'x_rna_kl': 0.007, 'x_rna_elbo': 0.275, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.693, 'vae_loss': 0.304, 'gen_loss': 0.269}, 72.5s elapsed
+[INFO] SCGLUETrainer: [Epoch 20] train={'g_nll': 0.415, 'g_kl': 0.0, 'g_elbo': 0.415, 'x_rna_nll': 0.252, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.259, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.691, 'vae_loss': 0.287, 'gen_loss': 0.253}, val={'g_nll': 0.414, 'g_kl': 0.0, 'g_elbo': 0.415, 'x_rna_nll': 0.259, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.265, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.693, 'vae_loss': 0.293, 'gen_loss': 0.259}, 73.1s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 1
+[INFO] SCGLUETrainer: [Epoch 30] train={'g_nll': 0.412, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.249, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.255, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.284, 'gen_loss': 0.249}, val={'g_nll': 0.412, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.258, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.264, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.293, 'gen_loss': 0.258}, 72.7s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 2
+[INFO] SCGLUETrainer: [Epoch 40] train={'g_nll': 0.411, 'g_kl': 0.0, 'g_elbo': 0.411, 'x_rna_nll': 0.248, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.254, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.283, 'gen_loss': 0.248}, val={'g_nll': 0.411, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.259, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.265, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.692, 'vae_loss': 0.294, 'gen_loss': 0.259}, 70.9s elapsed
+[INFO] EarlyStopping: Restoring checkpoint "39"...
+[INFO] EarlyStopping: Restoring checkpoint "39"...
+[INFO] fit_SCGLUE: Estimating balancing weight...
+[INFO] estimate_balancing_weight: Clustering cells...
+[INFO] estimate_balancing_weight: Matching clusters...
+[INFO] estimate_balancing_weight: Matching array shape = (22, 17)...
+[INFO] estimate_balancing_weight: Estimating balancing weight...
+[INFO] fit_SCGLUE: Fine-tuning SCGLUE model...
+[INFO] check_graph: Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+[INFO] SCGLUEModel: Setting `graph_batch_size` = 686132
+[INFO] SCGLUEModel: Setting `align_burnin` = 23
+[INFO] SCGLUEModel: Setting `patience` = 12
+[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 6
+[INFO] SCGLUETrainer: Using training directory: "/dcs07/hongkai/data/harry/result/multiomics/integration/glue/training/fine-tune"
+[INFO] SCGLUETrainer: [Epoch 10] train={'g_nll': 0.411, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.253, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.259, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.691, 'vae_loss': 0.287, 'gen_loss': 0.253}, val={'g_nll': 0.412, 'g_kl': 0.0, 'g_elbo': 0.412, 'x_rna_nll': 0.248, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.254, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.696, 'vae_loss': 0.282, 'gen_loss': 0.248}, 73.1s elapsed
+[INFO] SCGLUETrainer: [Epoch 20] train={'g_nll': 0.409, 'g_kl': 0.0, 'g_elbo': 0.409, 'x_rna_nll': 0.25, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.256, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.686, 'vae_loss': 0.284, 'gen_loss': 0.25}, val={'g_nll': 0.409, 'g_kl': 0.0, 'g_elbo': 0.409, 'x_rna_nll': 0.244, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.25, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.688, 'vae_loss': 0.279, 'gen_loss': 0.244}, 73.5s elapsed
+[INFO] SCGLUETrainer: [Epoch 30] train={'g_nll': 0.407, 'g_kl': 0.0, 'g_elbo': 0.407, 'x_rna_nll': 0.251, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.257, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.686, 'vae_loss': 0.285, 'gen_loss': 0.251}, val={'g_nll': 0.406, 'g_kl': 0.0, 'g_elbo': 0.406, 'x_rna_nll': 0.245, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.251, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.69, 'vae_loss': 0.279, 'gen_loss': 0.245}, 73.3s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 1
+[INFO] SCGLUETrainer: [Epoch 40] train={'g_nll': 0.404, 'g_kl': 0.0, 'g_elbo': 0.404, 'x_rna_nll': 0.25, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.256, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.69, 'vae_loss': 0.284, 'gen_loss': 0.25}, val={'g_nll': 0.404, 'g_kl': 0.0, 'g_elbo': 0.404, 'x_rna_nll': 0.246, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.252, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.688, 'vae_loss': 0.28, 'gen_loss': 0.246}, 71.2s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 2
+[INFO] SCGLUETrainer: [Epoch 50] train={'g_nll': 0.403, 'g_kl': 0.0, 'g_elbo': 0.403, 'x_rna_nll': 0.249, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.255, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.689, 'vae_loss': 0.283, 'gen_loss': 0.248}, val={'g_nll': 0.403, 'g_kl': 0.0, 'g_elbo': 0.403, 'x_rna_nll': 0.246, 'x_rna_kl': 0.006, 'x_rna_elbo': 0.252, 'x_atac_nll': 0.012, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.012, 'dsc_loss': 0.689, 'vae_loss': 0.28, 'gen_loss': 0.246}, 73.1s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 3
+[INFO] EarlyStopping: Restoring checkpoint "54"...
+[INFO] EarlyStopping: Restoring checkpoint "54"...
+
+
+
+🎨 Generating embeddings...
+
+
+
+
+
+
+💾 Saving results to /dcs07/hongkai/data/harry/result/multiomics/integration/glue...
+
+
+
+
+
+
+📊 Checking integration consistency...
+
+
+
+[INFO] integration_consistency: Using layer "counts" for modality "rna"
+[INFO] integration_consistency: Selecting aggregation "sum" for modality "rna"
+[INFO] integration_consistency: Selecting aggregation "sum" for modality "atac"
+[INFO] integration_consistency: Selecting log-norm preprocessing for modality "rna"
+[INFO] integration_consistency: Selecting log-norm preprocessing for modality "atac"
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 10 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 20 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 49 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 99 common metacells...
+[INFO] get_metacells: Clustering metacells...
+[INFO] get_metacells: Aggregating metacells...
+[INFO] metacell_corr: Computing correlation on 197 common metacells...
+
+
+
+Consistency scores - Min: 0.0422, Mean: 0.0711
+
+
+
+
+
+
+📈 Integration Assessment:
+Feature mode: Highly Variable
+Consistency threshold: 0.05
+Minimum consistency: 0.0422
+Status: ❌ UNRELIABLE
+
+
+
+
+
+
+⚠️ Low consistency detected. Consider adjusting parameters or checking data quality.
+
+
+
+
+
+
+🎉 GLUE training pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multiomics/integration/glue
+
+
+
+Training completed.
+Computing gene activity...
+
+🧬 Computing gene activity using raw RNA counts (highly optimized)...
+   k_neighbors: 10
+   metric: cosine
+   GPU acceleration: enabled
+   Available GPU memory: 45.22 GB
+   Available CPU memory: 1011.67 GB
+📂 Loading processed RNA embeddings...
+📂 Loading ATAC embeddings...
+📂 Loading raw RNA counts...
+   RNA cells: 12402, ATAC cells: 12402, Genes: 36601
+
+🔍 Finding k-nearest RNA neighbors (GPU-accelerated)...
+   k-NN search completed in 3.58 seconds
+
+📐 Computing similarity weights on GPU...
+
+🧮 Computing weighted gene activity...
+   Optimal batch size: 7721
+   Progress: 50.0% (1/2 batches)
+   Progress: 100.0% (2/2 batches)
+   Gene activity computation completed in 30.82 seconds
+
+🔍 Validating gene activity counts...
+📦 Converting gene activity to sparse CSC matrix...
+   Sparsity: 81.4% zeros
+
+🔗 Preparing RNA data for merging...
+   Converting RNA to sparse (sparsity: 95.8%)
+🔗 Merging gene activity with RNA data...
+📦 Converting to CSC format...
+
+✅ Gene activity computation and merging complete!
+
+📊 Summary:
+   Output path: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+   Merged dataset shape: (24804, 36601)
+   RNA cells: 12402
+   ATAC cells: 12402
+   Matrix format: csc_matrix (sparse)
+   Data type: float64
+   Sparsity: 88.6% zeros
+   Memory usage: 828.16 MB (sparse)
+   Optimization: GPU vectorization + dynamic batching + sparse matrices
+   Batch processing: 2 batches of size 7721
+Gene activity computation completed.
+Assigning cell types...
+ Using Linux Cell Type Assignment for cell type assignment...
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.8)...
+[cell_types] Found 16 clusters after Leiden clustering.
+[cell_types] Finished assigning cell types.
+[cell_types] Converting GPU arrays to CPU...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 3 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/atac_rna_integrated.h5ad
+[cell_types] Total runtime: 33.60 seconds
+
+Total runtime: 187.65 minutes
+✓ GLUE integration completed successfully
+  Completed 4/5 GLUE sub-steps
+Step 2: Running integration preprocessing...
+Minimum dimension requested by scrublet is 30, raise sample standard accordingly
+=== Read input dataset ===
+Dimension of raw data (cells x genes): 24804 x 36601
+Modified sample IDs by adding modality information from 'modality' column
+After remove MT_gene and user input cell -- Cells remaining: 24804, Genes remaining: 36588
+Sample counts BEFORE filtering:
+sample
+ENCSR284PXA_ATAC    6885
+ENCSR284PXA_RNA     6885
+ENCSR694BTU_ATAC    5517
+ENCSR694BTU_RNA     5517
+dtype: int64
+
+Samples retained (>= 30 cells): ['ENCSR284PXA_ATAC', 'ENCSR284PXA_RNA', 'ENCSR694BTU_ATAC', 'ENCSR694BTU_RNA']
+
+Sample counts AFTER filtering:
+sample
+ENCSR284PXA_RNA     6885
+ENCSR284PXA_ATAC    6885
+ENCSR694BTU_RNA     5517
+ENCSR694BTU_ATAC    5517
+Name: count, dtype: int64
+Final filtering -- Cells remaining: 24804, Genes remaining: 20007
+Running doublet detection with scrublet on 24804 cells...
+Warning: Scrublet failed with error: Length of passed value for obs_names is 49608, but this AnnData has shape: (24804, 20007)
+Continuing without doublet detection...
+Preprocessing complete!
+Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multiomics/preprocess/adata_sample.h5ad
+Function execution time: 170.14 seconds
+✓ Integration preprocessing completed successfully
+Loaded dimensionality reduction data from existing files
+
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multiomics
+Available results: ['glue', 'adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'status_flags']
+Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Completed steps: 9/10
+GLUE sub-steps completed: 5/5
+
+✓ Multiomics pipeline completed successfully!
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+Multiomics Pipeline: ⚠ PARTIAL
+  - glue_integration: ✓
+  - glue_preprocessing: ✓
+  - glue_training: ✓
+  - glue_gene_activity: ✓
+  - glue_cell_types: ✓
+  - glue_visualization: ✓
+  - integration_preprocessing: ✓
+  - dimensionality_reduction: ✓
+  - embedding_visualization: ✓
+  - optimal_resolution: ✗
+
+Results saved to: /dcs07/hongkai/data/harry/result
+Status file: /dcs07/hongkai/data/harry/result/sys_log/main_process_status.json
+Execution time: 11430.9152 seconds

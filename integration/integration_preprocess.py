@@ -64,12 +64,12 @@ def integrate_preprocess(
         if verbose:
             print(f"Modified sample IDs by adding modality information from '{modality_col}' column")
 
-    # sc.pp.filter_cells(adata, min_genes=min_features)
-    # if verbose:
-    #     print(f"After cell filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
-    # sc.pp.filter_genes(adata, min_cells=min_cell_gene)
-    # if verbose:
-    #     print(f"After gene filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
+    sc.pp.filter_cells(adata, min_genes=min_features)
+    if verbose:
+        print(f"After cell filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
+    sc.pp.filter_genes(adata, min_cells=min_cell_gene)
+    if verbose:
+        print(f"After gene filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
 
     # Mito QC
     adata.var['mt'] = adata.var_names.str.startswith('MT-')
