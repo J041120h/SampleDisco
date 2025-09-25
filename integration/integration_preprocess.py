@@ -63,7 +63,14 @@ def integrate_preprocess(
         adata.obs[sample_column] = adata.obs[sample_column].astype(str) + '_' + adata.obs[modality_col].astype(str)
         if verbose:
             print(f"Modified sample IDs by adding modality information from '{modality_col}' column")
-
+    adata.var_names_make_unique()
+    adata.var = adata.var.dropna(axis=1, how="all")
+    sc.pp.calculate_qc_metrics(
+        adata, 
+        qc_vars=["MT"],  # mitochondrial genes if annotated
+        log1p=False, 
+        inplace=True
+    )
     sc.pp.filter_cells(adata, min_genes=min_features)
     if verbose:
         print(f"After cell filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")

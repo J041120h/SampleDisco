@@ -1,0 +1,10 @@
+Loading data...
+
+1. Basic info:
+   Shape: (406072, 36591)
+   Matrix type: <class 'numpy.ndarray'>
+
+4. Testing operations:
+   ✓ Simple slicing works: (10, 10)
+   ✓ Manual gene counting works: min=256, max=15124
+   ✓ Scanpy filter works on small subset

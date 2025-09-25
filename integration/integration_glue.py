@@ -709,6 +709,35 @@ def compute_gene_activity_from_knn(
     from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
     from cupyx.scipy import sparse as cusparse
     
+    def fix_sparse_matrix_dtype(X, verbose=False):
+        """Fix sparse matrix by converting to int64 indices"""
+        if not sparse.issparse(X):
+            return X
+            
+        if verbose:
+            print(f"   Converting sparse matrix indices to int64...")
+            print(f"   Current dtypes - indices: {X.indices.dtype}, indptr: {X.indptr.dtype}")
+        
+        # Convert to COO then back to CSR with int64
+        coo = X.tocoo()
+        
+        # Create new CSR matrix with int64 indices
+        X_fixed = sparse.csr_matrix(
+            (coo.data.astype(np.float64), 
+             (coo.row.astype(np.int64), coo.col.astype(np.int64))),
+            shape=X.shape,
+            dtype=np.float64
+        )
+        
+        # Clean up
+        X_fixed.eliminate_zeros()
+        X_fixed.sort_indices()
+        
+        if verbose:
+            print(f"   Fixed dtypes - indices: {X_fixed.indices.dtype}, indptr: {X_fixed.indptr.dtype}")
+        
+        return X_fixed
+    
     # Memory pool settings for GPU
     mempool = cp.get_default_memory_pool()
     pinned_mempool = cp.get_default_pinned_memory_pool()
@@ -946,14 +975,15 @@ def compute_gene_activity_from_knn(
     gene_activity_matrix = np.nan_to_num(gene_activity_matrix, 0)
     np.clip(gene_activity_matrix, 0, None, out=gene_activity_matrix)
     
-    # Convert to sparse CSC matrix
+    # Convert to sparse CSR matrix with int64 indices
     if verbose:
-        print("📦 Converting gene activity to sparse CSC matrix...")
+        print("📦 Converting gene activity to sparse CSR matrix with int64 indices...")
         nnz_before = np.count_nonzero(gene_activity_matrix)
         sparsity = 1 - (nnz_before / gene_activity_matrix.size)
         print(f"   Sparsity: {sparsity:.1%} zeros")
     
-    gene_activity_sparse = sparse.csc_matrix(gene_activity_matrix, dtype=np.float64)
+    gene_activity_sparse = sparse.csr_matrix(gene_activity_matrix, dtype=np.float64)
+    gene_activity_sparse = fix_sparse_matrix_dtype(gene_activity_sparse, verbose=verbose)
     
     # Clear dense matrix
     del gene_activity_matrix
@@ -985,7 +1015,9 @@ def compute_gene_activity_from_knn(
     if is_sparse_rna:
         rna_X = rna_raw[common_cells, :].X
         if sparse.issparse(rna_X):
-            rna_X = rna_X.tocsc().astype(np.float64)
+            rna_X = rna_X.tocsr().astype(np.float64)
+            # Fix sparse matrix dtype to int64
+            rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
             if verbose:
                 rna_sparsity = 1 - (rna_X.nnz / (rna_X.shape[0] * rna_X.shape[1]))
                 print(f"   RNA sparsity: {rna_sparsity:.1%} zeros")
@@ -996,7 +1028,8 @@ def compute_gene_activity_from_knn(
             if sparsity > 0.5:
                 if verbose:
                     print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
-                rna_X = sparse.csc_matrix(rna_X, dtype=np.float64)
+                rna_X = sparse.csr_matrix(rna_X, dtype=np.float64)
+                rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
     else:
         rna_X = rna_raw[common_cells, :].X[:].astype(np.float64)
         nnz = np.count_nonzero(rna_X)
@@ -1004,7 +1037,8 @@ def compute_gene_activity_from_knn(
         if sparsity > 0.5:
             if verbose:
                 print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
-            rna_X = sparse.csc_matrix(rna_X, dtype=np.float64)
+            rna_X = sparse.csr_matrix(rna_X, dtype=np.float64)
+            rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
     
     # Close the backed file
     rna_raw.file.close()
@@ -1028,31 +1062,76 @@ def compute_gene_activity_from_knn(
     for key, value in raw_rna_varm_dict.items():
         rna_for_merge.varm[key] = value
     
-    # Merge datasets
+    # ==========================================
+    # CRITICAL FIX: Handle index overlaps
+    # ==========================================
     if verbose:
-        print("🔗 Merging gene activity with RNA data...")
+        print("\n🔗 Merging gene activity with RNA data...")
+        print("   Checking for index overlaps...")
     
-    # Variables should be identical now (both from raw RNA)
-    merged_adata = ad.concat([rna_for_merge, gene_activity_adata], 
-                             axis=0, 
-                             join='inner',
-                             merge='same')
+    # Check for overlapping indices
+    rna_indices = set(rna_for_merge.obs.index)
+    atac_indices = set(gene_activity_adata.obs.index)
+    overlap = rna_indices.intersection(atac_indices)
+    
+    if overlap:
+        if verbose:
+            print(f"   ⚠️ Found {len(overlap)} overlapping indices")
+            print(f"   Adding modality suffix to ensure unique indices...")
+    else:
+        if verbose:
+            print(f"   No overlapping indices found, but adding suffix for safety...")
+    
+    # ALWAYS add modality suffix for safety
+    # Store original barcodes
+    rna_for_merge.obs['original_barcode'] = rna_for_merge.obs.index
+    gene_activity_adata.obs['original_barcode'] = gene_activity_adata.obs.index
+    
+    # Create unique indices with modality suffix
+    rna_for_merge.obs.index = pd.Index([f"{idx}_RNA" for idx in rna_for_merge.obs.index])
+    gene_activity_adata.obs.index = pd.Index([f"{idx}_ATAC" for idx in gene_activity_adata.obs.index])
+    
+    if verbose:
+        print(f"   RNA cells: {rna_for_merge.n_obs}")
+        print(f"   ATAC cells: {gene_activity_adata.n_obs}")
+    
+    # Merge datasets with fixed indices
+    merged_adata = ad.concat(
+        [rna_for_merge, gene_activity_adata], 
+        axis=0, 
+        join='inner',
+        merge='same',
+        label=None,  # Don't add batch labels
+        keys=None,   # Don't add keys  
+        index_unique=None  # Don't modify indices further
+    )
     
     del rna_for_merge, gene_activity_adata
     gc.collect()
     
-    # Ensure the merged matrix is sparse CSC
-    if not sparse.issparse(merged_adata.X):
+    # Verify indices are unique
+    if not merged_adata.obs.index.is_unique:
         if verbose:
-            print("📦 Converting merged matrix to sparse CSC...")
-        merged_adata.X = sparse.csc_matrix(merged_adata.X, dtype=np.float64)
-    elif not isinstance(merged_adata.X, sparse.csc_matrix):
+            print("   ⚠️ Warning: Non-unique indices detected, fixing...")
+        merged_adata.obs_names_make_unique()
+    
+    # ==========================================
+    # Ensure proper sparse matrix format with int64
+    # ==========================================
+    if sparse.issparse(merged_adata.X):
         if verbose:
-            print("📦 Converting to CSC format...")
-        merged_adata.X = merged_adata.X.tocsc().astype(np.float64)
-    else:
-        if merged_adata.X.dtype != np.float64:
-            merged_adata.X = merged_adata.X.astype(np.float64)
+            print("📦 Ensuring merged matrix has int64 indices...")
+        
+        # Convert to CSR format (better for row operations)
+        if not isinstance(merged_adata.X, sparse.csr_matrix):
+            merged_adata.X = merged_adata.X.tocsr()
+        
+        # Fix dtype to int64
+        merged_adata.X = fix_sparse_matrix_dtype(merged_adata.X, verbose=verbose)
+        
+        # Final cleanup
+        merged_adata.X.sort_indices()
+        merged_adata.X.eliminate_zeros()
     
     # Clean for saving
     merged_adata = clean_anndata_for_saving(merged_adata, verbose=False)
@@ -1073,12 +1152,15 @@ def compute_gene_activity_from_knn(
         print(f"   Merged dataset shape: {merged_adata.shape}")
         print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
         print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
+        print(f"   Unique cell indices: {merged_adata.obs.index.is_unique}")
         
         # Report matrix format
         if sparse.issparse(merged_adata.X):
             matrix_type = type(merged_adata.X).__name__
             sparsity = 1 - (merged_adata.X.nnz / (merged_adata.X.shape[0] * merged_adata.X.shape[1]))
             print(f"   Matrix format: {matrix_type} (sparse)")
+            print(f"   Matrix index dtype: {merged_adata.X.indices.dtype}")
+            print(f"   Matrix indptr dtype: {merged_adata.X.indptr.dtype}")
             print(f"   Data type: {merged_adata.X.dtype}")
             print(f"   Sparsity: {sparsity:.1%} zeros")
             print(f"   Memory usage: {merged_adata.X.data.nbytes / 1e6:.2f} MB (sparse)")

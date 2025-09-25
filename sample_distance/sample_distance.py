@@ -5,7 +5,7 @@ from anndata import AnnData
 from scipy.spatial.distance import pdist, squareform
 from typing import Optional, List
 from distance_test import distanceCheck
-from .EMD import EMD_distances
+# from .EMD import EMD_distances
 from .ChiSquare import chi_square_distance
 from .jensenshannon import jensen_shannon_distance
 
@@ -410,7 +410,7 @@ def sample_distance(
             raise ValueError(f"cell_adata is required for {method} distance calculation")
         
         if method == "EMD":
-            print("Computing Earth Mover's Distance (EMD)...")
+            # print("Computing Earth Mover's Distance (EMD)...")
             emd_output_dir = os.path.join(output_dir, 'sample_level_EMD')
             EMD_distances(
                 adata=cell_adata,
