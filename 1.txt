@@ -1,10 +1,16 @@
-Loading data...
-
-1. Basic info:
-   Shape: (406072, 36591)
-   Matrix type: <class 'numpy.ndarray'>
-
-4. Testing operations:
-   ✓ Simple slicing works: (10, 10)
-   ✓ Manual gene counting works: min=256, max=15124
-   ✓ Scanpy filter works on small subset
+==============================================================================================================
+📂 Inspecting AnnData file: /dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad
+Shape (.X)               : (430595, 36601)
+.obs index type          : Index
+.obs index dtype         : object
+.var index type          : Index
+.var index dtype         : object
+.X container type        : ndarray
+--------------------------------------------------------------------------------------------------------------
+Matrix type              : DENSE (in-memory)
+Data dtype               : float64
+Min                      : 0.0
+Max                      : 8376.0
+Mean                     : 0.11866506692420253
+Variance                 : 10.419683766202278
+==============================================================================================================

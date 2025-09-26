@@ -593,7 +593,208 @@ def fix_categorical_columns(adata, verbose=True):
     
     return adata
 
-from integration.integration_preprocess import integrate_preprocess
+import anndata as ad
+import numpy as np
+from scipy import sparse
+import os
+import math
+
+def _welford_update(x, n, mean, M2):
+    n += 1
+    delta = x - mean
+    mean += delta / n
+    M2 += delta * (x - mean)
+    return n, mean, M2
+
+def _stream_dense_stats(h5_dataset, chunk_rows=2048):
+    total = h5_dataset.shape[0] * h5_dataset.shape[1]
+    gmin = math.inf
+    gmax = -math.inf
+    n = 0
+    mean = 0.0
+    M2 = 0.0
+    R = h5_dataset.shape[0]
+    for start in range(0, R, chunk_rows):
+        stop = min(start + chunk_rows, R)
+        block = h5_dataset[start:stop, :]
+        bmin = float(np.min(block))
+        bmax = float(np.max(block))
+        if bmin < gmin: gmin = bmin
+        if bmax > gmax: gmax = bmax
+        flat = block.ravel()
+        for val in flat:
+            n, mean, M2 = _welford_update(float(val), n, mean, M2)
+    var = M2 / n if n > 0 else float("nan")
+    return gmin, gmax, mean, var
+
+def _backed_sparse_handles(adata):
+    """
+    Return (data_ds, indices_ds, indptr_ds) for backed sparse X by peeking into the HDF5 group.
+    Prints available keys if standard names are missing.
+    """
+    try:
+        grp = adata.file["X"]  # h5py Group for X
+    except Exception as e:
+        print("⚠️  Could not access underlying HDF5 group 'X'.")
+        print(f"Error: {e}")
+        return None, None, None
+
+    # Usual names in AnnData-backed sparse
+    candidates = [
+        ("data", "indices", "indptr"),
+        # Some tools use alternative field names; try a few fallbacks:
+        ("x", "indices", "indptr"),
+        ("values", "indices", "indptr"),
+    ]
+    for dn, in_n, ip_n in candidates:
+        if dn in grp and in_n in grp and ip_n in grp:
+            return grp[dn], grp[in_n], grp[ip_n]
+
+    # If we get here, show what's available to help debugging
+    print("⚠️  Backed sparse group found, but standard datasets not present.")
+    print(f"Available keys under 'X': {list(grp.keys())}")
+    return None, None, None
+
+def inspect_anndata_X(h5ad_path: str):
+    """
+    Inspect the .X matrix and index metadata of an AnnData file.
+    Safe for huge/backed dense or sparse matrices. Prints everything directly.
+    """
+    if not os.path.exists(h5ad_path):
+        raise FileNotFoundError(f"File not found: {h5ad_path}")
+
+    adata = ad.read_h5ad(h5ad_path)
+    X = adata.X
+    shape = adata.shape
+
+    print("="*110)
+    print(f"📂 Inspecting AnnData file: {h5ad_path}")
+    print(f"Shape (.X)               : {shape}")
+    print(f".obs index type          : {type(adata.obs.index).__name__}")
+    print(f".obs index dtype         : {getattr(adata.obs.index.dtype, 'name', type(adata.obs.index))}")
+    print(f".var index type          : {type(adata.var.index).__name__}")
+    print(f".var index dtype         : {getattr(adata.var.index.dtype, 'name', type(adata.var.index))}")
+    X_type = type(X).__name__
+    print(f".X container type        : {X_type}")
+    print("-"*110)
+
+    # Path 1: in-memory SciPy sparse
+    if sparse.issparse(X):
+        print("Matrix type              : SPARSE (in-memory)")
+        nnz = X.nnz
+        density = nnz / (shape[0] * shape[1])
+        print(f"Sparse format            : {type(X).__name__}")
+        print(f"Data dtype               : {X.dtype}")
+        print(f"nnz (nonzeros)           : {nnz}")
+        print(f"Density                  : {density:.8f}")
+        if nnz > 0:
+            d = X.data
+            print(f"Min (incl zeros)         : {min(0.0, float(d.min()))}")
+            print(f"Max                      : {float(d.max())}")
+            print(f"Mean (nonzeros)          : {float(d.mean())}")
+            print(f"Variance (nonzeros)      : {float(d.var())}")
+        else:
+            print("⚠️  No nonzero entries (all zeros). Min/Max/Mean/Var = 0, 0, 0, 0.")
+        print("="*110)
+        return
+
+    # Path 2: AnnData backed sparse wrappers (e.g., CSCDataset/CSRDataset)
+    if "Dataset" in X_type and ("CSC" in X_type or "CSR" in X_type):
+        print("Matrix type              : SPARSE (backed)")
+        data_ds, indices_ds, indptr_ds = _backed_sparse_handles(adata)
+        if data_ds is None:
+            print("="*110)
+            return
+        nnz = int(data_ds.shape[0])
+        total = shape[0] * shape[1]
+        density = nnz / total if total > 0 else float("nan")
+        print(f"Sparse format            : {X_type}")
+        print(f"Data dtype               : {data_ds.dtype}")
+        print(f"nnz (nonzeros)           : {nnz}")
+        print(f"Density                  : {density:.8f}")
+
+        if nnz == 0:
+            print("Min (incl zeros)         : 0.0")
+            print("Max                      : 0.0")
+            print("Mean (overall)           : 0.0")
+            print("Variance (overall)       : 0.0")
+            print("="*110)
+            return
+
+        # Load only nonzero values (much smaller than full matrix)
+        d = data_ds[:]  # NumPy array of nonzeros
+        nz_min = float(np.min(d))
+        nz_max = float(np.max(d))
+        nz_mean = float(np.mean(d))
+        nz_var = float(np.var(d))
+        overall_min = min(0.0, nz_min)
+        overall_mean = (nz_mean * nnz) / total
+        Ex2 = (nz_var + nz_mean**2) * nnz / total
+        overall_var = Ex2 - overall_mean**2
+
+        print(f"Min (incl zeros)         : {overall_min}")
+        print(f"Max (nonzeros)           : {nz_max}")
+        print(f"Mean (overall)           : {overall_mean}")
+        print(f"Variance (overall)       : {overall_var}")
+        print(f"Mean (nonzeros)          : {nz_mean}")
+        print(f"Variance (nonzeros)      : {nz_var}")
+        print("="*110)
+        return
+
+    # Path 3: backed dense (h5py.Dataset)
+    if "Dataset" in X_type:
+        print("Matrix type              : DENSE (backed)")
+        print(f"Data dtype               : {X.dtype}")
+        gmin, gmax, mean, var = _stream_dense_stats(X)
+        print(f"Min                      : {gmin}")
+        print(f"Max                      : {gmax}")
+        print(f"Mean                     : {mean}")
+        print(f"Variance                 : {var}")
+        print("="*110)
+        return
+
+    # Path 4: in-memory dense ndarray
+    print("Matrix type              : DENSE (in-memory)")
+    print(f"Data dtype               : {X.dtype}")
+    print(f"Min                      : {np.min(X)}")
+    print(f"Max                      : {np.max(X)}")
+    print(f"Mean                     : {np.mean(X)}")
+    print(f"Variance                 : {np.var(X)}")
+    print("="*110)
+
+import anndata as ad
+import numpy as np
+from scipy import sparse
+import scanpy as sc
+
+def prepare_for_scanpy_ops(h5ad_path):
+    # 1) Load to memory (detach from backed)
+    adata = ad.read_h5ad(h5ad_path, backed="r").to_memory()  # AnnData >=0.9
+    # fallback if needed: adata = ad.read_h5ad(h5ad_path); adata = adata[:, :].copy()
+
+    # 2) Ensure CSR in-memory
+    X = adata.X
+    if sparse.isspmatrix_csc(X):
+        adata.X = X.tocsr(copy=False)
+    elif not sparse.isspmatrix_csr(X):
+        adata.X = sparse.csr_matrix(X, copy=False)
+
+    # 3) Force canonical dtypes (SciPy expects int32 indices/indptr)
+    X = adata.X
+    if X.indices.dtype != np.int32 or X.indptr.dtype != np.int32:
+        adata.X = sparse.csr_matrix(
+            (X.data.astype(np.float64, copy=False),
+             X.indices.astype(np.int32, copy=False),
+             X.indptr.astype(np.int32, copy=False)),
+            shape=X.shape
+        )
+
+    # 4) Canonicalize structure (dedup + sort)
+    adata.X.sum_duplicates()
+    adata.X.sort_indices()
+
+    return adata
+
 
 # Run the test
 if __name__ == "__main__":
@@ -619,4 +820,9 @@ if __name__ == "__main__":
     # )
 
     # fix_categorical_columns(ad.read_h5ad("/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/test_merge/test_merged.h5ad"))
-    diagnose_sparse_matrix_issue("/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/atac_rna_integrated.h5ad")
+    # diagnose_sparse_matrix_issue("/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/atac_rna_integrated.h5ad")
+    # stats = inspect_anndata_X("/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad")
+    # Example:
+    adata = prepare_for_scanpy_ops("/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad")
+    sc.pp.filter_cells(adata, min_counts=1)
+    sc.pp.filter_genes(adata, min_cells=10)
