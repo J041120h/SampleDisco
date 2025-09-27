@@ -69,7 +69,7 @@ def align_by_samples(md: pd.DataFrame, data: pd.DataFrame) -> Tuple[pd.DataFrame
 
 def _compute_knn_from_embedding(emb: np.ndarray, k: int) -> np.ndarray:
     k_eff = min(k, emb.shape[0])
-    nn = NearestNeighbors(n_neighbors=k_eff, metric="euclidean", n_jobs=-1)
+    nn = NearestNeighbors(n_neighbors=k_eff, metric="cosine", n_jobs=-1)
     nn.fit(emb)
     _, idx = nn.kneighbors(emb, return_distance=True)
     return idx
