@@ -225,8 +225,8 @@ def main():
     # EDIT THESE PATHS:
     evaluate_batch_removal(
         meta_csv="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        data_csv="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance/distance_matrix_expression_DR.csv",
-        mode="distance",  # or "embedding"
+        data_csv="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv",
+        mode="embedding",  # or "embedding"
         outdir="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample",
         k=15,  # reduced from 30 since only 25 samples
         include_self=False

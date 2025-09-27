@@ -727,6 +727,7 @@ def fill_obs_nan_with_unknown(
 
 
 if __name__ == "__main__":
+    print("start testing environment_test.py")
     compute_gene_activity_from_knn(
         glue_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue',
         output_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
