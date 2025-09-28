@@ -570,6 +570,9 @@ def run_trajectory_anova_analysis(meta_csv_path, pseudotime_csv_path, output_dir
     dict : Results dictionary containing all analysis outputs
     """
     # Create output directory if it doesn't exist
+
+    os.makedirs(output_dir_path, exist_ok=True)
+    output_dir_path = os.path.join(output_dir_path, 'ANOVA')
     os.makedirs(output_dir_path, exist_ok=True)
     
     print("\n" + "="*50)

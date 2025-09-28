@@ -324,8 +324,10 @@ def evaluate_ari_clustering(
         Dictionary containing evaluation metrics and output paths
     """
     # Setup output directory
-    outdir_p = Path(outdir)
-    outdir_p.mkdir(parents=True, exist_ok=True)
+    import os
+    os.makedirs(output_dir_path, exist_ok=True)
+    output_dir_path = os.path.join(output_dir_path, 'ARI_Clustering_Evaluation')
+    os.makedirs(output_dir_path, exist_ok=True)
     
     # Read and align data
     print("Reading metadata and data files...", file=sys.stderr)

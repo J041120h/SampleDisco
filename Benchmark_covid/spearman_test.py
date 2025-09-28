@@ -365,6 +365,9 @@ def run_trajectory_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path)
     """
     # Create output directory if it doesn't exist
     os.makedirs(output_dir_path, exist_ok=True)
+    output_dir_path = os.path.join(output_dir_path, 'Spearman_Correlation')
+    os.makedirs(output_dir_path, exist_ok=True)
+    
     
     print("\n" + "="*50)
     print("STARTING TRAJECTORY CORRELATION ANALYSIS")
