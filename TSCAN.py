@@ -537,7 +537,54 @@ def TSCAN(
             if verbose:
                 print(f"Warning: Grouping plot failed - {e}")
 
-    # 9. Prepare final results
+    # 9. Save pseudotime data to CSV files
+    try:
+        # Prepare pseudotime expression data (raw pseudotime values)
+        pseudotime_data = []
+        
+        # Add main path samples
+        for sample_id, pseudotime_val in pseudo_main.items():
+            pseudotime_data.append({
+                'sample_id': sample_id,
+                'trajectory_type': 'main_path',
+                'branch_id': 'main',
+                'pseudotime': pseudotime_val,
+                'cluster': sample_projections[sample_id]['cluster'] if sample_id in sample_projections else 'unknown'
+            })
+        
+        # Add branching path samples
+        for branch_idx, branch_pseudo in pseudo_branches.items():
+            for sample_id, pseudotime_val in branch_pseudo.items():
+                pseudotime_data.append({
+                    'sample_id': sample_id,
+                    'trajectory_type': 'branch',
+                    'branch_id': f'branch_{branch_idx}',
+                    'pseudotime': pseudotime_val,
+                    'cluster': sample_projections_branching_paths[branch_idx][sample_id]['cluster'] if sample_id in sample_projections_branching_paths[branch_idx] else 'unknown'
+                })
+        
+        # Create DataFrame and save
+        pseudotime_df = pd.DataFrame(pseudotime_data)
+        
+        # Save pseudotime expression (raw values)
+        pseudotime_expression_path = os.path.join(tscan_output_path, 'pseudotime_expression.csv')
+        pseudotime_df.to_csv(pseudotime_expression_path, index=False)
+        
+        # Save pseudotime proportions (same as expression since already normalized 0-1)
+        pseudotime_proportion_path = os.path.join(tscan_output_path, 'pseudotime_proportions.csv')
+        pseudotime_df.to_csv(pseudotime_proportion_path, index=False)
+        
+        if verbose:
+            print(f"Pseudotime data saved:")
+            print(f"  Expression: {pseudotime_expression_path}")
+            print(f"  Proportions: {pseudotime_proportion_path}")
+            print(f"  Total samples in CSV: {len(pseudotime_df)}")
+    
+    except Exception as e:
+        if verbose:
+            print(f"Warning: Failed to save pseudotime CSV files - {e}")
+
+    # 10. Prepare final results
     results = {
         "main_path": main_path,
         "origin": origin,

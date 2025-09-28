@@ -432,6 +432,27 @@ def CCA_Call(
             sample_dicts[key] = {}
             pc_info[key] = None
 
+    # Save pseudotime data to CSV files
+    if output_dir:
+        for key in ["X_DR_proportion", "X_DR_expression"]:
+            if sample_dicts[key]:  # Only save if we have data
+                # Convert dictionary to DataFrame
+                pseudotime_df = pd.DataFrame([
+                    {'Sample': sample_id, 'Pseudotime': pseudotime_value}
+                    for sample_id, pseudotime_value in sample_dicts[key].items()
+                ])
+                
+                # Create CSV filename
+                data_type = key.replace("X_DR_", "")
+                csv_filename = f"pseudotime_{data_type}.csv"
+                csv_path = os.path.join(output_dir, csv_filename)
+                
+                # Save to CSV
+                pseudotime_df.to_csv(csv_path, index=False)
+                
+                if verbose:
+                    print(f"Saved {data_type} pseudotime data to: {csv_path}")
+
     if verbose:
         print("\n" + "="*50)
         print("CCA ANALYSIS SUMMARY")
