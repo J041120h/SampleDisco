@@ -459,24 +459,25 @@ def wrapper(
         from .multiomics_wrapper import multiomics_wrapper
     
     #memory management for large datasets, enable managed memory if needed
-    if use_gpu and large_data_need_extra_memory:
-        # Enable `managed_memory`
-        import rmm
-        import cupy as cp
-        from rmm.allocators.cupy import rmm_cupy_allocator
+    if use_gpu:
+        if large_data_need_extra_memory:
+            # Enable `managed_memory`
+            import rmm
+            import cupy as cp
+            from rmm.allocators.cupy import rmm_cupy_allocator
 
-        rmm.reinitialize(managed_memory=True, pool_allocator=False)
-        cp.cuda.set_allocator(rmm_cupy_allocator)
-    else:
-        # Enable `pool_allocator`
-        import rmm
-        import cupy as cp
-        from rmm.allocators.cupy import rmm_cupy_allocator
-        rmm.reinitialize(
-            managed_memory=False,
-            pool_allocator=True,
-        )
-        cp.cuda.set_allocator(rmm_cupy_allocator)
+            rmm.reinitialize(managed_memory=True, pool_allocator=False)
+            cp.cuda.set_allocator(rmm_cupy_allocator)
+        else:
+            # Enable `pool_allocator`
+            import rmm
+            import cupy as cp
+            from rmm.allocators.cupy import rmm_cupy_allocator
+            rmm.reinitialize(
+                managed_memory=False,
+                pool_allocator=True,
+            )
+            cp.cuda.set_allocator(rmm_cupy_allocator)
     
     # Create main output directory
     Path(output_dir).mkdir(parents=True, exist_ok=True)

@@ -438,7 +438,7 @@ def CCA_Call(
             if sample_dicts[key]:  # Only save if we have data
                 # Convert dictionary to DataFrame
                 pseudotime_df = pd.DataFrame([
-                    {'Sample': sample_id, 'Pseudotime': pseudotime_value}
+                    {'sample': sample_id, 'pseudotime': pseudotime_value}
                     for sample_id, pseudotime_value in sample_dicts[key].items()
                 ])
                 
