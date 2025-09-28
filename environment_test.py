@@ -30,16 +30,6 @@ except ImportError:
     GPU_AVAILABLE = False
     print("GPU libraries (cupy/cuml) not available, will use CPU implementations")
 
-# Custom modules (these appear to be user-defined modules)
-# Note: These imports will only work if these modules exist in your environment
-try:
-    from pseudo_adata import *
-    from DR import *
-    from Cell_type import *
-except ImportError as e:
-    print(f"Custom module import failed: {e}")
-    print("Make sure pseudo_adata.py, DR.py, and Cell_type.py are in your Python path")
-
 # Additional packages that may be needed for full functionality
 # (These are used implicitly through scanpy or other functions)
 try:
@@ -727,14 +717,26 @@ def fill_obs_nan_with_unknown(
 
 
 if __name__ == "__main__":
-    print("start testing environment_test.py")
-    compute_gene_activity_from_knn(
-        glue_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue',
-        output_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
-        raw_rna_path = '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
-    )
+    # print("start testing environment_test.py")
+    # compute_gene_activity_from_knn(
+    #     glue_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue',
+    #     output_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
+    #     raw_rna_path = '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
+    # )
 
-    integrate_preprocess(
-        output_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
-        h5ad_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad'
-    )
+    # integrate_preprocess(
+    #     output_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
+    #     h5ad_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad'
+    # )
+    try:
+        import cupy as cp
+        from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+        gpu_available = True
+        if verbose:
+            print("🚀 GPU acceleration enabled (cuML/CuPy detected)")
+    except ImportError:
+        print("⚠️  GPU libraries not found, falling back to CPU")
+        if verbose:
+            print("⚠️  GPU libraries not found, falling back to CPU")
+        from sklearn.neighbors import NearestNeighbors
+        from sklearn.preprocessing import normalize
