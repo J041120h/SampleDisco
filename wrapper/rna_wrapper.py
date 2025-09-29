@@ -325,14 +325,14 @@ def rna_wrapper(
             )
         else:
             AnnData_cell = cell_types(
-                adata=AnnData_cell,
-                cell_type_column=cell_type_column,
-                existing_cell_types=existing_cell_types,
-                n_target_clusters=n_target_cell_clusters,
-                umap=umap,
+                adata = AnnData_cell,
+                cell_type_column = cell_type_column,
+                existing_cell_types = existing_cell_types,
+                n_target_clusters = n_target_cell_clusters,
+                umap = umap,
                 Save = True,
-                output_dir=rna_output_dir,
-                cluster_resolution=cluster_resolution,
+                output_dir = rna_output_dir,
+                cluster_resolution =cluster_resolution,
                 markers=markers,
                 method=method,
                 metric=metric,

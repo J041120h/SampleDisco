@@ -796,33 +796,105 @@ def prepare_for_scanpy_ops(h5ad_path):
     return adata
 
 
-# Run the test
-if __name__ == "__main__":
-    # print("Running metadata merging test...")
-    # # test_metadata_merging(
-    # #     glue_dir="/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue",
-    # #     output_path="/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess",
-    # #     raw_rna_path= '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
-    # # )
+# # Run the test
+# if __name__ == "__main__":
+#     # print("Running metadata merging test...")
+#     # # test_metadata_merging(
+#     # #     glue_dir="/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue",
+#     # #     output_path="/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess",
+#     # #     raw_rna_path= '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
+#     # # )
 
-    # integrate_preprocess(
-    #     output_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/test_merge',
-    #     h5ad_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/test_merge/test_merged.h5ad',
-    #     sample_column = 'sample',
-    #     modality_col = 'modality',
-    #     min_cells_sample=1,
-    #     min_cell_gene=10,
-    #     min_features=500,
-    #     pct_mito_cutoff=20,
-    #     exclude_genes=None,
-    #     doublet=True,
-    #     verbose=True
-    # )
+#     # integrate_preprocess(
+#     #     output_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/test_merge',
+#     #     h5ad_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/test_merge/test_merged.h5ad',
+#     #     sample_column = 'sample',
+#     #     modality_col = 'modality',
+#     #     min_cells_sample=1,
+#     #     min_cell_gene=10,
+#     #     min_features=500,
+#     #     pct_mito_cutoff=20,
+#     #     exclude_genes=None,
+#     #     doublet=True,
+#     #     verbose=True
+#     # )
 
-    # fix_categorical_columns(ad.read_h5ad("/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/test_merge/test_merged.h5ad"))
-    # diagnose_sparse_matrix_issue("/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/atac_rna_integrated.h5ad")
-    # stats = inspect_anndata_X("/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad")
-    # Example:
-    adata = prepare_for_scanpy_ops("/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad")
-    sc.pp.filter_cells(adata, min_counts=1)
-    sc.pp.filter_genes(adata, min_cells=10)
+#     # fix_categorical_columns(ad.read_h5ad("/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/test_merge/test_merged.h5ad"))
+#     # diagnose_sparse_matrix_issue("/dcs07/hongkai/data/harry/result/heart/multiomics/preprocess/atac_rna_integrated.h5ad")
+#     # stats = inspect_anndata_X("/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad")
+#     # Example:
+#     adata = prepare_for_scanpy_ops("/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad")
+#     sc.pp.filter_cells(adata, min_counts=1)
+#     sc.pp.filter_genes(adata, min_cells=10)
+
+import os
+import numpy as np
+import anndata as ad
+
+def check_h5ad_integrity(rna_processed_path, atac_path, raw_rna_path):
+    paths = {
+        "rna_processed": rna_processed_path,
+        "atac": atac_path,
+        "raw_rna": raw_rna_path,
+    }
+    
+    for name, path in paths.items():
+        if not os.path.exists(path):
+            print(f"❌ {name} not found: {path}")
+            continue
+        print(f"\n🔍 Checking {name} → {path}")
+        adata = ad.read_h5ad(path)  # always in-memory for checking
+        n_obs, n_vars = adata.n_obs, adata.n_vars
+        print(f"   shape = {adata.shape}")
+
+        # ---- Names ----
+        if not adata.obs_names.is_unique:
+            print(f"   ⚠️ Duplicate .obs_names detected")
+        if not adata.var_names.is_unique:
+            print(f"   ⚠️ Duplicate .var_names detected")
+        if adata.obs_names.dtype != object:
+            print(f"   ⚠️ .obs_names dtype = {adata.obs_names.dtype}")
+        if adata.var_names.dtype != object:
+            print(f"   ⚠️ .var_names dtype = {adata.var_names.dtype}")
+
+        # ---- X ----
+        if hasattr(adata.X, "shape"):
+            if adata.X.shape != (n_obs, n_vars):
+                print(f"   ❌ X has wrong shape {adata.X.shape} vs {(n_obs, n_vars)}")
+
+        # ---- Layers ----
+        for lname, L in (adata.layers or {}).items():
+            if L.shape != (n_obs, n_vars):
+                print(f"   ❌ layer[{lname}] shape {L.shape} != {(n_obs, n_vars)}")
+
+        # ---- OBsM ----
+        for k, M in (adata.obsm or {}).items():
+            M = np.asarray(M)
+            if M.shape[0] != n_obs:
+                print(f"   ❌ obsm[{k}] first dim {M.shape[0]} != n_obs {n_obs}")
+
+        # ---- VARM ----
+        for k, M in (adata.varm or {}).items():
+            M = np.asarray(M)
+            if M.shape[0] != n_vars:
+                print(f"   ❌ varm[{k}] first dim {M.shape[0]} != n_vars {n_vars}")
+
+        # ---- OBSP ----
+        for k, M in (adata.obsp or {}).items():
+            if M.shape != (n_obs, n_obs):
+                print(f"   ❌ obsp[{k}] shape {M.shape} != {(n_obs, n_obs)}")
+
+        # ---- VARP ----
+        for k, M in (adata.varp or {}).items():
+            if M.shape != (n_vars, n_vars):
+                print(f"   ❌ varp[{k}] shape {M.shape} != {(n_vars, n_vars)}")
+
+        print(f"   ✓ {name} passed basic integrity checks")
+
+# Example usage:
+glue_dir = "/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue"
+rna_processed_path = os.path.join(glue_dir, "glue-rna-emb.h5ad")
+atac_path = os.path.join(glue_dir, "glue-atac-emb.h5ad")
+raw_rna_path = "/dcl01/hongkai/data/data/hjiang/Data/paired/rna/sparse_all.h5ad"
+
+check_h5ad_integrity(rna_processed_path, atac_path, raw_rna_path)

@@ -1,0 +1,4 @@
+usage: monitor_wrapper.py [-h] --outdir OUTDIR [--label LABEL] --cmd CMD
+                          [--interval INTERVAL] [--nsys] [--perf]
+                          [--workdir WORKDIR]
+monitor_wrapper.py: error: the following arguments are required: --outdir

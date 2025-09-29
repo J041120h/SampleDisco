@@ -5,6 +5,12 @@ import os
 import inspect
 from wrapper.wrapper import wrapper
 
+os.environ["CUDA_HOME"] = "/usr/local/cuda"
+os.environ["CUDA_PATH"] = "/usr/local/cuda"
+os.environ["CUPY_CUDA_PATH"] = "/usr/local/cuda"
+os.environ["PATH"] = os.environ["CUDA_HOME"] + "/bin:" + os.environ["PATH"]
+os.environ["LD_LIBRARY_PATH"] = os.environ["CUDA_HOME"] + "/lib64:" + os.environ.get("LD_LIBRARY_PATH", "")
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Run the data processing wrapper.")
 

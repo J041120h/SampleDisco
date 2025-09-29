@@ -294,7 +294,7 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: false
+multiomics_run_glue: true
 multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: true

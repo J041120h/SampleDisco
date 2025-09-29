@@ -558,7 +558,7 @@ def integrate_preprocess(
     # 1. Read the raw count data from an existing H5AD
     if verbose:
         print('=== Read input dataset ===')
-    adata = sc.read_h5ad(h5ad_path)
+    adata = ad.read_h5ad(h5ad_path, backed='r')
     if verbose:
         print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
 
@@ -724,14 +724,17 @@ def fill_obs_nan_with_unknown(
 
 
 if __name__ == "__main__":
-    print("start testing environment_test.py")
-    compute_gene_activity_from_knn(
-        glue_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue',
-        output_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
-        raw_rna_path = '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
-    )
+    # print("start testing environment_test.py")
+    # compute_gene_activity_from_knn(
+    #     glue_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/integration/glue',
+    #     output_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
+    #     raw_rna_path = '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/sparse_all.h5ad'
+    # )
 
-    integrate_preprocess(
-        output_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
-        h5ad_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad'
-    )
+    # integrate_preprocess(
+    #     output_dir = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics',
+    #     h5ad_path = '/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad'
+    # )
+    import h5py
+    with h5py.File("/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad", "r") as f:
+        print(list(f.keys()))  # ensure 'X' datasets exist and have sane shapes
