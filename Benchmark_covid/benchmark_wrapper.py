@@ -42,6 +42,27 @@ class BenchmarkWrapper:
         if self.mode not in ['expression', 'proportion']:
             raise ValueError("Mode must be either 'expression' or 'proportion'")
         
+        # Validate input paths exist
+        if not self.base_input_path.exists():
+            error_msg = f"ERROR: Base input path does not exist: {self.base_input_path}"
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
+        
+        if not self.base_input_path.is_dir():
+            error_msg = f"ERROR: Base input path is not a directory: {self.base_input_path}"
+            logger.error(error_msg)
+            raise NotADirectoryError(error_msg)
+        
+        if not self.meta_csv_path.exists():
+            error_msg = f"ERROR: Metadata CSV file does not exist: {self.meta_csv_path}"
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
+        
+        if not self.meta_csv_path.is_file():
+            error_msg = f"ERROR: Metadata CSV path is not a file: {self.meta_csv_path}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
         # Set output base directory
         if output_base_dir is None:
             # Use the parent directory of base_input_path for outputs
@@ -74,6 +95,43 @@ class BenchmarkWrapper:
         output_dir.mkdir(parents=True, exist_ok=True)
         return output_dir
     
+    def _check_file_exists(self, file_path: Path, file_description: str) -> bool:
+        """
+        Check if a file exists and print detailed error if not.
+        
+        Parameters
+        ----------
+        file_path : Path
+            Path to check
+        file_description : str
+            Description of the file for error message
+        
+        Returns
+        -------
+        bool
+            True if file exists, False otherwise
+        """
+        if not file_path.exists():
+            error_msg = f"ERROR: {file_description} not found!"
+            logger.error(error_msg)
+            logger.error(f"  Expected path: {file_path}")
+            logger.error(f"  Parent directory exists: {file_path.parent.exists()}")
+            
+            if file_path.parent.exists():
+                logger.error(f"  Contents of parent directory:")
+                try:
+                    for item in file_path.parent.iterdir():
+                        logger.error(f"    - {item.name}")
+                except Exception as e:
+                    logger.error(f"    Could not list directory contents: {e}")
+            else:
+                logger.error(f"  Parent directory does not exist: {file_path.parent}")
+                logger.error(f"  Please check the directory structure.")
+            
+            return False
+        
+        return True
+    
     def run_trajectory_anova(self, **kwargs) -> Dict[str, Any]:
         """
         Run trajectory ANOVA analysis.
@@ -93,9 +151,11 @@ class BenchmarkWrapper:
         pseudotime_path = self._get_pseudotime_path()
         output_dir = self._create_output_dir("trajectory_anova")
         
-        if not pseudotime_path.exists():
-            logger.error(f"Pseudotime file not found: {pseudotime_path}")
-            return {"status": "error", "message": f"File not found: {pseudotime_path}"}
+        if not self._check_file_exists(pseudotime_path, "Pseudotime CSV file"):
+            return {
+                "status": "error", 
+                "message": f"Pseudotime file not found: {pseudotime_path}"
+            }
         
         try:
             result = run_trajectory_anova_analysis(
@@ -138,9 +198,11 @@ class BenchmarkWrapper:
         embedding_path = self._get_embedding_path()
         output_dir = self._create_output_dir("batch_removal")
         
-        if not embedding_path.exists():
-            logger.error(f"Embedding file not found: {embedding_path}")
-            return {"status": "error", "message": f"File not found: {embedding_path}"}
+        if not self._check_file_exists(embedding_path, "Embedding/coordinates CSV file"):
+            return {
+                "status": "error", 
+                "message": f"Embedding file not found: {embedding_path}"
+            }
         
         try:
             result = evaluate_batch_removal(
@@ -189,9 +251,11 @@ class BenchmarkWrapper:
         embedding_path = self._get_embedding_path()
         output_dir = self._create_output_dir("ari_clustering")
         
-        if not embedding_path.exists():
-            logger.error(f"Embedding file not found: {embedding_path}")
-            return {"status": "error", "message": f"File not found: {embedding_path}"}
+        if not self._check_file_exists(embedding_path, "Embedding/coordinates CSV file"):
+            return {
+                "status": "error", 
+                "message": f"Embedding file not found: {embedding_path}"
+            }
         
         try:
             result = evaluate_ari_clustering(
@@ -234,9 +298,11 @@ class BenchmarkWrapper:
         pseudotime_path = self._get_pseudotime_path()
         output_dir = self._create_output_dir("trajectory_analysis")
         
-        if not pseudotime_path.exists():
-            logger.error(f"Pseudotime file not found: {pseudotime_path}")
-            return {"status": "error", "message": f"File not found: {pseudotime_path}"}
+        if not self._check_file_exists(pseudotime_path, "Pseudotime CSV file"):
+            return {
+                "status": "error", 
+                "message": f"Pseudotime file not found: {pseudotime_path}"
+            }
         
         try:
             result = run_trajectory_analysis(
@@ -379,21 +445,26 @@ def run_benchmarks(
         ari_clustering={"k_neighbors": 20, "create_plots": True}
     )
     """
-    wrapper = BenchmarkWrapper(
-        base_input_path=base_input_path,
-        meta_csv_path=meta_csv_path,
-        mode=mode,
-        output_base_dir=output_base_dir
-    )
+    try:
+        wrapper = BenchmarkWrapper(
+            base_input_path=base_input_path,
+            meta_csv_path=meta_csv_path,
+            mode=mode,
+            output_base_dir=output_base_dir
+        )
+        
+        if benchmarks_to_run:
+            # Run only specified benchmarks
+            all_benchmarks = ["trajectory_anova", "batch_removal", "ari_clustering", "trajectory_analysis"]
+            skip_benchmarks = [b for b in all_benchmarks if b not in benchmarks_to_run]
+            return wrapper.run_all_benchmarks(skip_benchmarks=skip_benchmarks, **kwargs)
+        else:
+            # Run all benchmarks
+            return wrapper.run_all_benchmarks(**kwargs)
     
-    if benchmarks_to_run:
-        # Run only specified benchmarks
-        all_benchmarks = ["trajectory_anova", "batch_removal", "ari_clustering", "trajectory_analysis"]
-        skip_benchmarks = [b for b in all_benchmarks if b not in benchmarks_to_run]
-        return wrapper.run_all_benchmarks(skip_benchmarks=skip_benchmarks, **kwargs)
-    else:
-        # Run all benchmarks
-        return wrapper.run_all_benchmarks(**kwargs)
+    except (FileNotFoundError, NotADirectoryError, ValueError) as e:
+        logger.error(f"Failed to initialize BenchmarkWrapper: {e}")
+        return {"initialization_error": {"status": "error", "message": str(e)}}
 
 
 # Example usage

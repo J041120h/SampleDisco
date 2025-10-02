@@ -144,9 +144,15 @@ def evaluate_batch_removal(
         Include sample itself in KNN neighborhood
     """
     import os
+    from pathlib import Path
+    
+    # FIX: Use 'outdir' parameter correctly
+    os.makedirs(outdir, exist_ok=True)
+    output_dir_path = os.path.join(outdir, 'Batch_Removal_Evaluation')
     os.makedirs(output_dir_path, exist_ok=True)
-    output_dir_path = os.path.join(output_dir_path, 'Batch_Removal_Evaluation')
-    os.makedirs(output_dir_path, exist_ok=True)
+    
+    # FIX: Define outdir_p as Path object
+    outdir_p = Path(output_dir_path)
 
     # Read & align data
     md = read_metadata(meta_csv)
@@ -224,8 +230,8 @@ if __name__ == "__main__":
     evaluate_batch_removal(
         meta_csv="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
         data_csv="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv",
-        mode="embedding",  # or "embedding"
+        mode="embedding",
         outdir="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample",
-        k=15,  # reduced from 30 since only 25 samples
+        k=15,
         include_self=False
     )

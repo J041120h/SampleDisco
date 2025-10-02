@@ -1,188 +1,94 @@
-=== 0) Basics ===============================================
-Mon Sep 29 11:42:29 AM EDT 2025
-Hostname: compute-171.cm.cluster
-User: hjiang
 
-=== 1) Active Python/Conda ==================================
-# conda environments:
-hongkai               *  /users/hjiang/.conda/envs/hongkai
-PYTHON: /users/hjiang/.conda/envs/hongkai/bin/python
-Python 3.10.18
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 25 samples
 
-=== 2) Environment variables (CUDA-related) ==================
-CONDA_PREFIX=/users/hjiang/.conda/envs/hongkai
-CUDA_HOME=<unset>
-CUDA_PATH=<unset>
-PATH=/users/hjiang/.conda/envs/hongkai/bin:/jhpce/shared/jhpce/core/conda/miniconda3-24.3.0/condabin:/jhpce/shared/jhpce/core/conda/miniconda3-24.3.0/bin:/jhpce/shared/jhpce/core/JHPCE_tools/3.0/bin:/users/hjiang/.vscode-server/cli/servers/Stable-e3a5acfb517a443235981655413d566533107e92/server/bin/remote-cli:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/users/hjiang/bin:/users/hjiang/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/usr/local/cuda/bin
-LD_LIBRARY_PATH=/jhpce/shared/jhpce/core/JHPCE_tools/3.0/lib:/usr/local/lib/python3.9/site-packages/nvidia/cudnn/lib:/jhpce/shared/jhpce/core/conda/miniconda3-23.3.1/envs/cudatoolkit-11.8.0/lib:/usr/local/lib/python3.9/site-packages/tensorrt_libs
+Merging data...
+  Merged data: 25 samples retained
 
-=== 3) System CUDA toolchain (if any) ========================
-[nvidia-smi]
-Mon Sep 29 11:42:33 2025       
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 555.42.06              Driver Version: 555.42.06      CUDA Version: 12.5     |
-|-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA L40S                    Off |   00000000:01:00.0 Off |                    0 |
-| N/A   32C    P0             83W /  350W |       1MiB /  46068MiB |      0%      Default |
-|                                         |                        |                  N/A |
-+-----------------------------------------+------------------------+----------------------+
-                                                                                         
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|  No running processes found                                                             |
-+-----------------------------------------------------------------------------------------+
-[nvcc --version]
-nvcc: NVIDIA (R) Cuda compiler driver
-Copyright (c) 2005-2024 NVIDIA Corporation
-Built on Thu_Jun__6_02:18:23_PDT_2024
-Cuda compilation tools, release 12.5, V12.5.82
-Build cuda_12.5.r12.5/compiler.34385749_0
-[Locate libnvrtc*]
-	libnvrtc.so.12 (libc6,x86-64) => /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.12
-	libnvrtc.so (libc6,x86-64) => /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
+Performing Two-way ANOVA...
+  Analyzing 25 samples with complete data
+  Number of batches: 6
+  Number of severity levels: 4
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
 
-=== 4) Conda packages of interest ============================
-cuda-bindings             12.9.2          py310hc395c1c_1    conda-forge
-cuda-cccl_linux-64        12.5.39              ha770c72_0    conda-forge
-cuda-crt-dev_linux-64     12.5.82              ha770c72_0    conda-forge
-cuda-crt-tools            12.5.82              ha770c72_0    conda-forge
-cuda-cudart               12.5.82              he02047a_0    conda-forge
-cuda-cudart-dev           12.5.82              he02047a_0    conda-forge
-cuda-cudart-dev_linux-64  12.5.82              h85509e4_0    conda-forge
-cuda-cudart-static        12.5.82              he02047a_0    conda-forge
-cuda-cudart-static_linux-64 12.5.82              h85509e4_0    conda-forge
-cuda-cudart_linux-64      12.5.82              h85509e4_0    conda-forge
-cuda-nvcc-dev_linux-64    12.5.82              ha770c72_0    conda-forge
-cuda-nvcc-impl            12.5.82              hd3aeb46_0    conda-forge
-cuda-nvcc-tools           12.5.82              hd3aeb46_0    conda-forge
-cuda-nvrtc                12.5.82              he02047a_0    conda-forge
-cuda-nvrtc-dev            12.5.82              he02047a_0    conda-forge
-cuda-nvvm-dev_linux-64    12.5.82              ha770c72_0    conda-forge
-cuda-nvvm-impl            12.5.82              h59595ed_0    conda-forge
-cuda-nvvm-tools           12.5.82              h59595ed_0    conda-forge
-cuda-pathfinder           1.2.3              pyhcf101f3_0    conda-forge
-cuda-profiler-api         12.5.39              ha770c72_0    conda-forge
-cuda-python               12.9.2             pyhb6702c7_2    conda-forge
-cuda-version              12.5                 hd4f0392_3    conda-forge
-cudf                      25.08.00        cuda12_py310_250806_6cea3743    rapidsai
-cudf-cu12                 25.8.0                   pypi_0    pypi
-cugraph                   25.08.00        cuda12_py310_250806_e0f09e50    rapidsai
-cuml                      25.08.00        cuda12_py310_250806_b081fcd0    rapidsai
-cuml-cu12                 25.8.0                   pypi_0    pypi
-cupy                      13.6.0          py310h8c3aed4_2    conda-forge
-cupy-cuda12x              13.6.0                   pypi_0    pypi
-libraft                   25.08.00        cuda12_250806_2fb92393    rapidsai
-libraft-cu12              25.8.0                   pypi_0    pypi
-libraft-headers           25.08.00        cuda12_250806_2fb92393    rapidsai
-libraft-headers-only      25.08.00        cuda12_250806_2fb92393    rapidsai
-raft-dask                 25.08.00        cuda12_py310_250806_2fb92393    rapidsai
-raft-dask-cu12            25.8.0                   pypi_0    pypi
-rapids-dask-dependency    25.8.0                   pypi_0    pypi
-rapids-logger             0.1.1                    pypi_0    pypi
-rapids-singlecell         0.13.1                   pypi_0    pypi
-rmm                       25.08.00        cuda12_py310_250806_63a4d366    rapidsai
-rmm-cu12                  25.8.0                   pypi_0    pypi
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_anova/ANOVA/twoway_anova_plots.png
 
-=== 5) Pip packages (in this env) ============================
-Name: cupy-cuda12x
-Version: 13.6.0
-Summary: CuPy: NumPy & SciPy for GPU
-Home-page: https://cupy.dev/
-Author: 
-Author-email: Seiya Tokui <tokui@preferred.jp>
-License-Expression: MIT
-Location: /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages
-Requires: fastrlock, numpy
-Required-by: cudf, cudf-cu12, cugraph, cuml, cuml-cu12, dask-cudf, dask-cudf-cu12, pylibcugraph
----
-Name: rmm
-Version: 25.8.0
-Summary: rmm - RAPIDS Memory Manager
-Home-page: https://github.com/rapidsai/rmm
-Author: NVIDIA Corporation
-Author-email: 
-License: Apache-2.0
-Location: /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages
-Requires: cuda-python, librmm, numpy
-Required-by: cudf, cugraph, cuml, pylibcudf, pylibcugraph, pylibraft, ucxx
----
-Name: cudf
-Version: 25.8.0
-Summary: cuDF - GPU Dataframe
-Home-page: https://github.com/rapidsai/cudf
-Author: NVIDIA Corporation
-Author-email: 
-License: Apache-2.0
-Location: /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages
-Requires: cachetools, cuda-python, cupy-cuda12x, fsspec, libcudf, numba, numba-cuda, numpy, nvtx, packaging, pandas, pyarrow, pylibcudf, pynvjitlink, rich, rmm, typing_extensions
-Required-by: cugraph, cuml, dask-cudf
----
-Name: cuml
-Version: 25.8.0
-Summary: cuML - RAPIDS ML Algorithms
-Home-page: https://github.com/rapidsai/cuml
-Author: NVIDIA Corporation
-Author-email: 
-License: Apache-2.0
-Location: /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages
-Requires: cuda-python, cudf, cupy-cuda12x, cuvs, dask-cuda, dask-cudf, joblib, libcuml, numba, numpy, nvidia-cublas, nvidia-cufft, nvidia-curand, nvidia-cusolver, nvidia-cusparse, packaging, pylibraft, raft-dask, rapids-dask-dependency, rich, rmm, scikit-learn, scipy, treelite
-Required-by: 
----
-Name: libraft-cu12
-Version: 25.8.0
-Summary: RAFT: Reusable Algorithms Functions and other Tools (C++)
-Home-page: https://github.com/rapidsai/raft
-Author: NVIDIA Corporation
-Author-email: 
-License: Apache-2.0
-Location: /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages
-Requires: librmm-cu12, nvidia-cublas-cu12, nvidia-curand-cu12, nvidia-cusolver-cu12, nvidia-cusparse-cu12, nvidia-nccl-cu12, rapids-logger
-Required-by: libcuml-cu12, libcuvs-cu12, pylibraft-cu12, raft-dask-cu12
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_anova/ANOVA/twoway_anova_summary.txt
 
-=== 6) Check for cuda_fp16.h in common include paths =========
-Missing: /include/cuda_fp16.h
-Missing: /include/cuda_fp16.h
-Missing: /users/hjiang/.conda/envs/hongkai/include/cuda_fp16.h
-FOUND: /usr/local/cuda/include/cuda_fp16.h
-[Quick scan under /usr/local (depth<=3)]
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 1.4529e-01 (η² = 0.440)
+  Severity Effect: p = 2.5773e-06 (η² = 0.914)
+  Interaction: p = 5.3429e-03 (η² = 0.827)
+  Overall Assessment: EXCELLENT
+==================================================
 
-=== 7) Python-side probes (no JIT to avoid your error) =======
-Python: 3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]
-sys.executable: /users/hjiang/.conda/envs/hongkai/bin/python
-import cupy: OK (13.6.0)
-import cuml: OK (25.08.00)
-import rmm: OK (25.08.00)
-import rapids_singlecell: OK (0.13.1)
-CUDA runtime version (from CuPy): 12090
-Visible CUDA devices: 1
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_anova/ANOVA
+Batch-removal Evaluation Summary
+================================
+Samples: 25
+Batches: 6 -> ['Mudd', 'SS1', 'SS2', 'Su', 'Wilk', 'Zhu']
 
-=== 8) RAPIDS coherence quick check ==========================
-[libraft/libcugraph/cuml versions]
-cuml                      25.08.00        cuda12_py310_250806_b081fcd0    rapidsai
-cuml-cu12                 25.8.0                   pypi_0    pypi
-libcugraph                25.08.00        cuda12_250806_e0f09e50    rapidsai
-libraft                   25.08.00        cuda12_250806_2fb92393    rapidsai
-libraft-cu12              25.8.0                   pypi_0    pypi
-libraft-headers           25.08.00        cuda12_250806_2fb92393    rapidsai
-libraft-headers-only      25.08.00        cuda12_250806_2fb92393    rapidsai
+iLISI (mean ± sd): 2.2131 ± 1.0372
+iLISI_norm: 0.3688
+ASW-batch: 0.5384
 
-=== 9) Module system (if available) ==========================
-module: 
-module: Currently Loaded Modules:
-module:   1) JHPCE_ROCKY9_DEFAULT_ENV   2) JHPCE_tools/3.0   3) conda/3-24.3.0
-module: 
-module:  
-module: 
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/batch_removal/Batch_Removal_Evaluation
+============================================================
+ARI-based Clustering Evaluation Summary
+============================================================
+Data mode: embedding
+Total samples: 25
+Samples with valid severity: 25
+Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+K neighbors for KNN: 15
 
-=== Done. Interpretations ====================================
-- If ALL 'Missing: .../cuda_fp16.h' → your environment lacks CUDA headers; NVRTC cannot include <cuda_fp16.h>.
-- If you see both 'cupy' and 'cupy-cuda12x' in pip/conda, that's a duplicate installation risk.
-- If RAPIDS packages show mixed minor versions (e.g., libcugraph 25.4, libraft 25.8), expect ABI/runtime errors later.
-- If CUDA runtime version is shown but JIT still fails in your pipeline, it's almost always missing headers (this script avoided JIT).
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): -0.0194
+Normalized Mutual Info (NMI): 0.1621
+Average Cluster Purity: 0.8523
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and severity levels
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 25 samples
+
+Merging data...
+  Merged data: 25 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 25 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.6919 (p = 1.2757e-04)
+  Assessment: MODERATE positive correlation
+  Statistical significance: highly significant (p < 0.001)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_analysis/Spearman_Correlation
