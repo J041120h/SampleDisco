@@ -81,7 +81,7 @@ rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
 
 # RNA PCA Parameters
-rna_n_expression_components: 30
+rna_n_expression_components: 30x
 rna_n_proportion_components: 30
 rna_harmony_for_proportion: true
 rna_dr_output_dir: null

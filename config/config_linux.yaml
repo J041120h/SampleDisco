@@ -26,7 +26,7 @@ rna_sample_meta_path: null
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: false
+rna_preprocessing: true
 rna_cell_type_cluster: true
 rna_dimensionality_reduction: true
 rna_sample_distance_calculation: false
@@ -294,7 +294,7 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: true
+multiomics_run_glue: false
 multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: true
@@ -315,7 +315,7 @@ multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"
 multiomics_sample_col: "sample"
-multiomics_batch_col: null
+multiomics_batch_col: 'modality'
 multiomics_celltype_col: "cell_type"
 multiomics_verbose: true
 multiomics_use_gpu: true
@@ -338,7 +338,7 @@ multiomics_metadata_sep: ","
 multiomics_consistency_threshold: 0.05
 treat_sample_as_batch: False
 multiomics_save_prefix: "glue"
-multiomics_k_neighbors: 20
+multiomics_k_neighbors: 1
 multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 multiomics_existing_cell_types: false

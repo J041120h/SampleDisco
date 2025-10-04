@@ -65,6 +65,8 @@ def integrate_preprocess(
             print(f"Modified sample IDs by adding modality information from '{modality_col}' column")
     adata.var_names_make_unique()
     adata.var = adata.var.dropna(axis=1, how="all")
+    adata.var["mt"]   = adata.var_names.str.upper().str.startswith("MT-")
+    adata.var["MT"]   = adata.var["mt"]  # legacy compatibility
     sc.pp.calculate_qc_metrics(
         adata, 
         qc_vars=["MT"],  # mitochondrial genes if annotated

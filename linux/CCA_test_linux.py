@@ -42,15 +42,29 @@ def cca_pvalue_test_linux(
     num_simulations: int = 1000,
     sev_col: str = "sev.level",
     verbose: bool = True,
-    timeout_seconds: int = 3600  # 1 hour timeout
+    timeout_seconds: int = 3600  # Optional timeout parameter with default
 ):
     """
     Perform CCA p-value test using pseudo anndata (sample by gene) - Linux GPU version with timeout protection.
     
     Parameters:
     -----------
+    pseudo_adata : AnnData
+        Pseudo anndata object
+    column : str
+        Key in pseudo_adata.uns containing coordinates
+    input_correlation : float
+        Observed correlation to test against
+    output_directory : str
+        Directory to save results
+    num_simulations : int
+        Number of permutation simulations (default: 1000)
+    sev_col : str
+        Column name for severity levels (default: "sev.level")
+    verbose : bool
+        Whether to print timing information (default: True)
     timeout_seconds : int
-        Maximum time (in seconds) to allow for the test (default: 3600 = 1 hour)
+        Maximum time in seconds to allow for the test (default: 3600 = 1 hour)
     """
     import os
     import time
@@ -129,8 +143,8 @@ def cca_pvalue_test_linux(
             return p_value
             
     except TimeoutError:
-        print(f"⏰ TIMEOUT: CCA p-value test exceeded {timeout_seconds} seconds")
-        print(f"⏰ Returning NaN p-value")
+        print(f"TIMEOUT: CCA p-value test exceeded {timeout_seconds} seconds")
+        print(f"Returning NaN p-value")
         
         # Log timeout to file
         timeout_log_path = os.path.join(output_directory, "CCA_PVALUE_TIMEOUT_LOG.txt")
@@ -143,7 +157,7 @@ def cca_pvalue_test_linux(
         return np.nan
     
     except Exception as e:
-        print(f"❌ Error in CCA p-value test: {str(e)}")
+        print(f"Error in CCA p-value test: {str(e)}")
         return np.nan
 
 def find_optimal_cell_resolution_linux(
@@ -161,18 +175,52 @@ def find_optimal_cell_resolution_linux(
     num_pvalue_simulations: int = 1000,
     n_pcs_for_null: int = 10,
     compute_corrected_pvalues: bool = True,
-    resolution_timeout: int = 3600,  # 1 hour timeout per resolution
-    verbose: bool = True
+    verbose: bool = True,
+    resolution_timeout: int = 3600  # Optional timeout parameter with default
 ) -> tuple:
     """
-    PROFILED VERSION: Find optimal clustering resolution with detailed timing information and timeout protection.
+    Find optimal clustering resolution by maximizing CCA correlation - Linux GPU version with timeout protection.
+    
+    Parameters match the CPU version exactly, with optional timeout parameter added.
     
     Parameters:
     -----------
-    resolution_timeout : int
-        Maximum time (in seconds) to allow for processing each resolution (default: 3600 = 1 hour)
+    AnnData_cell : AnnData
+        Cell-level AnnData object (RNA-seq)
+    AnnData_sample : AnnData  
+        Sample-level AnnData object (RNA-seq)
+    output_dir : str
+        Output directory for results
+    column : str
+        Column name in adata.uns for dimension reduction results
+    n_features : int
+        Number of features for pseudobulk
+    sev_col : str
+        Column name for severity levels
+    batch_col : str
+        Column name for batch information
+    sample_col : str
+        Column name for sample identifiers
+    use_rep : str
+        Representation to use for clustering (default: 'X_pca')
+    num_PCs : int
+        Number of PCs for clustering
+    num_DR_components : int
+        Number of dimension reduction components
+    num_pvalue_simulations : int
+        Number of simulations for null distribution (default: 1000)
+    n_pcs_for_null : int
+        Number of PCs to use for CCA analysis and null distribution (default: 10)
+    compute_corrected_pvalues : bool
+        Whether to compute corrected p-values (default: True)
     verbose : bool
         Whether to print verbose output (default: True)
+    resolution_timeout : int
+        Maximum time in seconds per resolution (default: 3600 = 1 hour)
+        
+    Returns:
+    --------
+    tuple: (optimal_resolution, results_dataframe)
     """
     import time
     
@@ -181,12 +229,14 @@ def find_optimal_cell_resolution_linux(
         start = time.time()
         result = func(*args, **kwargs)
         end = time.time()
-        print(f"⏱️  {func_name}: {end - start:.2f} seconds")
+        if verbose:
+            print(f"  {func_name}: {end - start:.2f} seconds")
         return result
     
     start_time = time.time()
-    print("🚀 Using PROFILED GPU version of optimal resolution WITH TIMEOUT PROTECTION")
-    print(f"⏰ Timeout per resolution: {resolution_timeout} seconds ({resolution_timeout/3600:.1f} hours)")
+    if verbose:
+        print("Using PROFILED GPU version of optimal resolution WITH TIMEOUT PROTECTION")
+        print(f"Timeout per resolution: {resolution_timeout} seconds ({resolution_timeout/3600:.1f} hours)")
     
     # Extract DR type from column name for clearer output
     dr_type = column.replace('X_DR_', '') if column.startswith('X_DR_') else column
@@ -198,11 +248,13 @@ def find_optimal_cell_resolution_linux(
     resolutions_dir = os.path.join(main_output_dir, "resolutions")
     os.makedirs(resolutions_dir, exist_ok=True)
     setup_time = time.time() - setup_start
-    print(f"⏱️  Directory setup: {setup_time:.2f} seconds")
+    if verbose:
+        print(f"Directory setup: {setup_time:.2f} seconds")
 
-    print("\n📊 Starting RNA-seq resolution optimization with detailed timing...")
+    print(f"Starting RNA-seq resolution optimization for {column}...")
     print(f"Using representation: {use_rep} with {num_PCs} components")
     print(f"Using {n_pcs_for_null} PCs for CCA analysis")
+    print(f"Testing resolutions from 0.01 to 1.00...")
     if compute_corrected_pvalues:
         print(f"Will compute corrected p-values with {num_pvalue_simulations} simulations per resolution")
 
@@ -213,7 +265,7 @@ def find_optimal_cell_resolution_linux(
 
     def process_resolution(resolution, search_pass):
         """Process a single resolution with timeout protection"""
-        print(f"\n🎯 Testing resolution: {resolution:.3f}")
+        print(f"\n\nTesting resolution: {resolution:.3f}\n")
         resolution_start = time.time()
         
         # Create resolution-specific directory
@@ -241,19 +293,17 @@ def find_optimal_cell_resolution_linux(
         try:
             with timeout(resolution_timeout):
                 # Clean up previous cell type assignments
-                cleanup_start = time.time()
                 if 'cell_type' in AnnData_cell.obs.columns:
                     AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
                 if 'cell_type' in AnnData_sample.obs.columns:
                     AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-                cleanup_time = time.time() - cleanup_start
-                print(f"  ⏱️  Cleanup: {cleanup_time:.3f} seconds")
                 
                 # Perform clustering using Linux GPU version
                 clustering_result = time_function(
-                    "  🧬 Cell clustering",
+                    "Cell clustering",
                     cell_types_linux,
                     AnnData_cell,
+                    cell_type_column='cell_type',  # Fixed parameter name to match CPU version
                     Save=False,
                     output_dir=resolution_dir,
                     cluster_resolution=resolution,
@@ -267,7 +317,7 @@ def find_optimal_cell_resolution_linux(
                 
                 # Assign cell types to samples using Linux GPU version
                 assignment_result = time_function(
-                    "  📋 Cell type assignment",
+                    "Cell type assignment",
                     cell_type_assign_linux,
                     AnnData_cell, 
                     AnnData_sample, 
@@ -279,11 +329,11 @@ def find_optimal_cell_resolution_linux(
                 # Record number of clusters
                 n_clusters = AnnData_sample.obs['cell_type'].nunique()
                 result_dict['n_clusters'] = n_clusters
-                print(f"  📊 Number of clusters: {n_clusters}")
+                print(f"Number of clusters: {n_clusters}")
                 
                 # Compute pseudobulk data
                 pseudobulk_dict, pseudobulk_adata = time_function(
-                    "  🧪 Pseudobulk computation",
+                    "Pseudobulk computation",
                     compute_pseudobulk_adata_linux,
                     adata=AnnData_sample, 
                     batch_col=batch_col, 
@@ -299,7 +349,7 @@ def find_optimal_cell_resolution_linux(
                 
                 # Perform dimension reduction
                 dr_result = time_function(
-                    "  📐 Dimension reduction",
+                    "Dimension reduction",
                     dimension_reduction,
                     adata=AnnData_sample,
                     pseudobulk=pseudobulk_dict,
@@ -307,8 +357,8 @@ def find_optimal_cell_resolution_linux(
                     sample_col=sample_col,
                     n_expression_components=num_DR_components,
                     n_proportion_components=num_DR_components,
-                    batch_col = batch_col,
-                    harmony_for_proportion = True,
+                    batch_col=batch_col,
+                    harmony_for_proportion=True,
                     atac=False,
                     output_dir=resolution_dir,
                     not_save=True,
@@ -317,13 +367,11 @@ def find_optimal_cell_resolution_linux(
 
                 # Check if column exists in pseudobulk_adata.uns
                 if column not in pseudobulk_adata.uns:
-                    print(f"  ⚠️  Warning: {column} not found in pseudobulk_adata.uns")
+                    print(f"Warning: {column} not found in pseudobulk_adata.uns. Skipping resolution {resolution:.3f}")
                     return result_dict, resolution_null_result
                 
-                # Run CCA analysis using improved approach
+                # Run CCA analysis
                 try:
-                    cca_start = time.time()
-                    
                     # Get full PCA coordinates and metadata  
                     pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
                         adata=pseudobulk_adata,
@@ -344,16 +392,12 @@ def find_optimal_cell_resolution_linux(
                     U, V = cca_analysis.transform(pca_coords_analysis, sev_levels_2d)
                     cca_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
                     
-                    cca_time = time.time() - cca_start
-                    print(f"  ⏱️  CCA analysis: {cca_time:.3f} seconds")
-                    
                     result_dict['cca_score'] = cca_score
                     result_dict['n_pcs_used'] = min(n_pcs_for_null, pca_coords_full.shape[1])
-                    print(f"  🎯 CCA Score = {cca_score:.4f} (using {result_dict['n_pcs_used']} PCs)")
+                    print(f"Resolution {resolution:.3f}: CCA Score = {cca_score:.4f} (using {result_dict['n_pcs_used']} PCs)")
                     
                     # Create CCA visualization plot using improved function with automatic PC selection
                     try:
-                        plot_start = time.time()
                         plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.3f}.png")
                         cca_score_viz, pc_indices_used, cca_model_viz = plot_cca_on_2d_pca(
                             pca_coords_full=pca_coords_full,
@@ -369,21 +413,18 @@ def find_optimal_cell_resolution_linux(
                         # Store which PCs were used for visualization
                         result_dict['pc_indices_used'] = pc_indices_used
                         
-                        plot_time = time.time() - plot_start
-                        print(f"  ⏱️  CCA plot generation: {plot_time:.3f} seconds")
-                        
                         if verbose:
-                            print(f"  📊 Created CCA visualization using PC{pc_indices_used[0]+1} + PC{pc_indices_used[1]+1} (viz score: {cca_score_viz:.4f})")
+                            print(f"Created CCA visualization plot using PC{pc_indices_used[0]+1} + PC{pc_indices_used[1]+1} (viz score: {cca_score_viz:.4f})")
                             
                     except Exception as e:
                         if verbose:
-                            print(f"  ⚠️  Warning: Failed to create CCA visualization: {str(e)}")
+                            print(f"Warning: Failed to create CCA visualization: {str(e)}")
                     
                     # Generate null distribution if computing corrected p-values
                     if compute_corrected_pvalues:
                         try:
                             null_distribution = time_function(
-                                f"  🎲 Null distribution ({num_pvalue_simulations} sims)",
+                                f"Null distribution ({num_pvalue_simulations} sims)",
                                 generate_null_distribution,
                                 pseudobulk_adata=pseudobulk_adata,
                                 column=column,
@@ -396,22 +437,19 @@ def find_optimal_cell_resolution_linux(
                             resolution_null_result['null_scores'] = null_distribution
                             
                             # Compute standard p-value for this resolution
-                            pvalue_start = time.time()
                             p_value = np.mean(null_distribution >= cca_score)
-                            pvalue_time = time.time() - pvalue_start
                             result_dict['p_value'] = p_value
-                            print(f"  ⏱️  P-value computation: {pvalue_time:.3f} seconds")
-                            print(f"  📈 Standard p-value = {p_value:.4f}")
+                            print(f"Resolution {resolution:.3f}: Standard p-value = {p_value:.4f}")
                             
                         except Exception as e:
-                            print(f"  ❌ Failed to generate null distribution: {str(e)}")
+                            print(f"Warning: Failed to generate null distribution: {str(e)}")
                     
                 except Exception as e:
-                    print(f"  ❌ Error in CCA analysis: {str(e)}")
+                    print(f"Error in CCA analysis at resolution {resolution:.3f}: {str(e)}")
                     
         except TimeoutError:
-            print(f"  ⏰ TIMEOUT: Resolution {resolution:.3f} exceeded {resolution_timeout} seconds")
-            print(f"  ⏰ Skipping this resolution and moving to next one...")
+            print(f"TIMEOUT: Resolution {resolution:.3f} exceeded {resolution_timeout} seconds")
+            print(f"Skipping this resolution and moving to next one...")
             result_dict['timed_out'] = True
             timed_out_resolutions.append(resolution)
             
@@ -423,15 +461,16 @@ def find_optimal_cell_resolution_linux(
                 f.write(f"Elapsed time: {time.time() - resolution_start:.2f} seconds\n")
             
         except Exception as e:
-            print(f"  ❌ Error at resolution {resolution:.3f}: {str(e)}")
+            print(f"Error at resolution {resolution:.3f}: {str(e)}")
         
         resolution_time = time.time() - resolution_start
-        print(f"  ⏱️  TOTAL for resolution {resolution:.3f}: {resolution_time:.2f} seconds")
+        if verbose:
+            print(f"TOTAL for resolution {resolution:.3f}: {resolution_time:.2f} seconds")
         
         return result_dict, resolution_null_result
 
     # First pass: coarse search
-    print("\n🔍 === FIRST PASS: Coarse Search ===")
+    print("\n=== FIRST PASS: Coarse Search ===")
     coarse_start = time.time()
     
     for resolution in np.arange(0.1, 1.01, 0.1):
@@ -440,26 +479,27 @@ def find_optimal_cell_resolution_linux(
         all_resolution_null_results.append(resolution_null_result)
 
     coarse_time = time.time() - coarse_start
-    print(f"\n⏱️  COARSE SEARCH TOTAL: {coarse_time:.2f} seconds")
+    if verbose:
+        print(f"\nCOARSE SEARCH TOTAL: {coarse_time:.2f} seconds")
 
     # Find best resolution from first pass
     coarse_results = [r for r in all_results if not np.isnan(r['cca_score']) and not r['timed_out']]
     if not coarse_results:
         if timed_out_resolutions:
-            print(f"⚠️  Warning: All coarse resolutions timed out: {timed_out_resolutions}")
-            print("⚠️  Consider increasing timeout or reducing complexity")
+            print(f"Warning: All coarse resolutions timed out: {timed_out_resolutions}")
+            print("Consider increasing timeout or reducing complexity")
         raise ValueError("No valid CCA scores obtained in coarse search.")
     
     best_coarse = max(coarse_results, key=lambda x: x['cca_score'])
     best_resolution = best_coarse['resolution']
-    print(f"\n🏆 Best resolution from first pass: {best_resolution:.2f}")
-    print(f"🎯 Best CCA score: {best_coarse['cca_score']:.4f}")
+    print(f"\nBest resolution from first pass: {best_resolution:.2f}")
+    print(f"Best CCA score: {best_coarse['cca_score']:.4f}")
     
-    if timed_out_resolutions:
-        print(f"⏰ Timed out resolutions in coarse search: {timed_out_resolutions}")
+    if timed_out_resolutions and verbose:
+        print(f"Timed out resolutions in coarse search: {timed_out_resolutions}")
 
     # Second pass: fine-tuned search
-    print("\n🔬 === SECOND PASS: Fine-tuned Search ===")
+    print("\n=== SECOND PASS: Fine-tuned Search ===")
     fine_start = time.time()
     
     search_range_start = max(0.01, best_resolution - 0.02)
@@ -478,7 +518,8 @@ def find_optimal_cell_resolution_linux(
         all_resolution_null_results.append(resolution_null_result)
 
     fine_time = time.time() - fine_start
-    print(f"\n⏱️  FINE SEARCH TOTAL: {fine_time:.2f} seconds")
+    if verbose:
+        print(f"\nFINE SEARCH TOTAL: {fine_time:.2f} seconds")
 
     # Create comprehensive results dataframe
     df_results = pd.DataFrame(all_results)
@@ -486,7 +527,8 @@ def find_optimal_cell_resolution_linux(
     
     # Generate corrected null distribution if computing corrected p-values
     if compute_corrected_pvalues:
-        print("\n🔧 === GENERATING CORRECTED NULL DISTRIBUTION ===")
+        print("\n=== GENERATING CORRECTED NULL DISTRIBUTION ===")
+        print("Accounting for resolution selection bias...")
         corrected_start = time.time()
         
         # Filter out null results that failed to generate or timed out
@@ -495,25 +537,23 @@ def find_optimal_cell_resolution_linux(
         if valid_null_results:
             # Use the same function from ATAC
             corrected_null_distribution = time_function(
-                "📊 Corrected null distribution generation",
+                "Corrected null distribution generation",
                 generate_corrected_null_distribution,
                 all_resolution_results=valid_null_results,
                 n_permutations=num_pvalue_simulations
             )
             
             # Save corrected null distribution
-            save_start = time.time()
             corrected_null_dir = os.path.join(main_output_dir, "corrected_null")
             os.makedirs(corrected_null_dir, exist_ok=True)
             corrected_null_path = os.path.join(corrected_null_dir, f'corrected_null_distribution_{dr_type}.npy')
             np.save(corrected_null_path, corrected_null_distribution)
-            save_time = time.time() - save_start
-            print(f"⏱️  Saving corrected null: {save_time:.3f} seconds")
+            print(f"Corrected null distribution saved to: {corrected_null_path}")
             
             # Compute corrected p-values for all resolutions
-            print("\n📊 === COMPUTING CORRECTED P-VALUES ===")
+            print("\n=== COMPUTING CORRECTED P-VALUES ===")
             df_results = time_function(
-                "📈 Corrected p-values computation",
+                "Corrected p-values computation",
                 compute_corrected_pvalues_rna,
                 df_results=df_results,
                 corrected_null_distribution=corrected_null_distribution,
@@ -522,7 +562,6 @@ def find_optimal_cell_resolution_linux(
             )
             
             # Create visualization of corrected null distribution
-            viz_start = time.time()
             plt.figure(figsize=(10, 6))
             plt.hist(corrected_null_distribution, bins=50, alpha=0.7, color='lightblue', 
                     density=True, edgecolor='black')
@@ -544,15 +583,15 @@ def find_optimal_cell_resolution_linux(
             corrected_null_plot_path = os.path.join(corrected_null_dir, 'corrected_null_distribution.png')
             plt.savefig(corrected_null_plot_path, dpi=300, bbox_inches='tight')
             plt.close()
-            viz_time = time.time() - viz_start
-            print(f"⏱️  Corrected null visualization: {viz_time:.3f} seconds")
+            print(f"Corrected null distribution plot saved to: {corrected_null_plot_path}")
             
         else:
-            print("⚠️  Warning: No valid null distributions generated")
+            print("Warning: No valid null distributions generated, cannot compute corrected p-values")
             compute_corrected_pvalues = False
         
         corrected_time = time.time() - corrected_start
-        print(f"⏱️  CORRECTED P-VALUES TOTAL: {corrected_time:.2f} seconds")
+        if verbose:
+            print(f"CORRECTED P-VALUES TOTAL: {corrected_time:.2f} seconds")
     
     # Find final best resolution (excluding timed out ones)
     valid_results = df_results[(~df_results['cca_score'].isna()) & (~df_results['timed_out'])]
@@ -566,31 +605,29 @@ def find_optimal_cell_resolution_linux(
     final_best_corrected_pvalue = valid_results.loc[final_best_idx, 'corrected_pvalue'] if compute_corrected_pvalues else np.nan
     final_best_pc_indices = valid_results.loc[final_best_idx, 'pc_indices_used']
 
-    print(f"\n🏆 === FINAL RESULTS ===")
-    print(f"🎯 Best resolution: {final_best_resolution:.3f}")
-    print(f"📊 Best CCA score: {final_best_score:.4f}")
-    print(f"🧬 Number of clusters: {valid_results.loc[final_best_idx, 'n_clusters']}")
-    print(f"📐 Number of PCs used: {valid_results.loc[final_best_idx, 'n_pcs_used']}")
+    print(f"\n=== FINAL RESULTS ===")
+    print(f"Best resolution: {final_best_resolution:.3f}")
+    print(f"Best CCA score: {final_best_score:.4f}")
+    print(f"Number of clusters at best resolution: {valid_results.loc[final_best_idx, 'n_clusters']}")
+    print(f"Number of PCs used: {valid_results.loc[final_best_idx, 'n_pcs_used']}")
     if final_best_pc_indices is not None:
-        print(f"📊 Best visualization used PC{final_best_pc_indices[0]+1} + PC{final_best_pc_indices[1]+1}")
+        print(f"Best visualization used PC{final_best_pc_indices[0]+1} + PC{final_best_pc_indices[1]+1}")
     if not np.isnan(final_best_pvalue):
-        print(f"📈 Standard p-value: {final_best_pvalue:.4f}")
+        print(f"Standard p-value: {final_best_pvalue:.4f}")
     if compute_corrected_pvalues and not np.isnan(final_best_corrected_pvalue):
-        print(f"📊 Corrected p-value: {final_best_corrected_pvalue:.4f}")
+        print(f"Corrected p-value: {final_best_corrected_pvalue:.4f}")
     
     # Report timeout statistics
     total_timed_out = len(timed_out_resolutions)
     total_tested = len(all_results)
     if total_timed_out > 0:
-        print(f"\n⏰ TIMEOUT SUMMARY:")
+        print(f"\nTIMEOUT SUMMARY:")
         print(f"  - Total resolutions that timed out: {total_timed_out}")
         print(f"  - Total resolutions tested: {total_tested}")
         print(f"  - Success rate: {((total_tested - total_timed_out) / total_tested * 100):.1f}%")
         print(f"  - Timed out resolutions: {timed_out_resolutions}")
 
-    # Create comprehensive summary and save results
-    final_processing_start = time.time()
-    
+    # Create comprehensive summary
     create_comprehensive_summary_rna(
         df_results=df_results,
         best_resolution=final_best_resolution,
@@ -602,13 +639,14 @@ def find_optimal_cell_resolution_linux(
     # Save complete results
     results_csv_path = os.path.join(main_output_dir, f"all_resolution_results_{dr_type}.csv")
     df_results.to_csv(results_csv_path, index=False)
+    print(f"\nAll results saved to: {results_csv_path}")
 
     # Create a final summary report with timing information
     final_summary_path = os.path.join(main_output_dir, "FINAL_SUMMARY.txt")
     total_runtime = time.time() - start_time
     
     with open(final_summary_path, 'w') as f:
-        f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY (PROFILED GPU/Linux Version with Timeout)\n")
+        f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY (GPU/Linux Version with Timeout)\n")
         f.write("=" * 80 + "\n\n")
         f.write(f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Total runtime: {total_runtime:.2f} seconds\n")
@@ -620,7 +658,7 @@ def find_optimal_cell_resolution_linux(
         f.write(f"  - Fine search: {fine_time:.2f} seconds\n")
         if compute_corrected_pvalues and 'corrected_time' in locals():
             f.write(f"  - Corrected p-values: {corrected_time:.2f} seconds\n")
-        f.write(f"  - Final processing: {time.time() - final_processing_start:.2f} seconds\n\n")
+        f.write("\n")
         
         f.write("TIMEOUT STATISTICS:\n")
         f.write(f"  - Total resolutions tested: {total_tested}\n")
@@ -653,22 +691,29 @@ def find_optimal_cell_resolution_linux(
         f.write(f"\nValid resolutions tested: {len(valid_results)}\n")
         f.write(f"  - Coarse search: {len(valid_results[valid_results['pass'] == 'coarse'])} resolutions\n")
         f.write(f"  - Fine search: {len(valid_results[valid_results['pass'] == 'fine'])} resolutions\n")
+        
+        f.write("\nOUTPUT FILES:\n")
+        f.write(f"  - Main directory: {main_output_dir}\n")
+        f.write(f"  - Summary plots: {os.path.join(main_output_dir, 'summary')}\n")
+        f.write(f"  - Resolution results: {os.path.join(main_output_dir, 'resolutions')}\n")
+        if compute_corrected_pvalues:
+            f.write(f"  - Corrected p-values: {os.path.join(main_output_dir, 'corrected_p_values')}\n")
+            f.write(f"  - Corrected null distribution: {os.path.join(main_output_dir, 'corrected_null')}\n")
     
-    final_processing_time = time.time() - final_processing_start
-    print(f"⏱️  Final processing: {final_processing_time:.3f} seconds")
-
-    print(f"\n🚀 [PROFILED Find Optimal Resolution RNA-seq] TOTAL RUNTIME: {total_runtime:.2f} seconds")
-    print("\n📊 PERFORMANCE SUMMARY:")
-    print(f"  🔧 Setup: {setup_time:.1f}s")
-    print(f"  🔍 Coarse search: {coarse_time:.1f}s ({coarse_time/total_runtime*100:.1f}%)")
-    print(f"  🔬 Fine search: {fine_time:.1f}s ({fine_time/total_runtime*100:.1f}%)")
-    if compute_corrected_pvalues and 'corrected_time' in locals():
-        print(f"  📊 Corrected p-values: {corrected_time:.1f}s ({corrected_time/total_runtime*100:.1f}%)")
-    print(f"  📝 Final processing: {final_processing_time:.1f}s")
+    print(f"\nFinal summary saved to: {final_summary_path}")
     
-    if total_timed_out > 0:
-        print(f"\n⏰ TIMEOUT IMPACT:")
-        print(f"  - Resolutions skipped due to timeout: {total_timed_out}")
-        print(f"  - Time saved by skipping: ~{total_timed_out * resolution_timeout / 3600:.1f} hours")
+    if verbose:
+        print(f"\n[Find Optimal Resolution RNA-seq Linux] Total runtime: {total_runtime:.2f} seconds")
+        print("\nPERFORMANCE SUMMARY:")
+        print(f"  Setup: {setup_time:.1f}s")
+        print(f"  Coarse search: {coarse_time:.1f}s ({coarse_time/total_runtime*100:.1f}%)")
+        print(f"  Fine search: {fine_time:.1f}s ({fine_time/total_runtime*100:.1f}%)")
+        if compute_corrected_pvalues and 'corrected_time' in locals():
+            print(f"  Corrected p-values: {corrected_time:.1f}s ({corrected_time/total_runtime*100:.1f}%)")
+        
+        if total_timed_out > 0:
+            print(f"\nTIMEOUT IMPACT:")
+            print(f"  - Resolutions skipped due to timeout: {total_timed_out}")
+            print(f"  - Time saved by skipping: ~{total_timed_out * resolution_timeout / 3600:.1f} hours")
 
     return final_best_resolution, df_results

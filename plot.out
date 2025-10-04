@@ -22,11 +22,11 @@ Resuming process from previous progress:
         "visualization": false
     },
     "multiomics": {
-        "glue_integration": false,
+        "glue_integration": true,
         "glue_preprocessing": false,
         "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
+        "glue_gene_activity": true,
+        "glue_cell_types": true,
         "glue_visualization": false,
         "integration_preprocessing": false,
         "dimensionality_reduction": false,
@@ -35,7 +35,7 @@ Resuming process from previous progress:
     },
     "system_info": {
         "platform": "Linux",
-        "python_version": "3.10.13 | packaged by conda-forge | (main, Dec 23 2023, 15:36:39) [GCC 12.3.0]",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
         "use_gpu": true,
         "linux_system": true
     }
@@ -45,9 +45,368 @@ Resuming process from previous progress:
 RUNNING MULTIOMICS PIPELINE
 ============================================================
 Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/Benchmark/multiomics
-Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
+Initial status flags: {'glue_integration': True, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
 Step 2: Running integration preprocessing...
 Minimum dimension requested by scrublet is 30, raise sample standard accordingly
 === Read input dataset ===
 Dimension of raw data (cells x genes): 861190 x 36601
 Modified sample IDs by adding modality information from 'modality' column
+After cell filtering -- Cells remaining: 835934, Genes remaining: 36601
+After gene filtering -- Cells remaining: 835934, Genes remaining: 34481
+After remove MT_gene and user input cell -- Cells remaining: 835934, Genes remaining: 34468
+Sample counts BEFORE filtering:
+sample
+ENCSR568QKW_ATAC    17447
+ENCSR568QKW_RNA     16919
+ENCSR618WVK_RNA     16288
+ENCSR245BNT_ATAC    15812
+ENCSR618WVK_ATAC    15491
+                    ...  
+ENCSR636WIB_RNA      5128
+ENCSR694BTU_ATAC     4963
+ENCSR636WIB_ATAC     4910
+ENCSR033MDU_ATAC     4606
+ENCSR033MDU_RNA      4470
+Length: 88, dtype: int64
+
+Samples retained (>= 30 cells): ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC', 'ENCSR158DQA_RNA', 'ENCSR201BHG_ATAC', 'ENCSR201BHG_RNA', 'ENCSR212VKB_ATAC', 'ENCSR212VKB_RNA', 'ENCSR222ZFD_ATAC', 'ENCSR222ZFD_RNA', 'ENCSR233SQG_ATAC', 'ENCSR233SQG_RNA', 'ENCSR245BNT_ATAC', 'ENCSR245BNT_RNA', 'ENCSR255POA_ATAC', 'ENCSR255POA_RNA', 'ENCSR264JIX_ATAC', 'ENCSR264JIX_RNA', 'ENCSR265ZRW_ATAC', 'ENCSR265ZRW_RNA', 'ENCSR284PXA_ATAC', 'ENCSR284PXA_RNA', 'ENCSR300BCB_ATAC', 'ENCSR300BCB_RNA', 'ENCSR316WAS_ATAC', 'ENCSR316WAS_RNA', 'ENCSR320RLS_ATAC', 'ENCSR320RLS_RNA', 'ENCSR351CSQ_ATAC', 'ENCSR351CSQ_RNA', 'ENCSR420IUS_ATAC', 'ENCSR420IUS_RNA', 'ENCSR449VCG_ATAC', 'ENCSR449VCG_RNA', 'ENCSR488VFJ_ATAC', 'ENCSR488VFJ_RNA', 'ENCSR508WRP_ATAC', 'ENCSR508WRP_RNA', 'ENCSR511RDV_ATAC', 'ENCSR511RDV_RNA', 'ENCSR534YJW_ATAC', 'ENCSR534YJW_RNA', 'ENCSR549KDX_ATAC', 'ENCSR549KDX_RNA', 'ENCSR568QKW_ATAC', 'ENCSR568QKW_RNA', 'ENCSR573DJW_ATAC', 'ENCSR573DJW_RNA', 'ENCSR613LBN_ATAC', 'ENCSR613LBN_RNA', 'ENCSR618WVK_ATAC', 'ENCSR618WVK_RNA', 'ENCSR636WIB_ATAC', 'ENCSR636WIB_RNA', 'ENCSR662XCU_ATAC', 'ENCSR662XCU_RNA', 'ENCSR694BTU_ATAC', 'ENCSR694BTU_RNA', 'ENCSR727WGO_ATAC', 'ENCSR727WGO_RNA', 'ENCSR768WQT_ATAC', 'ENCSR768WQT_RNA', 'ENCSR775AZP_ATAC', 'ENCSR775AZP_RNA', 'ENCSR788DZO_ATAC', 'ENCSR788DZO_RNA', 'ENCSR793DNM_ATAC', 'ENCSR793DNM_RNA', 'ENCSR808RAT_ATAC', 'ENCSR808RAT_RNA', 'ENCSR822CXI_ATAC', 'ENCSR822CXI_RNA', 'ENCSR823KSL_ATAC', 'ENCSR823KSL_RNA', 'ENCSR851GBP_ATAC', 'ENCSR851GBP_RNA', 'ENCSR923FKN_ATAC', 'ENCSR923FKN_RNA', 'ENCSR925IHI_ATAC', 'ENCSR925IHI_RNA', 'ENCSR975IXL_ATAC', 'ENCSR975IXL_RNA', 'ENCSR980AFI_ATAC', 'ENCSR980AFI_RNA', 'ENCSR987VTJ_ATAC', 'ENCSR987VTJ_RNA']
+
+Sample counts AFTER filtering:
+sample
+ENCSR568QKW_ATAC    17447
+ENCSR568QKW_RNA     16919
+ENCSR618WVK_RNA     16288
+ENCSR245BNT_ATAC    15812
+ENCSR618WVK_ATAC    15491
+                    ...  
+ENCSR636WIB_RNA      5128
+ENCSR694BTU_ATAC     4963
+ENCSR636WIB_ATAC     4910
+ENCSR033MDU_ATAC     4606
+ENCSR033MDU_RNA      4470
+Name: count, Length: 88, dtype: int64
+Final filtering -- Cells remaining: 835934, Genes remaining: 17504
+Running doublet detection with scrublet on 835934 cells...
+Detected 25134 doublets out of 835934 cells
+After doublet removal: 810800 cells remaining
+Preprocessing complete!
+Preprocessed data saved to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/adata_sample.h5ad
+Function execution time: 5403.05 seconds
+✓ Integration preprocessing completed successfully
+Step 3: Running dimensionality reduction (pseudobulk + PCA)...
+  Sub-step 3a: Computing pseudobulk...
+No batch column specified, using 'modality' as the batch column.
+Using PyTorch with GPU: NVIDIA H100 NVL
+Initial GPU memory: 0.00/0.00 GB allocated/reserved
+Processing 32 cell types across 88 samples
+Creating layer for 1
+Creating layer for 10
+Creating layer for 11
+Creating layer for 12
+Creating layer for 13
+Creating layer for 14
+Creating layer for 15
+Creating layer for 16
+Creating layer for 17
+Creating layer for 18
+Creating layer for 19
+Creating layer for 2
+Creating layer for 20
+Creating layer for 21
+Creating layer for 22
+Creating layer for 23
+Creating layer for 24
+Creating layer for 25
+Creating layer for 26
+Creating layer for 27
+Creating layer for 28
+Creating layer for 29
+Creating layer for 3
+Creating layer for 30
+Creating layer for 31
+Creating layer for 32
+Creating layer for 4
+Creating layer for 5
+Creating layer for 6
+Creating layer for 7
+Creating layer for 8
+Creating layer for 9
+
+Processing cell type: 1
+  Applying batch correction on 17494 genes
+  Combat completed successfully, 17494 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 10
+  Applying batch correction on 17500 genes
+  Combat completed successfully, 17500 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 11
+  Applying batch correction on 17443 genes
+  Combat completed successfully, 17443 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 12
+  Applying batch correction on 17472 genes
+  Combat completed successfully, 17472 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 13
+  Applying batch correction on 17489 genes
+  Combat completed successfully, 17489 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 14
+  Applying batch correction on 17479 genes
+  Combat completed successfully, 17479 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 15
+  Applying batch correction on 17450 genes
+  Combat completed successfully, 17450 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 16
+  Applying batch correction on 17488 genes
+  Combat completed successfully, 17488 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 17
+  Applying batch correction on 17482 genes
+  Combat completed successfully, 17482 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 18
+  Applying batch correction on 17475 genes
+  Combat completed successfully, 17475 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 19
+  Applying batch correction on 17455 genes
+  Combat completed successfully, 17455 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 2
+  Applying batch correction on 17502 genes
+  Combat completed successfully, 17502 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 20
+  Applying batch correction on 17462 genes
+  Combat completed successfully, 17462 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 21
+  Applying batch correction on 17418 genes
+  Combat completed successfully, 17418 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 22
+  Applying batch correction on 17449 genes
+  Combat completed successfully, 17449 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 23
+  Applying batch correction on 17434 genes
+  Combat completed successfully, 17434 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 24
+  Applying batch correction on 17454 genes
+  Combat completed successfully, 17454 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 25
+  Applying batch correction on 17409 genes
+  Combat completed successfully, 17409 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 26
+  Applying batch correction on 17402 genes
+  Combat completed successfully, 17402 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 27
+  Applying batch correction on 17406 genes
+  Combat completed successfully, 17406 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 28
+  Applying batch correction on 17449 genes
+  Combat completed successfully, 17449 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 29
+  Applying batch correction on 17225 genes
+  Combat completed successfully, 17225 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 3
+  Applying batch correction on 17498 genes
+  Combat completed successfully, 17498 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 30
+  Applying batch correction on 16938 genes
+  Combat completed successfully, 16938 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 31
+  Applying batch correction on 16773 genes
+  Combat completed successfully, 16773 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 32
+  Applying batch correction on 17426 genes
+  Combat completed successfully, 17426 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 4
+  Applying batch correction on 17502 genes
+  Combat completed successfully, 17502 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 5
+  Applying batch correction on 17497 genes
+  Combat completed successfully, 17497 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 6
+  Applying batch correction on 17483 genes
+  Combat completed successfully, 17483 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 7
+  Applying batch correction on 17498 genes
+  Combat completed successfully, 17498 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 8
+  Applying batch correction on 17478 genes
+  Combat completed successfully, 17478 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 9
+  Applying batch correction on 17485 genes
+  Combat completed successfully, 17485 genes remaining
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Concatenating all cell type HVGs into single AnnData
+Applying final HVG selection on 64000 concatenated genes
+Final HVG selection: 2000 genes
+
+Creating final HVG expression matrix
+
+Total runtime: 32.45 seconds
+Final HVG matrix shape: (32, 88)
+Final AnnData shape: (88, 2000)
+  Sub-step 3b: Processing with PCA...
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - count_output_dir: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(88, 2000), proportion=(88, 32)
+[DimRed] Computing PCA for RNA data with 10 components on (88, 2000) data
+[PCA] Success. Shape: (88, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (88, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (88, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 10 components...
+[run_dimension_reduction_proportion] Harmony failed: No module named 'harmonypy'. Using PCA only.
+[run_dimension_reduction_proportion] Completed using PCA. Shape: (88, 10)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file paths:
+  - adata: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/adata_sample.h5ad
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving adata to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/adata_sample.h5ad
+[Save] ✓ Successfully saved adata (8080.6 MB)
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (1.0 MB)
+[process_anndata_with_dimension_reduction] ✓ All files saved successfully
+
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 517.35 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ✓ ATTEMPTED
+✓ Dimensionality reduction completed successfully
+Step 4: Visualizing multimodal embedding...
+Creating default embedding visualization (all samples)
+Expression key: X_DR_expression
+Proportion key: X_DR_proportion
+Created/using visualization directory: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/visualization
+Expression plot saved to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/visualization/all_samples_expression.png
+Proportion plot saved to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/visualization/all_samples_proportion.png
+✓ Embedding visualization completed successfully
+
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/multiomics
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
+Final status flags: {'glue_integration': True, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Completed steps: 6/10
+GLUE sub-steps completed: 2/5
+
+✓ Multiomics pipeline completed successfully!
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+Multiomics Pipeline: ⚠ PARTIAL
+  - glue_integration: ✓
+  - glue_preprocessing: ✗
+  - glue_training: ✗
+  - glue_gene_activity: ✓
+  - glue_cell_types: ✓
+  - glue_visualization: ✗
+  - integration_preprocessing: ✓
+  - dimensionality_reduction: ✓
+  - embedding_visualization: ✓
+  - optimal_resolution: ✗
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark
+Status file: /dcs07/hongkai/data/harry/result/Benchmark/sys_log/main_process_status.json
+Execution time: 5957.1813 seconds
