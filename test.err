@@ -1,4 +1,20 @@
-usage: monitor_wrapper.py [-h] --outdir OUTDIR [--label LABEL] --cmd CMD
-                          [--interval INTERVAL] [--nsys] [--perf]
-                          [--workdir WORKDIR]
-monitor_wrapper.py: error: the following arguments are required: --outdir
+... storing 'celltype' as categorical
+... storing 'old' as categorical
+... storing 'large' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'celltype' as categorical
+... storing 'sample' as categorical
+... storing 'old' as categorical
+... storing 'large' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+2025-10-04 17:58:55 - INFO - init
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical

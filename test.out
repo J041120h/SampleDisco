@@ -1,0 +1,369 @@
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": true,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
+
+============================================================
+RUNNING RNA PIPELINE
+============================================================
+Starting RNA wrapper function with provided parameters...
+Starting preprocessing...
+=== Reading input dataset ===
+Raw shape: 46712 cells × 14881 genes
+All required columns are present in adata.obs.
+Before GPU conversion. Type of adata.X: <class 'scipy.sparse._csc.csc_matrix'>
+adata.X dtype: float64
+adata.X is sparse: True
+Converting adata.X from float64 to float32
+Converted to GPU. Type of adata.X: <class 'cupyx.scipy.sparse._csc.csc_matrix'>
+filtered out 4938 genes that are detected in less than 500 cells
+filtered out 142 cells that have less than 500 genes expressed
+After initial filtering: 46570 cells × 9943 genes
+After mitochondrial filtering: 46516 cells × 9943 genes
+After gene exclusion filtering: 46516 cells × 9930 genes
+After sample filtering: 46516 cells × 9930 genes
+Number of samples remaining: 25
+After final gene filtering: 46516 cells × 9930 genes
+Processed shape: 46516 cells × 9930 genes
+Preprocessing complete!
+=== [GPU] Processing data for clustering ===
+=== [GPU] Running Harmony integration ===
+Variables to regress: sample
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+	Completed 3 / 30 iteration(s).
+	Completed 4 / 30 iteration(s).
+	Completed 5 / 30 iteration(s).
+	Completed 6 / 30 iteration(s).
+	Completed 7 / 30 iteration(s).
+	Completed 8 / 30 iteration(s).
+	Completed 9 / 30 iteration(s).
+Reach convergence after 9 iteration(s).
+End of harmony for adata_cluster.
+=== [GPU] Processing data for sample differences ===
+Total runtime: 45.62 seconds
+Starting cell type clustering at resolution: 0.88
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.88)...
+[cell_types] Found 15 clusters after Leiden clustering.
+[cell_types] Finished assigning cell types.
+[cell_types] Computing UMAP...
+[cell_types] Converting GPU arrays to CPU...
+[cell_types] Generating UMAP visualizations...
+[generate_umap_visualizations] Generating UMAP plots...
+[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (15 categories)
+[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/umap_cell_type.png
+[cell_types] Total runtime: 2.66 seconds
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 11 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad
+Starting dimensionality reduction...
+Using PyTorch with GPU: NVIDIA H100 NVL
+Initial GPU memory: 0.03/0.03 GB allocated/reserved
+Processing 15 cell types across 25 samples
+Creating layer for 1
+Creating layer for 10
+Creating layer for 11
+Creating layer for 12
+Creating layer for 13
+Creating layer for 14
+Creating layer for 15
+Creating layer for 2
+Creating layer for 3
+Creating layer for 4
+Creating layer for 5
+Creating layer for 6
+Creating layer for 7
+Creating layer for 8
+Creating layer for 9
+
+Processing cell type: 1
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 10
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 11
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 12
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 13
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 14
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 15
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 2
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 3
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 4
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 5
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 6
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 7
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 8
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Processing cell type: 9
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+
+Concatenating all cell type HVGs into single AnnData
+Applying final HVG selection on 30000 concatenated genes
+Final HVG selection: 2000 genes
+
+Creating final HVG expression matrix
+
+Total runtime: 26.02 seconds
+Final HVG matrix shape: (15, 25)
+Final AnnData shape: (25, 2000)
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - count_output_dir: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=24, n_proportion_components=15
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(25, 2000), proportion=(25, 15)
+[DimRed] Computing PCA for RNA data with 24 components on (25, 2000) data
+[PCA] Success. Shape: (25, 24)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (25, 24))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (25, 24))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 15 components...
+[run_dimension_reduction_proportion] Harmony failed: No module named 'harmonypy'. Using PCA only.
+[run_dimension_reduction_proportion] Completed using PCA. Shape: (25, 15)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file paths:
+  - adata: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving adata to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad
+[Save] ✓ Successfully saved adata (207.0 MB)
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (0.5 MB)
+[process_anndata_with_dimension_reduction] ✓ All files saved successfully
+
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 16.99 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ✓ ATTEMPTED
+Starting trajectory analysis...
+
+Processing X_DR_proportion...
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.3044
+PC1 + PC3: CCA score = 0.3466
+PC1 + PC4: CCA score = 0.2817
+PC1 + PC5: CCA score = 0.2792
+PC1 + PC6: CCA score = 0.2862
+PC1 + PC7: CCA score = 0.3196
+PC1 + PC8: CCA score = 0.4706
+PC1 + PC9: CCA score = 0.3437
+PC1 + PC10: CCA score = 0.2792
+PC2 + PC3: CCA score = 0.2860
+PC2 + PC4: CCA score = 0.2026
+PC2 + PC5: CCA score = 0.1991
+PC2 + PC6: CCA score = 0.2087
+PC2 + PC7: CCA score = 0.2526
+PC2 + PC8: CCA score = 0.4279
+PC2 + PC9: CCA score = 0.2825
+PC2 + PC10: CCA score = 0.1991
+PC3 + PC4: CCA score = 0.2616
+PC3 + PC5: CCA score = 0.2589
+PC3 + PC6: CCA score = 0.2664
+PC3 + PC7: CCA score = 0.3020
+PC3 + PC8: CCA score = 0.4588
+PC3 + PC9: CCA score = 0.3275
+PC3 + PC10: CCA score = 0.2589
+PC4 + PC5: CCA score = 0.1622
+PC4 + PC6: CCA score = 0.1740
+PC4 + PC7: CCA score = 0.2247
+PC4 + PC8: CCA score = 0.4121
+PC4 + PC9: CCA score = 0.2579
+PC4 + PC10: CCA score = 0.1622
+PC5 + PC6: CCA score = 0.1699
+PC5 + PC7: CCA score = 0.2216
+PC5 + PC8: CCA score = 0.4104
+PC5 + PC9: CCA score = 0.2552
+PC5 + PC10: CCA score = 0.1578
+PC6 + PC7: CCA score = 0.2303
+PC6 + PC8: CCA score = 0.4151
+PC6 + PC9: CCA score = 0.2628
+PC6 + PC10: CCA score = 0.1699
+PC7 + PC8: CCA score = 0.4388
+PC7 + PC9: CCA score = 0.2988
+PC7 + PC10: CCA score = 0.2216
+PC8 + PC9: CCA score = 0.4567
+PC8 + PC10: CCA score = 0.4103
+PC9 + PC10: CCA score = 0.2552
+Best combination: PC1 + PC8 with score 0.4706
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/CCA/pca_10d_cca_proportion.pdf
+
+Processing X_DR_expression...
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2203
+PC1 + PC3: CCA score = 0.5134
+PC1 + PC4: CCA score = 0.3266
+PC1 + PC5: CCA score = 0.4082
+PC1 + PC6: CCA score = 0.3706
+PC1 + PC7: CCA score = 0.2284
+PC1 + PC8: CCA score = 0.2138
+PC1 + PC9: CCA score = 0.2599
+PC1 + PC10: CCA score = 0.2153
+PC2 + PC3: CCA score = 0.4702
+PC2 + PC4: CCA score = 0.2533
+PC2 + PC5: CCA score = 0.3523
+PC2 + PC6: CCA score = 0.3079
+PC2 + PC7: CCA score = 0.0983
+PC2 + PC8: CCA score = 0.0564
+PC2 + PC9: CCA score = 0.1582
+PC2 + PC10: CCA score = 0.0620
+PC3 + PC4: CCA score = 0.5284
+PC3 + PC5: CCA score = 0.5824
+PC3 + PC6: CCA score = 0.5566
+PC3 + PC7: CCA score = 0.4740
+PC3 + PC8: CCA score = 0.4671
+PC3 + PC9: CCA score = 0.4899
+PC3 + PC10: CCA score = 0.4678
+PC4 + PC5: CCA score = 0.4269
+PC4 + PC6: CCA score = 0.3911
+PC4 + PC7: CCA score = 0.2603
+PC4 + PC8: CCA score = 0.2476
+PC4 + PC9: CCA score = 0.2883
+PC4 + PC10: CCA score = 0.2489
+PC5 + PC6: CCA score = 0.4614
+PC5 + PC7: CCA score = 0.3574
+PC5 + PC8: CCA score = 0.3483
+PC5 + PC9: CCA score = 0.3783
+PC5 + PC10: CCA score = 0.3492
+PC6 + PC7: CCA score = 0.3138
+PC6 + PC8: CCA score = 0.3033
+PC6 + PC9: CCA score = 0.3373
+PC6 + PC10: CCA score = 0.3044
+PC7 + PC8: CCA score = 0.0826
+PC7 + PC9: CCA score = 0.1693
+PC7 + PC10: CCA score = 0.0865
+PC8 + PC9: CCA score = 0.1489
+PC8 + PC10: CCA score = 0.0317
+PC9 + PC10: CCA score = 0.1511
+Best combination: PC3 + PC5 with score 0.5824
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/CCA/pca_10d_cca_expression.pdf
+Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/CCA/pseudotime_proportion.csv
+Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/CCA/pseudotime_expression.csv
+
+==================================================
+CCA ANALYSIS SUMMARY
+==================================================
+X_DR_proportion: CCA score = 0.4706 (using PC1 + PC8)
+X_DR_expression: CCA score = 0.5824 (using PC3 + PC5)
+
+Total runtime: 0.60 seconds
+==================================================
+P-value for observed correlation 0.47057174006114216: 0.052
+[CCA p-test] Runtime: 0.81 seconds
+P-value for observed correlation 0.5823708609185801: 0.009
+[CCA p-test] Runtime: 0.80 seconds
+RNA analysis completed successfully!
+
+✓ RNA pipeline completed successfully!
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✗
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample
+Status file: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/sys_log/main_process_status.json
+Execution time: 111.8990 seconds

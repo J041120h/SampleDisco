@@ -221,11 +221,8 @@ def rna_wrapper(
                 sample_meta_path=rna_sample_meta_path,
                 output_dir=rna_output_dir,
                 sample_column=sample_col,
-                cell_type_column=cell_type_column,
                 cell_meta_path=cell_meta_path,
                 batch_key=batch_col,
-                markers=markers,
-                cluster_resolution=cluster_resolution,
                 num_PCs=num_PCs,
                 num_harmony=num_harmony,
                 num_features=num_features,
@@ -234,9 +231,6 @@ def rna_wrapper(
                 pct_mito_cutoff=pct_mito_cutoff,
                 exclude_genes=exclude_genes,
                 doublet=doublet,
-                method=method,
-                metric=metric,
-                distance_mode=distance_mode,
                 vars_to_regress=vars_to_regress,
                 verbose=verbose
             )
@@ -246,11 +240,8 @@ def rna_wrapper(
                 sample_meta_path=rna_sample_meta_path,
                 output_dir=rna_output_dir,
                 sample_column=sample_col,
-                cell_type_column=cell_type_column,
                 cell_meta_path=cell_meta_path,
                 batch_key=batch_col,
-                markers=markers,
-                cluster_resolution=cluster_resolution,
                 num_PCs=num_PCs,
                 num_harmony=num_harmony,
                 num_features=num_features,
@@ -259,12 +250,10 @@ def rna_wrapper(
                 pct_mito_cutoff=pct_mito_cutoff,
                 exclude_genes=exclude_genes,
                 doublet=doublet,
-                method=method,
-                metric=metric,
-                distance_mode=distance_mode,
                 vars_to_regress=vars_to_regress,
                 verbose=verbose
             )
+
         status_flags["rna"]["preprocessing"] = True
         
         # Standardize column names after preprocessing
@@ -299,7 +288,7 @@ def rna_wrapper(
     
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
-        print("Starting cell type clustering...")
+        print("Starting cell type clustering at resolution:", cluster_resolution)
         if linux_system and use_gpu:
             AnnData_cell = cell_types_linux(
                 adata=AnnData_cell,

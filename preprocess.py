@@ -11,7 +11,6 @@ def anndata_cluster(
     adata_cluster,
     output_dir,
     sample_column = 'sample',
-    cluster_resolution=0.8,
     num_features=2000,
     num_PCs=20,
     num_harmony=30,
@@ -50,7 +49,6 @@ def anndata_cluster(
     if verbose:
         print('=== Running Harmony integration for clustering ===')
         print('Variables to be regressed out: ', ','.join(vars_to_regress_for_harmony or []))
-        print(f'Clustering cluster_resolution: {cluster_resolution}')
 
     # Step A3: Harmony
     Z = harmonize(
@@ -106,11 +104,8 @@ def preprocess(
     sample_meta_path,
     output_dir,
     sample_column = 'sample',
-    cell_type_column='cell_type',
     cell_meta_path=None,
     batch_key='batch',
-    markers=None,
-    cluster_resolution=0.8,
     num_PCs=20,
     num_harmony=30,
     num_features=2000,
@@ -237,7 +232,6 @@ def preprocess(
     adata_cluster=adata_cluster,
     output_dir=output_dir,
     sample_column=sample_column,
-    cluster_resolution=cluster_resolution,
     num_features=num_features,
     num_PCs=num_PCs,
     num_harmony=num_harmony,

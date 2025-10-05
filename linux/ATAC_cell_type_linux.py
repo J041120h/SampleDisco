@@ -8,6 +8,7 @@ import rapids_singlecell as rsc
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
+from utils.random_seed import set_seed
 
 def standardize_cell_type_column_linux(adata, verbose=True):
     """
@@ -111,6 +112,7 @@ def cell_types_atac_linux(
     - Updated AnnData object with assigned cell types
     """
     start_time = time.time() if verbose else None
+    set_seed(42)
     
     # Track recursion depth for debugging and preventing infinite loops
     if _recursion_depth > 10:

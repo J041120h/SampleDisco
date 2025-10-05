@@ -48,7 +48,7 @@ def run_lsi_expression(
             pb_adata.X = pb_adata.X.tocsr()
         
         ac.pp.tfidf(pb_adata, scale_factor=1e4)
-        sc.tl.lsi(pb_adata, n_comps=n_components)
+        sc.tl.lsi(pb_adata, n_comps=n_components, random_state=42)
         lsi_coords = pb_adata.obsm['X_lsi']
         
         lsi_df = pd.DataFrame(
@@ -230,7 +230,7 @@ def run_snapatac2_spectral(
         snap.pp.select_features(pb_adata, n_features=n_features_to_select)
         
         # Compute spectral embedding
-        snap.tl.spectral(pb_adata, n_comps=n_components)
+        snap.tl.spectral(pb_adata, n_comps=n_components, random_state = 42)
         
         # Extract spectral coordinates
         spectral_coords = pb_adata.obsm['X_spectral']
@@ -414,7 +414,7 @@ def run_dimension_reduction_expression(
             if pb_adata.X.max() > 100:
                 sc.pp.log1p(pb_adata)
             
-            sc.tl.pca(pb_adata, n_comps=n_components, svd_solver='arpack')
+            sc.tl.pca(pb_adata, n_comps=n_components, svd_solver='arpack', random_state = 42)
             
             pca_coords = pb_adata.obsm['X_pca']
             pca_df = pd.DataFrame(
@@ -504,7 +504,7 @@ def run_dimension_reduction_proportion(
         print(f"[run_dimension_reduction_proportion] Computing PCA with {n_components} components...")
     
     from sklearn.decomposition import PCA
-    pca = PCA(n_components=n_components)
+    pca = PCA(n_components=n_components, random_state =42)
     pca_coords = pca.fit_transform(proportion_df)
     
     if pseudobulk_anndata is not None:

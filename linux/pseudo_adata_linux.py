@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 # Import the TF-IDF function
 from tf_idf import tfidf_memory_efficient
+from utils.random_seed import set_seed
 
 
 def clear_gpu_memory():
@@ -560,7 +561,7 @@ def compute_pseudobulk_adata_linux(
     max_cells_per_batch : int
         Maximum number of cells to load to GPU at once
     """
-    
+    set_seed(seed=42)
     # Call the main GPU function
     cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu(
         adata=adata,

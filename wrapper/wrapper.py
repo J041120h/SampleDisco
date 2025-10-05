@@ -1,4 +1,5 @@
 import os
+os.environ['PYTHONHASHSEED'] = str(42)
 import json
 import sys
 import platform
@@ -7,6 +8,10 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
+import random
+import numpy as np
+np.random.seed(42)
+random.seed(42)
 
 # Import individual wrappers
 from .rna_wrapper import rna_wrapper
@@ -464,6 +469,7 @@ def wrapper(
             # Enable `managed_memory`
             import rmm
             import cupy as cp
+            cp.random.seed(42)
             from rmm.allocators.cupy import rmm_cupy_allocator
 
             rmm.reinitialize(managed_memory=True, pool_allocator=False)

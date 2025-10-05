@@ -14,7 +14,7 @@ import pandas as pd
 import os
 import scanpy as sc
 from visualization.visualization_helper import generate_umap_visualizations
-
+from utils.random_seed import set_seed
 
 def clean_obs_for_saving(adata, verbose=True):
     """
@@ -304,7 +304,7 @@ def cell_types_linux(
     - Updated AnnData object with assigned cell types
     """
     start_time = time.time() if verbose else None
-    
+    set_seed(42)
     # Track recursion depth for debugging and preventing infinite loops
     if _recursion_depth > 10:
         raise RuntimeError(f"Maximum recursion depth exceeded. Could not achieve {n_target_clusters} clusters.")
@@ -370,7 +370,7 @@ def cell_types_linux(
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
-            rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
+            rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
 
     # ============================================================================
     # DE NOVO CLUSTERING (NO EXISTING ANNOTATIONS) - RECURSIVE STRATEGY
@@ -383,7 +383,7 @@ def cell_types_linux(
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
-            rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
+            rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
 
         # ========================================================================
         # ADAPTIVE CLUSTERING WITH RECURSION
@@ -397,7 +397,8 @@ def cell_types_linux(
             rsc.tl.leiden(
                 adata,
                 resolution=cluster_resolution,
-                key_added='cell_type'
+                key_added='cell_type',
+                random_state=42
             )
             
             # Convert cluster labels to 1-based indexing as strings
@@ -479,7 +480,8 @@ def cell_types_linux(
             rsc.tl.leiden(
                 adata,
                 resolution=cluster_resolution,
-                key_added='cell_type'
+                key_added='cell_type',
+                random_state=42
             )
 
             # Convert cluster labels to 1-based indexing as strings

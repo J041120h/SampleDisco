@@ -125,7 +125,7 @@ def cell_types(
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
-            sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
+            sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
 
     # NO EXISTING ANNOTATIONS - RECURSIVE STRATEGY
     else:
@@ -136,7 +136,7 @@ def cell_types(
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
-            sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs)
+            sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
 
         # ADAPTIVE CLUSTERING WITH RECURSION
         if n_target_clusters is not None:
@@ -149,9 +149,9 @@ def cell_types(
                 adata,
                 resolution=cluster_resolution,
                 flavor='igraph',
-                n_iterations=2,
                 directed=False,
-                key_added='cell_type'
+                key_added='cell_type',
+                random_state=42
             )
             
             # Convert cluster labels to 1-based indexing as strings
@@ -234,9 +234,9 @@ def cell_types(
                 adata,
                 resolution=cluster_resolution,
                 flavor='igraph',
-                n_iterations=2,
                 directed=False,
-                key_added='cell_type'
+                key_added='cell_type',
+                random_state=42
             )
 
             # Convert cluster labels to 1-based indexing as strings

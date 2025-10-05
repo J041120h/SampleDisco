@@ -9,6 +9,7 @@ from harmony import harmonize
 import rapids_singlecell as rsc
 from scipy import sparse
 import time
+from utils.random_seed import set_seed
 
 def anndata_cluster(
     adata_cluster,
@@ -23,6 +24,7 @@ def anndata_cluster(
     if verbose:
         print('=== [GPU] Processing data for clustering ===')
 
+    set_seed(42)
     # Step A1: HVG selection (run on CPU before GPU conversion)
     rsc.pp.highly_variable_genes(
         adata_cluster,
@@ -93,11 +95,8 @@ def preprocess_linux(
     sample_meta_path,
     output_dir,
     sample_column='sample',
-    cell_type_column='cell_type',
     cell_meta_path=None,
     batch_key='batch',
-    markers=None,
-    cluster_resolution=0.8,
     num_PCs=20,
     num_harmony=30,
     num_features=2000,
@@ -106,9 +105,6 @@ def preprocess_linux(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    method='average',
-    metric='euclidean',
-    distance_mode='centroid',
     vars_to_regress=None,     # <-- non-mutable default
     verbose=True
 ):
