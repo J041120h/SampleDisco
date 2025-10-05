@@ -13,7 +13,7 @@
 ... storing 'sex' as categorical
 ... storing 'severity' as categorical
 ... storing 'batch' as categorical
-2025-10-04 17:58:55 - INFO - init
+2025-10-04 21:41:30 - INFO - init
 ... storing 'study' as categorical
 ... storing 'sex' as categorical
 ... storing 'severity' as categorical
