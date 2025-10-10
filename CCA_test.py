@@ -494,6 +494,107 @@ def create_comprehensive_summary_rna(df_results, best_resolution, column, output
         fontsize=10,
         ha='center'
     )
+    
+    ax1.set_xlabel('Resolution', fontsize=12)
+    ax1.set_ylabel('CCA Score', fontsize=12)
+    ax1.set_title(f'RNA-seq Resolution Optimization: {column}', fontsize=14, fontweight='bold')
+    ax1.legend(loc='best', fontsize=10)
+    ax1.grid(True, alpha=0.3)
+    
+    # Plot corrected p-values if available
+    if has_corrected_pvalues:
+        valid_pval_df = valid_df[~valid_df['corrected_pvalue'].isna()]
+        
+        coarse_pval = valid_pval_df[valid_pval_df['pass'] == 'coarse']
+        fine_pval = valid_pval_df[valid_pval_df['pass'] == 'fine']
+        
+        ax2.scatter(coarse_pval['resolution'], coarse_pval['corrected_pvalue'], 
+                    color='blue', s=80, alpha=0.6, label='Coarse Search', zorder=2)
+        ax2.scatter(fine_pval['resolution'], fine_pval['corrected_pvalue'], 
+                    color='green', s=60, alpha=0.8, label='Fine Search', zorder=3)
+        
+        ax2.plot(valid_pval_df['resolution'], valid_pval_df['corrected_pvalue'], 
+                 'k-', linewidth=1, alpha=0.4, zorder=1)
+        
+        ax2.axvline(x=best_resolution, color='red', linestyle='--', linewidth=2, zorder=4)
+        ax2.axhline(y=0.05, color='orange', linestyle=':', linewidth=2,
+                    label='p=0.05 threshold', zorder=4)
+        
+        # Add best p-value annotation
+        best_pval = valid_pval_df.loc[valid_pval_df['resolution'] == best_resolution, 'corrected_pvalue'].iloc[0]
+        ax2.annotate(f'p={best_pval:.4f}', 
+                     xy=(best_resolution, best_pval),
+                     xytext=(best_resolution + 0.05, best_pval + 0.05),
+                     arrowprops=dict(arrowstyle='->', color='red', alpha=0.7),
+                     fontsize=10, bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.5))
+        
+        ax2.set_xlabel('Resolution', fontsize=12)
+        ax2.set_ylabel('Corrected P-value', fontsize=12)
+        ax2.set_title('Corrected P-values (Accounting for Resolution Selection)', fontsize=14, fontweight='bold')
+        ax2.legend(loc='best', fontsize=10)
+        ax2.grid(True, alpha=0.3)
+        ax2.set_ylim(-0.05, 1.05)
+    
+    plt.tight_layout()
+    
+    # Save main plot
+    plot_path = os.path.join(summary_dir, f'resolution_optimization_summary_{column}.png')
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Summary plot saved to: {plot_path}")
+    
+    # Create text summary
+    summary_path = os.path.join(summary_dir, f'optimization_results_{column}.txt')
+    with open(summary_path, 'w') as f:
+        f.write(f"RNA-seq Resolution Optimization Results: {column}\n")
+        f.write("=" * 80 + "\n\n")
+        f.write(f"Best Resolution: {best_resolution:.3f}\n")
+        f.write(f"Best CCA Score: {best_score:.4f}\n")
+        
+        if has_corrected_pvalues:
+            f.write(f"Corrected P-value at Best Resolution: {best_pval:.4f}\n")
+        
+        f.write(f"\nTotal Resolutions Tested: {len(valid_df)}\n")
+        f.write(f"  - Coarse Search: {len(coarse_df)} resolutions\n")
+        f.write(f"  - Fine Search: {len(fine_df)} resolutions\n")
+        
+        f.write("\n" + "-" * 80 + "\n")
+        f.write("All Results (sorted by resolution):\n")
+        f.write("-" * 80 + "\n")
+        f.write(f"{'Resolution':<12} {'CCA Score':<12} {'Pass Type':<12}")
+        if has_corrected_pvalues:
+            f.write(f" {'Corrected P-value':<18}")
+        f.write("\n")
+        
+        for _, row in valid_df.iterrows():
+            f.write(f"{row['resolution']:<12.3f} {row['cca_score']:<12.4f} {row['pass']:<12}")
+            if has_corrected_pvalues and 'corrected_pvalue' in row:
+                pval = row['corrected_pvalue']
+                pval_str = f"{pval:.4f}" if not np.isnan(pval) else "N/A"
+                f.write(f" {pval_str:<18}")
+            f.write("\n")
+        
+        # Add summary statistics
+        f.write("\n" + "-" * 80 + "\n")
+        f.write("Summary Statistics:\n")
+        f.write(f"CCA Score Range: [{valid_df['cca_score'].min():.4f}, {valid_df['cca_score'].max():.4f}]\n")
+        f.write(f"Mean CCA Score: {valid_df['cca_score'].mean():.4f} ± {valid_df['cca_score'].std():.4f}\n")
+        
+        if has_corrected_pvalues:
+            valid_pvals = valid_df['corrected_pvalue'].dropna()
+            if len(valid_pvals) > 0:
+                f.write(f"\nCorrected P-value Statistics:\n")
+                f.write(f"Min P-value: {valid_pvals.min():.4f}\n")
+                f.write(f"Resolutions with p < 0.05: {(valid_pvals < 0.05).sum()}\n")
+                f.write(f"Resolutions with p < 0.01: {(valid_pvals < 0.01).sum()}\n")
+    
+    print(f"Summary report saved to: {summary_path}")
+    
+    # Save detailed results CSV
+    detailed_csv_path = os.path.join(summary_dir, f'detailed_results_{column}.csv')
+    df_sorted.to_csv(detailed_csv_path, index=False)
+    print(f"Detailed results saved to: {detailed_csv_path}")
+
 
 def cca_pvalue_test(
     pseudo_adata: AnnData,
@@ -670,16 +771,29 @@ def find_optimal_cell_resolution(
     --------
     tuple: (optimal_resolution, results_dataframe)
     """
+    # Helper function for timing
+    def time_function(func_name, func, *args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        if verbose:
+            print(f"  {func_name}: {end - start:.2f} seconds")
+        return result
+    
     start_time = time.time()
     
     # Extract DR type from column name for clearer output
     dr_type = column.replace('X_DR_', '') if column.startswith('X_DR_') else column
     
+    # Setup directories
+    setup_start = time.time()
     main_output_dir = os.path.join(output_dir, f"RNA_resolution_optimization_{dr_type}")
     os.makedirs(main_output_dir, exist_ok=True)
-    
     resolutions_dir = os.path.join(main_output_dir, "resolutions")
     os.makedirs(resolutions_dir, exist_ok=True)
+    setup_time = time.time() - setup_start
+    if verbose:
+        print(f"Directory setup: {setup_time:.2f} seconds")
 
     print(f"Starting RNA-seq resolution optimization for {column}...")
     print(f"Using representation: {use_rep} with {num_PCs} components")
@@ -692,13 +806,13 @@ def find_optimal_cell_resolution(
     all_results = []
     all_resolution_null_results = []
 
-    # First pass: coarse search
-    print("\n=== FIRST PASS: Coarse Search ===")
-    for resolution in np.arange(0.1, 1.01, 0.1):
-        print(f"\n\nTesting resolution: {resolution:.2f}\n")
+    def process_resolution(resolution, search_pass):
+        """Process a single resolution"""
+        print(f"\n\nTesting resolution: {resolution:.3f}\n")
+        resolution_start = time.time()
         
         # Create resolution-specific directory
-        resolution_dir = os.path.join(resolutions_dir, f"resolution_{resolution:.2f}")
+        resolution_dir = os.path.join(resolutions_dir, f"resolution_{resolution:.3f}")
         os.makedirs(resolution_dir, exist_ok=True)
         
         result_dict = {
@@ -706,7 +820,7 @@ def find_optimal_cell_resolution(
             'cca_score': np.nan,
             'p_value': np.nan,
             'corrected_pvalue': np.nan,
-            'pass': 'coarse',
+            'pass': search_pass,
             'n_clusters': 0,
             'n_samples': 0,
             'n_pcs_used': n_pcs_for_null,
@@ -727,9 +841,12 @@ def find_optimal_cell_resolution(
                 AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
             
             # Perform clustering using RNA-specific function
-            cell_types(
+            # FIXED: Use cell_type_column consistently (not cell_column)
+            clustering_result = time_function(
+                "Cell clustering",
+                cell_types,
                 AnnData_cell,
-                cell_type_column='cell_type',
+                cell_type_column='cell_type',  # FIXED: consistent parameter name
                 Save=False,
                 output_dir=resolution_dir,
                 cluster_resolution=resolution,
@@ -742,7 +859,15 @@ def find_optimal_cell_resolution(
             )
             
             # Assign cell types to samples
-            cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=resolution_dir, verbose=False)
+            assignment_result = time_function(
+                "Cell type assignment",
+                cell_type_assign,
+                AnnData_cell,
+                AnnData_sample,
+                Save=False,
+                output_dir=resolution_dir,
+                verbose=False
+            )
             
             # Record number of clusters
             n_clusters = AnnData_sample.obs['cell_type'].nunique()
@@ -750,7 +875,9 @@ def find_optimal_cell_resolution(
             print(f"Number of clusters: {n_clusters}")
             
             # Compute pseudobulk data
-            pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
+            pseudobulk_dict, pseudobulk_adata = time_function(
+                "Pseudobulk computation",
+                compute_pseudobulk_adata,
                 adata=AnnData_sample, 
                 batch_col=batch_col, 
                 sample_col=sample_col, 
@@ -764,7 +891,9 @@ def find_optimal_cell_resolution(
             result_dict['n_samples'] = len(pseudobulk_adata)
             
             # Perform dimension reduction
-            dimension_reduction(
+            dr_result = time_function(
+                "Dimension reduction",
+                dimension_reduction,
                 adata=AnnData_sample,
                 pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata,
@@ -772,7 +901,7 @@ def find_optimal_cell_resolution(
                 n_expression_components=num_DR_components,
                 n_proportion_components=num_DR_components,
                 batch_col=batch_col,
-                harmony_for_proportion = True,
+                harmony_for_proportion=True,
                 atac=False,  # RNA-seq data
                 output_dir=resolution_dir,
                 not_save=True,
@@ -781,14 +910,11 @@ def find_optimal_cell_resolution(
 
             # Check if column exists in pseudobulk_adata.uns
             if column not in pseudobulk_adata.uns:
-                print(f"Warning: {column} not found in pseudobulk_adata.uns. Skipping resolution {resolution:.2f}")
-                all_results.append(result_dict)
-                all_resolution_null_results.append(resolution_null_result)
-                continue
+                print(f"Warning: {column} not found in pseudobulk_adata.uns. Skipping resolution {resolution:.3f}")
+                return result_dict, resolution_null_result
             
-            # Run CCA analysis - use the same function as ATAC but adapted for RNA
+            # Run CCA analysis
             try:
-                # For RNA, we need to adapt the CCA analysis to work with the available data structure
                 # Get full PCA coordinates and metadata  
                 pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
                     adata=pseudobulk_adata,
@@ -812,204 +938,9 @@ def find_optimal_cell_resolution(
                 
                 result_dict['cca_score'] = cca_score
                 result_dict['n_pcs_used'] = min(n_pcs_for_null, pca_coords_full.shape[1])
-                print(f"Resolution {resolution:.2f}: CCA Score = {cca_score:.4f} (using {result_dict['n_pcs_used']} PCs)")
+                print(f"Resolution {resolution:.3f}: CCA Score = {cca_score:.4f} (using {result_dict['n_pcs_used']} PCs)")
                 
                 # Create CCA visualization plot using improved function with automatic PC selection
-                try:
-                    # Save CCA plot with automatic PC selection for best visualization
-                    plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.2f}.png")
-                    cca_score_viz, pc_indices_used, cca_model_viz = plot_cca_on_2d_pca(
-                        pca_coords_full=pca_coords_full,
-                        sev_levels=sev_levels,
-                        auto_select_best_2pc=True,  # Automatically select best 2-PC combination
-                        pc_indices=None,
-                        output_path=plot_path,
-                        sample_labels=None,
-                        title_suffix=f"Resolution {resolution:.2f}",
-                        verbose=verbose
-                    )
-                    
-                    # Store which PCs were used for visualization
-                    result_dict['pc_indices_used'] = pc_indices_used
-                    
-                    if verbose:
-                        print(f"Created CCA visualization plot using PC{pc_indices_used[0]+1} + PC{pc_indices_used[1]+1} (viz score: {cca_score_viz:.4f})")
-                        
-                except Exception as e:
-                    if verbose:
-                        print(f"Warning: Failed to create CCA visualization: {str(e)}")
-                
-                # Generate null distribution if computing corrected p-values
-                if compute_corrected_pvalues:
-                    try:
-                        null_distribution = generate_null_distribution(
-                            pseudobulk_adata=pseudobulk_adata,
-                            column=column,
-                            sev_col=sev_col,
-                            n_pcs=n_pcs_for_null,
-                            n_permutations=num_pvalue_simulations,
-                            save_path=os.path.join(resolution_dir, f'null_dist_{resolution:.2f}.npy'),
-                            verbose=False
-                        )
-                        resolution_null_result['null_scores'] = null_distribution
-                        
-                        # Compute standard p-value for this resolution
-                        p_value = np.mean(null_distribution >= cca_score)
-                        result_dict['p_value'] = p_value
-                        print(f"Resolution {resolution:.2f}: Standard p-value = {p_value:.4f}")
-                        
-                    except Exception as e:
-                        print(f"Warning: Failed to generate null distribution: {str(e)}")
-                
-            except Exception as e:
-                print(f"Error in CCA analysis at resolution {resolution:.2f}: {str(e)}")
-                
-        except Exception as e:
-            print(f"Error at resolution {resolution:.2f}: {str(e)}")
-        
-        all_results.append(result_dict)
-        all_resolution_null_results.append(resolution_null_result)
-
-    # Find best resolution from first pass
-    coarse_results = [r for r in all_results if not np.isnan(r['cca_score'])]
-    if not coarse_results:
-        raise ValueError("No valid CCA scores obtained in coarse search. Check your RNA data and parameters.")
-    
-    best_coarse = max(coarse_results, key=lambda x: x['cca_score'])
-    best_resolution = best_coarse['resolution']
-    print(f"\nBest resolution from first pass: {best_resolution:.2f}")
-    print(f"Best CCA score: {best_coarse['cca_score']:.4f}")
-
-    # Second pass: fine-tuned search
-    print("\n=== SECOND PASS: Fine-tuned Search ===")
-    search_range_start = max(0.01, best_resolution - 0.01)
-    search_range_end = min(1.00, best_resolution + 0.01)
-    
-    print(f"Fine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
-
-    for resolution in np.arange(search_range_start, search_range_end + 0.001, 0.01):
-        resolution = round(resolution, 3)
-        
-        # Skip if already tested in coarse search
-        if any(abs(r['resolution'] - resolution) < 0.001 for r in all_results):
-            continue
-        
-        print(f"\nTesting fine-tuned resolution: {resolution:.3f}")
-        
-        # Create resolution-specific directory
-        resolution_dir = os.path.join(resolutions_dir, f"resolution_{resolution:.3f}")
-        os.makedirs(resolution_dir, exist_ok=True)
-        
-        result_dict = {
-            'resolution': resolution,
-            'cca_score': np.nan,
-            'p_value': np.nan,
-            'corrected_pvalue': np.nan,
-            'pass': 'fine',
-            'n_clusters': 0,
-            'n_samples': 0,
-            'n_pcs_used': n_pcs_for_null,
-            'pc_indices_used': None
-        }
-        
-        # Initialize null results for this resolution
-        resolution_null_result = {
-            'resolution': resolution,
-            'null_scores': None
-        }
-        
-        try:
-            # Clean up previous cell type assignments
-            if 'cell_type' in AnnData_cell.obs.columns:
-                AnnData_cell.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-            if 'cell_type' in AnnData_sample.obs.columns:
-                AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
-            
-            # Perform clustering
-            cell_types(
-                AnnData_cell,
-                cell_column='cell_type',
-                Save=False,
-                output_dir=resolution_dir,
-                cluster_resolution=resolution,
-                markers=None,
-                method='average',
-                metric='euclidean',
-                distance_mode='centroid',
-                num_PCs=num_PCs,
-                verbose=False
-            )
-            
-            # Assign cell types to samples
-            cell_type_assign(AnnData_cell, AnnData_sample, Save=False, output_dir=resolution_dir, verbose=False)
-            
-            # Record number of clusters
-            n_clusters = AnnData_sample.obs['cell_type'].nunique()
-            result_dict['n_clusters'] = n_clusters
-            
-            # Compute pseudobulk data
-            pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
-                adata=AnnData_sample, 
-                batch_col=batch_col, 
-                sample_col=sample_col, 
-                celltype_col='cell_type', 
-                n_features=n_features,
-                output_dir=resolution_dir,
-                Save=False,
-                verbose=False
-            )
-            
-            result_dict['n_samples'] = len(pseudobulk_adata)
-            
-            # Perform dimension reduction
-            dimension_reduction(
-                adata=AnnData_sample,
-                pseudobulk=pseudobulk_dict,
-                pseudobulk_anndata=pseudobulk_adata,
-                sample_col=sample_col,
-                n_expression_components=num_DR_components,
-                n_proportion_components=num_DR_components,
-                batch_col=batch_col,
-                harmony_for_proportion = True,
-                atac=False,
-                output_dir=resolution_dir,
-                not_save=True,
-                verbose=False
-            )
-
-            # Check if column exists
-            if column not in pseudobulk_adata.uns:
-                all_results.append(result_dict)
-                all_resolution_null_results.append(resolution_null_result)
-                continue
-            
-            # Run CCA analysis
-            try:
-                # Get full PCA coordinates and metadata  
-                pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
-                    adata=pseudobulk_adata,
-                    column=column,
-                    sev_col=sev_col,
-                    n_components=n_pcs_for_null,  # Use specified number of PCs
-                    verbose=False
-                )
-                
-                # Calculate CCA score using the specified number of PCs
-                pca_coords_analysis = pca_coords_full[:, :min(n_pcs_for_null, pca_coords_full.shape[1])]
-                sev_levels_2d = sev_levels.reshape(-1, 1)
-                
-                # Fit CCA on the analysis PCs
-                from sklearn.cross_decomposition import CCA
-                cca_analysis = CCA(n_components=1)
-                cca_analysis.fit(pca_coords_analysis, sev_levels_2d)
-                U, V = cca_analysis.transform(pca_coords_analysis, sev_levels_2d)
-                cca_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-                
-                result_dict['cca_score'] = cca_score
-                result_dict['n_pcs_used'] = min(n_pcs_for_null, pca_coords_full.shape[1])
-                print(f"Fine-tuned Resolution {resolution:.3f}: Score {cca_score:.4f}")
-                
-                # Create CCA visualization plot using improved function
                 try:
                     # Save CCA plot with automatic PC selection for best visualization
                     plot_path = os.path.join(resolution_dir, f"cca_plot_res_{resolution:.3f}.png")
@@ -1037,7 +968,9 @@ def find_optimal_cell_resolution(
                 # Generate null distribution if computing corrected p-values
                 if compute_corrected_pvalues:
                     try:
-                        null_distribution = generate_null_distribution(
+                        null_distribution = time_function(
+                            f"Null distribution ({num_pvalue_simulations} sims)",
+                            generate_null_distribution,
                             pseudobulk_adata=pseudobulk_adata,
                             column=column,
                             sev_col=sev_col,
@@ -1048,21 +981,72 @@ def find_optimal_cell_resolution(
                         )
                         resolution_null_result['null_scores'] = null_distribution
                         
-                        # Compute standard p-value
+                        # Compute standard p-value for this resolution
                         p_value = np.mean(null_distribution >= cca_score)
                         result_dict['p_value'] = p_value
+                        print(f"Resolution {resolution:.3f}: Standard p-value = {p_value:.4f}")
                         
                     except Exception as e:
                         print(f"Warning: Failed to generate null distribution: {str(e)}")
-                    
+                
             except Exception as e:
-                print(f"Error in CCA analysis at fine-tuned resolution {resolution:.3f}: {str(e)}")
+                print(f"Error in CCA analysis at resolution {resolution:.3f}: {str(e)}")
                 
         except Exception as e:
-            print(f"Error at fine-tuned resolution {resolution:.3f}: {str(e)}")
+            print(f"Error at resolution {resolution:.3f}: {str(e)}")
         
+        resolution_time = time.time() - resolution_start
+        if verbose:
+            print(f"TOTAL for resolution {resolution:.3f}: {resolution_time:.2f} seconds")
+        
+        return result_dict, resolution_null_result
+
+    # First pass: coarse search
+    print("\n=== FIRST PASS: Coarse Search ===")
+    coarse_start = time.time()
+    
+    for resolution in np.arange(0.1, 1.01, 0.1):
+        result_dict, resolution_null_result = process_resolution(resolution, 'coarse')
         all_results.append(result_dict)
         all_resolution_null_results.append(resolution_null_result)
+
+    coarse_time = time.time() - coarse_start
+    if verbose:
+        print(f"\nCOARSE SEARCH TOTAL: {coarse_time:.2f} seconds")
+
+    # Find best resolution from first pass
+    coarse_results = [r for r in all_results if not np.isnan(r['cca_score'])]
+    if not coarse_results:
+        raise ValueError("No valid CCA scores obtained in coarse search. Check your RNA data and parameters.")
+    
+    best_coarse = max(coarse_results, key=lambda x: x['cca_score'])
+    best_resolution = best_coarse['resolution']
+    print(f"\nBest resolution from first pass: {best_resolution:.2f}")
+    print(f"Best CCA score: {best_coarse['cca_score']:.4f}")
+
+    # Second pass: fine-tuned search
+    print("\n=== SECOND PASS: Fine-tuned Search ===")
+    fine_start = time.time()
+    
+    search_range_start = max(0.01, best_resolution - 0.02)
+    search_range_end = min(1.00, best_resolution + 0.02)
+    
+    print(f"Fine-tuning search from {search_range_start:.2f} to {search_range_end:.2f}...")
+
+    for resolution in np.arange(search_range_start, search_range_end + 0.001, 0.01):
+        resolution = round(resolution, 3)
+        
+        # Skip if already tested in coarse search
+        if any(abs(r['resolution'] - resolution) < 0.001 for r in all_results):
+            continue
+        
+        result_dict, resolution_null_result = process_resolution(resolution, 'fine')
+        all_results.append(result_dict)
+        all_resolution_null_results.append(resolution_null_result)
+
+    fine_time = time.time() - fine_start
+    if verbose:
+        print(f"\nFINE SEARCH TOTAL: {fine_time:.2f} seconds")
 
     # Create comprehensive results dataframe
     df_results = pd.DataFrame(all_results)
@@ -1072,13 +1056,16 @@ def find_optimal_cell_resolution(
     if compute_corrected_pvalues:
         print("\n=== GENERATING CORRECTED NULL DISTRIBUTION ===")
         print("Accounting for resolution selection bias...")
+        corrected_start = time.time()
         
         # Filter out null results that failed to generate
         valid_null_results = [r for r in all_resolution_null_results if r['null_scores'] is not None]
         
         if valid_null_results:
             # Use the same function from ATAC
-            corrected_null_distribution = generate_corrected_null_distribution(
+            corrected_null_distribution = time_function(
+                "Corrected null distribution generation",
+                generate_corrected_null_distribution,
                 all_resolution_results=valid_null_results,
                 n_permutations=num_pvalue_simulations
             )
@@ -1092,7 +1079,9 @@ def find_optimal_cell_resolution(
             
             # Compute corrected p-values for all resolutions
             print("\n=== COMPUTING CORRECTED P-VALUES ===")
-            df_results = compute_corrected_pvalues_rna(
+            df_results = time_function(
+                "Corrected p-values computation",
+                compute_corrected_pvalues_rna,
                 df_results=df_results,
                 corrected_null_distribution=corrected_null_distribution,
                 output_dir=main_output_dir,
@@ -1125,6 +1114,10 @@ def find_optimal_cell_resolution(
         else:
             print("Warning: No valid null distributions generated, cannot compute corrected p-values")
             compute_corrected_pvalues = False
+        
+        corrected_time = time.time() - corrected_start
+        if verbose:
+            print(f"CORRECTED P-VALUES TOTAL: {corrected_time:.2f} seconds")
     
     # Find final best resolution
     valid_results = df_results[~df_results['cca_score'].isna()]
@@ -1165,12 +1158,21 @@ def find_optimal_cell_resolution(
     print(f"\nAll results saved to: {results_csv_path}")
 
     # Create a final summary report
+    total_runtime = time.time() - start_time
     final_summary_path = os.path.join(main_output_dir, "FINAL_SUMMARY.txt")
     with open(final_summary_path, 'w') as f:
         f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY\n")
         f.write("=" * 60 + "\n\n")
         f.write(f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"Total runtime: {time.time() - start_time:.2f} seconds\n\n")
+        f.write(f"Total runtime: {total_runtime:.2f} seconds\n\n")
+        
+        f.write("TIMING BREAKDOWN:\n")
+        f.write(f"  - Setup: {setup_time:.2f} seconds\n")
+        f.write(f"  - Coarse search: {coarse_time:.2f} seconds\n")
+        f.write(f"  - Fine search: {fine_time:.2f} seconds\n")
+        if compute_corrected_pvalues and 'corrected_time' in locals():
+            f.write(f"  - Corrected p-values: {corrected_time:.2f} seconds\n")
+        f.write("\n")
         
         f.write("OPTIMIZATION PARAMETERS:\n")
         f.write(f"  - Column analyzed: {column}\n")
@@ -1205,6 +1207,14 @@ def find_optimal_cell_resolution(
             f.write(f"  - Corrected null distribution: {os.path.join(main_output_dir, 'corrected_null')}\n")
     
     print(f"\nFinal summary saved to: {final_summary_path}")
-    print(f"\n[Find Optimal Resolution RNA-seq] Total runtime: {time.time() - start_time:.2f} seconds\n")
+    
+    if verbose:
+        print(f"\n[Find Optimal Resolution RNA-seq] Total runtime: {total_runtime:.2f} seconds")
+        print("\nPERFORMANCE SUMMARY:")
+        print(f"  Setup: {setup_time:.1f}s")
+        print(f"  Coarse search: {coarse_time:.1f}s ({coarse_time/total_runtime*100:.1f}%)")
+        print(f"  Fine search: {fine_time:.1f}s ({fine_time/total_runtime*100:.1f}%)")
+        if compute_corrected_pvalues and 'corrected_time' in locals():
+            print(f"  Corrected p-values: {corrected_time:.1f}s ({corrected_time/total_runtime*100:.1f}%)")
 
     return final_best_resolution, df_results
