@@ -16,7 +16,6 @@ from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from trajectory_diff_gene import run_integrated_differential_analysis
 from cluster import cluster
-from cell_type_annotation import annotate_cell_types_with_celltypist
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
 
@@ -152,6 +151,7 @@ def rna_wrapper(
         from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
         from linux.CCA_test_linux import find_optimal_cell_resolution_linux
         from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
+        from cell_type_annotation import annotate_cell_types_with_celltypist
 
     # Set default values for parameters
     if vars_to_regress is None:

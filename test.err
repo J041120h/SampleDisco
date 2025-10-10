@@ -1,4 +1,5 @@
 ... storing 'celltype' as categorical
+... storing 'sample' as categorical
 ... storing 'old' as categorical
 ... storing 'large' as categorical
 ... storing 'study' as categorical
@@ -13,7 +14,6 @@
 ... storing 'sex' as categorical
 ... storing 'severity' as categorical
 ... storing 'batch' as categorical
-2025-10-04 21:41:30 - INFO - init
 ... storing 'study' as categorical
 ... storing 'sex' as categorical
 ... storing 'severity' as categorical

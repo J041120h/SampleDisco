@@ -1,40 +1,29 @@
 import os
+import contextlib
+import io
 import numpy as np
 import pandas as pd
 import scanpy as sc
 from harmony import harmonize
 import time
-import contextlib
-import io
+from scipy import sparse
+from utils.random_seed import set_seed
 
 def anndata_cluster(
     adata_cluster,
     output_dir,
-    sample_column = 'sample',
+    sample_column='sample',
     num_features=2000,
     num_PCs=20,
     num_harmony=30,
     vars_to_regress_for_harmony=None,
     verbose=True
 ):
-    """
-    Given an AnnData object, perform:
-      - HVG selection (Seurat v3),
-      - PCA,
-      - Harmony batch correction for clustering,
-      - Leiden clustering or label transfer to 'cell_type',
-      - Ranking marker genes,
-      - Hierarchical dendrogram,
-      - UMAP projection.
-
-    Results and the final adata are written to 'adata_cell.h5ad' under output_dir/harmony.
-    """
     if verbose:
-        print('=== Processing data for clustering (mediating batch effects) ===')
-    
-    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
-    sc.pp.log1p(adata_cluster)
-    # Step A1: HVG selection
+        print('=== [CPU] Processing data for clustering ===')
+
+    set_seed(42)
+    # Step A1: HVG selection (before normalization)
     sc.pp.highly_variable_genes(
         adata_cluster,
         n_top_genes=num_features,
@@ -42,28 +31,30 @@ def anndata_cluster(
         batch_key=sample_column
     )
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
+    sc.pp.normalize_total(adata_cluster, target_sum=1e4)
+    sc.pp.log1p(adata_cluster)
 
-    # Step A2: PCA
+    # Step A2: CPU PCA
     sc.tl.pca(adata_cluster, n_comps=num_PCs, svd_solver='arpack')
 
     if verbose:
-        print('=== Running Harmony integration for clustering ===')
-        print('Variables to be regressed out: ', ','.join(vars_to_regress_for_harmony or []))
+        print('=== [CPU] Running Harmony integration ===')
+        print('Variables to regress:', ', '.join(vars_to_regress_for_harmony or []))
 
     # Step A3: Harmony
     Z = harmonize(
         adata_cluster.obsm['X_pca'],
         adata_cluster.obs,
-        batch_key = vars_to_regress_for_harmony,
+        batch_key=vars_to_regress_for_harmony,  # allow list (covariates) or a single key
         max_iter_harmony=num_harmony,
-        use_gpu = True
+        use_gpu=False
     )
     adata_cluster.obsm['X_pca_harmony'] = Z
 
     if verbose:
         print("End of harmony for adata_cluster.")
 
-    # Step A8: Write out final
+    # Save
     sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
     return adata_cluster
 
@@ -75,35 +66,30 @@ def anndata_sample(
     num_harmony=30,
     verbose=True
 ):
-    """
-    Given an AnnData object, perform:
-      - HVG selection by cell_type,
-      - PCA,
-      - Harmony integration (here by default on 'batch'),
-      - UMAP projection,
-      - and writes out 'adata_sample.h5ad'.
-
-    This version does minimal or no batch correction on the front-end so that
-    the sample differences remain interpretable.
-    """
     if verbose:
-        print('=== Processing data for sample differences (without batch effect correction) ===')
+        print('=== [CPU] Processing data for sample differences ===')
+
+    # Store original counts
     adata_sample_diff.layers["counts"] = adata_sample_diff.X.copy()
+
+    # Preprocess
     sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
     sc.pp.log1p(adata_sample_diff)
-    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack', zero_center=True)
+    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver='arpack')
 
-    adata_sample_diff.X = adata_sample_diff.layers["counts"].copy() # Restore original counts as we will normalize later after pseudobulk
+    # Restore original counts
+    adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
     del adata_sample_diff.layers["counts"]
-    # Write out final
     sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
+
     return adata_sample_diff
+
 
 def preprocess(
     h5ad_path,
     sample_meta_path,
     output_dir,
-    sample_column = 'sample',
+    sample_column='sample',
     cell_meta_path=None,
     batch_key='batch',
     num_PCs=20,
@@ -114,131 +100,137 @@ def preprocess(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    vars_to_regress=[],
+    vars_to_regress=None,     # <-- non-mutable default
     verbose=True
 ):
-    """
-    Harmony Integration with proportional HVG selection by cell type,
-    now reading an existing H5AD file that only contains raw counts (no meta).
-
-    This function:
-      1. Reads and preprocesses the data (filter genes/cells, remove MT genes, etc.).
-      2. Splits into two branches for:
-         (a) adata_cluster used for clustering with Harmony
-         (b) adata_sample_diff used for sample-level analysis (minimal batch correction).
-      3. Returns both AnnData objects.
-    """
-    # Start timing
     start_time = time.time()
-
-    # 0. Create output directories if not present
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:
-            print("Automatically generating output directory")
+            print("Created output directory")
 
-    # 1. Read the raw count data from an existing H5AD
+    output_dir = os.path.join(output_dir, 'preprocess')
+    os.makedirs(output_dir, exist_ok=True)
+
     if verbose:
-        print('=== Read input dataset ===')
+        print('=== Reading input dataset ===')
+
     adata = sc.read_h5ad(h5ad_path)
     if verbose:
-        print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
+        print(f'Raw shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
-    # We want to regress "sample" plus anything else the user included
-    vars_to_regress_for_harmony = vars_to_regress.copy()
+    # ---------- Normalize vars_to_regress, build Harmony covariates ----------
+    if vars_to_regress is None:
+        vars_to_regress = []
+    # Flatten and coerce to strings (guards against arrays/lists)
+    flat_vars = []
+    for v in vars_to_regress:
+        if isinstance(v, (list, tuple, np.ndarray, pd.Index)):
+            flat_vars.extend(map(str, list(v)))
+        else:
+            flat_vars.append(str(v))
+
+    vars_to_regress_for_harmony = flat_vars.copy()
     if sample_column not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append(sample_column)
 
-    # Attach sample info
+    # ---------- Attach metadata ----------
     if cell_meta_path is None:
-        if sample_column not in adata.obs.columns: 
+        if sample_column not in adata.obs.columns:
             adata.obs[sample_column] = adata.obs_names.str.split(':').str[0]
     else:
         cell_meta = pd.read_csv(cell_meta_path)
         cell_meta.set_index('barcode', inplace=True)
         adata.obs = adata.obs.join(cell_meta, how='left')
 
-    # We allow user not to input sample_meta_path
     if sample_meta_path is not None:
         sample_meta = pd.read_csv(sample_meta_path)
         adata.obs = adata.obs.merge(sample_meta, on=sample_column, how='left')
-    
-    # Error checking, to make sure that all required columns are present
-    all_required_columns = vars_to_regress + [batch_key]
-    missing_vars = [col for col in all_required_columns if col not in adata.obs.columns]
+
+    # ---------- Required columns check (robust to None/unhashables) ----------
+    required = flat_vars.copy()
+    if batch_key:
+        required.append(str(batch_key))
+    # De-duplicate while preserving order
+    required = list(dict.fromkeys(required))
+    missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
     if missing_vars:
         raise KeyError(f"The following variables are missing from adata.obs: {missing_vars}")
     else:
-        if verbose:
-            print("All required columns are present in adata.obs.")
+        print("All required columns are present in adata.obs.")
 
-    # Basic filtering
-    sc.pp.filter_cells(adata, min_genes=min_features)
+    print("Type of adata.X:", type(adata.X))
+    print("adata.X dtype:", adata.X.dtype)
+    print("adata.X is sparse:", sparse.issparse(adata.X))
+
+    if adata.X.dtype != np.float32:
+        print(f"Converting adata.X from {adata.X.dtype} to float32")
+        adata.X = adata.X.astype(np.float32)
+
+    # Filter genes and cells
     sc.pp.filter_genes(adata, min_cells=min_cells)
+    sc.pp.filter_cells(adata, min_genes=min_features)
     if verbose:
-        print(f"After basic filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
+        print(f'After initial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
-    # Mito QC
+    # Calculate mitochondrial gene percentage
     adata.var['mt'] = adata.var_names.str.startswith('MT-')
     sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
+    
+    # Filter based on mitochondrial percentage
     adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
+    if verbose:
+        print(f'After mitochondrial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
-    # Exclude genes if needed
+    # Filter MT genes and excluded genes
     mt_genes = adata.var_names[adata.var_names.str.startswith('MT-')]
-    if exclude_genes is not None:
-        genes_to_exclude = set(exclude_genes) | set(mt_genes)
-    else:
-        genes_to_exclude = set(mt_genes)
+    genes_to_exclude = set(mt_genes) | set(exclude_genes or [])
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
     if verbose:
-        print(f"After remove MT_gene and user input cell -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
+        print(f'After gene exclusion filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
-    cell_counts_per_patient = adata.obs.groupby(sample_column).size()
+    # Filter samples with too few cells
+    cell_counts = adata.obs.groupby(sample_column).size()
+    keep = cell_counts[cell_counts >= min_cells].index
+    adata = adata[adata.obs[sample_column].isin(keep)].copy()
     if verbose:
-        print("Sample counts BEFORE filtering:")
-        print(cell_counts_per_patient.sort_values(ascending=False))
-    patients_to_keep = cell_counts_per_patient[cell_counts_per_patient >= min_cells].index
-    if verbose:
-        print(f"\nSamples retained (>= {min_cells} cells): {list(patients_to_keep)}")
-    adata = adata[adata.obs[sample_column].isin(patients_to_keep)].copy()
-    cell_counts_after = adata.obs[sample_column].value_counts()
-    if verbose:
-        print("\nSample counts AFTER filtering:")
-        print(cell_counts_after.sort_values(ascending=False))
+        print(f'After sample filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
+        print(f'Number of samples remaining: {len(keep)}')
 
-    # Drop genes that are too rare in these final cells
-    min_cells_for_gene = int(0.01 * adata.n_obs)  # e.g., gene must appear in 1% of cells
-    sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
+    # Additional gene filtering based on cell percentage
+    sc.pp.filter_genes(adata, min_cells=int(0.01 * adata.n_obs))
     if verbose:
-        print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
+        print(f'After final gene filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 
-    # Optional doublet detection
+    if verbose:
+        print(f'Processed shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
+
     if doublet:
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
+        # Run scrublet quietly and APPLY the filter
+        with contextlib.redirect_stdout(io.StringIO()):
             sc.pp.scrublet(adata, batch_key=sample_column)
-            adata = adata[~adata.obs['predicted_doublet']].copy()
-    
+        adata = adata[~adata.obs['predicted_doublet']].copy()
+
     adata.raw = adata.copy()
     if verbose:
         print("Preprocessing complete!")
 
-    # Split data for two separate analyses
-    adata_cluster = adata.copy()      # used for clustering (with batch effect correction)
-    adata_sample_diff = adata.copy()  # used for sample-level analysis
+    adata_cluster = adata.copy()
+    adata_sample_diff = adata.copy()
 
-    # 2(a). Clustering and cell-type annotation
+    # Updated function call for anndata_cluster - matching its actual signature
     adata_cluster = anndata_cluster(
-    adata_cluster=adata_cluster,
-    output_dir=output_dir,
-    sample_column=sample_column,
-    num_features=num_features,
-    num_PCs=num_PCs,
-    num_harmony=num_harmony,
-    vars_to_regress_for_harmony=vars_to_regress_for_harmony,
-    verbose=verbose
+        adata_cluster=adata_cluster,
+        output_dir=output_dir,
+        sample_column=sample_column,
+        num_features=num_features,
+        num_PCs=num_PCs,
+        num_harmony=num_harmony,
+        vars_to_regress_for_harmony=vars_to_regress_for_harmony,
+        verbose=verbose
     )
 
+    # Updated function call for anndata_sample - matching its actual signature
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
         output_dir=output_dir,
@@ -248,12 +240,7 @@ def preprocess(
         verbose=verbose
     )
 
-    # End timing
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    # Print execution time
     if verbose:
-        print(f"Function execution time: {elapsed_time:.2f} seconds")
+        print(f"Total runtime: {time.time() - start_time:.2f} seconds")
 
     return adata_cluster, adata_sample_diff

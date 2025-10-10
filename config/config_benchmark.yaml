@@ -12,7 +12,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
-use_gpu: true
+use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true
@@ -49,7 +49,7 @@ rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: null
 rna_markers: null
-rna_cluster_resolution: 0.600
+rna_cluster_resolution: 0.700
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -81,8 +81,8 @@ rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
 
 # RNA PCA Parameters
-rna_n_expression_components: 30
-rna_n_proportion_components: 30
+rna_n_expression_components: 10
+rna_n_proportion_components: 5
 rna_harmony_for_proportion: true
 rna_dr_output_dir: null
 rna_dr_verbose: true
@@ -92,7 +92,7 @@ rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
-rna_cca_optimal_cell_resolution: false
+rna_cca_optimal_cell_resolution: true
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null
