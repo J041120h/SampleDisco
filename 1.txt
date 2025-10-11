@@ -1,94 +1,28 @@
+📂 Loading AnnData from: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad
+✅ Loaded AnnData with 861190 cells × 36601 genes
 
-==================================================
-STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
-==================================================
-Loading data files...
-  Loaded metadata: 541 samples
-  Loaded pseudotime: 25 samples
+🧬 First 10 cell/sample names (before):
+  - ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA
+  - ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA
+  - ENCSR128ZLB_AAACATGCACAACCTA-1_RNA
+  - ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA
+  - ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA
+  - ENCSR128ZLB_AAACCAACAAAGCGCA-1_RNA
+  - ENCSR128ZLB_AAACCAACAAGCCACT-1_RNA
+  - ENCSR128ZLB_AAACCGAAGCTAAGTC-1_RNA
+  - ENCSR128ZLB_AAACCGAAGCTCCTTA-1_RNA
+  - ENCSR128ZLB_AAACCGAAGGCGAATA-1_RNA
 
-Merging data...
-  Merged data: 25 samples retained
+🧬 First 10 cell/sample names (after):
+  - ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA
+  - ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA
+  - ENCSR128ZLB_AAACATGCACAACCTA-1_RNA
+  - ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA
+  - ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA
+  - ENCSR128ZLB_AAACCAACAAAGCGCA-1_RNA
+  - ENCSR128ZLB_AAACCAACAAGCCACT-1_RNA
+  - ENCSR128ZLB_AAACCGAAGCTAAGTC-1_RNA
+  - ENCSR128ZLB_AAACCGAAGCTCCTTA-1_RNA
+  - ENCSR128ZLB_AAACCGAAGGCGAATA-1_RNA
 
-Performing Two-way ANOVA...
-  Analyzing 25 samples with complete data
-  Number of batches: 6
-  Number of severity levels: 4
-  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_anova/ANOVA/twoway_anova_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_anova/ANOVA/twoway_anova_summary.txt
-
-==================================================
-KEY RESULTS:
-  Batch Effect: p = 1.4529e-01 (η² = 0.440)
-  Severity Effect: p = 2.5773e-06 (η² = 0.914)
-  Interaction: p = 5.3429e-03 (η² = 0.827)
-  Overall Assessment: EXCELLENT
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_anova/ANOVA
-Batch-removal Evaluation Summary
-================================
-Samples: 25
-Batches: 6 -> ['Mudd', 'SS1', 'SS2', 'Su', 'Wilk', 'Zhu']
-
-iLISI (mean ± sd): 2.2131 ± 1.0372
-iLISI_norm: 0.3688
-ASW-batch: 0.5384
-
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/batch_removal/Batch_Removal_Evaluation
-============================================================
-ARI-based Clustering Evaluation Summary
-============================================================
-Data mode: embedding
-Total samples: 25
-Samples with valid severity: 25
-Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
-Number of clusters used: 4
-K neighbors for KNN: 15
-
-METRICS:
-------------------------------
-Adjusted Rand Index (ARI): -0.0194
-Normalized Mutual Info (NMI): 0.1621
-Average Cluster Purity: 0.8523
-
-INTERPRETATION:
-------------------------------
-VERY POOR: Almost no agreement between clusters and severity levels
-
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/ari_clustering/ARI_Clustering_Evaluation
-============================================================
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-Loading data files...
-  Loaded metadata: 541 samples
-  Loaded pseudotime: 25 samples
-
-Merging data...
-  Merged data: 25 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 25 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = 0.6919 (p = 1.2757e-04)
-  Assessment: MODERATE positive correlation
-  Statistical significance: highly significant (p < 0.001)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/benchmark_results_expression/trajectory_analysis/Spearman_Correlation
+💾 Overwritten cleaned AnnData file: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad

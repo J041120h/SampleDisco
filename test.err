@@ -1,20 +1,6 @@
-... storing 'celltype' as categorical
-... storing 'sample' as categorical
-... storing 'old' as categorical
-... storing 'large' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'celltype' as categorical
-... storing 'sample' as categorical
-... storing 'old' as categorical
-... storing 'large' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/Benchmark_multiomics/pseudo_expression_test.py", line 531, in <module>
+    results = compute_paired_cell_metrics(
+  File "/users/hjiang/GenoDistance/code/Benchmark_multiomics/pseudo_expression_test.py", line 149, in compute_paired_cell_metrics
+    rna_idx = rna_cells.obs.index[rna_barcode_to_idx[bc]]
+UnboundLocalError: local variable 'rna_barcode_to_idx' referenced before assignment

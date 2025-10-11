@@ -295,77 +295,135 @@ class ImprovedNBEncoder(DataEncoder):
         return normalized.log1p()
 
 
+import torch
+import torch.nn.functional as F
+import torch.distributions as TD
+from scglue.models.sc import DataDecoder
+
+EPS = 1e-8  # small constant for numerical stability
+
+
 class ImprovedNBDecoder(DataDecoder):
     """
     Improved Negative Binomial decoder following SCGLUE tutorial.
     Includes batch-specific parameters for handling batch effects.
     """
-    
+
     def __init__(self, out_features: int, n_batches: int = 1) -> None:
         """
         Initialize decoder with batch-specific parameters.
-        
+
         Args:
             out_features: Number of output features (genes)
             n_batches: Number of batches for batch effect correction
         """
         super().__init__(out_features, n_batches=n_batches)
-        
-        # Initialize parameters with proper scaling
-        self.scale_lin = torch.nn.Parameter(
-            torch.zeros(n_batches, out_features)
-        )
-        self.bias = torch.nn.Parameter(
-            torch.zeros(n_batches, out_features)
-        )
-        self.log_theta = torch.nn.Parameter(
-            torch.zeros(n_batches, out_features)
-        )
-        
-        # Initialize with small random values for better training stability
+
+        # Batch-specific parameters
+        self.scale_lin = torch.nn.Parameter(torch.zeros(n_batches, out_features))
+        self.bias = torch.nn.Parameter(torch.zeros(n_batches, out_features))
+        self.log_theta = torch.nn.Parameter(torch.zeros(n_batches, out_features))
+
+        # Small random init for stability
         torch.nn.init.normal_(self.scale_lin, mean=0.0, std=0.01)
         torch.nn.init.normal_(self.bias, mean=0.0, std=0.01)
-        torch.nn.init.normal_(self.log_theta, mean=2.0, std=0.5)  # Start with reasonable dispersion
-    
+        torch.nn.init.normal_(self.log_theta, mean=2.0, std=0.5)  # reasonable dispersion
+
     def forward(
-        self, 
-        u: torch.Tensor, 
-        v: torch.Tensor,
-        b: torch.Tensor, 
-        l: torch.Tensor
-    ):
+        self,
+        u: torch.Tensor,  # (n_cells, latent_dim)
+        v: torch.Tensor,  # (n_genes, latent_dim)
+        b: torch.Tensor,  # (n_cells,)
+        l: torch.Tensor   # (n_cells, 1) or (n_cells,)
+    ) -> TD.NegativeBinomial:
         """
-        Generate NegativeBinomial distribution for RNA counts.
-        
-        Args:
-            u: Cell embeddings (n_cells, latent_dim)
-            v: Feature embeddings (n_features, latent_dim)
-            b: Batch indices (n_cells,)
-            l: Library sizes (n_cells, 1)
-        
-        Returns:
-            NegativeBinomial distribution
+        Return a NegativeBinomial distribution for RNA counts with:
+          total_count = theta (inverse-dispersion)
+          logits      = log(mu / theta)
+
+        Enforces compositional rates via softmax so that sum(mu_i) per cell ~= library size.
         """
-        # Apply softplus to ensure positive scale
-        scale = F.softplus(self.scale_lin[b])
-        
-        # Compute logits as scaled inner product plus bias
-        logit_mu = scale * (u @ v.t()) + self.bias[b]
-        
-        # Apply softmax and scale by library size to get expected counts
-        mu = F.softmax(logit_mu, dim=1) * l
-        
-        # Get theta (inverse dispersion) with minimum threshold for stability
-        theta = self.log_theta[b].exp().clamp(min=1e-6, max=1e6)
-        
-        # Create NegativeBinomial distribution
-        # Using the parameterization: NB(total_count=theta, logits=log(mu/theta))
+        # Ensure types/shapes
+        if b.dtype != torch.long:
+            b = b.long()
+        if l.ndim == 1:
+            l = l.unsqueeze(1)  # (n_cells, 1)
+
+        # Broadcasted per-batch parameters: (n_cells, n_genes)
+        scale = F.softplus(self.scale_lin[b])                  # positive
+        bias = self.bias[b]
+        theta = self.log_theta[b].exp().clamp_min(1e-6)        # avoid 0; (n_cells, n_genes)
+
+        # Gene proportions per cell (stabilized softmax)
+        # (n_cells, d) @ (d, n_genes) -> (n_cells, n_genes)
+        logits_raw = scale * (u @ v.t()) + bias
+        logits_ctr = logits_raw - logits_raw.max(dim=1, keepdim=True).values  # row-wise centering
+        p = torch.softmax(logits_ctr, dim=1).clamp_min(EPS)  # (n_cells, n_genes)
+
+        # Expected counts per cell/gene
+        mu = p * l  # broadcasts to (n_cells, n_genes)
+
+        # NB parameterization via logits: log(mu / theta)
         nb_logits = (mu + EPS).log() - (theta + EPS).log()
-        
-        return D.NegativeBinomial(
-            total_count=theta,
-            logits=nb_logits
+        nb_logits = torch.where(torch.isfinite(nb_logits), nb_logits, torch.zeros_like(nb_logits))
+
+        return TD.NegativeBinomial(
+            total_count=theta,  # (n_cells, n_genes)
+            logits=nb_logits    # (n_cells, n_genes)
         )
+
+    
+import torch
+import torch.nn.functional as F
+import torch.distributions as TD
+
+EPS = 1e-8  # small constant for numerical stability
+
+def forward(
+    self,
+    u: torch.Tensor,  # (n_cells, latent_dim)
+    v: torch.Tensor,  # (n_genes, latent_dim)
+    b: torch.Tensor,  # (n_cells,)
+    l: torch.Tensor   # (n_cells, 1) or (n_cells,)
+) -> TD.NegativeBinomial:
+    """
+    Return a NegativeBinomial distribution for RNA counts with:
+      total_count = theta (inverse-dispersion)
+      logits      = log(mu / theta)
+
+    Enforces compositional rates via softmax so that sum(mu_i) per cell ~= library size.
+    """
+    # Ensure types/shapes
+    if b.dtype != torch.long:
+        b = b.long()
+    if l.ndim == 1:
+        l = l.unsqueeze(1)  # (n_cells, 1)
+
+    # Broadcasted per-batch parameters: (n_cells, n_genes)
+    scale = F.softplus(self.scale_lin[b])                      # positive
+    bias  = self.bias[b]
+    theta = self.log_theta[b].exp().clamp_min(1e-6)            # avoid 0; (n_cells, n_genes)
+
+    # Gene proportions per cell (stabilized softmax)
+    # inner product: (n_cells, latent_dim) @ (latent_dim, n_genes) -> (n_cells, n_genes)
+    logits_raw = scale * (u @ v.t()) + bias
+    logits_ctr = logits_raw - logits_raw.max(dim=1, keepdim=True).values  # subtract row max for stability
+    p = torch.softmax(logits_ctr, dim=1).clamp_min(EPS)  # (n_cells, n_genes)
+
+    # Expected counts per cell/gene
+    mu = p * l  # broadcasts (n_cells, n_genes)
+
+    # NB parameterization via logits: log(mu / theta)
+    nb_logits = (mu + EPS).log() - (theta + EPS).log()
+
+    # Replace non-finite logits (can happen if inputs are pathological) with zeros (neutral)
+    nb_logits = torch.where(torch.isfinite(nb_logits), nb_logits, torch.zeros_like(nb_logits))
+
+    return TD.NegativeBinomial(
+        total_count=theta,  # (n_cells, n_genes)
+        logits=nb_logits    # (n_cells, n_genes)
+    )
+
 
 
 # Register the improved model
@@ -497,11 +555,6 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
 
     print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n")
 
-
-# -------------------------
-# Decoder-based RNA transfer for ATAC (unchanged)
-# -------------------------
-
 def decode_rna_from_atac_with_decoder(
     glue_dir: str,
     output_path: str,
@@ -513,11 +566,14 @@ def decode_rna_from_atac_with_decoder(
       - RNA cells have their original RNA counts
       - ATAC cells carry decoder-predicted RNA expression
 
-    Assumes:
-      - Trained model saved at {glue_dir}/glue.dill
-      - Embedded AnnData saved at {glue_dir}/glue-rna-emb.h5ad and {glue_dir}/glue-atac-emb.h5ad
+    Assumes files in {glue_dir}:
+      - glue.dill
+      - glue-rna-emb.h5ad
+      - glue-atac-emb.h5ad
     """
     import torch
+    import numpy as np
+    import pandas as pd
     from scipy import sparse
 
     model_path = os.path.join(glue_dir, "glue.dill")
@@ -530,7 +586,7 @@ def decode_rna_from_atac_with_decoder(
 
     if verbose:
         print("\n🧠 Loading trained SCGLUE model and embedded datasets...")
-    glue = scglue.models.load_SCGLUE(model_path)
+    glue = scglue.models.fit_SCGLUE(model_path)
     rna = ad.read_h5ad(rna_emb_path)
     atac = ad.read_h5ad(atac_emb_path)
 
@@ -545,25 +601,23 @@ def decode_rna_from_atac_with_decoder(
         raise RuntimeError("RNA feature embeddings (varm['X_glue']) not found!")
     v_rna = rna.varm["X_glue"]    # (n_genes, d)
 
-    # 2) Build batch indices for RNA decoder: map ATAC 'sample' to RNA 'sample' categories
+    # 2) Map ATAC 'sample' to RNA batch indices (if present)
     if "sample" in rna.obs:
         rna_batches = pd.Categorical(rna.obs["sample"]).categories
-        rna_batch_index = {s:i for i, s in enumerate(rna_batches)}
+        rna_batch_index = {s: i for i, s in enumerate(rna_batches)}
         if "sample" in atac.obs:
             atac_b = atac.obs["sample"].map(lambda s: rna_batch_index.get(s, 0)).astype(int).to_numpy()
         else:
             atac_b = np.zeros(atac.n_obs, dtype=int)
     else:
-        rna_batches = pd.Index([])
         atac_b = np.zeros(atac.n_obs, dtype=int)
 
-    # 3) Choose a library size for ATAC->RNA decoding.
-    #    We use the median RNA library size (from counts layer if present).
+    # 3) Choose ATAC->RNA decoding library size: median RNA library
     if "counts" in (rna.layers or {}):
         rna_lib = np.array(rna.layers["counts"].sum(axis=1)).flatten()
     else:
-        # Fall back to exp(log1p^-1) approximation from X if raw counts absent
-        rna_lib = np.expm1(rna.X.A.sum(axis=1) if sparse.issparse(rna.X) else rna.X.sum(axis=1))
+        X = rna.X.A if sparse.issparse(rna.X) else rna.X
+        rna_lib = np.expm1(X.sum(axis=1))
     lib_med = float(np.median(rna_lib))
     l_atac = np.full((atac.n_obs, 1), lib_med, dtype=np.float32)
 
@@ -574,45 +628,42 @@ def decode_rna_from_atac_with_decoder(
     b_t = torch.as_tensor(atac_b, dtype=torch.long, device=device)
     l_t = torch.as_tensor(l_atac, dtype=torch.float32, device=device)
 
-    # 5) Call RNA decoder: expected mean counts (use distribution.mean)
+    # 5) Use the trained RNA decoder from the model (u2x["rna"])
+    if not hasattr(glue, "u2x") or "rna" not in glue.u2x:
+        raise RuntimeError("Trained model does not expose RNA decoder via glue.u2x['rna']. "
+                           "Ensure prob_model='ImprovedNB' was used for RNA.")
+    rna_decoder = glue.u2x["rna"].to(device).eval()
+
     if verbose:
         print("🧪 Decoding expected RNA expression for ATAC cells via RNA decoder...")
-    if not hasattr(glue, "rna_decoder"):
-        raise RuntimeError("Trained model does not expose 'rna_decoder' (ensure prob_model='ImprovedNB' for RNA).")
-    glue.to(device)
-    glue.eval()
     with torch.no_grad():
-        dist = glue.rna_decoder(u_t, v_t, b_t, l_t)  # NegativeBinomial
+        dist = rna_decoder(u_t, v_t, b_t, l_t)  # torch.distributions.NegativeBinomial
         mu_atac_rna = dist.mean  # (n_atac, n_genes)
 
     mu_np = mu_atac_rna.detach().cpu().numpy().astype(np.float64)
 
-    # 6) Build merged AnnData:
-    #    - RNA block: original RNA (prefer raw counts if available)
-    #    - ATAC block: decoder-predicted RNA expression
+    # 6) Build merged AnnData
+    #    RNA rows = original (prefer counts); ATAC rows = predicted mu
     if "counts" in (rna.layers or {}):
         X_rna = rna.layers["counts"]
-        if sparse.issparse(X_rna):
-            X_rna = X_rna.tocsr().astype(np.float64)
-        else:
-            X_rna = np.asarray(X_rna).astype(np.float64)
+        X_rna = X_rna.tocsr().astype(np.float64) if sparse.issparse(X_rna) \
+            else np.asarray(X_rna).astype(np.float64)
     else:
-        X_rna = rna.X.tocsr().astype(np.float64) if sparse.issparse(rna.X) else np.asarray(rna.X).astype(np.float64)
+        X_rna = rna.X.tocsr().astype(np.float64) if sparse.issparse(rna.X) \
+            else np.asarray(rna.X).astype(np.float64)
 
-    # Ensure gene order / names match v_rna (they do by construction)
     genes = rna.var_names.copy()
-    # Make ATAC rows carry predicted RNA
     X_atac_pred = mu_np
-    # Convert dense blocks to sparse CSR if sufficiently sparse
+
     def to_csr_if_sparse(x):
         if sparse.issparse(x): return x.tocsr()
-        nnz = np.count_nonzero(x); sparsity = 1 - nnz / (x.shape[0]*x.shape[1])
+        nnz = np.count_nonzero(x)
+        sparsity = 1 - nnz / (x.shape[0] * x.shape[1])
         return sparse.csr_matrix(x) if sparsity > 0.5 else x
 
     X_rna = to_csr_if_sparse(X_rna)
     X_atac_pred = to_csr_if_sparse(X_atac_pred)
 
-    # Build two AnnData objects with consistent var
     rna_block = ad.AnnData(
         X=X_rna,
         obs=rna.obs.copy(),
@@ -627,11 +678,11 @@ def decode_rna_from_atac_with_decoder(
     )
     atac_block.obs['modality'] = 'ATAC'
 
-    # Add embeddings back (so visualization works the same)
+    # carry over embeddings
     for k, v in rna.obsm.items(): rna_block.obsm[k] = v
     for k, v in atac.obsm.items(): atac_block.obsm[k] = v
 
-    # Make indices unique across modalities
+    # unique indices across modalities
     rna_block.obs['original_barcode'] = rna_block.obs.index
     atac_block.obs['original_barcode'] = atac_block.obs.index
     rna_block.obs.index = pd.Index([f"{x}_RNA" for x in rna_block.obs.index])
@@ -640,7 +691,8 @@ def decode_rna_from_atac_with_decoder(
     merged = ad.concat([rna_block, atac_block], axis=0, join="inner", merge="same")
 
     # Save
-    out_dir = os.path.join(output_path, 'preprocess'); os.makedirs(out_dir, exist_ok=True)
+    out_dir = os.path.join(output_path, 'preprocess')
+    os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, 'atac_rna_integrated.h5ad')
     merged = clean_anndata_for_saving(merged, verbose=False)
     merged.write(out_path, compression='gzip', compression_opts=4)
@@ -905,8 +957,8 @@ if __name__ == "__main__":
     multiomics_run_find_optimal_resolution = False
 
     # GLUE sub-steps
-    multiomics_run_glue_preprocessing = True
-    multiomics_run_glue_training = True
+    multiomics_run_glue_preprocessing = False
+    multiomics_run_glue_training = False
     multiomics_run_glue_gene_activity = True      # decoder-based transfer step
     multiomics_run_glue_cell_types = True
     multiomics_run_glue_visualization = False

@@ -1,54 +1,40 @@
 import anndata as ad
 
-def compare_celltypes(h5ad_path1, h5ad_path2, celltype_col='cell_type'):
+def print_cell_names(adata_path: str):
     """
-    Compare if all matching cells belong to the same cell type across two h5ad files.
-
-    Parameters
-    ----------
-    h5ad_path1 : str
-        Path to first .h5ad file
-    h5ad_path2 : str
-        Path to second .h5ad file
-    celltype_col : str
-        Column name in .obs containing cell type annotations
-
-    Returns
-    -------
-    bool
-        True if all overlapping cells have the same cell type, False otherwise
+    Load an AnnData object, show first 10 cell names before/after removing tissue prefixes,
+    and overwrite the same file with cleaned cell names.
     """
-    adata1 = ad.read_h5ad(h5ad_path1)
-    adata2 = ad.read_h5ad(h5ad_path2)
+    print(f"📂 Loading AnnData from: {adata_path}")
+    adata = ad.read_h5ad(adata_path)
+    print(f"✅ Loaded AnnData with {adata.n_obs} cells × {adata.n_vars} genes")
 
-    # Intersect cell IDs
-    common_cells = adata1.obs_names.intersection(adata2.obs_names)
-    if len(common_cells) == 0:
-        print("No overlapping cells found.")
-        return False
+    # --- Before renaming ---
+    print("\n🧬 First 10 cell/sample names (before):")
+    for name in adata.obs_names[:10]:
+        print(f"  - {name}")
 
-    # Extract cell types
-    ct1 = adata1.obs.loc[common_cells, celltype_col].astype(str)
-    ct2 = adata2.obs.loc[common_cells, celltype_col].astype(str)
+    # --- Perform renaming ---
+    old_names = adata.obs_names.to_list()
+    new_names = []
+    for name in old_names:
+        i = name.find("ENC")
+        if i >= 0:
+            new_names.append(name[i:])
+        else:
+            new_names.append(name)  # leave unchanged if no "ENC"
 
-    # Compare equality
-    same = (ct1 == ct2)
-    all_match = same.all()
+    # --- After renaming ---
+    print("\n🧬 First 10 cell/sample names (after):")
+    for name in new_names[:10]:
+        print(f"  - {name}")
 
-    print(f"Total overlapping cells: {len(common_cells)}")
-    print(f"Matching cell types: {same.sum()}")
-    print(f"Mismatched cell types: {(~same).sum()}")
+    # --- Apply and save ---
+    adata.obs_names = new_names
+    adata.obs_names_make_unique()
+    adata.write_h5ad(adata_path)
+    print(f"\n💾 Overwritten cleaned AnnData file: {adata_path}")
 
-    if not all_match:
-        mismatches = common_cells[~same]
-        print("Example mismatches:")
-        print(pd.DataFrame({
-            "cell_id": mismatches,
-            "file1_celltype": ct1.loc[mismatches].values,
-            "file2_celltype": ct2.loc[mismatches].values
-        }).head())
-
-    return all_match
 
 if __name__ == "__main__":
-    compare_celltypes("/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample_test.h5ad", "/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/preprocess/adata_sample.h5ad", celltype_col="celltype")
+    print_cell_names('/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad')

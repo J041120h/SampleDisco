@@ -543,9 +543,9 @@ def create_comprehensive_summary_rna(df_results, best_resolution, column, output
     plt.close()
     print(f"Summary plot saved to: {plot_path}")
     
-    # Create text summary
+    # Create text summary (ensure UTF-8 so '±' writes without UnicodeEncodeError)
     summary_path = os.path.join(summary_dir, f'optimization_results_{column}.txt')
-    with open(summary_path, 'w') as f:
+    with open(summary_path, 'w', encoding='utf-8') as f:
         f.write(f"RNA-seq Resolution Optimization Results: {column}\n")
         f.write("=" * 80 + "\n\n")
         f.write(f"Best Resolution: {best_resolution:.3f}\n")
@@ -594,6 +594,7 @@ def create_comprehensive_summary_rna(df_results, best_resolution, column, output
     detailed_csv_path = os.path.join(summary_dir, f'detailed_results_{column}.csv')
     df_sorted.to_csv(detailed_csv_path, index=False)
     print(f"Detailed results saved to: {detailed_csv_path}")
+
 
 
 def cca_pvalue_test(
