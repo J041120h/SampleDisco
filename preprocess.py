@@ -7,7 +7,6 @@ import scanpy as sc
 from harmony import harmonize
 import time
 from scipy import sparse
-from utils.random_seed import set_seed
 
 def anndata_cluster(
     adata_cluster,
@@ -22,7 +21,6 @@ def anndata_cluster(
     if verbose:
         print('=== [CPU] Processing data for clustering ===')
 
-    set_seed(42)
     # Step A1: HVG selection (before normalization)
     sc.pp.highly_variable_genes(
         adata_cluster,

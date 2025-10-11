@@ -10,12 +10,13 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 import random
 import numpy as np
-np.random.seed(42)
-random.seed(42)
 
 # Import individual wrappers
 from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils.random_seed import set_global_seed
 
 def wrapper(
     # ========================================
@@ -560,6 +561,9 @@ def wrapper(
     # Ensure sys_log directory exists
     os.makedirs(os.path.dirname(status_file_path), exist_ok=True)
     
+    # Set global random seed for reproducibility
+    set_global_seed(seed = 42, use_gpu = use_gpu, verbose = True)
+
     # Load existing status if not initializing
     if os.path.exists(status_file_path) and not initialization:
         try:

@@ -12,7 +12,6 @@ from DR import dimension_reduction
 from CCA_test import * 
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
 from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
-from utils.random_seed import set_seed
 
 class TimeoutError(Exception):
     """Custom timeout exception"""
@@ -235,7 +234,6 @@ def find_optimal_cell_resolution_linux(
         return result
     
     start_time = time.time()
-    set_seed(42)
     
     if verbose:
         print("Using PROFILED GPU version of optimal resolution WITH TIMEOUT PROTECTION")
