@@ -1,32 +1,39 @@
 ================================================================================
-ATAC Gene Activity Validation Analysis
+DIRECT HDF5 PROCESSING (Most Robust)
 ================================================================================
 
-📂 Loading integrated data from: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad
-   Total cells: 861190
-   Total genes: 36601
+📂 Processing: /dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad
+   Batch size: 100
+   Subsample ratio: 0.01
 
-🔍 Verifying cell index structure...
-   Sample indices: ['ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA', 'ENCSR128ZLB_AAACATGCACAACCTA-1_RNA', 'ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA', 'ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA']
-   Has _RNA suffix: True
-   Has _ATAC suffix: True
-
-🧬 Separated modalities:
+📊 Loading metadata...
+   HDF5 keys: ['X', 'layers', 'obs', 'obsm', 'obsp', 'uns', 'var', 'varm', 'varp']
    RNA cells: 430595
    ATAC cells: 430595
 
-🔗 Matching cells using original barcodes...
-   Sample RNA barcodes: ['ENCSR128ZLB_AAACAGCCAGCAAATA-1', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1', 'ENCSR128ZLB_AAACATGCACAACCTA-1']
-   Sample ATAC barcodes: ['adrenal_gland_ENCSR212VKB_AAACAGCCAAAGGTAC-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCAACAGGAT-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACAACAAA-1']
-   Sample RNA indices: ['ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA', 'ENCSR128ZLB_AAACATGCACAACCTA-1_RNA']
-   Sample ATAC indices: ['ENCSR212VKB_AAACAGCCAAAGGTAC-1_ATAC', 'ENCSR212VKB_AAACAGCCAACAGGAT-1_ATAC', 'ENCSR212VKB_AAACAGCCACAACAAA-1_ATAC']
-   ⚠️ No matches found using original_barcode column
-   Attempting alternative: stripping suffixes from indices...
-   ✅ Found 430177 matches using suffix-stripped indices
+🔗 Found 430177 paired cells
+   Subsampled to 4301 cells
 
-🔗 Paired cell matching:
-   Paired cells found: 430177
-   RNA-only cells: 418
-   ATAC-only cells: 418
+📈 Processing paired cells in batches...
+   Data is stored as sparse CSR matrix
+   Loading full sparse matrix (this may take time)...
 
-   Example paired cell matches:
+✅ Processed 4301 paired cells
+   Computed 4301 cell correlations
+
+📈 Computing per-gene correlations (sampling)...
+
+🎨 Creating visualizations...
+
+💾 Saving results...
+
+================================================================================
+SUMMARY
+================================================================================
+Paired cells: 4301
+Processed cells: 4301
+Cell correlations: 4301
+Mean cell correlation: 0.6508
+Mean gene correlation (sampled): 0.0680
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark/pseudo_expression

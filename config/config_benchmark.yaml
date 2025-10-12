@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark/covid_400_sample"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,7 +21,7 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_25samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data.h5ad"
 rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
 rna_output_dir: null
 
