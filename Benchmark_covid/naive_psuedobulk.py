@@ -24,6 +24,82 @@ import warnings
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from visualization.visualization_emebedding import visualize_single_omics_embedding, create_multi_panel_embedding
 
+
+def compute_sample_distance_cosine(
+    pca_result: dict,
+    n_components: int | None = None,
+    output_dir: str | None = None,
+    save_plot: bool = True,
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Compute pairwise cosine distances between samples using their PCA coordinates.
+
+    Parameters
+    ----------
+    pca_result : dict
+        The output of perform_pca(...). Must contain key 'coords' (DataFrame, samples x PCs).
+    n_components : int or None
+        Number of leading PCs to use. If None, use all available PCs.
+    output_dir : str or None
+        If provided, saves CSV to <output_dir>/sample_distance_cosine_pca.csv
+        and (optionally) a heatmap to <output_dir>/figures/sample_distance_cosine_pca.png
+    save_plot : bool
+        Whether to render and save a heatmap PNG.
+    verbose : bool
+        Print progress messages.
+
+    Returns
+    -------
+    dist_df : DataFrame
+        Square DataFrame of cosine distances (samples x samples).
+    """
+    coords_df: pd.DataFrame = pca_result['coords']
+    if n_components is None:
+        X = coords_df.values
+        used_cols = list(coords_df.columns)
+    else:
+        use_k = max(1, min(n_components, coords_df.shape[1]))
+        used_cols = [f'PC{i+1}' for i in range(use_k)]
+        X = coords_df[used_cols].values
+
+    from sklearn.metrics.pairwise import cosine_distances
+    D = cosine_distances(X)
+    dist_df = pd.DataFrame(D, index=coords_df.index, columns=coords_df.index)
+
+    if output_dir is not None:
+        # Save CSV
+        csv_path = os.path.join(output_dir, 'sample_distance_cosine_pca.csv')
+        dist_df.to_csv(csv_path)
+        if verbose:
+            print(f"Saved cosine distance (PCA) matrix to: {csv_path}")
+
+        # Optional heatmap
+        if save_plot:
+            fig_dir = os.path.join(output_dir, 'figures')
+            os.makedirs(fig_dir, exist_ok=True)
+            plt.figure(figsize=(14, 12))
+            ax = sns.heatmap(
+                dist_df,
+                cmap='viridis',
+                square=True,
+                linewidths=0.3,
+                cbar_kws={'label': 'Cosine Distance', 'shrink': 0.8}
+            )
+            ax.set_xlabel('Samples', fontsize=12, fontweight='bold')
+            ax.set_ylabel('Samples', fontsize=12, fontweight='bold')
+            title_extra = f" (using {len(used_cols)} PCs)" if n_components is not None else ""
+            plt.title(f'Sample–Sample Cosine Distance on PCA{title_extra}', fontsize=14, fontweight='bold', pad=12)
+            out_png = os.path.join(fig_dir, 'sample_distance_cosine_pca.png')
+            plt.tight_layout()
+            plt.savefig(out_png, dpi=300, bbox_inches='tight')
+            plt.close()
+            if verbose:
+                print(f"Saved cosine distance heatmap to: {out_png}")
+
+    return dist_df
+
+
 from sklearn.cross_decomposition import CCA
 from itertools import combinations
 
@@ -969,6 +1045,20 @@ if __name__ == "__main__":
         show_ellipses=True,
         verbose=True
     )
+
+    # === NEW: sample–sample cosine distance on PCA ===
+    try:
+        # Use the first k PCs (or set n_components=None to use all PCs)
+        k = min(10, pca_result['coords'].shape[1])
+        dist_df = compute_sample_distance_cosine(
+            pca_result=pca_result,
+            n_components=k,
+            output_dir=output_dir,
+            save_plot=True,
+            verbose=True
+        )
+    except Exception as e:
+        print(f"Warning: cosine distance computation failed: {e}")
 
     # === Trajectory on PCA space (CCA vs sev.level) ===
     try:
