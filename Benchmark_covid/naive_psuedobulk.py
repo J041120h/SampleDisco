@@ -1029,9 +1029,9 @@ def preprocess_pseudobulk(
 
 if __name__ == "__main__":
     # Example usage with enhanced parameters
-    h5ad_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_25samples.h5ad"
+    h5ad_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data.h5ad"
     sample_meta_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
-    output_dir = "/dcs07/hongkai/data/harry/result/naive_pseudobulk"
+    output_dir = "/dcs07/hongkai/data/harry/result/naive_pseudobulk/covid_400_sample"
     
     # Run with enhanced visualizations
     adata, pseudobulk_df, normalized_df, pca_result, adata_vis = preprocess_pseudobulk(

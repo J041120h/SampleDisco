@@ -37,4 +37,4 @@ def print_cell_names(adata_path: str):
 
 
 if __name__ == "__main__":
-    print_cell_names('/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad')
+    # print_cell_names('/dcs07/hongkai/data/harry/result/Benchmark/multiomics/preprocess/atac_rna_integrated.h5ad')

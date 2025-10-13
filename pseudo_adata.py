@@ -9,6 +9,62 @@ from typing import Tuple, Dict
 from tf_idf import tfidf_memory_efficient
 import contextlib
 import io
+import threading
+import queue
+
+def run_with_timeout(func, args=(), kwargs={}, timeout_duration=1800):
+    """
+    Run a function with a timeout.
+    
+    Parameters
+    ----------
+    func : callable
+        Function to run
+    args : tuple
+        Positional arguments for the function
+    kwargs : dict
+        Keyword arguments for the function
+    timeout_duration : int
+        Timeout in seconds (default: 1800 = 30 minutes)
+    
+    Returns
+    -------
+    result : any
+        Result from the function if successful
+    
+    Raises
+    ------
+    TimeoutError
+        If the function doesn't complete within the timeout
+    """
+    result_queue = queue.Queue()
+    exception_queue = queue.Queue()
+    
+    def target():
+        try:
+            result = func(*args, **kwargs)
+            result_queue.put(result)
+        except Exception as e:
+            exception_queue.put(e)
+    
+    thread = threading.Thread(target=target)
+    thread.daemon = True
+    thread.start()
+    thread.join(timeout_duration)
+    
+    if thread.is_alive():
+        # Timeout occurred
+        raise TimeoutError(f"Function timed out after {timeout_duration} seconds")
+    
+    # Check if an exception occurred
+    if not exception_queue.empty():
+        raise exception_queue.get()
+    
+    # Get the result
+    if not result_queue.empty():
+        return result_queue.get()
+    
+    return None
 
 def _extract_sample_metadata(
     cell_adata: sc.AnnData,
@@ -73,7 +129,8 @@ def compute_pseudobulk_layers(
     normalize: bool = True,
     target_sum: float = 1e4,
     atac: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    combat_timeout: int = 1800  # 30 minutes in seconds
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
     Compute pseudobulk expression using AnnData layers architecture.
@@ -100,6 +157,8 @@ def compute_pseudobulk_layers(
         Whether the data is ATAC-seq (uses TF-IDF normalization)
     verbose : bool
         Print progress information
+    combat_timeout : int
+        Timeout for Combat batch correction in seconds (default: 1800 = 30 minutes)
     
     Returns
     -------
@@ -130,6 +189,7 @@ def compute_pseudobulk_layers(
     
     if verbose:
         print(f"Processing {len(cell_types)} cell types across {len(samples)} samples")
+        print(f"Combat timeout set to {combat_timeout} seconds ({combat_timeout/60:.1f} minutes)")
     
     # Phase 1: Create pseudobulk AnnData with layers
     pseudobulk_adata = _create_pseudobulk_layers(
@@ -187,6 +247,7 @@ def compute_pseudobulk_layers(
                 # Check if we have enough samples per batch
                 min_batch_size = temp_adata.obs[batch_col].value_counts().min()
                 if min_batch_size >= 2:
+                    combat_applied = False
                     try:
                         if verbose:
                             print(f"  Checking gene variance before batch correction...")
@@ -197,45 +258,80 @@ def compute_pseudobulk_layers(
                         else:
                             if verbose:
                                 print(f"  Applying batch correction on {temp_adata.n_vars} genes")
+                                print(f"  Starting Combat with {combat_timeout/60:.1f} minute timeout...")
                             
-                            # Suppress Combat output
-                            with contextlib.redirect_stdout(io.StringIO()), \
-                                 warnings.catch_warnings():
-                                warnings.filterwarnings("ignore")
-                                sc.pp.combat(temp_adata, key=batch_col)
+                            combat_start = time.time()
                             
-                            # Check for NaN values after Combat
-                            if issparse(temp_adata.X):
-                                has_nan = np.any(np.isnan(temp_adata.X.data))
-                                if has_nan:
-                                    nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
-                            else:
-                                nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
-                                has_nan = nan_genes_post.any()
+                            # Create a copy for Combat in case we need to revert
+                            temp_adata_backup = temp_adata.copy()
                             
-                            if has_nan:
+                            # Define Combat function to run with timeout
+                            def run_combat():
+                                with contextlib.redirect_stdout(io.StringIO()), \
+                                     warnings.catch_warnings():
+                                    warnings.filterwarnings("ignore")
+                                    sc.pp.combat(temp_adata, key=batch_col)
+                            
+                            # Run Combat with timeout
+                            try:
+                                run_with_timeout(run_combat, timeout_duration=combat_timeout)
+                                combat_applied = True
+                                combat_elapsed = time.time() - combat_start
+                                
                                 if verbose:
-                                    print(f"  Found {nan_genes_post.sum()} genes with NaN after Combat, removing them")
-                                    print(f"current gene count: {temp_adata.n_vars}")
+                                    print(f"  Combat completed in {combat_elapsed:.1f} seconds")
                                 
-                                # Remove genes with NaN values
-                                temp_adata = temp_adata[:, ~nan_genes_post].copy()
-                                
-                                # Final check
+                                # Check for NaN values after Combat
                                 if issparse(temp_adata.X):
-                                    still_has_nan = np.any(np.isnan(temp_adata.X.data))
+                                    has_nan = np.any(np.isnan(temp_adata.X.data))
+                                    if has_nan:
+                                        nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
                                 else:
-                                    still_has_nan = np.any(np.isnan(temp_adata.X))
+                                    nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                                    has_nan = nan_genes_post.any()
                                 
-                                if still_has_nan:
-                                    raise ValueError("NaN values persist after gene removal")
-                            if verbose:
-                                print(f"  Combat completed successfully, {temp_adata.n_vars} genes remaining")
+                                if has_nan:
+                                    if verbose:
+                                        print(f"  Found {nan_genes_post.sum()} genes with NaN after Combat, removing them")
+                                        print(f"  Current gene count: {temp_adata.n_vars}")
+                                    
+                                    # Remove genes with NaN values
+                                    temp_adata = temp_adata[:, ~nan_genes_post].copy()
+                                    
+                                    # Final check
+                                    if issparse(temp_adata.X):
+                                        still_has_nan = np.any(np.isnan(temp_adata.X.data))
+                                    else:
+                                        still_has_nan = np.any(np.isnan(temp_adata.X))
+                                    
+                                    if still_has_nan:
+                                        raise ValueError("NaN values persist after gene removal")
+                                
+                                if verbose:
+                                    print(f"  Combat completed successfully, {temp_adata.n_vars} genes remaining")
+                                    
+                            except TimeoutError:
+                                # Combat timed out
+                                if verbose:
+                                    print(f"  ⚠️ Combat timeout after {combat_timeout/60:.1f} minutes for {cell_type}")
+                                    print(f"  Skipping this cell type due to timeout")
+                                cell_types_to_remove.append(cell_type)
+                                continue
+                            
+                    except TimeoutError:
+                        # Already handled above
+                        pass
                     except Exception as e:
                         if verbose:
                             print(f"  Combat failed for {cell_type}: {str(e)}")
                             print(f"  Proceeding without batch correction for this cell type")
-                        # Continue without batch correction
+                        # Restore backup if Combat failed
+                        if 'temp_adata_backup' in locals():
+                            temp_adata = temp_adata_backup
+            
+            # Skip further processing if cell type was marked for removal due to timeout
+            if cell_type in cell_types_to_remove:
+                continue
 
             if verbose:
                 print(f"  Selecting top {n_features} HVGs")
@@ -287,6 +383,9 @@ def compute_pseudobulk_layers(
     
     # Remove failed cell types from the list
     cell_types = [ct for ct in cell_types if ct not in cell_types_to_remove]
+    
+    if verbose and cell_types_to_remove:
+        print(f"\n⚠️ Skipped {len(cell_types_to_remove)} cell types: {', '.join(cell_types_to_remove)}")
     
     # Phase 3: Create concatenated AnnData with all cell type HVGs
     if verbose:
@@ -522,10 +621,16 @@ def compute_pseudobulk_adata(
     normalize: bool = True,
     target_sum: float = 1e4,
     atac: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    combat_timeout: int = 1800  # 30 minutes default
 ) -> Tuple[Dict, sc.AnnData]:
     """
     Backward compatibility wrapper for the original function signature.
+    
+    Parameters
+    ----------
+    combat_timeout : int
+        Timeout for Combat batch correction in seconds (default: 1800 = 30 minutes)
     
     Returns
     -------
@@ -535,7 +640,7 @@ def compute_pseudobulk_adata(
         Final AnnData object with samples x genes (final HVGs only)
     """
     
-    # Call the refactored function
+    # Call the refactored function with timeout parameter
     cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers(
         adata=adata,
         batch_col=batch_col,
@@ -546,7 +651,8 @@ def compute_pseudobulk_adata(
         normalize=normalize,
         target_sum=target_sum,
         atac=atac,
-        verbose=verbose
+        verbose=verbose,
+        combat_timeout=combat_timeout
     )
     if Save:
         pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
