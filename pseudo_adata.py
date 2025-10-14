@@ -11,6 +11,7 @@ import contextlib
 import io
 import threading
 import queue
+from utils.batch_regress import simple_batch_regression
 
 def run_with_timeout(func, args=(), kwargs={}, timeout_duration=1800):
     """
@@ -248,6 +249,7 @@ def compute_pseudobulk_layers(
                 min_batch_size = temp_adata.obs[batch_col].value_counts().min()
                 if min_batch_size >= 2:
                     combat_applied = False
+                    fallback_used = False
                     try:
                         if verbose:
                             print(f"  Checking gene variance before batch correction...")
@@ -311,12 +313,29 @@ def compute_pseudobulk_layers(
                                     print(f"  Combat completed successfully, {temp_adata.n_vars} genes remaining")
                                     
                             except TimeoutError:
-                                # Combat timed out
+                                # Combat timed out - use simple batch regression as fallback
                                 if verbose:
                                     print(f"  ⚠️ Combat timeout after {combat_timeout/60:.1f} minutes for {cell_type}")
-                                    print(f"  Skipping this cell type due to timeout")
-                                cell_types_to_remove.append(cell_type)
-                                continue
+                                    print(f"  Using simple batch regression as fallback...")
+                                
+                                # Restore backup and apply simple batch regression
+                                temp_adata = temp_adata_backup
+                                temp_adata = simple_batch_regression(temp_adata, batch_col, verbose)
+                                fallback_used = True
+                                
+                                # Check for NaN values after simple regression
+                                if issparse(temp_adata.X):
+                                    nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+                                else:
+                                    nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                                
+                                if nan_genes_post.any():
+                                    if verbose:
+                                        print(f"  Found {nan_genes_post.sum()} genes with NaN after regression, removing them")
+                                    temp_adata = temp_adata[:, ~nan_genes_post].copy()
+                                
+                                if verbose:
+                                    print(f"  Fallback batch correction completed, {temp_adata.n_vars} genes remaining")
                             
                     except TimeoutError:
                         # Already handled above
@@ -324,14 +343,12 @@ def compute_pseudobulk_layers(
                     except Exception as e:
                         if verbose:
                             print(f"  Combat failed for {cell_type}: {str(e)}")
-                            print(f"  Proceeding without batch correction for this cell type")
-                        # Restore backup if Combat failed
+                            print(f"  Attempting simple batch regression as fallback...")
+                        
+                        # Restore backup and try simple batch regression
                         if 'temp_adata_backup' in locals():
                             temp_adata = temp_adata_backup
-            
-            # Skip further processing if cell type was marked for removal due to timeout
-            if cell_type in cell_types_to_remove:
-                continue
+                            temp_adata = simple_batch_regression(temp_adata, batch_col, verbose)
 
             if verbose:
                 print(f"  Selecting top {n_features} HVGs")

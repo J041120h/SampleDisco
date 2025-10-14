@@ -1,2 +1,16 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
+[WARNING] configure_dataset: `configure_dataset` has already been called. Previous configuration will be overwritten!
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/1.py", line 430, in <module>
+    main()
+  File "/users/hjiang/GenoDistance/code/1.py", line 296, in main
+    sparsity = 1 - (nnz / rna_X.size)
+ZeroDivisionError: division by zero

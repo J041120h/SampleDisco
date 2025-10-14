@@ -11,38 +11,6 @@ Outputs an AnnData with:
   - obs: copied from ATAC
   - var: decoded RNA gene index (ordered to match the model's vertices)
 """
-import time
-import gc
-import os 
-
-def simple_mem_stress(mb: int = 100, hold_seconds: int = 10):
-    MAX_MB = 819200  # safety cap
-    if mb <= 0:
-        raise ValueError("mb must be > 0")
-    if mb > MAX_MB:
-        print(f"[WARN] Requested {mb} MB exceeds safety cap of {MAX_MB} MB — capping to {MAX_MB} MB.")
-        mb = MAX_MB
-
-    chunk_size = 1024 * 1024  # 1 MiB
-    allocated = []
-    try:
-        for i in range(mb):
-            # allocate 1 MiB block and touch first byte so pages get committed
-            b = bytearray(chunk_size)
-            b[0] = 1
-            allocated.append(b)
-            # occasional progress print
-            if (i + 1) % 50 == 0 or (i + 1) == mb:
-                print(f"[INFO] Allocated {(i + 1)} / {mb} MiB")
-        print(f"[INFO] Holding {mb} MiB for {hold_seconds}s...")
-        time.sleep(hold_seconds)
-    except MemoryError:
-        print("[ERROR] MemoryError: allocation failed before reaching target size.")
-    finally:
-        # free and hint GC
-        allocated.clear()
-        gc.collect()
-        print("[INFO] Memory released.")
 
 
 # ────────────────────────────────────────────────────────────────────────────────
