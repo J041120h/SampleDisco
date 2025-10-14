@@ -259,13 +259,13 @@ def compute_metrics_direct_hdf5_robust(
                     
                     # Only correlate non-zero values
                     mask = (rna_vec != 0) | (atac_vec != 0)
-                    if mask.sum() >= 10:  # Need at least 10 non-zero values
-                        try:
-                            corr, _ = stats.pearsonr(rna_vec[mask], atac_vec[mask])
-                            if not np.isnan(corr) and not np.isinf(corr):
-                                per_cell_corr.append(corr)
-                        except:
-                            pass
+
+                    try:
+                        corr, _ = stats.pearsonr(rna_vec[mask], atac_vec[mask])
+                        if not np.isnan(corr) and not np.isinf(corr):
+                            per_cell_corr.append(corr)
+                    except:
+                        pass
                 
                 # Update gene statistics
                 # Use float64 for accumulation to avoid overflow
@@ -461,8 +461,8 @@ def compute_metrics_direct_hdf5_robust(
 if __name__ == "__main__":
     try:
         results = compute_metrics_direct_hdf5_robust(
-            integrated_path="/dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad",
-            output_dir="/dcs07/hongkai/data/harry/result/all/multiomics",
+            integrated_path="/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/preprocess/atac_rna_integrated.h5ad",
+            output_dir="/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics",
             batch_size=100,  # Smaller batch size for safety
             verbose=True,
             subsample_ratio=0.1,

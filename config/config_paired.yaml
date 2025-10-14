@@ -1,18 +1,18 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
-use_gpu: true
+use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true
@@ -26,25 +26,25 @@ rna_sample_meta_path: null
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: true
-rna_cell_type_cluster: true
-rna_dimensionality_reduction: true
-rna_sample_distance_calculation: false
+rna_preprocessing: false
+rna_cell_type_cluster: false
+rna_dimensionality_reduction: false
+rna_sample_distance_calculation: true
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad"
-rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_sample.h5ad"
-rna_pseudobulk_adata_path: null
+rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/preprocess/adata_sample.h5ad"
+rna_pseudobulk_adata_path: '/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/pseudobulk/pseudobulk_sample.h5ad'
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-  - "sev.level"
+  - "tissue"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: null
@@ -120,14 +120,14 @@ rna_sample_distance_methods:
 # RNA Visualization Parameters
 rna_verbose_visualization: true
 rna_trajectory_visualization_label: 
-  - "sev.level"
+  - "tissue"
 rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 3
-rna_plot_dendrogram_flag: true
-rna_plot_umap_by_cell_type_flag: true
-rna_plot_cell_type_proportions_pca_flag: false
-rna_plot_cell_type_expression_umap_flag: false
+rna_plot_dendrogram_flag: false
+rna_plot_umap_by_cell_type_flag: false
+rna_plot_cell_type_proportions_pca_flag: true
+rna_plot_cell_type_expression_umap_flag: true
 
 # RNA Cluster Based DEG
 rna_kmeans_based_cluster_flag: true
@@ -156,7 +156,7 @@ atac_cell_type_cluster: false
 atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false
 atac_trajectory_analysis: false
-atac_sample_distance_calculation: false
+atac_sample_distance_calculation: true
 atac_sample_cluster: false
 atac_cluster_dge: false
 atac_trajectory_dge: false

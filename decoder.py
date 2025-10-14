@@ -580,13 +580,17 @@ def decode_rna_from_atac_with_decoder(
     rna_emb_path = os.path.join(glue_dir, "glue-rna-emb.h5ad")
     atac_emb_path = os.path.join(glue_dir, "glue-atac-emb.h5ad")
 
-    if not os.path.exists(model_path):  raise FileNotFoundError(model_path)
-    if not os.path.exists(rna_emb_path): raise FileNotFoundError(rna_emb_path)
-    if not os.path.exists(atac_emb_path): raise FileNotFoundError(atac_emb_path)
+    if not os.path.exists(model_path):  
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+    if not os.path.exists(rna_emb_path): 
+        raise FileNotFoundError(f"RNA embeddings not found: {rna_emb_path}")
+    if not os.path.exists(atac_emb_path): 
+        raise FileNotFoundError(f"ATAC embeddings not found: {atac_emb_path}")
 
     if verbose:
         print("\n🧠 Loading trained SCGLUE model and embedded datasets...")
-    glue = scglue.models.fit_SCGLUE(model_path)
+    glue = scglue.models.load_model(model_path)
+    
     rna = ad.read_h5ad(rna_emb_path)
     atac = ad.read_h5ad(atac_emb_path)
 
@@ -617,27 +621,64 @@ def decode_rna_from_atac_with_decoder(
         rna_lib = np.array(rna.layers["counts"].sum(axis=1)).flatten()
     else:
         X = rna.X.A if sparse.issparse(rna.X) else rna.X
-        rna_lib = np.expm1(X.sum(axis=1))
+        rna_lib = np.expm1(X).sum(axis=1)
     lib_med = float(np.median(rna_lib))
     l_atac = np.full((atac.n_obs, 1), lib_med, dtype=np.float32)
 
     # 4) Torch tensors
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if verbose:
+        print(f"Using device: {device}")
+    
     u_t = torch.as_tensor(u_atac, dtype=torch.float32, device=device)
     v_t = torch.as_tensor(v_rna, dtype=torch.float32, device=device)
     b_t = torch.as_tensor(atac_b, dtype=torch.long, device=device)
     l_t = torch.as_tensor(l_atac, dtype=torch.float32, device=device)
 
-    # 5) Use the trained RNA decoder from the model (u2x["rna"])
-    if not hasattr(glue, "u2x") or "rna" not in glue.u2x:
-        raise RuntimeError("Trained model does not expose RNA decoder via glue.u2x['rna']. "
-                           "Ensure prob_model='ImprovedNB' was used for RNA.")
-    rna_decoder = glue.u2x["rna"].to(device).eval()
+    # 5) Locate the correct RNA decoder key robustly (minimal change: only decoder selection logic)
+    if not hasattr(glue, "u2x") or not isinstance(glue.u2x, dict) or len(glue.u2x) == 0:
+        have = [] if not hasattr(glue, "u2x") else list(getattr(glue, "u2x", {}).keys())
+        raise RuntimeError(
+            "This SCGLUE checkpoint doesn't expose any u2x decoders. "
+            f"Available u2x keys found: {have}. "
+            "Re-train/compile with a count likelihood for RNA (e.g., ImprovedNB/NB/Poisson)."
+        )
+
+    u2x_keys = list(glue.u2x.keys())
+
+    # Prefer decoders whose output dimensionality matches the number of RNA genes
+    size_matched = [k for k, dec in glue.u2x.items()
+                    if getattr(dec, "out_features", None) == rna.n_vars]
+
+    # Common aliases to try if multiple keys exist
+    preferred_aliases = ["rna", "gex", "RNA", "rna_counts", "GeneExpression"]
+
+    rna_key = None
+    if "rna" in size_matched:
+        rna_key = "rna"
+    elif len(size_matched) == 1:
+        rna_key = size_matched[0]
+    else:
+        # Fallback to aliases
+        rna_key = next((k for k in preferred_aliases if k in glue.u2x), None)
+        # If still unresolved and there is only one key overall, use it
+        if rna_key is None and len(u2x_keys) == 1:
+            rna_key = u2x_keys[0]
+
+    if rna_key is None:
+        raise RuntimeError(
+            "Could not locate the RNA decoder in glue.u2x. "
+            f"Available keys: {u2x_keys}. "
+            f"Keys with out_features={rna.n_vars}: {size_matched}. "
+            "If one of these corresponds to RNA (e.g., 'gex'), use that as the decoder key."
+        )
+
+    rna_decoder = glue.u2x[rna_key].to(device).eval()
 
     if verbose:
-        print("🧪 Decoding expected RNA expression for ATAC cells via RNA decoder...")
+        print(f"🧪 Decoding expected RNA expression for ATAC cells via RNA decoder key: '{rna_key}'")
     with torch.no_grad():
-        dist = rna_decoder(u_t, v_t, b_t, l_t)  # torch.distributions.NegativeBinomial
+        dist = rna_decoder(u_t, v_t, b_t, l_t)  # torch.distributions.NegativeBinomial (or compatible)
         mu_atac_rna = dist.mean  # (n_atac, n_genes)
 
     mu_np = mu_atac_rna.detach().cpu().numpy().astype(np.float64)
@@ -656,7 +697,8 @@ def decode_rna_from_atac_with_decoder(
     X_atac_pred = mu_np
 
     def to_csr_if_sparse(x):
-        if sparse.issparse(x): return x.tocsr()
+        if sparse.issparse(x): 
+            return x.tocsr()
         nnz = np.count_nonzero(x)
         sparsity = 1 - nnz / (x.shape[0] * x.shape[1])
         return sparse.csr_matrix(x) if sparsity > 0.5 else x
@@ -679,8 +721,10 @@ def decode_rna_from_atac_with_decoder(
     atac_block.obs['modality'] = 'ATAC'
 
     # carry over embeddings
-    for k, v in rna.obsm.items(): rna_block.obsm[k] = v
-    for k, v in atac.obsm.items(): atac_block.obsm[k] = v
+    for k, v in rna.obsm.items(): 
+        rna_block.obsm[k] = v
+    for k, v in atac.obsm.items(): 
+        atac_block.obsm[k] = v
 
     # unique indices across modalities
     rna_block.obs['original_barcode'] = rna_block.obs.index
@@ -705,7 +749,6 @@ def decode_rna_from_atac_with_decoder(
         print(f"   ATAC cells: {(merged.obs['modality'] == 'ATAC').sum()}")
 
     return merged
-
 
 # -------------------------
 # Visualization (unchanged)
@@ -928,7 +971,7 @@ if __name__ == "__main__":
     # ========================================
     # MAIN PIPELINE PARAMETERS
     # ========================================
-    output_dir = "/dcs07/hongkai/data/harry/result/Benchmark/decoder"
+    output_dir = "/dcs07/hongkai/data/harry/result/Benchmark_omics/decoder"
 
     # ========================================
     # PIPELINE CONTROL FLAGS

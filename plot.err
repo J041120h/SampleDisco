@@ -1,20 +1,2 @@
-... storing 'celltype' as categorical
-... storing 'sample' as categorical
-... storing 'old' as categorical
-... storing 'large' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'celltype' as categorical
-... storing 'sample' as categorical
-... storing 'old' as categorical
-... storing 'large' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
