@@ -9,10 +9,10 @@ from typing import Tuple, Dict, List
 
 # GPU imports
 import torch
-from torch.utils.data import DataLoader, TensorDataset
 
 # Import the TF-IDF function (keep as in your original setup)
 from tf_idf import tfidf_memory_efficient
+from utils.batch_regress import simple_batch_regression
 
 
 def clear_gpu_memory():
