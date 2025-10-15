@@ -1,73 +1,29 @@
-================================================================================
-DIRECT HDF5 PROCESSING (Robust Version) — DEBUG BUILD
-================================================================================
-[debug] Timestamp       : 2025-10-14T17:26:53.231531
-[debug] integrated_path : /dcs07/hongkai/data/harry/result/all/multiomics/integration/glue/atac_pseudorna_integrated.h5ad
-[debug] output_dir      : /dcs07/hongkai/data/harry/result/all/multiomics/integration/glue/validation_results_pseudorna
-[debug] batch_size      : 100
-[debug] subsample_ratio : 0.1
-[debug] max_memory_gb   : 400.0
-[debug] debug           : True
-================================================================================
-DIRECT HDF5 PROCESSING (Robust Version)
-================================================================================
-
-📂 Processing: /dcs07/hongkai/data/harry/result/all/multiomics/integration/glue/atac_pseudorna_integrated.h5ad
-   Batch size: 100
-   Subsample ratio: 0.1
-   Max memory: 400.0 GB
-[debug] Wrote h5_structure.txt
-[debug] matrix_shape: (861190, 2000)
-[debug] n_genes     : 2000
-[debug] Wrote obs_preview.csv (first 50 rows).
-[debug] Wrote obs_value_counts_modality.csv
-   Matrix shape: (861190, 2000)
-   RNA cells: 430595
-   ATAC cells: 430595
-[debug] RNA cells : 430595
-[debug] ATAC cells: 430595
-
-[DEBUG] RNA index examples: ['ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA', 'ENCSR128ZLB_AAACATGCACAACCTA-1_RNA', 'ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA', 'ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA', 'ENCSR128ZLB_AAACCAACAAAGCGCA-1_RNA', 'ENCSR128ZLB_AAACCAACAAGCCACT-1_RNA', 'ENCSR128ZLB_AAACCGAAGCTAAGTC-1_RNA', 'ENCSR128ZLB_AAACCGAAGCTCCTTA-1_RNA', 'ENCSR128ZLB_AAACCGAAGGCGAATA-1_RNA']
-[DEBUG] ATAC index examples: ['adrenal_gland_ENCSR212VKB_AAACAGCCAAAGGTAC-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACAGCCAACAGGAT-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACAGCCACAACAAA-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACAGCCACATTGCA-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACAGCCACCAGCAT-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACAGCCAGCACGTT-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACATGCAATTAGCT-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACATGCACCCTCAC-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACATGCATAAGCAA-1_ATAC', 'adrenal_gland_ENCSR212VKB_AAACATGCATAGCTTG-1_ATAC']
-[DEBUG] RNA original_barcode examples: ['ENCSR128ZLB_AAACAGCCAGCAAATA-1', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1', 'ENCSR128ZLB_AAACATGCACAACCTA-1', 'ENCSR128ZLB_AAACATGCACTGGCTG-1', 'ENCSR128ZLB_AAACCAACAAAGCCTC-1', 'ENCSR128ZLB_AAACCAACAAAGCGCA-1', 'ENCSR128ZLB_AAACCAACAAGCCACT-1', 'ENCSR128ZLB_AAACCGAAGCTAAGTC-1', 'ENCSR128ZLB_AAACCGAAGCTCCTTA-1', 'ENCSR128ZLB_AAACCGAAGGCGAATA-1']
-[DEBUG] ATAC original_barcode examples: ['adrenal_gland_ENCSR212VKB_AAACAGCCAAAGGTAC-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCAACAGGAT-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACAACAAA-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACATTGCA-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACCAGCAT-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCAGCACGTT-1', 'adrenal_gland_ENCSR212VKB_AAACATGCAATTAGCT-1', 'adrenal_gland_ENCSR212VKB_AAACATGCACCCTCAC-1', 'adrenal_gland_ENCSR212VKB_AAACATGCATAAGCAA-1', 'adrenal_gland_ENCSR212VKB_AAACATGCATAGCTTG-1']
-[debug] Using 'original_barcode' for pairing.
-[debug] Wrote rna_barcodes_head.txt (n=100)
-[debug] Wrote atac_barcodes_head.txt (n=100)
-
-🔗 Found 430595 paired cells
-[debug] n_paired=430595
-[debug] Wrote common_barcodes_head.txt (n=100)
-   Subsampled to 43059 cells
-[debug] Subsampled to 43059 cells
-[debug] Wrote paired_indices_preview.csv
-
-🔍 Detecting data format...
-   Data format: Sparse CSR matrix
-   Estimated sparse matrix size: 20.49 GB
-[debug] Sparse CSR detected; nnz≈916816689
-
-📈 Processing paired cells in batches...
-
-✅ Processed 43059 paired cells
-   Computed 43059 cell correlations
-[debug] n_processed=43059, n_cell_corr=43059
-
-📈 Computing per-gene correlations (sampling)...
-[debug] Sampling up to 1000 genes for per-gene correlation.
-
-🎨 Creating visualizations...
-
-💾 Saving results...
-[debug] Saved summary_robust.csv and debug_context.json
-
-================================================================================
-SUMMARY
-================================================================================
-Paired cells: 43059
-Processed cells: 43059
-Cell correlations: 43059
-Mean cell correlation: -0.0065
-Mean gene correlation (sampled): -0.0046
-
-Results saved to: /dcs07/hongkai/data/harry/result/all/multiomics/integration/glue/validation_results_pseudorna
+2025-10-15 13:43:38 - INFO - init
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 69, in <module>
+    main()
+  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 63, in main
+    wrapper(**config)
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 639, in wrapper
+    rna_results = rna_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 460, in rna_wrapper
+    find_optimal_cell_resolution_linux(
+  File "/users/hjiang/GenoDistance/code/linux/CCA_test_linux.py", line 417, in find_optimal_cell_resolution_linux
+    result_dict, resolution_null_result = process_resolution(resolution, 'coarse')
+  File "/users/hjiang/GenoDistance/code/linux/CCA_test_linux.py", line 288, in process_resolution
+    pseudobulk_dict, pseudobulk_adata = time_function(
+  File "/users/hjiang/GenoDistance/code/linux/CCA_test_linux.py", line 186, in time_function
+    result = func(*args, **kwargs)
+  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 592, in compute_pseudobulk_adata_linux
+    cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu(
+  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 121, in compute_pseudobulk_layers_gpu
+    pseudobulk_adata = _create_pseudobulk_layers_gpu(
+  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 452, in _create_pseudobulk_layers_gpu
+    expr_values = np.asarray(adata.X[cell_indices, :].mean(axis=0)).flatten()
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_index.py", line 87, in __getitem__
+    res = self._get_arrayXslice(row, col)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_csc.py", line 141, in _get_arrayXslice
+    return self._major_slice(col)._minor_index_fancy(row)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_compressed.py", line 856, in _minor_index_fancy
+    csr_column_index2(col_order, col_offsets, len(self.indices),
+KeyboardInterrupt

@@ -158,6 +158,11 @@ def run_cca_on_pca_from_adata(
     return pca_coords_subset, sev_levels, samples, n_components
 
 
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cross_decomposition import CCA
+from scipy.stats import pearsonr
+
 def plot_cca_on_2d_pca(
     pca_coords_full: np.ndarray,
     sev_levels: np.ndarray,
@@ -166,10 +171,12 @@ def plot_cca_on_2d_pca(
     output_path: str = None,
     sample_labels=None,
     title_suffix: str = "",
-    verbose: bool = False
+    verbose: bool = False,
+    create_contribution_plot: bool = True
 ):
     """
     Plot 2D PCA with CCA direction overlay, with PC selection logic integrated.
+    Optionally creates a companion plot showing PC contributions to CCA.
     
     Parameters:
     -----------
@@ -189,6 +196,8 @@ def plot_cca_on_2d_pca(
         Additional text for the title
     verbose : bool
         Whether to print information
+    create_contribution_plot : bool
+        If True, create a companion plot showing PC contributions (default: True)
         
     Returns:
     --------
@@ -240,14 +249,14 @@ def plot_cca_on_2d_pca(
         if verbose:
             print(f"Using default PC1 + PC2: CCA score = {cca_score:.4f}")
 
-    # Create the visualization
-    plt.figure(figsize=(10, 8))
+    # ==================== MAIN PLOT ====================
+    fig, ax = plt.subplots(figsize=(10, 8))
 
     # Normalize severity levels for coloring
     norm_sev = (sev_levels - np.min(sev_levels)) / (np.max(sev_levels) - np.min(sev_levels) + 1e-16)
 
     # Create scatter plot
-    sc = plt.scatter(
+    sc = ax.scatter(
         pca_coords_2d[:, 0],
         pca_coords_2d[:, 1],
         c=norm_sev,
@@ -256,7 +265,7 @@ def plot_cca_on_2d_pca(
         alpha=0.8,
         s=60
     )
-    cbar = plt.colorbar(sc, label='Normalized Severity Level')
+    cbar = plt.colorbar(sc, ax=ax, label='Normalized Severity Level')
 
     # Draw CCA direction vector
     dx, dy = cca_model.x_weights_[:, 0]
@@ -264,35 +273,105 @@ def plot_cca_on_2d_pca(
     x_start, x_end = -scale * dx, scale * dx
     y_start, y_end = -scale * dy, scale * dy
 
-    plt.plot([x_start, x_end], [y_start, y_end],
-             linestyle="--", color="red", linewidth=3, label="CCA Direction", alpha=0.9)
+    ax.plot([x_start, x_end], [y_start, y_end],
+            linestyle="--", color="red", linewidth=3, label="CCA Direction", alpha=0.9)
 
     # Add sample labels if requested
     if sample_labels is not None:
         for i, label in enumerate(sample_labels):
-            plt.text(pca_coords_2d[i, 0], pca_coords_2d[i, 1], 
-                    str(label), fontsize=8, alpha=0.7)
+            ax.text(pca_coords_2d[i, 0], pca_coords_2d[i, 1], 
+                   str(label), fontsize=8, alpha=0.7)
 
     # Set labels and title
-    plt.xlabel(f"PC{pc_indices_used[0]+1}")
-    plt.ylabel(f"PC{pc_indices_used[1]+1}")
+    ax.set_xlabel(f"PC{pc_indices_used[0]+1}", fontsize=12)
+    ax.set_ylabel(f"PC{pc_indices_used[1]+1}", fontsize=12)
     title = f"PCA (PC{pc_indices_used[0]+1} vs PC{pc_indices_used[1]+1}) with CCA Direction"
     if title_suffix:
         title += f" - {title_suffix}"
     if auto_select_best_2pc and n_components > 2:
         title += f" (Auto-selected, Score: {cca_score:.3f})"
-    plt.title(title, fontsize=14)
-    plt.grid(True, alpha=0.3)
-    plt.legend()
+    ax.set_title(title, fontsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.legend()
     plt.tight_layout()
 
-    # Save or show plot
+    # Save or show main plot
     if output_path:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         if verbose:
             print(f"Saved CCA plot to: {output_path}")
     else:
         plt.show()
+    
+    plt.close()
+    
+    # ==================== CONTRIBUTION PLOT ====================
+    if create_contribution_plot:
+        # Calculate individual PC correlations with severity
+        pc1_corr, _ = pearsonr(pca_coords_2d[:, 0], sev_levels)
+        pc2_corr, _ = pearsonr(pca_coords_2d[:, 1], sev_levels)
+        
+        # Create figure with simple bar chart
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        x_pos = np.arange(3)
+        colors = ['#3498db', '#e74c3c', '#2ecc71']
+        
+        # Show: individual correlations and CCA score
+        values = [pc1_corr, pc2_corr, cca_score]
+        labels = [
+            f'PC{pc_indices_used[0]+1}\n(r={pc1_corr:.3f})',
+            f'PC{pc_indices_used[1]+1}\n(r={pc2_corr:.3f})',
+            f'CCA Combined\n(r={cca_score:.3f})'
+        ]
+        
+        bars = ax.bar(x_pos, values, color=colors, alpha=0.7, 
+                      edgecolor='black', linewidth=2, width=0.6)
+        
+        ax.axhline(y=0, color='gray', linestyle='--', linewidth=1)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(labels, fontsize=11)
+        ax.set_ylabel('Correlation with Severity', fontsize=12, fontweight='bold')
+        ax.set_ylim([min(values) - 0.1, max(values) + 0.15])
+        ax.grid(axis='y', alpha=0.3)
+        
+        # Add value labels on bars
+        for bar, val in zip(bars, values):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.02,
+                    f'{val:.3f}', ha='center', va='bottom', 
+                    fontsize=11, fontweight='bold')
+        
+        # Add CCA weights as text annotation
+        weight_text = (
+            f"CCA Weights: PC{pc_indices_used[0]+1}={dx:.3f}, "
+            f"PC{pc_indices_used[1]+1}={dy:.3f}\n"
+            f"(Direction: {dx:.2f}×PC{pc_indices_used[0]+1} + {dy:.2f}×PC{pc_indices_used[1]+1})"
+        )
+        ax.text(0.5, 0.98, weight_text, transform=ax.transAxes, 
+                fontsize=10, ha='center', va='top',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        
+        # Title
+        title = f"PC Contributions to CCA"
+        if title_suffix:
+            title += f" - {title_suffix}"
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+        
+        plt.tight_layout()
+        
+        # Save or show contribution plot
+        if output_path:
+            import os
+            base, ext = os.path.splitext(output_path)
+            contribution_path = f"{base}_contributions{ext}"
+            plt.savefig(contribution_path, dpi=300, bbox_inches='tight')
+            if verbose:
+                print(f"Saved CCA contributions plot to: {contribution_path}")
+        else:
+            plt.show()
+        
+        plt.close()
     
     return cca_score, pc_indices_used, cca_model
 
