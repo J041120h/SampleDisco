@@ -738,6 +738,65 @@ def compute_gene_activity_from_knn(
         
         return X_fixed
     
+    def library_size_normalize(X, target_sum=10000, verbose=False):
+        """
+        Perform library size normalization on expression matrix.
+        
+        Parameters:
+        -----------
+        X : array-like or sparse matrix
+            Expression matrix (cells x genes)
+        target_sum : float
+            Target sum for normalization (default: 10000)
+        verbose : bool
+            Print progress information
+        
+        Returns:
+        --------
+        X_norm : same type as input
+            Library size normalized expression matrix
+        """
+        if verbose:
+            print(f"   Performing library size normalization (target sum: {target_sum})...")
+        
+        if sparse.issparse(X):
+            # For sparse matrices
+            X = X.tocsr()
+            
+            # Calculate library sizes (total counts per cell)
+            lib_sizes = np.array(X.sum(axis=1)).flatten()
+            
+            # Avoid division by zero
+            lib_sizes = np.maximum(lib_sizes, 1e-10)
+            
+            # Calculate scaling factors
+            scale_factors = target_sum / lib_sizes
+            
+            # Apply scaling using broadcasting
+            # Create diagonal matrix with scale factors
+            scaling_matrix = sparse.diags(scale_factors, dtype=np.float64)
+            X_norm = scaling_matrix @ X
+            
+            if verbose:
+                print(f"   Normalized sparse matrix: {X_norm.shape}")
+                print(f"   Library sizes - min: {lib_sizes.min():.2f}, max: {lib_sizes.max():.2f}, median: {np.median(lib_sizes):.2f}")
+        else:
+            # For dense matrices
+            # Calculate library sizes
+            lib_sizes = X.sum(axis=1)
+            
+            # Avoid division by zero
+            lib_sizes = np.maximum(lib_sizes, 1e-10)
+            
+            # Normalize
+            X_norm = (X / lib_sizes[:, np.newaxis]) * target_sum
+            
+            if verbose:
+                print(f"   Normalized dense matrix: {X_norm.shape}")
+                print(f"   Library sizes - min: {lib_sizes.min():.2f}, max: {lib_sizes.max():.2f}, median: {np.median(lib_sizes):.2f}")
+        
+        return X_norm
+    
     # Memory pool settings for GPU
     mempool = cp.get_default_memory_pool()
     pinned_mempool = cp.get_default_pinned_memory_pool()
@@ -832,6 +891,50 @@ def compute_gene_activity_from_knn(
     if verbose:
         print(f"   RNA cells: {n_rna_cells}, ATAC cells: {n_atac_cells}, Genes: {n_genes}")
     
+    # ==========================================
+    # LOAD AND NORMALIZE RNA DATA
+    # ==========================================
+    if verbose:
+        print("\n📊 Loading and normalizing RNA expression data...")
+    
+    # Check if RNA is sparse
+    is_sparse_rna = sparse.issparse(rna_raw.X)
+    
+    # Load all RNA data for normalization
+    if is_sparse_rna:
+        rna_X_full = rna_raw[common_cells, :].X
+        if sparse.issparse(rna_X_full):
+            rna_X_full = rna_X_full.tocsr().astype(np.float64)
+        else:
+            rna_X_full = rna_X_full[:].astype(np.float64)
+    else:
+        rna_X_full = rna_raw[common_cells, :].X[:].astype(np.float64)
+    
+    # Perform library size normalization
+    rna_X_normalized = library_size_normalize(rna_X_full, target_sum=10000, verbose=verbose)
+    
+    # Ensure it's sparse if beneficial
+    if not sparse.issparse(rna_X_normalized):
+        nnz = np.count_nonzero(rna_X_normalized)
+        sparsity = 1 - (nnz / rna_X_normalized.size)
+        if sparsity > 0.5:
+            if verbose:
+                print(f"   Converting normalized RNA to sparse (sparsity: {sparsity:.1%})")
+            rna_X_normalized = sparse.csr_matrix(rna_X_normalized, dtype=np.float64)
+    
+    # Fix sparse matrix dtype if needed
+    if sparse.issparse(rna_X_normalized):
+        rna_X_normalized = fix_sparse_matrix_dtype(rna_X_normalized, verbose=verbose)
+    
+    # Close the backed file since we've loaded what we need
+    rna_raw.file.close()
+    del rna_raw
+    gc.collect()
+    
+    # ==========================================
+    # K-NN COMPUTATION
+    # ==========================================
+    
     # Find k-nearest neighbors using GPU
     if verbose:
         print("\n🔍 Finding k-nearest RNA neighbors (GPU-accelerated)...")
@@ -874,6 +977,10 @@ def compute_gene_activity_from_knn(
     
     del similarities_gpu, distances_gpu, row_sums_gpu
     
+    # ==========================================
+    # GENE ACTIVITY COMPUTATION WITH NORMALIZED RNA
+    # ==========================================
+    
     # Determine optimal batch size based on memory
     estimated_memory_per_cell = (k_neighbors * n_genes * 8) / 1e9  # GB per cell
     optimal_batch_size = int(min(
@@ -884,7 +991,7 @@ def compute_gene_activity_from_knn(
     optimal_batch_size = max(optimal_batch_size, 100)  # Minimum batch size
     
     if verbose:
-        print(f"\n🧮 Computing weighted gene activity...")
+        print(f"\n🧮 Computing weighted gene activity from normalized RNA...")
         print(f"   Optimal batch size: {optimal_batch_size}")
         start_time = time.time()
     
@@ -893,8 +1000,8 @@ def compute_gene_activity_from_knn(
     # Pre-allocate output matrix as float64 for final precision
     gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float64)
     
-    # Optimize RNA data loading - check if sparse
-    is_sparse_rna = sparse.issparse(rna_raw.X)
+    # Check if normalized RNA is sparse
+    is_sparse_normalized = sparse.issparse(rna_X_normalized)
     
     for batch_idx in range(n_batches):
         start_idx = batch_idx * optimal_batch_size
@@ -909,9 +1016,9 @@ def compute_gene_activity_from_knn(
         batch_indices_cpu = cp.asnumpy(batch_indices_gpu).flatten()
         unique_rna_indices = np.unique(batch_indices_cpu)
         
-        # Load RNA expression for batch neighbors
-        if is_sparse_rna:
-            rna_expr_subset = rna_raw[common_cells[unique_rna_indices], :].X
+        # Get normalized RNA expression for batch neighbors
+        if is_sparse_normalized:
+            rna_expr_subset = rna_X_normalized[unique_rna_indices]
             if sparse.issparse(rna_expr_subset):
                 if rna_expr_subset.nnz / rna_expr_subset.size > 0.1:  # If >10% dense
                     rna_expr_subset = rna_expr_subset.toarray()
@@ -919,7 +1026,7 @@ def compute_gene_activity_from_knn(
                     # Keep sparse and use sparse GPU operations
                     rna_expr_subset = cusparse.csr_matrix(rna_expr_subset, dtype=cp.float32)
         else:
-            rna_expr_subset = rna_raw[common_cells[unique_rna_indices], :].X[:]
+            rna_expr_subset = rna_X_normalized[unique_rna_indices]
         
         # Transfer to GPU if not already
         if not isinstance(rna_expr_subset, (cp.ndarray, cusparse.csr_matrix)):
@@ -1007,45 +1114,23 @@ def compute_gene_activity_from_knn(
     for key, value in raw_rna_varm_dict.items():
         gene_activity_adata.varm[key] = value
     
-    # Prepare RNA data for merging
+    # ==========================================
+    # PREPARE RNA DATA FOR MERGING
+    # ==========================================
     if verbose:
-        print("\n🔗 Preparing RNA data for merging...")
+        print("\n🔗 Preparing normalized RNA data for merging...")
     
-    # Load RNA data efficiently
-    if is_sparse_rna:
-        rna_X = rna_raw[common_cells, :].X
-        if sparse.issparse(rna_X):
-            rna_X = rna_X.tocsr().astype(np.float64)
-            # Fix sparse matrix dtype to int64
-            rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
-            if verbose:
-                rna_sparsity = 1 - (rna_X.nnz / (rna_X.shape[0] * rna_X.shape[1]))
-                print(f"   RNA sparsity: {rna_sparsity:.1%} zeros")
-        else:
-            rna_X = rna_X[:].astype(np.float64)
-            nnz = np.count_nonzero(rna_X)
-            sparsity = 1 - (nnz / rna_X.size)
-            if sparsity > 0.5:
-                if verbose:
-                    print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
-                rna_X = sparse.csr_matrix(rna_X, dtype=np.float64)
-                rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
-    else:
-        rna_X = rna_raw[common_cells, :].X[:].astype(np.float64)
-        nnz = np.count_nonzero(rna_X)
-        sparsity = 1 - (nnz / rna_X.size)
-        if sparsity > 0.5:
-            if verbose:
-                print(f"   Converting RNA to sparse (sparsity: {sparsity:.1%})")
-            rna_X = sparse.csr_matrix(rna_X, dtype=np.float64)
-            rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
+    # Use the already normalized RNA data
+    rna_X = rna_X_normalized
     
-    # Close the backed file
-    rna_raw.file.close()
-    del rna_raw
-    gc.collect()
+    # Ensure proper sparse format if needed
+    if sparse.issparse(rna_X):
+        rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
+        if verbose:
+            rna_sparsity = 1 - (rna_X.nnz / (rna_X.shape[0] * rna_X.shape[1]))
+            print(f"   RNA sparsity: {rna_sparsity:.1%} zeros")
     
-    # Create RNA AnnData with raw RNA obs/var
+    # Create RNA AnnData with normalized data
     rna_for_merge = ad.AnnData(
         X=rna_X,
         obs=rna_obs.copy(),  # Using raw RNA obs
@@ -1066,7 +1151,7 @@ def compute_gene_activity_from_knn(
     # CRITICAL FIX: Handle index overlaps
     # ==========================================
     if verbose:
-        print("\n🔗 Merging gene activity with RNA data...")
+        print("\n🔗 Merging gene activity with normalized RNA data...")
         print("   Checking for index overlaps...")
     
     # Check for overlapping indices
@@ -1092,8 +1177,8 @@ def compute_gene_activity_from_knn(
     gene_activity_adata.obs.index = pd.Index([f"{idx}_ATAC" for idx in gene_activity_adata.obs.index])
     
     if verbose:
-        print(f"   RNA cells: {rna_for_merge.n_obs}")
-        print(f"   ATAC cells: {gene_activity_adata.n_obs}")
+        print(f"   RNA cells (normalized): {rna_for_merge.n_obs}")
+        print(f"   ATAC cells (gene activity): {gene_activity_adata.n_obs}")
     
     # Merge datasets with fixed indices
     merged_adata = ad.concat(
@@ -1150,8 +1235,9 @@ def compute_gene_activity_from_knn(
         print(f"\n📊 Summary:")
         print(f"   Output path: {output_path_anndata}")
         print(f"   Merged dataset shape: {merged_adata.shape}")
-        print(f"   RNA cells: {(merged_adata.obs['modality'] == 'RNA').sum()}")
-        print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
+        print(f"   RNA cells (normalized): {(merged_adata.obs['modality'] == 'RNA').sum()}")
+        print(f"   ATAC cells (gene activity): {(merged_adata.obs['modality'] == 'ATAC').sum()}")
+        print(f"   RNA normalization: Library size (target sum = 10000)")
         print(f"   Unique cell indices: {merged_adata.obs.index.is_unique}")
         
         # Report matrix format
