@@ -196,7 +196,7 @@ def preprocess(
         print(f'Number of samples remaining: {len(keep)}')
 
     # Additional gene filtering based on cell percentage
-    sc.pp.filter_genes(adata, min_cells=int(0.01 * adata.n_obs))
+    sc.pp.filter_genes(adata, min_cells=int(0.001 * adata.n_obs))
     if verbose:
         print(f'After final gene filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
 

@@ -6,6 +6,7 @@ import pandas as pd
 import scanpy as sc
 from scipy.sparse import issparse, csr_matrix
 from typing import Tuple, Dict, List
+import contextlib
 
 # GPU imports
 import torch
@@ -75,7 +76,7 @@ def compute_pseudobulk_layers_gpu(
     verbose: bool = False,
     batch_size: int = 100,
     max_cells_per_batch: int = 50000,
-    combat_timeout: float = 60.0  # timeout for ComBat (seconds)
+    combat_timeout: float = 1800.0  # timeout for ComBat (seconds)
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
     GPU-accelerated pseudobulk computation matching CPU version output exactly.
@@ -573,7 +574,7 @@ def compute_pseudobulk_adata_linux(
     verbose: bool = False,
     batch_size: int = 100,
     max_cells_per_batch: int = 50000,
-    combat_timeout: float = 60.0
+    combat_timeout: float = 1800.0
 ) -> Tuple[Dict, sc.AnnData]:
     """
     Explicit GPU version with additional control parameters.

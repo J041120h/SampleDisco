@@ -56,7 +56,7 @@ def anndata_cluster(
 
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_cluster)
-    sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
+    sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster, compression='gzip')
     return adata_cluster
 
 def anndata_sample(
@@ -83,7 +83,7 @@ def anndata_sample(
     rsc.get.anndata_to_CPU(adata_sample_diff)
     adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
     del adata_sample_diff.layers["counts"]
-    sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
+    sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff, compression='gzip')
 
     return adata_sample_diff
 

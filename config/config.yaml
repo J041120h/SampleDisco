@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark/covid_200_sample"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,7 +21,7 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_200samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad"
 rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
 rna_output_dir: null
 
@@ -29,7 +29,7 @@ rna_output_dir: null
 rna_preprocessing: true
 rna_cell_type_cluster: true
 rna_dimensionality_reduction: true
-rna_sample_distance_calculation: true
+rna_sample_distance_calculation: false
 rna_trajectory_analysis: true
 rna_trajectory_dge: false
 rna_sample_cluster: false
@@ -49,7 +49,7 @@ rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: null
 rna_markers: null
-rna_cluster_resolution: 1
+rna_cluster_resolution: 0.7
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -81,15 +81,15 @@ rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
 
 # RNA PCA Parameters
-rna_n_expression_components: 20
-rna_n_proportion_components: 20
+rna_n_expression_components: 10
+rna_n_proportion_components: 5
 rna_harmony_for_proportion: true
 rna_dr_output_dir: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
 rna_trajectory_supervised: true
-rna_n_components_for_cca: 2
+rna_n_components_for_cca: 10
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
 rna_cca_optimal_cell_resolution: true

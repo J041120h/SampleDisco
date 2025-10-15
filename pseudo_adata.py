@@ -12,8 +12,10 @@ import io
 import threading
 import queue
 from utils.batch_regress import simple_batch_regression
+import contextlib
 
-def run_with_timeout(func, args=(), kwargs={}, timeout_duration=1800):
+
+def run_with_timeout(func, args=(), kwargs={}, timeout_duration=18000):
     """
     Run a function with a timeout.
     
@@ -26,7 +28,6 @@ def run_with_timeout(func, args=(), kwargs={}, timeout_duration=1800):
     kwargs : dict
         Keyword arguments for the function
     timeout_duration : int
-        Timeout in seconds (default: 1800 = 30 minutes)
     
     Returns
     -------
