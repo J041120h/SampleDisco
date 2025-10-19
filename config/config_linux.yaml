@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark"
+output_dir: "/dcs07/hongkai/data/harry/result/all"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -294,15 +294,15 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: false
+multiomics_run_glue: true
 multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
-multiomics_run_glue_preprocessing: false
-multiomics_run_glue_training: false
+multiomics_run_glue_preprocessing: true
+multiomics_run_glue_training: true
 multiomics_run_glue_gene_activity: true
 multiomics_run_glue_cell_types: true
 multiomics_run_glue_visualization: false
@@ -310,7 +310,7 @@ multiomics_run_glue_visualization: false
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null
 multiomics_atac_sample_meta_file: null
-multiomics_additional_hvg_file : '/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt'
+multiomics_additional_hvg_file : null
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"

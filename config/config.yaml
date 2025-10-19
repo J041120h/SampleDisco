@@ -26,11 +26,11 @@ rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_da
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: false
-rna_cell_type_cluster: false
-rna_dimensionality_reduction: false
+rna_preprocessing: true
+rna_cell_type_cluster: true
+rna_dimensionality_reduction: true
 rna_sample_distance_calculation: true
-rna_trajectory_analysis: false
+rna_trajectory_analysis: true
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
@@ -49,7 +49,7 @@ rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: null
 rna_markers: null
-rna_cluster_resolution: 0.7
+rna_cluster_resolution: 1
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -343,7 +343,7 @@ multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: null
-multiomics_cluster_resolution: 0.8
+multiomics_cluster_resolution: 1
 multiomics_use_rep_celltype: "X_glue"
 multiomics_markers: null
 multiomics_method: "average"
