@@ -1,15 +1,15 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics"
+output_dir: "/dcs07/hongkai/data/harry/result/all"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: true
+run_rna_pipeline: false
 run_atac_pipeline: false
-run_multiomics_pipeline: false
+run_multiomics_pipeline: true
 
 # System configuration
 use_gpu: false

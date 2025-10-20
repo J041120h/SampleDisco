@@ -374,7 +374,7 @@ if __name__ == "__main__":
     results = run_benchmarks(
         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
         pseudotime_csv_path="/dcs07/hongkai/data/harry/result/pilot/covid_400_sample/pilot_native_pseudotime.csv",
-        embedding_csv_path="/dcs07/hongkai/data/harry/result/pilot/covid_400_sample/pilot_native_embedding.csv",
+        embedding_csv_path="/users/hjiang/r/25_sample/phemd_25_sample.csv",
         mode="expression",
         output_base_dir = '/dcs07/hongkai/data/harry/result/pilot/covid_400_sample',
         # per-benchmark overrides (optional)

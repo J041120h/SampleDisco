@@ -1,5 +1,4 @@
 import os
-os.environ['PYTHONHASHSEED'] = str(42)
 import json
 import sys
 import platform
@@ -460,6 +459,8 @@ def wrapper(
         - 'system_info': System configuration information
     """
     start_time = time.time()
+    # Set global random seed for reproducibility
+    set_global_seed(seed = 42, use_gpu = use_gpu, verbose = True)
 
     if run_multiomics_pipeline and use_gpu:
         from .multiomics_wrapper import multiomics_wrapper
@@ -470,7 +471,6 @@ def wrapper(
             # Enable `managed_memory`
             import rmm
             import cupy as cp
-            cp.random.seed(42)
             from rmm.allocators.cupy import rmm_cupy_allocator
 
             rmm.reinitialize(managed_memory=True, pool_allocator=False)
@@ -560,9 +560,6 @@ def wrapper(
     
     # Ensure sys_log directory exists
     os.makedirs(os.path.dirname(status_file_path), exist_ok=True)
-    
-    # Set global random seed for reproducibility
-    set_global_seed(seed = 42, use_gpu = use_gpu, verbose = True)
 
     # Load existing status if not initializing
     if os.path.exists(status_file_path) and not initialization:

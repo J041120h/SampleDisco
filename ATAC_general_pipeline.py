@@ -66,7 +66,7 @@ def snapatac2_dimensionality_reduction(
         log("Filtering doublets (scanpy-Scrublet)", verbose=verbose)
         try:
             # Complete Scrublet workflow (simulate + score + predict)
-            sc.pp.scrublet(adata, sim_doublet_ratio=2.0, random_seed=0)
+            sc.pp.scrublet(adata, sim_doublet_ratio=2.0, random_seed=42)
             
             # Direct filtering
             is_doublet = adata.obs['predicted_doublet']

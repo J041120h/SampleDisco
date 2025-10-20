@@ -60,7 +60,7 @@ def sparse_to_torch(X_sparse, device):
     shape = X_coo.shape
     return torch.sparse_coo_tensor(indices, values, shape).to(device)
 
-def batched_cosine_similarity_gpu(X_atac, X_rna, batch_size, device, max_pairs=None, seed=0):
+def batched_cosine_similarity_gpu(X_atac, X_rna, batch_size, device, max_pairs=None, seed=42):
     """GPU-accelerated batched cosine similarity computation"""
     n = X_atac.shape[0]
     idx = np.arange(n)
@@ -100,7 +100,7 @@ def batched_cosine_similarity_gpu(X_atac, X_rna, batch_size, device, max_pairs=N
     
     return cos_true, idx
 
-def batched_cosine_random_gpu(X_atac, X_rna, idx, batch_size, device, seed=0):
+def batched_cosine_random_gpu(X_atac, X_rna, idx, batch_size, device, seed=42):
     """GPU-accelerated random baseline cosine similarity"""
     n = X_atac.shape[0]
     m = len(idx)
