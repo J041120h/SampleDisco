@@ -692,6 +692,12 @@ def compute_gene_activity_from_knn(
     use_gpu: bool = True,
     verbose: bool = True,
 ) -> ad.AnnData:
+    """
+    Compute gene activity from k-NN with shift-scale weight normalization.
+    
+    Uses shift-scale approach that preserves all relative differences while
+    ensuring weights are in [0,1] and sum to 1.
+    """
     import anndata as ad
     import numpy as np
     import pandas as pd
@@ -858,21 +864,52 @@ def compute_gene_activity_from_knn(
         elapsed = time.time() - start_time
         print(f"   k-NN search completed in {elapsed:.2f} seconds")
     
-    # Compute weights directly on GPU
+    # Compute weights using shift-scale normalization
     if verbose:
-        print("\n📐 Computing similarity weights on GPU...")
+        print("\n📐 Computing similarity weights (shift-scale normalization)...")
     
+    # Convert distances to similarities based on metric
     if metric == 'cosine':
-        similarities_gpu = 1 - distances_gpu
+        # For cosine metric, cuML returns cosine distance in range [0, 2]
+        # Convert to cosine similarity in range [-1, 1]
+        similarities = 1 - (distances_gpu / 2)
     else:
-        similarities_gpu = 1 - distances_gpu
+        # For other metrics, use inverse distance
+        similarities = 1 / (1 + distances_gpu)
     
-    # Efficient normalization on GPU
-    similarities_gpu = cp.maximum(similarities_gpu, 0)
-    row_sums_gpu = similarities_gpu.sum(axis=1, keepdims=True) + 1e-8
-    weights_gpu = similarities_gpu / row_sums_gpu
+    # Shift and scale to [0, 1] while preserving relative differences
+    min_sim = cp.min(similarities, axis=1, keepdims=True)
+    max_sim = cp.max(similarities, axis=1, keepdims=True)
     
-    del similarities_gpu, distances_gpu, row_sums_gpu
+    # Handle case where all similarities are the same
+    sim_range = max_sim - min_sim
+    sim_range = cp.where(sim_range > 0, sim_range, 1.0)
+    
+    # Shift minimum to 0, maximum to 1
+    similarities = (similarities - min_sim) / sim_range
+    
+    # Normalize to sum to 1 (create weights)
+    weights_gpu = similarities / cp.sum(similarities, axis=1, keepdims=True)
+    
+    # Verify weights are valid
+    if verbose:
+        min_weight = cp.min(weights_gpu)
+        max_weight = cp.max(weights_gpu)
+        mean_weight = cp.mean(weights_gpu)
+        std_weight = cp.std(weights_gpu)
+        print(f"   Weight statistics: min={min_weight:.6f}, max={max_weight:.6f}, "
+              f"mean={mean_weight:.6f}, std={std_weight:.6f}")
+        
+        # Check that weights sum to 1 for each cell
+        weight_sums = cp.sum(weights_gpu, axis=1)
+        print(f"   Weight sums: min={cp.min(weight_sums):.6f}, max={cp.max(weight_sums):.6f}")
+        
+        # Check effective number of neighbors (inverse Simpson index)
+        squared_weights = weights_gpu ** 2
+        eff_neighbors = 1.0 / cp.mean(cp.sum(squared_weights, axis=1))
+        print(f"   Effective neighbors: {eff_neighbors:.1f} out of {k_neighbors}")
+    
+    del similarities, distances_gpu
     
     # Determine optimal batch size based on memory
     estimated_memory_per_cell = (k_neighbors * n_genes * 8) / 1e9  # GB per cell
@@ -1062,9 +1099,7 @@ def compute_gene_activity_from_knn(
     for key, value in raw_rna_varm_dict.items():
         rna_for_merge.varm[key] = value
     
-    # ==========================================
-    # CRITICAL FIX: Handle index overlaps
-    # ==========================================
+    # Handle index overlaps
     if verbose:
         print("\n🔗 Merging gene activity with RNA data...")
         print("   Checking for index overlaps...")
@@ -1115,9 +1150,7 @@ def compute_gene_activity_from_knn(
             print("   ⚠️ Warning: Non-unique indices detected, fixing...")
         merged_adata.obs_names_make_unique()
     
-    # ==========================================
     # Ensure proper sparse matrix format with int64
-    # ==========================================
     if sparse.issparse(merged_adata.X):
         if verbose:
             print("📦 Ensuring merged matrix has int64 indices...")
@@ -1171,6 +1204,7 @@ def compute_gene_activity_from_knn(
         
         print(f"   Optimization: GPU vectorization + dynamic batching + sparse matrices")
         print(f"   Batch processing: {n_batches} batches of size {optimal_batch_size}")
+        print(f"   Weight normalization: shift-scale (preserves all relative differences)")
 
     mempool.free_all_blocks()
     pinned_mempool.free_all_blocks()
