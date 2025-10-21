@@ -2,15 +2,13 @@
 # -*- coding: utf-8 -*-
 
 """
-DEBUG BUILD — functionality-preserving.
-Adds pairing normalization so ATAC barcodes ignore tissue prefix and start at 'ENCSR'.
+IMPROVED GENE CORRELATION BUILD
+Modified gene correlation to only consider cells where both RNA and ATAC express the gene.
 
-What’s new vs your previous debug build:
-- Normalizes ATAC barcodes by removing everything before the first 'ENCSR' token.
-- Applies the same normalization to index-based fallback.
-- Writes normalized barcode heads for inspection.
-
-Everything else (metrics, batching, plots) is unchanged.
+Changes from previous version:
+- Gene correlation now filters for cells with non-zero expression in both modalities
+- More meaningful correlation by focusing on actual expression patterns
+- Clearer debug output for gene correlation statistics
 """
 
 import os
@@ -212,7 +210,7 @@ def compute_metrics_direct_hdf5_robust(
 
     dbg_fp = _open_debug_log(output_dir) if debug else None
     _dprint(dbg_fp, "=" * 80)
-    _dprint(dbg_fp, "DIRECT HDF5 PROCESSING (Robust Version) — DEBUG BUILD")
+    _dprint(dbg_fp, "DIRECT HDF5 PROCESSING - IMPROVED GENE CORRELATION")
     _dprint(dbg_fp, "=" * 80)
     _dprint(dbg_fp, f"[debug] Timestamp       : {datetime.now().isoformat()}")
     _dprint(dbg_fp, f"[debug] integrated_path : {integrated_path}")
@@ -224,7 +222,7 @@ def compute_metrics_direct_hdf5_robust(
 
     if verbose:
         print("=" * 80)
-        print("DIRECT HDF5 PROCESSING (Robust Version)")
+        print("DIRECT HDF5 PROCESSING - IMPROVED GENE CORRELATION")
         print("=" * 80)
         print(f"\n📂 Processing: {integrated_path}")
         print(f"   Batch size: {batch_size}")
@@ -482,59 +480,122 @@ def compute_metrics_direct_hdf5_robust(
     if debug:
         _dprint(dbg_fp, f"[debug] n_processed={n_processed}, n_cell_corr={len(per_cell_corr)}")
 
-    # Per-gene correlations (sampling)
+    # ================== IMPROVED PER-GENE CORRELATIONS ==================
     if verbose:
-        print(f"\n📈 Computing per-gene correlations (sampling)...")
+        print(f"\n📈 Computing per-gene correlations (improved method)...")
     if debug:
-        _dprint(dbg_fp, "[debug] Sampling up to 1000 genes for per-gene correlation.")
+        _dprint(dbg_fp, "[debug] Using improved gene correlation: filtering for co-expressed cells")
 
+    # Sample genes for correlation analysis
     n_sample_genes = min(1000, n_genes)
     np.random.seed(42)
     sample_gene_idx = np.random.choice(n_genes, n_sample_genes, replace=False)
+    
+    # Initialize arrays to store correlation results
     gene_correlations = np.full(n_genes, np.nan)
-
+    gene_n_coexpressing_cells = np.zeros(n_genes, dtype=int)  # Track how many cells co-express each gene
+    
+    # Load all paired data once
     with h5py.File(integrated_path, 'r') as f:
+        if verbose:
+            print("   Loading paired RNA and ATAC data...")
         rna_data = safe_load_batch_from_hdf5(f, paired_rna_global, n_genes)
         atac_data = safe_load_batch_from_hdf5(f, paired_atac_global, n_genes)
+        
+        # Process each sampled gene
         gene_batch_size = 50
         for gb_start in tqdm(range(0, len(sample_gene_idx), gene_batch_size),
                              desc="Gene correlations", disable=not verbose):
             gb_end = min(gb_start + gene_batch_size, len(sample_gene_idx))
             gene_batch = sample_gene_idx[gb_start:gb_end]
+            
             try:
                 for gene_idx in gene_batch:
+                    # Get expression vectors for this gene across all paired cells
                     rna_vals = rna_data[:, gene_idx]
                     atac_vals = atac_data[:, gene_idx]
-                    if np.std(rna_vals) > 0 and np.std(atac_vals) > 0:
-                        try:
-                            corr, _ = stats.pearsonr(rna_vals, atac_vals)
-                            if not np.isnan(corr) and not np.isinf(corr):
-                                gene_correlations[gene_idx] = corr
-                        except:
-                            pass
+                    
+                    # Filter for cells where BOTH RNA and ATAC express the gene (non-zero)
+                    coexpress_mask = (rna_vals != 0) & (atac_vals != 0)
+                    n_coexpress = np.sum(coexpress_mask)
+                    gene_n_coexpressing_cells[gene_idx] = n_coexpress
+                    
+                    # Need at least 3 co-expressing cells for meaningful correlation
+                    if n_coexpress >= 3:
+                        rna_filtered = rna_vals[coexpress_mask]
+                        atac_filtered = atac_vals[coexpress_mask]
+                        
+                        # Check for variance in filtered data
+                        if np.std(rna_filtered) > 0 and np.std(atac_filtered) > 0:
+                            try:
+                                corr, _ = stats.pearsonr(rna_filtered, atac_filtered)
+                                if not np.isnan(corr) and not np.isinf(corr):
+                                    gene_correlations[gene_idx] = corr
+                                    if debug and gene_idx < 5:  # Debug first few genes
+                                        _dprint(dbg_fp, f"[debug] Gene {var_names[gene_idx]}: "
+                                               f"n_coexpress={n_coexpress}, corr={corr:.4f}")
+                            except Exception as e:
+                                if debug:
+                                    _dprint(dbg_fp, f"[debug] Correlation failed for gene {gene_idx}: {e}")
+                        elif debug and gene_idx < 5:
+                            _dprint(dbg_fp, f"[debug] Gene {var_names[gene_idx]}: "
+                                   f"n_coexpress={n_coexpress}, but no variance in filtered data")
+                    elif debug and gene_idx < 5:
+                        _dprint(dbg_fp, f"[debug] Gene {var_names[gene_idx]}: "
+                               f"only {n_coexpress} co-expressing cells (need >= 3)")
+                        
             except Exception as e:
                 if debug:
                     _dprint(dbg_fp, f"[debug] Error computing gene batch {gb_start}-{gb_end}:", repr(e))
                 print(f"\nError processing gene batch: {e}")
                 continue
+        
+        # Cleanup
         del rna_data, atac_data
         gc.collect()
 
-    # Results
+    # Summary statistics for gene correlations
+    valid_gene_corr = gene_correlations[~np.isnan(gene_correlations)]
+    sampled_coexpress_counts = gene_n_coexpressing_cells[sample_gene_idx]
+    genes_with_coexpress = np.sum(sampled_coexpress_counts > 0)
+    genes_with_sufficient_coexpress = np.sum(sampled_coexpress_counts >= 3)
+    
+    if verbose:
+        print(f"\n   Gene correlation statistics:")
+        print(f"   - Genes sampled: {n_sample_genes}")
+        print(f"   - Genes with co-expression: {genes_with_coexpress}")
+        print(f"   - Genes with ≥3 co-expressing cells: {genes_with_sufficient_coexpress}")
+        print(f"   - Valid correlations computed: {len(valid_gene_corr)}")
+        if len(valid_gene_corr) > 0:
+            print(f"   - Mean gene correlation: {valid_gene_corr.mean():.4f}")
+            print(f"   - Median gene correlation: {np.median(valid_gene_corr):.4f}")
+    
+    if debug:
+        _dprint(dbg_fp, f"[debug] Gene correlation summary:")
+        _dprint(dbg_fp, f"[debug]   Sampled genes: {n_sample_genes}")
+        _dprint(dbg_fp, f"[debug]   Genes with co-expression: {genes_with_coexpress}")
+        _dprint(dbg_fp, f"[debug]   Genes with sufficient co-expression: {genes_with_sufficient_coexpress}")
+        _dprint(dbg_fp, f"[debug]   Valid correlations: {len(valid_gene_corr)}")
+
+    # ================== END IMPROVED PER-GENE CORRELATIONS ==================
+
+    # Results DataFrame with additional co-expression info
     gene_results = pd.DataFrame({
         'gene': var_names,
         'pearson_corr': gene_correlations,
+        'n_coexpressing_cells': gene_n_coexpressing_cells,
         'mean_rna': gene_means_rna,
         'mean_atac': gene_means_atac,
         'std_rna': gene_stds_rna,
         'std_atac': gene_stds_atac
     })
 
-    # Plots
+    # Plots (updated to show co-expression filtering effect)
     if verbose:
         print("\n🎨 Creating visualizations...")
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 
+    # Cell correlations
     if len(per_cell_corr) > 0:
         axes[0, 0].hist(per_cell_corr, bins=50, edgecolor='black', alpha=0.7)
         axes[0, 0].axvline(per_cell_corr.mean(), color='red', linestyle='--',
@@ -544,16 +605,27 @@ def compute_metrics_direct_hdf5_robust(
         axes[0, 0].set_title('Per-Cell Correlations')
         axes[0, 0].legend()
 
-    valid_gene_corr = gene_correlations[~np.isnan(gene_correlations)]
+    # Gene correlations
     if len(valid_gene_corr) > 0:
         axes[0, 1].hist(valid_gene_corr, bins=50, edgecolor='black', alpha=0.7, color='orange')
         axes[0, 1].axvline(valid_gene_corr.mean(), color='red', linestyle='--',
                            label=f'Mean: {valid_gene_corr.mean():.3f}')
         axes[0, 1].set_xlabel('Pearson Correlation')
         axes[0, 1].set_ylabel('Number of Genes')
-        axes[0, 1].set_title(f'Gene Correlations (n={len(valid_gene_corr)} sampled)')
+        axes[0, 1].set_title(f'Gene Correlations (n={len(valid_gene_corr)}, co-expressed cells only)')
         axes[0, 1].legend()
 
+    # Co-expressing cells distribution
+    coexpress_counts_nonzero = sampled_coexpress_counts[sampled_coexpress_counts > 0]
+    if len(coexpress_counts_nonzero) > 0:
+        axes[0, 2].hist(np.log10(coexpress_counts_nonzero + 1), bins=30, edgecolor='black', alpha=0.7, color='green')
+        axes[0, 2].set_xlabel('log10(Number of Co-expressing Cells + 1)')
+        axes[0, 2].set_ylabel('Number of Genes')
+        axes[0, 2].set_title('Distribution of Co-expressing Cell Counts')
+        axes[0, 2].axvline(np.log10(3), color='red', linestyle='--', label='Min for correlation (n=3)')
+        axes[0, 2].legend()
+
+    # Mean expression comparison
     mask_nonzero = (gene_means_rna > 0) | (gene_means_atac > 0)
     axes[1, 0].scatter(gene_means_rna[mask_nonzero], gene_means_atac[mask_nonzero], alpha=0.3, s=5)
     if mask_nonzero.any():
@@ -566,6 +638,7 @@ def compute_metrics_direct_hdf5_robust(
     axes[1, 0].set_xscale('log')
     axes[1, 0].set_yscale('log')
 
+    # Mean-variance relationship
     axes[1, 1].scatter(gene_means_rna[mask_nonzero], gene_stds_rna[mask_nonzero], alpha=0.3, s=5, label='RNA')
     axes[1, 1].scatter(gene_means_atac[mask_nonzero], gene_stds_atac[mask_nonzero], alpha=0.3, s=5, label='ATAC')
     axes[1, 1].set_xlabel('Mean Expression')
@@ -575,8 +648,20 @@ def compute_metrics_direct_hdf5_robust(
     axes[1, 1].set_xscale('log')
     axes[1, 1].set_yscale('log')
 
+    # Correlation vs co-expression count
+    valid_corr_mask = ~np.isnan(gene_correlations[sample_gene_idx])
+    if np.any(valid_corr_mask):
+        axes[1, 2].scatter(sampled_coexpress_counts[valid_corr_mask], 
+                          gene_correlations[sample_gene_idx][valid_corr_mask],
+                          alpha=0.5, s=10)
+        axes[1, 2].set_xlabel('Number of Co-expressing Cells')
+        axes[1, 2].set_ylabel('Gene Correlation')
+        axes[1, 2].set_title('Correlation vs Co-expression Count')
+        axes[1, 2].set_xscale('log')
+        axes[1, 2].grid(True, alpha=0.3)
+
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'validation_results_robust.png'), dpi=150)
+    plt.savefig(os.path.join(output_dir, 'validation_results_improved.png'), dpi=150)
     plt.close()
 
     if verbose:
@@ -586,46 +671,53 @@ def compute_metrics_direct_hdf5_robust(
         pd.DataFrame({
             'barcode': common_barcodes[:len(per_cell_corr)],
             'correlation': per_cell_corr
-        }).to_csv(os.path.join(output_dir, 'cell_correlations_robust.csv'), index=False)
+        }).to_csv(os.path.join(output_dir, 'cell_correlations_improved.csv'), index=False)
 
-    gene_results.to_csv(os.path.join(output_dir, 'gene_metrics_robust.csv'), index=False)
+    gene_results.to_csv(os.path.join(output_dir, 'gene_metrics_improved.csv'), index=False)
 
     summary = {
         'n_paired_cells': n_paired,
         'n_processed': n_processed,
         'n_genes': n_genes,
-        'n_genes_sampled': int(min(1000, n_genes)),
+        'n_genes_sampled': int(n_sample_genes),
+        'n_genes_with_coexpression': int(genes_with_coexpress),
+        'n_genes_with_sufficient_coexpression': int(genes_with_sufficient_coexpress),
         'mean_cell_corr': float(per_cell_corr.mean()) if len(per_cell_corr) > 0 else np.nan,
         'median_cell_corr': float(np.median(per_cell_corr)) if len(per_cell_corr) > 0 else np.nan,
         'std_cell_corr': float(per_cell_corr.std()) if len(per_cell_corr) > 0 else np.nan,
         'mean_gene_corr': float(valid_gene_corr.mean()) if len(valid_gene_corr) > 0 else np.nan,
+        'median_gene_corr': float(np.median(valid_gene_corr)) if len(valid_gene_corr) > 0 else np.nan,
+        'std_gene_corr': float(valid_gene_corr.std()) if len(valid_gene_corr) > 0 else np.nan,
         'subsample_ratio': subsample_ratio
     }
-    pd.DataFrame([summary]).to_csv(os.path.join(output_dir, 'summary_robust.csv'), index=False)
+    pd.DataFrame([summary]).to_csv(os.path.join(output_dir, 'summary_improved.csv'), index=False)
 
     if debug:
         _dump_json(output_dir, "debug_context.json", {"stage": "done", "summary": summary})
-        _dprint(dbg_fp, "[debug] Saved summary_robust.csv and debug_context.json")
+        _dprint(dbg_fp, "[debug] Saved summary_improved.csv and debug_context.json")
 
     if verbose:
         print("\n" + "=" * 80)
-        print("SUMMARY")
+        print("SUMMARY - IMPROVED GENE CORRELATION")
         print("=" * 80)
         print(f"Paired cells: {n_paired}")
         print(f"Processed cells: {n_processed}")
         print(f"Cell correlations: {len(per_cell_corr)}")
         if len(per_cell_corr) > 0:
             print(f"Mean cell correlation: {summary['mean_cell_corr']:.4f}")
+        print(f"\nGene correlation analysis:")
+        print(f"  Genes sampled: {n_sample_genes}")
+        print(f"  Genes with co-expression: {genes_with_coexpress}")
+        print(f"  Valid correlations: {len(valid_gene_corr)}")
         if len(valid_gene_corr) > 0:
-            print(f"Mean gene correlation (sampled): {summary['mean_gene_corr']:.4f}")
+            print(f"  Mean gene correlation: {summary['mean_gene_corr']:.4f}")
+            print(f"  Median gene correlation: {summary['median_gene_corr']:.4f}")
         print(f"\nResults saved to: {output_dir}")
 
     if dbg_fp:
         dbg_fp.close()
     return summary
 
-
-# ────────────────────────── CLI ──────────────────────────
 
 if __name__ == "__main__":
     try:
