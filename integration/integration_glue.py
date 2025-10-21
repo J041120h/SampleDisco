@@ -1,14 +1,33 @@
-import anndata as ad
-import networkx as nx
-import scanpy as sc
-import scglue
-import numpy as np
-from typing import Optional, Tuple
-from pathlib import Path
-import pyensembl
-
-from Cell_type import *
+# Standard library
+import os
+import gc
 import time
+from pathlib import Path
+from typing import Optional, Tuple, List
+from itertools import chain
+from concurrent.futures import ThreadPoolExecutor
+
+# Third-party
+import numpy as np
+import pandas as pd
+import anndata as ad
+import scanpy as sc
+import networkx as nx
+import scglue
+import pyensembl
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import sparse
+import psutil
+import cupy as cp
+from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+from cupyx.scipy import sparse as cusparse
+
+# Local/project
+from Cell_type import *
+from linux.CellType_linux import cell_types_linux
+
 
 def clean_anndata_for_saving(adata, verbose=True):
     """
@@ -26,9 +45,6 @@ def clean_anndata_for_saving(adata, verbose=True):
     adata : AnnData
         Cleaned AnnData object
     """
-    import pandas as pd
-    import numpy as np
-    
     if verbose:
         print("🧹 Cleaning AnnData object for HDF5 compatibility...")
     
@@ -106,8 +122,6 @@ def merge_sample_metadata(
     adata : AnnData
         AnnData object with merged metadata and standardized 'sample' column
     """
-    import pandas as pd
-    
     meta = pd.read_csv(metadata_path, sep=sep).set_index(sample_column)
     
     # Store original column count for comparison
@@ -225,15 +239,6 @@ def glue_preprocess_pipeline(
     Tuple[ad.AnnData, ad.AnnData, nx.MultiDiGraph]
         Preprocessed RNA data, ATAC data, and guidance graph
     """
-    import anndata as ad
-    import scanpy as sc
-    import scglue
-    import pyensembl
-    import networkx as nx
-    import numpy as np
-    from pathlib import Path
-    from typing import Optional, Tuple
-    
     print("\n🚀 Starting GLUE preprocessing pipeline...\n")
     print(f"   Feature selection mode: {'Highly Variable' if use_highly_variable else 'All Features'}\n")
     
@@ -556,14 +561,6 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     use_highly_variable : bool
         Whether to use only highly variable features or all features
     """
-    import anndata as ad
-    import networkx as nx
-    import scglue
-    import pandas as pd
-    import scanpy as sc
-    import os
-    from itertools import chain
-    
     print("\n\n\n🚀 Starting GLUE training pipeline...\n\n\n")
     print(f"   Feature mode: {'Highly Variable Only' if use_highly_variable else 'All Features'}")
     print(f"   Output directory: {output_dir}\n")
@@ -697,24 +694,7 @@ def compute_gene_activity_from_knn(
     
     Uses shift-scale approach that preserves all relative differences while
     ensuring weights are in [0,1] and sum to 1.
-    """
-    import anndata as ad
-    import numpy as np
-    import pandas as pd
-    import time
-    from pathlib import Path
-    import os
-    import scanpy as sc
-    import gc
-    from scipy import sparse
-    from concurrent.futures import ThreadPoolExecutor
-    import psutil
-    
-    # GPU imports
-    import cupy as cp
-    from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-    from cupyx.scipy import sparse as cusparse
-    
+    """    
     def fix_sparse_matrix_dtype(X, verbose=False):
         """Fix sparse matrix by converting to int64 indices"""
         if not sparse.issparse(X):
@@ -1212,14 +1192,6 @@ def compute_gene_activity_from_knn(
     
     return merged_adata
 
-import os
-import scanpy as sc
-import anndata as ad
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np
-import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend to prevent figure warnings
 
 def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
@@ -1402,10 +1374,6 @@ def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
     
     print("\nVisualization complete!")
     
-import time
-import os
-from typing import Optional, List
-
 def glue(
     # Data files
     rna_file: str,
