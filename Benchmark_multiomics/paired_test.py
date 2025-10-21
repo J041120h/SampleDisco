@@ -589,27 +589,27 @@ if __name__ == "__main__":
 
     # Example: Validate multiple methods and save to output directory (existing path)
     print("Starting example validation...")
-    # results = validate_multiple_methods(
-    #     sample_distance_path='/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/rna/Sample_distance',
-    #     methods=['cosine', 'correlation'],
-    #     output_dir='/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/validation_results',
-    #     n_permutations=1000
-    # )
+    results = validate_multiple_methods(
+        sample_distance_path='/dcs07/hongkai/data/harry/result/all/rna/Sample_distance',
+        methods=['cosine', 'correlation'],
+        output_dir='/dcs07/hongkai/data/harry/result/all/rna',
+        n_permutations=1000
+    )
 
     # NEW — Example: run group separation on an AnnData pseudobulk (uncomment & set your paths)
     import anndata as ad
-    adata = ad.read_h5ad('/dcs07/hongkai/data/harry/result/all/multiomics/pseudobulk/pseudobulk_sample.h5ad')
-    _ = evaluate_group_separation_from_anndata(
-            adata=adata,
-            group_col='tissue',              # <-- any obs column, e.g. 'tissue'
-            metric='cosine',
-            obsm_keys_priority=['X_embedding','PCA','X_pca'],
-            index_col='sample',              # optional obs identifier for nice row names
-            n_permutations=1000,
-            random_seed=42,
-            stat='diff',                     # 'diff' or 'ratio'
-            output_dir='/tmp/group_eval'     # saves CSVs and a PNG
-        )
+    # adata = ad.read_h5ad('/dcs07/hongkai/data/harry/result/all/multiomics/pseudobulk/pseudobulk_sample.h5ad')
+    # _ = evaluate_group_separation_from_anndata(
+    #         adata=adata,
+    #         group_col='tissue',              # <-- any obs column, e.g. 'tissue'
+    #         metric='cosine',
+    #         obsm_keys_priority=['X_embedding','PCA','X_pca'],
+    #         index_col='sample',              # optional obs identifier for nice row names
+    #         n_permutations=1000,
+    #         random_seed=42,
+    #         stat='diff',                     # 'diff' or 'ratio'
+    #         output_dir='/tmp/group_eval'     # saves CSVs and a PNG
+    #     )
 
     print("\n=== VALIDATION SCRIPT COMPLETE ===")
     print("Check the output directory for detailed results and visualizations.")

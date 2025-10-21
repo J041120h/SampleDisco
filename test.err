@@ -1,1 +1,5 @@
-2025-10-20 11:05:18 - INFO - init
+2025-10-20 22:10:03 - INFO - init
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical

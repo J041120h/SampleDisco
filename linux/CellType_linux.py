@@ -303,6 +303,8 @@ def cell_types_linux(
     - Updated AnnData object with assigned cell types
     """
     start_time = time.time() if verbose else None
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     # Track recursion depth for debugging and preventing infinite loops
     if _recursion_depth > 10:
         raise RuntimeError(f"Maximum recursion depth exceeded. Could not achieve {n_target_clusters} clusters.")

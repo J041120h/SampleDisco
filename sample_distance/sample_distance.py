@@ -371,6 +371,8 @@ def sample_distance(
     - sample_column: Column name for samples in cell_adata (default: 'sample')
     - pseudobulk_adata: Pseudobulk AnnData object (required for EMD, chi_square, jensen_shannon)
     """
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     
     # Standard distance metrics that work with dimension reduction results
     valid_pdist_metrics = {

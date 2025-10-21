@@ -115,6 +115,8 @@ def run_cca_on_pca_from_adata(
     --------
     tuple: (pca_coords_full, sev_levels, samples, n_components_used)
     """
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     if column not in adata.uns:
         raise KeyError(f"'{column}' not found in adata.uns. Available keys: {list(adata.uns.keys())}")
     
@@ -203,6 +205,8 @@ def plot_cca_on_2d_pca(
     --------
     tuple: (cca_score, pc_indices_used, cca_model)
     """
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     n_components = pca_coords_full.shape[1]
     
     # PC selection logic
@@ -452,6 +456,8 @@ def CCA_Call(
     tuple: (proportion_score, expression_score, proportion_pseudotime, expression_pseudotime)
     """
     start_time = time.time() if verbose else None
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     
     if output_dir:
         output_dir = os.path.join(output_dir, 'CCA')

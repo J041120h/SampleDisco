@@ -7,9 +7,9 @@ output_dir: "/dcs07/hongkai/data/harry/result/all"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
 use_gpu: false

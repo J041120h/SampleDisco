@@ -1,39 +1,6 @@
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
-  from torch.distributed.optim import ZeroRedundancyOptimizer
-2025-10-20 01:12:58 - INFO - init
-... storing 'sample' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'tissue' as categorical
-... storing 'modality' as categorical
-... storing 'modality_modality' as categorical
-... storing 'modality_modality' as categorical
+MoTTY X11 proxy: Authorisation not recognised
+
+[36mIn case you are trying to start a graphical application with "sudo", read this article in order to avoid this issue:
+[35m[4mhttps://blog.mobatek.net/post/how-to-keep-X11-display-after-su-or-sudo/[0m
+
+

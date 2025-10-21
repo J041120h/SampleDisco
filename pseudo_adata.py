@@ -657,7 +657,8 @@ def compute_pseudobulk_adata(
     final_adata : sc.AnnData
         Final AnnData object with samples x genes (final HVGs only)
     """
-    
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     # Call the refactored function with timeout parameter
     cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers(
         adata=adata,

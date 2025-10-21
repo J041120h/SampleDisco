@@ -373,10 +373,10 @@ if __name__ == "__main__":
     # Example: run all with explicit paths
     results = run_benchmarks(
         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        pseudotime_csv_path="/dcs07/hongkai/data/harry/result/pilot/covid_400_sample/pilot_native_pseudotime.csv",
-        embedding_csv_path="/users/hjiang/r/25_sample/phemd_25_sample.csv",
+        pseudotime_csv_path='/users/hjiang/r/25_sample/trajectory/pseudotime_results.csv',
+        embedding_csv_path="/users/hjiang/r/25_sample/phemd_25_sample_mds_10d.csv",
         mode="expression",
-        output_base_dir = '/dcs07/hongkai/data/harry/result/pilot/covid_400_sample',
+        output_base_dir = '/users/hjiang/r/25_sample',
         # per-benchmark overrides (optional)
         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
         batch_removal={"k": 15, "include_self": False},

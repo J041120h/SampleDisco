@@ -15,8 +15,6 @@ from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils.random_seed import set_global_seed
-
 def wrapper(
     # ========================================
     # REQUIRED PARAMETERS
@@ -459,8 +457,6 @@ def wrapper(
         - 'system_info': System configuration information
     """
     start_time = time.time()
-    # Set global random seed for reproducibility
-    set_global_seed(seed = 42, use_gpu = use_gpu, verbose = True)
 
     if run_multiomics_pipeline and use_gpu:
         from .multiomics_wrapper import multiomics_wrapper

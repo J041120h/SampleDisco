@@ -1,5 +1,4 @@
-[Seed Control] GPU deterministic mode enabled with seed=42
-Linux system detected with GPU enabled.
+[Seed Control] CPU deterministic mode enabled with seed=42
 Resuming process from previous progress:
 {
     "rna": {
@@ -23,11 +22,11 @@ Resuming process from previous progress:
         "visualization": false
     },
     "multiomics": {
-        "glue_integration": false,
+        "glue_integration": true,
         "glue_preprocessing": false,
         "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
+        "glue_gene_activity": true,
+        "glue_cell_types": true,
         "glue_visualization": false,
         "integration_preprocessing": true,
         "dimensionality_reduction": true,
@@ -37,557 +36,87 @@ Resuming process from previous progress:
     "system_info": {
         "platform": "Linux",
         "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
+        "use_gpu": false,
+        "linux_system": false
     }
 }
 
 ============================================================
-RUNNING MULTIOMICS PIPELINE
+RUNNING RNA PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/all/multiomics
-Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Step 1: Running GLUE integration...
-  Sub-steps: Preprocessing=False, Training=False, Gene Activity=True, Cell Types=True, Visualization=False
-Computing gene activity...
+Starting RNA wrapper function with provided parameters...
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/pseudobulk/pseudobulk_sample.h5ad
 
-🧬 Computing gene activity using raw RNA counts (highly optimized)...
-   k_neighbors: 1
-   metric: cosine
-   GPU acceleration: enabled
-   Available GPU memory: 46.50 GB
-   Available CPU memory: 1025.11 GB
-📂 Loading processed RNA embeddings...
-📂 Loading ATAC embeddings...
-📂 Loading raw RNA counts...
-   RNA cells: 430595, ATAC cells: 430595, Genes: 36601
+Running sample distance: cosine
 
-🔍 Finding k-nearest RNA neighbors (GPU-accelerated)...
-   k-NN search completed in 5.13 seconds
+Computing cosine distance using dimension reduction results...
+Data type: ATAC (affects DR method prioritization)
+Available sample metadata columns: ['modality', 'predicted_doublet', 'tissue']
+Number of samples: 88
+Computing sample distances using expression dimension reduction (X_DR_expression)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/cosine/expression_DR_distance/distance_check_results_expression_DR_cosine.txt
+Score for expression_DR (cosine): 1.355891
+Summary updated in /dcs07/hongkai/data/harry/result/all/rna/summary_sample.csv
+Distance check completed for expression_DR: score = 1.355891
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/cosine/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
+expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/cosine/expression_DR_distance
+Computing sample distances using proportion dimension reduction (X_DR_proportion)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/cosine/proportion_DR_distance/distance_check_results_proportion_DR_cosine.txt
+Score for proportion_DR (cosine): 24.993105
+Summary updated in /dcs07/hongkai/data/harry/result/all/rna/summary_sample.csv
+Distance check completed for proportion_DR: score = 24.993105
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/cosine/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
+proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/cosine/proportion_DR_distance
+Sample distance computations completed for: expression_DR, proportion_DR
+Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/cosine/distance_statistics_summary_cosine.csv
 
-📐 Computing similarity weights on GPU...
+Running sample distance: correlation
 
-🧮 Computing weighted gene activity...
-   Optimal batch size: 10000
-   Progress: 9.1% (4/44 batches)
-   Progress: 18.2% (8/44 batches)
-   Progress: 27.3% (12/44 batches)
-   Progress: 36.4% (16/44 batches)
-   Progress: 45.5% (20/44 batches)
-   Progress: 54.5% (24/44 batches)
-   Progress: 63.6% (28/44 batches)
-   Progress: 72.7% (32/44 batches)
-   Progress: 81.8% (36/44 batches)
-   Progress: 90.9% (40/44 batches)
-   Progress: 100.0% (44/44 batches)
-   Gene activity computation completed in 4482.33 seconds
+Computing correlation distance using dimension reduction results...
+Data type: ATAC (affects DR method prioritization)
+Available sample metadata columns: ['modality', 'predicted_doublet', 'tissue']
+Number of samples: 88
+Computing sample distances using expression dimension reduction (X_DR_expression)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/correlation/expression_DR_distance/distance_check_results_expression_DR_correlation.txt
+Score for expression_DR (correlation): 1.391566
+Summary updated in /dcs07/hongkai/data/harry/result/all/rna/summary_sample.csv
+Distance check completed for expression_DR: score = 1.391566
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/correlation/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
+expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/correlation/expression_DR_distance
+Computing sample distances using proportion dimension reduction (X_DR_proportion)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/correlation/proportion_DR_distance/distance_check_results_proportion_DR_correlation.txt
+Score for proportion_DR (correlation): 18.163852
+Summary updated in /dcs07/hongkai/data/harry/result/all/rna/summary_sample.csv
+Distance check completed for proportion_DR: score = 18.163852
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/correlation/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
+proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/correlation/proportion_DR_distance
+Sample distance computations completed for: expression_DR, proportion_DR
+Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/all/rna/Sample_distance/correlation/distance_statistics_summary_correlation.csv
+Sample distance calculation completed. Results saved in /dcs07/hongkai/data/harry/result/all/rna/Sample_distance
+Starting visualization...
+[_preprocessing] Verified required columns in pseudobulk AnnData: ['tissue']
+Figure saved to: /dcs07/hongkai/data/harry/result/all/rna/visualization/proportion_embedding_tissue.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/all/rna/visualization/proportion_embedding_tissue.png
+Figure saved to: /dcs07/hongkai/data/harry/result/all/rna/visualization/expression_embedding_tissue.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/all/rna/visualization/expression_embedding_tissue.png
+[visualization] All requested visualizations saved.
+RNA analysis completed successfully!
 
-🔍 Validating gene activity counts...
-📦 Converting gene activity to sparse CSR matrix with int64 indices...
-   Sparsity: 94.4% zeros
-   Converting sparse matrix indices to int64...
-   Current dtypes - indices: int32, indptr: int32
-   Fixed dtypes - indices: int32, indptr: int32
-
-🔗 Preparing RNA data for merging...
-   Converting RNA to sparse (sparsity: 94.6%)
-   Converting sparse matrix indices to int64...
-   Current dtypes - indices: int32, indptr: int32
-   Fixed dtypes - indices: int32, indptr: int32
-
-🔗 Merging gene activity with RNA data...
-   Checking for index overlaps...
-   No overlapping indices found, but adding suffix for safety...
-   RNA cells: 430595
-   ATAC cells: 430595
-📦 Ensuring merged matrix has int64 indices...
-   Converting sparse matrix indices to int64...
-   Current dtypes - indices: int32, indptr: int32
-   Fixed dtypes - indices: int32, indptr: int32
-
-✅ Gene activity computation and merging complete!
-
-📊 Summary:
-   Output path: /dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad
-   Merged dataset shape: (861190, 36601)
-   RNA cells: 430595
-   ATAC cells: 430595
-   Unique cell indices: True
-   Matrix format: csr_matrix (sparse)
-   Matrix index dtype: int32
-   Matrix indptr dtype: int32
-   Data type: float64
-   Sparsity: 94.5% zeros
-   Memory usage: 13852.14 MB (sparse)
-   Optimization: GPU vectorization + dynamic batching + sparse matrices
-   Batch processing: 44 batches of size 10000
-Gene activity computation completed.
-Assigning cell types...
- Using Linux Cell Type Assignment for cell type assignment...
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.8)...
-[cell_types] Found 31 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Converting GPU arrays to CPU...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 5 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad
-[cell_types] Total runtime: 496.63 seconds
-
-Total runtime: 146.67 minutes
-✓ GLUE integration completed successfully
-  Completed 2/5 GLUE sub-steps
-Step 2: Running integration preprocessing...
-Minimum dimension requested by scrublet is 30, raise sample standard accordingly
-=== Read input dataset ===
-Dimension of raw data (cells x genes): 861190 x 36601
-Modified sample IDs by adding modality information from 'modality' column
-After cell filtering -- Cells remaining: 830356, Genes remaining: 36601
-After gene filtering -- Cells remaining: 830356, Genes remaining: 34556
-After remove MT_gene and user input cell -- Cells remaining: 830356, Genes remaining: 34543
-Sample counts BEFORE filtering:
-sample
-ENCSR568QKW_ATAC    17479
-ENCSR568QKW_RNA     16919
-ENCSR618WVK_RNA     16288
-ENCSR618WVK_ATAC    15970
-ENCSR245BNT_ATAC    15842
-                    ...  
-ENCSR694BTU_RNA      5219
-ENCSR636WIB_ATAC     5206
-ENCSR636WIB_RNA      5128
-ENCSR033MDU_ATAC     4631
-ENCSR033MDU_RNA      4470
-Length: 88, dtype: int64
-
-Samples retained (>= 30 cells): ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC', 'ENCSR158DQA_RNA', 'ENCSR201BHG_ATAC', 'ENCSR201BHG_RNA', 'ENCSR212VKB_ATAC', 'ENCSR212VKB_RNA', 'ENCSR222ZFD_ATAC', 'ENCSR222ZFD_RNA', 'ENCSR233SQG_ATAC', 'ENCSR233SQG_RNA', 'ENCSR245BNT_ATAC', 'ENCSR245BNT_RNA', 'ENCSR255POA_ATAC', 'ENCSR255POA_RNA', 'ENCSR264JIX_ATAC', 'ENCSR264JIX_RNA', 'ENCSR265ZRW_ATAC', 'ENCSR265ZRW_RNA', 'ENCSR284PXA_ATAC', 'ENCSR284PXA_RNA', 'ENCSR300BCB_ATAC', 'ENCSR300BCB_RNA', 'ENCSR316WAS_ATAC', 'ENCSR316WAS_RNA', 'ENCSR320RLS_ATAC', 'ENCSR320RLS_RNA', 'ENCSR351CSQ_ATAC', 'ENCSR351CSQ_RNA', 'ENCSR420IUS_ATAC', 'ENCSR420IUS_RNA', 'ENCSR449VCG_ATAC', 'ENCSR449VCG_RNA', 'ENCSR488VFJ_ATAC', 'ENCSR488VFJ_RNA', 'ENCSR508WRP_ATAC', 'ENCSR508WRP_RNA', 'ENCSR511RDV_ATAC', 'ENCSR511RDV_RNA', 'ENCSR534YJW_ATAC', 'ENCSR534YJW_RNA', 'ENCSR549KDX_ATAC', 'ENCSR549KDX_RNA', 'ENCSR568QKW_ATAC', 'ENCSR568QKW_RNA', 'ENCSR573DJW_ATAC', 'ENCSR573DJW_RNA', 'ENCSR613LBN_ATAC', 'ENCSR613LBN_RNA', 'ENCSR618WVK_ATAC', 'ENCSR618WVK_RNA', 'ENCSR636WIB_ATAC', 'ENCSR636WIB_RNA', 'ENCSR662XCU_ATAC', 'ENCSR662XCU_RNA', 'ENCSR694BTU_ATAC', 'ENCSR694BTU_RNA', 'ENCSR727WGO_ATAC', 'ENCSR727WGO_RNA', 'ENCSR768WQT_ATAC', 'ENCSR768WQT_RNA', 'ENCSR775AZP_ATAC', 'ENCSR775AZP_RNA', 'ENCSR788DZO_ATAC', 'ENCSR788DZO_RNA', 'ENCSR793DNM_ATAC', 'ENCSR793DNM_RNA', 'ENCSR808RAT_ATAC', 'ENCSR808RAT_RNA', 'ENCSR822CXI_ATAC', 'ENCSR822CXI_RNA', 'ENCSR823KSL_ATAC', 'ENCSR823KSL_RNA', 'ENCSR851GBP_ATAC', 'ENCSR851GBP_RNA', 'ENCSR923FKN_ATAC', 'ENCSR923FKN_RNA', 'ENCSR925IHI_ATAC', 'ENCSR925IHI_RNA', 'ENCSR975IXL_ATAC', 'ENCSR975IXL_RNA', 'ENCSR980AFI_ATAC', 'ENCSR980AFI_RNA', 'ENCSR987VTJ_ATAC', 'ENCSR987VTJ_RNA']
-
-Sample counts AFTER filtering:
-sample
-ENCSR568QKW_ATAC    17479
-ENCSR568QKW_RNA     16919
-ENCSR618WVK_RNA     16288
-ENCSR618WVK_ATAC    15970
-ENCSR245BNT_ATAC    15842
-                    ...  
-ENCSR694BTU_RNA      5219
-ENCSR636WIB_ATAC     5206
-ENCSR636WIB_RNA      5128
-ENCSR033MDU_ATAC     4631
-ENCSR033MDU_RNA      4470
-Name: count, Length: 88, dtype: int64
-Final filtering -- Cells remaining: 830356, Genes remaining: 17510
-Running doublet detection with scrublet on 830356 cells...
-Detected 26721 doublets out of 830356 cells
-After doublet removal: 803635 cells remaining
-Preprocessing complete!
-Preprocessed data saved to: /dcs07/hongkai/data/harry/result/all/multiomics/preprocess/adata_sample.h5ad
-Function execution time: 4739.43 seconds
-✓ Integration preprocessing completed successfully
-Step 3: Running dimensionality reduction (pseudobulk + PCA)...
-  Sub-step 3a: Computing pseudobulk...
-Created mixed batch column 'modality_modality' by combining 'modality' and 'modality'.
-Using PyTorch with GPU: NVIDIA L40S
-Initial GPU memory: 0.00/0.00 GB allocated/reserved
-Processing 31 cell types across 88 samples
-Creating layer for 1
-Creating layer for 10
-Creating layer for 11
-Creating layer for 12
-Creating layer for 13
-Creating layer for 14
-Creating layer for 15
-Creating layer for 16
-Creating layer for 17
-Creating layer for 18
-Creating layer for 19
-Creating layer for 2
-Creating layer for 20
-Creating layer for 21
-Creating layer for 22
-Creating layer for 23
-Creating layer for 24
-Creating layer for 25
-Creating layer for 26
-Creating layer for 27
-Creating layer for 28
-Creating layer for 29
-Creating layer for 3
-Creating layer for 30
-Creating layer for 31
-Creating layer for 4
-Creating layer for 5
-Creating layer for 6
-Creating layer for 7
-Creating layer for 8
-Creating layer for 9
-
-Processing cell type: 1
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 1: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 10
-  Applying ComBat batch correction on 17505 genes
-  ComBat failed for 10: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 11
-  Applying ComBat batch correction on 17487 genes
-  ComBat failed for 11: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 12
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 12: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 13
-  Applying ComBat batch correction on 17502 genes
-  ComBat failed for 13: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 14
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 14: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 15
-  Applying ComBat batch correction on 17503 genes
-  ComBat failed for 15: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 16
-  Applying ComBat batch correction on 17495 genes
-  ComBat failed for 16: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 17
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 17: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 18
-  Applying ComBat batch correction on 17509 genes
-  ComBat failed for 18: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 19
-  Applying ComBat batch correction on 17494 genes
-  ComBat failed for 19: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 2
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 2: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 20
-  Applying ComBat batch correction on 17495 genes
-  ComBat failed for 20: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 21
-  Applying ComBat batch correction on 17507 genes
-  ComBat failed for 21: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 22
-  Applying ComBat batch correction on 17504 genes
-  ComBat failed for 22: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 23
-  Applying ComBat batch correction on 17508 genes
-  ComBat failed for 23: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 24
-  Applying ComBat batch correction on 17500 genes
-  ComBat failed for 24: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 25
-  Applying ComBat batch correction on 17507 genes
-  ComBat failed for 25: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 26
-  Applying ComBat batch correction on 17491 genes
-  ComBat failed for 26: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 27
-  Applying ComBat batch correction on 17508 genes
-  ComBat failed for 27: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 28
-  Applying ComBat batch correction on 17507 genes
-  ComBat failed for 28: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 29
-  Applying ComBat batch correction on 17410 genes
-  ComBat failed for 29: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 3
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 3: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 30
-  Applying ComBat batch correction on 17398 genes
-  ComBat failed for 30: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 31
-  Applying ComBat batch correction on 17377 genes
-  ComBat failed for 31: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 4
-  Applying ComBat batch correction on 17501 genes
-  ComBat failed for 4: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 5
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 5: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 6
-  Applying ComBat batch correction on 17506 genes
-  ComBat failed for 6: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 7
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 7: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 8
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 8: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 9
-  Applying ComBat batch correction on 17510 genes
-  ComBat failed for 9: name 'io' is not defined
-  Falling back to regression-based batch correction
-  Applying simple batch regression (fallback method)...
-  Simple batch regression completed successfully
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Concatenating all cell type HVGs into single AnnData
-Applying final HVG selection on 62000 concatenated genes
-Final HVG selection: 2000 genes
-
-Creating final HVG expression matrix
-
-Total runtime: 400.21 seconds
-Final HVG matrix shape: (31, 88)
-Final AnnData shape: (88, 2000)
-  Sub-step 3b: Processing with PCA...
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - count_output_dir: /dcs07/hongkai/data/harry/result/all/multiomics/preprocess
-  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/all/multiomics/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(88, 2000), proportion=(88, 31)
-[DimRed] Computing PCA for RNA data with 10 components on (88, 2000) data
-[PCA] Success. Shape: (88, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (88, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (88, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Computing PCA with 10 components...
-[run_dimension_reduction_proportion] Harmony failed: No module named 'harmonypy'. Using PCA only.
-[run_dimension_reduction_proportion] Completed using PCA. Shape: (88, 10)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file paths:
-  - adata: /dcs07/hongkai/data/harry/result/all/multiomics/preprocess/adata_sample.h5ad
-  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/all/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving adata to: /dcs07/hongkai/data/harry/result/all/multiomics/preprocess/adata_sample.h5ad
-[Save] ✓ Successfully saved adata (7797.2 MB)
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/all/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (1.1 MB)
-[process_anndata_with_dimension_reduction] ✓ All files saved successfully
-
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 825.37 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ✓ ATTEMPTED
-✓ Dimensionality reduction completed successfully
-Step 4: Visualizing multimodal embedding...
-Creating default embedding visualization (all samples)
-Expression key: X_DR_expression
-Proportion key: X_DR_proportion
-Created/using visualization directory: /dcs07/hongkai/data/harry/result/all/multiomics/visualization
-Expression plot saved to: /dcs07/hongkai/data/harry/result/all/multiomics/visualization/all_samples_expression.png
-Proportion plot saved to: /dcs07/hongkai/data/harry/result/all/multiomics/visualization/all_samples_proportion.png
-✓ Embedding visualization completed successfully
-
-Pipeline completed successfully!
-Results saved to: /dcs07/hongkai/data/harry/result/all/multiomics
-Available results: ['glue', 'adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
-Final status flags: {'glue_integration': True, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Completed steps: 6/10
-GLUE sub-steps completed: 2/5
-
-✓ Multiomics pipeline completed successfully!
+✓ RNA pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
-Multiomics Pipeline: ⚠ PARTIAL
-  - glue_integration: ✓
-  - glue_preprocessing: ✗
-  - glue_training: ✗
-  - glue_gene_activity: ✓
-  - glue_cell_types: ✓
-  - glue_visualization: ✗
-  - integration_preprocessing: ✓
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
   - dimensionality_reduction: ✓
-  - embedding_visualization: ✓
-  - optimal_resolution: ✗
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✗
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✓
 
 Results saved to: /dcs07/hongkai/data/harry/result/all
 Status file: /dcs07/hongkai/data/harry/result/all/sys_log/main_process_status.json
-Execution time: 14784.5471 seconds
+Execution time: 108.8966 seconds

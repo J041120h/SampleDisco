@@ -14,6 +14,8 @@ def annotate_cell_types_with_celltypist(
     save=True
 ):
     # === Validation of model input ===
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     if (model_name is None and custom_model_path is None) or (model_name and custom_model_path):
         raise ValueError("You must provide exactly one of `model_name` or `custom_model_path`.")
 

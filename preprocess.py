@@ -102,6 +102,8 @@ def preprocess(
     verbose=True
 ):
     start_time = time.time()
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         if verbose:

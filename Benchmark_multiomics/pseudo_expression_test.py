@@ -630,8 +630,8 @@ def compute_metrics_direct_hdf5_robust(
 if __name__ == "__main__":
     try:
         results = compute_metrics_direct_hdf5_robust(
-            integrated_path="/dcs07/hongkai/data/harry/result/all/multiomics/integration/glue/atac_pseudorna_integrated.h5ad",
-            output_dir="/dcs07/hongkai/data/harry/result/all/multiomics/integration/glue/validation_results_pseudorna",
+            integrated_path="/dcs07/hongkai/data/harry/result/all/multiomics/preprocess/atac_rna_integrated.h5ad",
+            output_dir="/dcs07/hongkai/data/harry/result/all/validation_results_pseudorna",
             batch_size=100,
             verbose=True,
             subsample_ratio=0.1,

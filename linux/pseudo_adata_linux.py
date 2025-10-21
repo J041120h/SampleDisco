@@ -589,6 +589,8 @@ def compute_pseudobulk_adata_linux(
         Maximum time in seconds to wait for ComBat before falling back to regression
     """
     # Call the main GPU function
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu(
         adata=adata,
         batch_col=batch_col,

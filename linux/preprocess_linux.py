@@ -106,6 +106,8 @@ def preprocess_linux(
     vars_to_regress=None,     # <-- non-mutable default
     verbose=True
 ):
+    from utils.random_seed import set_global_seed
+    set_global_seed(seed = 42, verbose = verbose)
     start_time = time.time()
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
