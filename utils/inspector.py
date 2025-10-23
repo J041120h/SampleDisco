@@ -123,4 +123,4 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    summarize_h5ad(h5ad_path = '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad')
+    summarize_h5ad(h5ad_path = '/dcl01/hongkai/data/data/hjiang/Test/gene_activity/gene_activity_weighted_gpu.h5ad')

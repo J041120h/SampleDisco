@@ -733,3 +733,17 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nFatal error: {e}")
         traceback.print_exc()
+
+    try:
+        results = compute_metrics_direct_hdf5_robust(
+            integrated_path="/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/preprocess/atac_rna_integrated.h5ad",
+            output_dir="/dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/validation_results_pseudorna",
+            batch_size=100,
+            verbose=True,
+            subsample_ratio=0.1,
+            max_memory_gb=400.0,
+            debug=True
+        )
+    except Exception as e:
+        print(f"\nFatal error: {e}")
+        traceback.print_exc()

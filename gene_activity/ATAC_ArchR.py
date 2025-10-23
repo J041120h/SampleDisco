@@ -723,8 +723,8 @@ if __name__ == "__main__":
     print("Starting ArchR Gene Activity Analysis...")
     
     gene_activity = create_gene_activity_archR(
-        atac_adata="/Users/harry/Desktop/GenoDistance/Data/test_ATAC.h5ad",
-        output_dir="/Users/harry/Desktop/GenoDistance/results/ATAC_ArchR",
+        atac_adata="/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad",
+        output_dir="/dcs07/hongkai/data/harry/result/gene_activity/ATAC_ArchR",
         species="homo_sapiens",
         release=98,
         protein_coding_only=True,

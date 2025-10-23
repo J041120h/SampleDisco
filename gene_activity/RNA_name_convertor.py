@@ -424,7 +424,7 @@ def quick_gene_overview(adata, title="Gene Data Overview"):
 # Example usage
 if __name__ == "__main__":
     # Example: Convert RNA data to use gene IDs
-    rna_path ="/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad"
+    rna_path ="/dcl01/hongkai/data/data/hjiang/Data/paired/rna/placenta.h5ad"
     
     # Convert with Ensembl release 98
     adata_converted = convert_rna_to_gene_ids(
@@ -433,7 +433,7 @@ if __name__ == "__main__":
         species="homo_sapiens",
         handle_duplicates='first',
         min_mapping_rate=0.7,
-        output_path = "/dcl01/hongkai/data/data/hjiang/Test/gene_activity/rna_gene_id.h5ad",
+        output_path = "/dcs07/hongkai/data/harry/result/gene_activity/rna_corrected.h5ad",
         verbose=True
     )
     

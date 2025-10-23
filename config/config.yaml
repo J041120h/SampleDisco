@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,15 +21,15 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_25samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad"
 rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
 rna_preprocessing: false
-rna_cell_type_cluster: true
-rna_dimensionality_reduction: true
-rna_sample_distance_calculation: true
+rna_cell_type_cluster: false
+rna_dimensionality_reduction: false
+rna_sample_distance_calculation: false
 rna_trajectory_analysis: true
 rna_trajectory_dge: false
 rna_sample_cluster: false
@@ -92,7 +92,7 @@ rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
-rna_cca_optimal_cell_resolution: false
+rna_cca_optimal_cell_resolution: true
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null

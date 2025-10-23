@@ -448,7 +448,7 @@ def load_annotations(*, output_prefix="atac_annotation", output_dir="."):
 # ────────────────────────────── CLI demo ──────────────────────────────
 if __name__ == "__main__":
     # Example usage
-    atac_path = "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
+    atac_path = "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
     results = annotate_atac_peaks_parallel(
         atac_path,
         ensembl_release=98,
@@ -458,7 +458,7 @@ if __name__ == "__main__":
         distance_weight_sigma=50_000,
         min_peak_accessibility=0.01,
         output_prefix="atac_annotation",
-        output_dir="/dcl01/hongkai/data/data/hjiang/result/peak_annotation",
+        output_dir="/dcs07/hongkai/data/harry/result/gene_activity",
     )
 
     print("\nOutput files:")
