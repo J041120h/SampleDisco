@@ -1,45 +1,27 @@
-Loading RNA data from: /dcl01/hongkai/data/data/hjiang/Data/paired/rna/placenta.h5ad
-Original data shape: 12,402 cells × 36,601 genes
-Detected gene identifier type: gene_name
-Sample genes: ['MIR1302-2HG', 'FAM138A', 'OR4F5', 'AL627309.1', 'AL627309.3']
-Converting gene names to gene IDs using Ensembl release 98...
-Creating gene mappings from Ensembl release 98...
-Created mappings for 59,412 gene names → 60,623 gene IDs
-Warning: 69 gene names map to multiple IDs (kept first occurrence)
+GPU acceleration enabled. Detected 1 GPU(s)
+  GPU 0: NVIDIA L40S (47.7 GB)
+Creating gene activity matrix using GPU with 4 workers
+Aggregation method: weighted_sum
+Normalization: total_weight
+Min peak accessibility: 0.01
+Accessibility filter: 196789/3576085 peaks pass
 
-Conversion results:
-  Successfully mapped: 36,591 (99.97%)
-  Unmapped genes: 10
-  Duplicate gene names: 0
-  Genes retained: 36,591
-Filtered data shape: 12,402 cells × 36,591 genes
-Detailed mapping statistics saved to: /dcl01/hongkai/data/data/hjiang/Data/paired/rna/placenta_gene_conversion_stats.json
-Converted RNA data saved to: /dcs07/hongkai/data/harry/result/gene_activity/rna_corrected.h5ad
+Processing 18,651 genes from 3,576,085 peaks
+Using 196,789 accessibility-filtered peaks
+GPU batch size: 200 genes per batch
+Transferring data to GPU...
+Processing 94 gene batches on GPU...
+Combining results...
+Applying total_weight normalization on GPU...
 
-Final data structure:
-  Shape: 12,402 cells × 36,591 genes
-  Gene identifiers: gene_ids (var_names)
-  Gene names: available in var['gene_name']
+Gene activity matrix created: 12,402 cells × 18,651 genes
+Results saved to: /dcs07/hongkai/data/harry/result/gene_activity/gene_activity_weighted_gpu.h5ad
 
-Example gene ID → name mapping:
-  ENSG00000243485 → MIR1302-2HG
-  ENSG00000237613 → FAM138A
-  ENSG00000186092 → OR4F5
-  ENSG00000238009 → AL627309.1
-  ENSG00000239945 → AL627309.3
-Converted RNA Data
-==================
-Shape: 12,402 cells × 36,591 genes
-Gene identifier type: gene_id
-var_names name: gene_id
-Sample gene identifiers:
-  ENSG00000243485 → MIR1302-2HG
-  ENSG00000237613 → FAM138A
-  ENSG00000186092 → OR4F5
-  ENSG00000238009 → AL627309.1
-  ENSG00000239945 → AL627309.3
+Matrix statistics:
+  Non-zero genes: 18,651/18,651 (100.0%)
+  Sparsity: 59.7%
+  Total counts: 8,562,441
 
-Conversion info:
-  Method: ensembl_name_to_id
-  Ensembl release: 98
-  Mapping rate: 99.97%
+GPU acceleration statistics:
+  GPUs used: 1
+  Batch size: 200 genes

@@ -572,15 +572,15 @@ def peak_to_gene_activity_weighted_gpu(
 # Example usage
 if __name__ == "__main__":
     # Load data
-    atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad")
-    with open("/dcl01/hongkai/data/data/hjiang/result/peak_annotation/atac_annotation_peak2gene.pkl", "rb") as f:
+    atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad")
+    with open("/dcs07/hongkai/data/harry/result/gene_activity/atac_annotation_peak2gene.pkl", "rb") as f:
         annotation_results = pickle.load(f)
     
     # Run GPU-accelerated version
     adata_gene = peak_to_gene_activity_weighted_gpu(
         atac=atac,
         annotation_results=annotation_results,
-        output_dir="/dcl01/hongkai/data/data/hjiang/Test/gene_activity/",
+        output_dir="/dcs07/hongkai/data/harry/result/gene_activity",
         aggregation_method='weighted_sum',
         distance_threshold=100_000,
         weight_threshold=0.01,

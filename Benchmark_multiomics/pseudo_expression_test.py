@@ -185,390 +185,295 @@ def safe_load_batch_from_hdf5(
                 for j, idx in enumerate(chunk_indices):
                     try:
                         batch_data[i + j, :] = X_data[idx, :]
-                    except Exception as e:
-                        print(f"Error loading row {idx}: {e}")
+                    except:
+                        pass
         return batch_data
 
 
-# ─────────────────────── Main compute (debug build) ───────────────────────
+# ──────────────────────────── Main Function ────────────────────────────
 
 def compute_metrics_direct_hdf5_robust(
     integrated_path: str,
-    output_dir: str = "./validation_results",
+    output_dir: str,
     batch_size: int = 100,
     verbose: bool = True,
     subsample_ratio: float = 1.0,
-    max_memory_gb: float = 8.0,
-    debug: bool = True
+    max_memory_gb: float = 16.0,
+    debug: bool = False
 ) -> Dict:
-
-    # Guard: ensure output_dir is a directory, not a file path
-    if output_dir.endswith(".h5ad") or (os.path.exists(output_dir) and os.path.isfile(output_dir)):
-        base = os.path.dirname(output_dir) if output_dir.endswith(".h5ad") else os.path.dirname(integrated_path)
-        output_dir = os.path.join(base, "validation_results_debug")
-    os.makedirs(output_dir, exist_ok=True)
-
-    dbg_fp = _open_debug_log(output_dir) if debug else None
-    _dprint(dbg_fp, "=" * 80)
-    _dprint(dbg_fp, "DIRECT HDF5 PROCESSING - IMPROVED GENE CORRELATION")
-    _dprint(dbg_fp, "=" * 80)
-    _dprint(dbg_fp, f"[debug] Timestamp       : {datetime.now().isoformat()}")
-    _dprint(dbg_fp, f"[debug] integrated_path : {integrated_path}")
-    _dprint(dbg_fp, f"[debug] output_dir      : {output_dir}")
-    _dprint(dbg_fp, f"[debug] batch_size      : {batch_size}")
-    _dprint(dbg_fp, f"[debug] subsample_ratio : {subsample_ratio}")
-    _dprint(dbg_fp, f"[debug] max_memory_gb   : {max_memory_gb}")
-    _dprint(dbg_fp, f"[debug] debug           : {debug}")
+    """
+    Compute RNA-ATAC correlation metrics directly from integrated H5AD file.
+    
+    Key improvements:
+    - Gene correlations computed only from cells where both modalities express the gene
+    - Spearman correlation used for robustness to outliers and non-linear relationships
+    - Minimum threshold of 3 co-expressing cells required for correlation computation
+    - Enhanced statistics and visualizations of co-expression patterns
+    """
+    dbg_fp = None
+    if debug:
+        dbg_fp = _open_debug_log(output_dir)
+        _dprint(dbg_fp, f"\n{'=' * 80}")
+        _dprint(dbg_fp, f"Started at: {datetime.now().isoformat()}")
+        _dprint(dbg_fp, f"Integrated file: {integrated_path}")
+        _dprint(dbg_fp, f"Output dir: {output_dir}")
+        _dprint(dbg_fp, f"Batch size: {batch_size}, subsample: {subsample_ratio}")
 
     if verbose:
-        print("=" * 80)
-        print("DIRECT HDF5 PROCESSING - IMPROVED GENE CORRELATION")
-        print("=" * 80)
-        print(f"\n📂 Processing: {integrated_path}")
-        print(f"   Batch size: {batch_size}")
-        print(f"   Subsample ratio: {subsample_ratio}")
-        print(f"   Max memory: {max_memory_gb:.1f} GB")
+        print(f"\n{'=' * 80}")
+        print("COMPUTING RNA-ATAC METRICS (IMPROVED GENE CORRELATION)")
+        print(f"{'=' * 80}")
+        print(f"Integrated file: {integrated_path}")
 
     if debug:
         _dump_h5_structure(integrated_path, output_dir, dbg_fp)
 
-    # Read metadata to find paired cells
-    try:
-        adata_meta = ad.read_h5ad(integrated_path, backed='r')
-    except Exception as e:
-        _dprint(dbg_fp, "[debug] ERROR: ad.read_h5ad failed:", repr(e))
-        _dump_json(output_dir, "debug_context.json", {
-            "stage": "read_h5ad",
-            "error": repr(e),
-            "traceback": traceback.format_exc(),
-        })
-        raise
+    # Load metadata
+    with h5py.File(integrated_path, "r") as f:
+        obs_group = f['obs']
+        modality_key = 'modality'
+        if modality_key not in obs_group:
+            raise KeyError(f"Missing '{modality_key}' column in obs")
+        modality = obs_group[modality_key][:]
+        if modality.dtype.kind in ('S', 'O'):
+            modality = np.array([m.decode('utf-8') if isinstance(m, bytes) else str(m) for m in modality])
 
-    try:
-        obs_df = adata_meta.obs.copy()
-        var_names = adata_meta.var_names.copy()
-        n_genes = len(var_names)
-        matrix_shape = adata_meta.shape
-        if debug:
-            _dprint(dbg_fp, f"[debug] matrix_shape: {matrix_shape}")
-            _dprint(dbg_fp, f"[debug] n_genes     : {n_genes}")
-            _dump_obs_preview(output_dir, obs_df, dbg_fp)
-            _dump_json(output_dir, "debug_context.json", {
-                "matrix_shape": matrix_shape,
-                "n_genes": n_genes,
-                "obs_columns": list(obs_df.columns),
-                "index_name": obs_df.index.name,
-                "n_obs": obs_df.shape[0],
-            })
-    finally:
-        del adata_meta
-        gc.collect()
+        barcode_key = None
+        for key in ['original_barcode', '_index', 'obs_names']:
+            if key in obs_group:
+                barcode_key = key
+                break
+        if not barcode_key:
+            raise KeyError("No barcode column found in obs")
 
-    # Modality masks
-    try:
-        rna_mask = obs_df['modality'] == 'RNA'
-        atac_mask = obs_df['modality'] == 'ATAC'
-        if debug:
-            _dump_obs_value_counts(output_dir, obs_df, 'modality', dbg_fp)
-    except KeyError:
-        _dprint(dbg_fp, "[debug] ERROR: 'modality' column missing in .obs.")
-        _dump_json(output_dir, "debug_context.json", {
-            "stage": "modality_mask",
-            "error": "'modality' column missing",
-            "obs_columns": list(obs_df.columns)
-        })
-        raise
+        barcodes_raw = obs_group[barcode_key][:]
+        if barcodes_raw.dtype.kind in ('S', 'O'):
+            barcodes = np.array([b.decode('utf-8') if isinstance(b, bytes) else str(b) for b in barcodes_raw])
+        else:
+            barcodes = barcodes_raw.astype(str)
+
+        var_names_raw = f['var']['_index'][:]
+        if var_names_raw.dtype.kind in ('S', 'O'):
+            var_names = np.array([v.decode('utf-8') if isinstance(v, bytes) else str(v) for v in var_names_raw])
+        else:
+            var_names = var_names_raw.astype(str)
+
+    n_genes = len(var_names)
+    rna_mask = (modality == 'RNA')
+    atac_mask = (modality == 'ATAC')
 
     rna_indices = np.where(rna_mask)[0]
     atac_indices = np.where(atac_mask)[0]
+    rna_barcodes = barcodes[rna_indices]
+    atac_barcodes = barcodes[atac_indices]
 
     if verbose:
-        print(f"   Matrix shape: {matrix_shape}")
-        print(f"   RNA cells: {len(rna_indices)}")
-        print(f"   ATAC cells: {len(atac_indices)}")
+        print(f"\n📊 Data overview:")
+        print(f"   RNA cells: {len(rna_indices):,}")
+        print(f"   ATAC cells: {len(atac_indices):,}")
+        print(f"   Genes: {n_genes:,}")
+
     if debug:
-        _dprint(dbg_fp, f"[debug] RNA cells : {len(rna_indices)}")
-        _dprint(dbg_fp, f"[debug] ATAC cells: {len(atac_indices)}")
+        _dprint(dbg_fp, f"[debug] RNA cells: {len(rna_indices)}, ATAC cells: {len(atac_indices)}")
+        _dprint(dbg_fp, f"[debug] Genes: {n_genes}")
 
-    # Split views
-    rna_obs = obs_df[rna_mask]
-    atac_obs = obs_df[atac_mask]
+    # Normalize barcodes
+    rna_norm = np.array([_normalize_to_from_ENC(bc) for bc in rna_barcodes])
+    atac_norm = np.array([_normalize_to_from_ENC(bc) for bc in atac_barcodes])
 
-    # PRINT SAMPLE NAMES (indexes + original_barcode if available)
-    _show_name_samples(rna_obs, atac_obs, dbg_fp, n=10)
-
-    # ----------------- Pairing logic with ATAC prefix stripping -----------------
-    # Prefer original_barcode if present; otherwise use index-based
-    if 'original_barcode' in obs_df.columns:
-        rna_barcodes_raw = rna_obs['original_barcode'].astype(str).values
-        atac_barcodes_raw = atac_obs['original_barcode'].astype(str).values
-        if debug:
-            _dprint(dbg_fp, "[debug] Using 'original_barcode' for pairing.")
-    else:
-        rna_barcodes_raw = np.array([str(idx) for idx in rna_obs.index])
-        atac_barcodes_raw = np.array([str(idx) for idx in atac_obs.index])
-        if debug:
-            _dprint(dbg_fp, "[debug] Using index-based pairing.")
-
-    # Normalize: RNA left as is (already starts at ENCSR); ATAC strip prefix before 'ENCSR'
-    rna_barcodes = np.array([s if s.startswith("ENCSR") else s for s in rna_barcodes_raw], dtype=object)
-    atac_barcodes = np.array([_normalize_to_from_ENC(s) for s in atac_barcodes_raw], dtype=object)
-
-    # Also normalize index-based fallback suffix removal (_RNA/_ATAC) **after** ENC trimming
-    if 'original_barcode' not in obs_df.columns:
-        rna_barcodes = np.array([s.replace('_RNA', '') for s in rna_barcodes], dtype=object)
-        atac_barcodes = np.array([s.replace('_ATAC', '') for s in atac_barcodes], dtype=object)
-
-    # Emit heads for inspection
-    if debug:
-        _dump_indices_preview(output_dir, "rna_barcodes", rna_barcodes, dbg_fp)
-        _dump_indices_preview(output_dir, "atac_barcodes", atac_barcodes, dbg_fp)
-
-    # Intersect
-    common_barcodes = list(set(rna_barcodes) & set(atac_barcodes))
-
-    # If still empty and we were using original_barcode, try index-based normalization as a fallback
-    if len(common_barcodes) == 0 and 'original_barcode' in obs_df.columns:
-        rna_idx_norm = np.array([_normalize_to_from_ENC(str(idx)).replace('_RNA', '') for idx in rna_obs.index], dtype=object)
-        atac_idx_norm = np.array([_normalize_to_from_ENC(str(idx)).replace('_ATAC', '') for idx in atac_obs.index], dtype=object)
-        common_barcodes = list(set(rna_idx_norm) & set(atac_idx_norm))
-        if debug:
-            _dprint(dbg_fp, "[debug] First pairing yielded 0; retried with index-based ENC-trim + suffix-strip.")
-            _dump_indices_preview(output_dir, "rna_barcodes_index_norm", rna_idx_norm, dbg_fp)
-            _dump_indices_preview(output_dir, "atac_barcodes_index_norm", atac_idx_norm, dbg_fp)
-
+    # Find common barcodes
+    rna_set = set(rna_norm)
+    atac_set = set(atac_norm)
+    common_bc_set = rna_set & atac_set
+    common_barcodes = sorted(common_bc_set)
     n_paired = len(common_barcodes)
+
     if verbose:
-        print(f"\n🔗 Found {n_paired} paired cells")
-    if debug:
-        _dprint(dbg_fp, f"[debug] n_paired={n_paired}")
-        _dump_indices_preview(output_dir, "common_barcodes", np.array(common_barcodes, dtype=object), dbg_fp)
+        print(f"\n🔗 Pairing cells:")
+        print(f"   Common barcodes: {n_paired:,}")
 
     if n_paired == 0:
-        _dump_json(output_dir, "debug_context.json", {
-            "stage": "pairing",
-            "n_rna": int(len(rna_indices)),
-            "n_atac": int(len(atac_indices)),
-            "n_paired": 0,
-            "pairing_note": "After stripping ATAC prefix to ENCSR, still no overlap. "
-                            "Verify ENCSR accessions and cell barcode segments truly correspond between modalities.",
-            "obs_columns": list(obs_df.columns),
-        })
-        raise ValueError("No paired cells found!")
+        raise ValueError("No common barcodes found between RNA and ATAC")
 
-    # Optional subsample
-    if subsample_ratio < 1.0:
-        n_subsample = max(1, int(n_paired * subsample_ratio))
-        np.random.seed(42)
-        common_barcodes = list(np.random.choice(common_barcodes, n_subsample, replace=False))
-        n_paired = len(common_barcodes)
-        if verbose:
-            print(f"   Subsampled to {n_paired} cells")
-        if debug:
-            _dprint(dbg_fp, f"[debug] Subsampled to {n_paired} cells")
+    # Create mapping
+    rna_bc_to_idx = {bc: i for i, bc in enumerate(rna_norm)}
+    atac_bc_to_idx = {bc: i for i, bc in enumerate(atac_norm)}
 
-    # Build mapping from normalized barcodes back to local indices in each modality
-    rna_bc_to_idx = {bc: i for i, bc in enumerate(rna_barcodes)}
-    atac_bc_to_idx = {bc: i for i, bc in enumerate(atac_barcodes)}
-
-    paired_rna_local = np.array([rna_bc_to_idx[bc] for bc in common_barcodes])
-    paired_atac_local = np.array([atac_bc_to_idx[bc] for bc in common_barcodes])
-
+    paired_rna_local = np.array([rna_bc_to_idx[bc] for bc in common_barcodes], dtype=np.int64)
+    paired_atac_local = np.array([atac_bc_to_idx[bc] for bc in common_barcodes], dtype=np.int64)
     paired_rna_global = rna_indices[paired_rna_local]
     paired_atac_global = atac_indices[paired_atac_local]
 
+    # Subsample
+    if subsample_ratio < 1.0:
+        np.random.seed(42)
+        n_use = max(1, int(n_paired * subsample_ratio))
+        sub_idx = np.random.choice(n_paired, size=n_use, replace=False)
+        paired_rna_global = paired_rna_global[sub_idx]
+        paired_atac_global = paired_atac_global[sub_idx]
+        common_barcodes = [common_barcodes[i] for i in sub_idx]
+        n_paired = n_use
+        if verbose:
+            print(f"   Subsampled to: {n_paired:,} cells")
+
     if debug:
-        preview_df = pd.DataFrame({
-            "barcode": common_barcodes[:100],
-            "rna_local": paired_rna_local[:100],
-            "atac_local": paired_atac_local[:100],
-            "rna_global": paired_rna_global[:100],
-            "atac_global": paired_atac_global[:100],
-        })
-        preview_df.to_csv(os.path.join(output_dir, "paired_indices_preview.csv"), index=False)
-        _dprint(dbg_fp, "[debug] Wrote paired_indices_preview.csv")
+        _dprint(dbg_fp, f"[debug] After subsample: {n_paired} cells")
 
-    # Detect data format
-    if verbose:
-        print(f"\n🔍 Detecting data format...")
-    with h5py.File(integrated_path, 'r') as f:
-        if 'X' not in f:
-            if debug:
-                _dump_h5_structure(integrated_path, output_dir, dbg_fp)
-            raise ValueError("No 'X' matrix found in HDF5 file")
-        X_data = f['X']
-        is_sparse = isinstance(X_data, h5py.Group)
-        if is_sparse:
-            if verbose:
-                print("   Data format: Sparse CSR matrix")
-                data_size = X_data['data'].size
-                dtype_size = X_data['data'].dtype.itemsize
-                estimated_gb = (data_size * dtype_size * 3) / (1024**3)
-                print(f"   Estimated sparse matrix size: {estimated_gb:.2f} GB")
-            if debug:
-                _dprint(dbg_fp, f"[debug] Sparse CSR detected; nnz≈{X_data['data'].size}")
-        else:
-            if verbose:
-                print("   Data format: Dense matrix")
-                print(f"   Matrix dtype: {X_data.dtype}")
-                print(f"   Matrix shape: {X_data.shape}")
-            if debug:
-                _dprint(dbg_fp, f"[debug] Dense dataset dtype={X_data.dtype} shape={X_data.shape}")
+    # Memory check
+    bytes_per_matrix = n_paired * n_genes * 4
+    total_gb = (2 * bytes_per_matrix) / (1024**3)
+    if total_gb > max_memory_gb:
+        raise MemoryError(f"Would need ~{total_gb:.1f} GB but limit is {max_memory_gb} GB")
 
-    # Process paired cells (unchanged logic)
     if verbose:
-        print(f"\n📈 Processing paired cells in batches...")
+        print(f"   Estimated memory: {total_gb:.2f} GB")
+
+    # Load data in batches
+    if verbose:
+        print("\n📥 Loading data in batches...")
+
+    rna_mat = np.zeros((n_paired, n_genes), dtype=np.float32)
+    atac_mat = np.zeros((n_paired, n_genes), dtype=np.float32)
+
+    with h5py.File(integrated_path, "r") as f:
+        n_batches = int(np.ceil(n_paired / batch_size))
+        for batch_idx in tqdm(range(n_batches), desc="Loading", disable=not verbose):
+            start = batch_idx * batch_size
+            end = min(start + batch_size, n_paired)
+            rna_batch_global = paired_rna_global[start:end]
+            atac_batch_global = paired_atac_global[start:end]
+            rna_mat[start:end, :] = safe_load_batch_from_hdf5(f, rna_batch_global, n_genes, verbose=False)
+            atac_mat[start:end, :] = safe_load_batch_from_hdf5(f, atac_batch_global, n_genes, verbose=False)
+
+    if debug:
+        _dprint(dbg_fp, f"[debug] Loaded matrices: RNA {rna_mat.shape}, ATAC {atac_mat.shape}")
+
+    # Normalize
+    if verbose:
+        print("\n🔬 Normalizing data...")
+
+    rna_totals = rna_mat.sum(axis=1, keepdims=True)
+    rna_totals[rna_totals == 0] = 1
+    rna_normed = (rna_mat / rna_totals) * 1e4
+    rna_normed = np.log1p(rna_normed)
+
+    atac_totals = atac_mat.sum(axis=1, keepdims=True)
+    atac_totals[atac_totals == 0] = 1
+    atac_normed = (atac_mat / atac_totals) * 1e4
+    atac_normed = np.log1p(atac_normed)
+
+    del rna_mat, atac_mat
+    gc.collect()
+
+    n_processed = rna_normed.shape[0]
+
+    # Per-cell correlations
+    if verbose:
+        print("\n📊 Computing per-cell correlations...")
 
     per_cell_corr = []
-    gene_sums_rna = np.zeros(n_genes, dtype=np.float64)
-    gene_sums_atac = np.zeros(n_genes, dtype=np.float64)
-    gene_sums_sq_rna = np.zeros(n_genes, dtype=np.float64)
-    gene_sums_sq_atac = np.zeros(n_genes, dtype=np.float64)
-    gene_counts = np.zeros(n_genes, dtype=np.int64)
-    n_processed = 0
-
-    with h5py.File(integrated_path, 'r') as f:
-        for batch_start in tqdm(range(0, n_paired, batch_size),
-                                desc="Processing cells", disable=not verbose):
-            batch_end = min(batch_start + batch_size, n_paired)
-            rna_idx_batch = paired_rna_global[batch_start:batch_end]
-            atac_idx_batch = paired_atac_global[batch_start:batch_end]
-            try:
-                rna_batch = safe_load_batch_from_hdf5(f, rna_idx_batch, n_genes, verbose=False)
-                atac_batch = safe_load_batch_from_hdf5(f, atac_idx_batch, n_genes, verbose=False)
-
-                for i in range(len(rna_idx_batch)):
-                    rna_vec = rna_batch[i, :]
-                    atac_vec = atac_batch[i, :]
-                    mask = (rna_vec != 0) | (atac_vec != 0)
-                    try:
-                        corr, _ = stats.pearsonr(rna_vec[mask], atac_vec[mask])
-                        if not np.isnan(corr) and not np.isinf(corr):
-                            per_cell_corr.append(corr)
-                    except:
-                        pass
-
-                gene_sums_rna += np.sum(rna_batch, axis=0, dtype=np.float64)
-                gene_sums_atac += np.sum(atac_batch, axis=0, dtype=np.float64)
-                gene_sums_sq_rna += np.sum(rna_batch.astype(np.float64) ** 2, axis=0)
-                gene_sums_sq_atac += np.sum(atac_batch.astype(np.float64) ** 2, axis=0)
-                gene_counts += len(rna_idx_batch)
-                n_processed += len(rna_idx_batch)
-
-                del rna_batch, atac_batch
-                gc.collect()
-            except Exception as e:
-                if debug:
-                    _dprint(dbg_fp, f"[debug] Error in batch {batch_start}-{batch_end}: {repr(e)}")
-                print(f"\nError processing batch {batch_start}-{batch_end}: {e}")
-                continue
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        gene_means_rna = np.where(gene_counts > 0, gene_sums_rna / gene_counts, 0)
-        gene_means_atac = np.where(gene_counts > 0, gene_sums_atac / gene_counts, 0)
-        gene_vars_rna = np.where(gene_counts > 0,
-                                 (gene_sums_sq_rna / gene_counts) - (gene_means_rna ** 2), 0)
-        gene_vars_atac = np.where(gene_counts > 0,
-                                  (gene_sums_sq_atac / gene_counts) - (gene_means_atac ** 2), 0)
-        gene_stds_rna = np.sqrt(np.maximum(gene_vars_rna, 0))
-        gene_stds_atac = np.sqrt(np.maximum(gene_vars_atac, 0))
-
+    for i in tqdm(range(n_processed), desc="Cell correlations", disable=not verbose):
+        rna_vec = rna_normed[i, :]
+        atac_vec = atac_normed[i, :]
+        if rna_vec.std() > 0 and atac_vec.std() > 0:
+            corr, _ = stats.pearsonr(rna_vec, atac_vec)
+            if not np.isnan(corr):
+                per_cell_corr.append(corr)
     per_cell_corr = np.array(per_cell_corr)
-    if verbose:
-        print(f"\n✅ Processed {n_processed} paired cells")
-        print(f"   Computed {len(per_cell_corr)} cell correlations")
-    if debug:
-        _dprint(dbg_fp, f"[debug] n_processed={n_processed}, n_cell_corr={len(per_cell_corr)}")
+
+    if verbose and len(per_cell_corr) > 0:
+        print(f"\n   Per-cell correlation: {per_cell_corr.mean():.4f} ± {per_cell_corr.std():.4f}")
+        print(f"   Valid cells: {len(per_cell_corr)}/{n_processed}")
 
     # ================== IMPROVED PER-GENE CORRELATIONS ==================
+    """
+    Enhanced gene-level correlation analysis with co-expression filtering.
+    
+    Methodology:
+    1. Cell pairing: RNA and ATAC cells are matched by shared barcode identifiers
+    2. Normalization: Expression values are library-size normalized (scaled to 10,000) 
+       and log-transformed (log1p) for both modalities
+    3. Co-expression filtering: For each gene, only cells with non-zero expression 
+       in BOTH RNA and ATAC modalities are retained for correlation analysis
+    4. Statistical requirement: Minimum of 3 co-expressing cells required to compute 
+       correlation (prevents spurious correlations from insufficient data)
+    5. Correlation metric: Spearman rank correlation is used for robustness to outliers
+       and to capture monotonic (not strictly linear) relationships between modalities
+    
+    This approach ensures that correlations reflect genuine biological relationships
+    where the gene is actively expressed in both assays, rather than being dominated
+    by zero-inflation or technical noise.
+    """
+    
     if verbose:
-        print(f"\n📈 Computing per-gene correlations (improved method)...")
-    if debug:
-        _dprint(dbg_fp, "[debug] Using improved gene correlation: filtering for co-expressed cells")
+        print("\n🧬 Computing gene-level correlations (co-expression filtered)...")
+        print("   Using Spearman correlation on cells with non-zero expression in both modalities...")
 
-    # Sample genes for correlation analysis
-    n_sample_genes = min(1000, n_genes)
+    # Sample genes for analysis (to manage computational cost)
+    n_sample_genes = min(5000, n_genes)
     np.random.seed(42)
-    sample_gene_idx = np.random.choice(n_genes, n_sample_genes, replace=False)
-    
-    # Initialize arrays to store correlation results
-    gene_correlations = np.full(n_genes, np.nan)
-    gene_n_coexpressing_cells = np.zeros(n_genes, dtype=int)  # Track how many cells co-express each gene
-    
-    # Load all paired data once
-    with h5py.File(integrated_path, 'r') as f:
-        if verbose:
-            print("   Loading paired RNA and ATAC data...")
-        rna_data = safe_load_batch_from_hdf5(f, paired_rna_global, n_genes)
-        atac_data = safe_load_batch_from_hdf5(f, paired_atac_global, n_genes)
-        
-        # Process each sampled gene
-        gene_batch_size = 50
-        for gb_start in tqdm(range(0, len(sample_gene_idx), gene_batch_size),
-                             desc="Gene correlations", disable=not verbose):
-            gb_end = min(gb_start + gene_batch_size, len(sample_gene_idx))
-            gene_batch = sample_gene_idx[gb_start:gb_end]
-            
-            try:
-                for gene_idx in gene_batch:
-                    # Get expression vectors for this gene across all paired cells
-                    rna_vals = rna_data[:, gene_idx]
-                    atac_vals = atac_data[:, gene_idx]
-                    
-                    # Filter for cells where BOTH RNA and ATAC express the gene (non-zero)
-                    coexpress_mask = (rna_vals != 0) & (atac_vals != 0)
-                    n_coexpress = np.sum(coexpress_mask)
-                    gene_n_coexpressing_cells[gene_idx] = n_coexpress
-                    
-                    # Need at least 3 co-expressing cells for meaningful correlation
-                    if n_coexpress >= 3:
-                        rna_filtered = rna_vals[coexpress_mask]
-                        atac_filtered = atac_vals[coexpress_mask]
-                        
-                        # Check for variance in filtered data
-                        if np.std(rna_filtered) > 0 and np.std(atac_filtered) > 0:
-                            try:
-                                corr, _ = stats.pearsonr(rna_filtered, atac_filtered)
-                                if not np.isnan(corr) and not np.isinf(corr):
-                                    gene_correlations[gene_idx] = corr
-                                    if debug and gene_idx < 5:  # Debug first few genes
-                                        _dprint(dbg_fp, f"[debug] Gene {var_names[gene_idx]}: "
-                                               f"n_coexpress={n_coexpress}, corr={corr:.4f}")
-                            except Exception as e:
-                                if debug:
-                                    _dprint(dbg_fp, f"[debug] Correlation failed for gene {gene_idx}: {e}")
-                        elif debug and gene_idx < 5:
-                            _dprint(dbg_fp, f"[debug] Gene {var_names[gene_idx]}: "
-                                   f"n_coexpress={n_coexpress}, but no variance in filtered data")
-                    elif debug and gene_idx < 5:
-                        _dprint(dbg_fp, f"[debug] Gene {var_names[gene_idx]}: "
-                               f"only {n_coexpress} co-expressing cells (need >= 3)")
-                        
-            except Exception as e:
-                if debug:
-                    _dprint(dbg_fp, f"[debug] Error computing gene batch {gb_start}-{gb_end}:", repr(e))
-                print(f"\nError processing gene batch: {e}")
-                continue
-        
-        # Cleanup
-        del rna_data, atac_data
-        gc.collect()
+    sample_gene_idx = np.random.choice(n_genes, size=n_sample_genes, replace=False)
 
-    # Summary statistics for gene correlations
-    valid_gene_corr = gene_correlations[~np.isnan(gene_correlations)]
-    sampled_coexpress_counts = gene_n_coexpressing_cells[sample_gene_idx]
-    genes_with_coexpress = np.sum(sampled_coexpress_counts > 0)
-    genes_with_sufficient_coexpress = np.sum(sampled_coexpress_counts >= 3)
+    # Initialize result arrays
+    gene_correlations = np.full(n_genes, np.nan, dtype=np.float32)
+    gene_n_coexpressing_cells = np.zeros(n_genes, dtype=np.int32)
+    gene_means_rna = np.zeros(n_genes, dtype=np.float32)
+    gene_means_atac = np.zeros(n_genes, dtype=np.float32)
+    gene_stds_rna = np.zeros(n_genes, dtype=np.float32)
+    gene_stds_atac = np.zeros(n_genes, dtype=np.float32)
+
+    # Compute correlations for sampled genes
+    sampled_coexpress_counts = np.zeros(n_sample_genes, dtype=np.int32)
+    
+    for i, gene_idx in enumerate(tqdm(sample_gene_idx, desc="Gene correlations", disable=not verbose)):
+        # Extract expression vectors for this gene across all paired cells
+        rna_expr = rna_normed[:, gene_idx]
+        atac_expr = atac_normed[:, gene_idx]
+        
+        # Identify cells with non-zero expression in BOTH modalities (co-expressing cells)
+        coexpress_mask = (rna_expr > 0) & (atac_expr > 0)
+        n_coexpress = coexpress_mask.sum()
+        
+        sampled_coexpress_counts[i] = n_coexpress
+        gene_n_coexpressing_cells[gene_idx] = n_coexpress
+        
+        # Compute summary statistics across all paired cells
+        gene_means_rna[gene_idx] = rna_expr.mean()
+        gene_means_atac[gene_idx] = atac_expr.mean()
+        gene_stds_rna[gene_idx] = rna_expr.std()
+        gene_stds_atac[gene_idx] = atac_expr.std()
+        
+        # Require at least 3 co-expressing cells for meaningful correlation
+        if n_coexpress >= 3:
+            rna_coexpress = rna_expr[coexpress_mask]
+            atac_coexpress = atac_expr[coexpress_mask]
+            
+            # Use Spearman correlation for robustness to outliers and non-linear relationships
+            try:
+                corr, _ = stats.spearmanr(rna_coexpress, atac_coexpress)
+                if not np.isnan(corr):
+                    gene_correlations[gene_idx] = corr
+            except:
+                pass  # Keep as NaN if correlation fails
+
+    # Collect valid correlations for summary statistics
+    valid_gene_corr = gene_correlations[sample_gene_idx]
+    valid_gene_corr = valid_gene_corr[~np.isnan(valid_gene_corr)]
+    
+    # Count genes meeting criteria
+    genes_with_coexpress = (sampled_coexpress_counts > 0).sum()
+    genes_with_sufficient_coexpress = (sampled_coexpress_counts >= 3).sum()
     
     if verbose:
         print(f"\n   Gene correlation statistics:")
         print(f"   - Genes sampled: {n_sample_genes}")
-        print(f"   - Genes with co-expression: {genes_with_coexpress}")
+        print(f"   - Genes with any co-expression: {genes_with_coexpress}")
         print(f"   - Genes with ≥3 co-expressing cells: {genes_with_sufficient_coexpress}")
         print(f"   - Valid correlations computed: {len(valid_gene_corr)}")
         if len(valid_gene_corr) > 0:
             print(f"   - Mean gene correlation: {valid_gene_corr.mean():.4f}")
             print(f"   - Median gene correlation: {np.median(valid_gene_corr):.4f}")
+            print(f"   - Std gene correlation: {valid_gene_corr.std():.4f}")
     
     if debug:
         _dprint(dbg_fp, f"[debug] Gene correlation summary:")
@@ -582,7 +487,7 @@ def compute_metrics_direct_hdf5_robust(
     # Results DataFrame with additional co-expression info
     gene_results = pd.DataFrame({
         'gene': var_names,
-        'pearson_corr': gene_correlations,
+        'spearman_corr': gene_correlations,
         'n_coexpressing_cells': gene_n_coexpressing_cells,
         'mean_rna': gene_means_rna,
         'mean_atac': gene_means_atac,
@@ -610,7 +515,7 @@ def compute_metrics_direct_hdf5_robust(
         axes[0, 1].hist(valid_gene_corr, bins=50, edgecolor='black', alpha=0.7, color='orange')
         axes[0, 1].axvline(valid_gene_corr.mean(), color='red', linestyle='--',
                            label=f'Mean: {valid_gene_corr.mean():.3f}')
-        axes[0, 1].set_xlabel('Pearson Correlation')
+        axes[0, 1].set_xlabel('Spearman Correlation')
         axes[0, 1].set_ylabel('Number of Genes')
         axes[0, 1].set_title(f'Gene Correlations (n={len(valid_gene_corr)}, co-expressed cells only)')
         axes[0, 1].legend()

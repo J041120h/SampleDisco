@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 
 # ====== USER SETTINGS ======
-INPUT_CSV = "/users/hjiang/r/phemd_400_sample.csv"
+INPUT_CSV = "/users/hjiang/GenoDistance/QOT/400_qot_distance_matrix.csv"
 N_DIMS = 10                                      # e.g. 2, 3, 10, 50 ...
 # ===========================
 

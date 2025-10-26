@@ -527,7 +527,7 @@ if __name__ == "__main__":
     # )
 
     adata_rna = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/rna_corrected.h5ad')
-    adata_atac = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/ATAC_ArchR/gene_activity_matrix.h5ad')
+    adata_atac = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/gene_activity_weighted_gpu.h5ad')
 
     compute_rna_atac_cell_gene_correlations(
         adata_rna,

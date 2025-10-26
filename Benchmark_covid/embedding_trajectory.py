@@ -319,7 +319,7 @@ if __name__ == "__main__":
     # ========== MODIFY THESE PATHS ==========
     # Path to your embedding matrix CSV file
     # Format: First column should be sample IDs, remaining columns are embedding dimensions
-    EMBEDDING_CSV_PATH = '/users/hjiang/r/400_sample/phemd_400_sample_mds_10d.csv'
+    EMBEDDING_CSV_PATH = '/users/hjiang/r/MUSTARD/400_sample/400_sample_embedding.csv'
     
     # Path to your sample metadata CSV file  
     # Must contain a column with sample IDs and a column with severity/progression scores
