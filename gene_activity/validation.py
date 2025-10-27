@@ -405,26 +405,54 @@ def compute_rna_atac_cell_gene_correlations(
     # -----------------------------
     # 4) Per-gene correlations
     # -----------------------------
+    """
+    Enhanced gene-level correlation analysis with co-expression filtering.
+    
+    Methodology:
+    1. Cell pairing: RNA and ATAC cells are matched by shared cell identifiers
+    2. Normalization: Expression values are library-size normalized (scaled to 10,000) 
+       and log-transformed (log1p) for both modalities
+    3. Co-expression filtering: For each gene, only cells with non-zero expression 
+       in BOTH RNA and ATAC modalities are retained for correlation analysis
+    4. Statistical requirement: Minimum threshold (min_cells_for_gene_corr) of 
+       co-expressing cells required to compute correlation
+    5. Correlation metric: Spearman rank correlation is used for robustness to outliers
+       and to capture monotonic (not strictly linear) relationships between modalities
+    
+    This approach ensures correlations reflect genuine biological relationships where
+    the gene is actively expressed in both assays, rather than being dominated by
+    zero-inflation or technical noise.
+    """
+    from scipy import stats as sp_stats
+    
     per_gene_corr = np.full(n_genes, np.nan, dtype=float)
     per_gene_nco = np.zeros(n_genes, dtype=int)
 
-    # transpose once for cache-friendliness
+    # Transpose once for cache-friendliness
     rna_T = rna_X.T   # shape (n_genes, n_cells)
     atac_T = atac_X.T
 
     for j in tqdm(range(n_genes), desc="[correlation] per-gene", disable=not verbose):
+        # Extract expression vectors for this gene across all paired cells
         r = rna_T[j, :]
         a = atac_T[j, :]
-        # Only cells where BOTH modalities are non-zero
+        
+        # Identify cells with non-zero expression in BOTH modalities (co-expressing cells)
         co_mask = (r != 0) & (a != 0)
         nco = int(co_mask.sum())
         per_gene_nco[j] = nco
+        
+        # Require minimum threshold of co-expressing cells for meaningful correlation
         if nco >= min_cells_for_gene_corr and np.std(r[co_mask]) > 0 and np.std(a[co_mask]) > 0:
-            per_gene_corr[j] = np.corrcoef(r[co_mask], a[co_mask])[0, 1]
+            # Use Spearman correlation for robustness to outliers and non-linear relationships
+            try:
+                per_gene_corr[j], _ = sp_stats.spearmanr(r[co_mask], a[co_mask])
+            except:
+                pass  # Keep as NaN if correlation fails
 
     per_gene_df = pd.DataFrame({
         "gene": shared_genes,
-        "pearson_corr": per_gene_corr,
+        "spearman_corr": per_gene_corr,
         "n_coexpressing_cells": per_gene_nco
     })
 
@@ -458,7 +486,7 @@ def compute_rna_atac_cell_gene_correlations(
         axes[0, 1].hist(per_gene_corr[valid_gc], bins=50, edgecolor='black', alpha=0.8, label="per-gene corr")
         axes[0, 1].axvline(np.nanmean(per_gene_corr), ls='--', color='r',
                            label=f"Mean={np.nanmean(per_gene_corr):.3f}")
-        axes[0, 1].set_title(f"Per-gene Pearson correlation (n≥{min_cells_for_gene_corr} co-expressing cells)")
+        axes[0, 1].set_title(f"Per-gene Spearman correlation (n≥{min_cells_for_gene_corr} co-expressing cells)")
         axes[0, 1].set_xlabel("Correlation")
         axes[0, 1].set_ylabel("Genes")
         axes[0, 1].legend()
@@ -527,10 +555,10 @@ if __name__ == "__main__":
     # )
 
     adata_rna = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/rna_corrected.h5ad')
-    adata_atac = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/gene_activity_weighted_gpu.h5ad')
+    adata_atac = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/ATAC_ArchR/gene_activity_matrix.h5ad')
 
     compute_rna_atac_cell_gene_correlations(
         adata_rna,
         adata_atac,
-        output_dir="/dcs07/hongkai/data/harry/result/gene_activity/results_corr"
+        output_dir="/dcs07/hongkai/data/harry/result/gene_activity/ATAC_ArchR/results_corr"
     )

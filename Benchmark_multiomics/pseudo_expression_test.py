@@ -228,35 +228,44 @@ def compute_metrics_direct_hdf5_robust(
     if debug:
         _dump_h5_structure(integrated_path, output_dir, dbg_fp)
 
-    # Load metadata
-    with h5py.File(integrated_path, "r") as f:
-        obs_group = f['obs']
-        modality_key = 'modality'
-        if modality_key not in obs_group:
-            raise KeyError(f"Missing '{modality_key}' column in obs")
-        modality = obs_group[modality_key][:]
-        if modality.dtype.kind in ('S', 'O'):
-            modality = np.array([m.decode('utf-8') if isinstance(m, bytes) else str(m) for m in modality])
-
-        barcode_key = None
-        for key in ['original_barcode', '_index', 'obs_names']:
-            if key in obs_group:
-                barcode_key = key
-                break
-        if not barcode_key:
-            raise KeyError("No barcode column found in obs")
-
-        barcodes_raw = obs_group[barcode_key][:]
-        if barcodes_raw.dtype.kind in ('S', 'O'):
-            barcodes = np.array([b.decode('utf-8') if isinstance(b, bytes) else str(b) for b in barcodes_raw])
-        else:
-            barcodes = barcodes_raw.astype(str)
-
-        var_names_raw = f['var']['_index'][:]
-        if var_names_raw.dtype.kind in ('S', 'O'):
-            var_names = np.array([v.decode('utf-8') if isinstance(v, bytes) else str(v) for v in var_names_raw])
-        else:
-            var_names = var_names_raw.astype(str)
+    # Load metadata using anndata (more robust for different HDF5 formats)
+    if verbose:
+        print("\n📖 Loading metadata...")
+    
+    # Load only metadata without loading the full matrix
+    adata = ad.read_h5ad(integrated_path, backed='r')
+    
+    modality_key = 'modality'
+    if modality_key not in adata.obs.columns:
+        raise KeyError(f"Missing '{modality_key}' column in obs")
+    
+    modality = adata.obs[modality_key].values
+    if modality.dtype == object:
+        modality = modality.astype(str)
+    
+    # Get barcodes - try different column names
+    barcode_key = None
+    for key in ['original_barcode', 'barcode', 'cell_id']:
+        if key in adata.obs.columns:
+            barcode_key = key
+            break
+    
+    if barcode_key:
+        barcodes = adata.obs[barcode_key].values
+    else:
+        # Use the index as barcodes
+        barcodes = adata.obs.index.values
+    
+    if barcodes.dtype == object:
+        barcodes = barcodes.astype(str)
+    
+    var_names = adata.var.index.values
+    if var_names.dtype == object:
+        var_names = var_names.astype(str)
+    
+    # Close the backed connection
+    adata.file.close()
+    del adata
 
     n_genes = len(var_names)
     rna_mask = (modality == 'RNA')

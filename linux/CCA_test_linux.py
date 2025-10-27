@@ -1,5 +1,6 @@
 import anndata as ad
 from anndata import AnnData
+import scanpy as sc
 import pandas as pd
 from sklearn.cross_decomposition import CCA
 import numpy as np
@@ -317,6 +318,7 @@ def find_optimal_cell_resolution_linux(
                 not_save=True,
                 verbose=False
             )
+            pseudobulk_adata.write_h5ad(os.path.join(resolution_dir, "pseudobulk_sample.h5ad"))
 
             # Check if column exists in pseudobulk_adata.uns
             if column not in pseudobulk_adata.uns:
