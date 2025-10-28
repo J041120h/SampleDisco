@@ -39,25 +39,20 @@ def set_global_seed(seed: int = 42, verbose: bool = True):
             
             if verbose:
                 print(f"[Seed Control] PyTorch GPU deterministic mode enabled with seed={seed}")
-        else:
-            # CPU-only PyTorch
-            torch.backends.cudnn.deterministic = False
-            torch.backends.cudnn.benchmark = False
-            if verbose:
-                print(f"[Seed Control] PyTorch CPU mode with seed={seed}")
+
+            # --- CuPy (for RAPIDS) ---
+            try:
+                import cupy as cp
+                cp.random.seed(seed)
+                if verbose:
+                    print(f"[Seed Control] CuPy seed set to {seed}")
+            except ImportError:
+                # CuPy not installed, which is fine
+                pass
     except ImportError:
         if verbose:
             print(f"[Seed Control] PyTorch not available, skipping torch seed")
     
-    # --- CuPy (for RAPIDS) ---
-    try:
-        import cupy as cp
-        cp.random.seed(seed)
-        if verbose:
-            print(f"[Seed Control] CuPy seed set to {seed}")
-    except ImportError:
-        # CuPy not installed, which is fine
-        pass
     
     # --- Scanpy ---
     try:

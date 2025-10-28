@@ -12,7 +12,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
-use_gpu: true
+use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true
@@ -92,7 +92,7 @@ rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
-rna_cca_optimal_cell_resolution: true
+rna_cca_optimal_cell_resolution: false
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null

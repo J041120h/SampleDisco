@@ -471,7 +471,7 @@ def run_benchmarks(
 if __name__ == "__main__":
     # Example 1: Run all benchmarks for expression mode
     results = run_benchmarks(
-        base_input_path="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/0.2",
+        base_input_path="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna",
         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
         mode="expression"
     )

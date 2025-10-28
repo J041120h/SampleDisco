@@ -1,33 +1,6 @@
-2025-10-26 20:46:58 - INFO - init
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 69, in <module>
-    main()
-  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 63, in main
-    wrapper(**config)
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 632, in wrapper
-    rna_results = rna_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 474, in rna_wrapper
-    find_optimal_cell_resolution_linux(
-  File "/users/hjiang/GenoDistance/code/linux/CCA_test_linux.py", line 419, in find_optimal_cell_resolution_linux
-    result_dict, resolution_null_result = process_resolution(resolution, 'coarse')
-  File "/users/hjiang/GenoDistance/code/linux/CCA_test_linux.py", line 289, in process_resolution
-    pseudobulk_dict, pseudobulk_adata = time_function(
-  File "/users/hjiang/GenoDistance/code/linux/CCA_test_linux.py", line 187, in time_function
-    result = func(*args, **kwargs)
-  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 594, in compute_pseudobulk_adata_linux
-    cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu(
-  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 121, in compute_pseudobulk_layers_gpu
-    pseudobulk_adata = _create_pseudobulk_layers_gpu(
-  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 452, in _create_pseudobulk_layers_gpu
-    expr_values = np.asarray(adata.X[cell_indices, :].mean(axis=0)).flatten()
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_index.py", line 87, in __getitem__
-    res = self._get_arrayXslice(row, col)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_csc.py", line 141, in _get_arrayXslice
-    return self._major_slice(col)._minor_index_fancy(row)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_compressed.py", line 856, in _minor_index_fancy
-    csr_column_index2(col_order, col_offsets, len(self.indices),
-KeyboardInterrupt
+MoTTY X11 proxy: Authorisation not recognised
+
+[36mIn case you are trying to start a graphical application with "sudo", read this article in order to avoid this issue:
+[35m[4mhttps://blog.mobatek.net/post/how-to-keep-X11-display-after-su-or-sudo/[0m
+
+

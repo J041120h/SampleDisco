@@ -1,4 +1,3 @@
-Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
@@ -36,8 +35,8 @@ Resuming process from previous progress:
     "system_info": {
         "platform": "Linux",
         "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
+        "use_gpu": false,
+        "linux_system": false
     }
 }
 
@@ -45,352 +44,164 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Starting cell type clustering at resolution: 0.11
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.11)...
-[cell_types] Found 5 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Generating UMAP visualizations...
-[generate_umap_visualizations] Generating UMAP plots...
-[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (5 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/umap_cell_type.png
-[cell_types] Total runtime: 18.86 seconds
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 11 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_sample.h5ad
-Starting dimensionality reduction...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-Using PyTorch with GPU: NVIDIA L40S
-Initial GPU memory: 0.00/0.00 GB allocated/reserved
-Processing 5 cell types across 25 samples
-Creating layer for 1
-Creating layer for 2
-Creating layer for 3
-Creating layer for 4
-Creating layer for 5
-
-Processing cell type: 1
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 2
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 3
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 4
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Processing cell type: 5
-  Selecting top 2000 HVGs
-  Selected 2000 HVGs
-
-Concatenating all cell type HVGs into single AnnData
-Applying final HVG selection on 10000 concatenated genes
-Final HVG selection: 2000 genes
-
-Creating final HVG expression matrix
-
-Total runtime: 8.75 seconds
-Final HVG matrix shape: (5, 25)
-Final AnnData shape: (25, 2000)
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - count_output_dir: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess
-  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(25, 2000), proportion=(25, 5)
-[DimRed] Computing PCA for RNA data with 10 components on (25, 2000) data
-[PCA] Success. Shape: (25, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (25, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (25, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Computing PCA with 5 components...
-[run_dimension_reduction_proportion] Completed using PCA. Shape: (25, 5)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file paths:
-  - adata: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_sample.h5ad
-  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving adata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_sample.h5ad
-[Save] ✓ Successfully saved adata (207.0 MB)
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (0.4 MB)
-[process_anndata_with_dimension_reduction] ✓ All files saved successfully
-
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 17.58 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ✓ ATTEMPTED
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad
 
 Running sample distance: cosine
 
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 Computing cosine distance using dimension reduction results...
 Data type: ATAC (affects DR method prioritization)
-Available sample metadata columns: ['study', 'age', 'sex', 'severity', 'batch', 'sev.level', 'predicted_doublet']
-Number of samples: 25
+Available sample metadata columns: ['study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+Number of samples: 405
 Computing sample distances using expression dimension reduction (X_DR_expression)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance/distance_check_results_expression_DR_cosine.txt
-Score for expression_DR (cosine): 1.039313
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/summary_sample.csv
-Distance check completed for expression_DR: score = 1.039313
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance
+Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance/distance_check_results_expression_DR_cosine.txt
+Score for expression_DR (cosine): 1.115113
+Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
+Distance check completed for expression_DR: score = 1.115113
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
+expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance
 Computing sample distances using proportion dimension reduction (X_DR_proportion)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/cosine/proportion_DR_distance/distance_check_results_proportion_DR_cosine.txt
-Score for proportion_DR (cosine): 1.034904
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/summary_sample.csv
-Distance check completed for proportion_DR: score = 1.034904
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/cosine/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/cosine/proportion_DR_distance
+Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/proportion_DR_distance/distance_check_results_proportion_DR_cosine.txt
+Score for proportion_DR (cosine): 1.202119
+Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
+Distance check completed for proportion_DR: score = 1.202119
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
+proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/proportion_DR_distance
 Sample distance computations completed for: expression_DR, proportion_DR
-Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/cosine/distance_statistics_summary_cosine.csv
+Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/distance_statistics_summary_cosine.csv
 
 Running sample distance: correlation
 
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 Computing correlation distance using dimension reduction results...
 Data type: ATAC (affects DR method prioritization)
-Available sample metadata columns: ['study', 'age', 'sex', 'severity', 'batch', 'sev.level', 'predicted_doublet']
-Number of samples: 25
+Available sample metadata columns: ['study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+Number of samples: 405
 Computing sample distances using expression dimension reduction (X_DR_expression)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/correlation/expression_DR_distance/distance_check_results_expression_DR_correlation.txt
-Score for expression_DR (correlation): 1.018844
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/summary_sample.csv
-Distance check completed for expression_DR: score = 1.018844
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/correlation/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/correlation/expression_DR_distance
+Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/expression_DR_distance/distance_check_results_expression_DR_correlation.txt
+Score for expression_DR (correlation): 1.112590
+Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
+Distance check completed for expression_DR: score = 1.112590
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
+expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/expression_DR_distance
 Computing sample distances using proportion dimension reduction (X_DR_proportion)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/correlation/proportion_DR_distance/distance_check_results_proportion_DR_correlation.txt
-Score for proportion_DR (correlation): 1.036016
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/summary_sample.csv
-Distance check completed for proportion_DR: score = 1.036016
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/correlation/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/correlation/proportion_DR_distance
+Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/proportion_DR_distance/distance_check_results_proportion_DR_correlation.txt
+Score for proportion_DR (correlation): 1.203635
+Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
+Distance check completed for proportion_DR: score = 1.203635
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
+proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/proportion_DR_distance
 Sample distance computations completed for: expression_DR, proportion_DR
-Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance/correlation/distance_statistics_summary_correlation.csv
-Sample distance calculation completed. Results saved in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/Sample_distance
+Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/distance_statistics_summary_correlation.csv
+Sample distance calculation completed. Results saved in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance
 Starting trajectory analysis...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 
 Processing X_DR_proportion...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 Warning: Only 5 components available, using all of them.
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 Auto-selecting best 2-PC combination from 5 components...
 Testing 10 PC combinations...
-PC1 + PC2: CCA score = 0.3296
-PC1 + PC3: CCA score = 0.2747
-PC1 + PC4: CCA score = 0.2635
-PC1 + PC5: CCA score = 0.2891
-PC2 + PC3: CCA score = 0.2166
-PC2 + PC4: CCA score = 0.2021
-PC2 + PC5: CCA score = 0.2345
-PC3 + PC4: CCA score = 0.0875
-PC3 + PC5: CCA score = 0.1476
-PC4 + PC5: CCA score = 0.1254
-Best combination: PC1 + PC2 with score 0.3296
-Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/CCA/pca_10d_cca_proportion.pdf
-Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/CCA/pca_10d_cca_proportion_contributions.pdf
+PC1 + PC2: CCA score = 0.4357
+PC1 + PC3: CCA score = 0.4430
+PC1 + PC4: CCA score = 0.4460
+PC1 + PC5: CCA score = 0.4561
+PC2 + PC3: CCA score = 0.0991
+PC2 + PC4: CCA score = 0.1114
+PC2 + PC5: CCA score = 0.1156
+PC3 + PC4: CCA score = 0.1373
+PC3 + PC5: CCA score = 0.1124
+PC4 + PC5: CCA score = 0.1175
+Best combination: PC1 + PC5 with score 0.4561
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_proportion.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_proportion_contributions.pdf
 
 Processing X_DR_expression...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 Auto-selecting best 2-PC combination from 10 components...
 Testing 45 PC combinations...
-PC1 + PC2: CCA score = 0.4590
-PC1 + PC3: CCA score = 0.4670
-PC1 + PC4: CCA score = 0.5446
-PC1 + PC5: CCA score = 0.4973
-PC1 + PC6: CCA score = 0.4641
-PC1 + PC7: CCA score = 0.4595
-PC1 + PC8: CCA score = 0.6085
-PC1 + PC9: CCA score = 0.4611
-PC1 + PC10: CCA score = 0.4646
-PC2 + PC3: CCA score = 0.1044
-PC2 + PC4: CCA score = 0.2989
-PC2 + PC5: CCA score = 0.2002
-PC2 + PC6: CCA score = 0.0905
-PC2 + PC7: CCA score = 0.0631
-PC2 + PC8: CCA score = 0.4038
-PC2 + PC9: CCA score = 0.0734
-PC2 + PC10: CCA score = 0.0929
-PC3 + PC4: CCA score = 0.3110
-PC3 + PC5: CCA score = 0.2179
-PC3 + PC6: CCA score = 0.1248
-PC3 + PC7: CCA score = 0.1066
-PC3 + PC8: CCA score = 0.4129
-PC3 + PC9: CCA score = 0.1130
-PC3 + PC10: CCA score = 0.1265
-PC4 + PC5: CCA score = 0.3548
-PC4 + PC6: CCA score = 0.3066
-PC4 + PC7: CCA score = 0.2997
-PC4 + PC8: CCA score = 0.4989
-PC4 + PC9: CCA score = 0.3020
-PC4 + PC10: CCA score = 0.3073
-PC5 + PC6: CCA score = 0.2116
-PC5 + PC7: CCA score = 0.2014
-PC5 + PC8: CCA score = 0.4468
-PC5 + PC9: CCA score = 0.2048
-PC5 + PC10: CCA score = 0.2126
-PC6 + PC7: CCA score = 0.0931
-PC6 + PC8: CCA score = 0.4096
-PC6 + PC9: CCA score = 0.1003
-PC6 + PC10: CCA score = 0.1154
-PC7 + PC8: CCA score = 0.4044
-PC7 + PC9: CCA score = 0.0765
-PC7 + PC10: CCA score = 0.0954
-PC8 + PC9: CCA score = 0.4061
-PC8 + PC10: CCA score = 0.4101
-PC9 + PC10: CCA score = 0.1025
-Best combination: PC1 + PC8 with score 0.6085
-Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/CCA/pca_10d_cca_expression.pdf
-Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/CCA/pca_10d_cca_expression_contributions.pdf
-Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/CCA/pseudotime_proportion.csv
-Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/CCA/pseudotime_expression.csv
+PC1 + PC2: CCA score = 0.2821
+PC1 + PC3: CCA score = 0.3254
+PC1 + PC4: CCA score = 0.3407
+PC1 + PC5: CCA score = 0.2794
+PC1 + PC6: CCA score = 0.4232
+PC1 + PC7: CCA score = 0.3467
+PC1 + PC8: CCA score = 0.3395
+PC1 + PC9: CCA score = 0.3745
+PC1 + PC10: CCA score = 0.3882
+PC2 + PC3: CCA score = 0.1903
+PC2 + PC4: CCA score = 0.2156
+PC2 + PC5: CCA score = 0.0917
+PC2 + PC6: CCA score = 0.3308
+PC2 + PC7: CCA score = 0.2249
+PC2 + PC8: CCA score = 0.2136
+PC2 + PC9: CCA score = 0.2658
+PC2 + PC10: CCA score = 0.2848
+PC3 + PC4: CCA score = 0.2697
+PC3 + PC5: CCA score = 0.1863
+PC3 + PC6: CCA score = 0.3684
+PC3 + PC7: CCA score = 0.2773
+PC3 + PC8: CCA score = 0.2682
+PC3 + PC9: CCA score = 0.3113
+PC3 + PC10: CCA score = 0.3277
+PC4 + PC5: CCA score = 0.2120
+PC4 + PC6: CCA score = 0.3821
+PC4 + PC7: CCA score = 0.2952
+PC4 + PC8: CCA score = 0.2866
+PC4 + PC9: CCA score = 0.3274
+PC4 + PC10: CCA score = 0.3430
+PC5 + PC6: CCA score = 0.3285
+PC5 + PC7: CCA score = 0.2215
+PC5 + PC8: CCA score = 0.2100
+PC5 + PC9: CCA score = 0.2629
+PC5 + PC10: CCA score = 0.2821
+PC6 + PC7: CCA score = 0.3874
+PC6 + PC8: CCA score = 0.3810
+PC6 + PC9: CCA score = 0.4125
+PC6 + PC10: CCA score = 0.4250
+PC7 + PC8: CCA score = 0.2937
+PC7 + PC9: CCA score = 0.3336
+PC7 + PC10: CCA score = 0.3489
+PC8 + PC9: CCA score = 0.3261
+PC8 + PC10: CCA score = 0.3417
+PC9 + PC10: CCA score = 0.3766
+Best combination: PC6 + PC10 with score 0.4250
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_expression.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_expression_contributions.pdf
+Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pseudotime_proportion.csv
+Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pseudotime_expression.csv
 
 ==================================================
 CCA ANALYSIS SUMMARY
 ==================================================
-X_DR_proportion: CCA score = 0.3296 (using PC1 + PC2)
-X_DR_expression: CCA score = 0.6085 (using PC1 + PC8)
+X_DR_proportion: CCA score = 0.4561 (using PC1 + PC5)
+X_DR_expression: CCA score = 0.4250 (using PC6 + PC10)
 
-Total runtime: 23.51 seconds
+Total runtime: 0.58 seconds
 ==================================================
-P-value for observed correlation 0.3296347233775278: 0.276
-[CCA p-test] Runtime: 0.97 seconds
-P-value for observed correlation 0.6084988778946494: 0.001
-[CCA p-test] Runtime: 0.89 seconds
-Using PROFILED GPU version of optimal resolution
-Directory setup: 0.00 seconds
-Starting RNA-seq resolution optimization for X_DR_expression...
-Using representation: X_pca with 20 components
-Using 10 PCs for CCA analysis
-Testing resolutions from 0.01 to 1.00...
-Will compute corrected p-values with 1000 simulations per resolution
+P-value for observed correlation 0.45614199979802356: 0.0
+[CCA p-test] Runtime: 0.67 seconds
+P-value for observed correlation 0.42497877034547754: 0.0
+[CCA p-test] Runtime: 0.68 seconds
+RNA analysis completed successfully!
 
-=== FIRST PASS: Coarse Search ===
+✓ RNA pipeline completed successfully!
 
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✗
 
-Testing resolution: 0.100
-
-  Cell clustering: 10.37 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 4
-  Pseudobulk computation: 43.00 seconds
-  Dimension reduction: 0.00 seconds
-Error at resolution 0.100: module 'scanpy' has no attribute 'write_h5ad'
-TOTAL for resolution 0.100: 53.39 seconds
-
-
-Testing resolution: 0.200
-
-  Cell clustering: 7.83 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 5
-  Pseudobulk computation: 15.81 seconds
-  Dimension reduction: 0.00 seconds
-Error at resolution 0.200: module 'scanpy' has no attribute 'write_h5ad'
-TOTAL for resolution 0.200: 23.65 seconds
-
-
-Testing resolution: 0.300
-
-  Cell clustering: 8.15 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 9
-  Pseudobulk computation: 14.03 seconds
-  Dimension reduction: 0.00 seconds
-Error at resolution 0.300: module 'scanpy' has no attribute 'write_h5ad'
-TOTAL for resolution 0.300: 22.19 seconds
-
-
-Testing resolution: 0.400
-
-  Cell clustering: 3.43 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 9
-  Pseudobulk computation: 16.23 seconds
-  Dimension reduction: 0.00 seconds
-Error at resolution 0.400: module 'scanpy' has no attribute 'write_h5ad'
-TOTAL for resolution 0.400: 19.66 seconds
-
-
-Testing resolution: 0.500
-
-  Cell clustering: 8.33 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 10
-  Pseudobulk computation: 21.53 seconds
-  Dimension reduction: 0.01 seconds
-Error at resolution 0.500: module 'scanpy' has no attribute 'write_h5ad'
-TOTAL for resolution 0.500: 29.86 seconds
-
-
-Testing resolution: 0.600
-
-  Cell clustering: 2.19 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 12
-  Pseudobulk computation: 19.00 seconds
-  Dimension reduction: 0.01 seconds
-Error at resolution 0.600: module 'scanpy' has no attribute 'write_h5ad'
-TOTAL for resolution 0.600: 21.20 seconds
-
-
-Testing resolution: 0.700
-
-  Cell clustering: 6.75 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 12
-  Pseudobulk computation: 45.46 seconds
-  Dimension reduction: 0.01 seconds
-Error at resolution 0.700: module 'scanpy' has no attribute 'write_h5ad'
-TOTAL for resolution 0.700: 52.23 seconds
-
-
-Testing resolution: 0.800
-
-  Cell clustering: 7.57 seconds
-  Cell type assignment: 0.00 seconds
-Number of clusters: 13
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/sys_log/main_process_status.json
+Execution time: 626.9606 seconds
