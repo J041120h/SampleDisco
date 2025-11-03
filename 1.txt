@@ -1,27 +1,47 @@
-GPU acceleration enabled. Detected 1 GPU(s)
-  GPU 0: NVIDIA L40S (47.7 GB)
-Creating gene activity matrix using GPU with 4 workers
-Aggregation method: weighted_sum
-Normalization: total_weight
-Min peak accessibility: 0.01
-Accessibility filter: 196789/3576085 peaks pass
+🔍 Loading AnnData from: /users/hjiang/r/signac_outputs/gene_activity.h5ad
 
-Processing 18,651 genes from 3,576,085 peaks
-Using 196,789 accessibility-filtered peaks
-GPU batch size: 200 genes per batch
-Transferring data to GPU...
-Processing 94 gene batches on GPU...
-Combining results...
-Applying total_weight normalization on GPU...
+📦 Basic Info
+  - Shape (cells × genes): 12402 × 27569
+  - Layers: []
+  - obs columns: ['sample', 'nCount_RNA_ATAC', 'nFeature_RNA_ATAC', 'nCount_GeneActivity', 'nFeature_GeneActivity']
+  - var columns: ['name']
 
-Gene activity matrix created: 12,402 cells × 18,651 genes
-Results saved to: /dcs07/hongkai/data/harry/result/gene_activity/gene_activity_weighted_gpu.h5ad
+🧫 Example cell names:
+  - ENCSR284PXA_AAACAGCCAAATACCT-1
+  - ENCSR284PXA_AAACAGCCAAATATCC-1
+  - ENCSR284PXA_AAACAGCCAACCTGGT-1
+  - ENCSR284PXA_AAACAGCCACAGAAAC-1
+  - ENCSR284PXA_AAACAGCCAGTTGCGT-1
+  - ENCSR284PXA_AAACAGCCATAAGCAA-1
+  - ENCSR284PXA_AAACAGCCATGTTTGG-1
+  - ENCSR284PXA_AAACATGCAAGCTTTG-1
+  - ENCSR284PXA_AAACATGCAAGGAATC-1
+  - ENCSR284PXA_AAACATGCAATCCTAG-1
 
-Matrix statistics:
-  Non-zero genes: 18,651/18,651 (100.0%)
-  Sparsity: 59.7%
-  Total counts: 8,562,441
+📋 Example obs rows:
+                                     sample  ...  nFeature_GeneActivity
+ENCSR284PXA_AAACAGCCAAATACCT-1  ENCSR284PXA  ...                   3209
+ENCSR284PXA_AAACAGCCAAATATCC-1  ENCSR284PXA  ...                   5554
+ENCSR284PXA_AAACAGCCAACCTGGT-1  ENCSR284PXA  ...                   3367
+ENCSR284PXA_AAACAGCCACAGAAAC-1  ENCSR284PXA  ...                   2058
+ENCSR284PXA_AAACAGCCAGTTGCGT-1  ENCSR284PXA  ...                    593
+ENCSR284PXA_AAACAGCCATAAGCAA-1  ENCSR284PXA  ...                   1142
+ENCSR284PXA_AAACAGCCATGTTTGG-1  ENCSR284PXA  ...                    854
+ENCSR284PXA_AAACATGCAAGCTTTG-1  ENCSR284PXA  ...                    235
+ENCSR284PXA_AAACATGCAAGGAATC-1  ENCSR284PXA  ...                   7614
+ENCSR284PXA_AAACATGCAATCCTAG-1  ENCSR284PXA  ...                   1002
 
-GPU acceleration statistics:
-  GPUs used: 1
-  Batch size: 200 genes
+[10 rows x 5 columns]
+
+🧬 Example var rows:
+                        name
+RP11-34P13.8    RP11-34P13.8
+RP11-34P13.7    RP11-34P13.7
+FO538757.2        FO538757.2
+FO538757.1        FO538757.1
+AP006222.2        AP006222.2
+RP5-857K21.4    RP5-857K21.4
+RP11-206L10.9  RP11-206L10.9
+FAM87B                FAM87B
+LINC01128          LINC01128
+LINC00115          LINC00115

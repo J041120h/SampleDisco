@@ -1,207 +1,58 @@
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
-        "sample_distance_calculation": true,
-        "trajectory_analysis": true,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": false,
-        "linux_system": false
-    }
-}
 
 ============================================================
-RUNNING RNA PIPELINE
+STARTING DEBUG MODE - RNA-ATAC CORRELATION ANALYSIS
 ============================================================
-Starting RNA wrapper function with provided parameters...
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad
 
-Running sample distance: cosine
 
-[Seed Control] Scanpy seed set to 42
-Computing cosine distance using dimension reduction results...
-Data type: ATAC (affects DR method prioritization)
-Available sample metadata columns: ['study', 'age', 'sex', 'severity', 'batch', 'sev.level']
-Number of samples: 405
-Computing sample distances using expression dimension reduction (X_DR_expression)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance/distance_check_results_expression_DR_cosine.txt
-Score for expression_DR (cosine): 1.115113
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
-Distance check completed for expression_DR: score = 1.115113
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance
-Computing sample distances using proportion dimension reduction (X_DR_proportion)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/proportion_DR_distance/distance_check_results_proportion_DR_cosine.txt
-Score for proportion_DR (cosine): 1.202119
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
-Distance check completed for proportion_DR: score = 1.202119
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/proportion_DR_distance
-Sample distance computations completed for: expression_DR, proportion_DR
-Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/distance_statistics_summary_cosine.csv
+[DEBUG] ===== INPUT DATA INFO =====
+[DEBUG] RNA data shape: (12402, 36591)
+[DEBUG] First 5 RNA cell names: ['ENCSR284PXA_AAACAGCCAAATACCT-1', 'ENCSR284PXA_AAACAGCCAAATATCC-1', 'ENCSR284PXA_AAACAGCCAACCTGGT-1', 'ENCSR284PXA_AAACAGCCACAGAAAC-1', 'ENCSR284PXA_AAACAGCCAGTTGCGT-1']
+[DEBUG] First 5 RNA gene names: ['ENSG00000243485', 'ENSG00000237613', 'ENSG00000186092', 'ENSG00000238009', 'ENSG00000239945']
+[DEBUG] RNA X type: <class 'numpy.ndarray'>
 
-Running sample distance: correlation
+[DEBUG] ATAC data shape: (12402, 27569)
+[DEBUG] First 5 ATAC cell names: ['ENCSR284PXA_AAACAGCCAAATACCT-1', 'ENCSR284PXA_AAACAGCCAAATATCC-1', 'ENCSR284PXA_AAACAGCCAACCTGGT-1', 'ENCSR284PXA_AAACAGCCACAGAAAC-1', 'ENCSR284PXA_AAACAGCCAGTTGCGT-1']
+[DEBUG] First 5 ATAC gene names: ['RP11-34P13.8', 'RP11-34P13.7', 'FO538757.2', 'FO538757.1', 'AP006222.2']
+[DEBUG] ATAC X type: <class 'scipy.sparse._csc.csc_matrix'>
 
-[Seed Control] Scanpy seed set to 42
-Computing correlation distance using dimension reduction results...
-Data type: ATAC (affects DR method prioritization)
-Available sample metadata columns: ['study', 'age', 'sex', 'severity', 'batch', 'sev.level']
-Number of samples: 405
-Computing sample distances using expression dimension reduction (X_DR_expression)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/expression_DR_distance/distance_check_results_expression_DR_correlation.txt
-Score for expression_DR (correlation): 1.112590
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
-Distance check completed for expression_DR: score = 1.112590
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/expression_DR_distance
-Computing sample distances using proportion dimension reduction (X_DR_proportion)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/proportion_DR_distance/distance_check_results_proportion_DR_correlation.txt
-Score for proportion_DR (correlation): 1.203635
-Summary updated in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/summary_sample.csv
-Distance check completed for proportion_DR: score = 1.203635
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/proportion_DR_distance
-Sample distance computations completed for: expression_DR, proportion_DR
-Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/correlation/distance_statistics_summary_correlation.csv
-Sample distance calculation completed. Results saved in /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance
-Starting trajectory analysis...
-[Seed Control] Scanpy seed set to 42
+[DEBUG] ===== CELL PAIRING =====
+[DEBUG] Total RNA cells: 12402 | Total ATAC cells: 12402
+[DEBUG] Common cells found: 12402
+[DEBUG] After subsetting to common cells → RNA: (12402, 36591), ATAC: (12402, 27569)
 
-Processing X_DR_proportion...
-[Seed Control] Scanpy seed set to 42
-Warning: Only 5 components available, using all of them.
-[Seed Control] Scanpy seed set to 42
-Auto-selecting best 2-PC combination from 5 components...
-Testing 10 PC combinations...
-PC1 + PC2: CCA score = 0.4357
-PC1 + PC3: CCA score = 0.4430
-PC1 + PC4: CCA score = 0.4460
-PC1 + PC5: CCA score = 0.4561
-PC2 + PC3: CCA score = 0.0991
-PC2 + PC4: CCA score = 0.1114
-PC2 + PC5: CCA score = 0.1156
-PC3 + PC4: CCA score = 0.1373
-PC3 + PC5: CCA score = 0.1124
-PC4 + PC5: CCA score = 0.1175
-Best combination: PC1 + PC5 with score 0.4561
-Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_proportion.pdf
-Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_proportion_contributions.pdf
+[DEBUG] ===== GENE ALIGNMENT =====
+[DEBUG] Overlap by current var_names: 0
+[DEBUG] No shared genes. Attempting ID unification (Ensembl/Symbol)…
+[unify] Unifying on: SYMBOL
+[unify] Shared unified IDs: 19872
+[unify] Saved mapping → /users/hjiang/r/signac_outputs/results_corr/gene_id_mapping_unified.csv
+[DEBUG] Unified & aligned genes: 19872
+[DEBUG] Sampled down to 1000 genes
 
-Processing X_DR_expression...
-[Seed Control] Scanpy seed set to 42
-[Seed Control] Scanpy seed set to 42
-Auto-selecting best 2-PC combination from 10 components...
-Testing 45 PC combinations...
-PC1 + PC2: CCA score = 0.2821
-PC1 + PC3: CCA score = 0.3254
-PC1 + PC4: CCA score = 0.3407
-PC1 + PC5: CCA score = 0.2794
-PC1 + PC6: CCA score = 0.4232
-PC1 + PC7: CCA score = 0.3467
-PC1 + PC8: CCA score = 0.3395
-PC1 + PC9: CCA score = 0.3745
-PC1 + PC10: CCA score = 0.3882
-PC2 + PC3: CCA score = 0.1903
-PC2 + PC4: CCA score = 0.2156
-PC2 + PC5: CCA score = 0.0917
-PC2 + PC6: CCA score = 0.3308
-PC2 + PC7: CCA score = 0.2249
-PC2 + PC8: CCA score = 0.2136
-PC2 + PC9: CCA score = 0.2658
-PC2 + PC10: CCA score = 0.2848
-PC3 + PC4: CCA score = 0.2697
-PC3 + PC5: CCA score = 0.1863
-PC3 + PC6: CCA score = 0.3684
-PC3 + PC7: CCA score = 0.2773
-PC3 + PC8: CCA score = 0.2682
-PC3 + PC9: CCA score = 0.3113
-PC3 + PC10: CCA score = 0.3277
-PC4 + PC5: CCA score = 0.2120
-PC4 + PC6: CCA score = 0.3821
-PC4 + PC7: CCA score = 0.2952
-PC4 + PC8: CCA score = 0.2866
-PC4 + PC9: CCA score = 0.3274
-PC4 + PC10: CCA score = 0.3430
-PC5 + PC6: CCA score = 0.3285
-PC5 + PC7: CCA score = 0.2215
-PC5 + PC8: CCA score = 0.2100
-PC5 + PC9: CCA score = 0.2629
-PC5 + PC10: CCA score = 0.2821
-PC6 + PC7: CCA score = 0.3874
-PC6 + PC8: CCA score = 0.3810
-PC6 + PC9: CCA score = 0.4125
-PC6 + PC10: CCA score = 0.4250
-PC7 + PC8: CCA score = 0.2937
-PC7 + PC9: CCA score = 0.3336
-PC7 + PC10: CCA score = 0.3489
-PC8 + PC9: CCA score = 0.3261
-PC8 + PC10: CCA score = 0.3417
-PC9 + PC10: CCA score = 0.3766
-Best combination: PC6 + PC10 with score 0.4250
-Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_expression.pdf
-Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pca_10d_cca_expression_contributions.pdf
-Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pseudotime_proportion.csv
-Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pseudotime_expression.csv
+[DEBUG] ===== FINAL MATRICES =====
+[DEBUG] Final matrix shape: 12402 cells × 1000 genes
 
-==================================================
-CCA ANALYSIS SUMMARY
-==================================================
-X_DR_proportion: CCA score = 0.4561 (using PC1 + PC5)
-X_DR_expression: CCA score = 0.4250 (using PC6 + PC10)
+[DEBUG] ===== PER-CELL CORRELATIONS =====
+[DEBUG] Cell 0 (ENCSR284PXA_AAACAGCCAAATACCT-1): 198 non-zero genes, corr=-0.310
+[DEBUG] Cell 1 (ENCSR284PXA_AAACAGCCAAATATCC-1): 398 non-zero genes, corr=-0.063
+[DEBUG] Cell 2 (ENCSR284PXA_AAACAGCCAACCTGGT-1): 206 non-zero genes, corr=-0.237
+[DEBUG] Valid per-cell correlations: 12402/12402
 
-Total runtime: 0.58 seconds
-==================================================
-P-value for observed correlation 0.45614199979802356: 0.0
-[CCA p-test] Runtime: 0.67 seconds
-P-value for observed correlation 0.42497877034547754: 0.0
-[CCA p-test] Runtime: 0.68 seconds
-RNA analysis completed successfully!
+[DEBUG] ===== PER-GENE CORRELATIONS =====
+[DEBUG] Gene 0 (ABHD15): 36 co-expressing cells, corr=-0.233
+[DEBUG] Gene 1 (ABHD5): 1135 co-expressing cells, corr=-0.030
+[DEBUG] Gene 2 (ABLIM2): 21 co-expressing cells, corr=-0.067
+[DEBUG] Gene 3 (ABLIM3): 273 co-expressing cells, corr=0.052
+[correlation] Saved:
+  /users/hjiang/r/signac_outputs/results_corr/per_cell_correlations.csv
+  /users/hjiang/r/signac_outputs/results_corr/per_gene_correlations.csv
+  /users/hjiang/r/signac_outputs/results_corr/correlation_plots.png
 
-✓ RNA pipeline completed successfully!
+[DEBUG] ===== CORRELATION SUMMARY =====
+[DEBUG] Per-cell correlation - Mean: -0.256, Median: -0.239
+[DEBUG] Per-gene correlation - Mean: -0.050, Median: -0.058
 
 ============================================================
-PIPELINE EXECUTION SUMMARY
+DEBUG MODE COMPLETE
 ============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✓
-  - trajectory_analysis: ✓
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✗
 
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample
-Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/sys_log/main_process_status.json
-Execution time: 626.9606 seconds

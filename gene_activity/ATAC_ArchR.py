@@ -738,7 +738,7 @@ if __name__ == "__main__":
         max_pct_mt=None,
         n_threads=8,
         verbose=True,
-        gene_window=100_000,
+        gene_window=1_000,
         scale_max=5.0,
         decay_distance=5_000,
     )

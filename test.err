@@ -1,6 +1,3 @@
-MoTTY X11 proxy: Authorisation not recognised
-
-[36mIn case you are trying to start a graphical application with "sudo", read this article in order to avoid this issue:
-[35m[4mhttps://blog.mobatek.net/post/how-to-keep-X11-display-after-su-or-sudo/[0m
-
-
+/users/hjiang/GenoDistance/code/gene_activity/validation.py:87: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  atac_ens = pd.Series(atac_ids["ens_from_cols"]).fillna(atac_ids["ens_from_varname"])
+[correlation] per-gene:   0%|          | 0/1000 [00:00<?, ?it/s][correlation] per-gene:  38%|███▊      | 377/1000 [00:00<00:00, 3768.40it/s][correlation] per-gene:  76%|███████▌  | 758/1000 [00:00<00:00, 3792.25it/s][correlation] per-gene: 100%|██████████| 1000/1000 [00:00<00:00, 3733.83it/s]
