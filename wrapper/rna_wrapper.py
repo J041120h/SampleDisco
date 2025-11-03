@@ -18,7 +18,6 @@ from trajectory_diff_gene import run_integrated_differential_analysis
 from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
-from utils.unify_optimal import replace_optimal_dimension_reduction
 
 def rna_wrapper(
     # ===== Required Parameters =====
@@ -457,6 +456,7 @@ def rna_wrapper(
                 n_pcs_for_null = n_components_for_cca_rna,
                 verbose = trajectory_verbose
             )
+        from utils.unify_optimal import replace_optimal_dimension_reduction
         pseudobulk_adata = replace_optimal_dimension_reduction(rna_output_dir)
     
     # Step 5: Sample Distance Calculation - UNIFIED NAMING

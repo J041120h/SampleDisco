@@ -342,6 +342,34 @@ def atac_wrapper(
         print("Reading ATAC Pseudobulk from provided or default path")
         pseudobulk_adata = sc.read(temp_pseudobulk_path)
     
+    if atac_cca_optimal_cell_resolution:
+        find_optimal_cell_resolution_atac(
+            AnnData_cell=atac_cell,
+            AnnData_sample=atac_sample,
+            output_dir=atac_cca_output_dir,
+            column="X_DR_expression",
+            n_features=atac_pseudobulk_n_features,
+            sample_col=atac_sample_col,
+            batch_col=atac_batch_col,
+            num_DR_components=atac_dr_n_expression_components,
+            num_DMs=atac_n_lsi_components,
+            n_pcs=n_pcs_for_null_atac
+        )
+        find_optimal_cell_resolution_atac(
+            AnnData_cell=atac_cell,
+            AnnData_sample=atac_sample,
+            output_dir=atac_cca_output_dir,
+            column="X_DR_proportion",
+            n_features=atac_pseudobulk_n_features,
+            sample_col=atac_sample_col,
+            batch_col=atac_batch_col,
+            num_DR_components=atac_dr_n_proportion_components,
+            num_DMs=atac_n_lsi_components,
+            n_pcs=n_pcs_for_null_atac
+        )
+        from utils.unify_optimal import replace_optimal_dimension_reduction
+        pseudobulk_adata = replace_optimal_dimension_reduction(atac_output_dir)
+    
     if sample_distance_calculation:
         for method in sample_distance_methods:
             print(f"\nRunning ATAC sample distance: {method}\n")
@@ -399,31 +427,6 @@ def atac_wrapper(
                     verbose=trajectory_verbose
                 )
             
-            if atac_cca_optimal_cell_resolution:
-                find_optimal_cell_resolution_atac(
-                    AnnData_cell=atac_cell,
-                    AnnData_sample=atac_sample,
-                    output_dir=atac_cca_output_dir,
-                    column="X_DR_expression",
-                    n_features=atac_pseudobulk_n_features,
-                    sample_col=atac_sample_col,
-                    batch_col=atac_batch_col,
-                    num_DR_components=atac_dr_n_expression_components,
-                    num_DMs=atac_n_lsi_components,
-                    n_pcs=n_pcs_for_null_atac
-                )
-                find_optimal_cell_resolution_atac(
-                    AnnData_cell=atac_cell,
-                    AnnData_sample=atac_sample,
-                    output_dir=atac_cca_output_dir,
-                    column="X_DR_proportion",
-                    n_features=atac_pseudobulk_n_features,
-                    sample_col=atac_sample_col,
-                    batch_col=atac_batch_col,
-                    num_DR_components=atac_dr_n_proportion_components,
-                    num_DMs=atac_n_lsi_components,
-                    n_pcs=n_pcs_for_null_atac
-                )
             status_flags["atac"]["trajectory_analysis"] = True
         else:
             # Unsupervised trajectory analysis
