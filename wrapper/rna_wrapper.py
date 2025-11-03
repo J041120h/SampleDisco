@@ -18,6 +18,7 @@ from trajectory_diff_gene import run_integrated_differential_analysis
 from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
+from utils.unify_optimal import replace_optimal_dimension_reduction
 
 def rna_wrapper(
     # ===== Required Parameters =====
@@ -397,6 +398,67 @@ def rna_wrapper(
         print(f"Reading Pseudobulk from provided or default path: {temp_pseudobulk_path}")
         pseudobulk_adata = sc.read(temp_pseudobulk_path)
     
+    if cca_optimal_cell_resolution:
+        if linux_system and use_gpu:
+            find_optimal_cell_resolution_linux(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_proportion",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_proportion_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose
+            )
+            find_optimal_cell_resolution_linux(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_expression",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_expression_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose
+            )
+        else:
+            find_optimal_cell_resolution(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_proportion",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_proportion_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose
+            )
+            find_optimal_cell_resolution(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_expression",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_expression_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose
+            )
+        pseudobulk_adata = replace_optimal_dimension_reduction(rna_output_dir)
+    
     # Step 5: Sample Distance Calculation - UNIFIED NAMING
     if sample_distance_calculation:
         for method in sample_distance_methods:
@@ -455,65 +517,6 @@ def rna_wrapper(
                     verbose=trajectory_verbose
                 )
             
-            if cca_optimal_cell_resolution:
-                if linux_system and use_gpu:
-                    find_optimal_cell_resolution_linux(
-                        AnnData_cell = AnnData_cell,
-                        AnnData_sample = AnnData_sample,
-                        output_dir = cca_output_dir,
-                        column = "X_DR_proportion",
-                        n_features = n_features,
-                        sev_col = sev_col_cca,
-                        batch_col = batch_col,
-                        sample_col = sample_col,
-                        num_PCs = num_PCs,
-                        num_DR_components = n_proportion_components,
-                        n_pcs_for_null = n_components_for_cca_rna,
-                        verbose = trajectory_verbose
-                    )
-                    find_optimal_cell_resolution_linux(
-                        AnnData_cell = AnnData_cell,
-                        AnnData_sample = AnnData_sample,
-                        output_dir = cca_output_dir,
-                        column = "X_DR_expression",
-                        n_features = n_features,
-                        sev_col = sev_col_cca,
-                        batch_col = batch_col,
-                        sample_col = sample_col,
-                        num_PCs = num_PCs,
-                        num_DR_components = n_expression_components,
-                        n_pcs_for_null = n_components_for_cca_rna,
-                        verbose = trajectory_verbose
-                    )
-                else:
-                    find_optimal_cell_resolution(
-                        AnnData_cell = AnnData_cell,
-                        AnnData_sample = AnnData_sample,
-                        output_dir = cca_output_dir,
-                        column = "X_DR_proportion",
-                        n_features = n_features,
-                        sev_col = sev_col_cca,
-                        batch_col = batch_col,
-                        sample_col = sample_col,
-                        num_PCs = num_PCs,
-                        num_DR_components = n_proportion_components,
-                        n_pcs_for_null = n_components_for_cca_rna,
-                        verbose = trajectory_verbose
-                    )
-                    find_optimal_cell_resolution(
-                        AnnData_cell = AnnData_cell,
-                        AnnData_sample = AnnData_sample,
-                        output_dir = cca_output_dir,
-                        column = "X_DR_expression",
-                        n_features = n_features,
-                        sev_col = sev_col_cca,
-                        batch_col = batch_col,
-                        sample_col = sample_col,
-                        num_PCs = num_PCs,
-                        num_DR_components = n_expression_components,
-                        n_pcs_for_null = n_components_for_cca_rna,
-                        verbose = trajectory_verbose
-                    )
             status_flags["rna"]["trajectory_analysis"] = True
         else:
             # Unsupervised trajectory analysis

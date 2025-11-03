@@ -793,6 +793,9 @@ def find_optimal_cell_resolution(
     os.makedirs(main_output_dir, exist_ok=True)
     resolutions_dir = os.path.join(main_output_dir, "resolutions")
     os.makedirs(resolutions_dir, exist_ok=True)
+    # Create summary directory
+    summary_dir = os.path.join(main_output_dir, "summary")
+    os.makedirs(summary_dir, exist_ok=True)
     setup_time = time.time() - setup_start
     if verbose:
         print(f"Directory setup: {setup_time:.2f} seconds")
@@ -1151,20 +1154,32 @@ def find_optimal_cell_resolution(
         df_results=df_results,
         best_resolution=final_best_resolution,
         column=column,
-        output_dir=main_output_dir,
+        output_dir=summary_dir,  # CHANGE 1: Pass summary_dir instead of main_output_dir
         has_corrected_pvalues=compute_corrected_pvalues
     )
 
-    # Save complete results
-    results_csv_path = os.path.join(main_output_dir, f"all_resolution_results_{dr_type}.csv")
+    # CHANGE 1: Save complete results to summary directory
+    results_csv_path = os.path.join(summary_dir, f"all_resolution_results_{dr_type}.csv")
     df_results.to_csv(results_csv_path, index=False)
     print(f"\nAll results saved to: {results_csv_path}")
+
+    # CHANGE 2: Copy the optimal resolution's pseudobulk_anndata to summary directory
+    optimal_resolution_dir = os.path.join(resolutions_dir, f"resolution_{final_best_resolution:.3f}")
+    optimal_pseudobulk_path = os.path.join(optimal_resolution_dir, "pseudobulk_sample.h5ad")
+    optimal_pseudobulk_summary_path = os.path.join(summary_dir, f"optimal.h5ad")
+    
+    if os.path.exists(optimal_pseudobulk_path):
+        import shutil
+        shutil.copy2(optimal_pseudobulk_path, optimal_pseudobulk_summary_path)
+        print(f"Optimal resolution pseudobulk saved to: {optimal_pseudobulk_summary_path}")
+    else:
+        print(f"Warning: Could not find pseudobulk file at {optimal_pseudobulk_path}")
 
     # Create a final summary report
     total_runtime = time.time() - start_time
     final_summary_path = os.path.join(main_output_dir, "FINAL_SUMMARY.txt")
     with open(final_summary_path, 'w') as f:
-        f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY\n")
+        f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY (CPU Version)\n")
         f.write("=" * 60 + "\n\n")
         f.write(f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Total runtime: {total_runtime:.2f} seconds\n\n")
@@ -1203,7 +1218,8 @@ def find_optimal_cell_resolution(
         
         f.write("\nOUTPUT FILES:\n")
         f.write(f"  - Main directory: {main_output_dir}\n")
-        f.write(f"  - Summary plots: {os.path.join(main_output_dir, 'summary')}\n")
+        f.write(f"  - Summary directory: {summary_dir}\n")
+        f.write(f"  - Summary plots and results: {summary_dir}\n")
         f.write(f"  - Resolution results: {os.path.join(main_output_dir, 'resolutions')}\n")
         if compute_corrected_pvalues:
             f.write(f"  - Corrected p-values: {os.path.join(main_output_dir, 'corrected_p_values')}\n")
