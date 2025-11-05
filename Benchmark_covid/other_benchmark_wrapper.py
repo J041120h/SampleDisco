@@ -3,6 +3,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 import logging
 
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
 from ANOVA import run_trajectory_anova_analysis
 from batch_removal_test import evaluate_batch_removal
 from embedding_effective import evaluate_ari_clustering
@@ -105,6 +109,165 @@ class BenchmarkWrapper:
         return True
 
     # ------------------------- benchmarks -------------------------
+
+    def run_embedding_visualization(
+        self,
+        n_components: int = 2,
+        figsize: tuple = (12, 5),
+        dpi: int = 300,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Visualize embeddings colored by sev.level and batch.
+
+        Requires:
+            - meta_csv_path
+            - embedding_csv_path
+
+        Parameters
+        ----------
+        n_components : int, optional
+            Number of PCA components for dimensionality reduction (default: 2)
+        figsize : tuple, optional
+            Figure size (default: (12, 5))
+        dpi : int, optional
+            Resolution for saved figures (default: 300)
+        """
+        logger.info("Running Embedding Visualization...")
+        output_dir = self._create_output_dir("embedding_visualization")
+
+        if not self._check_file_exists(self.embedding_csv_path, "Embedding/coordinates CSV file"):
+            return {"status": "error", "message": "Missing or invalid embedding CSV path."}
+
+        try:
+            # Load data
+            logger.info(f"Loading metadata from: {self.meta_csv_path}")
+            meta_df = pd.read_csv(self.meta_csv_path)
+            
+            logger.info(f"Loading embeddings from: {self.embedding_csv_path}")
+            embedding_df = pd.read_csv(self.embedding_csv_path, index_col=0)
+            
+            # Check if required columns exist in metadata
+            required_cols = ['sev.level', 'batch']
+            missing_cols = [col for col in required_cols if col not in meta_df.columns]
+            if missing_cols:
+                logger.warning(f"Missing columns in metadata: {missing_cols}")
+                logger.info(f"Available columns: {meta_df.columns.tolist()}")
+                return {
+                    "status": "error", 
+                    "message": f"Missing required columns in metadata: {missing_cols}"
+                }
+            
+            # Ensure same sample order
+            if len(meta_df) != len(embedding_df):
+                logger.warning(f"Sample count mismatch: meta={len(meta_df)}, embedding={len(embedding_df)}")
+            
+            # Perform PCA for dimensionality reduction
+            logger.info(f"Performing PCA to {n_components} components...")
+            pca = PCA(n_components=n_components)
+            embedding_2d = pca.fit_transform(embedding_df)
+            
+            variance_explained = pca.explained_variance_ratio_
+            logger.info(f"Variance explained by PC1: {variance_explained[0]:.2%}")
+            logger.info(f"Variance explained by PC2: {variance_explained[1]:.2%}")
+            
+            # Create visualization
+            fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
+            
+            # Plot 1: Color by sev.level (continuous variable)
+            ax1 = axes[0]
+            
+            # Convert sev.level to numeric and normalize
+            sev_levels = pd.to_numeric(meta_df['sev.level'], errors='coerce')
+            sev_norm = (sev_levels - sev_levels.min()) / (sev_levels.max() - sev_levels.min() + 1e-16)
+            
+            scatter1 = ax1.scatter(
+                embedding_2d[:, 0], 
+                embedding_2d[:, 1], 
+                c=sev_norm,
+                cmap='viridis',
+                edgecolors='black',
+                alpha=0.8,
+                s=100,
+                linewidths=0.5
+            )
+            ax1.set_xlabel(f'PC1 ({variance_explained[0]:.1%})', fontsize=12, fontweight='bold')
+            ax1.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold')
+            ax1.set_title('Embeddings colored by sev.level', fontsize=14, fontweight='bold')
+            ax1.grid(True, alpha=0.3, linestyle='--')
+            
+            # Add colorbar with normalized values
+            cbar1 = plt.colorbar(scatter1, ax=ax1)
+            cbar1.set_label(f'Normalized sev.level', fontsize=10)
+            cbar1.ax.tick_params(labelsize=10)
+            
+            # Plot 2: Color by batch (categorical variable)
+            ax2 = axes[1]
+            
+            # Handle batch as categorical
+            unique_batches = sorted(meta_df['batch'].unique())
+            batch_to_num = {b: i for i, b in enumerate(unique_batches)}
+            batch_colors = [batch_to_num[b] for b in meta_df['batch']]
+            
+            scatter2 = ax2.scatter(
+                embedding_2d[:, 0], 
+                embedding_2d[:, 1], 
+                c=batch_colors,
+                cmap='tab10',
+                edgecolors='black',
+                alpha=0.8,
+                s=100,
+                linewidths=0.5
+            )
+            ax2.set_xlabel(f'PC1 ({variance_explained[0]:.1%})', fontsize=12, fontweight='bold')
+            ax2.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold')
+            ax2.set_title('Embeddings colored by batch', fontsize=14, fontweight='bold')
+            ax2.grid(True, alpha=0.3, linestyle='--')
+            
+            # Add colorbar for batch
+            cbar2 = plt.colorbar(scatter2, ax=ax2, ticks=range(len(unique_batches)))
+            cbar2.set_label('batch', fontsize=10)
+            cbar2.ax.set_yticklabels(unique_batches, fontsize=9)
+            cbar2.ax.tick_params(labelsize=9)
+            
+            plt.tight_layout()
+            
+            # Save figure
+            output_path = output_dir / 'embedding_overview.png'
+            plt.savefig(output_path, bbox_inches='tight', dpi=dpi)
+            plt.close()
+            
+            logger.info(f"Visualization saved to: {output_path}")
+            
+            # Save PCA results
+            pca_results = pd.DataFrame(
+                embedding_2d,
+                columns=[f'PC{i+1}' for i in range(n_components)],
+                index=embedding_df.index
+            )
+            pca_path = output_dir / 'pca_coordinates.csv'
+            pca_results.to_csv(pca_path)
+            logger.info(f"PCA coordinates saved to: {pca_path}")
+            
+            result = {
+                "variance_explained": variance_explained.tolist(),
+                "n_samples": len(embedding_df),
+                "n_features": embedding_df.shape[1],
+                "sev_level_range": [float(sev_levels.min()), float(sev_levels.max())],
+                "unique_batches": len(unique_batches),
+                "batch_labels": unique_batches,
+                "output_plot": str(output_path),
+                "output_pca": str(pca_path)
+            }
+            
+            logger.info(f"Embedding visualization completed. Results saved to: {output_dir}")
+            return {"status": "success", "output_dir": str(output_dir), "result": result}
+            
+        except Exception as e:
+            logger.error(f"Error in embedding visualization: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return {"status": "error", "message": str(e)}
 
     def run_trajectory_anova(self, **kwargs) -> Dict[str, Any]:
         """
@@ -246,6 +409,7 @@ class BenchmarkWrapper:
         **kwargs : dict
             Parameters to pass to individual benchmarks (use per-benchmark keys)
             e.g., kwargs = {
+                "embedding_visualization": {"dpi": 300, "figsize": (12, 5)},
                 "trajectory_anova": {...},
                 "batch_removal": {"k": 20},
                 "ari_clustering": {"k_neighbors": 30, "n_clusters": 8},
@@ -261,6 +425,7 @@ class BenchmarkWrapper:
         results: Dict[str, Dict[str, Any]] = {}
 
         benchmark_methods = {
+            "embedding_visualization": self.run_embedding_visualization,
             "trajectory_anova": self.run_trajectory_anova,
             "batch_removal": self.run_batch_removal_evaluation,
             "ari_clustering": self.run_ari_clustering,
@@ -332,12 +497,13 @@ def run_benchmarks(
         Label used ONLY for output folder naming
     benchmarks_to_run : list of str, optional
         Specific benchmarks to run. If None, runs all.
-        Options: ['trajectory_anova', 'batch_removal', 'ari_clustering', 'trajectory_analysis']
+        Options: ['embedding_visualization', 'trajectory_anova', 'batch_removal', 'ari_clustering', 'trajectory_analysis']
     output_base_dir : str, optional
         Base directory for outputs
     **kwargs : dict
         Per-benchmark kwargs, e.g.:
         {
+          "embedding_visualization": {"dpi": 300, "figsize": (12, 5)},
           "ari_clustering": {"k_neighbors": 30, "n_clusters": 8},
           "batch_removal": {"k": 20, "include_self": True}
         }
@@ -357,7 +523,7 @@ def run_benchmarks(
         )
 
         if benchmarks_to_run:
-            all_benchmarks = ["trajectory_anova", "batch_removal", "ari_clustering", "trajectory_analysis"]
+            all_benchmarks = ["embedding_visualization", "trajectory_anova", "batch_removal", "ari_clustering", "trajectory_analysis"]
             skip_benchmarks = [b for b in all_benchmarks if b not in benchmarks_to_run]
             return wrapper.run_all_benchmarks(skip_benchmarks=skip_benchmarks, **kwargs)
         else:
@@ -373,11 +539,12 @@ if __name__ == "__main__":
     # Example: run all with explicit paths
     results = run_benchmarks(
         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        pseudotime_csv_path='/users/hjiang/r/gedi_out/trajectory/pseudotime_results.csv',
-        embedding_csv_path="/users/hjiang/r/gedi_out/gedi_sample_embedding.csv",
+        pseudotime_csv_path='/users/hjiang/r/gedi_out_25/trajectory/pseudotime_results.csv',
+        embedding_csv_path="/users/hjiang/r/gedi_out_25/gedi_sample_embedding.csv",
         mode="expression",
-        output_base_dir = '/users/hjiang/r/gedi_out',
+        output_base_dir = '/users/hjiang/r/gedi_out_25',
         # per-benchmark overrides (optional)
+        embedding_visualization={"dpi": 300, "figsize": (12, 5)},
         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
         batch_removal={"k": 15, "include_self": False},
     )

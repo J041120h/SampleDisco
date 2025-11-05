@@ -319,7 +319,7 @@ if __name__ == "__main__":
     # ========== MODIFY THESE PATHS ==========
     # Path to your embedding matrix CSV file
     # Format: First column should be sample IDs, remaining columns are embedding dimensions
-    EMBEDDING_CSV_PATH = '/users/hjiang/r/gedi_out/gedi_sample_embedding.csv'
+    EMBEDDING_CSV_PATH = '/users/hjiang/r/gedi_out_25/gedi_sample_embedding.csv'
     
     # Path to your sample metadata CSV file  
     # Must contain a column with sample IDs and a column with severity/progression scores
