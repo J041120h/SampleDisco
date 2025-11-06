@@ -1,113 +1,56 @@
-2025-11-03 01:39:32 - INFO - init
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
+2025-11-05 23:48:15,047 - INFO - Initialized BenchmarkWrapper (explicit paths) with:
+2025-11-05 23:48:15,047 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2025-11-05 23:48:15,047 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pseudotime_expression.csv
+2025-11-05 23:48:15,047 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv
+2025-11-05 23:48:15,047 - INFO -   Mode label:        expression
+2025-11-05 23:48:15,047 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna
+2025-11-05 23:48:15,047 - INFO -   Mode output dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/benchmark_results_expression
+2025-11-05 23:48:15,047 - INFO - 
+==================================================
+2025-11-05 23:48:15,047 - INFO - Running embedding_visualization...
+2025-11-05 23:48:15,047 - INFO - ==================================================
+2025-11-05 23:48:15,047 - INFO - Running Embedding Visualization...
+2025-11-05 23:48:15,048 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2025-11-05 23:48:15,051 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv
+2025-11-05 23:48:15,056 - INFO - Performing PCA to 2 components...
+2025-11-05 23:48:15,058 - INFO - Variance explained by PC1: 34.82%
+2025-11-05 23:48:15,058 - INFO - Variance explained by PC2: 22.26%
+2025-11-05 23:48:16,007 - INFO - Embedding visualization completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/benchmark_results_expression/embedding_visualization
+2025-11-05 23:48:16,007 - INFO - 
+==================================================
+2025-11-05 23:48:16,007 - INFO - Running trajectory_anova...
+2025-11-05 23:48:16,008 - INFO - ==================================================
+2025-11-05 23:48:16,008 - INFO - Running Trajectory ANOVA Analysis...
+2025-11-05 23:48:16,985 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2025-11-05 23:48:16,991 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2025-11-05 23:48:16,992 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2025-11-05 23:48:19,622 - INFO - Trajectory ANOVA completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/benchmark_results_expression/trajectory_anova
+2025-11-05 23:48:19,622 - INFO - 
+==================================================
+2025-11-05 23:48:19,622 - INFO - Running batch_removal...
+2025-11-05 23:48:19,622 - INFO - ==================================================
+2025-11-05 23:48:19,622 - INFO - Running Batch Removal Evaluation...
+Note: dropping 136 metadata rows without data match.
+2025-11-05 23:48:19,678 - INFO - Batch removal evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/benchmark_results_expression/batch_removal
+2025-11-05 23:48:19,678 - INFO - 
+==================================================
+2025-11-05 23:48:19,678 - INFO - Running ari_clustering...
+2025-11-05 23:48:19,678 - INFO - ==================================================
+2025-11-05 23:48:19,678 - INFO - Running ARI Clustering Evaluation...
+Reading metadata and data files...
+Found severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Loaded embedding with shape (405, 10) (samples × dimensions)
+Note: dropping 136 metadata rows without data match.
+Found 4 unique severity levels: [1 2 3 4]
+Using 4 clusters for KNN clustering
+Performing KNN clustering with k=20...
+Computing ARI and other metrics...
+Generating visualizations...
+2025-11-05 23:48:20,970 - INFO - ARI clustering evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/benchmark_results_expression/ari_clustering
+2025-11-05 23:48:20,970 - INFO - 
+==================================================
+2025-11-05 23:48:20,970 - INFO - Running trajectory_analysis...
+2025-11-05 23:48:20,970 - INFO - ==================================================
+2025-11-05 23:48:20,970 - INFO - Running Trajectory Analysis...
+2025-11-05 23:48:22,683 - INFO - Trajectory analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/benchmark_results_expression/trajectory_analysis
+2025-11-05 23:48:22,684 - INFO - Summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/benchmark_results_expression/benchmark_summary.txt
