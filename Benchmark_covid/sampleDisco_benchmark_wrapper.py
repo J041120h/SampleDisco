@@ -145,77 +145,99 @@ class BenchmarkWrapper:
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Visualize embeddings colored by sev.level and batch.
+        Visualize embeddings colored by sev.level (continuous) and batch (categorical).
 
         Requires:
-            - meta_csv_path
-            - embedding_csv_path (from _get_embedding_path())
-
-        Parameters
-        ----------
-        n_components : int, optional
-            Number of PCA components for dimensionality reduction (default: 2)
-        figsize : tuple, optional
-            Figure size (default: (12, 5))
-        dpi : int, optional
-            Resolution for saved figures (default: 300)
+            - meta_csv_path (must include columns: 'sev.level', 'batch', and typically 'sample')
+            - embedding_csv_path (rows indexed by sample IDs matching meta['sample'] or meta index)
         """
         logger.info("Running Embedding Visualization...")
-        
-        embedding_path = self._get_embedding_path()
         output_dir = self._create_output_dir("embedding_visualization")
 
-        if not self._check_file_exists(embedding_path, "Embedding/coordinates CSV file"):
-            return {
-                "status": "error", 
-                "message": f"Embedding file not found: {embedding_path}"
-            }
+        if not self._check_file_exists(self.embedding_csv_path, "Embedding/coordinates CSV file"):
+            return {"status": "error", "message": "Missing or invalid embedding CSV path."}
 
         try:
-            # Load data
+            # -------------------- LOAD --------------------
             logger.info(f"Loading metadata from: {self.meta_csv_path}")
             meta_df = pd.read_csv(self.meta_csv_path)
-            
-            logger.info(f"Loading embeddings from: {embedding_path}")
-            embedding_df = pd.read_csv(embedding_path, index_col=0)
-            
-            # Check if required columns exist in metadata
+            print(f"[DEBUG] Metadata loaded: shape={meta_df.shape}, columns={meta_df.columns.tolist()}")
+
+            logger.info(f"Loading embeddings from: {self.embedding_csv_path}")
+            embedding_df = pd.read_csv(self.embedding_csv_path, index_col=0)
+            print(f"[DEBUG] Embedding matrix shape: {embedding_df.shape}")
+            print(f"[DEBUG] First 3 embedding indices: {embedding_df.index[:3].tolist()}")
+
+            # -------------------- REQUIREMENTS --------------------
             required_cols = ['sev.level', 'batch']
-            missing_cols = [col for col in required_cols if col not in meta_df.columns]
+            missing_cols = [c for c in required_cols if c not in meta_df.columns]
             if missing_cols:
                 logger.warning(f"Missing columns in metadata: {missing_cols}")
-                logger.info(f"Available columns: {meta_df.columns.tolist()}")
-                return {
-                    "status": "error", 
-                    "message": f"Missing required columns in metadata: {missing_cols}"
-                }
-            
-            # Ensure same sample order
-            if len(meta_df) != len(embedding_df):
-                logger.warning(f"Sample count mismatch: meta={len(meta_df)}, embedding={len(embedding_df)}")
-            
-            # Perform PCA for dimensionality reduction
+                print(f"[DEBUG] ERROR: Missing required columns in metadata: {missing_cols}")
+                return {"status": "error", "message": f"Missing required columns in metadata: {missing_cols}"}
+
+            # -------------------- ALIGN BY SAMPLE ID --------------------
+            # Prefer a 'sample' column if present; otherwise assume meta_df is already indexed by IDs
+            if 'sample' in meta_df.columns:
+                print("[DEBUG] Setting meta_df index to 'sample'")
+                meta_df = meta_df.set_index('sample')
+            else:
+                print("[DEBUG][WARN] 'sample' column not found; using meta_df.index for alignment")
+
+            # Report overlaps for auditing
+            common_ids = meta_df.index.intersection(embedding_df.index)
+            only_meta = meta_df.index.difference(embedding_df.index)
+            only_emb = embedding_df.index.difference(meta_df.index)
+            print(f"[DEBUG] Overlap report: common={len(common_ids)}, meta_only={len(only_meta)}, embed_only={len(only_emb)}")
+            if len(only_meta) > 0:
+                print(f"[DEBUG] Example meta_only IDs: {list(only_meta[:5])}")
+            if len(only_emb) > 0:
+                print(f"[DEBUG] Example embed_only IDs: {list(only_emb[:5])}")
+
+            if len(common_ids) == 0:
+                err = ("No overlapping sample IDs between metadata and embedding! "
+                    "Ensure meta_df['sample'] (or meta index) matches embedding_df.index.")
+                print(f"[DEBUG] ERROR: {err}")
+                raise ValueError(err)
+
+            # Subset BOTH to common IDs and order meta to match embedding
+            meta_before, emb_before = meta_df.shape[0], embedding_df.shape[0]
+            embedding_df = embedding_df.loc[common_ids]
+            meta_df = meta_df.loc[embedding_df.index]
+            print(f"[DEBUG] After alignment: meta_df={meta_df.shape}, embedding_df={embedding_df.shape}")
+            print(f"[DEBUG] Dropped rows -> meta: {meta_before - meta_df.shape[0]}, embed: {emb_before - embedding_df.shape[0]}")
+
+            # -------------------- PCA --------------------
             logger.info(f"Performing PCA to {n_components} components...")
+            print("[DEBUG] Running PCA on aligned embedding_df...")
             pca = PCA(n_components=n_components)
             embedding_2d = pca.fit_transform(embedding_df)
-            
             variance_explained = pca.explained_variance_ratio_
+            print(f"[DEBUG] PCA done. Explained variance ratio: {variance_explained}")
+
             logger.info(f"Variance explained by PC1: {variance_explained[0]:.2%}")
-            logger.info(f"Variance explained by PC2: {variance_explained[1]:.2%}")
-            
-            # Create visualization
+            if n_components >= 2:
+                logger.info(f"Variance explained by PC2: {variance_explained[1]:.2%}")
+
+            # -------------------- VISUALIZATION --------------------
+            print("[DEBUG] Creating figure...")
             fig, axes = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
-            
-            # Plot 1: Color by sev.level (continuous variable)
-            ax1 = axes[0]
-            
-            # Convert sev.level to numeric and normalize
+
+            # Left panel: sev.level (continuous)
+            print("[DEBUG] Plotting sev.level panel...")
             sev_levels = pd.to_numeric(meta_df['sev.level'], errors='coerce')
-            sev_norm = (sev_levels - sev_levels.min()) / (sev_levels.max() - sev_levels.min() + 1e-16)
-            
+            sev_min, sev_max = sev_levels.min(), sev_levels.max()
+            sev_range = (sev_max - sev_min) if pd.notnull(sev_max) and pd.notnull(sev_min) else 0.0
+            if sev_range == 0.0:
+                print("[DEBUG][WARN] sev.level has zero/invalid range; coloring will be constant.")
+            sev_norm = (sev_levels - (sev_min if pd.notnull(sev_min) else 0.0)) / (sev_range + 1e-16)
+            print(f"[DEBUG] sev.level raw range: min={sev_min}, max={sev_max}")
+            print(f"[DEBUG] sev.level normalized range: {sev_norm.min():.3f}–{sev_norm.max():.3f}")
+
+            ax1 = axes[0]
             scatter1 = ax1.scatter(
-                embedding_2d[:, 0], 
-                embedding_2d[:, 1], 
+                embedding_2d[:, 0],
+                embedding_2d[:, 1],
                 c=sev_norm,
                 cmap='viridis',
                 edgecolors='black',
@@ -224,26 +246,25 @@ class BenchmarkWrapper:
                 linewidths=0.5
             )
             ax1.set_xlabel(f'PC1 ({variance_explained[0]:.1%})', fontsize=12, fontweight='bold')
-            ax1.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold')
+            ax1.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold' if n_components >= 2 else None)
             ax1.set_title('Embeddings colored by sev.level', fontsize=14, fontweight='bold')
             ax1.grid(True, alpha=0.3, linestyle='--')
-            
-            # Add colorbar with normalized values
+
             cbar1 = plt.colorbar(scatter1, ax=ax1)
-            cbar1.set_label(f'Normalized sev.level', fontsize=10)
+            cbar1.set_label('Normalized sev.level', fontsize=10)
             cbar1.ax.tick_params(labelsize=10)
-            
-            # Plot 2: Color by batch (categorical variable)
-            ax2 = axes[1]
-            
-            # Handle batch as categorical
-            unique_batches = sorted(meta_df['batch'].unique())
+
+            # Right panel: batch (categorical)
+            print("[DEBUG] Plotting batch panel...")
+            unique_batches = sorted(meta_df['batch'].astype(str).unique().tolist())
+            print(f"[DEBUG] Unique batches ({len(unique_batches)}): {unique_batches[:10]}{'...' if len(unique_batches)>10 else ''}")
             batch_to_num = {b: i for i, b in enumerate(unique_batches)}
-            batch_colors = [batch_to_num[b] for b in meta_df['batch']]
-            
+            batch_colors = [batch_to_num[str(b)] for b in meta_df['batch']]
+
+            ax2 = axes[1]
             scatter2 = ax2.scatter(
-                embedding_2d[:, 0], 
-                embedding_2d[:, 1], 
+                embedding_2d[:, 0],
+                embedding_2d[:, 1],
                 c=batch_colors,
                 cmap='tab10',
                 edgecolors='black',
@@ -252,54 +273,56 @@ class BenchmarkWrapper:
                 linewidths=0.5
             )
             ax2.set_xlabel(f'PC1 ({variance_explained[0]:.1%})', fontsize=12, fontweight='bold')
-            ax2.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold')
+            ax2.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold' if n_components >= 2 else None)
             ax2.set_title('Embeddings colored by batch', fontsize=14, fontweight='bold')
             ax2.grid(True, alpha=0.3, linestyle='--')
-            
-            # Add colorbar for batch
+
+            # Colorbar with batch labels
             cbar2 = plt.colorbar(scatter2, ax=ax2, ticks=range(len(unique_batches)))
             cbar2.set_label('batch', fontsize=10)
             cbar2.ax.set_yticklabels(unique_batches, fontsize=9)
             cbar2.ax.tick_params(labelsize=9)
-            
+
             plt.tight_layout()
-            
-            # Save figure
+
+            # -------------------- SAVE OUTPUTS --------------------
             output_path = output_dir / 'embedding_overview.png'
+            print(f"[DEBUG] Saving figure to: {output_path}")
             plt.savefig(output_path, bbox_inches='tight', dpi=dpi)
             plt.close()
-            
-            logger.info(f"Visualization saved to: {output_path}")
-            
-            # Save PCA results
+
             pca_results = pd.DataFrame(
                 embedding_2d,
                 columns=[f'PC{i+1}' for i in range(n_components)],
                 index=embedding_df.index
             )
             pca_path = output_dir / 'pca_coordinates.csv'
+            print(f"[DEBUG] Saving PCA coordinates to: {pca_path}")
             pca_results.to_csv(pca_path)
-            logger.info(f"PCA coordinates saved to: {pca_path}")
-            
+
             result = {
                 "variance_explained": variance_explained.tolist(),
-                "n_samples": len(embedding_df),
-                "n_features": embedding_df.shape[1],
-                "sev_level_range": [float(sev_levels.min()), float(sev_levels.max())],
+                "n_samples": int(embedding_df.shape[0]),
+                "n_features": int(embedding_df.shape[1]),
+                "sev_level_range": [float(sev_min) if pd.notnull(sev_min) else None,
+                                    float(sev_max) if pd.notnull(sev_max) else None],
                 "unique_batches": len(unique_batches),
                 "batch_labels": unique_batches,
                 "output_plot": str(output_path),
                 "output_pca": str(pca_path)
             }
-            
+
+            print("[DEBUG] Visualization completed successfully.")
             logger.info(f"Embedding visualization completed. Results saved to: {output_dir}")
             return {"status": "success", "output_dir": str(output_dir), "result": result}
-            
+
         except Exception as e:
             logger.error(f"Error in embedding visualization: {e}")
             import traceback
             logger.error(traceback.format_exc())
+            print("[DEBUG] ERROR:", e)
             return {"status": "error", "message": str(e)}
+
     
     def run_trajectory_anova(self, **kwargs) -> Dict[str, Any]:
         """
