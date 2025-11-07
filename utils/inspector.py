@@ -123,4 +123,4 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    summarize_h5ad(h5ad_path = '/users/hjiang/r/signac_outputs/gene_activity.h5ad')
+    summarize_h5ad(h5ad_path = '/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data.h5ad')

@@ -11,6 +11,7 @@ from ANOVA import run_trajectory_anova_analysis
 from batch_removal_test import evaluate_batch_removal
 from embedding_effective import evaluate_ari_clustering
 from spearman_test import run_trajectory_analysis
+from customized_benchmark import benchmark_pseudotime_embeddings_custom  # <-- ADDED
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -419,6 +420,110 @@ class BenchmarkWrapper:
             logger.error(f"Error in trajectory analysis: {e}")
             return {"status": "error", "message": str(e)}
 
+    # ------------------------- customized benchmark (ADDED) -------------------------
+
+    def run_pseudotime_embeddings_custom(
+        self,
+        anchor_batch: str = "Su",
+        batch_col: str = "batch",
+        sev_col: str = "sev.level",
+        severity_transform: str = "raw",
+        neighbor_batches_include: Optional[List[str]] = None,
+        neighbor_batches_exclude: Optional[List[str]] = None,
+        k_neighbors: int = 1,
+        metric: str = "euclidean",
+        nn_agg: str = "mean",
+        standardize_embedding: bool = True,
+        make_plots: bool = True,
+        random_state: int = 0,
+        embedding_label: Optional[str] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Simple custom benchmark expecting pseudotime CSV with columns:
+            sample,pseudotime
+        Uses 'pseudotime' directly, aligned by sample ID.
+        """
+        logger.info("Running Custom Pseudotime Embeddings Benchmark (simple schema)...")
+        output_dir = self._create_output_dir("pseudotime_embeddings_custom")
+
+        # Required files
+        if not self._check_file_exists(self.embedding_csv_path, "Embedding/coordinates CSV file"):
+            return {"status": "error", "message": "Missing or invalid embedding CSV path."}
+        if not self._check_file_exists(self.pseudotime_csv_path, "Pseudotime CSV file"):
+            return {"status": "error", "message": "Missing or invalid pseudotime CSV path."}
+
+        try:
+            # --- Load metadata and index by 'sample'
+            meta_df = pd.read_csv(self.meta_csv_path)
+            for c in (batch_col, sev_col):
+                if c not in meta_df.columns:
+                    return {"status": "error", "message": f"Missing column in metadata: '{c}'"}
+            if 'sample' in meta_df.columns:
+                meta_df['sample'] = meta_df['sample'].astype(str).str.strip()
+                meta_df = meta_df.set_index('sample')
+            else:
+                return {"status": "error", "message": "Metadata must contain a 'sample' column."}
+
+            # --- Load embedding (indexed by sample IDs)
+            embedding_df = pd.read_csv(self.embedding_csv_path, index_col=0)
+            embedding_df.index = embedding_df.index.astype(str).str.strip()
+
+            # --- Align meta & embedding
+            common_ids = meta_df.index.intersection(embedding_df.index)
+            if common_ids.empty:
+                return {"status": "error", "message": "No overlapping sample IDs between metadata and embedding."}
+            meta_df = meta_df.loc[common_ids]
+            embedding_df = embedding_df.loc[common_ids]
+
+            # --- Load pseudotime with fixed schema: sample,pseudotime
+            pt = pd.read_csv(self.pseudotime_csv_path, usecols=['sample', 'pseudotime'])
+            pt['sample'] = pt['sample'].astype(str).str.strip()
+            pt = pt.drop_duplicates(subset='sample')
+            pt = pt.set_index('sample')
+
+            # --- Join pseudotime and drop rows without it
+            meta_df = meta_df.join(pt[['pseudotime']], how='left')
+            keep = meta_df['pseudotime'].notna()
+            if not keep.any():
+                return {"status": "error", "message": "All pseudotime values are missing after alignment."}
+            if (~keep).any():
+                dropped = int((~keep).sum())
+                logger.warning(f"Dropping {dropped} samples with missing pseudotime.")
+            meta_df = meta_df.loc[keep]
+            embedding_df = embedding_df.loc[keep]
+
+            # --- Run benchmark
+            method_name = embedding_label if embedding_label else self.mode
+            result = benchmark_pseudotime_embeddings_custom(
+                df=meta_df,
+                embedding=embedding_df.values,
+                method_name=method_name,
+                anchor_batch=anchor_batch,
+                batch_col=batch_col,
+                sev_col=sev_col,
+                pseudotime_col='pseudotime',  # fixed, simple
+                severity_transform=severity_transform,
+                neighbor_batches_include=neighbor_batches_include,
+                neighbor_batches_exclude=neighbor_batches_exclude,
+                k_neighbors=k_neighbors,
+                metric=metric,
+                nn_agg=nn_agg,
+                standardize_embedding=standardize_embedding,
+                make_plots=make_plots,
+                save_dir=str(output_dir),
+                random_state=random_state,
+                **kwargs
+            )
+
+            return {"status": "success", "output_dir": str(output_dir), "result": result}
+
+        except Exception as e:
+            logger.error(f"Error in custom pseudotime benchmark: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return {"status": "error", "message": str(e)}
+
     # ------------------------- orchestration -------------------------
 
     def run_all_benchmarks(
@@ -440,7 +545,8 @@ class BenchmarkWrapper:
                 "trajectory_anova": {...},
                 "batch_removal": {"k": 20},
                 "ari_clustering": {"k_neighbors": 30, "n_clusters": 8},
-                "trajectory_analysis": {...}
+                "trajectory_analysis": {...},
+                "pseudotime_embeddings_custom": {"k_neighbors": 5, "anchor_batch": "Su"}
             }
 
         Returns
@@ -457,6 +563,7 @@ class BenchmarkWrapper:
             "batch_removal": self.run_batch_removal_evaluation,
             "ari_clustering": self.run_ari_clustering,
             "trajectory_analysis": self.run_trajectory_analysis,
+            "pseudotime_embeddings_custom": self.run_pseudotime_embeddings_custom,  # <-- ADDED
         }
 
         for name, method in benchmark_methods.items():
@@ -524,7 +631,7 @@ def run_benchmarks(
         Label used ONLY for output folder naming
     benchmarks_to_run : list of str, optional
         Specific benchmarks to run. If None, runs all.
-        Options: ['embedding_visualization', 'trajectory_anova', 'batch_removal', 'ari_clustering', 'trajectory_analysis']
+        Options: ['embedding_visualization', 'trajectory_anova', 'batch_removal', 'ari_clustering', 'trajectory_analysis', 'pseudotime_embeddings_custom']
     output_base_dir : str, optional
         Base directory for outputs
     **kwargs : dict
@@ -532,7 +639,8 @@ def run_benchmarks(
         {
           "embedding_visualization": {"dpi": 300, "figsize": (12, 5)},
           "ari_clustering": {"k_neighbors": 30, "n_clusters": 8},
-          "batch_removal": {"k": 20, "include_self": True}
+          "batch_removal": {"k": 20, "include_self": True},
+          "pseudotime_embeddings_custom": {"k_neighbors": 5, "anchor_batch": "Su"}
         }
 
     Returns
@@ -550,7 +658,7 @@ def run_benchmarks(
         )
 
         if benchmarks_to_run:
-            all_benchmarks = ["embedding_visualization", "trajectory_anova", "batch_removal", "ari_clustering", "trajectory_analysis"]
+            all_benchmarks = ["embedding_visualization", "trajectory_anova", "batch_removal", "ari_clustering", "trajectory_analysis", "pseudotime_embeddings_custom"]  # <-- ADDED
             skip_benchmarks = [b for b in all_benchmarks if b not in benchmarks_to_run]
             return wrapper.run_all_benchmarks(skip_benchmarks=skip_benchmarks, **kwargs)
         else:
@@ -574,4 +682,5 @@ if __name__ == "__main__":
         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
         batch_removal={"k": 15, "include_self": False},
+        # pseudotime_embeddings_custom={"k_neighbors": 5, "anchor_batch": "Su"},  # optional example
     )
