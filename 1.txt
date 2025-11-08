@@ -1,1 +1,47 @@
-Subset written to: /dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data_Su_subset.h5ad (n_cells=456201, n_vars=14881)
+🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+
+📦 Basic Info
+  - Shape (cells × genes): 405 × 2000
+  - Layers: []
+  - obs columns: ['study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+  - var columns: ['n_cells', 'highly_variable', 'means', 'dispersions', 'dispersions_norm']
+
+🧫 Example cell names:
+  - CoV-1.1-Wilk
+  - CoV-1.2-Wilk
+  - CoV-100.1-Su
+  - CoV-100.2-Su
+  - CoV-101.1-Su
+  - CoV-101.2-Su
+  - CoV-102.1-Su
+  - CoV-102.2-Su
+  - CoV-103.1-Su
+  - CoV-103.2-Su
+
+📋 Example obs rows:
+             study   age sex severity batch  sev.level
+CoV-1.1-Wilk  Wilk  64.5   M       Se  Wilk          4
+CoV-1.2-Wilk  Wilk  64.5   M       Se  Wilk          4
+CoV-100.1-Su    Su  81.0   M      Mod    Su          3
+CoV-100.2-Su    Su  81.0   M      Mod    Su          3
+CoV-101.1-Su    Su  55.0   M       Se    Su          4
+CoV-101.2-Su    Su  55.0   M       Se    Su          4
+CoV-102.1-Su    Su  55.0   F       Se    Su          4
+CoV-102.2-Su    Su  55.0   F       Se    Su          4
+CoV-103.1-Su    Su  71.0   F      Mod    Su          3
+CoV-103.2-Su    Su  71.0   F      Mod    Su          3
+
+🧬 Example var rows:
+                n_cells  highly_variable  ...  dispersions  dispersions_norm
+1 - A1BG-AS1        357             True  ...     0.364989          1.787084
+1 - ABCC5           381             True  ...    -0.303007          0.903017
+1 - ABCD4           386             True  ...     2.092848          4.073838
+1 - ABLIM1          354             True  ...     1.220870          2.919808
+1 - AC113404.1       74             True  ...     2.037792          4.000973
+1 - ACAD9           383             True  ...    -0.488530          0.657484
+1 - ACCS            372             True  ...    -0.091460          1.182992
+1 - ACSF2           370             True  ...     1.899151          3.817487
+1 - ACSS2           389             True  ...     2.038063          2.875043
+1 - ACTN4           398             True  ...     0.881723          0.610751
+
+[10 rows x 5 columns]

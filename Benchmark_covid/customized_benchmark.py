@@ -11,7 +11,6 @@ import statsmodels.formula.api as smf
 from statsmodels.stats.anova import anova_lm
 
 # ---------------- Utilities ---------------- #
-
 def _bootstrap_ci_mean(vals: np.ndarray, iters: int = 2000, alpha: float = 0.05, seed: int = 42) -> Tuple[float,float]:
     rng = np.random.default_rng(seed)
     vals = np.asarray(vals)
