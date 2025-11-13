@@ -1,15 +1,11 @@
 import scanpy as sc
+import numpy as np
+from scipy.sparse import issparse
 
 def summarize_h5ad(h5ad_path: str, n_examples: int = 10):
     """
-    Summarize an AnnData .h5ad file by printing examples of cell names, obs, and var entries.
-    
-    Parameters
-    ----------
-    h5ad_path : str
-        Path to the .h5ad file.
-    n_examples : int
-        Number of examples to display for obs/var (default: 10).
+    Summarize an AnnData .h5ad file by printing examples of cell names, obs, var,
+    and inspecting .X (dtype, NaN/Inf, integer-like vs fractional, min/max, and example values).
     """
     try:
         print(f"🔍 Loading AnnData from: {h5ad_path}")
@@ -21,21 +17,105 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10):
         print(f"  - obs columns: {list(adata.obs.columns)}")
         print(f"  - var columns: {list(adata.var.columns)}")
 
+        # 🔎 Inspect .X
+        print("\n🔎 Inspecting .X matrix:")
+        X = adata.X
+
+        if issparse(X):
+            print(f"  - storage type: sparse ({type(X).__name__})")
+            dtype = X.dtype
+            data_array_for_checks = X.data
+        else:
+            print(f"  - storage type: dense ({type(X).__name__})")
+            dtype = X.dtype
+            data_array_for_checks = np.asarray(X)
+
+        print(f"  - dtype: {dtype}")
+
+        # Classify dtype using actual data content
+        is_numeric = np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)
+        if is_numeric:
+            flat = data_array_for_checks.ravel()
+            if flat.size == 0:
+                print("  - value type: numeric (empty matrix, cannot inspect values)")
+                is_integer_like = True
+            else:
+                max_check = min(100000, flat.size)
+                sample = flat[:max_check]
+                is_integer_like = np.allclose(sample, np.round(sample), atol=1e-8)
+
+            if np.issubdtype(dtype, np.integer):
+                msg = "integer"
+            elif np.issubdtype(dtype, np.floating):
+                msg = "float"
+            elif np.issubdtype(dtype, np.bool_):
+                msg = "bool"
+            else:
+                msg = "numeric (custom type)"
+
+            if is_integer_like:
+                msg += " — values appear integer-like (no fractional parts)"
+            else:
+                msg += " — fractional values detected"
+            print(f"  - value type: {msg}")
+
+        else:
+            print("  - ⚠️ unsupported / non-numeric dtype (e.g. object/string)")
+
+        # NaN / Inf checks
+        if is_numeric:
+            try:
+                has_nan = bool(np.isnan(data_array_for_checks).any())
+            except TypeError:
+                has_nan = False
+                print("  - ⚠️ np.isnan failed on this dtype; skipping NaN check")
+
+            has_inf = False
+            if np.issubdtype(dtype, np.floating):
+                has_inf = bool(np.isinf(data_array_for_checks).any())
+
+            print(f"  - contains NaN: {has_nan}")
+            if np.issubdtype(dtype, np.floating):
+                print(f"  - contains Inf: {has_inf}")
+        else:
+            print("  - Skipping NaN/Inf check due to non-numeric dtype.")
+
+        # Min / Max values
+        if is_numeric and data_array_for_checks.size > 0:
+            try:
+                min_val = float(np.nanmin(data_array_for_checks))
+                max_val = float(np.nanmax(data_array_for_checks))
+                print(f"  - min value: {min_val:.6g}")
+                print(f"  - max value: {max_val:.6g}")
+            except Exception as e:
+                print(f"  - ⚠️ Could not compute min/max: {e}")
+
+        # Example .X values
+        n_rows = min(n_examples, adata.n_obs)
+        n_cols = min(10, adata.n_vars)
+        print(f"\n🧮 Example .X values (first {n_rows} cells × {n_cols} genes):")
+        if issparse(X):
+            X_sub = X[:n_rows, :n_cols].toarray()
+        else:
+            X_sub = np.asarray(X[:n_rows, :n_cols])
+        print(X_sub)
+
         # Example cell names
         print("\n🧫 Example cell names:")
         for name in adata.obs_names[:n_examples]:
             print("  -", name)
 
-        # Example obs (metadata)
+        # Example obs
         print("\n📋 Example obs rows:")
         print(adata.obs.head(n_examples))
 
-        # Example var (gene information)
+        # Example var
         print("\n🧬 Example var rows:")
         print(adata.var.head(n_examples))
 
     except Exception as e:
         print(f"❌ Error reading {h5ad_path}: {e}")
+
 
 #!/usr/bin/env python3
 """
@@ -99,17 +179,6 @@ def main():
     _, missing_in_A = set(B.obs.columns), set(A.obs.columns)
     _, missing_in_B = set(A.obs.columns), set(B.obs.columns)
 
-    # # B → A
-    # print("⬅️  Transferring from B → A")
-    # A_updated, cols_A = transfer_columns(B, A)
-    # if cols_A:
-    #     out_a = f"{PATH_A}__obs_from_B.h5ad"
-    #     A_updated.write_h5ad(out_a)
-    #     print(f"💾 Saved updated A → {out_a}")
-    # else:
-    #     print("✅ No new columns added to A")
-
-    # A → B
     print("➡️  Transferring from A → B")
     B_updated, cols_B = transfer_columns(A, B)
     if cols_B:
@@ -121,6 +190,8 @@ def main():
 
     print("🎉 Done.")
 
+
 if __name__ == "__main__":
-    # main()
-    summarize_h5ad(h5ad_path = '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad')
+    summarize_h5ad(
+        h5ad_path="/dcs07/hongkai/data/harry/result/long_covid/QC/long_covid_qc_harmony_umap.h5ad"
+    )
