@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample"
+output_dir: "/dcs07/hongkai/data/harry/result/long_covid"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,14 +21,15 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_25samples.h5ad"
-rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad"
+rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: false
+rna_preprocessing: true
 rna_cell_type_cluster: true
 rna_dimensionality_reduction: true
+rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: true
 rna_trajectory_analysis: true
 rna_trajectory_dge: false
@@ -44,12 +45,12 @@ rna_pseudobulk_adata_path: null
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-- "sev.level"
+- "LC/Recovered"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: null
 rna_markers: null
-rna_cluster_resolution: 0.20
+rna_cluster_resolution: 0.180
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -92,7 +93,6 @@ rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
-rna_cca_optimal_cell_resolution: true
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null
@@ -120,7 +120,7 @@ rna_sample_distance_methods:
 # RNA Visualization Parameters
 rna_verbose_visualization: true
 rna_trajectory_visualization_label: 
-  - "sev.level"
+  - "LC/Recovered"
 rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 3

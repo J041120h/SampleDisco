@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # mds_from_distance_simple.py
-# Edit INPUT_CSV (and N_DIMS) below, then run: python mds_from_distance_simple.py
+# Loops over multiple sample sizes and runs classical MDS on each distance matrix.
 
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
 # ====== USER SETTINGS ======
-INPUT_CSV = "/users/hjiang/r/GloScope/25_sample/knn_divergence.csv"
+BASE_DIR = "/dcs07/hongkai/data/harry/result/QOT"
+SAMPLE_SIZES = [25, 50, 100, 200, 400]          # sample sizes to loop through
 N_DIMS = 10                                      # e.g. 2, 3, 10, 50 ...
 # ===========================
 
@@ -17,12 +18,21 @@ def read_distance_csv(p):
         df = pd.read_csv(p, index_col=0)
         D = df.values
         labels = df.index.astype(str).tolist()
+        
+        # If 'sample' column is not found, create it from default labels
+        if 'sample' not in df.columns:
+            print("[INFO] 'sample' column not found. Using default labels for samples.")
+            df.insert(0, 'sample', labels)
+            labels = df['sample'].tolist()  # Set the sample column as the labels
+        
         if D.shape[0] != D.shape[1]:
             raise ValueError("Matrix not square; retrying unlabeled read.")
     except Exception:
         df = pd.read_csv(p, header=None)
         D = df.values
         labels = [f"item_{i}" for i in range(D.shape[0])]
+        print("[INFO] No headers found; default labels used.")
+    
     if D.shape[0] != D.shape[1]:
         raise ValueError("Distance CSV must be square (n x n).")
     return D.astype(float), labels
@@ -63,9 +73,14 @@ def save_embedding(X, labels, input_path, k):
     print(f"[Saved] {out_npy}")
 
 def main():
-    D, labels = read_distance_csv(INPUT_CSV)
-    X = classical_mds(D, k=N_DIMS)
-    save_embedding(X, labels, INPUT_CSV, N_DIMS)
+    for n in SAMPLE_SIZES:
+        input_csv = Path(BASE_DIR) / f"{n}_sample" / f"{n}_qot_distance_matrix.csv"
+        print(f"\n[INFO] Processing {n} samples")
+        print(f"[INFO] Input CSV: {input_csv}")
+
+        D, labels = read_distance_csv(input_csv)
+        X = classical_mds(D, k=N_DIMS)
+        save_embedding(X, labels, input_csv, N_DIMS)
 
 if __name__ == "__main__":
     main()

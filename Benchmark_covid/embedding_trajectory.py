@@ -313,45 +313,33 @@ def compute_trajectory_from_embedding(
 # ============================================================================
 # MAIN EXECUTION - MODIFY THESE PATHS FOR YOUR DATA
 # ============================================================================
-
 if __name__ == "__main__":
-    
-    # ========== MODIFY THESE PATHS ==========
-    # Path to your embedding matrix CSV file
-    # Format: First column should be sample IDs, remaining columns are embedding dimensions
-    EMBEDDING_CSV_PATH = '/users/hjiang/r/gedi_out_25/gedi_sample_embedding.csv'
-    
-    # Path to your sample metadata CSV file  
-    # Must contain a column with sample IDs and a column with severity/progression scores
+    # ========== CONSTANT PATHS ==========
     SAMPLE_METADATA_CSV_PATH = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
-    
-    # Column name in metadata containing the progression/severity score
-    SEVERITY_COLUMN = "sev.level"  # Change this to your column name
-    
-    # Column name in metadata containing sample identifiers
-    SAMPLE_COLUMN = "sample"  # Change this to your sample ID column name
-    # ==========================================
-    
-    # Run trajectory analysis
-    try:
+    SEVERITY_COLUMN = "sev.level"
+    SAMPLE_COLUMN = "sample"
+    # =====================================
+
+    # Sample sizes to loop over
+    sample_sizes = [25, 50, 100, 200, 400]
+
+    for n in sample_sizes:
+        print(f"\n=======================")
+        print(f" Running trajectory for {n} samples")
+        print(f"=======================\n")
+
+        # Construct the embedding path for this sample size
+        EMBEDDING_CSV_PATH = (
+            f"/dcs07/hongkai/data/harry/result/QOT/{n}_sample/{n}_qot_distance_matrix_mds_10d.csv"
+        )
+
+        # Run trajectory
         results = compute_trajectory_from_embedding(
             embedding_csv_path=EMBEDDING_CSV_PATH,
             sample_metadata_csv_path=SAMPLE_METADATA_CSV_PATH,
             severity_column=SEVERITY_COLUMN,
             sample_column=SAMPLE_COLUMN,
-            auto_select_best_2d=True,  # Automatically find best 2D projection
-            save_plot=True,            # Save visualization
-            verbose=True               # Print progress
+            auto_select_best_2d=True,
+            save_plot=True,
+            verbose=True
         )
-        
-        # Display top samples by pseudotime
-        print("\n=== Samples ordered by pseudotime (first 10) ===")
-        print(results[['sample', 'pseudotime', SEVERITY_COLUMN]].head(10))
-        
-    except FileNotFoundError as e:
-        print(f"Error: File not found - {e}")
-        print("Please update the file paths in the script before running.")
-    except Exception as e:
-        print(f"Error during execution: {e}")
-        import traceback
-        traceback.print_exc()

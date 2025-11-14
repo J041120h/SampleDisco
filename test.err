@@ -1,1 +1,48 @@
-2025-11-13 10:10:23 - INFO - init
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 632, in wrapper
+    rna_results = rna_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 219, in rna_wrapper
+    AnnData_cell, AnnData_sample = preprocess_linux(
+  File "/users/hjiang/GenoDistance/code/linux/preprocess_linux.py", line 229, in preprocess_linux
+    adata_cluster = anndata_cluster(
+  File "/users/hjiang/GenoDistance/code/linux/preprocess_linux.py", line 59, in anndata_cluster
+    sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster, compression='gzip')
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py", line 82, in fn_compatible
+    return fn(*args_all, **kw)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scanpy/readwrite.py", line 676, in write
+    adata.write(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_core/anndata.py", line 1863, in write_h5ad
+    write_h5ad(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/h5ad.py", line 101, in write_h5ad
+    write_elem(f, "obs", adata.obs, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 378, in write_elem
+    Writer(_REGISTRY).write_elem(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/utils.py", line 247, in func_wrapper
+    return func(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 328, in write_elem
+    return write_func(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 71, in wrapper
+    result = func(g, k, *args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/methods.py", line 830, in write_dataframe
+    _writer.write_elem(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/utils.py", line 247, in func_wrapper
+    return func(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 328, in write_elem
+    return write_func(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 71, in wrapper
+    result = func(g, k, *args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/methods.py", line 487, in write_vlen_string_array
+    f.create_dataset(k, data=elem.astype(str_dtype), dtype=str_dtype, **dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/group.py", line 186, in create_dataset
+    dsid = dataset.make_new_dset(group, shape, dtype, data, name, **kwds)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/dataset.py", line 178, in make_new_dset
+    dset_id.write(h5s.ALL, h5s.ALL, data)
+  File "h5py/_objects.pyx", line 56, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 57, in h5py._objects.with_phil.wrapper
+  File "h5py/h5d.pyx", line 307, in h5py.h5d.DatasetID.write
+  File "h5py/_proxy.pyx", line 155, in h5py._proxy.dset_rw
+  File "h5py/_conv.pyx", line 442, in h5py._conv.str2vlen
+  File "h5py/_conv.pyx", line 96, in h5py._conv.generic_converter
+  File "h5py/_conv.pyx", line 247, in h5py._conv.conv_str2vlen
+TypeError: Can't implicitly convert non-string objects to strings
+Error raised while writing key 'OutSMART ID' of <class 'h5py._hl.group.Group'> to /obs

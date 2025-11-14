@@ -1,80 +1,66 @@
-#!/usr/bin/env python3
-# rename_cells_strip_to_ENC.py
-import re
-import sys
-import os
-import shutil
-from datetime import datetime
-
-import anndata as ad
+import scanpy as sc
 import pandas as pd
+from pathlib import Path
+import re
 
-def make_unique(names):
-    """Make index values unique by appending .1, .2, ... to duplicates (pandas-style)."""
-    idx = pd.Index(names)
-    if not idx.has_duplicates:
-        return idx.tolist()
-    counts = {}
-    out = []
-    for n in idx:
-        if n not in counts:
-            counts[n] = 0
-            out.append(n)
-        else:
-            counts[n] += 1
-            out.append(f"{n}.{counts[n]}")
-    return out
-
-def strip_prefix_before_ENC(name: str) -> str:
+def fix_sample_ids(input_h5ad: str, sample_col: str = "sample"):
     """
-    Keep from the first occurrence of 'ENC' onward.
-    If 'ENC' not found, keep original name.
+    Load a .h5ad file, clean the sample column, and save the corrected file.
+
+    Rules implemented:
+    - If 'source_file' exists, extract sample ID from filename like:
+        '1--104-M1_sample_filtered_feature_bc_matrix.h5'
+        → '104-M1'
+    - Otherwise, fall back to the existing sample column, which currently looks like:
+        '1--104-M1' → extract '104-M1'
+
+    Parameters
+    ----------
+    input_h5ad : str
+        Path to input .h5ad
+    output_h5ad : str
+        Path to write modified .h5ad
+    sample_col : str
+        Name of the sample column to fix (default: 'sample')
     """
-    m = re.search(r'ENC', name)
-    return name[m.start():] if m else name
+    output_h5ad = input_h5ad
+    print(f"🔍 Loading AnnData: {input_h5ad}")
+    adata = sc.read_h5ad(input_h5ad)
 
-def main(h5ad_path: str):
-    if not os.path.isfile(h5ad_path):
-        raise FileNotFoundError(f"No such file: {h5ad_path}")
+    if "source_file" in adata.obs.columns:
+        print("📦 Fixing sample IDs using `source_file` column...")
 
-    # Backup
-    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    backup_path = f"{h5ad_path}.bak-{ts}"
-    shutil.copy2(h5ad_path, backup_path)
-    print(f"[INFO] Backup created: {backup_path}")
+        def extract_from_filename(x):
+            # Example filename:
+            # '1--104-M1_sample_filtered_feature_bc_matrix.h5'
+            # Extract middle part before first underscore
+            base = Path(x).stem
+            main = base.split("_")[0]        # '1--104-M1'
+            parts = main.split("-")
+            # Expected format: ['1', '', '104', 'M1']
+            # Keep last two parts: '104-M1'
+            return "-".join(parts[-2:])
 
-    # Load
-    adata = ad.read_h5ad(h5ad_path)
-    old_names = adata.obs_names.tolist()
+        adata.obs[sample_col] = adata.obs["source_file"].apply(extract_from_filename)
 
-    # Transform
-    new_names = [strip_prefix_before_ENC(n) for n in old_names]
+    else:
+        print("📦 No `source_file` found. Fixing sample IDs using existing sample column...")
 
-    # Report potential no-ENC cases
-    no_enc_count = sum(1 for n in old_names if 'ENC' not in n)
-    if no_enc_count:
-        print(f"[WARN] {no_enc_count} cell IDs did not contain 'ENC' and were left unchanged.")
+        def extract_from_sample(x):
+            # Example: '1--104-M1'
+            parts = x.split("-")
+            return "-".join(parts[-2:])      # '104-M1'
 
-    # Ensure uniqueness
-    if len(set(new_names)) != len(new_names):
-        print("[WARN] Duplicate IDs detected after stripping; making names unique with numeric suffixes.")
-        new_names = make_unique(new_names)
+        adata.obs[sample_col] = adata.obs[sample_col].astype(str).apply(extract_from_sample)
 
-    # Apply
-    adata.obs_names = new_names
+    print("✅ Example corrected sample IDs:")
+    print(adata.obs[sample_col].head())
 
-    # (Optional) If .raw is present, it indexes genes (var_names), so no change needed.
-    # Save back in place
-    adata.write(h5ad_path)
-    print(f"[OK] Wrote updated AnnData in place: {h5ad_path}")
+    print(f"💾 Saving corrected file to: {output_h5ad}")
+    adata.write_h5ad(output_h5ad)
 
-    # Show a few examples of the change
-    print("\n[EXAMPLES] First 10 renames (old → new):")
-    for old, new in list(zip(old_names, new_names))[:10]:
-        print(f"  {old}  →  {new}")
+    print("🎉 Done.")
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python rename_cells_strip_to_ENC.py /path/to/file.h5ad")
-        sys.exit(1)
-    main(sys.argv[1])
+
+# Example usage:
+fix_sample_ids("/dcl01/hongkai/data/data/hjiang/Data/long_covid/long_covid.h5ad")

@@ -1,49 +1,13 @@
-🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_sample.h5ad
-
-📦 Basic Info
-  - Shape (cells × genes): 46337 × 9930
-  - Layers: []
-  - obs columns: ['celltype', 'sample', 'old', 'large', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level', 'n_genes', 'n_genes_by_counts', 'total_counts', 'total_counts_mt', 'pct_counts_mt', 'doublet_score', 'predicted_doublet', 'cell_type']
-  - var columns: ['n_cells', 'mt', 'n_cells_by_counts', 'mean_counts', 'pct_dropout_by_counts', 'total_counts']
-
-🧫 Example cell names:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
-
-📋 Example obs rows:
-   celltype     sample  old  ... doublet_score predicted_doublet  cell_type
-0  Mono_c15  HD-3-Wilk  c15  ...      0.107195             False          5
-1  Mono_c17  HD-3-Wilk  c17  ...      0.266881             False          5
-2  Mono_c17  HD-3-Wilk  c17  ...      0.235632             False          5
-3      T_c8  HD-3-Wilk   c8  ...      0.051635             False          3
-4  Mono_c14  HD-3-Wilk  c14  ...      0.020113             False          5
-5     B_c25  HD-3-Wilk  c25  ...      0.100279             False          1
-6  Mono_c14  HD-3-Wilk  c14  ...      0.020113             False          5
-7  Mono_c17  HD-3-Wilk  c17  ...      0.235632             False          5
-8  Mono_c17  HD-3-Wilk  c17  ...      0.266881             False          5
-9  Mono_c14  HD-3-Wilk  c14  ...      0.107195             False          5
-
-[10 rows x 18 columns]
-
-🧬 Example var rows:
-          n_cells     mt  ...  pct_dropout_by_counts  total_counts
-A1BG         5392  False  ...              88.421731        6540.0
-A1BG-AS1      587  False  ...              98.737385         616.0
-A2M-AS1       653  False  ...              98.597810         744.0
-AAAS         2368  False  ...              94.910887        2463.0
-AACS          785  False  ...              98.314365         816.0
-AAED1        3579  False  ...              92.304058        4080.0
-AAGAB        3316  False  ...              92.873094        3565.0
-AAK1        12694  False  ...              72.709899       20098.0
-AAMDC        1866  False  ...              95.993129        2001.0
-AAMP         6194  False  ...              86.691003        6914.0
-
-[10 rows x 6 columns]
+🔍 Loading AnnData: /dcl01/hongkai/data/data/hjiang/Data/long_covid/long_covid.h5ad
+📦 Fixing sample IDs using `source_file` column...
+✅ Example corrected sample IDs:
+AAACCTGAGAAACCAT-1-1--104-M1    104-M1
+AAACCTGAGAAGGTGA-1-1--104-M1    104-M1
+AAACCTGAGATCGATA-1-1--104-M1    104-M1
+AAACCTGAGCATCATC-1-1--104-M1    104-M1
+AAACCTGAGGGTGTTG-1-1--104-M1    104-M1
+Name: sample, dtype: category
+Categories (37, object): ['104-M1', '104-M3', '104-M6', '107-M1', ..., '173-M6', '185-M1', '185-M3',
+                          '185-M6']
+💾 Saving corrected file to: /dcl01/hongkai/data/data/hjiang/Data/long_covid/long_covid.h5ad
+🎉 Done.

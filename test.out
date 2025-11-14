@@ -1,0 +1,105 @@
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
+
+============================================================
+RUNNING RNA PIPELINE
+============================================================
+Starting RNA wrapper function with provided parameters...
+Starting preprocessing...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+=== Reading input dataset ===
+Raw shape: 898489 cells × 14881 genes
+All required columns are present in adata.obs.
+Before GPU conversion. Type of adata.X: <class 'scipy.sparse._csc.csc_matrix'>
+adata.X dtype: float64
+adata.X is sparse: True
+Converting adata.X from float64 to float32
+Converted to GPU. Type of adata.X: <class 'cupyx.scipy.sparse._csc.csc_matrix'>
+filtered out 1043 genes that are detected in less than 500 cells
+filtered out 107 cells that have less than 500 genes expressed
+After initial filtering: 898382 cells × 13838 genes
+After mitochondrial filtering: 898305 cells × 13838 genes
+After gene exclusion filtering: 898305 cells × 13825 genes
+After sample filtering: 898305 cells × 13825 genes
+Number of samples remaining: 405
+filtered out 566 genes that are detected in less than 898 cells
+After final gene filtering: 898305 cells × 13259 genes
+Processed shape: 898305 cells × 13259 genes
+Preprocessing complete!
+=== [GPU] Processing data for clustering ===
+=== [GPU] Running Harmony integration ===
+Variables to regress: sample
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+	Completed 3 / 30 iteration(s).
+	Completed 4 / 30 iteration(s).
+	Completed 5 / 30 iteration(s).
+	Completed 6 / 30 iteration(s).
+	Completed 7 / 30 iteration(s).
+	Completed 8 / 30 iteration(s).
+	Completed 9 / 30 iteration(s).
+Reach convergence after 9 iteration(s).
+End of harmony for adata_cluster.
+
+✗ RNA pipeline failed with error: Can't implicitly convert non-string objects to strings
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✗
+  - cell_type_cluster: ✗
+  - dimensionality_reduction: ✗
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✗
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✗
+
+Results saved to: /dcs07/hongkai/data/harry/result/long_covid
+Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
+Execution time: 560.1911 seconds
