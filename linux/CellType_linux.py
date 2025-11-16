@@ -13,9 +13,11 @@ import numpy as np
 import pandas as pd
 import os
 import scanpy as sc
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from visualization.visualization_helper import generate_umap_visualizations
-from utils.safe_save import safe_h5ad_write
-    
+from utils.safe_save import safe_h5ad_write, ensure_cpu_arrays  # Importing the new safe save method
+
 def cell_types_linux(
     adata, 
     cell_type_column='cell_type', 
@@ -88,9 +90,6 @@ def cell_types_linux(
     if _recursion_depth == 0:
         rsc.get.anndata_to_GPU(adata)
 
-    # ============================================================================
-    # EXISTING CELL TYPE ANNOTATION PROCESSING
-    # ============================================================================
     if cell_type_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:
             print("[cell_types] Found existing cell type annotation.")
@@ -104,9 +103,6 @@ def cell_types_linux(
             prefix = "  " * _recursion_depth  # Indent for recursion levels
             print(f"{prefix}[cell_types] Current number of cell types: {current_n_types}")
 
-        # ========================================================================
-        # CONDITIONAL DENDROGRAM CONSTRUCTION AND AGGREGATION
-        # ========================================================================
         apply_dendrogram = (
             n_target_clusters is not None and 
             current_n_types > n_target_clusters
@@ -147,9 +143,6 @@ def cell_types_linux(
                 print("[cell_types] Building neighborhood graph...")
             rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
 
-    # ============================================================================
-    # DE NOVO CLUSTERING (NO EXISTING ANNOTATIONS) - RECURSIVE STRATEGY
-    # ============================================================================
     else:
         if verbose and _recursion_depth == 0:
             print("[cell_types] No cell type annotation found. Performing clustering.")
@@ -160,9 +153,6 @@ def cell_types_linux(
                 print("[cell_types] Building neighborhood graph...")
             rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
 
-        # ========================================================================
-        # ADAPTIVE CLUSTERING WITH RECURSION
-        # ========================================================================
         if n_target_clusters is not None:
             if verbose:
                 prefix = "  " * _recursion_depth

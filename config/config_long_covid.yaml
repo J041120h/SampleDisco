@@ -21,31 +21,35 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/long_covid/long_covid.h5ad"
 rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: true
-rna_cell_type_cluster: true
-rna_dimensionality_reduction: true
+rna_preprocessing: false
+rna_cell_type_cluster: false
+rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
-rna_sample_distance_calculation: true
-rna_trajectory_analysis: true
+rna_sample_distance_calculation: false
+rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: null
-rna_anndata_sample_path: null
-rna_pseudobulk_adata_path: null
+rna_anndata_cell_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad
+rna_anndata_sample_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_sample.h5ad
+rna_pseudobulk_adata_path: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-- "LC/Recovered"
+  - "LC/Recovered"
+  - "month"
+  - "Sex"
+  - "BMI category"
+  - "Age at enrollment"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: null
@@ -89,7 +93,7 @@ rna_dr_output_dir: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
-rna_trajectory_supervised: true
+rna_trajectory_supervised: false
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
@@ -121,13 +125,17 @@ rna_sample_distance_methods:
 rna_verbose_visualization: true
 rna_trajectory_visualization_label: 
   - "LC/Recovered"
+  - "month"
+  - "Sex"
+  - "BMI category"
+  - "Age at enrollment"
 rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 3
 rna_plot_dendrogram_flag: true
 rna_plot_umap_by_cell_type_flag: true
-rna_plot_cell_type_proportions_pca_flag: false
-rna_plot_cell_type_expression_umap_flag: false
+rna_plot_cell_type_proportions_pca_flag: true
+rna_plot_cell_type_expression_umap_flag: true
 
 # RNA Cluster Based DEG
 rna_kmeans_based_cluster_flag: true

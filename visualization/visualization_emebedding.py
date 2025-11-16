@@ -291,7 +291,7 @@ def visualize_single_omics_embedding(
             # Format colorbar ticks for ordinal data
             if data_type == 'ordinal' and len(unique_values) <= 10:
                 cbar.set_ticks(sorted(unique_values))
-                cbar.set_ticklabels([str(int(v)) if v.is_integer() else f'{v:.1f}' 
+                cbar.set_ticklabels([str(int(v)) if float(v).is_integer() else f'{v:.1f}' 
                                     for v in sorted(unique_values)])
         
         # Plot missing values

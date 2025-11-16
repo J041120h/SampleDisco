@@ -11,7 +11,6 @@ from Grouping import find_sample_grouping
 from visualization.visualization_emebedding import plot_proportion_embedding, plot_expression_embedding
 
 def _preprocessing(
-    adata_sample_diff,
     adata_pseudobulk,
     output_dir,
     grouping_columns,
@@ -79,7 +78,6 @@ def visualization(
     age_bin_size=None,
     age_column='age',
     verbose=True,
-    dot_size=3,
 
     plot_dendrogram_flag=True,
     plot_cell_type_proportions_pca_flag=False,
@@ -91,7 +89,6 @@ def visualization(
     # 1. Preprocessing
     if grouping_columns:
         output_dir = _preprocessing(
-            AnnData_cell,
             pseudobulk_anndata,
             output_dir,
             grouping_columns,
@@ -105,6 +102,7 @@ def visualization(
         plot_dendrogram(AnnData_cell, output_dir, verbose=verbose)
 
     if plot_cell_type_proportions_pca_flag:
+        print("Generating cell type proportion PCA plots for grouping columns:", grouping_columns)
         for col in grouping_columns:
             plot_proportion_embedding(
                 adata = pseudobulk_anndata,
@@ -115,6 +113,7 @@ def visualization(
             )
 
     if plot_cell_type_expression_umap_flag:
+        print("Generating cell type expression plots for grouping columns:", grouping_columns)
         for col in grouping_columns:
             plot_expression_embedding(
                 adata = pseudobulk_anndata,

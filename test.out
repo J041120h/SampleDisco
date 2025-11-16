@@ -2,14 +2,14 @@ Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
+        "trajectory_analysis": true,
         "trajectory_dge": false,
         "cluster_dge": false,
-        "visualization": false
+        "visualization": true
     },
     "atac": {
         "preprocessing": false,
@@ -45,61 +45,51 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Starting preprocessing...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-=== Reading input dataset ===
-Raw shape: 898489 cells × 14881 genes
-All required columns are present in adata.obs.
-Before GPU conversion. Type of adata.X: <class 'scipy.sparse._csc.csc_matrix'>
-adata.X dtype: float64
-adata.X is sparse: True
-Converting adata.X from float64 to float32
-Converted to GPU. Type of adata.X: <class 'cupyx.scipy.sparse._csc.csc_matrix'>
-filtered out 1043 genes that are detected in less than 500 cells
-filtered out 107 cells that have less than 500 genes expressed
-After initial filtering: 898382 cells × 13838 genes
-After mitochondrial filtering: 898305 cells × 13838 genes
-After gene exclusion filtering: 898305 cells × 13825 genes
-After sample filtering: 898305 cells × 13825 genes
-Number of samples remaining: 405
-filtered out 566 genes that are detected in less than 898 cells
-After final gene filtering: 898305 cells × 13259 genes
-Processed shape: 898305 cells × 13259 genes
-Preprocessing complete!
-=== [GPU] Processing data for clustering ===
-=== [GPU] Running Harmony integration ===
-Variables to regress: sample
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-	Completed 9 / 30 iteration(s).
-Reach convergence after 9 iteration(s).
-End of harmony for adata_cluster.
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+Starting visualization...
+[_preprocessing] Verified required columns in pseudobulk AnnData: ['LC/Recovered', 'month', 'Sex', 'BMI category', 'Age at enrollment']
+Found 9 unique cell types.
+Dendrogram saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/cell_type_dendrogram.png
+Generating cell type proportion PCA plots for grouping columns: ['LC/Recovered', 'month', 'Sex', 'BMI category', 'Age at enrollment']
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_LC_Recovered.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_LC_Recovered.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_month.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_month.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Sex.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Sex.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_BMI_category.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_BMI_category.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Age_at_enrollment.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Age_at_enrollment.png
+Generating cell type expression plots for grouping columns: ['LC/Recovered', 'month', 'Sex', 'BMI category', 'Age at enrollment']
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_LC_Recovered.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_LC_Recovered.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_month.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_month.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Sex.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Sex.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_BMI_category.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_BMI_category.png
+Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Age_at_enrollment.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Age_at_enrollment.png
+[visualization] All requested visualizations saved.
+RNA analysis completed successfully!
 
-✗ RNA pipeline failed with error: Can't implicitly convert non-string objects to strings
+✓ RNA pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
 RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✗
-  - cell_type_cluster: ✗
-  - dimensionality_reduction: ✗
-  - sample_distance_calculation: ✗
-  - trajectory_analysis: ✗
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✓
   - trajectory_dge: ✗
   - cluster_dge: ✗
-  - visualization: ✗
+  - visualization: ✓
 
 Results saved to: /dcs07/hongkai/data/harry/result/long_covid
 Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
-Execution time: 560.1911 seconds
+Execution time: 82.0012 seconds

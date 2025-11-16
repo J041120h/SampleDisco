@@ -1,66 +1,48 @@
-import scanpy as sc
+import numpy as np
 import pandas as pd
-from pathlib import Path
-import re
+from scipy.sparse import spmatrix
 
-def fix_sample_ids(input_h5ad: str, sample_col: str = "sample"):
-    """
-    Load a .h5ad file, clean the sample column, and save the corrected file.
+def add_raw_counts_layer_by_integer_index(preprocessed_h5ad_path, raw_h5ad_path,
+                                          layer_name="raw_counts", verbose=True):
+    import scanpy as sc
 
-    Rules implemented:
-    - If 'source_file' exists, extract sample ID from filename like:
-        '1--104-M1_sample_filtered_feature_bc_matrix.h5'
-        → '104-M1'
-    - Otherwise, fall back to the existing sample column, which currently looks like:
-        '1--104-M1' → extract '104-M1'
+    adata_pre = sc.read_h5ad(preprocessed_h5ad_path)
+    adata_raw = sc.read_h5ad(raw_h5ad_path)
 
-    Parameters
-    ----------
-    input_h5ad : str
-        Path to input .h5ad
-    output_h5ad : str
-        Path to write modified .h5ad
-    sample_col : str
-        Name of the sample column to fix (default: 'sample')
-    """
-    output_h5ad = input_h5ad
-    print(f"🔍 Loading AnnData: {input_h5ad}")
-    adata = sc.read_h5ad(input_h5ad)
+    # 1) Make raw obs_names = integer row IDs (as strings)
+    adata_raw.obs_names = pd.Index(map(str, range(adata_raw.n_obs)))
 
-    if "source_file" in adata.obs.columns:
-        print("📦 Fixing sample IDs using `source_file` column...")
+    # 2) Get pre indices as a NumPy array (NOT a pandas Index)
+    pre_idx = adata_pre.obs_names.astype(int).to_numpy()
 
-        def extract_from_filename(x):
-            # Example filename:
-            # '1--104-M1_sample_filtered_feature_bc_matrix.h5'
-            # Extract middle part before first underscore
-            base = Path(x).stem
-            main = base.split("_")[0]        # '1--104-M1'
-            parts = main.split("-")
-            # Expected format: ['1', '', '104', 'M1']
-            # Keep last two parts: '104-M1'
-            return "-".join(parts[-2:])
+    # 3) Map genes
+    genes_pre = adata_pre.var_names
+    genes_raw = adata_raw.var_names
 
-        adata.obs[sample_col] = adata.obs["source_file"].apply(extract_from_filename)
+    if not np.all(np.isin(genes_pre, genes_raw)):
+        missing = genes_pre[~np.isin(genes_pre, genes_raw)]
+        raise ValueError(f"Preprocessed genes missing in raw, e.g. {missing[:10]}")
 
+    gene_to_raw = pd.Series(np.arange(len(genes_raw)), index=genes_raw)
+    gene_idx = gene_to_raw.loc[genes_pre].values
+
+    raw_X = adata_raw.X
+    if isinstance(raw_X, spmatrix):
+        # use AnnData slicing for sparse
+        aligned_raw = adata_raw[pre_idx, :][:, genes_pre].X
     else:
-        print("📦 No `source_file` found. Fixing sample IDs using existing sample column...")
+        aligned_raw = raw_X[np.ix_(pre_idx, gene_idx)]
 
-        def extract_from_sample(x):
-            # Example: '1--104-M1'
-            parts = x.split("-")
-            return "-".join(parts[-2:])      # '104-M1'
+    adata_pre.layers[layer_name] = aligned_raw
+    adata_pre.write(preprocessed_h5ad_path)
 
-        adata.obs[sample_col] = adata.obs[sample_col].astype(str).apply(extract_from_sample)
+    if verbose:
+        print("Done: added raw counts layer by integer index.")
 
-    print("✅ Example corrected sample IDs:")
-    print(adata.obs[sample_col].head())
-
-    print(f"💾 Saving corrected file to: {output_h5ad}")
-    adata.write_h5ad(output_h5ad)
-
-    print("🎉 Done.")
-
-
-# Example usage:
-fix_sample_ids("/dcl01/hongkai/data/data/hjiang/Data/long_covid/long_covid.h5ad")
+if __name__ == "__main__":
+    add_raw_counts_layer_by_integer_index(
+        preprocessed_h5ad_path = "/dcs07/hongkai/data/harry/result/processed_data/400_adata_cell.h5ad",
+        raw_h5ad_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad",
+        layer_name="raw_counts",
+        verbose=True,
+    )

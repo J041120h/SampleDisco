@@ -9,11 +9,14 @@ from harmony import harmonize
 import rapids_singlecell as rsc
 from scipy import sparse
 import time
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils.safe_save import safe_h5ad_write  # Importing the new safe save method
 
 def anndata_cluster(
     adata_cluster,
     output_dir,
-    sample_column = 'sample',
+    sample_column='sample',
     num_features=2000,
     num_PCs=20,
     num_harmony=30,
@@ -56,7 +59,11 @@ def anndata_cluster(
 
     # Back to CPU before saving
     rsc.get.anndata_to_CPU(adata_cluster)
-    sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster, compression='gzip')
+    
+    # Use the safe save function to write the file
+    save_path = os.path.join(output_dir, 'adata_cell.h5ad')
+    safe_h5ad_write(adata_cluster, save_path, verbose=verbose)
+
     return adata_cluster
 
 def anndata_sample(
@@ -83,7 +90,10 @@ def anndata_sample(
     rsc.get.anndata_to_CPU(adata_sample_diff)
     adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
     del adata_sample_diff.layers["counts"]
-    sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff, compression='gzip')
+    
+    # Use the safe save function to write the file
+    save_path = os.path.join(output_dir, 'adata_sample.h5ad')
+    safe_h5ad_write(adata_sample_diff, save_path, verbose=verbose)
 
     return adata_sample_diff
 
@@ -150,7 +160,15 @@ def preprocess_linux(
 
     if sample_meta_path is not None:
         sample_meta = pd.read_csv(sample_meta_path)
-        adata.obs = adata.obs.merge(sample_meta, on=sample_column, how='left')
+
+    sample_meta = sample_meta.set_index(sample_column)
+
+    adata.obs = adata.obs.join(
+        sample_meta,
+        on=sample_column, 
+        how='left'
+    )
+
 
     # ---------- Required columns check (robust to None/unhashables) ----------
     required = flat_vars.copy()

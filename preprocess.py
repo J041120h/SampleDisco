@@ -7,6 +7,7 @@ import scanpy as sc
 from harmony import harmonize
 import time
 from scipy import sparse
+from utils.safe_save import safe_h5ad_write  # Importing the new safe save method
 
 def anndata_cluster(
     adata_cluster,
@@ -52,8 +53,10 @@ def anndata_cluster(
     if verbose:
         print("End of harmony for adata_cluster.")
 
-    # Save
-    sc.write(os.path.join(output_dir, 'adata_cell.h5ad'), adata_cluster)
+    # Use safe saving method instead of direct write
+    save_path = os.path.join(output_dir, 'adata_cell.h5ad')
+    safe_h5ad_write(adata_cluster, save_path, verbose=verbose)
+    
     return adata_cluster
 
 def anndata_sample(
@@ -78,7 +81,10 @@ def anndata_sample(
     # Restore original counts
     adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
     del adata_sample_diff.layers["counts"]
-    sc.write(os.path.join(output_dir, 'adata_sample.h5ad'), adata_sample_diff)
+
+    # Use safe saving method instead of direct write
+    save_path = os.path.join(output_dir, 'adata_sample.h5ad')
+    safe_h5ad_write(adata_sample_diff, save_path, verbose=verbose)
 
     return adata_sample_diff
 
@@ -145,7 +151,14 @@ def preprocess(
 
     if sample_meta_path is not None:
         sample_meta = pd.read_csv(sample_meta_path)
-        adata.obs = adata.obs.merge(sample_meta, on=sample_column, how='left')
+
+    sample_meta = sample_meta.set_index(sample_column)
+
+    adata.obs = adata.obs.join(
+        sample_meta,
+        on=sample_column, 
+        how='left'
+    )
 
     # ---------- Required columns check (robust to None/unhashables) ----------
     required = flat_vars.copy()

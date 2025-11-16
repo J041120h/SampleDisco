@@ -279,7 +279,7 @@ def rna_wrapper(
         status_flags["rna"]["cell_type_cluster"] = True
         AnnData_cell_path = temp_cell_path
         AnnData_sample_path = temp_sample_path
-        if cell_type_cluster or DimensionalityReduction or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or cca_optimal_cell_resolution:
+        if cell_type_cluster or DimensionalityReduction or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or cca_optimal_cell_resolution or visualize_data:
             AnnData_cell = sc.read(AnnData_cell_path)
             AnnData_sample = sc.read(AnnData_sample_path)
     
@@ -687,7 +687,6 @@ def rna_wrapper(
             age_bin_size=age_bin_size,
             age_column=age_column,
             verbose=verbose_Visualization,
-            dot_size=dot_size,
             plot_dendrogram_flag=plot_dendrogram_flag,
             plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
             plot_cell_type_expression_umap_flag=plot_cell_type_expression_umap_flag
