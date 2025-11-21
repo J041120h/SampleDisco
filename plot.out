@@ -9,7 +9,7 @@ Resuming process from previous progress:
         "trajectory_analysis": true,
         "trajectory_dge": false,
         "cluster_dge": false,
-        "visualization": true
+        "visualization": false
     },
     "atac": {
         "preprocessing": false,
@@ -45,21 +45,21 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad
 Starting visualization...
 [_preprocessing] Verified required columns in pseudobulk AnnData: ['sev.level', 'batch']
-Found 17 unique cell types.
-Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/cell_type_dendrogram.png
+Found 19 unique cell types.
+Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/cell_type_dendrogram.png
 Generating cell type proportion PCA plots for grouping columns: ['sev.level', 'batch']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_sev.level.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_sev.level.png
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_batch.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_batch.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_sev.level.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_batch.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_batch.png
 Generating cell type expression plots for grouping columns: ['sev.level', 'batch']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_sev.level.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_sev.level.png
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_batch.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_batch.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_sev.level.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_batch.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_batch.png
 [visualization] All requested visualizations saved.
 RNA analysis completed successfully!
 
@@ -78,6 +78,6 @@ RNA Pipeline: ⚠ PARTIAL
   - cluster_dge: ✗
   - visualization: ✓
 
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample
-Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/sys_log/main_process_status.json
-Execution time: 16.4100 seconds
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/sys_log/main_process_status.json
+Execution time: 64.5338 seconds

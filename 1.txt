@@ -1,1 +1,16 @@
-Done: added raw counts layer by integer index.
+Loading pseudobulk AnnData from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+
+=== Batch → Sample Counts ===
+Su              : 29 samples
+SS2             : 6 samples
+SS1             : 5 samples
+Zhu             : 3 samples
+Wen             : 2 samples
+Lee             : 1 samples
+Mudd            : 1 samples
+Silvin          : 1 samples
+Wilk            : 1 samples
+Yu              : 1 samples
+
+Total samples: 50
+Total batches: 10

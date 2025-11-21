@@ -101,7 +101,7 @@ def compute_pseudobulk_layers_gpu(
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
 
-    # Check if batch correction should be applied
+    # Check if batch correction should be applied (based on original cell-level adata)
     batch_correction = (
         batch_col is not None and
         batch_col in adata.obs.columns and
@@ -168,16 +168,38 @@ def compute_pseudobulk_layers_gpu(
                     print(f"  Found {nan_genes.sum()} genes with NaN values, removing them")
                 temp_adata = temp_adata[:, ~nan_genes].copy()
 
+            # --- DEBUG BLOCK: explain why ComBat runs or is skipped ---
+            if verbose:
+                print(f"  [DEBUG] batch_correction flag = {batch_correction}")
+                if batch_correction:
+                    if batch_col not in temp_adata.obs.columns:
+                        print("  [DEBUG] SKIPPING ComBat: batch column missing in temp_adata.obs.")
+                    else:
+                        unique_batches = temp_adata.obs[batch_col].unique()
+                        print(f"  [DEBUG] Unique batch values: {list(unique_batches)}")
+                        batch_counts = temp_adata.obs[batch_col].value_counts().to_dict()
+                        print(f"  [DEBUG] Batch counts: {batch_counts}")
+
+                        if len(unique_batches) <= 1:
+                            print("  [DEBUG] SKIPPING ComBat: only one batch present.")
+                        else:
+                            min_batch_size_dbg = temp_adata.obs[batch_col].value_counts().min()
+                            print(f"  [DEBUG] min_batch_size = {min_batch_size_dbg}")
+                            if min_batch_size_dbg < 2:
+                                print("  [DEBUG] SKIPPING ComBat: some batch has <2 samples.")
+                else:
+                    print("  [DEBUG] SKIPPING ComBat: batch_correction=False "
+                          "(batch col missing or all NA in original adata).")
+            # --- END DEBUG BLOCK ---
+
             # Batch correction if needed
-            if batch_correction and len(temp_adata.obs[batch_col].unique()) > 1:
+            if batch_correction and batch_col in temp_adata.obs.columns and len(temp_adata.obs[batch_col].unique()) > 1:
                 min_batch_size = temp_adata.obs[batch_col].value_counts().min()
                 if min_batch_size >= 2:
                     combat_succeeded = False
                     try:
                         if verbose:
                             print(f"  Applying ComBat batch correction on {temp_adata.n_vars} genes")
-
-                        import signal
 
                         def timeout_handler(signum, frame):
                             raise TimeoutError("ComBat timed out")
@@ -206,7 +228,9 @@ def compute_pseudobulk_layers_gpu(
                             if issparse(temp_adata.X):
                                 has_nan = np.any(np.isnan(temp_adata.X.data))
                                 if has_nan:
-                                    nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+                                    nan_genes_post = np.array(
+                                        np.isnan(temp_adata.X.toarray()).any(axis=0)
+                                    ).flatten()
                                 else:
                                     nan_genes_post = np.zeros(temp_adata.n_vars, dtype=bool)
                             else:
@@ -218,7 +242,7 @@ def compute_pseudobulk_layers_gpu(
                                     print(f"  Found {nan_genes_post.sum()} genes with NaN after ComBat, removing them")
                                 temp_adata = temp_adata[:, ~nan_genes_post].copy()
 
-                            if verbose:
+                            if combat_succeeded and verbose:
                                 print(f"  ComBat completed successfully, {temp_adata.n_vars} genes remaining")
 
                     except (TimeoutError, Exception) as e:
@@ -369,6 +393,7 @@ def compute_pseudobulk_layers_gpu(
         print(f"Final AnnData shape: {concat_adata.shape}")
 
     return final_expression_df, cell_proportion_df, concat_adata
+
 
 
 def _create_pseudobulk_layers_gpu(

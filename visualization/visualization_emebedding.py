@@ -18,6 +18,13 @@ sns.set_palette("husl")
 def detect_data_type(values: np.ndarray) -> Tuple[str, List]:
     """
     Enhanced data type detection with better handling of edge cases.
+
+    Returns
+    -------
+    data_type : {'numerical', 'ordinal', 'categorical'}
+    unique_values : list
+        For numerical/ordinal, this will be numeric values.
+        For categorical, this will be the raw unique values.
     """
     # Remove NaN values for analysis
     valid_values = values[pd.notna(values)]
@@ -31,23 +38,38 @@ def detect_data_type(values: np.ndarray) -> Tuple[str, List]:
     # Try to convert to numbers
     try:
         numeric_values = pd.to_numeric(valid_values, errors='coerce')
-        n_numeric = np.sum(~pd.isna(numeric_values))
+        numeric_mask = ~pd.isna(numeric_values)
+        n_numeric = np.sum(numeric_mask)
         
         # If most values are numeric
         if n_numeric / len(valid_values) > 0.8:
+            numeric_valid = numeric_values[numeric_mask]
+
             # Check if it's essentially categorical (few unique values)
             if n_unique <= 10 and n_unique / len(valid_values) < 0.1:
                 # Check for binary 0/1
-                if n_unique == 2 and set(numeric_values[~pd.isna(numeric_values)]) == {0, 1}:
+                unique_numeric = np.unique(pd.to_numeric(unique_values, errors='coerce'))
+                unique_numeric = unique_numeric[~pd.isna(unique_numeric)]
+                
+                if len(unique_numeric) == 2 and set(unique_numeric) == {0, 1}:
+                    # Treat as categorical with raw labels
                     return 'categorical', unique_values.tolist()
-                # For other small sets, check if they're ordinal
-                if all(x.is_integer() for x in numeric_values[~pd.isna(numeric_values)]):
-                    return 'ordinal', unique_values.tolist()
-            return 'numerical', unique_values.tolist()
-    except:
+
+                # For other small integer sets, treat as ordinal
+                if np.all(np.mod(numeric_valid, 1) == 0):
+                    # IMPORTANT: return numeric unique values, not strings
+                    ordinal_unique = np.unique(numeric_valid.astype(float))
+                    return 'ordinal', ordinal_unique.tolist()
+            
+            # General numerical
+            numeric_unique = np.unique(numeric_valid.astype(float))
+            return 'numerical', numeric_unique.tolist()
+    except Exception:
         pass
     
+    # Fallback: categorical with raw labels
     return 'categorical', unique_values.tolist()
+
 
 
 def create_gradient_colormap(name: str = 'viridis', n_colors: int = 256) -> LinearSegmentedColormap:
