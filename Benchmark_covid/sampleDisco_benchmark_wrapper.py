@@ -696,33 +696,44 @@ def run_benchmarks(
 
 # ------------------------- examples -------------------------
 if __name__ == "__main__":
-    # Example 1: Run all benchmarks with explicit paths for expression mode
-    results_expression = run_benchmarks(
-        meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        pseudotime_csv_path="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/CCA/pseudotime_expression.csv",
-        embedding_csv_path="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv",
-        mode="expression",
-        output_base_dir="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna",
-        # Optional: customize specific benchmarks
-        embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-        ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True}
-    )
+    # sample_sizes = [25, 50, 100, 200, 400]
+    
+    # for sample_size in sample_sizes:
+    #     # Construct the file paths based on the sample size
+    #     meta_csv_path = f"/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
+    #     pseudotime_csv_path = f"/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{sample_size}_sample/rna/CCA/pseudotime_expression.csv"
+    #     embedding_csv_path = f"/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{sample_size}_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv"
+    #     output_base_dir = f"/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{sample_size}_sample/rna"
+        
+    #     # Run the benchmark with the constructed paths for the current sample size
+    #     results_expression = run_benchmarks(
+    #         meta_csv_path=meta_csv_path,
+    #         pseudotime_csv_path=pseudotime_csv_path,
+    #         embedding_csv_path=embedding_csv_path,
+    #         mode="expression",
+    #         output_base_dir=output_base_dir,
+    #         # Optional: customize specific benchmarks
+    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True}
+    #     )
 
-    # Example 2: Run all benchmarks with explicit paths for proportion mode
-    # results_proportion = run_benchmarks(
-    #     meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #     pseudotime_csv_path="/path/to/pseudotime_proportion.csv",
-    #     embedding_csv_path="/path/to/proportion_DR_coordinates.csv",
-    #     mode="proportion",
-    #     output_base_dir="/path/to/output"
-    # )
-
-    # Example 3: Run only specific benchmarks
-    # results_specific = run_benchmarks(
-    #     meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #     embedding_csv_path="/path/to/embedding.csv",
-    #     mode="expression",
-    #     benchmarks_to_run=["embedding_visualization", "ari_clustering"],
-    #     output_base_dir="/path/to/output",
-    #     ari_clustering={"k_neighbors": 30, "n_clusters": 8}
-    # )
+    sample_sizes = [25, 50, 100, 200, 400]
+    
+    for sample_size in sample_sizes:
+        # Construct the file paths based on the sample size
+        meta_csv_path = f"/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
+        pseudotime_csv_path = f"/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{sample_size}_sample/rna/CCA/pseudotime_proportion.csv"
+        embedding_csv_path = f"/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{sample_size}_sample/rna/Sample_distance/cosine/proportion_DR_distance/proportion_DR_coordinates.csv"
+        output_base_dir = f"/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{sample_size}_sample/rna"
+        
+        # Run the benchmark with the constructed paths for the current sample size
+        results_expression = run_benchmarks(
+            meta_csv_path=meta_csv_path,
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            mode="proportion",
+            output_base_dir=output_base_dir,
+            # Optional: customize specific benchmarks
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True}
+        )

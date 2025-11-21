@@ -1,6 +1,83 @@
-[correlation] Paired cells: 2607
-[correlation] Using 2607 paired cells × 1000 shared genes
-[correlation] Saved:
-  /dcs07/hongkai/data/harry/result/gene_activity/results_corr/per_cell_correlations.csv
-  /dcs07/hongkai/data/harry/result/gene_activity/results_corr/per_gene_correlations.csv
-  /dcs07/hongkai/data/harry/result/gene_activity/results_corr/correlation_plots.png
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
+        "trajectory_analysis": true,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": true
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
+
+============================================================
+RUNNING RNA PIPELINE
+============================================================
+Starting RNA wrapper function with provided parameters...
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+Starting visualization...
+[_preprocessing] Verified required columns in pseudobulk AnnData: ['sev.level', 'batch']
+Found 17 unique cell types.
+Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/cell_type_dendrogram.png
+Generating cell type proportion PCA plots for grouping columns: ['sev.level', 'batch']
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_sev.level.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_batch.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_batch.png
+Generating cell type expression plots for grouping columns: ['sev.level', 'batch']
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_sev.level.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_batch.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_batch.png
+[visualization] All requested visualizations saved.
+RNA analysis completed successfully!
+
+✓ RNA pipeline completed successfully!
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✓
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/sys_log/main_process_status.json
+Execution time: 16.4100 seconds

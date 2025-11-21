@@ -1,0 +1,589 @@
+2025-11-20 01:36:44 - INFO - init
+2025-11-20 01:37:35,176 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:37:35 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:37:35,263 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:37:35 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:37:35,264 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:37:35 - INFO - Iteration 1 of 30
+2025-11-20 01:37:35,282 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:37:35 - INFO - Iteration 2 of 30
+2025-11-20 01:37:35,303 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:37:35 - INFO - Iteration 3 of 30
+2025-11-20 01:37:35,323 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:37:35 - INFO - Iteration 4 of 30
+2025-11-20 01:37:35,343 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 01:37:35 - INFO - Iteration 5 of 30
+2025-11-20 01:37:35,351 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 01:37:35 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:38:30,695 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:38:30 - INFO - Computing initial centroids with sklearn.KMeans...
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:39:52,874 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:39:52 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:39:52,885 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:39:52 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:39:52,885 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:39:52 - INFO - Iteration 1 of 30
+2025-11-20 01:39:52,899 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:39:52 - INFO - Iteration 2 of 30
+2025-11-20 01:39:52,914 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:39:52 - INFO - Iteration 3 of 30
+2025-11-20 01:39:52,925 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:39:52 - INFO - Iteration 4 of 30
+2025-11-20 01:39:52,932 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 01:39:52 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:41:40,835 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:41:40 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:41:40,846 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:41:40 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:41:40,846 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:41:40 - INFO - Iteration 1 of 30
+2025-11-20 01:41:40,866 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:41:40 - INFO - Iteration 2 of 30
+2025-11-20 01:41:40,877 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:41:40 - INFO - Iteration 3 of 30
+2025-11-20 01:41:40,887 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:41:40 - INFO - Iteration 4 of 30
+2025-11-20 01:41:40,904 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 01:41:40 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:43:20,748 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:43:20 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:43:20,758 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:43:20 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:43:20,758 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:43:20 - INFO - Iteration 1 of 30
+2025-11-20 01:43:20,778 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:43:20 - INFO - Iteration 2 of 30
+2025-11-20 01:43:20,798 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:43:20 - INFO - Iteration 3 of 30
+2025-11-20 01:43:20,809 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:43:20 - INFO - Iteration 4 of 30
+2025-11-20 01:43:20,818 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 01:43:20 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:45:19,016 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:45:19 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:45:19,027 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:45:19 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:45:19,027 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:45:19 - INFO - Iteration 1 of 30
+2025-11-20 01:45:19,047 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:45:19 - INFO - Iteration 2 of 30
+2025-11-20 01:45:19,060 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:45:19 - INFO - Iteration 3 of 30
+2025-11-20 01:45:19,066 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:45:19 - INFO - Iteration 4 of 30
+2025-11-20 01:45:19,076 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 01:45:19 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:47:15,561 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:47:15 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:47:15,572 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:47:15 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:47:15,572 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:47:15 - INFO - Iteration 1 of 30
+2025-11-20 01:47:15,592 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:47:15 - INFO - Iteration 2 of 30
+2025-11-20 01:47:15,600 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:47:15 - INFO - Iteration 3 of 30
+2025-11-20 01:47:15,620 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:47:15 - INFO - Iteration 4 of 30
+2025-11-20 01:47:15,632 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 01:47:15 - INFO - Iteration 5 of 30
+2025-11-20 01:47:15,638 - harmonypy - INFO - Iteration 6 of 30
+2025-11-20 01:47:15 - INFO - Iteration 6 of 30
+2025-11-20 01:47:15,649 - harmonypy - INFO - Iteration 7 of 30
+2025-11-20 01:47:15 - INFO - Iteration 7 of 30
+2025-11-20 01:47:15,656 - harmonypy - INFO - Iteration 8 of 30
+2025-11-20 01:47:15 - INFO - Iteration 8 of 30
+2025-11-20 01:47:15,662 - harmonypy - INFO - Iteration 9 of 30
+2025-11-20 01:47:15 - INFO - Iteration 9 of 30
+2025-11-20 01:47:15,667 - harmonypy - INFO - Iteration 10 of 30
+2025-11-20 01:47:15 - INFO - Iteration 10 of 30
+2025-11-20 01:47:15,682 - harmonypy - INFO - Iteration 11 of 30
+2025-11-20 01:47:15 - INFO - Iteration 11 of 30
+2025-11-20 01:47:15,689 - harmonypy - INFO - Converged after 11 iterations
+2025-11-20 01:47:15 - INFO - Converged after 11 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:49:32,754 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:49:32 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:49:32,765 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:49:32 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:49:32,765 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:49:32 - INFO - Iteration 1 of 30
+2025-11-20 01:49:32,786 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:49:32 - INFO - Iteration 2 of 30
+2025-11-20 01:49:32,806 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:49:32 - INFO - Iteration 3 of 30
+2025-11-20 01:49:32,825 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:49:32 - INFO - Iteration 4 of 30
+2025-11-20 01:49:32,844 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 01:49:32 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:51:40,224 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:51:40 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:51:40,234 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:51:40 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:51:40,235 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:51:40 - INFO - Iteration 1 of 30
+2025-11-20 01:51:40,253 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:51:40 - INFO - Iteration 2 of 30
+2025-11-20 01:51:40,273 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:51:40 - INFO - Iteration 3 of 30
+2025-11-20 01:51:40,289 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:51:40 - INFO - Iteration 4 of 30
+2025-11-20 01:51:40,300 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 01:51:40 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:54:16,285 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:54:16 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:54:16,295 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:54:16 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:54:16,295 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:54:16 - INFO - Iteration 1 of 30
+2025-11-20 01:54:16,314 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:54:16 - INFO - Iteration 2 of 30
+2025-11-20 01:54:16,323 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:54:16 - INFO - Iteration 3 of 30
+2025-11-20 01:54:16,336 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:54:16 - INFO - Iteration 4 of 30
+2025-11-20 01:54:16,341 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 01:54:16 - INFO - Iteration 5 of 30
+2025-11-20 01:54:16,354 - harmonypy - INFO - Iteration 6 of 30
+2025-11-20 01:54:16 - INFO - Iteration 6 of 30
+2025-11-20 01:54:16,365 - harmonypy - INFO - Converged after 6 iterations
+2025-11-20 01:54:16 - INFO - Converged after 6 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:55:57,514 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:55:57 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:55:57,525 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:55:57 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:55:57,525 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:55:57 - INFO - Iteration 1 of 30
+2025-11-20 01:55:57,543 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:55:57 - INFO - Iteration 2 of 30
+2025-11-20 01:55:57,558 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:55:57 - INFO - Iteration 3 of 30
+2025-11-20 01:55:57,578 - harmonypy - INFO - Converged after 3 iterations
+2025-11-20 01:55:57 - INFO - Converged after 3 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:57:37,061 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:57:37 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:57:37,072 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:57:37 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:57:37,072 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:57:37 - INFO - Iteration 1 of 30
+2025-11-20 01:57:37,088 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:57:37 - INFO - Iteration 2 of 30
+2025-11-20 01:57:37,104 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:57:37 - INFO - Iteration 3 of 30
+2025-11-20 01:57:37,112 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:57:37 - INFO - Iteration 4 of 30
+2025-11-20 01:57:37,117 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 01:57:37 - INFO - Iteration 5 of 30
+2025-11-20 01:57:37,127 - harmonypy - INFO - Iteration 6 of 30
+2025-11-20 01:57:37 - INFO - Iteration 6 of 30
+2025-11-20 01:57:37,143 - harmonypy - INFO - Iteration 7 of 30
+2025-11-20 01:57:37 - INFO - Iteration 7 of 30
+2025-11-20 01:57:37,154 - harmonypy - INFO - Iteration 8 of 30
+2025-11-20 01:57:37 - INFO - Iteration 8 of 30
+2025-11-20 01:57:37,164 - harmonypy - INFO - Converged after 8 iterations
+2025-11-20 01:57:37 - INFO - Converged after 8 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 01:59:26,331 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:59:26 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 01:59:26,342 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:59:26 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 01:59:26,342 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 01:59:26 - INFO - Iteration 1 of 30
+2025-11-20 01:59:26,362 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 01:59:26 - INFO - Iteration 2 of 30
+2025-11-20 01:59:26,371 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 01:59:26 - INFO - Iteration 3 of 30
+2025-11-20 01:59:26,391 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 01:59:26 - INFO - Iteration 4 of 30
+2025-11-20 01:59:26,408 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 01:59:26 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:01:05,864 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:01:05 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:01:05,875 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:01:05 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:01:05,875 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:01:05 - INFO - Iteration 1 of 30
+2025-11-20 02:01:05,890 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:01:05 - INFO - Iteration 2 of 30
+2025-11-20 02:01:05,906 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:01:05 - INFO - Iteration 3 of 30
+2025-11-20 02:01:05,914 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:01:05 - INFO - Iteration 4 of 30
+2025-11-20 02:01:05,919 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:01:05 - INFO - Iteration 5 of 30
+2025-11-20 02:01:05,932 - harmonypy - INFO - Iteration 6 of 30
+2025-11-20 02:01:05 - INFO - Iteration 6 of 30
+2025-11-20 02:01:05,946 - harmonypy - INFO - Converged after 6 iterations
+2025-11-20 02:01:05 - INFO - Converged after 6 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:02:05,205 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:02:05 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:02:05,215 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:02:05 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:02:05,215 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:02:05 - INFO - Iteration 1 of 30
+2025-11-20 02:02:05,233 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:02:05 - INFO - Iteration 2 of 30
+2025-11-20 02:02:05,253 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:02:05 - INFO - Iteration 3 of 30
+2025-11-20 02:02:05,273 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:02:05 - INFO - Iteration 4 of 30
+2025-11-20 02:02:05,293 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:02:05 - INFO - Iteration 5 of 30
+2025-11-20 02:02:05,301 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 02:02:05 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:02:59,593 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:02:59 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:02:59,604 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:02:59 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:02:59,604 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:02:59 - INFO - Iteration 1 of 30
+2025-11-20 02:02:59,620 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:02:59 - INFO - Iteration 2 of 30
+2025-11-20 02:02:59,638 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:02:59 - INFO - Iteration 3 of 30
+2025-11-20 02:02:59,657 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:02:59 - INFO - Iteration 4 of 30
+2025-11-20 02:02:59,677 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 02:02:59 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:04:03,853 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:04:03 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:04:03,864 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:04:03 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:04:03,864 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:04:03 - INFO - Iteration 1 of 30
+2025-11-20 02:04:03,874 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:04:03 - INFO - Iteration 2 of 30
+2025-11-20 02:04:03,884 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:04:03 - INFO - Iteration 3 of 30
+2025-11-20 02:04:03,896 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:04:03 - INFO - Iteration 4 of 30
+2025-11-20 02:04:03,915 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:04:03 - INFO - Iteration 5 of 30
+2025-11-20 02:04:03,932 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 02:04:03 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:05:50,196 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:05:50 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:05:50,207 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:05:50 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:05:50,207 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:05:50 - INFO - Iteration 1 of 30
+2025-11-20 02:05:50,227 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:05:50 - INFO - Iteration 2 of 30
+2025-11-20 02:05:50,234 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:05:50 - INFO - Iteration 3 of 30
+2025-11-20 02:05:50,254 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:05:50 - INFO - Iteration 4 of 30
+2025-11-20 02:05:50,260 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 02:05:50 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:07:45,378 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:07:45 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:07:45,389 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:07:45 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:07:45,389 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:07:45 - INFO - Iteration 1 of 30
+2025-11-20 02:07:45,409 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:07:45 - INFO - Iteration 2 of 30
+2025-11-20 02:07:45,429 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:07:45 - INFO - Iteration 3 of 30
+2025-11-20 02:07:45,449 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:07:45 - INFO - Iteration 4 of 30
+2025-11-20 02:07:45,468 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:07:45 - INFO - Iteration 5 of 30
+2025-11-20 02:07:45,488 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 02:07:45 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:09:47,300 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:09:47 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:09:47,311 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:09:47 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:09:47,311 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:09:47 - INFO - Iteration 1 of 30
+2025-11-20 02:09:47,331 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:09:47 - INFO - Iteration 2 of 30
+2025-11-20 02:09:47,347 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:09:47 - INFO - Iteration 3 of 30
+2025-11-20 02:09:47,357 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:09:47 - INFO - Iteration 4 of 30
+2025-11-20 02:09:47,369 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:09:47 - INFO - Iteration 5 of 30
+2025-11-20 02:09:47,382 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 02:09:47 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:11:42,071 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:11:42 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:11:42,082 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:11:42 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:11:42,082 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:11:42 - INFO - Iteration 1 of 30
+2025-11-20 02:11:42,102 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:11:42 - INFO - Iteration 2 of 30
+2025-11-20 02:11:42,121 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:11:42 - INFO - Iteration 3 of 30
+2025-11-20 02:11:42,128 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:11:42 - INFO - Iteration 4 of 30
+2025-11-20 02:11:42,140 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:11:42 - INFO - Iteration 5 of 30
+2025-11-20 02:11:42,149 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 02:11:42 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:13:57,111 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:13:57 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:13:57,122 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:13:57 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:13:57,122 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:13:57 - INFO - Iteration 1 of 30
+2025-11-20 02:13:57,142 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:13:57 - INFO - Iteration 2 of 30
+2025-11-20 02:13:57,158 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:13:57 - INFO - Iteration 3 of 30
+2025-11-20 02:13:57,178 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:13:57 - INFO - Iteration 4 of 30
+2025-11-20 02:13:57,189 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:13:57 - INFO - Iteration 5 of 30
+2025-11-20 02:13:57,197 - harmonypy - INFO - Iteration 6 of 30
+2025-11-20 02:13:57 - INFO - Iteration 6 of 30
+2025-11-20 02:13:57,214 - harmonypy - INFO - Iteration 7 of 30
+2025-11-20 02:13:57 - INFO - Iteration 7 of 30
+2025-11-20 02:13:57,220 - harmonypy - INFO - Iteration 8 of 30
+2025-11-20 02:13:57 - INFO - Iteration 8 of 30
+2025-11-20 02:13:57,230 - harmonypy - INFO - Iteration 9 of 30
+2025-11-20 02:13:57 - INFO - Iteration 9 of 30
+2025-11-20 02:13:57,235 - harmonypy - INFO - Iteration 10 of 30
+2025-11-20 02:13:57 - INFO - Iteration 10 of 30
+2025-11-20 02:13:57,248 - harmonypy - INFO - Iteration 11 of 30
+2025-11-20 02:13:57 - INFO - Iteration 11 of 30
+2025-11-20 02:13:57,266 - harmonypy - INFO - Iteration 12 of 30
+2025-11-20 02:13:57 - INFO - Iteration 12 of 30
+2025-11-20 02:13:57,279 - harmonypy - INFO - Iteration 13 of 30
+2025-11-20 02:13:57 - INFO - Iteration 13 of 30
+2025-11-20 02:13:57,298 - harmonypy - INFO - Converged after 13 iterations
+2025-11-20 02:13:57 - INFO - Converged after 13 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:16:04,069 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:16:04 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:16:04,080 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:16:04 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:16:04,080 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:16:04 - INFO - Iteration 1 of 30
+2025-11-20 02:16:04,098 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:16:04 - INFO - Iteration 2 of 30
+2025-11-20 02:16:04,113 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:16:04 - INFO - Iteration 3 of 30
+2025-11-20 02:16:04,123 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:16:04 - INFO - Iteration 4 of 30
+2025-11-20 02:16:04,143 - harmonypy - INFO - Converged after 4 iterations
+2025-11-20 02:16:04 - INFO - Converged after 4 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:18:42,481 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:18:42 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:18:42,492 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:18:42 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:18:42,492 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:18:42 - INFO - Iteration 1 of 30
+2025-11-20 02:18:42,500 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:18:42 - INFO - Iteration 2 of 30
+2025-11-20 02:18:42,517 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:18:42 - INFO - Iteration 3 of 30
+2025-11-20 02:18:42,524 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:18:42 - INFO - Iteration 4 of 30
+2025-11-20 02:18:42,536 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:18:42 - INFO - Iteration 5 of 30
+2025-11-20 02:18:42,541 - harmonypy - INFO - Iteration 6 of 30
+2025-11-20 02:18:42 - INFO - Iteration 6 of 30
+2025-11-20 02:18:42,550 - harmonypy - INFO - Converged after 6 iterations
+2025-11-20 02:18:42 - INFO - Converged after 6 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:21:13,628 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:21:13 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:21:13,638 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:21:13 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:21:13,638 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:21:13 - INFO - Iteration 1 of 30
+2025-11-20 02:21:13,651 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:21:13 - INFO - Iteration 2 of 30
+2025-11-20 02:21:13,666 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:21:13 - INFO - Iteration 3 of 30
+2025-11-20 02:21:13,678 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:21:13 - INFO - Iteration 4 of 30
+2025-11-20 02:21:13,689 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:21:13 - INFO - Iteration 5 of 30
+2025-11-20 02:21:13,699 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 02:21:13 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:23:30,140 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:23:30 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:23:30,151 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:23:30 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:23:30,151 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:23:30 - INFO - Iteration 1 of 30
+2025-11-20 02:23:30,171 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:23:30 - INFO - Iteration 2 of 30
+2025-11-20 02:23:30,179 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:23:30 - INFO - Iteration 3 of 30
+2025-11-20 02:23:30,187 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:23:30 - INFO - Iteration 4 of 30
+2025-11-20 02:23:30,201 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:23:30 - INFO - Iteration 5 of 30
+2025-11-20 02:23:30,214 - harmonypy - INFO - Iteration 6 of 30
+2025-11-20 02:23:30 - INFO - Iteration 6 of 30
+2025-11-20 02:23:30,233 - harmonypy - INFO - Converged after 6 iterations
+2025-11-20 02:23:30 - INFO - Converged after 6 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:25:51,712 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:25:51 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:25:51,723 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:25:51 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:25:51,723 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:25:51 - INFO - Iteration 1 of 30
+2025-11-20 02:25:51,737 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:25:51 - INFO - Iteration 2 of 30
+2025-11-20 02:25:51,748 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:25:51 - INFO - Iteration 3 of 30
+2025-11-20 02:25:51,763 - harmonypy - INFO - Iteration 4 of 30
+2025-11-20 02:25:51 - INFO - Iteration 4 of 30
+2025-11-20 02:25:51,782 - harmonypy - INFO - Iteration 5 of 30
+2025-11-20 02:25:51 - INFO - Iteration 5 of 30
+2025-11-20 02:25:51,789 - harmonypy - INFO - Converged after 5 iterations
+2025-11-20 02:25:51 - INFO - Converged after 5 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical
+2025-11-20 02:28:11,343 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:28:11 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-20 02:28:11,353 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:28:11 - INFO - sklearn.KMeans initialization complete.
+2025-11-20 02:28:11,354 - harmonypy - INFO - Iteration 1 of 30
+2025-11-20 02:28:11 - INFO - Iteration 1 of 30
+2025-11-20 02:28:11,368 - harmonypy - INFO - Iteration 2 of 30
+2025-11-20 02:28:11 - INFO - Iteration 2 of 30
+2025-11-20 02:28:11,378 - harmonypy - INFO - Iteration 3 of 30
+2025-11-20 02:28:11 - INFO - Iteration 3 of 30
+2025-11-20 02:28:11,397 - harmonypy - INFO - Converged after 3 iterations
+2025-11-20 02:28:11 - INFO - Converged after 3 iterations
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'sev.level' as categorical

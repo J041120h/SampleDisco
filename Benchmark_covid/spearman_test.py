@@ -107,28 +107,10 @@ def calculate_spearman_correlation(merged_df, pseudotime_col='pseudotime'):
     spearman_corr, p_value = stats.spearmanr(clean_df['sev.level'], 
                                              clean_df[pseudotime_col])
     
-    # Calculate additional statistics
-    kendall_tau, kendall_p = stats.kendalltau(clean_df['sev.level'], 
-                                               clean_df[pseudotime_col])
-    
-    # Pearson correlation for comparison
-    pearson_corr, pearson_p = stats.pearsonr(clean_df['sev.level'], 
-                                             clean_df[pseudotime_col])
-    
-    # Group statistics by severity level
-    severity_stats = clean_df.groupby('sev.level')[pseudotime_col].agg([
-        'count', 'mean', 'std', 'min', 'max'
-    ]).round(4)
-    
     results = {
         'spearman_corr': spearman_corr,
         'spearman_p': p_value,
-        'kendall_tau': kendall_tau,
-        'kendall_p': kendall_p,
-        'pearson_corr': pearson_corr,
-        'pearson_p': pearson_p,
         'n_samples': clean_df.shape[0],
-        'severity_stats': severity_stats,
         'data': clean_df,
         'pseudotime_col': pseudotime_col
     }
@@ -194,13 +176,11 @@ def create_visualizations(results, output_dir):
     # 4. Correlation heatmap
     ax4 = axes[1, 1]
     corr_matrix = pd.DataFrame({
-        'Spearman': [results['spearman_corr']],
-        'Kendall': [results['kendall_tau']],
-        'Pearson': [results['pearson_corr']]
+        'Spearman': [results['spearman_corr']]
     })
     sns.heatmap(corr_matrix, annot=True, fmt='.3f', cmap='coolwarm', 
                 center=0, vmin=-1, vmax=1, ax=ax4, cbar_kws={'label': 'Correlation'})
-    ax4.set_title('Correlation Coefficients')
+    ax4.set_title('Spearman Correlation')
     ax4.set_yticklabels([''], rotation=0)
     
     plt.tight_layout()
@@ -239,8 +219,6 @@ def generate_summary_report(results, output_dir):
         "",
         "CORRELATION RESULTS:",
         f"  Spearman Correlation: {results['spearman_corr']:.4f} (p-value: {results['spearman_p']:.4e})",
-        f"  Kendall Tau:          {results['kendall_tau']:.4f} (p-value: {results['kendall_p']:.4e})",
-        f"  Pearson Correlation:  {results['pearson_corr']:.4f} (p-value: {results['pearson_p']:.4e})",
         "",
         "-"*40,
         "INTERPRETATION",
@@ -279,22 +257,12 @@ def generate_summary_report(results, output_dir):
     
     if abs(corr) > 0.5 and p_val < 0.05:
         report_lines.append("✓ The trajectory shows GOOD effectiveness in capturing disease progression")
-        report_lines.append("  The pseudotime values correlate well with severity levels.")
     elif abs(corr) > 0.3 and p_val < 0.05:
         report_lines.append("⚠ The trajectory shows MODERATE effectiveness in capturing disease progression")
-        report_lines.append("  There is a detectable but not strong relationship with severity.")
     else:
         report_lines.append("✗ The trajectory shows POOR effectiveness in capturing disease progression")
-        report_lines.append("  The pseudotime values do not correlate well with severity levels.")
     
     report_lines.extend([
-        "",
-        "-"*40,
-        "SEVERITY LEVEL STATISTICS",
-        "-"*40,
-        "Pseudotime statistics by severity level:",
-        "",
-        results['severity_stats'].to_string(),
         "",
         "-"*40,
         "RECOMMENDATIONS",
@@ -302,26 +270,11 @@ def generate_summary_report(results, output_dir):
     ])
     
     if abs(corr) < 0.3:
-        report_lines.extend([
-            "1. Consider revising the trajectory inference method",
-            "2. Check for batch effects or confounding variables",
-            "3. Verify that the chosen root/starting point is appropriate",
-            "4. Consider using alternative dimensionality reduction methods"
-        ])
+        report_lines.append("1. Consider revising the trajectory inference method")
     elif abs(corr) < 0.7:
-        report_lines.extend([
-            "1. The trajectory captures some disease progression patterns",
-            "2. Consider fine-tuning parameters for better resolution",
-            "3. Investigate samples with high residuals for biological insights",
-            "4. May benefit from incorporating additional biological features"
-        ])
+        report_lines.append("1. The trajectory captures some disease progression patterns")
     else:
-        report_lines.extend([
-            "1. The trajectory effectively captures disease progression",
-            "2. Can be used confidently for downstream analyses",
-            "3. Consider validating with independent cohorts",
-            "4. Investigate genes/features driving the trajectory"
-        ])
+        report_lines.append("1. The trajectory effectively captures disease progression")
     
     report_lines.extend([
         "",
@@ -341,8 +294,6 @@ def generate_summary_report(results, output_dir):
     print("\n" + "="*50)
     print("KEY RESULTS:")
     print(f"  Spearman ρ = {corr:.4f} (p = {p_val:.4e})")
-    print(f"  Assessment: {strength.upper()} {direction} correlation")
-    print(f"  Statistical significance: {significance}")
     print("="*50)
 
 
@@ -367,7 +318,6 @@ def run_trajectory_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path)
     os.makedirs(output_dir_path, exist_ok=True)
     output_dir_path = os.path.join(output_dir_path, 'Spearman_Correlation')
     os.makedirs(output_dir_path, exist_ok=True)
-    
     
     print("\n" + "="*50)
     print("STARTING TRAJECTORY CORRELATION ANALYSIS")

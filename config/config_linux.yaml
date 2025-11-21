@@ -1,15 +1,15 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/all"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
 use_gpu: true
@@ -21,35 +21,37 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad"
-rna_sample_meta_path: null
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_50samples.h5ad"
+rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: true
-rna_cell_type_cluster: true
-rna_dimensionality_reduction: true
+rna_preprocessing: false
+rna_cell_type_cluster: false
+rna_dimensionality_reduction: false
+rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_cell.h5ad"
-rna_anndata_sample_path: "/dcl01/hongkai/data/data/hjiang/result/harmony/adata_sample.h5ad"
-rna_pseudobulk_adata_path: null
+rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/preprocess/adata_cell.h5ad"
+rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/preprocess/adata_sample.h5ad"
+rna_pseudobulk_adata_path: '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad'
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-  - "sev.level"
+- "sev.level"
+- "batch"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: null
+rna_batch_col: 'batch'
 rna_markers: null
-rna_cluster_resolution: 0.6
+rna_cluster_resolution: 0.990
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -76,24 +78,23 @@ rna_cell_type_annotation_custom_model_path: null
 
 # RNA Pseudobulk Parameters
 rna_celltype_col: "cell_type"
-rna_pseudobulk_output_dir: "/dcl01/hongkai/data/data/hjiang/result/pseudobulk"
+rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
-rna_n_proportion_components: 10
+rna_n_proportion_components: 5
 rna_harmony_for_proportion: true
 rna_dr_output_dir: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
 rna_trajectory_supervised: true
-rna_n_components_for_cca: 2
+rna_n_components_for_cca: 10
 rna_cca_output_dir: null
 rna_sev_col_cca: "sev.level"
-rna_cca_optimal_cell_resolution: true
-rna_cca_pvalue: false
+rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null
 
@@ -121,13 +122,14 @@ rna_sample_distance_methods:
 rna_verbose_visualization: true
 rna_trajectory_visualization_label: 
   - "sev.level"
+  - "batch"
 rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 3
 rna_plot_dendrogram_flag: true
 rna_plot_umap_by_cell_type_flag: true
-rna_plot_cell_type_proportions_pca_flag: false
-rna_plot_cell_type_expression_umap_flag: false
+rna_plot_cell_type_proportions_pca_flag: true
+rna_plot_cell_type_expression_umap_flag: true
 
 # RNA Cluster Based DEG
 rna_kmeans_based_cluster_flag: true
@@ -301,8 +303,8 @@ multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
-multiomics_run_glue_preprocessing: false
-multiomics_run_glue_training: false
+multiomics_run_glue_preprocessing: true
+multiomics_run_glue_training: true
 multiomics_run_glue_gene_activity: true
 multiomics_run_glue_cell_types: true
 multiomics_run_glue_visualization: false
@@ -310,12 +312,12 @@ multiomics_run_glue_visualization: false
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null
 multiomics_atac_sample_meta_file: null
-multiomics_additional_hvg_file : null
+multiomics_additional_hvg_file : '/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt'
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"
 multiomics_sample_col: "sample"
-multiomics_batch_col: 'modality'
+multiomics_batch_col: null
 multiomics_celltype_col: "cell_type"
 multiomics_verbose: true
 multiomics_use_gpu: true
@@ -338,12 +340,12 @@ multiomics_metadata_sep: ","
 multiomics_consistency_threshold: 0.05
 treat_sample_as_batch: False
 multiomics_save_prefix: "glue"
-multiomics_k_neighbors: 1
+multiomics_k_neighbors: 200
 multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: null
-multiomics_cluster_resolution: 0.8
+multiomics_cluster_resolution: 1.00
 multiomics_use_rep_celltype: "X_glue"
 multiomics_markers: null
 multiomics_method: "average"

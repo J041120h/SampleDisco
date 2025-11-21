@@ -309,7 +309,6 @@ def compute_trajectory_from_embedding(
     
     return results_df
 
-
 # ============================================================================
 # MAIN EXECUTION - MODIFY THESE PATHS FOR YOUR DATA
 # ============================================================================
@@ -330,7 +329,7 @@ if __name__ == "__main__":
 
         # Construct the embedding path for this sample size
         EMBEDDING_CSV_PATH = (
-            f"/dcs07/hongkai/data/harry/result/QOT/{n}_sample/{n}_qot_distance_matrix_mds_10d.csv"
+            f"/dcs07/hongkai/data/harry/result/scPoli/{n}_sample/sample_embeddings_full.csv"
         )
 
         # Run trajectory

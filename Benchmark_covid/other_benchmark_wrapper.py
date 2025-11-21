@@ -109,6 +109,43 @@ class BenchmarkWrapper:
 
         return True
 
+    def _save_summary_csv(self, results: Dict[str, Dict[str, Any]], summary_csv_path: Optional[Path] = None) -> None:
+        """Save a summary of all benchmark results to a CSV file."""
+        if not summary_csv_path:
+            summary_csv_path = self.mode_output_dir / "benchmark_summary.csv"
+
+        # Initialize the CSV if it doesn't exist
+        if not summary_csv_path.exists():
+            header = [
+                "Benchmark", "ARI", "iLISI_norm", "ASW-batch", "Mean Per-Su NN",
+                "Spearman Correlation", "Batch Effect Size", "Severity Effect Size", "Interaction Effect Size"
+            ]
+            summary_df = pd.DataFrame(columns=header)
+            summary_df.to_csv(summary_csv_path, index=False)
+            logger.info(f"Created new summary CSV at: {summary_csv_path}")
+        else:
+            summary_df = pd.read_csv(summary_csv_path)
+
+        # Add the results as a new row for each benchmark
+        for benchmark_name, result in results.items():
+            row = {
+                "Benchmark": benchmark_name,
+                "ARI": result.get("ari", None),
+                "iLISI_norm": result.get("ilisi_norm", None),
+                "ASW-batch": result.get("asw_batch", None),
+                "Mean Per-Su NN": result.get("mean_per_su_nn", None),
+                "Spearman Correlation": result.get("spearman_corr", None),
+                "Batch Effect Size": result.get("batch_effect_size", None),
+                "Severity Effect Size": result.get("severity_effect_size", None),
+                "Interaction Effect Size": result.get("interaction_effect_size", None)
+            }
+            summary_df = summary_df.append(row, ignore_index=True)
+
+        # Save the updated CSV file
+        summary_df.to_csv(summary_csv_path, index=False)
+        logger.info(f"Updated summary CSV at: {summary_csv_path}")
+
+
     def run_embedding_visualization(
         self,
         n_components: int = 2,
@@ -295,8 +332,6 @@ class BenchmarkWrapper:
             print("[DEBUG] ERROR:", e)
             return {"status": "error", "message": str(e)}
 
-
-
     def run_trajectory_anova(self, **kwargs) -> Dict[str, Any]:
         """
         Run trajectory ANOVA analysis.
@@ -419,8 +454,6 @@ class BenchmarkWrapper:
         except Exception as e:
             logger.error(f"Error in trajectory analysis: {e}")
             return {"status": "error", "message": str(e)}
-
-    # ------------------------- customized benchmark (ADDED) -------------------------
 
     def run_pseudotime_embeddings_custom(
         self,
@@ -581,32 +614,6 @@ class BenchmarkWrapper:
         self._save_summary(results)
         return results
 
-    def _save_summary(self, results: Dict[str, Dict[str, Any]]) -> None:
-        """Save a summary of all benchmark results."""
-        summary_path = self.mode_output_dir / "benchmark_summary.txt"
-        with open(summary_path, "w") as f:
-            f.write("Benchmark Summary Report\n")
-            f.write("========================\n\n")
-            f.write(f"Mode label:        {self.mode}\n")
-            f.write(f"Meta CSV:          {self.meta_csv_path}\n")
-            f.write(f"Pseudotime CSV:    {self.pseudotime_csv_path if self.pseudotime_csv_path else '(not provided)'}\n")
-            f.write(f"Embedding CSV:     {self.embedding_csv_path if self.embedding_csv_path else '(not provided)'}\n")
-            f.write(f"Output Directory:  {self.mode_output_dir}\n\n")
-
-            for benchmark_name, result in results.items():
-                f.write(f"\n{benchmark_name.upper()}\n")
-                f.write(f"{'-' * len(benchmark_name)}\n")
-                f.write(f"Status: {result.get('status', 'unknown')}\n")
-                if result.get("status") == "success":
-                    f.write(f"Output: {result.get('output_dir', 'N/A')}\n")
-                else:
-                    f.write(f"Error: {result.get('message', 'Unknown error')}\n")
-
-        logger.info(f"Summary saved to: {summary_path}")
-
-
-# ------------------------- convenience function -------------------------
-
 def run_benchmarks(
     meta_csv_path: str,
     pseudotime_csv_path: Optional[str] = None,
@@ -668,7 +675,6 @@ def run_benchmarks(
         logger.error(f"Failed to initialize BenchmarkWrapper: {e}")
         return {"initialization_error": {"status": "error", "message": str(e)}}
  
-
 # ------------------------- examples -------------------------
 if __name__ == "__main__":
     # Example: run all with explicit paths
@@ -676,11 +682,11 @@ if __name__ == "__main__":
         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
         pseudotime_csv_path='/users/hjiang/r/gedi_out_25/trajectory/pseudotime_results.csv',
         embedding_csv_path="/users/hjiang/r/gedi_out_25/gedi_sample_embedding.csv",
+        summary_csv_path="/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv",
         mode="expression",
         output_base_dir = '/users/hjiang/r/gedi_out_25',
         # per-benchmark overrides (optional)
         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
         batch_removal={"k": 15, "include_self": False},
-        # pseudotime_embeddings_custom={"k_neighbors": 5, "anchor_batch": "Su"},  # optional example
     )

@@ -179,7 +179,7 @@ def find_optimal_cell_resolution_linux(
     tuple: (optimal_resolution, results_dataframe)
     """
     import time
-    
+
     # Helper function for timing
     def time_function(func_name, func, *args, **kwargs):
         start = time.time()
@@ -211,7 +211,6 @@ def find_optimal_cell_resolution_linux(
         print(f"Directory setup: {setup_time:.2f} seconds")
 
     print(f"Starting RNA-seq resolution optimization for {column}...")
-    print(f"Using representation: {use_rep} with {num_PCs} components")
     print(f"Using {n_pcs_for_null} PCs for CCA analysis")
     print(f"Testing resolutions from 0.01 to 1.00...")
     if compute_corrected_pvalues:

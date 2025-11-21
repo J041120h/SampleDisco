@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/long_covid"
+output_dir: "/dcs07/hongkai/data/harry/result/long_covid_batch_removal"
 
 # ========================================
 # PIPELINE CONTROL FLAGS

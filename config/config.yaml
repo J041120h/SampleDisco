@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,7 +21,7 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_50samples.h5ad"
 rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
 rna_output_dir: null
 
@@ -31,26 +31,27 @@ rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: true
+rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/preprocess/adata_cell.h5ad"
-rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/preprocess/adata_sample.h5ad"
-rna_pseudobulk_adata_path: '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad'
+rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/preprocess/adata_cell.h5ad"
+rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/preprocess/adata_sample.h5ad"
+rna_pseudobulk_adata_path: '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad'
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
 - "sev.level"
+- "batch"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: null
+rna_batch_col: 'batch'
 rna_markers: null
-rna_cluster_resolution: 0.180
+rna_cluster_resolution: 0.990
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -121,13 +122,14 @@ rna_sample_distance_methods:
 rna_verbose_visualization: true
 rna_trajectory_visualization_label: 
   - "sev.level"
+  - "batch"
 rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 3
 rna_plot_dendrogram_flag: true
 rna_plot_umap_by_cell_type_flag: true
-rna_plot_cell_type_proportions_pca_flag: false
-rna_plot_cell_type_expression_umap_flag: false
+rna_plot_cell_type_proportions_pca_flag: true
+rna_plot_cell_type_expression_umap_flag: true
 
 # RNA Cluster Based DEG
 rna_kmeans_based_cluster_flag: true

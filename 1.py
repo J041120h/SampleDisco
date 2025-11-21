@@ -41,8 +41,8 @@ def add_raw_counts_layer_by_integer_index(preprocessed_h5ad_path, raw_h5ad_path,
 
 if __name__ == "__main__":
     add_raw_counts_layer_by_integer_index(
-        preprocessed_h5ad_path = "/dcs07/hongkai/data/harry/result/processed_data/400_adata_cell.h5ad",
-        raw_h5ad_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad",
+        preprocessed_h5ad_path = "/dcs07/hongkai/data/harry/result/processed_data/279_adata_cell.h5ad",
+        raw_h5ad_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_Su_subset.h5ad",
         layer_name="raw_counts",
         verbose=True,
     )

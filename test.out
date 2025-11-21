@@ -45,33 +45,1549 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+Using PROFILED GPU version of optimal resolution
+Directory setup: 0.00 seconds
+Starting RNA-seq resolution optimization for X_DR_expression...
+Using representation: X_pca with 20 components
+Using 10 PCs for CCA analysis
+Testing resolutions from 0.01 to 1.00...
+Will compute corrected p-values with 1000 simulations per resolution
+
+=== FIRST PASS: Coarse Search ===
+
+
+Testing resolution: 0.100
+
+  Cell clustering: 5.28 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 5
+  Pseudobulk computation: 49.14 seconds
+  Dimension reduction: 0.19 seconds
+Resolution 0.100: CCA Score = 0.3931 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.1252
+PC1 + PC3: CCA score = 0.1705
+PC1 + PC4: CCA score = 0.1485
+PC1 + PC5: CCA score = 0.1396
+PC1 + PC6: CCA score = 0.2967
+PC1 + PC7: CCA score = 0.1273
+PC1 + PC8: CCA score = 0.1225
+PC1 + PC9: CCA score = 0.1255
+PC1 + PC10: CCA score = 0.1385
+PC2 + PC3: CCA score = 0.1525
+PC2 + PC4: CCA score = 0.1275
+PC2 + PC5: CCA score = 0.1170
+PC2 + PC6: CCA score = 0.2868
+PC2 + PC7: CCA score = 0.1020
+PC2 + PC8: CCA score = 0.0959
+PC2 + PC9: CCA score = 0.0997
+PC2 + PC10: CCA score = 0.1156
+PC3 + PC4: CCA score = 0.1722
+PC3 + PC5: CCA score = 0.1646
+PC3 + PC6: CCA score = 0.3092
+PC3 + PC7: CCA score = 0.1543
+PC3 + PC8: CCA score = 0.1503
+PC3 + PC9: CCA score = 0.1528
+PC3 + PC10: CCA score = 0.1636
+PC4 + PC5: CCA score = 0.1417
+PC4 + PC6: CCA score = 0.2977
+PC4 + PC7: CCA score = 0.1296
+PC4 + PC8: CCA score = 0.1249
+PC4 + PC9: CCA score = 0.1278
+PC4 + PC10: CCA score = 0.1406
+PC5 + PC6: CCA score = 0.2933
+PC5 + PC7: CCA score = 0.1192
+PC5 + PC8: CCA score = 0.1141
+PC5 + PC9: CCA score = 0.1173
+PC5 + PC10: CCA score = 0.1311
+PC6 + PC7: CCA score = 0.2877
+PC6 + PC8: CCA score = 0.2856
+PC6 + PC9: CCA score = 0.2869
+PC6 + PC10: CCA score = 0.2928
+PC7 + PC8: CCA score = 0.0986
+PC7 + PC9: CCA score = 0.1023
+PC7 + PC10: CCA score = 0.1179
+PC8 + PC9: CCA score = 0.0963
+PC8 + PC10: CCA score = 0.1127
+PC9 + PC10: CCA score = 0.1159
+Best combination: PC3 + PC6 with score 0.3092
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.100/cca_plot_res_0.100.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.100/cca_plot_res_0.100_contributions.png
+Created CCA visualization plot using PC3 + PC6 (viz score: 0.3092)
+  Null distribution (1000 sims): 1.23 seconds
+Resolution 0.100: Standard p-value = 0.7750
+TOTAL for resolution 0.100: 56.66 seconds
+
+
+Testing resolution: 0.200
+
+  Cell clustering: 4.57 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 5
+  Pseudobulk computation: 48.72 seconds
+  Dimension reduction: 0.01 seconds
+Resolution 0.200: CCA Score = 0.4661 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.1699
+PC1 + PC3: CCA score = 0.2699
+PC1 + PC4: CCA score = 0.1707
+PC1 + PC5: CCA score = 0.2533
+PC1 + PC6: CCA score = 0.1719
+PC1 + PC7: CCA score = 0.2655
+PC1 + PC8: CCA score = 0.1806
+PC1 + PC9: CCA score = 0.1916
+PC1 + PC10: CCA score = 0.2848
+PC2 + PC3: CCA score = 0.2113
+PC2 + PC4: CCA score = 0.0306
+PC2 + PC5: CCA score = 0.1897
+PC2 + PC6: CCA score = 0.0370
+PC2 + PC7: CCA score = 0.2057
+PC2 + PC8: CCA score = 0.0665
+PC2 + PC9: CCA score = 0.0922
+PC2 + PC10: CCA score = 0.2300
+PC3 + PC4: CCA score = 0.2119
+PC3 + PC5: CCA score = 0.2828
+PC3 + PC6: CCA score = 0.2129
+PC3 + PC7: CCA score = 0.2937
+PC3 + PC8: CCA score = 0.2200
+PC3 + PC9: CCA score = 0.2291
+PC3 + PC10: CCA score = 0.3113
+PC4 + PC5: CCA score = 0.1903
+PC4 + PC6: CCA score = 0.0402
+PC4 + PC7: CCA score = 0.2063
+PC4 + PC8: CCA score = 0.0683
+PC4 + PC9: CCA score = 0.0935
+PC4 + PC10: CCA score = 0.2305
+PC5 + PC6: CCA score = 0.1915
+PC5 + PC7: CCA score = 0.2786
+PC5 + PC8: CCA score = 0.1993
+PC5 + PC9: CCA score = 0.2093
+PC5 + PC10: CCA score = 0.2970
+PC6 + PC7: CCA score = 0.2073
+PC6 + PC8: CCA score = 0.0715
+PC6 + PC9: CCA score = 0.0958
+PC6 + PC10: CCA score = 0.2315
+PC7 + PC8: CCA score = 0.2146
+PC7 + PC9: CCA score = 0.2239
+PC7 + PC10: CCA score = 0.3074
+PC8 + PC9: CCA score = 0.1106
+PC8 + PC10: CCA score = 0.2380
+PC9 + PC10: CCA score = 0.2464
+Best combination: PC3 + PC10 with score 0.3113
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.200/cca_plot_res_0.200.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.200/cca_plot_res_0.200_contributions.png
+Created CCA visualization plot using PC3 + PC10 (viz score: 0.3113)
+  Null distribution (1000 sims): 1.21 seconds
+Resolution 0.200: Standard p-value = 0.4310
+TOTAL for resolution 0.200: 55.27 seconds
+
+
+Testing resolution: 0.300
+
+  Cell clustering: 4.52 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 8
+  Pseudobulk computation: 75.67 seconds
+  Dimension reduction: 0.07 seconds
+Resolution 0.300: CCA Score = 0.5450 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.1588
+PC1 + PC3: CCA score = 0.1495
+PC1 + PC4: CCA score = 0.2921
+PC1 + PC5: CCA score = 0.2654
+PC1 + PC6: CCA score = 0.3135
+PC1 + PC7: CCA score = 0.1549
+PC1 + PC8: CCA score = 0.1186
+PC1 + PC9: CCA score = 0.1141
+PC1 + PC10: CCA score = 0.2040
+PC2 + PC3: CCA score = 0.1525
+PC2 + PC4: CCA score = 0.2937
+PC2 + PC5: CCA score = 0.2671
+PC2 + PC6: CCA score = 0.3149
+PC2 + PC7: CCA score = 0.1578
+PC2 + PC8: CCA score = 0.1224
+PC2 + PC9: CCA score = 0.1181
+PC2 + PC10: CCA score = 0.2062
+PC3 + PC4: CCA score = 0.2887
+PC3 + PC5: CCA score = 0.2616
+PC3 + PC6: CCA score = 0.3103
+PC3 + PC7: CCA score = 0.1484
+PC3 + PC8: CCA score = 0.1101
+PC3 + PC9: CCA score = 0.1052
+PC3 + PC10: CCA score = 0.1992
+PC4 + PC5: CCA score = 0.3626
+PC4 + PC6: CCA score = 0.3991
+PC4 + PC7: CCA score = 0.2916
+PC4 + PC8: CCA score = 0.2741
+PC4 + PC9: CCA score = 0.2721
+PC4 + PC10: CCA score = 0.3204
+PC5 + PC6: CCA score = 0.3800
+PC5 + PC7: CCA score = 0.2648
+PC5 + PC8: CCA score = 0.2453
+PC5 + PC9: CCA score = 0.2432
+PC5 + PC10: CCA score = 0.2962
+PC6 + PC7: CCA score = 0.3130
+PC6 + PC8: CCA score = 0.2967
+PC6 + PC9: CCA score = 0.2949
+PC6 + PC10: CCA score = 0.3400
+PC7 + PC8: CCA score = 0.1173
+PC7 + PC9: CCA score = 0.1128
+PC7 + PC10: CCA score = 0.2033
+PC8 + PC9: CCA score = 0.0529
+PC8 + PC10: CCA score = 0.1772
+PC9 + PC10: CCA score = 0.1742
+Best combination: PC4 + PC6 with score 0.3991
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.300/cca_plot_res_0.300.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.300/cca_plot_res_0.300_contributions.png
+Created CCA visualization plot using PC4 + PC6 (viz score: 0.3991)
+  Null distribution (1000 sims): 1.22 seconds
+Resolution 0.300: Standard p-value = 0.1070
+TOTAL for resolution 0.300: 82.22 seconds
+
+
+Testing resolution: 0.400
+
+  Cell clustering: 4.57 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 13
+  Pseudobulk computation: 101.37 seconds
+  Dimension reduction: 0.08 seconds
+Resolution 0.400: CCA Score = 0.6174 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2747
+PC1 + PC3: CCA score = 0.3616
+PC1 + PC4: CCA score = 0.3211
+PC1 + PC5: CCA score = 0.2741
+PC1 + PC6: CCA score = 0.4129
+PC1 + PC7: CCA score = 0.3617
+PC1 + PC8: CCA score = 0.2625
+PC1 + PC9: CCA score = 0.2697
+PC1 + PC10: CCA score = 0.3063
+PC2 + PC3: CCA score = 0.2668
+PC2 + PC4: CCA score = 0.2086
+PC2 + PC5: CCA score = 0.1248
+PC2 + PC6: CCA score = 0.3331
+PC2 + PC7: CCA score = 0.2669
+PC2 + PC8: CCA score = 0.0965
+PC2 + PC9: CCA score = 0.1148
+PC2 + PC10: CCA score = 0.1850
+PC3 + PC4: CCA score = 0.3144
+PC3 + PC5: CCA score = 0.2663
+PC3 + PC6: CCA score = 0.4078
+PC3 + PC7: CCA score = 0.3558
+PC3 + PC8: CCA score = 0.2542
+PC3 + PC9: CCA score = 0.2617
+PC3 + PC10: CCA score = 0.2993
+PC4 + PC5: CCA score = 0.2079
+PC4 + PC6: CCA score = 0.3723
+PC4 + PC7: CCA score = 0.3144
+PC4 + PC8: CCA score = 0.1922
+PC4 + PC9: CCA score = 0.2020
+PC4 + PC10: CCA score = 0.2487
+PC5 + PC6: CCA score = 0.3326
+PC5 + PC7: CCA score = 0.2663
+PC5 + PC8: CCA score = 0.0949
+PC5 + PC9: CCA score = 0.1135
+PC5 + PC10: CCA score = 0.1842
+PC6 + PC7: CCA score = 0.4078
+PC6 + PC8: CCA score = 0.3231
+PC6 + PC9: CCA score = 0.3290
+PC6 + PC10: CCA score = 0.3596
+PC7 + PC8: CCA score = 0.2543
+PC7 + PC9: CCA score = 0.2618
+PC7 + PC10: CCA score = 0.2993
+PC8 + PC9: CCA score = 0.0814
+PC8 + PC10: CCA score = 0.1663
+PC9 + PC10: CCA score = 0.1776
+Best combination: PC1 + PC6 with score 0.4129
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.400/cca_plot_res_0.400.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.400/cca_plot_res_0.400_contributions.png
+Created CCA visualization plot using PC1 + PC6 (viz score: 0.4129)
+  Null distribution (1000 sims): 1.22 seconds
+Resolution 0.400: Standard p-value = 0.0050
+TOTAL for resolution 0.400: 108.00 seconds
+
+
+Testing resolution: 0.500
+
+  Cell clustering: 4.73 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 11
+  Pseudobulk computation: 93.12 seconds
+  Dimension reduction: 0.08 seconds
+Resolution 0.500: CCA Score = 0.5331 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2529
+PC1 + PC3: CCA score = 0.1719
+PC1 + PC4: CCA score = 0.2177
+PC1 + PC5: CCA score = 0.1883
+PC1 + PC6: CCA score = 0.3291
+PC1 + PC7: CCA score = 0.2861
+PC1 + PC8: CCA score = 0.1524
+PC1 + PC9: CCA score = 0.2265
+PC1 + PC10: CCA score = 0.1520
+PC2 + PC3: CCA score = 0.2203
+PC2 + PC4: CCA score = 0.2576
+PC2 + PC5: CCA score = 0.2333
+PC2 + PC6: CCA score = 0.3568
+PC2 + PC7: CCA score = 0.3175
+PC2 + PC8: CCA score = 0.2054
+PC2 + PC9: CCA score = 0.2651
+PC2 + PC10: CCA score = 0.2051
+PC3 + PC4: CCA score = 0.1788
+PC3 + PC5: CCA score = 0.1415
+PC3 + PC6: CCA score = 0.3048
+PC3 + PC7: CCA score = 0.2577
+PC3 + PC8: CCA score = 0.0883
+PC3 + PC9: CCA score = 0.1894
+PC3 + PC10: CCA score = 0.0876
+PC4 + PC5: CCA score = 0.1945
+PC4 + PC6: CCA score = 0.3327
+PC4 + PC7: CCA score = 0.2902
+PC4 + PC8: CCA score = 0.1601
+PC4 + PC9: CCA score = 0.2317
+PC4 + PC10: CCA score = 0.1597
+PC5 + PC6: CCA score = 0.3143
+PC5 + PC7: CCA score = 0.2689
+PC5 + PC8: CCA score = 0.1170
+PC5 + PC9: CCA score = 0.2044
+PC5 + PC10: CCA score = 0.1164
+PC6 + PC7: CCA score = 0.3810
+PC6 + PC8: CCA score = 0.2942
+PC6 + PC9: CCA score = 0.3386
+PC6 + PC10: CCA score = 0.2940
+PC7 + PC8: CCA score = 0.2451
+PC7 + PC9: CCA score = 0.2969
+PC7 + PC10: CCA score = 0.2448
+PC8 + PC9: CCA score = 0.1719
+PC8 + PC10: CCA score = 0.0364
+PC9 + PC10: CCA score = 0.1715
+Best combination: PC6 + PC7 with score 0.3810
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.500/cca_plot_res_0.500.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.500/cca_plot_res_0.500_contributions.png
+Created CCA visualization plot using PC6 + PC7 (viz score: 0.3810)
+  Null distribution (1000 sims): 1.22 seconds
+Resolution 0.500: Standard p-value = 0.1340
+TOTAL for resolution 0.500: 99.99 seconds
+
+
+Testing resolution: 0.600
+
+  Cell clustering: 4.90 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 13
+  Pseudobulk computation: 111.22 seconds
+  Dimension reduction: 0.07 seconds
+Resolution 0.600: CCA Score = 0.4548 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2937
+PC1 + PC3: CCA score = 0.3460
+PC1 + PC4: CCA score = 0.2924
+PC1 + PC5: CCA score = 0.3645
+PC1 + PC6: CCA score = 0.2947
+PC1 + PC7: CCA score = 0.2949
+PC1 + PC8: CCA score = 0.3001
+PC1 + PC9: CCA score = 0.3132
+PC1 + PC10: CCA score = 0.3187
+PC2 + PC3: CCA score = 0.1890
+PC2 + PC4: CCA score = 0.0388
+PC2 + PC5: CCA score = 0.2211
+PC2 + PC6: CCA score = 0.0534
+PC2 + PC7: CCA score = 0.0547
+PC2 + PC8: CCA score = 0.0779
+PC2 + PC9: CCA score = 0.1187
+PC2 + PC10: CCA score = 0.1327
+PC3 + PC4: CCA score = 0.1870
+PC3 + PC5: CCA score = 0.2869
+PC3 + PC6: CCA score = 0.1905
+PC3 + PC7: CCA score = 0.1909
+PC3 + PC8: CCA score = 0.1988
+PC3 + PC9: CCA score = 0.2181
+PC3 + PC10: CCA score = 0.2260
+PC4 + PC5: CCA score = 0.2193
+PC4 + PC6: CCA score = 0.0456
+PC4 + PC7: CCA score = 0.0472
+PC4 + PC8: CCA score = 0.0728
+PC4 + PC9: CCA score = 0.1155
+PC4 + PC10: CCA score = 0.1297
+PC5 + PC6: CCA score = 0.2224
+PC5 + PC7: CCA score = 0.2227
+PC5 + PC8: CCA score = 0.2295
+PC5 + PC9: CCA score = 0.2464
+PC5 + PC10: CCA score = 0.2534
+PC6 + PC7: CCA score = 0.0597
+PC6 + PC8: CCA score = 0.0815
+PC6 + PC9: CCA score = 0.1211
+PC6 + PC10: CCA score = 0.1348
+PC7 + PC8: CCA score = 0.0823
+PC7 + PC9: CCA score = 0.1217
+PC7 + PC10: CCA score = 0.1353
+PC8 + PC9: CCA score = 0.1337
+PC8 + PC10: CCA score = 0.1462
+PC9 + PC10: CCA score = 0.1715
+Best combination: PC1 + PC5 with score 0.3645
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.600/cca_plot_res_0.600.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.600/cca_plot_res_0.600_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.3645)
+  Null distribution (1000 sims): 1.21 seconds
+Resolution 0.600: Standard p-value = 0.4700
+TOTAL for resolution 0.600: 118.14 seconds
+
+
+Testing resolution: 0.700
+
+  Cell clustering: 4.94 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 14
+  Pseudobulk computation: 109.59 seconds
+  Dimension reduction: 0.14 seconds
+Resolution 0.700: CCA Score = 0.4926 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2552
+PC1 + PC3: CCA score = 0.3611
+PC1 + PC4: CCA score = 0.1562
+PC1 + PC5: CCA score = 0.2040
+PC1 + PC6: CCA score = 0.1701
+PC1 + PC7: CCA score = 0.2199
+PC1 + PC8: CCA score = 0.1942
+PC1 + PC9: CCA score = 0.1729
+PC1 + PC10: CCA score = 0.1705
+PC2 + PC3: CCA score = 0.3839
+PC2 + PC4: CCA score = 0.2033
+PC2 + PC5: CCA score = 0.2420
+PC2 + PC6: CCA score = 0.2142
+PC2 + PC7: CCA score = 0.2555
+PC2 + PC8: CCA score = 0.2337
+PC2 + PC9: CCA score = 0.2164
+PC2 + PC10: CCA score = 0.2144
+PC3 + PC4: CCA score = 0.3265
+PC3 + PC5: CCA score = 0.3519
+PC3 + PC6: CCA score = 0.3334
+PC3 + PC7: CCA score = 0.3613
+PC3 + PC8: CCA score = 0.3463
+PC3 + PC9: CCA score = 0.3348
+PC3 + PC10: CCA score = 0.3336
+PC4 + PC5: CCA score = 0.1335
+PC4 + PC6: CCA score = 0.0716
+PC4 + PC7: CCA score = 0.1567
+PC4 + PC8: CCA score = 0.1178
+PC4 + PC9: CCA score = 0.0781
+PC4 + PC10: CCA score = 0.0724
+PC5 + PC6: CCA score = 0.1495
+PC5 + PC7: CCA score = 0.2044
+PC5 + PC8: CCA score = 0.1764
+PC5 + PC9: CCA score = 0.1527
+PC5 + PC10: CCA score = 0.1499
+PC6 + PC7: CCA score = 0.1705
+PC6 + PC8: CCA score = 0.1357
+PC6 + PC9: CCA score = 0.1031
+PC6 + PC10: CCA score = 0.0989
+PC7 + PC8: CCA score = 0.1945
+PC7 + PC9: CCA score = 0.1733
+PC7 + PC10: CCA score = 0.1709
+PC8 + PC9: CCA score = 0.1392
+PC8 + PC10: CCA score = 0.1362
+PC9 + PC10: CCA score = 0.1036
+Best combination: PC2 + PC3 with score 0.3839
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.700/cca_plot_res_0.700.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.700/cca_plot_res_0.700_contributions.png
+Created CCA visualization plot using PC2 + PC3 (viz score: 0.3839)
+  Null distribution (1000 sims): 1.21 seconds
+Resolution 0.700: Standard p-value = 0.2910
+TOTAL for resolution 0.700: 116.63 seconds
+
+
+Testing resolution: 0.800
+
+  Cell clustering: 4.80 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 16
+  Pseudobulk computation: 130.28 seconds
+  Dimension reduction: 0.10 seconds
+Resolution 0.800: CCA Score = 0.5749 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2379
+PC1 + PC3: CCA score = 0.2228
+PC1 + PC4: CCA score = 0.1942
+PC1 + PC5: CCA score = 0.3028
+PC1 + PC6: CCA score = 0.1145
+PC1 + PC7: CCA score = 0.2792
+PC1 + PC8: CCA score = 0.1372
+PC1 + PC9: CCA score = 0.1581
+PC1 + PC10: CCA score = 0.1972
+PC2 + PC3: CCA score = 0.2941
+PC2 + PC4: CCA score = 0.2731
+PC2 + PC5: CCA score = 0.3585
+PC2 + PC6: CCA score = 0.2236
+PC2 + PC7: CCA score = 0.3389
+PC2 + PC8: CCA score = 0.2360
+PC2 + PC9: CCA score = 0.2487
+PC2 + PC10: CCA score = 0.2752
+PC3 + PC4: CCA score = 0.2600
+PC3 + PC5: CCA score = 0.3487
+PC3 + PC6: CCA score = 0.2074
+PC3 + PC7: CCA score = 0.3285
+PC3 + PC8: CCA score = 0.2208
+PC3 + PC9: CCA score = 0.2343
+PC3 + PC10: CCA score = 0.2623
+PC4 + PC5: CCA score = 0.3311
+PC4 + PC6: CCA score = 0.1763
+PC4 + PC7: CCA score = 0.3098
+PC4 + PC8: CCA score = 0.1918
+PC4 + PC9: CCA score = 0.2073
+PC4 + PC10: CCA score = 0.2384
+PC5 + PC6: CCA score = 0.2916
+PC5 + PC7: CCA score = 0.3872
+PC5 + PC8: CCA score = 0.3013
+PC5 + PC9: CCA score = 0.3113
+PC5 + PC10: CCA score = 0.3329
+PC6 + PC7: CCA score = 0.2671
+PC6 + PC8: CCA score = 0.1104
+PC6 + PC9: CCA score = 0.1355
+PC6 + PC10: CCA score = 0.1796
+PC7 + PC8: CCA score = 0.2776
+PC7 + PC9: CCA score = 0.2885
+PC7 + PC10: CCA score = 0.3116
+PC8 + PC9: CCA score = 0.1552
+PC8 + PC10: CCA score = 0.1949
+PC9 + PC10: CCA score = 0.2101
+Best combination: PC5 + PC7 with score 0.3872
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.800/cca_plot_res_0.800.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.800/cca_plot_res_0.800_contributions.png
+Created CCA visualization plot using PC5 + PC7 (viz score: 0.3872)
+  Null distribution (1000 sims): 1.23 seconds
+Resolution 0.800: Standard p-value = 0.0320
+TOTAL for resolution 0.800: 137.15 seconds
+
+
+Testing resolution: 0.900
+
+  Cell clustering: 4.79 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 15
+  Pseudobulk computation: 120.61 seconds
+  Dimension reduction: 0.08 seconds
+Resolution 0.900: CCA Score = 0.5721 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2426
+PC1 + PC3: CCA score = 0.1433
+PC1 + PC4: CCA score = 0.3435
+PC1 + PC5: CCA score = 0.3213
+PC1 + PC6: CCA score = 0.1788
+PC1 + PC7: CCA score = 0.2743
+PC1 + PC8: CCA score = 0.1562
+PC1 + PC9: CCA score = 0.1489
+PC1 + PC10: CCA score = 0.1828
+PC2 + PC3: CCA score = 0.1981
+PC2 + PC4: CCA score = 0.3697
+PC2 + PC5: CCA score = 0.3492
+PC2 + PC6: CCA score = 0.2251
+PC2 + PC7: CCA score = 0.3065
+PC2 + PC8: CCA score = 0.2077
+PC2 + PC9: CCA score = 0.2022
+PC2 + PC10: CCA score = 0.2284
+PC3 + PC4: CCA score = 0.3137
+PC3 + PC5: CCA score = 0.2892
+PC3 + PC6: CCA score = 0.1112
+PC3 + PC7: CCA score = 0.2359
+PC3 + PC8: CCA score = 0.0695
+PC3 + PC9: CCA score = 0.0507
+PC3 + PC10: CCA score = 0.1176
+PC4 + PC5: CCA score = 0.4256
+PC4 + PC6: CCA score = 0.3314
+PC4 + PC7: CCA score = 0.3913
+PC4 + PC8: CCA score = 0.3198
+PC4 + PC9: CCA score = 0.3163
+PC4 + PC10: CCA score = 0.3336
+PC5 + PC6: CCA score = 0.3083
+PC5 + PC7: CCA score = 0.3720
+PC5 + PC8: CCA score = 0.2958
+PC5 + PC9: CCA score = 0.2920
+PC5 + PC10: CCA score = 0.3107
+PC6 + PC7: CCA score = 0.2590
+PC6 + PC8: CCA score = 0.1274
+PC6 + PC9: CCA score = 0.1183
+PC6 + PC10: CCA score = 0.1589
+PC7 + PC8: CCA score = 0.2440
+PC7 + PC9: CCA score = 0.2393
+PC7 + PC10: CCA score = 0.2618
+PC8 + PC9: CCA score = 0.0803
+PC8 + PC10: CCA score = 0.1331
+PC9 + PC10: CCA score = 0.1243
+Best combination: PC4 + PC5 with score 0.4256
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.900/cca_plot_res_0.900.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.900/cca_plot_res_0.900_contributions.png
+Created CCA visualization plot using PC4 + PC5 (viz score: 0.4256)
+  Null distribution (1000 sims): 1.23 seconds
+Resolution 0.900: Standard p-value = 0.0310
+TOTAL for resolution 0.900: 127.46 seconds
+
+
+Testing resolution: 1.000
+
+  Cell clustering: 4.84 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 17
+  Pseudobulk computation: 149.16 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 1.000: CCA Score = 0.4643 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2390
+PC1 + PC3: CCA score = 0.1693
+PC1 + PC4: CCA score = 0.1274
+PC1 + PC5: CCA score = 0.2812
+PC1 + PC6: CCA score = 0.2272
+PC1 + PC7: CCA score = 0.1979
+PC1 + PC8: CCA score = 0.1260
+PC1 + PC9: CCA score = 0.1845
+PC1 + PC10: CCA score = 0.1260
+PC2 + PC3: CCA score = 0.2351
+PC2 + PC4: CCA score = 0.2070
+PC2 + PC5: CCA score = 0.3251
+PC2 + PC6: CCA score = 0.2797
+PC2 + PC7: CCA score = 0.2565
+PC2 + PC8: CCA score = 0.2061
+PC2 + PC9: CCA score = 0.2463
+PC2 + PC10: CCA score = 0.2061
+PC3 + PC4: CCA score = 0.1199
+PC3 + PC5: CCA score = 0.2779
+PC3 + PC6: CCA score = 0.2230
+PC3 + PC7: CCA score = 0.1932
+PC3 + PC8: CCA score = 0.1184
+PC3 + PC9: CCA score = 0.1794
+PC3 + PC10: CCA score = 0.1184
+PC4 + PC5: CCA score = 0.2545
+PC4 + PC6: CCA score = 0.1932
+PC4 + PC7: CCA score = 0.1578
+PC4 + PC8: CCA score = 0.0400
+PC4 + PC9: CCA score = 0.1406
+PC4 + PC10: CCA score = 0.0400
+PC5 + PC6: CCA score = 0.3165
+PC5 + PC7: CCA score = 0.2962
+PC5 + PC8: CCA score = 0.2538
+PC5 + PC9: CCA score = 0.2874
+PC5 + PC10: CCA score = 0.2538
+PC6 + PC7: CCA score = 0.2455
+PC6 + PC8: CCA score = 0.1923
+PC6 + PC9: CCA score = 0.2348
+PC6 + PC10: CCA score = 0.1923
+PC7 + PC8: CCA score = 0.1566
+PC7 + PC9: CCA score = 0.2066
+PC7 + PC10: CCA score = 0.1566
+PC8 + PC9: CCA score = 0.1393
+PC8 + PC10: CCA score = 0.0353
+PC9 + PC10: CCA score = 0.1393
+Best combination: PC2 + PC5 with score 0.3251
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_1.000/cca_plot_res_1.000.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_1.000/cca_plot_res_1.000_contributions.png
+Created CCA visualization plot using PC2 + PC5 (viz score: 0.3251)
+  Null distribution (1000 sims): 1.20 seconds
+Resolution 1.000: Standard p-value = 0.4460
+TOTAL for resolution 1.000: 156.07 seconds
+
+COARSE SEARCH TOTAL: 1057.60 seconds
+
+Best resolution from first pass: 0.40
+Best CCA score: 0.6174
+
+=== SECOND PASS: Fine-tuned Search ===
+Fine-tuning search from 0.38 to 0.42...
+
+
+Testing resolution: 0.380
+
+  Cell clustering: 4.69 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 11
+  Pseudobulk computation: 94.47 seconds
+  Dimension reduction: 0.07 seconds
+Resolution 0.380: CCA Score = 0.5218 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2102
+PC1 + PC3: CCA score = 0.3125
+PC1 + PC4: CCA score = 0.1253
+PC1 + PC5: CCA score = 0.1435
+PC1 + PC6: CCA score = 0.2467
+PC1 + PC7: CCA score = 0.0847
+PC1 + PC8: CCA score = 0.1604
+PC1 + PC9: CCA score = 0.0888
+PC1 + PC10: CCA score = 0.2232
+PC2 + PC3: CCA score = 0.3571
+PC2 + PC4: CCA score = 0.2134
+PC2 + PC5: CCA score = 0.2246
+PC2 + PC6: CCA score = 0.3012
+PC2 + PC7: CCA score = 0.1924
+PC2 + PC8: CCA score = 0.2357
+PC2 + PC9: CCA score = 0.1943
+PC2 + PC10: CCA score = 0.2823
+PC3 + PC4: CCA score = 0.3147
+PC3 + PC5: CCA score = 0.3223
+PC3 + PC6: CCA score = 0.3797
+PC3 + PC7: CCA score = 0.3008
+PC3 + PC8: CCA score = 0.3302
+PC3 + PC9: CCA score = 0.3020
+PC3 + PC10: CCA score = 0.3649
+PC4 + PC5: CCA score = 0.1482
+PC4 + PC6: CCA score = 0.2495
+PC4 + PC7: CCA score = 0.0923
+PC4 + PC8: CCA score = 0.1646
+PC4 + PC9: CCA score = 0.0962
+PC4 + PC10: CCA score = 0.2263
+PC5 + PC6: CCA score = 0.2591
+PC5 + PC7: CCA score = 0.1159
+PC5 + PC8: CCA score = 0.1788
+PC5 + PC9: CCA score = 0.1189
+PC5 + PC10: CCA score = 0.2368
+PC6 + PC7: CCA score = 0.2317
+PC6 + PC8: CCA score = 0.2688
+PC6 + PC9: CCA score = 0.2333
+PC6 + PC10: CCA score = 0.3104
+PC7 + PC8: CCA score = 0.1362
+PC7 + PC9: CCA score = 0.0268
+PC7 + PC10: CCA score = 0.2065
+PC8 + PC9: CCA score = 0.1388
+PC8 + PC10: CCA score = 0.2474
+PC9 + PC10: CCA score = 0.2083
+Best combination: PC3 + PC6 with score 0.3797
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.380/cca_plot_res_0.380.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.380/cca_plot_res_0.380_contributions.png
+Created CCA visualization plot using PC3 + PC6 (viz score: 0.3797)
+  Null distribution (1000 sims): 1.22 seconds
+Resolution 0.380: Standard p-value = 0.1650
+TOTAL for resolution 0.380: 101.22 seconds
+
+
+Testing resolution: 0.390
+
+  Cell clustering: 4.72 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 11
+  Pseudobulk computation: 92.76 seconds
+  Dimension reduction: 0.11 seconds
+Resolution 0.390: CCA Score = 0.4814 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2071
+PC1 + PC3: CCA score = 0.3290
+PC1 + PC4: CCA score = 0.1937
+PC1 + PC5: CCA score = 0.2082
+PC1 + PC6: CCA score = 0.2583
+PC1 + PC7: CCA score = 0.1524
+PC1 + PC8: CCA score = 0.1570
+PC1 + PC9: CCA score = 0.1696
+PC1 + PC10: CCA score = 0.1621
+PC2 + PC3: CCA score = 0.3296
+PC2 + PC4: CCA score = 0.1948
+PC2 + PC5: CCA score = 0.2092
+PC2 + PC6: CCA score = 0.2591
+PC2 + PC7: CCA score = 0.1538
+PC2 + PC8: CCA score = 0.1584
+PC2 + PC9: CCA score = 0.1708
+PC2 + PC10: CCA score = 0.1635
+PC3 + PC4: CCA score = 0.3214
+PC3 + PC5: CCA score = 0.3303
+PC3 + PC6: CCA score = 0.3640
+PC3 + PC7: CCA score = 0.2983
+PC3 + PC8: CCA score = 0.3007
+PC3 + PC9: CCA score = 0.3074
+PC3 + PC10: CCA score = 0.3034
+PC4 + PC5: CCA score = 0.1960
+PC4 + PC6: CCA score = 0.2485
+PC4 + PC7: CCA score = 0.1353
+PC4 + PC8: CCA score = 0.1404
+PC4 + PC9: CCA score = 0.1543
+PC4 + PC10: CCA score = 0.1461
+PC5 + PC6: CCA score = 0.2600
+PC5 + PC7: CCA score = 0.1554
+PC5 + PC8: CCA score = 0.1598
+PC5 + PC9: CCA score = 0.1722
+PC5 + PC10: CCA score = 0.1649
+PC6 + PC7: CCA score = 0.2179
+PC6 + PC8: CCA score = 0.2211
+PC6 + PC9: CCA score = 0.2302
+PC6 + PC10: CCA score = 0.2248
+PC7 + PC8: CCA score = 0.0737
+PC7 + PC9: CCA score = 0.0976
+PC7 + PC10: CCA score = 0.0841
+PC8 + PC9: CCA score = 0.1046
+PC8 + PC10: CCA score = 0.0921
+PC9 + PC10: CCA score = 0.1122
+Best combination: PC3 + PC6 with score 0.3640
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.390/cca_plot_res_0.390.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.390/cca_plot_res_0.390_contributions.png
+Created CCA visualization plot using PC3 + PC6 (viz score: 0.3640)
+  Null distribution (1000 sims): 1.21 seconds
+Resolution 0.390: Standard p-value = 0.3250
+TOTAL for resolution 0.390: 99.58 seconds
+
+
+Testing resolution: 0.410
+
+  Cell clustering: 4.81 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 11
+  Pseudobulk computation: 102.36 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 0.410: CCA Score = 0.4254 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2158
+PC1 + PC3: CCA score = 0.2490
+PC1 + PC4: CCA score = 0.2163
+PC1 + PC5: CCA score = 0.2449
+PC1 + PC6: CCA score = 0.2651
+PC1 + PC7: CCA score = 0.3368
+PC1 + PC8: CCA score = 0.2155
+PC1 + PC9: CCA score = 0.2461
+PC1 + PC10: CCA score = 0.2157
+PC2 + PC3: CCA score = 0.1253
+PC2 + PC4: CCA score = 0.0210
+PC2 + PC5: CCA score = 0.1168
+PC2 + PC6: CCA score = 0.1548
+PC2 + PC7: CCA score = 0.2590
+PC2 + PC8: CCA score = 0.0111
+PC2 + PC9: CCA score = 0.1193
+PC2 + PC10: CCA score = 0.0133
+PC3 + PC4: CCA score = 0.1260
+PC3 + PC5: CCA score = 0.1706
+PC3 + PC6: CCA score = 0.1985
+PC3 + PC7: CCA score = 0.2873
+PC3 + PC8: CCA score = 0.1248
+PC3 + PC9: CCA score = 0.1722
+PC3 + PC10: CCA score = 0.1250
+PC4 + PC5: CCA score = 0.1177
+PC4 + PC6: CCA score = 0.1554
+PC4 + PC7: CCA score = 0.2594
+PC4 + PC8: CCA score = 0.0178
+PC4 + PC9: CCA score = 0.1201
+PC4 + PC10: CCA score = 0.0193
+PC5 + PC6: CCA score = 0.1933
+PC5 + PC7: CCA score = 0.2837
+PC5 + PC8: CCA score = 0.1163
+PC5 + PC9: CCA score = 0.1662
+PC5 + PC10: CCA score = 0.1165
+PC6 + PC7: CCA score = 0.3013
+PC6 + PC8: CCA score = 0.1544
+PC6 + PC9: CCA score = 0.1948
+PC6 + PC10: CCA score = 0.1546
+PC7 + PC8: CCA score = 0.2588
+PC7 + PC9: CCA score = 0.2847
+PC7 + PC10: CCA score = 0.2589
+PC8 + PC9: CCA score = 0.1187
+PC8 + PC10: CCA score = 0.0074
+PC9 + PC10: CCA score = 0.1190
+Best combination: PC1 + PC7 with score 0.3368
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.410/cca_plot_res_0.410.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.410/cca_plot_res_0.410_contributions.png
+Created CCA visualization plot using PC1 + PC7 (viz score: 0.3368)
+  Null distribution (1000 sims): 1.21 seconds
+Resolution 0.410: Standard p-value = 0.6200
+TOTAL for resolution 0.410: 109.23 seconds
+
+
+Testing resolution: 0.420
+
+  Cell clustering: 4.58 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 11
+  Pseudobulk computation: 92.89 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 0.420: CCA Score = 0.4926 (using 10 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.2274
+PC1 + PC3: CCA score = 0.1859
+PC1 + PC4: CCA score = 0.0674
+PC1 + PC5: CCA score = 0.2876
+PC1 + PC6: CCA score = 0.2047
+PC1 + PC7: CCA score = 0.0754
+PC1 + PC8: CCA score = 0.0321
+PC1 + PC9: CCA score = 0.0789
+PC1 + PC10: CCA score = 0.1235
+PC2 + PC3: CCA score = 0.2933
+PC2 + PC4: CCA score = 0.2367
+PC2 + PC5: CCA score = 0.3663
+PC2 + PC6: CCA score = 0.3056
+PC2 + PC7: CCA score = 0.2391
+PC2 + PC8: CCA score = 0.2291
+PC2 + PC9: CCA score = 0.2402
+PC2 + PC10: CCA score = 0.2583
+PC3 + PC4: CCA score = 0.1971
+PC3 + PC5: CCA score = 0.3421
+PC3 + PC6: CCA score = 0.2761
+PC3 + PC7: CCA score = 0.2000
+PC3 + PC8: CCA score = 0.1880
+PC3 + PC9: CCA score = 0.2013
+PC3 + PC10: CCA score = 0.2226
+PC4 + PC5: CCA score = 0.2950
+PC4 + PC6: CCA score = 0.2150
+PC4 + PC7: CCA score = 0.1000
+PC4 + PC8: CCA score = 0.0731
+PC4 + PC9: CCA score = 0.1027
+PC4 + PC10: CCA score = 0.1399
+PC5 + PC6: CCA score = 0.3527
+PC5 + PC7: CCA score = 0.2969
+PC5 + PC8: CCA score = 0.2890
+PC5 + PC9: CCA score = 0.2978
+PC5 + PC10: CCA score = 0.3126
+PC6 + PC7: CCA score = 0.2176
+PC6 + PC8: CCA score = 0.2067
+PC6 + PC9: CCA score = 0.2189
+PC6 + PC10: CCA score = 0.2386
+PC7 + PC8: CCA score = 0.0805
+PC7 + PC9: CCA score = 0.1081
+PC7 + PC10: CCA score = 0.1439
+PC8 + PC9: CCA score = 0.0838
+PC8 + PC10: CCA score = 0.1267
+PC9 + PC10: CCA score = 0.1457
+Best combination: PC2 + PC5 with score 0.3663
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.420/cca_plot_res_0.420.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/resolutions/resolution_0.420/cca_plot_res_0.420_contributions.png
+Created CCA visualization plot using PC2 + PC5 (viz score: 0.3663)
+  Null distribution (1000 sims): 1.28 seconds
+Resolution 0.420: Standard p-value = 0.2710
+TOTAL for resolution 0.420: 99.59 seconds
+
+FINE SEARCH TOTAL: 409.63 seconds
+
+=== GENERATING CORRECTED NULL DISTRIBUTION ===
+Accounting for resolution selection bias...
+  Corrected null distribution generation: 0.00 seconds
+Corrected null distribution saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/corrected_null/corrected_null_distribution_expression.npy
+
+=== COMPUTING CORRECTED P-VALUES ===
+  Corrected p-values computation: 4.01 seconds
+Corrected null distribution plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/corrected_null/corrected_null_distribution.png
+CORRECTED P-VALUES TOTAL: 4.29 seconds
+
+=== FINAL RESULTS ===
+Best resolution: 0.400
+Best CCA score: 0.6174
+Number of clusters at best resolution: 13
+Number of PCs used: 10
+Best visualization used PC1 + PC6
+Standard p-value: 0.0050
+Corrected p-value: 0.0630
+Summary plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/summary/summary/resolution_optimization_summary_X_DR_expression.png
+Summary report saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/summary/summary/optimization_results_X_DR_expression.txt
+Detailed results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/summary/summary/detailed_results_X_DR_expression.csv
+
+All results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/summary/all_resolution_results_expression.csv
+Optimal resolution pseudobulk saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/summary/optimal.h5ad
+
+Final summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/FINAL_SUMMARY.txt
+
+[Find Optimal Resolution RNA-seq Linux] Total runtime: 1472.26 seconds
+
+PERFORMANCE SUMMARY:
+  Setup: 0.0s
+  Coarse search: 1057.6s (71.8%)
+  Fine search: 409.6s (27.8%)
+  Corrected p-values: 4.3s (0.3%)
+Using PROFILED GPU version of optimal resolution
+Directory setup: 0.00 seconds
+Starting RNA-seq resolution optimization for X_DR_proportion...
+Using representation: X_pca with 20 components
+Using 10 PCs for CCA analysis
+Testing resolutions from 0.01 to 1.00...
+Will compute corrected p-values with 1000 simulations per resolution
+
+=== FIRST PASS: Coarse Search ===
+
+
+Testing resolution: 0.100
+
+  Cell clustering: 4.46 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 5
+  Pseudobulk computation: 47.74 seconds
+  Dimension reduction: 0.10 seconds
+Resolution 0.100: CCA Score = 0.3916 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3854
+PC1 + PC3: CCA score = 0.3497
+PC1 + PC4: CCA score = 0.3528
+PC1 + PC5: CCA score = 0.3494
+PC2 + PC3: CCA score = 0.1792
+PC2 + PC4: CCA score = 0.1789
+PC2 + PC5: CCA score = 0.1752
+PC3 + PC4: CCA score = 0.0774
+PC3 + PC5: CCA score = 0.0629
+PC4 + PC5: CCA score = 0.1287
+Best combination: PC1 + PC2 with score 0.3854
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.100/cca_plot_res_0.100.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.100/cca_plot_res_0.100_contributions.png
+Created CCA visualization plot using PC1 + PC2 (viz score: 0.3854)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.100: Standard p-value = 0.1830
+TOTAL for resolution 0.100: 54.22 seconds
+
+
+Testing resolution: 0.200
+
+  Cell clustering: 4.65 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 5
+  Pseudobulk computation: 47.71 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 0.200: CCA Score = 0.4048 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3964
+PC1 + PC3: CCA score = 0.3566
+PC1 + PC4: CCA score = 0.3644
+PC1 + PC5: CCA score = 0.3607
+PC2 + PC3: CCA score = 0.1890
+PC2 + PC4: CCA score = 0.2018
+PC2 + PC5: CCA score = 0.1946
+PC3 + PC4: CCA score = 0.0963
+PC3 + PC5: CCA score = 0.0857
+PC4 + PC5: CCA score = 0.1128
+Best combination: PC1 + PC2 with score 0.3964
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.200/cca_plot_res_0.200.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.200/cca_plot_res_0.200_contributions.png
+Created CCA visualization plot using PC1 + PC2 (viz score: 0.3964)
+  Null distribution (1000 sims): 1.18 seconds
+Resolution 0.200: Standard p-value = 0.1440
+TOTAL for resolution 0.200: 54.37 seconds
+
+
+Testing resolution: 0.300
+
+  Cell clustering: 4.47 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 6
+  Pseudobulk computation: 57.79 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 0.300: CCA Score = 0.5219 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3786
+PC1 + PC3: CCA score = 0.3534
+PC1 + PC4: CCA score = 0.4833
+PC1 + PC5: CCA score = 0.3650
+PC2 + PC3: CCA score = 0.1764
+PC2 + PC4: CCA score = 0.3464
+PC2 + PC5: CCA score = 0.1943
+PC3 + PC4: CCA score = 0.3250
+PC3 + PC5: CCA score = 0.1562
+PC4 + PC5: CCA score = 0.3575
+Best combination: PC1 + PC4 with score 0.4833
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.300/cca_plot_res_0.300.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.300/cca_plot_res_0.300_contributions.png
+Created CCA visualization plot using PC1 + PC4 (viz score: 0.4833)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.300: Standard p-value = 0.0140
+TOTAL for resolution 0.300: 64.26 seconds
+
+
+Testing resolution: 0.400
+
+  Cell clustering: 4.51 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 13
+  Pseudobulk computation: 99.83 seconds
+  Dimension reduction: 0.07 seconds
+Resolution 0.400: CCA Score = 0.4938 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3186
+PC1 + PC3: CCA score = 0.3085
+PC1 + PC4: CCA score = 0.3725
+PC1 + PC5: CCA score = 0.4414
+PC2 + PC3: CCA score = 0.1181
+PC2 + PC4: CCA score = 0.2210
+PC2 + PC5: CCA score = 0.3126
+PC3 + PC4: CCA score = 0.2086
+PC3 + PC5: CCA score = 0.3097
+PC4 + PC5: CCA score = 0.3494
+Best combination: PC1 + PC5 with score 0.4414
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.400/cca_plot_res_0.400.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.400/cca_plot_res_0.400_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.4414)
+  Null distribution (1000 sims): 1.18 seconds
+Resolution 0.400: Standard p-value = 0.0240
+TOTAL for resolution 0.400: 106.32 seconds
+
+
+Testing resolution: 0.500
+
+  Cell clustering: 4.79 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 13
+  Pseudobulk computation: 108.41 seconds
+  Dimension reduction: 0.12 seconds
+Resolution 0.500: CCA Score = 0.5504 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.4337
+PC1 + PC3: CCA score = 0.4215
+PC1 + PC4: CCA score = 0.5441
+PC1 + PC5: CCA score = 0.4208
+PC2 + PC3: CCA score = 0.0874
+PC2 + PC4: CCA score = 0.3184
+PC2 + PC5: CCA score = 0.1574
+PC3 + PC4: CCA score = 0.3157
+PC3 + PC5: CCA score = 0.1204
+PC4 + PC5: CCA score = 0.3323
+Best combination: PC1 + PC4 with score 0.5441
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.500/cca_plot_res_0.500.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.500/cca_plot_res_0.500_contributions.png
+Created CCA visualization plot using PC1 + PC4 (viz score: 0.5441)
+  Null distribution (1000 sims): 1.17 seconds
+Resolution 0.500: Standard p-value = 0.0070
+TOTAL for resolution 0.500: 115.22 seconds
+
+
+Testing resolution: 0.600
+
+  Cell clustering: 4.71 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 15
+  Pseudobulk computation: 115.18 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 0.600: CCA Score = 0.5184 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3415
+PC1 + PC3: CCA score = 0.3236
+PC1 + PC4: CCA score = 0.3742
+PC1 + PC5: CCA score = 0.4764
+PC2 + PC3: CCA score = 0.1058
+PC2 + PC4: CCA score = 0.1952
+PC2 + PC5: CCA score = 0.3385
+PC3 + PC4: CCA score = 0.1622
+PC3 + PC5: CCA score = 0.3316
+PC4 + PC5: CCA score = 0.3667
+Best combination: PC1 + PC5 with score 0.4764
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.600/cca_plot_res_0.600.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.600/cca_plot_res_0.600_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.4764)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.600: Standard p-value = 0.0130
+TOTAL for resolution 0.600: 121.90 seconds
+
+
+Testing resolution: 0.700
+
+  Cell clustering: 4.89 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 14
+  Pseudobulk computation: 107.87 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 0.700: CCA Score = 0.5156 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3844
+PC1 + PC3: CCA score = 0.3537
+PC1 + PC4: CCA score = 0.4379
+PC1 + PC5: CCA score = 0.4438
+PC2 + PC3: CCA score = 0.1802
+PC2 + PC4: CCA score = 0.3357
+PC2 + PC5: CCA score = 0.2616
+PC3 + PC4: CCA score = 0.2719
+PC3 + PC5: CCA score = 0.2209
+PC4 + PC5: CCA score = 0.2974
+Best combination: PC1 + PC5 with score 0.4438
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.700/cca_plot_res_0.700.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.700/cca_plot_res_0.700_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.4438)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.700: Standard p-value = 0.0100
+TOTAL for resolution 0.700: 114.79 seconds
+
+
+Testing resolution: 0.800
+
+  Cell clustering: 4.83 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 16
+  Pseudobulk computation: 128.18 seconds
+  Dimension reduction: 0.19 seconds
+Resolution 0.800: CCA Score = 0.4255 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3515
+PC1 + PC3: CCA score = 0.3347
+PC1 + PC4: CCA score = 0.4041
+PC1 + PC5: CCA score = 0.3508
+PC2 + PC3: CCA score = 0.1107
+PC2 + PC4: CCA score = 0.2352
+PC2 + PC5: CCA score = 0.1095
+PC3 + PC4: CCA score = 0.2056
+PC3 + PC5: CCA score = 0.0557
+PC4 + PC5: CCA score = 0.2024
+Best combination: PC1 + PC4 with score 0.4041
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.800/cca_plot_res_0.800.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.800/cca_plot_res_0.800_contributions.png
+Created CCA visualization plot using PC1 + PC4 (viz score: 0.4041)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.800: Standard p-value = 0.0870
+TOTAL for resolution 0.800: 135.11 seconds
+
+
+Testing resolution: 0.900
+
+  Cell clustering: 4.78 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 15
+  Pseudobulk computation: 120.08 seconds
+  Dimension reduction: 0.08 seconds
+Resolution 0.900: CCA Score = 0.5582 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.4166
+PC1 + PC3: CCA score = 0.4029
+PC1 + PC4: CCA score = 0.5419
+PC1 + PC5: CCA score = 0.4015
+PC2 + PC3: CCA score = 0.1275
+PC2 + PC4: CCA score = 0.3648
+PC2 + PC5: CCA score = 0.1279
+PC3 + PC4: CCA score = 0.3419
+PC3 + PC5: CCA score = 0.0600
+PC4 + PC5: CCA score = 0.3555
+Best combination: PC1 + PC4 with score 0.5419
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.900/cca_plot_res_0.900.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.900/cca_plot_res_0.900_contributions.png
+Created CCA visualization plot using PC1 + PC4 (viz score: 0.5419)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.900: Standard p-value = 0.0050
+TOTAL for resolution 0.900: 126.85 seconds
+
+
+Testing resolution: 1.000
+
+  Cell clustering: 4.86 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 19
+  Pseudobulk computation: 151.55 seconds
+  Dimension reduction: 0.08 seconds
+Resolution 1.000: CCA Score = 0.4852 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3605
+PC1 + PC3: CCA score = 0.3357
+PC1 + PC4: CCA score = 0.3698
+PC1 + PC5: CCA score = 0.4174
+PC2 + PC3: CCA score = 0.1883
+PC2 + PC4: CCA score = 0.2252
+PC2 + PC5: CCA score = 0.3175
+PC3 + PC4: CCA score = 0.1758
+PC3 + PC5: CCA score = 0.2742
+PC4 + PC5: CCA score = 0.2958
+Best combination: PC1 + PC5 with score 0.4174
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_1.000/cca_plot_res_1.000.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_1.000/cca_plot_res_1.000_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.4174)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 1.000: Standard p-value = 0.0350
+TOTAL for resolution 1.000: 158.42 seconds
+
+COARSE SEARCH TOTAL: 1051.49 seconds
+
+Best resolution from first pass: 0.90
+Best CCA score: 0.5582
+
+=== SECOND PASS: Fine-tuned Search ===
+Fine-tuning search from 0.88 to 0.92...
+
+
+Testing resolution: 0.880
+
+  Cell clustering: 4.88 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 18
+  Pseudobulk computation: 144.24 seconds
+  Dimension reduction: 0.08 seconds
+Resolution 0.880: CCA Score = 0.5172 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3860
+PC1 + PC3: CCA score = 0.3412
+PC1 + PC4: CCA score = 0.3828
+PC1 + PC5: CCA score = 0.4338
+PC2 + PC3: CCA score = 0.2042
+PC2 + PC4: CCA score = 0.2522
+PC2 + PC5: CCA score = 0.3438
+PC3 + PC4: CCA score = 0.1544
+PC3 + PC5: CCA score = 0.2667
+PC4 + PC5: CCA score = 0.3036
+Best combination: PC1 + PC5 with score 0.4338
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.880/cca_plot_res_0.880.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.880/cca_plot_res_0.880_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.4338)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.880: Standard p-value = 0.0110
+TOTAL for resolution 0.880: 151.18 seconds
+
+
+Testing resolution: 0.890
+
+  Cell clustering: 5.05 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 17
+  Pseudobulk computation: 129.41 seconds
+  Dimension reduction: 0.10 seconds
+Resolution 0.890: CCA Score = 0.5758 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3861
+PC1 + PC3: CCA score = 0.3704
+PC1 + PC4: CCA score = 0.4991
+PC1 + PC5: CCA score = 0.4359
+PC2 + PC3: CCA score = 0.1655
+PC2 + PC4: CCA score = 0.3943
+PC2 + PC5: CCA score = 0.2393
+PC3 + PC4: CCA score = 0.3785
+PC3 + PC5: CCA score = 0.2115
+PC4 + PC5: CCA score = 0.4129
+Best combination: PC1 + PC4 with score 0.4991
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.890/cca_plot_res_0.890.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.890/cca_plot_res_0.890_contributions.png
+Created CCA visualization plot using PC1 + PC4 (viz score: 0.4991)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.890: Standard p-value = 0.0020
+TOTAL for resolution 0.890: 136.49 seconds
+
+
+Testing resolution: 0.910
+
+  Cell clustering: 4.96 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 17
+  Pseudobulk computation: 134.59 seconds
+  Dimension reduction: 0.09 seconds
+Resolution 0.910: CCA Score = 0.5696 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.4038
+PC1 + PC3: CCA score = 0.3834
+PC1 + PC4: CCA score = 0.4582
+PC1 + PC5: CCA score = 0.4852
+PC2 + PC3: CCA score = 0.1535
+PC2 + PC4: CCA score = 0.3145
+PC2 + PC5: CCA score = 0.2925
+PC3 + PC4: CCA score = 0.2857
+PC3 + PC5: CCA score = 0.2665
+PC4 + PC5: CCA score = 0.3727
+Best combination: PC1 + PC5 with score 0.4852
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.910/cca_plot_res_0.910.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.910/cca_plot_res_0.910_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.4852)
+  Null distribution (1000 sims): 1.18 seconds
+Resolution 0.910: Standard p-value = 0.0030
+TOTAL for resolution 0.910: 141.57 seconds
+
+
+Testing resolution: 0.920
+
+  Cell clustering: 4.88 seconds
+  Cell type assignment: 0.00 seconds
+Number of clusters: 17
+  Pseudobulk computation: 132.73 seconds
+  Dimension reduction: 0.06 seconds
+Resolution 0.920: CCA Score = 0.5660 (using 5 PCs)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3813
+PC1 + PC3: CCA score = 0.3426
+PC1 + PC4: CCA score = 0.4364
+PC1 + PC5: CCA score = 0.4791
+PC2 + PC3: CCA score = 0.1895
+PC2 + PC4: CCA score = 0.3322
+PC2 + PC5: CCA score = 0.3516
+PC3 + PC4: CCA score = 0.2667
+PC3 + PC5: CCA score = 0.3007
+PC4 + PC5: CCA score = 0.3905
+Best combination: PC1 + PC5 with score 0.4791
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.920/cca_plot_res_0.920.png
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/resolutions/resolution_0.920/cca_plot_res_0.920_contributions.png
+Created CCA visualization plot using PC1 + PC5 (viz score: 0.4791)
+  Null distribution (1000 sims): 1.19 seconds
+Resolution 0.920: Standard p-value = 0.0030
+TOTAL for resolution 0.920: 139.61 seconds
+
+FINE SEARCH TOTAL: 568.85 seconds
+
+=== GENERATING CORRECTED NULL DISTRIBUTION ===
+Accounting for resolution selection bias...
+  Corrected null distribution generation: 0.00 seconds
+Corrected null distribution saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/corrected_null/corrected_null_distribution_proportion.npy
+
+=== COMPUTING CORRECTED P-VALUES ===
+  Corrected p-values computation: 4.06 seconds
+Corrected null distribution plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/corrected_null/corrected_null_distribution.png
+CORRECTED P-VALUES TOTAL: 4.34 seconds
+
+=== FINAL RESULTS ===
+Best resolution: 0.890
+Best CCA score: 0.5758
+Number of clusters at best resolution: 17
+Number of PCs used: 5
+Best visualization used PC1 + PC4
+Standard p-value: 0.0020
+Corrected p-value: 0.0080
+Summary plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/summary/summary/resolution_optimization_summary_X_DR_proportion.png
+Summary report saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/summary/summary/optimization_results_X_DR_proportion.txt
+Detailed results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/summary/summary/detailed_results_X_DR_proportion.csv
+
+All results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/summary/all_resolution_results_proportion.csv
+Optimal resolution pseudobulk saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/summary/optimal.h5ad
+
+Final summary saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/FINAL_SUMMARY.txt
+
+[Find Optimal Resolution RNA-seq Linux] Total runtime: 1625.40 seconds
+
+PERFORMANCE SUMMARY:
+  Setup: 0.0s
+  Coarse search: 1051.5s (64.7%)
+  Fine search: 568.9s (35.0%)
+  Corrected p-values: 4.3s (0.3%)
+[Replace DR] Starting dimension reduction replacement...
+[Replace DR] File paths:
+  - Optimal expression: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_expression/summary/optimal.h5ad
+  - Optimal proportion: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/RNA_resolution_optimization_proportion/summary/optimal.h5ad
+  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+
+[Replace DR] Loading files...
+  ✓ Optimal expression loaded: (50, 2000)
+  ✓ Optimal proportion loaded: (50, 2000)
+  ✓ Pseudobulk sample loaded: (50, 2000)
+
+[Replace DR] Replacing expression dimension reduction results...
+  ✓ Copied .uns['X_DR_expression'] (shape: (50, 10))
+  ✓ Copied .uns['X_DR_expression_variance'] (shape: (10,))
+  ✓ Copied .uns['X_DR_expression_variance_ratio'] (shape: (10,))
+  ✓ Copied .uns['X_pca_expression_method'] (shape: (50, 10))
+  ✓ Copied .obsm['X_DR_expression'] (shape: (50, 10))
+  ✓ Copied .obsm['X_pca_expression_method'] (shape: (50, 10))
+
+[Replace DR] Replacing proportion dimension reduction results...
+  ✓ Copied .uns['X_DR_proportion'] (shape: (50, 5))
+  ✓ Copied .uns['X_DR_proportion_variance_ratio'] (shape: (5,))
+  ✓ Copied .uns['pca_proportion_variance_ratio'] (shape: (5,))
+  ✓ Copied .obsm['X_DR_proportion'] (shape: (50, 5))
+  ✓ Copied .obsm['X_pca_proportion'] (shape: (50, 5))
+
+[Replace DR] Saving updated pseudobulk_sample...
+  Destination: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+  ✓ Successfully saved (0.5 MB)
+
+[Replace DR] === SUMMARY ===
+  Expression DR keys copied: 6
+  Proportion DR keys copied: 5
+  File updated: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
 Starting visualization...
-[_preprocessing] Verified required columns in pseudobulk AnnData: ['LC/Recovered', 'month', 'Sex', 'BMI category', 'Age at enrollment']
-Found 9 unique cell types.
-Dendrogram saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/cell_type_dendrogram.png
-Generating cell type proportion PCA plots for grouping columns: ['LC/Recovered', 'month', 'Sex', 'BMI category', 'Age at enrollment']
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_LC_Recovered.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_LC_Recovered.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_month.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_month.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Sex.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Sex.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_BMI_category.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_BMI_category.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Age_at_enrollment.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/proportion_embedding_Age_at_enrollment.png
-Generating cell type expression plots for grouping columns: ['LC/Recovered', 'month', 'Sex', 'BMI category', 'Age at enrollment']
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_LC_Recovered.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_LC_Recovered.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_month.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_month.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Sex.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Sex.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_BMI_category.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_BMI_category.png
-Figure saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Age_at_enrollment.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/visualization/expression_embedding_Age_at_enrollment.png
+[_preprocessing] Verified required columns in pseudobulk AnnData: ['sev.level', 'batch']
+Found 17 unique cell types.
+Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/cell_type_dendrogram.png
+Generating cell type proportion PCA plots for grouping columns: ['sev.level', 'batch']
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_sev.level.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_batch.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/proportion_embedding_batch.png
+Generating cell type expression plots for grouping columns: ['sev.level', 'batch']
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_sev.level.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_batch.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/visualization/expression_embedding_batch.png
 [visualization] All requested visualizations saved.
 RNA analysis completed successfully!
 
@@ -90,6 +1606,6 @@ RNA Pipeline: ⚠ PARTIAL
   - cluster_dge: ✗
   - visualization: ✓
 
-Results saved to: /dcs07/hongkai/data/harry/result/long_covid
-Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
-Execution time: 82.0012 seconds
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/sys_log/main_process_status.json
+Execution time: 3112.6652 seconds
