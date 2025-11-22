@@ -12,7 +12,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
-use_gpu: true
+use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true

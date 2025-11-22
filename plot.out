@@ -1,4 +1,3 @@
-Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
@@ -36,8 +35,8 @@ Resuming process from previous progress:
     "system_info": {
         "platform": "Linux",
         "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
+        "use_gpu": false,
+        "linux_system": false
     }
 }
 
@@ -49,95 +48,103 @@ Starting dimensionality reduction...
 [Seed Control] PyTorch GPU deterministic mode enabled with seed=42
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
-[pseudobulk] Using GPU: NVIDIA L40S
-[pseudobulk] Initial GPU memory: 0.00/0.00 GB (alloc/reserved)
-[pseudobulk] Batch correction enabled: True (col='batch')
-[pseudobulk] 9 cell types, 25 samples
-[pseudobulk] Creating layer for 1
-[pseudobulk] Creating layer for 2
-[pseudobulk] Creating layer for 3
-[pseudobulk] Creating layer for 4
-[pseudobulk] Creating layer for 5
-[pseudobulk] Creating layer for 6
-[pseudobulk] Creating layer for 7
-[pseudobulk] Creating layer for 8
-[pseudobulk] Creating layer for 9
+[pseudobulk-CPU] Batch correction enabled: True (col='batch')
+[pseudobulk-CPU] 9 cell types, 25 samples
+[pseudobulk-CPU] ComBat timeout: 1800s
+[pseudobulk-CPU] Creating layer for 1
+[pseudobulk-CPU] Creating layer for 2
+[pseudobulk-CPU] Creating layer for 3
+[pseudobulk-CPU] Creating layer for 4
+[pseudobulk-CPU] Creating layer for 5
+[pseudobulk-CPU] Creating layer for 6
+[pseudobulk-CPU] Creating layer for 7
+[pseudobulk-CPU] Creating layer for 8
+[pseudobulk-CPU] Creating layer for 9
 
-[pseudobulk] Processing cell type: 1
+[pseudobulk-CPU] Processing cell type: 1
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 2
+[pseudobulk-CPU] Processing cell type: 2
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 3
+[pseudobulk-CPU] Processing cell type: 3
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 4
+[pseudobulk-CPU] Processing cell type: 4
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 5
+[pseudobulk-CPU] Processing cell type: 5
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 6
+[pseudobulk-CPU] Processing cell type: 6
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 7
+[pseudobulk-CPU] Processing cell type: 7
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 8
+[pseudobulk-CPU] Processing cell type: 8
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Processing cell type: 9
+[pseudobulk-CPU] Processing cell type: 9
   - Skipping ComBat (min batch size=1 < 2).
   - Applying limma batch regression (~ batch).
   - limma batch regression applied.
   - Batch correction method: limma
+  - Selecting top 2000 HVGs
   - Selected 2000 HVGs.
 
-[pseudobulk] Summary:
+[pseudobulk-CPU] Summary:
   - Successful cell types: 9
   - Failed/empty cell types: 0
 
-[pseudobulk] Concatenating HVGs across cell types.
-[pseudobulk] Final HVG selection on concatenated matrix (genes=18000).
-[pseudobulk] Final HVGs retained: 2000
-[pseudobulk] Building final HVG expression matrix (CT x sample).
+[pseudobulk-CPU] Concatenating HVGs across cell types.
+[pseudobulk-CPU] Final HVG selection on concatenated matrix (genes=18000).
+[pseudobulk-CPU] Final HVGs retained: 2000
+[pseudobulk-CPU] Building final HVG expression matrix (CT x sample).
 
-[pseudobulk] Done. Runtime: 14.84 s
-[pseudobulk] Final HVG matrix shape: (9, 25)
-[pseudobulk] Final AnnData shape: (25, 2000)
+[pseudobulk-CPU] Done. Runtime: 13.22 s
+[pseudobulk-CPU] Final HVG matrix shape: (9, 25)
+[pseudobulk-CPU] Final AnnData shape: (25, 2000)
 [process_anndata_with_dimension_reduction] Starting dimension reduction computation...
 [process_anndata_with_dimension_reduction] Results will be stored under unified keys:
   - X_DR_expression: for expression data
@@ -167,11 +174,11 @@ Starting dimensionality reduction...
 [Save] Saving adata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_sample.h5ad
 [Save] ✓ Successfully saved adata (207.0 MB)
 [Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (0.6 MB)
+[Save] ✓ Successfully saved pseudobulk_anndata (0.7 MB)
 [process_anndata_with_dimension_reduction] ✓ All files saved successfully
 
 [process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 15.86 seconds
+Total runtime: 16.14 seconds
 Expression dimension reduction: ✓ SUCCESS
 Proportion dimension reduction: ✓ SUCCESS
 Results available under unified keys:
@@ -212,4 +219,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample
 Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/sys_log/main_process_status.json
-Execution time: 39.1421 seconds
+Execution time: 36.5610 seconds
