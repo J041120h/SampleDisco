@@ -4,21 +4,23 @@
 ... storing 'batch' as categorical
 ... storing 'sev.level' as categorical
 ... storing 'predicted_doublet' as categorical
-2025-11-22 10:04:31,385 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-22 10:04:31 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-22 10:04:31,471 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-22 10:04:31 - INFO - sklearn.KMeans initialization complete.
-2025-11-22 10:04:31,471 - harmonypy - INFO - Iteration 1 of 30
-2025-11-22 10:04:31 - INFO - Iteration 1 of 30
-2025-11-22 10:04:31,492 - harmonypy - INFO - Iteration 2 of 30
-2025-11-22 10:04:31 - INFO - Iteration 2 of 30
-2025-11-22 10:04:31,512 - harmonypy - INFO - Iteration 3 of 30
-2025-11-22 10:04:31 - INFO - Iteration 3 of 30
-2025-11-22 10:04:31,523 - harmonypy - INFO - Iteration 4 of 30
-2025-11-22 10:04:31 - INFO - Iteration 4 of 30
-2025-11-22 10:04:31,542 - harmonypy - INFO - Iteration 5 of 30
-2025-11-22 10:04:31 - INFO - Iteration 5 of 30
-2025-11-22 10:04:31,549 - harmonypy - INFO - Iteration 6 of 30
-2025-11-22 10:04:31 - INFO - Iteration 6 of 30
-2025-11-22 10:04:31,562 - harmonypy - INFO - Converged after 6 iterations
-2025-11-22 10:04:31 - INFO - Converged after 6 iterations
+2025-11-22 10:12:17,612 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-22 10:12:17 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-11-22 10:12:17,666 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-11-22 10:12:17 - INFO - sklearn.KMeans initialization complete.
+2025-11-22 10:12:17,666 - harmonypy - INFO - Iteration 1 of 30
+2025-11-22 10:12:17 - INFO - Iteration 1 of 30
+2025-11-22 10:12:17,685 - harmonypy - INFO - Iteration 2 of 30
+2025-11-22 10:12:17 - INFO - Iteration 2 of 30
+2025-11-22 10:12:17,690 - harmonypy - INFO - Iteration 3 of 30
+2025-11-22 10:12:17 - INFO - Iteration 3 of 30
+2025-11-22 10:12:17,695 - harmonypy - INFO - Iteration 4 of 30
+2025-11-22 10:12:17 - INFO - Iteration 4 of 30
+2025-11-22 10:12:17,700 - harmonypy - INFO - Iteration 5 of 30
+2025-11-22 10:12:17 - INFO - Iteration 5 of 30
+2025-11-22 10:12:17,705 - harmonypy - INFO - Iteration 6 of 30
+2025-11-22 10:12:17 - INFO - Iteration 6 of 30
+2025-11-22 10:12:17,710 - harmonypy - INFO - Iteration 7 of 30
+2025-11-22 10:12:17 - INFO - Iteration 7 of 30
+2025-11-22 10:12:17,714 - harmonypy - INFO - Converged after 7 iterations
+2025-11-22 10:12:17 - INFO - Converged after 7 iterations
