@@ -9,7 +9,7 @@ Resuming process from previous progress:
         "trajectory_analysis": true,
         "trajectory_dge": false,
         "cluster_dge": false,
-        "visualization": false
+        "visualization": true
     },
     "atac": {
         "preprocessing": false,
@@ -45,21 +45,724 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+Starting dimensionality reduction...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Using PyTorch with GPU: NVIDIA L40S
+Initial GPU memory: 0.00/0.00 GB allocated/reserved
+
+[DEBUG] ========= INITIAL BATCH CORRECTION SETUP =========
+[DEBUG] batch_col parameter: 'batch'
+[DEBUG] batch_col is None: False
+[DEBUG] batch_col in adata.obs: True
+[DEBUG] Null values in batch column: 0/219101
+[DEBUG] All values are null: False
+[DEBUG] Unique batch values (excluding NaN): ['Wilk', 'Lee', 'Wen', 'Yu', 'Aruna', 'SS2', 'SS1', 'Silvin', 'Mudd', 'Zhu']...
+[DEBUG] batch_correction will be enabled: True
+[DEBUG] ===================================================
+
+Processing 11 cell types across 100 samples
+Creating layer for 1
+Creating layer for 10
+Creating layer for 11
+Creating layer for 2
+Creating layer for 3
+Creating layer for 4
+Creating layer for 5
+Creating layer for 6
+Creating layer for 7
+Creating layer for 8
+Creating layer for 9
+
+Processing cell type: 1
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 1 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 1 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 10
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 10 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 9834)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 9834)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 9834)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 9834), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 9834)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 9834)
+      [LIMMA DEBUG] Correction term shape: (100, 9834)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 9834)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 9834)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 9834
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2001 HVGs
+  [DEBUG] ========= CELL TYPE 10 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2001
+  [DEBUG] ==================================================
+
+
+Processing cell type: 11
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 11 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 7528)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 7528)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 7528)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 7528), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 7528)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 7528)
+      [LIMMA DEBUG] Correction term shape: (100, 7528)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 7528)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.01 seconds
+  [DEBUG]    - Output shape: (100, 7528)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 7528
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2182 HVGs
+  [DEBUG] ========= CELL TYPE 11 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2182
+  [DEBUG] ==================================================
+
+
+Processing cell type: 2
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 2 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 2 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 3
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 3 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 3 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 4
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 4 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 4 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 5
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 5 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.01 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 5 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 6
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 6 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 6 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 7
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 7 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 7 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 8
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 8 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.01 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 8 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+Processing cell type: 9
+  [DEBUG] ========= BATCH CORRECTION DIAGNOSTICS for 9 =========
+  [DEBUG] batch_correction flag = True
+  [DEBUG] batch_col = 'batch'
+  [DEBUG] temp_adata shape = (100, 10159)
+  [DEBUG] temp_adata.obs columns = ['batch']
+  [DEBUG] ✓ Batch column 'batch' found in temp_adata.obs
+  [DEBUG] Number of unique batches: 11
+  [DEBUG] Unique batch values: ['Wilk', 'Su', 'Lee', 'Zhu', 'Mudd', 'Aruna', 'SS1', 'SS2', 'Silvin', 'Wen', 'Yu']
+  [DEBUG] Batch counts: {'Su': 62, 'SS2': 13, 'Lee': 4, 'SS1': 4, 'Zhu': 4, 'Aruna': 4, 'Wilk': 3, 'Mudd': 2, 'Wen': 2, 'Silvin': 1, 'Yu': 1}
+  [DEBUG] Min batch size = 1, Max batch size = 62
+  [DEBUG] ❌ CANNOT DO BATCH CORRECTION with ComBat: some batch has <2 samples (min=1).
+  [DEBUG] ======================================================
+  [DEBUG] 🔄 STARTING BATCH CORRECTION PROCESS
+  [DEBUG] Min batch size: 1
+  [DEBUG] ⚠️  ComBat SKIPPED: min_batch_size (1) < 2
+  [DEBUG]    - ComBat requires at least 2 samples per batch
+  [DEBUG] 🔄 Attempting limma as alternative...
+  [DEBUG] 📊 Attempting limma batch correction:
+  [DEBUG]    - Input shape: (100, 10159)
+  [DEBUG]    - Covariate formula: ~ batch
+  [DEBUG]    - Design formula: 1 (unused)
+  [DEBUG]    - rcond: 1e-8
+  [DEBUG]    - Note: limma may handle small batch sizes better than ComBat
+      [LIMMA DEBUG] Input expression shape: (100, 10159)
+      [LIMMA DEBUG] Input pheno shape: (100, 1)
+      [LIMMA DEBUG] Covariate formula: ~ batch
+      [LIMMA DEBUG] Design formula (unused): 1
+      [LIMMA DEBUG] Covariate design matrix shape: (100, 11)
+      [LIMMA DEBUG] Covariate column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Running lstsq with A.shape=(100, 11), B.shape=(100, 10159), rcond=1e-08
+      [LIMMA DEBUG] Coefficients shape: (11, 10159)
+      [LIMMA DEBUG] Rank: 11
+      [LIMMA DEBUG] Column names: ['Intercept', 'batch[T.Lee]', 'batch[T.Mudd]', 'batch[T.SS1]', 'batch[T.SS2]', 'batch[T.Silvin]', 'batch[T.Su]', 'batch[T.Wen]', 'batch[T.Wilk]', 'batch[T.Yu]', 'batch[T.Zhu]']
+      [LIMMA DEBUG] Batch mask: [False, True, True, True, True, True, True, True, True, True, True]
+      [LIMMA DEBUG] X_batch shape: (100, 10)
+      [LIMMA DEBUG] beta_batch shape: (10, 10159)
+      [LIMMA DEBUG] Correction term shape: (100, 10159)
+      [LIMMA DEBUG] Output corrected expression shape: (100, 10159)
+      [LIMMA DEBUG] Output contains NaN: False
+  [DEBUG] ✅ limma SUCCEEDED in 0.02 seconds
+  [DEBUG]    - Output shape: (100, 10159)
+  [DEBUG] 📈 limma final status:
+  [DEBUG]    - Genes remaining: 10159
+  [DEBUG]    - Batch correction applied: YES (limma)
+  [DEBUG] 📊 BATCH CORRECTION SUMMARY:
+  [DEBUG]    - Status: ✅ SUCCESS
+  [DEBUG]    - Method used: limma
+  Selecting top 2000 HVGs
+  Selected 2000 HVGs
+  [DEBUG] ========= CELL TYPE 9 SUMMARY =========
+  [DEBUG] ✓ Processing completed successfully
+  [DEBUG] Final HVG count: 2000
+  [DEBUG] ==================================================
+
+
+[DEBUG] ========= OVERALL BATCH CORRECTION SUMMARY =========
+[DEBUG] Total cell types processed: 11
+[DEBUG] Successful cell types: 11
+[DEBUG] Failed cell types: 0
+[DEBUG] Batch correction was enabled for this dataset
+[DEBUG] Batch column used: 'batch'
+[DEBUG] =========================================================
+
+
+Concatenating all cell type HVGs into single AnnData
+Applying final HVG selection on 22183 concatenated genes
+Final HVG selection: 2000 genes
+
+Creating final HVG expression matrix
+
+Total runtime: 252.29 seconds
+Final HVG matrix shape: (11, 100)
+Final AnnData shape: (100, 2000)
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - count_output_dir: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(100, 2000), proportion=(100, 11)
+[DimRed] Computing PCA for RNA data with 10 components on (100, 2000) data
+[PCA] Success. Shape: (100, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (100, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (100, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 5 components...
+[run_dimension_reduction_proportion] Applying Harmony with batch: batch
+[run_dimension_reduction_proportion] Harmony completed. Shape: (100, 5)
+[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (100, 5)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file paths:
+  - adata: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess/adata_sample.h5ad
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving adata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess/adata_sample.h5ad
+[Save] ✓ Successfully saved adata (944.4 MB)
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (1.6 MB)
+[process_anndata_with_dimension_reduction] ✓ All files saved successfully
+
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 71.51 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ✓ ATTEMPTED
 Starting visualization...
 [_preprocessing] Verified required columns in pseudobulk AnnData: ['sev.level', 'batch']
-Found 19 unique cell types.
-Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/cell_type_dendrogram.png
+Found 11 unique cell types.
+Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/cell_type_dendrogram.png
 Generating cell type proportion PCA plots for grouping columns: ['sev.level', 'batch']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_sev.level.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_sev.level.png
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_batch.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/proportion_embedding_batch.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/proportion_embedding_sev.level.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/proportion_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/proportion_embedding_batch.png
+Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/proportion_embedding_batch.png
 Generating cell type expression plots for grouping columns: ['sev.level', 'batch']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_sev.level.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_sev.level.png
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_batch.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/visualization/expression_embedding_batch.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/expression_embedding_sev.level.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/expression_embedding_sev.level.png
+Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/expression_embedding_batch.png
+Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/visualization/expression_embedding_batch.png
 [visualization] All requested visualizations saved.
 RNA analysis completed successfully!
 
@@ -78,6 +781,6 @@ RNA Pipeline: ⚠ PARTIAL
   - cluster_dge: ✗
   - visualization: ✓
 
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample
-Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/sys_log/main_process_status.json
-Execution time: 64.5338 seconds
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/sys_log/main_process_status.json
+Execution time: 346.6274 seconds

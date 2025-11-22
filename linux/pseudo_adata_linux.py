@@ -1,21 +1,113 @@
 import os
 import time
 import gc
+import signal
+import io
+import warnings
 import numpy as np
 import pandas as pd
 import scanpy as sc
 from scipy.sparse import issparse, csr_matrix
 from typing import Tuple, Dict, List
 import contextlib
+import patsy
+import sys
 
 # GPU imports
 import torch
 
 # Import the TF-IDF function (keep as in your original setup)
 from tf_idf import tfidf_memory_efficient
-from utils.batch_regress import simple_batch_regression
+from utils.random_seed import set_global_seed
 
 
+# ---------------------------------------------------------------------
+# Limma-like batch regression (clean logging)
+# ---------------------------------------------------------------------
+def limma(
+    pheno: pd.DataFrame,
+    exprs: np.ndarray,
+    covariate_formula: str,
+    design_formula: str = '1',
+    rcond: float = 1e-8,
+    verbose: bool = False
+) -> np.ndarray:
+    """
+    Limma-like linear regression to remove batch (or other covariates).
+
+    Parameters
+    ----------
+    pheno : DataFrame
+        Sample-level metadata; rows must align with exprs rows.
+    exprs : ndarray
+        Expression matrix with shape (n_samples, n_genes).
+    covariate_formula : str
+        Patsy formula for covariates to regress out (e.g. '~ batch').
+        We will remove the *non-intercept* part of these covariates.
+    design_formula : str, optional
+        Kept for API compatibility but not used in the new implementation.
+    rcond : float
+        rcond passed to np.linalg.lstsq.
+    verbose : bool
+        If True, prints brief diagnostics.
+
+    Returns
+    -------
+    corrected : ndarray
+        Batch/covariate-corrected expression matrix with same shape as exprs.
+    """
+    exprs = np.asarray(exprs)
+    if exprs.ndim != 2:
+        raise ValueError(f"exprs must be 2D (n_samples, n_genes); got shape {exprs.shape}")
+
+    n_samples, n_genes = exprs.shape
+
+    if verbose:
+        print(f"[limma] exprs shape: {exprs.shape}, pheno shape: {pheno.shape}")
+        print(f"[limma] covariate formula: {covariate_formula}")
+
+    # Build covariate design matrix (includes intercept + dummy variables)
+    covariate_design = patsy.dmatrix(covariate_formula, pheno, return_type='dataframe')
+    X = np.asarray(covariate_design, dtype=float)  # (n_samples, p)
+
+    if X.shape[0] != n_samples:
+        raise ValueError(
+            f"Rows in design ({X.shape[0]}) != samples in exprs ({n_samples})"
+        )
+
+    if verbose:
+        print(f"[limma] design shape: {X.shape}")
+
+    # Solve least squares: X (n_samples x p) -> exprs (n_samples x n_genes)
+    coefficients, res, rank, s = np.linalg.lstsq(X, exprs, rcond=rcond)
+
+    if verbose:
+        print(f"[limma] coeff shape: {coefficients.shape}, rank: {rank}")
+
+    # Identify non-intercept columns to remove (e.g. batch dummies)
+    col_names = list(covariate_design.columns)
+    batch_mask = [not name.startswith('Intercept') for name in col_names]
+
+    if not any(batch_mask):
+        if verbose:
+            print("[limma] No non-intercept columns; returning exprs unchanged.")
+        return exprs.copy()
+
+    X_batch = X[:, batch_mask]               # (n_samples, p_batch)
+    beta_batch = coefficients[batch_mask, :] # (p_batch, n_genes)
+
+    correction = X_batch.dot(beta_batch)     # (n_samples, n_genes)
+    corrected = exprs - correction
+
+    if verbose:
+        print(f"[limma] corrected shape: {corrected.shape}")
+
+    return corrected
+
+
+# ---------------------------------------------------------------------
+# GPU helpers
+# ---------------------------------------------------------------------
 def clear_gpu_memory():
     """Aggressively clear GPU memory."""
     gc.collect()
@@ -63,6 +155,9 @@ def _extract_sample_metadata(
     return sample_adata
 
 
+# ---------------------------------------------------------------------
+# Main GPU pseudobulk with batch correction
+# ---------------------------------------------------------------------
 def compute_pseudobulk_layers_gpu(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -84,7 +179,7 @@ def compute_pseudobulk_layers_gpu(
     Parameters
     ----------
     combat_timeout : float
-        Maximum time in seconds to wait for ComBat before falling back to regression.
+        Maximum time in seconds to wait for ComBat before falling back to limma.
         Set to None to disable timeout.
     """
     start_time = time.time() if verbose else None
@@ -93,9 +188,9 @@ def compute_pseudobulk_layers_gpu(
     clear_gpu_memory()
 
     if verbose and torch.cuda.is_available():
-        print(f"Using PyTorch with GPU: {torch.cuda.get_device_name(0)}")
         alloc, reserved = get_gpu_memory_info()
-        print(f"Initial GPU memory: {alloc:.2f}/{reserved:.2f} GB allocated/reserved")
+        print(f"[pseudobulk] Using GPU: {torch.cuda.get_device_name(0)}")
+        print(f"[pseudobulk] Initial GPU memory: {alloc:.2f}/{reserved:.2f} GB (alloc/reserved)")
 
     # Create output directory
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
@@ -107,33 +202,37 @@ def compute_pseudobulk_layers_gpu(
         batch_col in adata.obs.columns and
         not adata.obs[batch_col].isnull().all()
     )
+    
     if batch_correction and adata.obs[batch_col].isnull().any():
         adata.obs[batch_col] = adata.obs[batch_col].fillna("Unknown")
+
+    if verbose:
+        print(f"[pseudobulk] Batch correction enabled: {batch_correction} (col='{batch_col}')")
 
     # Get unique samples and cell types
     samples = sorted(adata.obs[sample_col].unique())
     cell_types = sorted(adata.obs[celltype_col].unique())
 
     if verbose:
-        print(f"Processing {len(cell_types)} cell types across {len(samples)} samples")
+        print(f"[pseudobulk] {len(cell_types)} cell types, {len(samples)} samples")
 
-    # Phase 1: Create pseudobulk AnnData with layers (matching CPU structure)
+    # Phase 1: Create pseudobulk AnnData with layers
     pseudobulk_adata = _create_pseudobulk_layers_gpu(
         adata, samples, cell_types, sample_col, celltype_col,
         batch_col, batch_size, max_cells_per_batch, verbose
     )
 
-    # Phase 2: Process each cell type layer (matching CPU logic exactly)
+    # Phase 2: Process each cell type layer
     all_hvg_data = {}
     all_gene_names = []
     cell_types_to_remove = []
 
     for cell_type in cell_types:
         if verbose:
-            print(f"\nProcessing cell type: {cell_type}")
+            print(f"\n[pseudobulk] Processing cell type: {cell_type}")
 
         try:
-            # Create temporary AnnData for this cell type
+            # Temporary AnnData for this cell type
             layer_data = pseudobulk_adata.layers[cell_type]
             temp_adata = sc.AnnData(
                 X=layer_data.copy(),
@@ -141,23 +240,22 @@ def compute_pseudobulk_layers_gpu(
                 var=pseudobulk_adata.var.copy()
             )
 
-            # Filter out genes with zero expression across all samples
+            # Filter out genes with zero expression
             sc.pp.filter_genes(temp_adata, min_cells=1)
-
             if temp_adata.n_vars == 0:
                 if verbose:
-                    print(f"  No expressed genes for {cell_type}, skipping")
+                    print(f"  - No expressed genes, skipping.")
                 cell_types_to_remove.append(cell_type)
                 continue
 
-            # Apply normalization (using GPU acceleration where possible)
+            # Normalization
             if normalize:
                 if atac:
                     tfidf_memory_efficient(temp_adata, scale_factor=target_sum)
                 else:
                     _normalize_gpu(temp_adata, target_sum, device, max_cells_per_batch)
 
-            # Check for NaN values and filter
+            # Remove NaN genes if any
             if issparse(temp_adata.X):
                 nan_genes = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
             else:
@@ -165,145 +263,137 @@ def compute_pseudobulk_layers_gpu(
 
             if nan_genes.any():
                 if verbose:
-                    print(f"  Found {nan_genes.sum()} genes with NaN values, removing them")
+                    print(f"  - Removing {nan_genes.sum()} NaN genes before batch correction.")
                 temp_adata = temp_adata[:, ~nan_genes].copy()
 
-            # --- DEBUG BLOCK: explain why ComBat runs or is skipped ---
-            if verbose:
-                print(f"  [DEBUG] batch_correction flag = {batch_correction}")
-                if batch_correction:
-                    if batch_col not in temp_adata.obs.columns:
-                        print("  [DEBUG] SKIPPING ComBat: batch column missing in temp_adata.obs.")
-                    else:
-                        unique_batches = temp_adata.obs[batch_col].unique()
-                        print(f"  [DEBUG] Unique batch values: {list(unique_batches)}")
-                        batch_counts = temp_adata.obs[batch_col].value_counts().to_dict()
-                        print(f"  [DEBUG] Batch counts: {batch_counts}")
+            # Batch correction
+            batch_correction_applied = False
+            batch_correction_method = None
 
-                        if len(unique_batches) <= 1:
-                            print("  [DEBUG] SKIPPING ComBat: only one batch present.")
-                        else:
-                            min_batch_size_dbg = temp_adata.obs[batch_col].value_counts().min()
-                            print(f"  [DEBUG] min_batch_size = {min_batch_size_dbg}")
-                            if min_batch_size_dbg < 2:
-                                print("  [DEBUG] SKIPPING ComBat: some batch has <2 samples.")
-                else:
-                    print("  [DEBUG] SKIPPING ComBat: batch_correction=False "
-                          "(batch col missing or all NA in original adata).")
-            # --- END DEBUG BLOCK ---
-
-            # Batch correction if needed
             if batch_correction and batch_col in temp_adata.obs.columns and len(temp_adata.obs[batch_col].unique()) > 1:
                 min_batch_size = temp_adata.obs[batch_col].value_counts().min()
+
+                # Try ComBat first if possible
                 if min_batch_size >= 2:
-                    combat_succeeded = False
                     try:
                         if verbose:
-                            print(f"  Applying ComBat batch correction on {temp_adata.n_vars} genes")
+                            print(f"  - Trying ComBat (min batch size={min_batch_size})")
 
                         def timeout_handler(signum, frame):
                             raise TimeoutError("ComBat timed out")
 
-                        # Set up timeout if specified and platform supports it
                         old_handler = None
                         if combat_timeout is not None:
                             old_handler = signal.signal(signal.SIGALRM, timeout_handler)
                             signal.alarm(int(combat_timeout))
 
                         try:
-                            # Suppress ComBat output
                             with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
                                 warnings.filterwarnings("ignore")
                                 sc.pp.combat(temp_adata, key=batch_col)
-                            combat_succeeded = True
+                            batch_correction_applied = True
+                            batch_correction_method = "ComBat"
                         finally:
-                            # Disable the alarm and restore handler
                             if combat_timeout is not None:
                                 signal.alarm(0)
                                 if old_handler is not None:
                                     signal.signal(signal.SIGALRM, old_handler)
 
-                        # Check for NaN values after ComBat
-                        if combat_succeeded:
-                            if issparse(temp_adata.X):
-                                has_nan = np.any(np.isnan(temp_adata.X.data))
-                                if has_nan:
-                                    nan_genes_post = np.array(
-                                        np.isnan(temp_adata.X.toarray()).any(axis=0)
-                                    ).flatten()
-                                else:
-                                    nan_genes_post = np.zeros(temp_adata.n_vars, dtype=bool)
-                            else:
-                                nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
-                                has_nan = nan_genes_post.any()
-
-                            if has_nan:
-                                if verbose:
-                                    print(f"  Found {nan_genes_post.sum()} genes with NaN after ComBat, removing them")
-                                temp_adata = temp_adata[:, ~nan_genes_post].copy()
-
-                            if combat_succeeded and verbose:
-                                print(f"  ComBat completed successfully, {temp_adata.n_vars} genes remaining")
-
-                    except (TimeoutError, Exception) as e:
-                        if verbose:
-                            if isinstance(e, TimeoutError):
-                                print(f"  ComBat timed out for {cell_type} after {combat_timeout}s")
-                            else:
-                                print(f"  ComBat failed for {cell_type}: {str(e)}")
-                            print(f"  Falling back to regression-based batch correction")
-
-                        # Fall back to simple regression-based batch correction (the provided helper)
-                        temp_adata = simple_batch_regression(
-                            temp_adata,
-                            batch_col=batch_col,
-                            verbose=verbose
-                        )
-
-                        # Check for NaN values after regression
+                        # Remove NaNs generated by ComBat
                         if issparse(temp_adata.X):
-                            nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+                            has_nan = np.any(np.isnan(temp_adata.X.data))
+                            if has_nan:
+                                nan_genes_post = np.array(
+                                    np.isnan(temp_adata.X.toarray()).any(axis=0)
+                                ).flatten()
+                            else:
+                                nan_genes_post = np.zeros(temp_adata.n_vars, dtype=bool)
                         else:
                             nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
 
                         if nan_genes_post.any():
-                            if verbose:
-                                print(f"  Found {nan_genes_post.sum()} genes with NaN after regression, removing them")
                             temp_adata = temp_adata[:, ~nan_genes_post].copy()
 
-            if verbose:
-                print(f"  Selecting top {n_features} HVGs")
+                        if verbose:
+                            print(f"  - ComBat applied successfully.")
 
-            # Ensure we don't request more genes than available
+                    except (TimeoutError, Exception):
+                        if verbose:
+                            print(f"  - ComBat failed or timed out; will try limma.")
+                else:
+                    if verbose:
+                        print(f"  - Skipping ComBat (min batch size={min_batch_size} < 2).")
+
+                # limma fallback / alternative
+                if not batch_correction_applied:
+                    try:
+                        if verbose:
+                            print("  - Applying limma batch regression (~ batch).")
+
+                        # Ensure dense
+                        if issparse(temp_adata.X):
+                            X_dense = temp_adata.X.toarray()
+                        else:
+                            X_dense = temp_adata.X.copy()
+
+                        covariate_formula = f'~ {batch_col}'
+                        X_corrected = limma(
+                            pheno=temp_adata.obs,
+                            exprs=X_dense,
+                            covariate_formula=covariate_formula,
+                            design_formula='1',
+                            rcond=1e-8,
+                            verbose=False  # keep limma quiet here
+                        )
+                        temp_adata.X = X_corrected
+                        batch_correction_applied = True
+                        batch_correction_method = "limma"
+
+                        # Remove NaNs if any
+                        if issparse(temp_adata.X):
+                            nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+                        else:
+                            nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                        if nan_genes_post.any():
+                            temp_adata = temp_adata[:, ~nan_genes_post].copy()
+
+                        if verbose:
+                            print("  - limma batch regression applied.")
+
+                    except Exception as e:
+                        if verbose:
+                            print(f"  - limma failed ({type(e).__name__}); continuing without batch correction.")
+
+            elif verbose:
+                print("  - Batch correction skipped (conditions not met).")
+
+            if verbose and batch_correction_applied:
+                print(f"  - Batch correction method: {batch_correction_method}")
+
+            # HVG selection
             n_hvgs = min(n_features, temp_adata.n_vars)
-
-            # Use scanpy's HVG selection (matching CPU version)
             sc.pp.highly_variable_genes(
                 temp_adata,
                 n_top_genes=n_hvgs,
                 subset=False
             )
 
-            # Extract HVG data
             hvg_mask = temp_adata.var['highly_variable']
             hvg_genes = temp_adata.var.index[hvg_mask].tolist()
 
             if len(hvg_genes) == 0:
                 if verbose:
-                    print(f"  No HVGs found for {cell_type}, skipping")
+                    print("  - No HVGs found, skipping cell type.")
                 cell_types_to_remove.append(cell_type)
                 continue
 
-            # Extract expression values for HVGs
             hvg_expr = temp_adata[:, hvg_mask].X
             if issparse(hvg_expr):
                 hvg_expr = hvg_expr.toarray()
 
-            # Create prefixed gene names and store data (matching CPU format)
             prefixed_genes = [f"{cell_type} - {g}" for g in hvg_genes]
             all_gene_names.extend(prefixed_genes)
 
-            # Store expression data
             for i, sample in enumerate(temp_adata.obs.index):
                 if sample not in all_hvg_data:
                     all_hvg_data[sample] = {}
@@ -311,21 +401,25 @@ def compute_pseudobulk_layers_gpu(
                     all_hvg_data[sample][gene] = float(hvg_expr[i, j])
 
             if verbose:
-                print(f"  Selected {len(hvg_genes)} HVGs")
+                print(f"  - Selected {len(hvg_genes)} HVGs.")
 
         except Exception as e:
             if verbose:
-                print(f"  Failed to process {cell_type}: {e}")
+                print(f"  - Failed to process {cell_type}: {e}")
             cell_types_to_remove.append(cell_type)
 
-    # Remove failed cell types from the list
+    # Remove failed cell types from list
     cell_types = [ct for ct in cell_types if ct not in cell_types_to_remove]
+
+    if verbose:
+        print("\n[pseudobulk] Summary:")
+        print(f"  - Successful cell types: {len(cell_types)}")
+        print(f"  - Failed/empty cell types: {len(cell_types_to_remove)}")
 
     # Phase 3: Create concatenated AnnData with all cell type HVGs
     if verbose:
-        print("\nConcatenating all cell type HVGs into single AnnData")
+        print("\n[pseudobulk] Concatenating HVGs across cell types.")
 
-    # Create sample x gene matrix from all HVG data
     all_unique_genes = sorted(list(set(all_gene_names)))
     concat_matrix = np.zeros((len(samples), len(all_unique_genes)), dtype=float)
 
@@ -334,7 +428,6 @@ def compute_pseudobulk_layers_gpu(
             if sample in all_hvg_data and gene in all_hvg_data[sample]:
                 concat_matrix[i, j] = all_hvg_data[sample][gene]
 
-    # Create concatenated AnnData
     concat_adata = sc.AnnData(
         X=concat_matrix,
         obs=pd.DataFrame(index=samples),
@@ -343,26 +436,23 @@ def compute_pseudobulk_layers_gpu(
 
     # Final HVG selection on concatenated data
     if verbose:
-        print(f"Applying final HVG selection on {concat_adata.n_vars} concatenated genes")
+        print(f"[pseudobulk] Final HVG selection on concatenated matrix (genes={concat_adata.n_vars}).")
 
-    # Filter out genes with zero expression across all samples
     sc.pp.filter_genes(concat_adata, min_cells=1)
-
-    # Apply final HVG selection
     final_n_hvgs = min(n_features, concat_adata.n_vars)
     sc.pp.highly_variable_genes(
         concat_adata,
         n_top_genes=final_n_hvgs,
-        subset=True  # keep only final HVGs
+        subset=True
     )
 
     if verbose:
-        print(f"Final HVG selection: {concat_adata.n_vars} genes")
+        print(f"[pseudobulk] Final HVGs retained: {concat_adata.n_vars}")
 
     # Create final expression DataFrame in original format
     final_expression_df = _create_final_expression_matrix(
         all_hvg_data,
-        concat_adata.var.index.tolist(),  # Only final HVGs
+        concat_adata.var.index.tolist(),
         samples,
         cell_types,
         verbose
@@ -376,7 +466,7 @@ def compute_pseudobulk_layers_gpu(
     # Add cell proportions to concat_adata
     concat_adata.uns['cell_proportions'] = cell_proportion_df
 
-    # Save final outputs (matching CPU version exactly)
+    # Save final outputs
     final_expression_df.to_csv(
         os.path.join(pseudobulk_dir, "expression_hvg.csv")
     )
@@ -388,14 +478,16 @@ def compute_pseudobulk_layers_gpu(
 
     if verbose:
         elapsed_time = time.time() - start_time
-        print(f"\nTotal runtime: {elapsed_time:.2f} seconds")
-        print(f"Final HVG matrix shape: {final_expression_df.shape}")
-        print(f"Final AnnData shape: {concat_adata.shape}")
+        print(f"\n[pseudobulk] Done. Runtime: {elapsed_time:.2f} s")
+        print(f"[pseudobulk] Final HVG matrix shape: {final_expression_df.shape}")
+        print(f"[pseudobulk] Final AnnData shape: {concat_adata.shape}")
 
     return final_expression_df, cell_proportion_df, concat_adata
 
 
-
+# ---------------------------------------------------------------------
+# Pseudobulk helper: create layers
+# ---------------------------------------------------------------------
 def _create_pseudobulk_layers_gpu(
     adata: sc.AnnData,
     samples: list,
@@ -424,33 +516,25 @@ def _create_pseudobulk_layers_gpu(
         )
         obs_df[batch_col] = [sample_batch_map.get(s, 'Unknown') for s in samples]
 
-    # Use all genes from original data
     var_df = adata.var.copy()
 
-    # Initialize empty pseudobulk AnnData
     n_samples = len(samples)
     n_genes = adata.n_vars
 
-    # Create zero matrix for main X
     X_main = np.zeros((n_samples, n_genes), dtype=float)
     pseudobulk_adata = sc.AnnData(X=X_main, obs=obs_df, var=var_df)
 
-    # Add layers for each cell type
     for cell_type in cell_types:
         if verbose:
-            print(f"Creating layer for {cell_type}")
+            print(f"[pseudobulk] Creating layer for {cell_type}")
 
-        # Initialize layer matrix
         layer_matrix = np.zeros((n_samples, n_genes), dtype=float)
 
-        # Compute pseudobulk expression for each sample
         for sample_idx, sample in enumerate(samples):
-            # Get cells for this sample and cell type
             mask = (adata.obs[sample_col] == sample) & (adata.obs[celltype_col] == cell_type)
             cell_indices = np.where(mask)[0]
 
             if len(cell_indices) > 0:
-                # Process in chunks for memory efficiency
                 if len(cell_indices) > max_cells_per_batch:
                     expr_sum = np.zeros(n_genes, dtype=float)
                     for chunk_start in range(0, len(cell_indices), max_cells_per_batch):
@@ -462,7 +546,6 @@ def _create_pseudobulk_layers_gpu(
                         else:
                             chunk_data = adata.X[chunk_indices, :]
 
-                        # Move to GPU for sum
                         chunk_gpu = torch.from_numpy(np.asarray(chunk_data)).float().to(device)
                         chunk_sum = chunk_gpu.sum(dim=0)
                         expr_sum += chunk_sum.cpu().numpy()
@@ -472,50 +555,52 @@ def _create_pseudobulk_layers_gpu(
 
                     layer_matrix[sample_idx, :] = expr_sum / len(cell_indices)
                 else:
-                    # Process all at once
                     if issparse(adata.X):
                         expr_values = np.asarray(adata.X[cell_indices, :].mean(axis=0)).flatten()
                     else:
                         expr_values = np.asarray(adata.X[cell_indices, :].mean(axis=0)).flatten()
                     layer_matrix[sample_idx, :] = expr_values
 
-        # Add as layer
         pseudobulk_adata.layers[cell_type] = layer_matrix
 
     return pseudobulk_adata
 
 
-def _normalize_gpu(temp_adata: sc.AnnData, target_sum: float, device: torch.device,
-                   max_cells_per_batch: int):
+# ---------------------------------------------------------------------
+# GPU normalization
+# ---------------------------------------------------------------------
+def _normalize_gpu(
+    temp_adata: sc.AnnData,
+    target_sum: float,
+    device: torch.device,
+    max_cells_per_batch: int
+):
     """GPU-accelerated normalization matching scanpy's normalize_total and log1p."""
     n_obs = temp_adata.n_obs
 
-    # Convert to dense if sparse
     if issparse(temp_adata.X):
         temp_adata.X = temp_adata.X.toarray()
 
-    # Process in chunks
     for start_idx in range(0, n_obs, max_cells_per_batch):
         end_idx = min(start_idx + max_cells_per_batch, n_obs)
         chunk = np.asarray(temp_adata.X[start_idx:end_idx])
         X_chunk = torch.from_numpy(chunk).float().to(device)
 
-        # Normalize total (matching scanpy)
         row_sums = X_chunk.sum(dim=1, keepdim=True)
-        row_sums[row_sums == 0] = 1  # Avoid division by zero
+        row_sums[row_sums == 0] = 1
         X_chunk = X_chunk * (target_sum / row_sums)
 
-        # Log1p transformation
         X_chunk = torch.log1p(X_chunk)
 
-        # Copy back to CPU
         temp_adata.X[start_idx:end_idx] = X_chunk.cpu().numpy()
 
-        # Clean up
         del X_chunk
         clear_gpu_memory()
 
 
+# ---------------------------------------------------------------------
+# Final expression matrix + proportions
+# ---------------------------------------------------------------------
 def _create_final_expression_matrix(
     all_hvg_data: dict,
     all_gene_names: list,
@@ -525,21 +610,16 @@ def _create_final_expression_matrix(
 ) -> pd.DataFrame:
     """Create final expression matrix in original format (identical to CPU version)."""
     if verbose:
-        print("\nCreating final HVG expression matrix")
+        print("[pseudobulk] Building final HVG expression matrix (CT x sample).")
 
-    # Group genes by cell type
     cell_type_groups = {}
     for gene in set(all_gene_names):
         cell_type = gene.split(' - ')[0]
-        if cell_type not in cell_type_groups:
-            cell_type_groups[cell_type] = []
-        cell_type_groups[cell_type].append(gene)
+        cell_type_groups.setdefault(cell_type, []).append(gene)
 
-    # Sort genes within each cell type
     for ct in cell_type_groups:
         cell_type_groups[ct].sort()
 
-    # Create final format (cell types as rows, samples as columns)
     final_expression_df = pd.DataFrame(
         index=sorted(cell_types),
         columns=samples,
@@ -585,6 +665,9 @@ def _compute_cell_proportions(
     return proportion_df
 
 
+# ---------------------------------------------------------------------
+# Top-level wrapper
+# ---------------------------------------------------------------------
 def compute_pseudobulk_adata_linux(
     adata: sc.AnnData,
     batch_col: str = 'batch',
@@ -603,19 +686,9 @@ def compute_pseudobulk_adata_linux(
 ) -> Tuple[Dict, sc.AnnData]:
     """
     Explicit GPU version with additional control parameters.
-
-    Additional Parameters
-    ---------------------
-    batch_size : int
-        Number of samples to process simultaneously on GPU
-    max_cells_per_batch : int
-        Maximum number of cells to load to GPU at once
-    combat_timeout : float
-        Maximum time in seconds to wait for ComBat before falling back to regression
     """
-    # Call the main GPU function
-    from utils.random_seed import set_global_seed
-    set_global_seed(seed = 42, verbose = verbose)
+    set_global_seed(seed=42, verbose=verbose)
+
     cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu(
         adata=adata,
         batch_col=batch_col,
@@ -632,22 +705,20 @@ def compute_pseudobulk_adata_linux(
         combat_timeout=combat_timeout
     )
 
-    # Extract sample metadata (matching CPU version - do this ALWAYS)
+    # Attach sample metadata
     final_adata = _extract_sample_metadata(
         cell_adata=adata,
         sample_adata=final_adata,
         sample_col=sample_col,
     )
 
-    # Add cell proportions (matching CPU version - do this ALWAYS)
+    # Attach proportions
     final_adata.uns['cell_proportions'] = cell_proportion_df
 
-    # Save only if requested
     if Save:
         pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
         sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
 
-    # Create backward-compatible dictionary
     pseudobulk = {
         "cell_expression_corrected": cell_expression_hvg_df,
         "cell_proportion": cell_proportion_df.T

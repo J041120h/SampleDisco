@@ -1,16 +1,98 @@
-Loading pseudobulk AnnData from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad
 
-=== Batch → Sample Counts ===
-Su              : 29 samples
-SS2             : 6 samples
-SS1             : 5 samples
-Zhu             : 3 samples
-Wen             : 2 samples
-Lee             : 1 samples
-Mudd            : 1 samples
-Silvin          : 1 samples
-Wilk            : 1 samples
-Yu              : 1 samples
+============================================================
+RNA–ATAC PSEUDOBULK + CORRELATION ANALYSIS
+============================================================
 
-Total samples: 50
-Total batches: 10
+[Main] Loading RNA from:  /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/rna_corrected.h5ad
+[Main] Loading ATAC from: /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/heart_gene_activity.h5ad
+[Main] Found 203036 shared cells; subsetting both modalities.
+[Main] Running QC + clustering on RNA (for cell types)...
+[QC] Starting QC: 203036 cells × 36591 genes
+[QC] Finished QC: 203036 cells × 28117 genes
+[Main] After QC, keeping 203036 cells for both RNA and ATAC.
+[Cluster] Normalizing RNA (normalize_total + log1p)...
+[Cluster] Selecting 2000 HVGs...
+[Cluster] Running PCA with 30 components...
+[Cluster] Not running Harmony (HAS_HARMONY=True, batch_col=batch). Using PCA directly.
+[Cluster] Computing neighbors and UMAP...
+[Cluster] Running Leiden (resolution=1.0, igraph flavor)...
+[Cluster] Found 41 Leiden clusters (cell types).
+[Main] Transferring cell types to full RNA and ATAC objects...
+[Plot] Saving RNA UMAP colored by cell type...
+[Plot] Saving ATAC UMAP (using RNA UMAP coordinates) colored by cell type...
+[Main] Unifying gene IDs between RNA and ATAC (before pseudobulk)...
+[unify] Unifying on: SYMBOL
+[unify] Shared unified IDs: 19872
+[unify] Saved mapping → /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/gene_mapping/gene_id_mapping_unified.csv
+[Main] After unification: 19872 shared gene IDs.
+[Main] Normalizing aligned RNA & ATAC (CPM + log1p) for pseudobulk...
+[Pseudobulk] Using 203036 cells grouped by 'celltype'.
+[Pseudobulk] Result shape: 19872 genes × 41 groups
+[Pseudobulk] Using 203036 cells grouped by 'celltype'.
+[Pseudobulk] Result shape: 19872 genes × 41 groups
+[Main] Saved RNA pseudobulk to:  /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/rna_pseudobulk_celltype.csv
+[Main] Saved ATAC pseudobulk to: /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/atac_pseudobulk_celltype.csv
+[Main] For correlation: 19872 common genes, 41 common cell types.
+[Main] Saved per-cell-type Pearson correlations to: /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/celltype_pearson_correlations.csv
+[Plot] Saving heatmap of per-cell-type Pearson correlations...
+[Plot] Saving scatter plot for example cell type: 0
+[Main] Finished comparison of ATAC gene activity vs RNA.
+[Main] Outputs saved to: /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr
+
+============================================================
+RUNNING CELL-LEVEL / GENE-LEVEL CORRELATION (OPTIONAL)
+============================================================
+
+
+[DEBUG] ===== INPUT DATA INFO =====
+[DEBUG] RNA data shape: (203036, 36591)
+[DEBUG] First 5 RNA cell names: ['ENCSR201BHG_AAACAGCCAAACCCTA-1', 'ENCSR201BHG_AAACAGCCAATCCTAG-1', 'ENCSR201BHG_AAACAGCCACAAAGGT-1', 'ENCSR201BHG_AAACAGCCACACTAAT-1', 'ENCSR201BHG_AAACAGCCACAGGATG-1']
+[DEBUG] First 5 RNA gene names: ['ENSG00000243485', 'ENSG00000237613', 'ENSG00000186092', 'ENSG00000238009', 'ENSG00000239945']
+[DEBUG] RNA X type: <class 'numpy.ndarray'>
+
+[DEBUG] ATAC data shape: (203036, 27569)
+[DEBUG] First 5 ATAC cell names: ['ENCSR201BHG_AAACAGCCAAACCCTA-1', 'ENCSR201BHG_AAACAGCCAATCCTAG-1', 'ENCSR201BHG_AAACAGCCACAAAGGT-1', 'ENCSR201BHG_AAACAGCCACACTAAT-1', 'ENCSR201BHG_AAACAGCCACAGGATG-1']
+[DEBUG] First 5 ATAC gene names: ['RP11-34P13.8', 'RP11-34P13.7', 'FO538757.2', 'FO538757.1', 'AP006222.2']
+[DEBUG] ATAC X type: <class 'scipy.sparse._csc.csc_matrix'>
+
+[DEBUG] ===== CELL PAIRING =====
+[DEBUG] Total RNA cells: 203036 | Total ATAC cells: 203036
+[DEBUG] Common cells found: 203036
+[DEBUG] After subsetting to common cells → RNA: (203036, 36591), ATAC: (203036, 27569)
+
+[DEBUG] ===== GENE ALIGNMENT =====
+[DEBUG] Overlap by current var_names: 0
+[DEBUG] No shared genes. Attempting ID unification (Ensembl/Symbol)…
+[unify] Unifying on: SYMBOL
+[unify] Shared unified IDs: 19872
+[unify] Saved mapping → /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/cell_gene_corr/gene_id_mapping_unified.csv
+[DEBUG] Unified & aligned genes: 19872
+[DEBUG] Sampled down to 1000 genes
+
+[DEBUG] ===== FINAL MATRICES =====
+[DEBUG] Final matrix shape: 203036 cells × 1000 genes
+
+[DEBUG] ===== PER-CELL CORRELATIONS =====
+[DEBUG] Cell 0 (ENCSR201BHG_AAACAGCCAAACCCTA-1): 257 non-zero genes, corr=-0.107
+[DEBUG] Cell 1 (ENCSR201BHG_AAACAGCCAATCCTAG-1): 65 non-zero genes, corr=-0.701
+[DEBUG] Cell 2 (ENCSR201BHG_AAACAGCCACAAAGGT-1): 214 non-zero genes, corr=-0.063
+[DEBUG] Valid per-cell correlations: 203033/203036
+
+[DEBUG] ===== PER-GENE CORRELATIONS =====
+[DEBUG] Gene 0 (ABHD15): 793 co-expressing cells, corr=-0.066
+[DEBUG] Gene 1 (ABHD5): 5920 co-expressing cells, corr=-0.048
+[DEBUG] Gene 2 (ABLIM2): 11589 co-expressing cells, corr=-0.074
+[DEBUG] Gene 3 (ABLIM3): 18362 co-expressing cells, corr=-0.104
+[correlation] Saved:
+  /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/cell_gene_corr/per_cell_correlations.csv
+  /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/cell_gene_corr/per_gene_correlations.csv
+  /dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr/cell_gene_corr/correlation_plots.png
+
+[DEBUG] ===== CORRELATION SUMMARY =====
+[DEBUG] Per-cell correlation - Mean: -0.355, Median: -0.345
+[DEBUG] Per-gene correlation - Mean: -0.070, Median: -0.069
+
+============================================================
+ANALYSIS COMPLETE
+============================================================
+
