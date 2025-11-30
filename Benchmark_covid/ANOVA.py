@@ -78,24 +78,13 @@ def merge_data(meta_df, pseudotime_df):
     
     return merged_df
 
-
 def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
     """
-    Perform Two-way ANOVA to test effects of batch and severity on pseudotime
-    
-    Parameters:
-    -----------
-    merged_df : pd.DataFrame
-        Merged dataframe with batch, severity and pseudotime
-    pseudotime_col : str
-        Name of pseudotime column
-    
-    Returns:
-    --------
-    dict : ANOVA results and statistics
+    Perform Two-way ANOVA to test effects of batch and severity on pseudotime.
+    If only one batch is present, fall back to one-way ANOVA on severity_level.
     """
-    print("\nPerforming Two-way ANOVA...")
-    
+    print("\nPerforming ANOVA...")
+
     # Check for required columns
     required_cols = ['batch', 'sev.level', pseudotime_col]
     for col in required_cols:
@@ -104,20 +93,31 @@ def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
     
     # Prepare data - remove NaN and ensure factors are categorical
     anova_df = merged_df[['sample', 'batch', 'sev.level', pseudotime_col]].dropna()
-    
-    # IMPORTANT: Rename 'sev.level' to avoid formula parsing issues with the dot
+
+    # Rename 'sev.level' to avoid formula parsing issues with the dot
     anova_df = anova_df.rename(columns={'sev.level': 'severity_level'})
-    
     anova_df['batch'] = anova_df['batch'].astype('category')
     anova_df['severity_level'] = anova_df['severity_level'].astype('category')
     
-    print(f"  Analyzing {anova_df.shape[0]} samples with complete data")
-    print(f"  Number of batches: {anova_df['batch'].nunique()}")
-    print(f"  Number of severity levels: {anova_df['severity_level'].nunique()}")
-    
-    # Create formula for two-way ANOVA with interaction
-    formula = f'{pseudotime_col} ~ C(batch) + C(severity_level) + C(batch):C(severity_level)'
-    
+    n_samples = anova_df.shape[0]
+    n_batches = anova_df['batch'].nunique()
+    n_sev = anova_df['severity_level'].nunique()
+
+    print(f"  Analyzing {n_samples} samples with complete data")
+    print(f"  Number of batches: {n_batches}")
+    print(f"  Number of severity levels: {n_sev}")
+
+    # --------- Choose model: two-way vs one-way --------- #
+    if n_batches > 1:
+        print("  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).")
+        formula = f'{pseudotime_col} ~ C(batch) + C(severity_level) + C(batch):C(severity_level)'
+        model_type = 'two_way'
+    else:
+        print("  Only ONE batch detected → falling back to ONE-WAY ANOVA on severity_level.")
+        # Only severity as a factor
+        formula = f'{pseudotime_col} ~ C(severity_level)'
+        model_type = 'one_way_severity'
+
     # Fit the model
     model = ols(formula, data=anova_df).fit()
     
@@ -125,20 +125,20 @@ def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
     anova_table = anova_lm(model, typ=2)
     
     # Debug: Print available columns
+    print(f"  ANOVA table index: {list(anova_table.index)}")
     print(f"  ANOVA table columns: {list(anova_table.columns)}")
     
     # Calculate mean squares if not present
     if 'mean_sq' not in anova_table.columns:
         anova_table['mean_sq'] = anova_table['sum_sq'] / anova_table['df']
     
-    # Calculate effect sizes (eta-squared)
+    # Effect sizes
     anova_table['eta_sq'] = anova_table['sum_sq'] / anova_table['sum_sq'].sum()
     
-    # Calculate partial eta-squared
-    ss_total = anova_table['sum_sq'].sum()
+    # Partial eta-squared (vs residual)
     ss_residual = anova_table.loc['Residual', 'sum_sq']
     anova_table['partial_eta_sq'] = anova_table['sum_sq'] / (anova_table['sum_sq'] + ss_residual)
-    
+
     # Descriptive statistics by groups
     desc_stats = {
         'by_batch': anova_df.groupby('batch')[pseudotime_col].agg(['count', 'mean', 'std']),
@@ -148,20 +148,26 @@ def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
     
     # Post-hoc tests if main effects are significant
     posthoc_results = {}
-    
+
     # Tukey HSD for severity levels if significant
-    if 'PR(>F)' in anova_table.columns and anova_table.loc['C(severity_level)', 'PR(>F)'] < 0.05:
-        tukey_severity = pairwise_tukeyhsd(anova_df[pseudotime_col], 
-                                          anova_df['severity_level'], 
-                                          alpha=0.05)
-        posthoc_results['severity'] = tukey_severity
+    if 'C(severity_level)' in anova_table.index and 'PR(>F)' in anova_table.columns:
+        if anova_table.loc['C(severity_level)', 'PR(>F)'] < 0.05:
+            tukey_severity = pairwise_tukeyhsd(
+                anova_df[pseudotime_col],
+                anova_df['severity_level'],
+                alpha=0.05
+            )
+            posthoc_results['severity'] = tukey_severity
     
-    # Tukey HSD for batch if significant
-    if 'PR(>F)' in anova_table.columns and anova_table.loc['C(batch)', 'PR(>F)'] < 0.05:
-        tukey_batch = pairwise_tukeyhsd(anova_df[pseudotime_col], 
-                                       anova_df['batch'], 
-                                       alpha=0.05)
-        posthoc_results['batch'] = tukey_batch
+    # Tukey HSD for batch if present & significant (only in two-way model)
+    if model_type == 'two_way' and 'C(batch)' in anova_table.index and 'PR(>F)' in anova_table.columns:
+        if anova_table.loc['C(batch)', 'PR(>F)'] < 0.05:
+            tukey_batch = pairwise_tukeyhsd(
+                anova_df[pseudotime_col],
+                anova_df['batch'],
+                alpha=0.05
+            )
+            posthoc_results['batch'] = tukey_batch
     
     # Add back the original column name for compatibility with visualization
     anova_df['sev.level'] = anova_df['severity_level']
@@ -173,43 +179,36 @@ def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
         'posthoc': posthoc_results,
         'data': anova_df,
         'pseudotime_col': pseudotime_col,
-        'n_samples': anova_df.shape[0],
-        'n_batches': anova_df['batch'].nunique(),
-        'n_severity_levels': anova_df['severity_level'].nunique()
+        'n_samples': n_samples,
+        'n_batches': n_batches,
+        'n_severity_levels': n_sev,
+        'model_type': model_type,   # <--- NEW FLAG
     }
     
     return results
 
-
 def create_visualizations(results, output_dir):
     """
-    Create visualization plots for the Two-way ANOVA analysis
-    
-    Parameters:
-    -----------
-    results : dict
-        Results from ANOVA analysis
-    output_dir : str
-        Output directory path
+    Create visualization plots for the ANOVA analysis.
+    Works for both two-way (batch + severity) and one-way (severity only).
     """
     print("\nCreating visualizations...")
     
     data = results['data']
     pseudotime_col = results['pseudotime_col']
+    model_type = results.get('model_type', 'two_way')
     
-    # Set style
     sns.set_style("whitegrid")
     
-    # Create figure with subplots
     fig = plt.figure(figsize=(16, 12))
     
-    # 1. Interaction plot
+    # 1. Interaction plot (will just be a single line if one batch)
     ax1 = plt.subplot(2, 3, 1)
     interaction_data = data.groupby(['sev.level', 'batch'])[pseudotime_col].mean().reset_index()
     for batch in interaction_data['batch'].unique():
         batch_data = interaction_data[interaction_data['batch'] == batch]
-        ax1.plot(batch_data['sev.level'], batch_data[pseudotime_col], 
-                marker='o', label=f'Batch {batch}', linewidth=2, markersize=8)
+        ax1.plot(batch_data['sev.level'], batch_data[pseudotime_col],
+                 marker='o', label=f'Batch {batch}', linewidth=2, markersize=8)
     ax1.set_xlabel('Severity Level')
     ax1.set_ylabel('Mean Pseudotime')
     ax1.set_title('Interaction Plot: Batch × Severity Level')
@@ -234,38 +233,64 @@ def create_visualizations(results, output_dir):
     
     # 4. Violin plot with batch and severity
     ax4 = plt.subplot(2, 3, 4)
-    sns.violinplot(data=data, x='sev.level', y=pseudotime_col, hue='batch', 
-                   split=False, inner='box', ax=ax4)
+    sns.violinplot(
+        data=data,
+        x='sev.level',
+        y=pseudotime_col,
+        hue='batch',
+        split=False,
+        inner='box',
+        ax=ax4
+    )
     ax4.set_xlabel('Severity Level')
     ax4.set_ylabel('Pseudotime')
     ax4.set_title('Pseudotime Distribution by Severity and Batch')
     ax4.legend(title='Batch', bbox_to_anchor=(1.05, 1), loc='upper left')
     
-    # 5. Effect sizes visualization
+    # 5. Effect sizes visualization (adaptive)
     ax5 = plt.subplot(2, 3, 5)
-    anova_table = results['anova_table'].iloc[:-1]  # Remove residual row
+    anova_table = results['anova_table']
+
+    # Drop residual row
+    anova_no_res = anova_table.loc[anova_table.index != 'Residual']
     effect_data = pd.DataFrame({
-        'Factor': anova_table.index,
-        'Partial Eta²': anova_table['partial_eta_sq'].values
+        'Factor': anova_no_res.index,
+        'Partial Eta²': anova_no_res['partial_eta_sq'].values
     })
+
+    # Map to nicer labels if possible
+    label_map = {
+        'C(batch)': 'Batch',
+        'C(severity_level)': 'Severity',
+        'C(batch):C(severity_level)': 'Batch×Severity'
+    }
+    labels = [label_map.get(f, str(f)) for f in effect_data['Factor']]
+
     bars = ax5.bar(range(len(effect_data)), effect_data['Partial Eta²'])
     ax5.set_xticks(range(len(effect_data)))
-    ax5.set_xticklabels(['Batch', 'Severity', 'Batch×Severity'], rotation=45)
+    ax5.set_xticklabels(labels, rotation=45)
     ax5.set_ylabel('Partial Eta-Squared')
     ax5.set_title('Effect Sizes (Partial η²)')
     ax5.set_ylim(0, 1)
-    
+
     # Add value labels on bars
-    for i, (bar, val) in enumerate(zip(bars, effect_data['Partial Eta²'])):
-        ax5.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
-                f'{val:.3f}', ha='center', va='bottom')
+    for bar, val in zip(bars, effect_data['Partial Eta²']):
+        ax5.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.01,
+            f'{val:.3f}',
+            ha='center',
+            va='bottom'
+        )
     
     # 6. Heatmap of mean pseudotime by batch and severity
     ax6 = plt.subplot(2, 3, 6)
-    pivot_data = data.pivot_table(values=pseudotime_col, 
-                                  index='sev.level', 
-                                  columns='batch', 
-                                  aggfunc='mean')
+    pivot_data = data.pivot_table(
+        values=pseudotime_col,
+        index='sev.level',
+        columns='batch',
+        aggfunc='mean'
+    )
     sns.heatmap(pivot_data, annot=True, fmt='.3f', cmap='YlOrRd', ax=ax6)
     ax6.set_xlabel('Batch')
     ax6.set_ylabel('Severity Level')
@@ -273,32 +298,26 @@ def create_visualizations(results, output_dir):
     
     plt.tight_layout()
     
-    # Save figure
     plot_path = os.path.join(output_dir, 'twoway_anova_plots.png')
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
     
     print(f"  Saved plots to: {plot_path}")
 
-
 def generate_summary_report(results, output_dir):
     """
-    Generate and save comprehensive summary report
-    
-    Parameters:
-    -----------
-    results : dict
-        Results from ANOVA analysis
-    output_dir : str
-        Output directory path
+    Generate and save comprehensive summary report.
+    Works for both two-way (batch + severity) and one-way (severity only).
     """
     print("\nGenerating summary report...")
     
     anova_table = results['anova_table']
+    model_type = results.get('model_type', 'two_way')
     
     report_lines = [
         "="*80,
-        "TWO-WAY ANOVA TRAJECTORY ANALYSIS REPORT",
+        "TWO-WAY ANOVA TRAJECTORY ANALYSIS REPORT" if model_type == 'two_way'
+        else "ONE-WAY ANOVA TRAJECTORY ANALYSIS REPORT (Severity Only)",
         "="*80,
         f"Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "",
@@ -310,14 +329,14 @@ def generate_summary_report(results, output_dir):
         f"Number of Severity Levels: {results['n_severity_levels']}",
         "",
         "-"*40,
-        "TWO-WAY ANOVA RESULTS",
+        "ANOVA RESULTS",
         "-"*40,
         "",
         "ANOVA Table:",
         "="*70,
     ]
     
-    # Format ANOVA table for report - check which columns are available
+    # Format ANOVA table for report
     available_cols = ['df', 'sum_sq']
     if 'mean_sq' in anova_table.columns:
         available_cols.append('mean_sq')
@@ -336,75 +355,93 @@ def generate_summary_report(results, output_dir):
         "MAIN EFFECTS INTERPRETATION",
         "-"*40,
     ])
-    
-    # Batch effect interpretation
-    batch_p = anova_table.loc['C(batch)', 'PR(>F)'] if 'PR(>F)' in anova_table.columns else None
-    batch_eta = anova_table.loc['C(batch)', 'partial_eta_sq']
-    batch_f = anova_table.loc['C(batch)', 'F'] if 'F' in anova_table.columns else None
-    
+
+    # Helpers to safely pull rows/stats
+    def get_row(idx_name):
+        return anova_table.loc[idx_name] if idx_name in anova_table.index else None
+
+    def extract_stats(row):
+        if row is None:
+            return None, None, None
+        p = row['PR(>F)'] if 'PR(>F)' in anova_table.columns else None
+        eta = row['partial_eta_sq']
+        F = row['F'] if 'F' in anova_table.columns else None
+        return p, eta, F
+
+    batch_row = get_row('C(batch)')
+    severity_row = get_row('C(severity_level)')
+    interaction_row = get_row('C(batch):C(severity_level)')
+
+    batch_p, batch_eta, batch_f = extract_stats(batch_row)
+    severity_p, severity_eta, severity_f = extract_stats(severity_row)
+    interaction_p, interaction_eta, interaction_f = extract_stats(interaction_row)
+
+    # 1. Batch effect interpretation (if present)
     report_lines.extend([
         "",
-        f"1. BATCH EFFECT:",
+        "1. BATCH EFFECT:",
     ])
-    if batch_f is not None:
-        report_lines.append(f"   F-statistic: {batch_f:.3f}")
-    if batch_p is not None:
-        report_lines.append(f"   p-value: {batch_p:.4e}")
-    report_lines.append(f"   Partial η²: {batch_eta:.4f}")
+    if batch_row is None:
+        report_lines.append("   (Batch factor not in model — only one batch in data.)")
+    else:
+        if batch_f is not None:
+            report_lines.append(f"   F-statistic: {batch_f:.3f}")
+        if batch_p is not None:
+            report_lines.append(f"   p-value: {batch_p:.4e}")
+        report_lines.append(f"   Partial η²: {batch_eta:.4f}")
+        if batch_p is not None and batch_p < 0.05:
+            effect_size = "large" if batch_eta > 0.14 else "medium" if batch_eta > 0.06 else "small"
+            report_lines.append(f"   ✗ SIGNIFICANT batch effect detected ({effect_size} effect size)")
+            report_lines.append("   → Batch correction may be necessary for reliable trajectory inference")
+        elif batch_p is not None:
+            report_lines.append("   ✓ No significant batch effect detected")
+            report_lines.append("   → Trajectory is robust to batch variations")
     
-    if batch_p is not None and batch_p < 0.05:
-        effect_size = "large" if batch_eta > 0.14 else "medium" if batch_eta > 0.06 else "small"
-        report_lines.append(f"   ✗ SIGNIFICANT batch effect detected ({effect_size} effect size)")
-        report_lines.append("   → Batch correction may be necessary for reliable trajectory inference")
-    elif batch_p is not None:
-        report_lines.append("   ✓ No significant batch effect detected")
-        report_lines.append("   → Trajectory is robust to batch variations")
-    
-    # Severity effect interpretation
-    severity_p = anova_table.loc['C(severity_level)', 'PR(>F)'] if 'PR(>F)' in anova_table.columns else None
-    severity_eta = anova_table.loc['C(severity_level)', 'partial_eta_sq']
-    severity_f = anova_table.loc['C(severity_level)', 'F'] if 'F' in anova_table.columns else None
-    
+    # 2. Severity effect interpretation
     report_lines.extend([
         "",
-        f"2. SEVERITY LEVEL EFFECT:",
+        "2. SEVERITY LEVEL EFFECT:",
     ])
-    if severity_f is not None:
-        report_lines.append(f"   F-statistic: {severity_f:.3f}")
-    if severity_p is not None:
-        report_lines.append(f"   p-value: {severity_p:.4e}")
-    report_lines.append(f"   Partial η²: {severity_eta:.4f}")
+    if severity_row is None:
+        report_lines.append("   (Severity factor not found in ANOVA table.)")
+    else:
+        if severity_f is not None:
+            report_lines.append(f"   F-statistic: {severity_f:.3f}")
+        if severity_p is not None:
+            report_lines.append(f"   p-value: {severity_p:.4e}")
+        report_lines.append(f"   Partial η²: {severity_eta:.4f}")
+        
+        if severity_p is not None and severity_p < 0.05:
+            effect_size = "large" if severity_eta > 0.14 else "medium" if severity_eta > 0.06 else "small"
+            report_lines.append(f"   ✓ SIGNIFICANT severity effect detected ({effect_size} effect size)")
+            report_lines.append("   → Trajectory effectively captures disease progression")
+        elif severity_p is not None:
+            report_lines.append("   ✗ No significant severity effect detected")
+            report_lines.append("   → Trajectory does NOT capture disease progression well")
     
-    if severity_p is not None and severity_p < 0.05:
-        effect_size = "large" if severity_eta > 0.14 else "medium" if severity_eta > 0.06 else "small"
-        report_lines.append(f"   ✓ SIGNIFICANT severity effect detected ({effect_size} effect size)")
-        report_lines.append("   → Trajectory effectively captures disease progression")
-    elif severity_p is not None:
-        report_lines.append("   ✗ No significant severity effect detected")
-        report_lines.append("   → Trajectory does NOT capture disease progression well")
-    
-    # Interaction effect interpretation
-    interaction_p = anova_table.loc['C(batch):C(severity_level)', 'PR(>F)'] if 'PR(>F)' in anova_table.columns else None
-    interaction_eta = anova_table.loc['C(batch):C(severity_level)', 'partial_eta_sq']
-    interaction_f = anova_table.loc['C(batch):C(severity_level)', 'F'] if 'F' in anova_table.columns else None
-    
+    # 3. Interaction effect (only meaningful in two-way)
     report_lines.extend([
         "",
-        f"3. INTERACTION EFFECT (Batch × Severity):",
+        "3. INTERACTION EFFECT (Batch × Severity):",
     ])
-    if interaction_f is not None:
-        report_lines.append(f"   F-statistic: {interaction_f:.3f}")
-    if interaction_p is not None:
-        report_lines.append(f"   p-value: {interaction_p:.4e}")
-    report_lines.append(f"   Partial η²: {interaction_eta:.4f}")
-    
-    if interaction_p is not None and interaction_p < 0.05:
-        report_lines.append("   ⚠ SIGNIFICANT interaction detected")
-        report_lines.append("   → Batch effects vary across severity levels")
-        report_lines.append("   → Interpretation of main effects should be cautious")
-    elif interaction_p is not None:
-        report_lines.append("   ✓ No significant interaction detected")
-        report_lines.append("   → Batch effects are consistent across severity levels")
+    if model_type == 'one_way_severity':
+        report_lines.append("   (Interaction term not included — only one batch in data.)")
+    else:
+        if interaction_row is None:
+            report_lines.append("   (Interaction term not found in ANOVA table.)")
+        else:
+            if interaction_f is not None:
+                report_lines.append(f"   F-statistic: {interaction_f:.3f}")
+            if interaction_p is not None:
+                report_lines.append(f"   p-value: {interaction_p:.4e}")
+            report_lines.append(f"   Partial η²: {interaction_eta:.4f}")
+            if interaction_p is not None and interaction_p < 0.05:
+                report_lines.append("   ⚠ SIGNIFICANT interaction detected")
+                report_lines.append("   → Batch effects vary across severity levels")
+                report_lines.append("   → Interpretation of main effects should be cautious")
+            elif interaction_p is not None:
+                report_lines.append("   ✓ No significant interaction detected")
+                report_lines.append("   → Batch effects are consistent across severity levels")
     
     # Overall effectiveness assessment
     report_lines.extend([
@@ -415,25 +452,37 @@ def generate_summary_report(results, output_dir):
     ])
     
     # Determine overall effectiveness
-    if severity_p is not None and batch_p is not None:
-        if severity_p < 0.05 and batch_p >= 0.05:
+    if model_type == 'one_way_severity':
+        # Only severity info is meaningful
+        if severity_p is not None and severity_p < 0.05:
             effectiveness = "EXCELLENT"
-            effectiveness_desc = "The trajectory captures disease progression without batch confounding"
-        elif severity_p < 0.05 and batch_p < 0.05 and batch_eta < severity_eta:
-            effectiveness = "GOOD"
-            effectiveness_desc = "The trajectory captures disease progression but shows some batch effects"
-        elif severity_p < 0.05 and batch_p < 0.05 and batch_eta >= severity_eta:
-            effectiveness = "MODERATE"
-            effectiveness_desc = "Disease progression is detected but batch effects are substantial"
-        elif severity_p >= 0.05 and batch_p < 0.05:
-            effectiveness = "POOR"
-            effectiveness_desc = "The trajectory is dominated by batch effects, not biological signal"
-        else:
+            effectiveness_desc = "The trajectory captures disease progression (single-batch data)."
+        elif severity_p is not None:
             effectiveness = "INEFFECTIVE"
-            effectiveness_desc = "The trajectory does not capture meaningful biological variation"
+            effectiveness_desc = "The trajectory does not capture disease progression well (single-batch data)."
+        else:
+            effectiveness = "UNDETERMINED"
+            effectiveness_desc = "Unable to determine effectiveness due to missing p-value for severity."
     else:
-        effectiveness = "UNDETERMINED"
-        effectiveness_desc = "Unable to determine effectiveness due to missing p-values"
+        if severity_p is not None and batch_p is not None:
+            if severity_p < 0.05 and batch_p >= 0.05:
+                effectiveness = "EXCELLENT"
+                effectiveness_desc = "The trajectory captures disease progression without batch confounding"
+            elif severity_p < 0.05 and batch_p < 0.05 and batch_eta < severity_eta:
+                effectiveness = "GOOD"
+                effectiveness_desc = "The trajectory captures disease progression but shows some batch effects"
+            elif severity_p < 0.05 and batch_p < 0.05 and batch_eta >= severity_eta:
+                effectiveness = "MODERATE"
+                effectiveness_desc = "Disease progression is detected but batch effects are substantial"
+            elif severity_p >= 0.05 and batch_p < 0.05:
+                effectiveness = "POOR"
+                effectiveness_desc = "The trajectory is dominated by batch effects, not biological signal"
+            else:
+                effectiveness = "INEFFECTIVE"
+                effectiveness_desc = "The trajectory does not capture meaningful biological variation"
+        else:
+            effectiveness = "UNDETERMINED"
+            effectiveness_desc = "Unable to determine effectiveness due to missing p-values"
     
     report_lines.extend([
         f"Overall Assessment: {effectiveness}",
@@ -536,18 +585,36 @@ def generate_summary_report(results, output_dir):
     # Print key results to console
     print("\n" + "="*50)
     print("KEY RESULTS:")
-    if batch_p is not None:
-        print(f"  Batch Effect: p = {batch_p:.4e} (η² = {batch_eta:.3f})")
+
+    # Batch
+    if batch_row is not None:
+        if batch_p is not None:
+            print(f"  Batch Effect: p = {batch_p:.4e} (η² = {batch_eta:.3f})")
+        else:
+            print(f"  Batch Effect: η² = {batch_eta:.3f}")
     else:
-        print(f"  Batch Effect: η² = {batch_eta:.3f}")
-    if severity_p is not None:
-        print(f"  Severity Effect: p = {severity_p:.4e} (η² = {severity_eta:.3f})")
+        print("  Batch Effect: (no batch factor — single-batch dataset)")
+
+    # Severity
+    if severity_row is not None:
+        if severity_p is not None:
+            print(f"  Severity Effect: p = {severity_p:.4e} (η² = {severity_eta:.3f})")
+        else:
+            print(f"  Severity Effect: η² = {severity_eta:.3f}")
     else:
-        print(f"  Severity Effect: η² = {severity_eta:.3f}")
-    if interaction_p is not None:
-        print(f"  Interaction: p = {interaction_p:.4e} (η² = {interaction_eta:.3f})")
+        print("  Severity Effect: (severity factor missing)")
+
+    # Interaction
+    if model_type == 'two_way' and interaction_row is not None:
+        if interaction_p is not None:
+            print(f"  Interaction: p = {interaction_p:.4e} (η² = {interaction_eta:.3f})")
+        else:
+            print(f"  Interaction: η² = {interaction_eta:.3f}")
+    elif model_type == 'two_way':
+        print("  Interaction: (interaction term missing)")
     else:
-        print(f"  Interaction: η² = {interaction_eta:.3f}")
+        print("  Interaction: (not applicable for one-way severity model)")
+
     print(f"  Overall Assessment: {effectiveness}")
     print("="*50)
 
@@ -603,13 +670,3 @@ def run_trajectory_anova_analysis(meta_csv_path, pseudotime_csv_path, output_dir
     except Exception as e:
         print(f"\n✗ Error during analysis: {str(e)}")
         raise
-
-
-if __name__ == "__main__":
-    # Run the main analysis pipeline
-    # Users will directly modify these paths
-    run_trajectory_anova_analysis(
-        meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        pseudotime_csv_path='/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/CCA/pseudotime_expression.csv',
-        output_dir_path='/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/twoway_anova_results'
-    )

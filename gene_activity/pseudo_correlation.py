@@ -116,6 +116,7 @@ def _choose_unified_key(rna_ids: pd.DataFrame,
     # auto: pick the bigger
     return "ensembl" if ens_overlap >= sym_overlap else "symbol"
 
+
 def unify_and_align_genes(
     adata_rna: sc.AnnData,
     adata_atac: sc.AnnData,
@@ -135,6 +136,10 @@ def unify_and_align_genes(
     - If atac_layer is set and present, use that layer as the ATAC matrix.
 
     Returns: rna_sub, atac_sub, shared_ids, mapping_df
+
+    DEBUG-friendly version:
+      * Detects duplicate unified IDs per modality
+      * Writes them to CSV and drops them (keeps first) before alignment
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -145,8 +150,13 @@ def unify_and_align_genes(
         X = adata_atac.layers[atac_layer]
         # Preserve var/obs; replace X view only for correlation
         adata_atac = sc.AnnData(X=X, obs=adata_atac.obs.copy(), var=adata_atac.var.copy())
+    elif verbose:
+        print(f"[unify] ATAC layer '{atac_layer}' not found; using adata_atac.X")
 
     # Derive IDs for both
+    if verbose:
+        print("[unify] Deriving ID candidates from RNA and ATAC .var / var_names")
+
     rna_ids = _derive_ids(adata_rna.var_names, adata_rna.var)
     atac_ids = _derive_ids(adata_atac.var_names, adata_atac.var)
 
@@ -154,6 +164,8 @@ def unify_and_align_genes(
     sym2ens = {}
     ens2sym = {}
     if mapping_csv and os.path.exists(mapping_csv):
+        if verbose:
+            print(f"[unify] Reading mapping_csv: {mapping_csv}")
         mdf = pd.read_csv(mapping_csv)
         if {"gene_id", "gene_name"}.issubset(set(mdf.columns)):
             mdf = mdf.dropna(subset=["gene_id", "gene_name"]).copy()
@@ -164,7 +176,7 @@ def unify_and_align_genes(
             ens2sym = pd.Series(mdf["gene_name"].values, index=mdf["gene_id"].values).to_dict()
             sym2ens = pd.Series(mdf["gene_id"].values, index=mdf["gene_name"].values).to_dict()
             if verbose:
-                print(f"[unify] Loaded mapping_csv with {len(mdf)} rows")
+                print(f"[unify] Loaded mapping_csv with {len(mdf)} unique gene_id rows")
         else:
             if verbose:
                 print("[unify] mapping_csv missing required columns 'gene_id' and 'gene_name' — ignoring")
@@ -181,6 +193,8 @@ def unify_and_align_genes(
 
         # If missing, try convert via symbol -> ensembl using mapping_csv
         if mapping_csv:
+            if verbose:
+                print("[unify] Filling missing Ensembl IDs using symbol→Ensembl mapping (if possible)")
             rna_missing = rna_id.isna()
             atac_missing = atac_id.isna()
             if rna_missing.any():
@@ -200,6 +214,8 @@ def unify_and_align_genes(
 
         # If missing, try ensembl -> symbol via mapping_csv
         if mapping_csv:
+            if verbose:
+                print("[unify] Filling missing symbols using Ensembl→symbol mapping (if possible)")
             rna_missing = rna_id.isna()
             atac_missing = atac_id.isna()
             if rna_missing.any():
@@ -213,22 +229,102 @@ def unify_and_align_genes(
         rna_id = rna_id.dropna().astype(str).map(_normalize_symbol)
         atac_id = atac_id.dropna().astype(str).map(_normalize_symbol)
 
-    # Build mapping dataframe for provenance
-    map_rna = pd.DataFrame({"orig": adata_rna.var_names, "unified_id": rna_id.reindex(adata_rna.var_names).values})
-    map_atac = pd.DataFrame({"orig": adata_atac.var_names, "unified_id": atac_id.reindex(adata_atac.var_names).values})
+    # ------------------------------------------------------------------
+    # Build mapping DataFrames with orig var_names and unified IDs
+    # ------------------------------------------------------------------
+    rna_uid = rna_id.reindex(adata_rna.var_names)
+    atac_uid = atac_id.reindex(adata_atac.var_names)
 
-    # Shared unified ids
-    shared = sorted(set(map_rna["unified_id"].dropna()) & set(map_atac["unified_id"].dropna()))
+    map_rna = pd.DataFrame({"orig": adata_rna.var_names, "unified_id": rna_uid.values})
+    map_atac = pd.DataFrame({"orig": adata_atac.var_names, "unified_id": atac_uid.values})
+
     if verbose:
-        print(f"[unify] Shared unified IDs: {len(shared)}")
+        print(f"[unify] Non-null unified IDs: RNA={map_rna['unified_id'].notna().sum()}, "
+              f"ATAC={map_atac['unified_id'].notna().sum()}")
+
+    # ------------------------------------------------------------------
+    # DEBUG: detect and log duplicate unified IDs BEFORE alignment
+    # ------------------------------------------------------------------
+    dup_rna = map_rna[map_rna["unified_id"].notna() &
+                      map_rna["unified_id"].duplicated(keep=False)]
+    dup_atac = map_atac[map_atac["unified_id"].notna() &
+                        map_atac["unified_id"].duplicated(keep=False)]
+
+    if len(dup_rna) > 0:
+        dup_path_rna = os.path.join(output_dir, "rna_unified_id_duplicates.csv")
+        dup_rna.to_csv(dup_path_rna, index=False)
+        if verbose:
+            print(f"[unify][DEBUG] RNA duplicates detected for unified_id (n={len(dup_rna)} rows). "
+                  f"Saved details → {dup_path_rna}")
+
+    if len(dup_atac) > 0:
+        dup_path_atac = os.path.join(output_dir, "atac_unified_id_duplicates.csv")
+        dup_atac.to_csv(dup_path_atac, index=False)
+        if verbose:
+            print(f"[unify][DEBUG] ATAC duplicates detected for unified_id (n={len(dup_atac)} rows). "
+                  f"Saved details → {dup_path_atac}")
+
+    # Drop duplicates (keep first occurrence) for alignment purposes
+    map_rna_unique = (
+        map_rna
+        .dropna(subset=["unified_id"])
+        .drop_duplicates(subset="unified_id", keep="first")
+        .copy()
+    )
+    map_atac_unique = (
+        map_atac
+        .dropna(subset=["unified_id"])
+        .drop_duplicates(subset="unified_id", keep="first")
+        .copy()
+    )
+
+    if verbose:
+        print(f"[unify] After dropping duplicates: RNA unique IDs={len(map_rna_unique)}, "
+              f"ATAC unique IDs={len(map_atac_unique)}")
+
+    # Build Series unified_id -> orig var_name
+    rna_uid_to_var = pd.Series(
+        map_rna_unique["orig"].values,
+        index=map_rna_unique["unified_id"].values,
+        dtype="object",
+    )
+    atac_uid_to_var = pd.Series(
+        map_atac_unique["orig"].values,
+        index=map_atac_unique["unified_id"].values,
+        dtype="object",
+    )
+
+    # Shared unified ids (after uniqueness)
+    shared = sorted(set(rna_uid_to_var.index) & set(atac_uid_to_var.index))
+    if verbose:
+        print(f"[unify] Shared unified IDs after deduplication: {len(shared)}")
 
     if len(shared) == 0:
-        raise ValueError("[unify] No overlap after ID harmonization. "
+        raise ValueError("[unify] No overlap after ID harmonization (post-dedup). "
                          "Provide a mapping_csv or check species/build.")
 
-    # Indexers to reorder columns
-    rna_idx = pd.Index(map_rna["unified_id"]).get_indexer(shared)
-    atac_idx = pd.Index(map_atac["unified_id"]).get_indexer(shared)
+    # ------------------------------------------------------------------
+    # Use original var_names (which are unique) to get column indices
+    # ------------------------------------------------------------------
+    rna_var_index = pd.Index(adata_rna.var_names)
+    atac_var_index = pd.Index(adata_atac.var_names)
+
+    rna_cols = [rna_uid_to_var.loc[u] for u in shared]
+    atac_cols = [atac_uid_to_var.loc[u] for u in shared]
+
+    rna_idx = rna_var_index.get_indexer(rna_cols)
+    atac_idx = atac_var_index.get_indexer(atac_cols)
+
+    # Safety checks
+    if (rna_idx < 0).any():
+        bad = [shared[i] for i, idx in enumerate(rna_idx) if idx < 0]
+        raise RuntimeError(f"[unify] Internal error: some shared IDs not found in RNA var_names: {bad[:10]} ...")
+    if (atac_idx < 0).any():
+        bad = [shared[i] for i, idx in enumerate(atac_idx) if idx < 0]
+        raise RuntimeError(f"[unify] Internal error: some shared IDs not found in ATAC var_names: {bad[:10]} ...")
+
+    if verbose:
+        print(f"[unify] Will align RNA and ATAC to {len(shared)} shared genes")
 
     # Subset (columns) and overwrite var_names with unified ids
     rna_aligned = adata_rna[:, rna_idx].copy()
@@ -236,11 +332,11 @@ def unify_and_align_genes(
     rna_aligned.var_names = pd.Index(shared)
     atac_aligned.var_names = pd.Index(shared)
 
-    # Save mapping CSV for debugging
+    # Save mapping CSV for provenance
     md = pd.DataFrame({
         "unified_id": shared,
-        "rna_orig": map_rna.set_index("unified_id").reindex(shared)["orig"].values,
-        "atac_orig": map_atac.set_index("unified_id").reindex(shared)["orig"].values,
+        "rna_orig": [rna_uid_to_var.loc[u] for u in shared],
+        "atac_orig": [atac_uid_to_var.loc[u] for u in shared],
         "target_space": target
     })
     md_path = os.path.join(output_dir, "gene_id_mapping_unified.csv")
@@ -324,9 +420,16 @@ def _cluster_with_harmony_on_rna(
     sc.pp.pca(adata_rna, n_comps=n_pcs, svd_solver="arpack", random_state=random_state)
 
     use_rep = "X_pca"
-    if _HAS_HARMONY and batch_col is not None and batch_col in adata_rna.obs.columns:
+    can_run_harmony = (
+        _HAS_HARMONY
+        and batch_col is not None
+        and batch_col in adata_rna.obs.columns
+        and adata_rna.obs[batch_col].notna().any()
+    )
+    if can_run_harmony:
         if verbose:
             print(f"[Cluster] Running Harmony on batch_col = '{batch_col}'...")
+            print(f"[Cluster][DEBUG] batch_col unique values: {adata_rna.obs[batch_col].value_counts().to_dict()}")
         Z = harmonize(
             adata_rna.obsm["X_pca"],
             adata_rna.obs,
@@ -336,7 +439,9 @@ def _cluster_with_harmony_on_rna(
         use_rep = "X_pca_harmony"
     else:
         if verbose:
-            print(f"[Cluster] Not running Harmony (HAS_HARMONY={_HAS_HARMONY}, batch_col={batch_col}). Using PCA directly.")
+            print(f"[Cluster] Not running Harmony (HAS_HARMONY={_HAS_HARMONY}, "
+                  f"batch_col='{batch_col}', in_obs={batch_col in adata_rna.obs.columns}). "
+                  "Using PCA directly.")
 
     if verbose:
         print("[Cluster] Computing neighbors and UMAP...")
@@ -462,6 +567,10 @@ def compare_atac_rna_gene_activity(
     adata_rna_full = sc.read_h5ad(rna_h5ad_path)
     adata_atac_full = sc.read_h5ad(atac_h5ad_path)
 
+    if verbose:
+        print(f"[Main] RNA shape:  {adata_rna_full.shape}")
+        print(f"[Main] ATAC shape: {adata_atac_full.shape}")
+
     common_cells = adata_rna_full.obs_names.intersection(adata_atac_full.obs_names)
     if len(common_cells) == 0:
         raise ValueError("No overlapping cell barcodes between RNA and ATAC AnnData objects.")
@@ -568,6 +677,8 @@ def compare_atac_rna_gene_activity(
         rna_aligned = adata_rna_full[:, shared_var].copy()
         atac_aligned = adata_atac_full[:, shared_var].copy()
         shared_ids = list(shared_var)
+        if verbose:
+            print(f"[Main] Using direct name intersection without unification: {len(shared_ids)} genes")
 
     # Ensure celltype column survived
     assert celltype_key in rna_aligned.obs.columns
@@ -716,6 +827,7 @@ def compute_rna_atac_cell_gene_correlations(
     """
     Compute per-cell and per-gene RNA–ATAC correlations for paired cells.
     If gene names don't overlap, automatically unify ID spaces (Ensembl vs Symbol).
+    DEBUG prints are enabled regardless of 'verbose' for core steps.
     """
     import matplotlib.pyplot as plt
     from tqdm import tqdm
@@ -956,13 +1068,13 @@ def compute_rna_atac_cell_gene_correlations(
 
 if __name__ == "__main__":
     print("\n" + "="*60)
-    print("RNA–ATAC PSEUDOBULK + CORRELATION ANALYSIS")
+    print("RNA–ATAC PSEUDOBULK + CORRELATION ANALYSIS (DEBUG VERSION)")
     print("="*60 + "\n")
 
     # Example paths (edit these to your dataset)
-    rna_path = "/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/rna_corrected.h5ad"
-    atac_path = "/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/heart_gene_activity.h5ad"
-    out_dir = "/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/pseudobulk_corr"
+    rna_path = "/dcs07/hongkai/data/harry/result/gene_activity/old/rna_corrected.h5ad"
+    atac_path = "/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/gene_activity.h5ad"
+    out_dir = "/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart"
 
     # 1) Pseudobulk per cell type and Pearson correlation across genes
     result_pseudo = compare_atac_rna_gene_activity(
@@ -979,7 +1091,7 @@ if __name__ == "__main__":
 
     # 2) Optional: per-cell / per-gene correlation on the same aligned h5ad files
     print("\n" + "="*60)
-    print("RUNNING CELL-LEVEL / GENE-LEVEL CORRELATION (OPTIONAL)")
+    print("RUNNING CELL-LEVEL / GENE-LEVEL CORRELATION (OPTIONAL, DEBUG)")
     print("="*60 + "\n")
 
     adata_rna = sc.read_h5ad(rna_path)

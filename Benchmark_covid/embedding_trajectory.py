@@ -320,7 +320,7 @@ if __name__ == "__main__":
     # =====================================
 
     # Sample sizes to loop over
-    sample_sizes = [25, 50, 100, 200, 400]
+    sample_sizes = [25, 50, 100, 200, 279, 400]
 
     for n in sample_sizes:
         print(f"\n=======================")
@@ -329,8 +329,10 @@ if __name__ == "__main__":
 
         # Construct the embedding path for this sample size
         EMBEDDING_CSV_PATH = (
-            f"/dcs07/hongkai/data/harry/result/scPoli/{n}_sample/sample_embeddings_full.csv"
+            f'/dcs07/hongkai/data/harry/result/Gloscope/{n}_sample/knn_divergence_mds_10d.csv'
         )
+
+        
 
         # Run trajectory
         results = compute_trajectory_from_embedding(

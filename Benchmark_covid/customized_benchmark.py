@@ -75,13 +75,11 @@ def benchmark_pseudotime_embeddings_custom(
 ) -> Dict[str, object]:
     """
     Two-part benchmark for a SINGLE embedding:
-      (1) Su-only (anchor batch) ANOVA: pseudotime ~ C(severity), plotting p-value and effect size (η², ω²)
-      (2) For each Su sample, find k nearest neighbors from OTHER batches; compute |Δseverity| and plot ONE histogram
-
-    Note: sev_col may include dots/spaces; we quote it in the formula using Patsy's Q('...').
+      (1) Su-only (anchor batch) ANOVA: pseudotime ~ C(severity)
+      (2) Su-anchored cross-batch k-NN |Δseverity| (if multiple batches exist)
     """
     os.makedirs(save_dir, exist_ok=True)
-    out = {"paths": {}}
+    out: Dict[str, object] = {"paths": {}}
 
     if batch_col not in df or sev_col not in df:
         raise ValueError("df must contain batch_col and sev_col.")
@@ -116,8 +114,6 @@ def benchmark_pseudotime_embeddings_custom(
         print(f"\nANOVA table:\n{aov}")
 
         # Identify rows and compute effect sizes
-        # One factor + Residual in typ=2 one-way ANOVA
-        # Row name of factor will look like "C(Q('sev.level'))"
         effect_row = next((idx for idx in aov.index if idx != "Residual"), None)
         ss_effect = float(aov.loc[effect_row, "sum_sq"]) if effect_row else np.nan
         df_effect = float(aov.loc[effect_row, "df"]) if effect_row else np.nan
@@ -142,7 +138,7 @@ def benchmark_pseudotime_embeddings_custom(
             F, p = (np.nan, np.nan)
         out["anova_anchor_scipy"] = {"F": F, "p": p}
         print(f"SciPy F-test: F={F:.4f}, p={p:.4g}")
-        print(f"Effect sizes: eta²={eta_sq:.4f}, omega²={omega_sq:.4f}")
+        print(f"Effect sizes: eta²={eta_sq:.4f}, ω²={omega_sq:.4f}")
 
         # Plot: ANOVA box/jitter + effect sizes in title
         if make_plots:
@@ -176,18 +172,52 @@ def benchmark_pseudotime_embeddings_custom(
         out["anova_anchor"] = None
         out["anova_anchor_scipy"] = None
 
-    # ---------- Part 2: Su-anchored nearest-neighbor severity gap (ONE plot only) ----------
+    # ---------- NEW: check whether we even *can* do cross-batch NN ---------- #
+    unique_batches = df[batch_col].unique()
+    n_batches = len(unique_batches)
+    n_non_anchor = (~anchor_mask).sum()
+
+    print(f"\n[DEBUG] Batch value counts:\n{df[batch_col].value_counts()}")
+    print(f"[DEBUG] anchor_batch = {anchor_batch}")
+    print(f"[DEBUG] n_batches = {n_batches}, n_non_anchor = {n_non_anchor}")
+
+    if n_non_anchor == 0:
+        # Only the anchor batch exists in this df – skip NN-based metrics
+        print("\n[INFO] Only anchor batch present in data. "
+              "Skipping nearest-neighbor severity gap analysis.")
+        out["nn_gap_summary"] = None
+        out["nn_gap_per_sample"] = None
+        out["paths"]["nn_gap_summary_csv"] = None
+        print(f"{'='*60}\n")
+        return out
+
+    # ---------- Part 2: Su-anchored nearest-neighbor severity gap ---------- #
     print(f"\n{'='*60}")
     print("DEBUG: Nearest Neighbor Severity Gap Analysis")
     print(f"{'='*60}")
     
     pool_mask = ~anchor_mask
     if neighbor_batches_include is not None:
-        pool_mask &= df[batch_col].isin(set(neighbor_batches_include)).values
+        include_set = set(neighbor_batches_include)
+        print(f"[DEBUG] neighbor_batches_include = {include_set}")
+        pool_mask &= df[batch_col].isin(include_set).values
     if neighbor_batches_exclude is not None:
-        pool_mask &= ~df[batch_col].isin(set(neighbor_batches_exclude)).values
-    if not pool_mask.any():
-        raise ValueError("No samples left in neighbor pool after filters.")
+        exclude_set = set(neighbor_batches_exclude)
+        print(f"[DEBUG] neighbor_batches_exclude = {exclude_set}")
+        pool_mask &= ~df[batch_col].isin(exclude_set).values
+
+    pool_size = pool_mask.sum()
+    print(f"[DEBUG] neighbor pool size after filters = {pool_size}")
+
+    # NEW: if filters killed the pool, gracefully skip instead of raising
+    if pool_size == 0:
+        print("\n[INFO] No samples left in neighbor pool after filters. "
+              "Skipping nearest-neighbor severity gap analysis for this method.")
+        out["nn_gap_summary"] = None
+        out["nn_gap_per_sample"] = None
+        out["paths"]["nn_gap_summary_csv"] = None
+        print(f"{'='*60}\n")
+        return out
 
     X = np.asarray(embedding)
     if X.ndim == 1:
@@ -210,7 +240,13 @@ def benchmark_pseudotime_embeddings_custom(
     print(f"k_neighbors: {k_neighbors}")
 
     if X_pool.shape[0] < k_neighbors:
-        raise ValueError(f"Neighbor pool smaller than k ({X_pool.shape[0]} < {k_neighbors}).")
+        print("\n[INFO] Neighbor pool smaller than k. "
+              "Skipping nearest-neighbor severity gap analysis for this method.")
+        out["nn_gap_summary"] = None
+        out["nn_gap_per_sample"] = None
+        out["paths"]["nn_gap_summary_csv"] = None
+        print(f"{'='*60}\n")
+        return out
 
     nn = NearestNeighbors(n_neighbors=k_neighbors, metric=metric)
     nn.fit(X_pool)
@@ -249,7 +285,6 @@ def benchmark_pseudotime_embeddings_custom(
     print(f"\nSummary CSV saved to: {csv_path}")
 
     if make_plots:
-        # ONE PLOT ONLY: Histogram of per-sample gaps (no ECDF)
         fig, ax = plt.subplots(figsize=(6.8, 4.4), dpi=160)
         ax.hist(per_su, bins=30, alpha=0.7, edgecolor='black')
         ax.axvline(mean_gap, linestyle='--', linewidth=2, label=f'Mean={mean_gap:.2f}')
@@ -259,7 +294,9 @@ def benchmark_pseudotime_embeddings_custom(
                      f"Mean={mean_gap:.3f}  95% CI=[{lo:.3f}, {hi:.3f}]")
         ax.legend()
         p2 = os.path.join(save_dir, "nn_severity_gap_hist.png")
-        plt.tight_layout(); plt.savefig(p2); plt.close(fig)
+        plt.tight_layout()
+        plt.savefig(p2)
+        plt.close(fig)
         out["paths"]["nn_gap_hist"] = p2
         print(f"Histogram saved to: {p2}")
 

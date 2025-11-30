@@ -30,10 +30,12 @@ class BenchmarkWrapper:
         Path to pseudotime CSV file (required for trajectory_* benchmarks)
     embedding_csv_path : str, optional
         Path to embedding/coordinates CSV file (required for ARI and batch-removal benchmarks)
-    mode : str, optional
-        Label used ONLY for naming the output directory scope (default: 'expression')
+    method_name : str
+        Name of the method being benchmarked (e.g., 'GEDI', 'scVI'). Used for summary CSV columns.
     output_base_dir : str, optional
         Base directory for all outputs. If None, defaults to parent of the meta CSV file.
+    summary_csv_path : str, optional
+        Path to the summary CSV file for aggregating results across runs.
     """
 
     def __init__(
@@ -41,14 +43,15 @@ class BenchmarkWrapper:
         meta_csv_path: str,
         pseudotime_csv_path: Optional[str] = None,
         embedding_csv_path: Optional[str] = None,
-        mode: str = "expression",
+        method_name: str = "method",
         output_base_dir: Optional[str] = None,
+        summary_csv_path: Optional[str] = None,
     ):
         # Store and validate core inputs
         self.meta_csv_path = Path(meta_csv_path).resolve()
         self.pseudotime_csv_path = Path(pseudotime_csv_path).resolve() if pseudotime_csv_path else None
         self.embedding_csv_path = Path(embedding_csv_path).resolve() if embedding_csv_path else None
-        self.mode = mode.lower()
+        self.method_name = method_name
 
         if not self.meta_csv_path.exists() or not self.meta_csv_path.is_file():
             raise FileNotFoundError(f"Metadata CSV does not exist or is not a file: {self.meta_csv_path}")
@@ -60,22 +63,29 @@ class BenchmarkWrapper:
         else:
             self.output_base_dir = Path(output_base_dir).resolve()
 
-        # Mode-scoped output directory
-        self.mode_output_dir = self.output_base_dir / f"benchmark_results_{self.mode}"
-        self.mode_output_dir.mkdir(parents=True, exist_ok=True)
+        # Summary CSV path
+        if summary_csv_path is not None:
+            self.summary_csv_path = Path(summary_csv_path).resolve()
+        else:
+            self.summary_csv_path = self.output_base_dir / "benchmark_summary.csv"
+
+        # Output directory for this run
+        self.run_output_dir = self.output_base_dir / f"benchmark_results_{self.method_name}"
+        self.run_output_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("Initialized BenchmarkWrapper (explicit paths) with:")
         logger.info(f"  Meta CSV:          {self.meta_csv_path}")
         logger.info(f"  Pseudotime CSV:    {self.pseudotime_csv_path if self.pseudotime_csv_path else '(not provided)'}")
         logger.info(f"  Embedding CSV:     {self.embedding_csv_path if self.embedding_csv_path else '(not provided)'}")
-        logger.info(f"  Mode label:        {self.mode}")
+        logger.info(f"  Method name:       {self.method_name}")
         logger.info(f"  Output base dir:   {self.output_base_dir}")
-        logger.info(f"  Mode output dir:   {self.mode_output_dir}")
+        logger.info(f"  Run output dir:    {self.run_output_dir}")
+        logger.info(f"  Summary CSV:       {self.summary_csv_path}")
 
     # ------------------------- helpers -------------------------
 
     def _create_output_dir(self, benchmark_name: str) -> Path:
-        out = self.mode_output_dir / benchmark_name
+        out = self.run_output_dir / benchmark_name
         out.mkdir(parents=True, exist_ok=True)
         return out
 
@@ -109,41 +119,123 @@ class BenchmarkWrapper:
 
         return True
 
-    def _save_summary_csv(self, results: Dict[str, Dict[str, Any]], summary_csv_path: Optional[Path] = None) -> None:
-        """Save a summary of all benchmark results to a CSV file."""
-        if not summary_csv_path:
-            summary_csv_path = self.mode_output_dir / "benchmark_summary.csv"
+    def _save_summary_csv(self, results: Dict[str, Dict[str, Any]]) -> None:
+        """
+        Save a summary of benchmark results to a CSV file.
+        
+        Structure:
+        - Rows: benchmark metric categories (ARI, iLISI_norm, Spearman_Correlation, etc.)
+        - Columns: method_name-sample_size (e.g., GEDI-25, scVI-50)
+        """
+        summary_csv_path = self.summary_csv_path
+        
+        # Ensure parent directory exists
+        summary_csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Initialize the CSV if it doesn't exist
-        if not summary_csv_path.exists():
-            header = [
-                "Benchmark", "ARI", "iLISI_norm", "ASW-batch", "Mean Per-Su NN",
-                "Spearman Correlation", "Batch Effect Size", "Severity Effect Size", "Interaction Effect Size"
-            ]
-            summary_df = pd.DataFrame(columns=header)
-            summary_df.to_csv(summary_csv_path, index=False)
-            logger.info(f"Created new summary CSV at: {summary_csv_path}")
+        # Collect metrics from all successful benchmarks
+        all_metrics = {}
+        sample_size = None
+        
+        for benchmark_name, bench_result in results.items():
+            if bench_result.get("status") != "success":
+                logger.warning(f"Skipping {benchmark_name} in summary - status was not 'success'")
+                continue
+            
+            result = bench_result.get("result", {})
+            if result is None:
+                result = {}
+            
+            # Debug: log all keys in result
+            logger.info(f"[DEBUG] {benchmark_name} result keys: {list(result.keys()) if isinstance(result, dict) else type(result)}")
+            
+            # Get sample size (take from first benchmark that has it)
+            if sample_size is None:
+                sample_size = result.get("n_samples")
+            
+            # Map benchmark-specific metrics to standard row names based on actual return structures
+            if benchmark_name == "embedding_visualization":
+                if "n_samples" in result:
+                    all_metrics["n_samples"] = result["n_samples"]
+                    
+            elif benchmark_name == "trajectory_anova":
+                # ANOVA.py returns: anova_table DataFrame with partial_eta_sq column, indexed by 'C(batch)', 'C(severity_level)', etc.
+                anova_table = result.get("anova_table")
+                if anova_table is not None and hasattr(anova_table, 'loc'):
+                    try:
+                        if 'C(batch)' in anova_table.index and 'partial_eta_sq' in anova_table.columns:
+                            all_metrics["batch_partial_eta_sq"] = float(anova_table.loc['C(batch)', 'partial_eta_sq'])
+                        if 'C(severity_level)' in anova_table.index and 'partial_eta_sq' in anova_table.columns:
+                            all_metrics["severity_partial_eta_sq"] = float(anova_table.loc['C(severity_level)', 'partial_eta_sq'])
+                        if 'C(batch):C(severity_level)' in anova_table.index and 'partial_eta_sq' in anova_table.columns:
+                            all_metrics["interaction_partial_eta_sq"] = float(anova_table.loc['C(batch):C(severity_level)', 'partial_eta_sq'])
+                    except Exception as e:
+                        logger.warning(f"Could not extract ANOVA metrics: {e}")
+                    
+            elif benchmark_name == "batch_removal":
+                # batch_removal_test.py returns: iLISI_norm_mean, ASW_batch_overall
+                if "iLISI_norm_mean" in result:
+                    all_metrics["iLISI_norm"] = result["iLISI_norm_mean"]
+                if "ASW_batch_overall" in result:
+                    all_metrics["ASW_batch"] = result["ASW_batch_overall"]
+                    
+            elif benchmark_name == "ari_clustering":
+                # embedding_effective.py returns: metrics dict nested with 'ari', 'nmi', 'avg_purity'
+                metrics_dict = result.get("metrics", {})
+                if isinstance(metrics_dict, dict):
+                    if "ari" in metrics_dict:
+                        all_metrics["ARI"] = metrics_dict["ari"]
+                    if "nmi" in metrics_dict:
+                        all_metrics["NMI"] = metrics_dict["nmi"]
+                    if "avg_purity" in metrics_dict:
+                        all_metrics["Avg_Purity"] = metrics_dict["avg_purity"]
+                    
+            elif benchmark_name == "trajectory_analysis":
+                # spearman_test.py returns: spearman_corr, spearman_p
+                if "spearman_corr" in result:
+                    all_metrics["Spearman_Correlation"] = result["spearman_corr"]
+                if "spearman_p" in result:
+                    all_metrics["Spearman_pval"] = result["spearman_p"]
+                    
+            elif benchmark_name == "pseudotime_embeddings_custom":
+                # customized_benchmark.py returns: nn_gap_summary (DataFrame), anova_anchor_scipy dict
+                nn_gap_summary = result.get("nn_gap_summary")
+                if nn_gap_summary is not None and hasattr(nn_gap_summary, 'iloc'):
+                    try:
+                        row = nn_gap_summary.iloc[0]
+                        if "mean_|Δsev|" in row:
+                            all_metrics["Mean_NN_Severity_Gap"] = float(row["mean_|Δsev|"])
+                        if "n_anchor" in row:
+                            sample_size = int(row["n_anchor"]) if sample_size is None else sample_size
+                    except Exception as e:
+                        logger.warning(f"Could not extract nn_gap_summary metrics: {e}")
+                
+                anova_scipy = result.get("anova_anchor_scipy")
+                if isinstance(anova_scipy, dict):
+                    if "p" in anova_scipy:
+                        all_metrics["Custom_ANOVA_pval"] = anova_scipy["p"]
+        
+        logger.info(f"[DEBUG] Collected metrics: {all_metrics}")
+        
+        if not all_metrics:
+            logger.warning("No metrics collected from benchmarks - nothing to save to summary CSV")
+            return
+        
+        # Build column name: method_name-sample_size
+        col_name = f"{self.method_name}-{sample_size}" if sample_size else self.method_name
+        
+        # Load existing summary or create new one
+        if summary_csv_path.exists():
+            summary_df = pd.read_csv(summary_csv_path, index_col=0)
         else:
-            summary_df = pd.read_csv(summary_csv_path)
-
-        # Add the results as a new row for each benchmark
-        for benchmark_name, result in results.items():
-            row = {
-                "Benchmark": benchmark_name,
-                "ARI": result.get("ari", None),
-                "iLISI_norm": result.get("ilisi_norm", None),
-                "ASW-batch": result.get("asw_batch", None),
-                "Mean Per-Su NN": result.get("mean_per_su_nn", None),
-                "Spearman Correlation": result.get("spearman_corr", None),
-                "Batch Effect Size": result.get("batch_effect_size", None),
-                "Severity Effect Size": result.get("severity_effect_size", None),
-                "Interaction Effect Size": result.get("interaction_effect_size", None)
-            }
-            summary_df = summary_df.append(row, ignore_index=True)
-
-        # Save the updated CSV file
-        summary_df.to_csv(summary_csv_path, index=False)
-        logger.info(f"Updated summary CSV at: {summary_csv_path}")
+            summary_df = pd.DataFrame()
+        
+        # Add/update the column for this run
+        for metric, value in all_metrics.items():
+            summary_df.loc[metric, col_name] = value
+        
+        # Save
+        summary_df.to_csv(summary_csv_path, index_label="Metric")
+        logger.info(f"Updated summary CSV at: {summary_csv_path} with column '{col_name}'")
 
 
     def run_embedding_visualization(
@@ -527,11 +619,11 @@ class BenchmarkWrapper:
             embedding_df = embedding_df.loc[keep]
 
             # --- Run benchmark
-            method_name = embedding_label if embedding_label else self.mode
+            method_label = embedding_label if embedding_label else self.method_name
             result = benchmark_pseudotime_embeddings_custom(
                 df=meta_df,
                 embedding=embedding_df.values,
-                method_name=method_name,
+                method_name=method_label,
                 anchor_batch=anchor_batch,
                 batch_col=batch_col,
                 sev_col=sev_col,
@@ -611,16 +703,17 @@ class BenchmarkWrapper:
             method_kwargs = kwargs.get(name, {})
             results[name] = method(**method_kwargs)
 
-        self._save_summary(results)
+        self._save_summary_csv(results)
         return results
 
 def run_benchmarks(
     meta_csv_path: str,
     pseudotime_csv_path: Optional[str] = None,
     embedding_csv_path: Optional[str] = None,
-    mode: str = "expression",
+    method_name: str = "method",
     benchmarks_to_run: Optional[List[str]] = None,
     output_base_dir: Optional[str] = None,
+    summary_csv_path: Optional[str] = None,
     **kwargs,
 ) -> Dict[str, Dict[str, Any]]:
     """
@@ -634,13 +727,15 @@ def run_benchmarks(
         Path to pseudotime CSV file (required for trajectory_* benchmarks)
     embedding_csv_path : str, optional
         Path to embedding/coordinates CSV file (required for ARI/batch-removal)
-    mode : str
-        Label used ONLY for output folder naming
+    method_name : str
+        Name of the method being benchmarked (e.g., 'GEDI', 'scVI'). Used for summary CSV columns.
     benchmarks_to_run : list of str, optional
         Specific benchmarks to run. If None, runs all.
         Options: ['embedding_visualization', 'trajectory_anova', 'batch_removal', 'ari_clustering', 'trajectory_analysis', 'pseudotime_embeddings_custom']
     output_base_dir : str, optional
         Base directory for outputs
+    summary_csv_path : str, optional
+        Path to the summary CSV file for aggregating results across runs.
     **kwargs : dict
         Per-benchmark kwargs, e.g.:
         {
@@ -660,8 +755,9 @@ def run_benchmarks(
             meta_csv_path=meta_csv_path,
             pseudotime_csv_path=pseudotime_csv_path,
             embedding_csv_path=embedding_csv_path,
-            mode=mode,
+            method_name=method_name,
             output_base_dir=output_base_dir,
+            summary_csv_path=summary_csv_path,
         )
 
         if benchmarks_to_run:
@@ -677,16 +773,23 @@ def run_benchmarks(
  
 # ------------------------- examples -------------------------
 if __name__ == "__main__":
-    # Example: run all with explicit paths
-    results = run_benchmarks(
-        meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        pseudotime_csv_path='/users/hjiang/r/gedi_out_25/trajectory/pseudotime_results.csv',
-        embedding_csv_path="/users/hjiang/r/gedi_out_25/gedi_sample_embedding.csv",
-        summary_csv_path="/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv",
-        mode="expression",
-        output_base_dir = '/users/hjiang/r/gedi_out_25',
-        # per-benchmark overrides (optional)
-        embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-        ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-        batch_removal={"k": 15, "include_self": False},
-    )
+    sample_sizes = [25, 50, 100, 200, 279, 400]
+    
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/GEDI/{size}_sample'
+        pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
+        embedding_csv_path = f'{output_base_dir}/gedi_sample_embedding.csv'
+        summary_csv_path = f'/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="GEDI",
+            output_base_dir=output_base_dir,
+            # per-benchmark overrides (optional)
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )

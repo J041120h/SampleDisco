@@ -1,271 +1,237 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Simplified Batch-Removal Evaluation using iLISI and ASW-batch.
+
+Usage: Edit the function call in main() with your file paths and run the script.
+"""
+
 from __future__ import annotations
-import os
-from typing import Dict, Optional, Sequence, Tuple
+import sys
+from pathlib import Path
+from typing import Tuple, Dict
+
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import StandardScaler
-from scipy.stats import f_oneway
-import statsmodels.formula.api as smf
-from statsmodels.stats.anova import anova_lm
+from sklearn.metrics import silhouette_score, silhouette_samples
 
-# ---------------- Utilities ---------------- #
-def _bootstrap_ci_mean(vals: np.ndarray, iters: int = 2000, alpha: float = 0.05, seed: int = 42) -> Tuple[float,float]:
-    rng = np.random.default_rng(seed)
-    vals = np.asarray(vals)
-    if len(vals) == 0:
-        return (np.nan, np.nan)
-    bs = rng.choice(vals, size=(iters, len(vals)), replace=True).mean(axis=1)
-    return float(np.quantile(bs, alpha/2)), float(np.quantile(bs, 1 - alpha/2))
 
-def _transform_severity(sev: np.ndarray, mode: str = "raw") -> np.ndarray:
-    sev = np.asarray(sev, dtype=float)
-    if mode == "raw":
-        return sev
-    if mode == "scaled":
-        mn, mx = np.nanmin(sev), np.nanmax(sev)
-        return (sev - mn) / (mx - mn) if mx > mn else np.zeros_like(sev)
-    if mode == "rank":
-        order = sev.argsort(kind="mergesort")
-        ranks = np.empty_like(order, dtype=float)
-        ranks[order] = np.arange(len(sev), dtype=float)
-        ranks /= (len(sev) - 1) if len(sev) > 1 else 1.0
-        return ranks
-    raise ValueError(f"Unknown severity_transform='{mode}'")
+def read_metadata(meta_csv: str) -> pd.DataFrame:
+    md = pd.read_csv(meta_csv)
+    md.columns = [c.lower() for c in md.columns]
+    required = {"sample", "batch"}
+    missing = required - set(md.columns)
+    if missing:
+        raise ValueError(f"Metadata must contain columns {sorted(required)}; missing: {sorted(missing)}")
+    if md["sample"].duplicated().any():
+        dups = md.loc[md["sample"].duplicated(), "sample"].unique()
+        raise ValueError(f"'sample' IDs must be unique. Duplicates: {dups[:10]}")
+    return md
 
-def _aggregate(vals: np.ndarray, dist: Optional[np.ndarray], how: str) -> np.ndarray:
-    """Aggregate k-NN per-row values to a single score."""
-    if vals.ndim == 1:
-        return vals
-    how = how.lower()
-    if how == "mean":
-        return vals.mean(axis=1)
-    if how == "median":
-        return np.median(vals, axis=1)
-    if how == "distance_weighted":
-        if dist is None:
-            raise ValueError("distance_weighted aggregation requires distances.")
-        w = 1.0 / np.clip(dist, 1e-8, None)
-        w /= w.sum(axis=1, keepdims=True)
-        return (vals * w).sum(axis=1)
-    raise ValueError(f"Unknown nn_agg='{how}'")
 
-# -------------- Main Benchmark -------------- #
+def read_embedding_or_distance(data_csv: str, mode: str) -> Tuple[pd.DataFrame, bool]:
+    df = pd.read_csv(data_csv, index_col=0)
+    if mode == "distance":
+        if df.shape[0] != df.shape[1]:
+            raise ValueError("Distance matrix must be square (samples × samples).")
+        # Ensure zero diagonal and symmetry
+        vals = df.values.astype(float)
+        np.fill_diagonal(vals, 0.0)
+        if not np.allclose(vals, vals.T, equal_nan=True, rtol=1e-5, atol=1e-8):
+            print("Warning: distance matrix not exactly symmetric; proceeding.", file=sys.stderr)
+        # Update the dataframe with corrected values
+        df.iloc[:, :] = vals
+        return df, True
+    elif mode == "embedding":
+        if df.shape[1] < 1:
+            raise ValueError("Embedding file must have ≥1 dimension columns.")
+        return df, False
+    else:
+        raise ValueError("mode must be 'embedding' or 'distance'.")
 
-def benchmark_pseudotime_embeddings_custom(
-    df: pd.DataFrame,
-    embedding: np.ndarray,
-    method_name: str = "embedding",
-    *,
-    anchor_batch: str = "Su",
-    batch_col: str = "batch",
-    sev_col: str = "sev.level",
-    pseudotime_col: Optional[str] = None,
-    severity_transform: str = "raw",
-    neighbor_batches_include: Optional[Sequence[str]] = None,
-    neighbor_batches_exclude: Optional[Sequence[str]] = None,
-    k_neighbors: int = 1,
-    metric: str = "euclidean",
-    nn_agg: str = "mean",
-    standardize_embedding: bool = True,
-    make_plots: bool = True,
-    save_dir: str = "benchmark_out",
-    random_state: int = 0,
+
+def align_by_samples(md: pd.DataFrame, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    if md.index.name != "sample":
+        md = md.set_index("sample", drop=False)
+    common = md.index.intersection(data.index)
+    if len(common) == 0:
+        raise ValueError("No overlapping sample IDs between metadata and data.")
+    if len(common) < len(md):
+        print(f"Note: dropping {len(md) - len(common)} metadata rows without data match.", file=sys.stderr)
+    if len(common) < len(data):
+        print(f"Note: dropping {len(data) - len(common)} data rows without metadata.", file=sys.stderr)
+    md2 = md.loc[sorted(common)].copy()
+    data2 = data.loc[sorted(common)].copy()
+    return md2, data2
+
+
+def _compute_knn_from_embedding(emb: np.ndarray, k: int) -> np.ndarray:
+    k_eff = min(k, emb.shape[0])
+    nn = NearestNeighbors(n_neighbors=k_eff, metric="cosine", n_jobs=-1)
+    nn.fit(emb)
+    _, idx = nn.kneighbors(emb, return_distance=True)
+    return idx
+
+
+def _compute_knn_from_distance(dist: np.ndarray, k: int) -> np.ndarray:
+    n = dist.shape[0]
+    k_eff = min(k, n)
+    return np.argsort(dist, axis=1)[:, :k_eff]
+
+
+def _inverse_simpson(counts: np.ndarray) -> float:
+    total = counts.sum()
+    if total <= 0:
+        return 0.0
+    p = counts / total
+    denom = np.sum(p * p)
+    return 0.0 if denom <= 0 else 1.0 / denom
+
+
+def compute_ilisi(labels_int: np.ndarray, knn_idx: np.ndarray, include_self: bool) -> np.ndarray:
+    n = labels_int.shape[0]
+    L = int(labels_int.max()) + 1
+    out = np.zeros(n, dtype=float)
+    for i in range(n):
+        neigh = knn_idx[i]
+        if not include_self:
+            neigh = neigh[neigh != i]
+        counts = np.bincount(labels_int[neigh], minlength=L)
+        out[i] = _inverse_simpson(counts)
+    return out
+
+
+def compute_asw_batch(labels_int: np.ndarray, emb: np.ndarray | None, dist: np.ndarray | None) -> Tuple[float, np.ndarray]:
+    if (emb is None) == (dist is None):
+        raise ValueError("Provide exactly one of emb or dist.")
+    if emb is not None:
+        s_overall = silhouette_score(emb, labels_int, metric="euclidean")
+        s_per = silhouette_samples(emb, labels_int, metric="euclidean")
+    else:
+        s_overall = silhouette_score(dist, labels_int, metric="precomputed")
+        s_per = silhouette_samples(dist, labels_int, metric="precomputed")
+    asw_overall = float(np.clip((1.0 - s_overall) / 2.0, 0.0, 1.0))
+    asw_per = np.clip((1.0 - s_per) / 2.0, 0.0, 1.0)
+    return asw_overall, asw_per
+
+
+def evaluate_batch_removal(
+    meta_csv: str,
+    data_csv: str,
+    mode: str,
+    outdir: str,
+    k: int = 30,
+    include_self: bool = False,
 ) -> Dict[str, object]:
     """
-    Two-part benchmark for a SINGLE embedding:
-      (1) Su-only (anchor batch) ANOVA: pseudotime ~ C(severity), plotting p-value and effect size (η², ω²)
-      (2) For each Su sample, find k nearest neighbors from OTHER batches; compute |Δseverity| and plot ONE histogram
+    Compute iLISI and ASW-batch metrics for batch effect evaluation.
 
-    Note: sev_col may include dots/spaces; we quote it in the formula using Patsy's Q('...').
+    Parameters
+    ----------
+    meta_csv : str
+        Path to metadata CSV with 'sample' and 'batch' columns
+    data_csv : str  
+        Path to data CSV (embedding: samples×dims, distance: samples×samples)
+    mode : str
+        'embedding' or 'distance'
+    outdir : str
+        Output directory for results
+    k : int, default=30
+        Number of neighbors for iLISI KNN
+    include_self : bool, default=False
+        Include sample itself in KNN neighborhood
     """
-    os.makedirs(save_dir, exist_ok=True)
-    out = {"paths": {}}
-
-    if batch_col not in df or sev_col not in df:
-        raise ValueError("df must contain batch_col and sev_col.")
-
-    anchor_mask = (df[batch_col] == anchor_batch).values
-    if not anchor_mask.any():
-        raise ValueError(f"No rows for anchor batch '{anchor_batch}'.")
-
-    sev_raw = df[sev_col].to_numpy()
-    sev_for_nn = _transform_severity(sev_raw, severity_transform)
-
-    # ---------- Part 1: Su-only ANOVA (with effect size) ----------
-    print(f"\n{'='*60}")
-    print("DEBUG: ANOVA Analysis")
-    print(f"{'='*60}")
-    print(f"pseudotime_col = {pseudotime_col}")
-    print(f"make_plots = {make_plots}")
+    import os
+    from pathlib import Path
     
-    if pseudotime_col is not None:
-        if pseudotime_col not in df.columns:
-            raise ValueError(f"pseudotime_col '{pseudotime_col}' not in df.")
-        
-        df_anchor = df.loc[anchor_mask].copy()
-        print(f"Anchor batch '{anchor_batch}' has {len(df_anchor)} samples")
-        print(f"Unique severity levels: {sorted(df_anchor[sev_col].dropna().unique())}")
+    # FIX: Use 'outdir' parameter correctly
+    os.makedirs(outdir, exist_ok=True)
+    output_dir_path = os.path.join(outdir, 'Batch_Removal_Evaluation')
+    os.makedirs(output_dir_path, exist_ok=True)
+    
+    # FIX: Define outdir_p as Path object
+    outdir_p = Path(output_dir_path)
 
-        # Safely reference severity column with Patsy's Q(...)
-        formula = f"{pseudotime_col} ~ C(Q('{sev_col}'))"
-        ols = smf.ols(formula, data=df_anchor).fit()
-        aov = anova_lm(ols, typ=2)
-        out["anova_anchor"] = aov
-        print(f"\nANOVA table:\n{aov}")
+    # Read & align data
+    md = read_metadata(meta_csv)
+    data_df, is_distance = read_embedding_or_distance(data_csv, mode)
+    md_aln, data_aln = align_by_samples(md, data_df)
+    
+    # Prepare arrays
+    batches_str = md_aln["batch"].astype(str).values
+    uniq_batches, labels_int = np.unique(batches_str, return_inverse=True)
+    n_batches = len(uniq_batches)
+    n_samples = data_aln.shape[0]
+    k_eff = min(max(int(k), 1), n_samples)
 
-        # Identify rows and compute effect sizes
-        # One factor + Residual in typ=2 one-way ANOVA
-        # Row name of factor will look like "C(Q('sev.level'))"
-        effect_row = next((idx for idx in aov.index if idx != "Residual"), None)
-        ss_effect = float(aov.loc[effect_row, "sum_sq"]) if effect_row else np.nan
-        df_effect = float(aov.loc[effect_row, "df"]) if effect_row else np.nan
-        ss_resid  = float(aov.loc["Residual", "sum_sq"])
-        df_resid  = float(aov.loc["Residual", "df"])
-        ss_total  = ss_effect + ss_resid
-        mse       = ss_resid / df_resid if df_resid > 0 else np.nan
-
-        # Eta-squared and Omega-squared (unbiased)
-        eta_sq = ss_effect / ss_total if ss_total > 0 else np.nan
-        omega_sq = ((ss_effect - df_effect * mse) /
-                    (ss_total + mse)) if (not np.isnan(mse) and (ss_total + mse) > 0) else np.nan
-
-        # p-value (if available)
-        p_val = aov.loc[effect_row, "PR(>F)"] if (effect_row and "PR(>F)" in aov.columns) else np.nan
-
-        # Parallel SciPy check (optional)
-        groups = [g[pseudotime_col].values for _, g in df_anchor.groupby(sev_col)]
-        if sum(len(g) > 1 for g in groups) >= 2:
-            F, p = f_oneway(*groups)
-        else:
-            F, p = (np.nan, np.nan)
-        out["anova_anchor_scipy"] = {"F": F, "p": p}
-        print(f"SciPy F-test: F={F:.4f}, p={p:.4g}")
-        print(f"Effect sizes: eta²={eta_sq:.4f}, omega²={omega_sq:.4f}")
-
-        # Plot: ANOVA box/jitter + effect sizes in title
-        if make_plots:
-            print("\n>>> Generating ANOVA plot with effect size...")
-            fig, ax = plt.subplots(figsize=(6.8, 4.4), dpi=160)
-            order = sorted(df_anchor[sev_col].dropna().unique())
-            data_to_plot = [df_anchor.loc[df_anchor[sev_col] == s, pseudotime_col].values for s in order]
-            ax.boxplot(data_to_plot, positions=np.arange(len(order)) + 1, widths=0.6, showfliers=False)
-            for i, s in enumerate(order, start=1):
-                y = df_anchor.loc[df_anchor[sev_col] == s, pseudotime_col].values
-                x = np.random.default_rng(random_state + i).normal(i, 0.045, size=len(y))
-                ax.scatter(x, y, s=12, alpha=0.7)
-
-            title = (f"{anchor_batch} only — ANOVA: {pseudotime_col} ~ C({sev_col})"
-                     f"\n p={p_val:.3g} • η²={eta_sq:.3f} • ω²={omega_sq:.3f}")
-            ax.set_title(title)
-            ax.set_xlabel("Severity Level")
-            ax.set_ylabel(pseudotime_col)
-            ax.set_xticks(np.arange(len(order)) + 1)
-            ax.set_xticklabels([str(s) for s in order])
-            p1 = os.path.join(save_dir, f"{anchor_batch.lower()}_anova_box_effectsize.png")
-            plt.tight_layout()
-            plt.savefig(p1)
-            plt.close(fig)
-            out["paths"]["anchor_anova_box"] = p1
-            print(f">>> ANOVA plot saved to: {p1}")
-        else:
-            print(">>> make_plots=False, skipping ANOVA plot")
+    # Compute metrics
+    if mode == "embedding":
+        emb = data_aln.values.astype(float)
+        knn_idx = _compute_knn_from_embedding(emb, k=k_eff)
+        dist = None
     else:
-        print(">>> pseudotime_col is None, skipping ANOVA analysis")
-        out["anova_anchor"] = None
-        out["anova_anchor_scipy"] = None
+        dist = data_aln.values.astype(float)
+        # Ensure diagonal is zero for silhouette calculation
+        np.fill_diagonal(dist, 0.0)
+        knn_idx = _compute_knn_from_distance(dist, k=k_eff)
+        emb = None
 
-    # ---------- Part 2: Su-anchored nearest-neighbor severity gap (ONE plot only) ----------
-    print(f"\n{'='*60}")
-    print("DEBUG: Nearest Neighbor Severity Gap Analysis")
-    print(f"{'='*60}")
+    ilisi_per = compute_ilisi(labels_int, knn_idx, include_self=include_self)
+    ilisi_mean = float(np.mean(ilisi_per))
+    ilisi_std = float(np.std(ilisi_per, ddof=1)) if n_samples > 1 else 0.0
+    ilisi_norm_mean = float(ilisi_mean / max(1, n_batches))
+
+    asw_overall, asw_per = compute_asw_batch(labels_int, emb=emb, dist=dist)
+
+    # Save results
+    per_sample_df = pd.DataFrame({
+        "sample": md_aln.index.astype(str),
+        "batch": batches_str,
+        "iLISI": ilisi_per,
+        "ASW_batch": asw_per,
+    }).set_index("sample")
     
-    pool_mask = ~anchor_mask
-    if neighbor_batches_include is not None:
-        pool_mask &= df[batch_col].isin(set(neighbor_batches_include)).values
-    if neighbor_batches_exclude is not None:
-        pool_mask &= ~df[batch_col].isin(set(neighbor_batches_exclude)).values
-    if not pool_mask.any():
-        raise ValueError("No samples left in neighbor pool after filters.")
+    per_sample_path = outdir_p / "per_sample_metrics.csv"
+    per_sample_df.to_csv(per_sample_path)
 
-    X = np.asarray(embedding)
-    if X.ndim == 1:
-        X = X[:, None]
-    if X.shape[0] != len(df):
-        raise ValueError(f"Embedding has {X.shape[0]} rows; df has {len(df)}.")
+    # Summary
+    summary_lines = [
+        "Batch-removal Evaluation Summary",
+        "================================",
+        f"Samples: {n_samples}",
+        f"Batches: {n_batches} -> {list(uniq_batches)}",
+        "",
+        f"iLISI (mean ± sd): {ilisi_mean:.4f} ± {ilisi_std:.4f}",
+        f"iLISI_norm: {ilisi_norm_mean:.4f}",
+        f"ASW-batch: {asw_overall:.4f}",
+        "",
+        f"Results saved to: {outdir_p}",
+    ]
+    summary_path = outdir_p / "batch_info_summary.txt"
+    summary_path.write_text("\n".join(summary_lines), encoding="utf-8")
+    print("\n".join(summary_lines))
 
-    X_use = X.copy()
-    if standardize_embedding:
-        X_use = StandardScaler().fit_transform(X_use)
-
-    X_anchor = X_use[anchor_mask]
-    sev_anchor = sev_for_nn[anchor_mask]
-
-    X_pool = X_use[pool_mask]
-    sev_pool = sev_for_nn[pool_mask]
-    
-    print(f"Anchor samples: {len(X_anchor)}")
-    print(f"Pool samples: {len(X_pool)}")
-    print(f"k_neighbors: {k_neighbors}")
-
-    if X_pool.shape[0] < k_neighbors:
-        raise ValueError(f"Neighbor pool smaller than k ({X_pool.shape[0]} < {k_neighbors}).")
-
-    nn = NearestNeighbors(n_neighbors=k_neighbors, metric=metric)
-    nn.fit(X_pool)
-    dist, idx = nn.kneighbors(X_anchor)
-
-    sev_nn = sev_pool[idx]
-    delta = np.abs(sev_nn - sev_anchor[:, None])
-
-    per_su = _aggregate(delta, dist, nn_agg)
-    mean_gap = float(per_su.mean())
-    lo, hi = _bootstrap_ci_mean(per_su)
-
-    print(f"\nResults for '{method_name}':")
-    print(f"  Mean |Δseverity|: {mean_gap:.4f}")
-    print(f"  95% CI: [{lo:.4f}, {hi:.4f}]")
-
-    summary = {
-        "method": method_name,
-        "mean_|Δsev|": mean_gap,
-        "ci95_lo": lo,
-        "ci95_hi": hi,
-        "k": k_neighbors,
-        "metric": metric,
-        "nn_agg": nn_agg,
-        "severity_transform": severity_transform,
-        "n_anchor": int(len(per_su)),
-        "neighbor_pool_n": int(X_pool.shape[0]),
+    return {
+        "n_samples": n_samples,
+        "batches": list(uniq_batches),
+        "iLISI_mean": ilisi_mean,
+        "iLISI_std": ilisi_std,
+        "iLISI_norm_mean": ilisi_norm_mean,
+        "ASW_batch_overall": asw_overall,
+        "per_sample_path": str(per_sample_path),
+        "summary_path": str(summary_path),
     }
 
-    out["nn_gap_summary"] = pd.DataFrame([summary])
-    out["nn_gap_per_sample"] = per_su
-    
-    # Add to the summary the values you wanted:
-    out["mean_per_su_nn"] = mean_gap
-    out["su_trajectory_effect_size"] = {"eta_sq": eta_sq, "omega_sq": omega_sq}
 
-    csv_path = os.path.join(save_dir, "nn_severity_gap_summary.csv")
-    out["nn_gap_summary"].to_csv(csv_path, index=False)
-    out["paths"]["nn_gap_summary_csv"] = csv_path
-    print(f"\nSummary CSV saved to: {csv_path}")
-
-    if make_plots:
-        # ONE PLOT ONLY: Histogram of per-sample gaps (no ECDF)
-        fig, ax = plt.subplots(figsize=(6.8, 4.4), dpi=160)
-        ax.hist(per_su, bins=30, alpha=0.7, edgecolor='black')
-        ax.axvline(mean_gap, linestyle='--', linewidth=2, label=f'Mean={mean_gap:.2f}')
-        ax.set_xlabel("|Δ severity|")
-        ax.set_ylabel("Count")
-        ax.set_title(f"{method_name}: Per-{anchor_batch} NN |Δ severity| (k={k_neighbors})\n"
-                     f"Mean={mean_gap:.3f}  95% CI=[{lo:.3f}, {hi:.3f}]")
-        ax.legend()
-        p2 = os.path.join(save_dir, "nn_severity_gap_hist.png")
-        plt.tight_layout(); plt.savefig(p2); plt.close(fig)
-        out["paths"]["nn_gap_hist"] = p2
-        print(f"Histogram saved to: {p2}")
-
-    print(f"{'='*60}\n")
-    return out
+if __name__ == "__main__":
+    # EDIT THESE PATHS:
+    evaluate_batch_removal(
+        meta_csv="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+        data_csv="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv",
+        mode="embedding",
+        outdir="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample",
+        k=15,
+        include_self=False
+    )

@@ -1,589 +1,952 @@
-2025-11-20 01:36:44 - INFO - init
-2025-11-20 01:37:35,176 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:37:35 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:37:35,263 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:37:35 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:37:35,264 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:37:35 - INFO - Iteration 1 of 30
-2025-11-20 01:37:35,282 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:37:35 - INFO - Iteration 2 of 30
-2025-11-20 01:37:35,303 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:37:35 - INFO - Iteration 3 of 30
-2025-11-20 01:37:35,323 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:37:35 - INFO - Iteration 4 of 30
-2025-11-20 01:37:35,343 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 01:37:35 - INFO - Iteration 5 of 30
-2025-11-20 01:37:35,351 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 01:37:35 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:38:30,695 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:38:30 - INFO - Computing initial centroids with sklearn.KMeans...
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:39:52,874 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:39:52 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:39:52,885 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:39:52 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:39:52,885 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:39:52 - INFO - Iteration 1 of 30
-2025-11-20 01:39:52,899 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:39:52 - INFO - Iteration 2 of 30
-2025-11-20 01:39:52,914 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:39:52 - INFO - Iteration 3 of 30
-2025-11-20 01:39:52,925 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:39:52 - INFO - Iteration 4 of 30
-2025-11-20 01:39:52,932 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 01:39:52 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:41:40,835 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:41:40 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:41:40,846 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:41:40 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:41:40,846 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:41:40 - INFO - Iteration 1 of 30
-2025-11-20 01:41:40,866 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:41:40 - INFO - Iteration 2 of 30
-2025-11-20 01:41:40,877 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:41:40 - INFO - Iteration 3 of 30
-2025-11-20 01:41:40,887 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:41:40 - INFO - Iteration 4 of 30
-2025-11-20 01:41:40,904 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 01:41:40 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:43:20,748 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:43:20 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:43:20,758 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:43:20 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:43:20,758 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:43:20 - INFO - Iteration 1 of 30
-2025-11-20 01:43:20,778 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:43:20 - INFO - Iteration 2 of 30
-2025-11-20 01:43:20,798 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:43:20 - INFO - Iteration 3 of 30
-2025-11-20 01:43:20,809 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:43:20 - INFO - Iteration 4 of 30
-2025-11-20 01:43:20,818 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 01:43:20 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:45:19,016 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:45:19 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:45:19,027 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:45:19 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:45:19,027 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:45:19 - INFO - Iteration 1 of 30
-2025-11-20 01:45:19,047 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:45:19 - INFO - Iteration 2 of 30
-2025-11-20 01:45:19,060 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:45:19 - INFO - Iteration 3 of 30
-2025-11-20 01:45:19,066 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:45:19 - INFO - Iteration 4 of 30
-2025-11-20 01:45:19,076 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 01:45:19 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:47:15,561 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:47:15 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:47:15,572 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:47:15 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:47:15,572 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:47:15 - INFO - Iteration 1 of 30
-2025-11-20 01:47:15,592 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:47:15 - INFO - Iteration 2 of 30
-2025-11-20 01:47:15,600 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:47:15 - INFO - Iteration 3 of 30
-2025-11-20 01:47:15,620 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:47:15 - INFO - Iteration 4 of 30
-2025-11-20 01:47:15,632 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 01:47:15 - INFO - Iteration 5 of 30
-2025-11-20 01:47:15,638 - harmonypy - INFO - Iteration 6 of 30
-2025-11-20 01:47:15 - INFO - Iteration 6 of 30
-2025-11-20 01:47:15,649 - harmonypy - INFO - Iteration 7 of 30
-2025-11-20 01:47:15 - INFO - Iteration 7 of 30
-2025-11-20 01:47:15,656 - harmonypy - INFO - Iteration 8 of 30
-2025-11-20 01:47:15 - INFO - Iteration 8 of 30
-2025-11-20 01:47:15,662 - harmonypy - INFO - Iteration 9 of 30
-2025-11-20 01:47:15 - INFO - Iteration 9 of 30
-2025-11-20 01:47:15,667 - harmonypy - INFO - Iteration 10 of 30
-2025-11-20 01:47:15 - INFO - Iteration 10 of 30
-2025-11-20 01:47:15,682 - harmonypy - INFO - Iteration 11 of 30
-2025-11-20 01:47:15 - INFO - Iteration 11 of 30
-2025-11-20 01:47:15,689 - harmonypy - INFO - Converged after 11 iterations
-2025-11-20 01:47:15 - INFO - Converged after 11 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:49:32,754 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:49:32 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:49:32,765 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:49:32 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:49:32,765 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:49:32 - INFO - Iteration 1 of 30
-2025-11-20 01:49:32,786 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:49:32 - INFO - Iteration 2 of 30
-2025-11-20 01:49:32,806 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:49:32 - INFO - Iteration 3 of 30
-2025-11-20 01:49:32,825 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:49:32 - INFO - Iteration 4 of 30
-2025-11-20 01:49:32,844 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 01:49:32 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:51:40,224 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:51:40 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:51:40,234 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:51:40 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:51:40,235 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:51:40 - INFO - Iteration 1 of 30
-2025-11-20 01:51:40,253 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:51:40 - INFO - Iteration 2 of 30
-2025-11-20 01:51:40,273 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:51:40 - INFO - Iteration 3 of 30
-2025-11-20 01:51:40,289 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:51:40 - INFO - Iteration 4 of 30
-2025-11-20 01:51:40,300 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 01:51:40 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:54:16,285 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:54:16 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:54:16,295 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:54:16 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:54:16,295 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:54:16 - INFO - Iteration 1 of 30
-2025-11-20 01:54:16,314 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:54:16 - INFO - Iteration 2 of 30
-2025-11-20 01:54:16,323 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:54:16 - INFO - Iteration 3 of 30
-2025-11-20 01:54:16,336 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:54:16 - INFO - Iteration 4 of 30
-2025-11-20 01:54:16,341 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 01:54:16 - INFO - Iteration 5 of 30
-2025-11-20 01:54:16,354 - harmonypy - INFO - Iteration 6 of 30
-2025-11-20 01:54:16 - INFO - Iteration 6 of 30
-2025-11-20 01:54:16,365 - harmonypy - INFO - Converged after 6 iterations
-2025-11-20 01:54:16 - INFO - Converged after 6 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:55:57,514 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:55:57 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:55:57,525 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:55:57 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:55:57,525 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:55:57 - INFO - Iteration 1 of 30
-2025-11-20 01:55:57,543 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:55:57 - INFO - Iteration 2 of 30
-2025-11-20 01:55:57,558 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:55:57 - INFO - Iteration 3 of 30
-2025-11-20 01:55:57,578 - harmonypy - INFO - Converged after 3 iterations
-2025-11-20 01:55:57 - INFO - Converged after 3 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:57:37,061 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:57:37 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:57:37,072 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:57:37 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:57:37,072 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:57:37 - INFO - Iteration 1 of 30
-2025-11-20 01:57:37,088 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:57:37 - INFO - Iteration 2 of 30
-2025-11-20 01:57:37,104 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:57:37 - INFO - Iteration 3 of 30
-2025-11-20 01:57:37,112 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:57:37 - INFO - Iteration 4 of 30
-2025-11-20 01:57:37,117 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 01:57:37 - INFO - Iteration 5 of 30
-2025-11-20 01:57:37,127 - harmonypy - INFO - Iteration 6 of 30
-2025-11-20 01:57:37 - INFO - Iteration 6 of 30
-2025-11-20 01:57:37,143 - harmonypy - INFO - Iteration 7 of 30
-2025-11-20 01:57:37 - INFO - Iteration 7 of 30
-2025-11-20 01:57:37,154 - harmonypy - INFO - Iteration 8 of 30
-2025-11-20 01:57:37 - INFO - Iteration 8 of 30
-2025-11-20 01:57:37,164 - harmonypy - INFO - Converged after 8 iterations
-2025-11-20 01:57:37 - INFO - Converged after 8 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 01:59:26,331 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:59:26 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 01:59:26,342 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:59:26 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 01:59:26,342 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 01:59:26 - INFO - Iteration 1 of 30
-2025-11-20 01:59:26,362 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 01:59:26 - INFO - Iteration 2 of 30
-2025-11-20 01:59:26,371 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 01:59:26 - INFO - Iteration 3 of 30
-2025-11-20 01:59:26,391 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 01:59:26 - INFO - Iteration 4 of 30
-2025-11-20 01:59:26,408 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 01:59:26 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:01:05,864 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:01:05 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:01:05,875 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:01:05 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:01:05,875 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:01:05 - INFO - Iteration 1 of 30
-2025-11-20 02:01:05,890 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:01:05 - INFO - Iteration 2 of 30
-2025-11-20 02:01:05,906 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:01:05 - INFO - Iteration 3 of 30
-2025-11-20 02:01:05,914 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:01:05 - INFO - Iteration 4 of 30
-2025-11-20 02:01:05,919 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:01:05 - INFO - Iteration 5 of 30
-2025-11-20 02:01:05,932 - harmonypy - INFO - Iteration 6 of 30
-2025-11-20 02:01:05 - INFO - Iteration 6 of 30
-2025-11-20 02:01:05,946 - harmonypy - INFO - Converged after 6 iterations
-2025-11-20 02:01:05 - INFO - Converged after 6 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:02:05,205 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:02:05 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:02:05,215 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:02:05 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:02:05,215 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:02:05 - INFO - Iteration 1 of 30
-2025-11-20 02:02:05,233 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:02:05 - INFO - Iteration 2 of 30
-2025-11-20 02:02:05,253 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:02:05 - INFO - Iteration 3 of 30
-2025-11-20 02:02:05,273 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:02:05 - INFO - Iteration 4 of 30
-2025-11-20 02:02:05,293 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:02:05 - INFO - Iteration 5 of 30
-2025-11-20 02:02:05,301 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 02:02:05 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:02:59,593 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:02:59 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:02:59,604 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:02:59 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:02:59,604 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:02:59 - INFO - Iteration 1 of 30
-2025-11-20 02:02:59,620 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:02:59 - INFO - Iteration 2 of 30
-2025-11-20 02:02:59,638 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:02:59 - INFO - Iteration 3 of 30
-2025-11-20 02:02:59,657 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:02:59 - INFO - Iteration 4 of 30
-2025-11-20 02:02:59,677 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 02:02:59 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:04:03,853 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:04:03 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:04:03,864 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:04:03 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:04:03,864 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:04:03 - INFO - Iteration 1 of 30
-2025-11-20 02:04:03,874 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:04:03 - INFO - Iteration 2 of 30
-2025-11-20 02:04:03,884 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:04:03 - INFO - Iteration 3 of 30
-2025-11-20 02:04:03,896 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:04:03 - INFO - Iteration 4 of 30
-2025-11-20 02:04:03,915 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:04:03 - INFO - Iteration 5 of 30
-2025-11-20 02:04:03,932 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 02:04:03 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:05:50,196 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:05:50 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:05:50,207 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:05:50 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:05:50,207 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:05:50 - INFO - Iteration 1 of 30
-2025-11-20 02:05:50,227 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:05:50 - INFO - Iteration 2 of 30
-2025-11-20 02:05:50,234 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:05:50 - INFO - Iteration 3 of 30
-2025-11-20 02:05:50,254 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:05:50 - INFO - Iteration 4 of 30
-2025-11-20 02:05:50,260 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 02:05:50 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:07:45,378 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:07:45 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:07:45,389 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:07:45 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:07:45,389 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:07:45 - INFO - Iteration 1 of 30
-2025-11-20 02:07:45,409 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:07:45 - INFO - Iteration 2 of 30
-2025-11-20 02:07:45,429 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:07:45 - INFO - Iteration 3 of 30
-2025-11-20 02:07:45,449 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:07:45 - INFO - Iteration 4 of 30
-2025-11-20 02:07:45,468 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:07:45 - INFO - Iteration 5 of 30
-2025-11-20 02:07:45,488 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 02:07:45 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:09:47,300 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:09:47 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:09:47,311 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:09:47 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:09:47,311 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:09:47 - INFO - Iteration 1 of 30
-2025-11-20 02:09:47,331 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:09:47 - INFO - Iteration 2 of 30
-2025-11-20 02:09:47,347 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:09:47 - INFO - Iteration 3 of 30
-2025-11-20 02:09:47,357 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:09:47 - INFO - Iteration 4 of 30
-2025-11-20 02:09:47,369 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:09:47 - INFO - Iteration 5 of 30
-2025-11-20 02:09:47,382 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 02:09:47 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:11:42,071 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:11:42 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:11:42,082 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:11:42 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:11:42,082 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:11:42 - INFO - Iteration 1 of 30
-2025-11-20 02:11:42,102 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:11:42 - INFO - Iteration 2 of 30
-2025-11-20 02:11:42,121 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:11:42 - INFO - Iteration 3 of 30
-2025-11-20 02:11:42,128 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:11:42 - INFO - Iteration 4 of 30
-2025-11-20 02:11:42,140 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:11:42 - INFO - Iteration 5 of 30
-2025-11-20 02:11:42,149 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 02:11:42 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:13:57,111 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:13:57 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:13:57,122 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:13:57 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:13:57,122 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:13:57 - INFO - Iteration 1 of 30
-2025-11-20 02:13:57,142 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:13:57 - INFO - Iteration 2 of 30
-2025-11-20 02:13:57,158 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:13:57 - INFO - Iteration 3 of 30
-2025-11-20 02:13:57,178 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:13:57 - INFO - Iteration 4 of 30
-2025-11-20 02:13:57,189 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:13:57 - INFO - Iteration 5 of 30
-2025-11-20 02:13:57,197 - harmonypy - INFO - Iteration 6 of 30
-2025-11-20 02:13:57 - INFO - Iteration 6 of 30
-2025-11-20 02:13:57,214 - harmonypy - INFO - Iteration 7 of 30
-2025-11-20 02:13:57 - INFO - Iteration 7 of 30
-2025-11-20 02:13:57,220 - harmonypy - INFO - Iteration 8 of 30
-2025-11-20 02:13:57 - INFO - Iteration 8 of 30
-2025-11-20 02:13:57,230 - harmonypy - INFO - Iteration 9 of 30
-2025-11-20 02:13:57 - INFO - Iteration 9 of 30
-2025-11-20 02:13:57,235 - harmonypy - INFO - Iteration 10 of 30
-2025-11-20 02:13:57 - INFO - Iteration 10 of 30
-2025-11-20 02:13:57,248 - harmonypy - INFO - Iteration 11 of 30
-2025-11-20 02:13:57 - INFO - Iteration 11 of 30
-2025-11-20 02:13:57,266 - harmonypy - INFO - Iteration 12 of 30
-2025-11-20 02:13:57 - INFO - Iteration 12 of 30
-2025-11-20 02:13:57,279 - harmonypy - INFO - Iteration 13 of 30
-2025-11-20 02:13:57 - INFO - Iteration 13 of 30
-2025-11-20 02:13:57,298 - harmonypy - INFO - Converged after 13 iterations
-2025-11-20 02:13:57 - INFO - Converged after 13 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:16:04,069 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:16:04 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:16:04,080 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:16:04 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:16:04,080 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:16:04 - INFO - Iteration 1 of 30
-2025-11-20 02:16:04,098 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:16:04 - INFO - Iteration 2 of 30
-2025-11-20 02:16:04,113 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:16:04 - INFO - Iteration 3 of 30
-2025-11-20 02:16:04,123 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:16:04 - INFO - Iteration 4 of 30
-2025-11-20 02:16:04,143 - harmonypy - INFO - Converged after 4 iterations
-2025-11-20 02:16:04 - INFO - Converged after 4 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:18:42,481 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:18:42 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:18:42,492 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:18:42 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:18:42,492 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:18:42 - INFO - Iteration 1 of 30
-2025-11-20 02:18:42,500 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:18:42 - INFO - Iteration 2 of 30
-2025-11-20 02:18:42,517 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:18:42 - INFO - Iteration 3 of 30
-2025-11-20 02:18:42,524 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:18:42 - INFO - Iteration 4 of 30
-2025-11-20 02:18:42,536 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:18:42 - INFO - Iteration 5 of 30
-2025-11-20 02:18:42,541 - harmonypy - INFO - Iteration 6 of 30
-2025-11-20 02:18:42 - INFO - Iteration 6 of 30
-2025-11-20 02:18:42,550 - harmonypy - INFO - Converged after 6 iterations
-2025-11-20 02:18:42 - INFO - Converged after 6 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:21:13,628 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:21:13 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:21:13,638 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:21:13 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:21:13,638 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:21:13 - INFO - Iteration 1 of 30
-2025-11-20 02:21:13,651 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:21:13 - INFO - Iteration 2 of 30
-2025-11-20 02:21:13,666 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:21:13 - INFO - Iteration 3 of 30
-2025-11-20 02:21:13,678 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:21:13 - INFO - Iteration 4 of 30
-2025-11-20 02:21:13,689 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:21:13 - INFO - Iteration 5 of 30
-2025-11-20 02:21:13,699 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 02:21:13 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:23:30,140 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:23:30 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:23:30,151 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:23:30 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:23:30,151 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:23:30 - INFO - Iteration 1 of 30
-2025-11-20 02:23:30,171 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:23:30 - INFO - Iteration 2 of 30
-2025-11-20 02:23:30,179 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:23:30 - INFO - Iteration 3 of 30
-2025-11-20 02:23:30,187 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:23:30 - INFO - Iteration 4 of 30
-2025-11-20 02:23:30,201 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:23:30 - INFO - Iteration 5 of 30
-2025-11-20 02:23:30,214 - harmonypy - INFO - Iteration 6 of 30
-2025-11-20 02:23:30 - INFO - Iteration 6 of 30
-2025-11-20 02:23:30,233 - harmonypy - INFO - Converged after 6 iterations
-2025-11-20 02:23:30 - INFO - Converged after 6 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:25:51,712 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:25:51 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:25:51,723 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:25:51 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:25:51,723 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:25:51 - INFO - Iteration 1 of 30
-2025-11-20 02:25:51,737 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:25:51 - INFO - Iteration 2 of 30
-2025-11-20 02:25:51,748 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:25:51 - INFO - Iteration 3 of 30
-2025-11-20 02:25:51,763 - harmonypy - INFO - Iteration 4 of 30
-2025-11-20 02:25:51 - INFO - Iteration 4 of 30
-2025-11-20 02:25:51,782 - harmonypy - INFO - Iteration 5 of 30
-2025-11-20 02:25:51 - INFO - Iteration 5 of 30
-2025-11-20 02:25:51,789 - harmonypy - INFO - Converged after 5 iterations
-2025-11-20 02:25:51 - INFO - Converged after 5 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
-2025-11-20 02:28:11,343 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:28:11 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-11-20 02:28:11,353 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:28:11 - INFO - sklearn.KMeans initialization complete.
-2025-11-20 02:28:11,354 - harmonypy - INFO - Iteration 1 of 30
-2025-11-20 02:28:11 - INFO - Iteration 1 of 30
-2025-11-20 02:28:11,368 - harmonypy - INFO - Iteration 2 of 30
-2025-11-20 02:28:11 - INFO - Iteration 2 of 30
-2025-11-20 02:28:11,378 - harmonypy - INFO - Iteration 3 of 30
-2025-11-20 02:28:11 - INFO - Iteration 3 of 30
-2025-11-20 02:28:11,397 - harmonypy - INFO - Converged after 3 iterations
-2025-11-20 02:28:11 - INFO - Converged after 3 iterations
-... storing 'study' as categorical
-... storing 'sex' as categorical
-... storing 'severity' as categorical
-... storing 'batch' as categorical
-... storing 'sev.level' as categorical
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+[DEBUG] Embedding matrix shape: (25, 10)
+[DEBUG] First 3 embedding indices: ['CoV-104.2-Su', 'CoV-128.2-Su', 'CoV-133.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=25, meta_only=516, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su']
+[DEBUG] After alignment: meta_df=(25, 6), embedding_df=(25, 10)
+[DEBUG] Dropped rows -> meta: 516, embed: 0
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.54964201 0.3194467 ]
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (6): ['Mudd', 'SS1', 'SS2', 'Su', 'Wilk', 'Zhu']
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/embedding_visualization/pca_coordinates.csv
+[DEBUG] Visualization completed successfully.
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 25 samples
+
+Merging data...
+  Merged data: 25 samples retained
+
+Performing ANOVA...
+  Analyzing 25 samples with complete data
+  Number of batches: 6
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 4.6786e-01 (η² = 0.156)
+  Severity Effect: p = 1.4516e-01 (η² = 0.321)
+  Interaction: p = 2.5593e-01 (η² = 0.593)
+  Overall Assessment: INEFFECTIVE
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/trajectory_anova/ANOVA
+Batch-removal Evaluation Summary
+================================
+Samples: 25
+Batches: 6 -> ['Mudd', 'SS1', 'SS2', 'Su', 'Wilk', 'Zhu']
+
+iLISI (mean ± sd): 1.8076 ± 0.3651
+iLISI_norm: 0.3013
+ASW-batch: 0.5393
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/batch_removal/Batch_Removal_Evaluation
+============================================================
+ARI-based Clustering Evaluation Summary
+============================================================
+Data mode: embedding
+Total samples: 25
+Samples with valid severity: 25
+Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+K neighbors for KNN: 20
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.0257
+Normalized Mutual Info (NMI): 0.1950
+Average Cluster Purity: 0.6488
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and severity levels
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 25 samples
+
+Merging data...
+  Merged data: 25 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 25 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.5132 (p = 8.6943e-03)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 16 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq    df         F    PR(>F)
+C(Q('sev.level'))  0.353493   3.0  1.676966  0.224594
+Residual           0.843174  12.0       NaN       NaN
+SciPy F-test: F=1.6770, p=0.2246
+Effect sizes: eta²=0.2954, ω²=0.1126
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su      16
+SS1      4
+Mudd     2
+Wilk     1
+SS2      1
+Zhu      1
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 6, n_non_anchor = 9
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 9
+Anchor samples: 16
+Pool samples: 9
+k_neighbors: 1
+
+Results for 'GEDI':
+  Mean |Δseverity|: 1.4375
+  95% CI: [0.9984, 1.9375]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/GEDI/25_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+[DEBUG] Embedding matrix shape: (50, 10)
+[DEBUG] First 3 embedding indices: ['CoV-1.2-Wilk', 'CoV-105.1-Su', 'CoV-113.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=50, meta_only=491, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.1-Wilk', 'CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su', 'CoV-101.2-Su']
+[DEBUG] After alignment: meta_df=(50, 6), embedding_df=(50, 10)
+[DEBUG] Dropped rows -> meta: 491, embed: 0
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.52340191 0.24042499]
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (10): ['Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/embedding_visualization/pca_coordinates.csv
+[DEBUG] Visualization completed successfully.
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 50 samples
+
+Merging data...
+  Merged data: 50 samples retained
+
+Performing ANOVA...
+  Analyzing 50 samples with complete data
+  Number of batches: 10
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 1.9436e-02 (η² = 0.548)
+  Severity Effect: p = 1.0000e+00 (η² = 0.000)
+  Interaction: p = 4.1264e-02 (η² = 0.637)
+  Overall Assessment: POOR
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/trajectory_anova/ANOVA
+Batch-removal Evaluation Summary
+================================
+Samples: 50
+Batches: 10 -> ['Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 2.0706 ± 1.2327
+iLISI_norm: 0.2071
+ASW-batch: 0.6021
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/batch_removal/Batch_Removal_Evaluation
+============================================================
+ARI-based Clustering Evaluation Summary
+============================================================
+Data mode: embedding
+Total samples: 50
+Samples with valid severity: 50
+Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+K neighbors for KNN: 20
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): -0.0276
+Normalized Mutual Info (NMI): 0.0945
+Average Cluster Purity: 0.7560
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and severity levels
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 50 samples
+
+Merging data...
+  Merged data: 50 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 50 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.5340 (p = 6.5110e-05)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 29 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq    df         F    PR(>F)
+C(Q('sev.level'))  0.322638   3.0  4.400239  0.012855
+Residual           0.611024  25.0       NaN       NaN
+SciPy F-test: F=4.4002, p=0.01285
+Effect sizes: eta²=0.3456, ω²=0.2602
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su        29
+SS2        6
+SS1        5
+Zhu        3
+Wen        2
+Wilk       1
+Lee        1
+Yu         1
+Silvin     1
+Mudd       1
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 10, n_non_anchor = 21
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 21
+Anchor samples: 29
+Pool samples: 21
+k_neighbors: 1
+
+Results for 'GEDI':
+  Mean |Δseverity|: 1.3448
+  95% CI: [1.0000, 1.7241]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/GEDI/50_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+[DEBUG] Embedding matrix shape: (100, 10)
+[DEBUG] First 3 embedding indices: ['CoV-1.1-Wilk', 'CoV-100.1-Su', 'CoV-103.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=100, meta_only=441, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.2-Wilk', 'CoV-100.2-Su', 'CoV-101.1-Su', 'CoV-101.2-Su', 'CoV-102.1-Su']
+[DEBUG] After alignment: meta_df=(100, 6), embedding_df=(100, 10)
+[DEBUG] Dropped rows -> meta: 441, embed: 0
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.46310866 0.2386316 ]
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (11): ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu']...
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/embedding_visualization/pca_coordinates.csv
+[DEBUG] Visualization completed successfully.
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 100 samples
+
+Merging data...
+  Merged data: 100 samples retained
+
+Performing ANOVA...
+  Analyzing 100 samples with complete data
+  Number of batches: 11
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 1.6897e-02 (η² = 0.440)
+  Severity Effect: p = 1.0000e+00 (η² = -0.062)
+  Interaction: p = 9.8777e-02 (η² = 0.387)
+  Overall Assessment: POOR
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/trajectory_anova/ANOVA
+Batch-removal Evaluation Summary
+================================
+Samples: 100
+Batches: 11 -> ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 1.5806 ± 0.6917
+iLISI_norm: 0.1437
+ASW-batch: 0.5502
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/batch_removal/Batch_Removal_Evaluation
+============================================================
+ARI-based Clustering Evaluation Summary
+============================================================
+Data mode: embedding
+Total samples: 100
+Samples with valid severity: 100
+Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+K neighbors for KNN: 20
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.0178
+Normalized Mutual Info (NMI): 0.0938
+Average Cluster Purity: 0.8022
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and severity levels
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 100 samples
+
+Merging data...
+  Merged data: 100 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 100 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.5571 (p = 1.7422e-09)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 62 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq    df         F    PR(>F)
+C(Q('sev.level'))  1.158073   3.0  9.985783  0.000021
+Residual           2.242129  58.0       NaN       NaN
+SciPy F-test: F=9.9858, p=2.11e-05
+Effect sizes: eta²=0.3406, ω²=0.3030
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su        62
+SS2       13
+Lee        4
+Zhu        4
+Aruna      4
+SS1        4
+Wilk       3
+Wen        2
+Mudd       2
+Yu         1
+Silvin     1
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 11, n_non_anchor = 38
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 38
+Anchor samples: 62
+Pool samples: 38
+k_neighbors: 1
+
+Results for 'GEDI':
+  Mean |Δseverity|: 1.5161
+  95% CI: [1.3065, 1.7419]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/GEDI/100_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+[DEBUG] Embedding matrix shape: (200, 10)
+[DEBUG] First 3 embedding indices: ['CoV-1.1-Wilk', 'CoV-100.1-Su', 'CoV-100.2-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=200, meta_only=341, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.2-Wilk', 'CoV-104.1-Su', 'CoV-105.1-Su', 'CoV-105.2-Su', 'CoV-106.1-Su']
+[DEBUG] After alignment: meta_df=(200, 6), embedding_df=(200, 10)
+[DEBUG] Dropped rows -> meta: 341, embed: 0
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.46173719 0.22071873]
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (11): ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu']...
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/embedding_visualization/pca_coordinates.csv
+[DEBUG] Visualization completed successfully.
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 200 samples
+
+Merging data...
+  Merged data: 200 samples retained
+
+Performing ANOVA...
+  Analyzing 200 samples with complete data
+  Number of batches: 11
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 2.2061e-02 (η² = 0.183)
+  Severity Effect: p = 7.6322e-01 (η² = 0.005)
+  Interaction: p = 3.7139e-16 (η² = 0.604)
+  Overall Assessment: POOR
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/trajectory_anova/ANOVA
+Batch-removal Evaluation Summary
+================================
+Samples: 200
+Batches: 11 -> ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 1.5482 ± 0.8005
+iLISI_norm: 0.1407
+ASW-batch: 0.5804
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/batch_removal/Batch_Removal_Evaluation
+============================================================
+ARI-based Clustering Evaluation Summary
+============================================================
+Data mode: embedding
+Total samples: 200
+Samples with valid severity: 200
+Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+K neighbors for KNN: 20
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): -0.0000
+Normalized Mutual Info (NMI): 0.0730
+Average Cluster Purity: 0.8482
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and severity levels
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 200 samples
+
+Merging data...
+  Merged data: 200 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 200 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.6042 (p = 2.7293e-21)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 129 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq     df          F        PR(>F)
+C(Q('sev.level'))  2.370756    3.0  33.087625  8.218366e-16
+Residual           2.985451  125.0        NaN           NaN
+SciPy F-test: F=33.0876, p=8.218e-16
+Effect sizes: eta²=0.4426, ω²=0.4273
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su        129
+SS2        23
+SS1        13
+Wilk        8
+Lee         7
+Zhu         6
+Yu          4
+Mudd        3
+Aruna       3
+Wen         2
+Silvin      2
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 11, n_non_anchor = 71
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 71
+Anchor samples: 129
+Pool samples: 71
+k_neighbors: 1
+
+Results for 'GEDI':
+  Mean |Δseverity|: 1.2713
+  95% CI: [1.1008, 1.4496]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/GEDI/200_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+[DEBUG] Embedding matrix shape: (249, 10)
+[DEBUG] First 3 embedding indices: ['CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=249, meta_only=292, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-118.1-Su', 'CoV-121.1-Su', 'CoV-122.1-Su']
+[DEBUG] After alignment: meta_df=(249, 6), embedding_df=(249, 10)
+[DEBUG] Dropped rows -> meta: 292, embed: 0
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.76516628 0.14572816]
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (1): ['Su']
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/embedding_visualization/pca_coordinates.csv
+[DEBUG] Visualization completed successfully.
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 249 samples
+
+Merging data...
+  Merged data: 249 samples retained
+
+Performing ANOVA...
+  Analyzing 249 samples with complete data
+  Number of batches: 1
+  Number of severity levels: 4
+  Only ONE batch detected → falling back to ONE-WAY ANOVA on severity_level.
+  ANOVA table index: ['C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: (no batch factor — single-batch dataset)
+  Severity Effect: p = 1.1875e-18 (η² = 0.297)
+  Interaction: (not applicable for one-way severity model)
+  Overall Assessment: EXCELLENT
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/trajectory_anova/ANOVA
+============================================================
+ARI-based Clustering Evaluation Summary
+============================================================
+Data mode: embedding
+Total samples: 249
+Samples with valid severity: 249
+Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+K neighbors for KNN: 20
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.0168
+Normalized Mutual Info (NMI): 0.0619
+Average Cluster Purity: 0.7311
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and severity levels
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 249 samples
+
+Merging data...
+  Merged data: 249 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 249 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.5462 (p = 9.2110e-21)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 249 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq     df          F        PR(>F)
+C(Q('sev.level'))  2.734373    3.0  34.536774  1.187534e-18
+Residual           6.465778  245.0        NaN           NaN
+SciPy F-test: F=34.5368, p=1.188e-18
+Effect sizes: eta²=0.2972, ω²=0.2878
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/GEDI/279_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su    249
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 1, n_non_anchor = 0
+
+[INFO] Only anchor batch present in data. Skipping nearest-neighbor severity gap analysis.
+============================================================
+
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+[DEBUG] Embedding matrix shape: (405, 10)
+[DEBUG] First 3 embedding indices: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-100.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=405, meta_only=136, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-118.1-Su', 'CoV-121.1-Su', 'CoV-122.1-Su', 'CoV-124.1-Su', 'CoV-131-Su']
+[DEBUG] After alignment: meta_df=(405, 6), embedding_df=(405, 10)
+[DEBUG] Dropped rows -> meta: 136, embed: 0
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.57862199 0.19711384]
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (12): ['Aruna', 'Guo', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk']...
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/embedding_visualization/pca_coordinates.csv
+[DEBUG] Visualization completed successfully.
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 405 samples
+
+Merging data...
+  Merged data: 405 samples retained
+
+Performing ANOVA...
+  Analyzing 405 samples with complete data
+  Number of batches: 12
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 1.4505e-01 (η² = 0.054)
+  Severity Effect: p = 2.9791e-01 (η² = 0.010)
+  Interaction: p = 3.1161e-06 (η² = 0.233)
+  Overall Assessment: INEFFECTIVE
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/trajectory_anova/ANOVA
+Batch-removal Evaluation Summary
+================================
+Samples: 405
+Batches: 12 -> ['Aruna', 'Guo', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 1.6635 ± 0.8546
+iLISI_norm: 0.1386
+ASW-batch: 0.5743
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/batch_removal/Batch_Removal_Evaluation
+============================================================
+ARI-based Clustering Evaluation Summary
+============================================================
+Data mode: embedding
+Total samples: 405
+Samples with valid severity: 405
+Unique severity levels: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+K neighbors for KNN: 20
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): -0.0009
+Normalized Mutual Info (NMI): 0.0367
+Average Cluster Purity: 0.8054
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and severity levels
+
+Results saved to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 405 samples
+
+Merging data...
+  Merged data: 405 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 405 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.4828 (p = 4.9085e-25)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 249 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq     df          F        PR(>F)
+C(Q('sev.level'))  1.866543    3.0  33.525923  3.427947e-18
+Residual           4.546760  245.0        NaN           NaN
+SciPy F-test: F=33.5259, p=3.428e-18
+Effect sizes: eta²=0.2910, ω²=0.2815
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su        249
+SS2        56
+SS1        25
+Lee        14
+Zhu        14
+Wilk       13
+Aruna      12
+Yu          9
+Wen         5
+Mudd        4
+Guo         2
+Silvin      2
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 12, n_non_anchor = 156
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 156
+Anchor samples: 249
+Pool samples: 156
+k_neighbors: 1
+
+Results for 'GEDI':
+  Mean |Δseverity|: 1.0884
+  95% CI: [0.9759, 1.1969]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/GEDI/400_sample/benchmark_results_GEDI/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+

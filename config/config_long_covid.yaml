@@ -31,11 +31,11 @@ rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: false
+rna_trajectory_analysis: true
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: true
+rna_visualize_data: false
 
 # RNA Paths for Skipping Processes
 rna_anndata_cell_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad
@@ -52,7 +52,7 @@ rna_grouping_columns:
   - "Age at enrollment"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: null
+rna_batch_col: "OutSMART short number"
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -93,10 +93,10 @@ rna_dr_output_dir: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
-rna_trajectory_supervised: false
+rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
-rna_sev_col_cca: "sev.level"
+rna_sev_col_cca: "month"
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null

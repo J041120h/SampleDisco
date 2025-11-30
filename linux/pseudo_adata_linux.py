@@ -12,6 +12,7 @@ from typing import Tuple, Dict, List
 import contextlib
 import patsy
 import sys
+import traceback
 
 # GPU imports
 import torch
@@ -237,16 +238,13 @@ def compute_pseudobulk_layers_gpu(
                 # limma fallback / alternative
                 if not batch_correction_applied:
                     try:
-                        if verbose:
-                            print("  - Applying limma batch regression (~ batch).")
-
                         # Ensure dense
                         if issparse(temp_adata.X):
                             X_dense = temp_adata.X.toarray()
                         else:
                             X_dense = temp_adata.X.copy()
+                        covariate_formula = f'~ Q("{batch_col}")'
 
-                        covariate_formula = f'~ {batch_col}'
                         X_corrected = limma(
                             pheno=temp_adata.obs,
                             exprs=X_dense,
@@ -255,6 +253,7 @@ def compute_pseudobulk_layers_gpu(
                             rcond=1e-8,
                             verbose=False  # keep limma quiet here
                         )
+                    
                         temp_adata.X = X_corrected
                         batch_correction_applied = True
                         batch_correction_method = "limma"
@@ -273,6 +272,9 @@ def compute_pseudobulk_layers_gpu(
                     except Exception as e:
                         if verbose:
                             print(f"  - limma failed ({type(e).__name__}); continuing without batch correction.")
+                            print(f"    DEBUG: Exception details: {str(e)}")
+                            print(f"    DEBUG: Traceback:")
+                            traceback.print_exc()
 
             elif verbose:
                 print("  - Batch correction skipped (conditions not met).")
