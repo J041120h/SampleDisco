@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # mds_from_distance_simple.py
-# Loops over multiple sample sizes and runs classical MDS on each distance matrix.
+# Loops over multiple sample sizes and runs classical MDS on each embedding matrix.
 
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
 # ====== USER SETTINGS ======
-BASE_DIR = "/dcs07/hongkai/data/harry/result/Gloscope"  # Base directory for the Gloscope result files
-SAMPLE_SIZES = [25, 50, 100, 200, 279, 400]                # Sample sizes to loop through
-N_DIMS = 10                                            # Number of dimensions for MDS
+BASE_DIR = "/dcs07/hongkai/data/harry/result/scPoli"  # Base directory for the scPoli result files
+SAMPLE_SIZES = [25, 50, 100, 200, 279, 400]         # Sample sizes to loop through
+N_DIMS = 10                                         # Number of dimensions for MDS
 # ===========================
 
 def read_distance_csv(p):
@@ -86,7 +86,7 @@ def main():
     Main function to loop through different sample sizes, run MDS, and save the embeddings.
     """
     for n in SAMPLE_SIZES:
-        input_csv = Path(BASE_DIR) / f"{n}_sample" / f"knn_divergence.csv"
+        input_csv = Path(BASE_DIR) / f"{n}_sample" / "sample_embeddings_full.csv"
         print(f"\n[INFO] Processing {n} samples")
         print(f"[INFO] Input CSV: {input_csv}")
 

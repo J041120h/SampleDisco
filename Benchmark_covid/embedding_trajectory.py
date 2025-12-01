@@ -329,9 +329,8 @@ if __name__ == "__main__":
 
         # Construct the embedding path for this sample size
         EMBEDDING_CSV_PATH = (
-            f'/dcs07/hongkai/data/harry/result/Gloscope/{n}_sample/knn_divergence_mds_10d.csv'
+            f'/dcs07/hongkai/data/harry/result/scPoli/{n}_sample/sample_embeddings_full.csv'
         )
-
         
 
         # Run trajectory
