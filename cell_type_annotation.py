@@ -4,6 +4,7 @@ import celltypist
 from celltypist import models
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Optional
 
 def annotate_cell_types_with_celltypist(
     adata,
@@ -15,7 +16,7 @@ def annotate_cell_types_with_celltypist(
 ):
     # === Validation of model input ===
     from utils.random_seed import set_global_seed
-    set_global_seed(seed = 42, verbose = verbose)
+    set_global_seed(seed = 42)
     if (model_name is None and custom_model_path is None) or (model_name and custom_model_path):
         raise ValueError("You must provide exactly one of `model_name` or `custom_model_path`.")
 
@@ -88,3 +89,52 @@ def annotate_cell_types_with_celltypist(
         print(f"[INFO] Annotated AnnData saved to: {output_file}")
 
     return adata
+
+def run_celltypist_only(
+    h5ad_path: str,
+    output_dir: str,
+    celltypist_model_name: Optional[str] = None,
+    custom_model_path: Optional[str] = None,
+    majority_voting: bool = True,
+) -> None:
+    """
+    Load AnnData, run CellTypist annotation ONLY, and overwrite the SAME .h5ad file.
+
+    This is a stripped-down wrapper around `annotate_cell_types_with_celltypist`:
+      - no Leiden, no marker analysis, no extra steps
+      - same model loading behavior as in the full pipeline
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    print(f"[INFO] Loading AnnData from: {h5ad_path}")
+    adata = sc.read_h5ad(h5ad_path)
+    print(f"[INFO] Shape: {adata.n_obs} cells × {adata.n_vars} genes")
+
+    # --- Run CellTypist annotation only ---
+    adata = annotate_cell_types_with_celltypist(
+        adata=adata,
+        output_dir=output_dir,
+        model_name=celltypist_model_name,
+        custom_model_path=custom_model_path,
+        majority_voting=majority_voting,
+    )
+
+    # --- Overwrite the same .h5ad file ---
+    print(f"[INFO] Writing annotated AnnData back to: {h5ad_path}")
+    adata.write_h5ad(h5ad_path, compression="gzip")
+    print("[INFO] CellTypist-only annotation complete.")
+
+
+if __name__ == "__main__":
+    # ====== EDIT THESE PATHS MANUALLY ======
+    H5AD_PATH = "/dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad"
+    OUTPUT_DIR = "/dcs07/hongkai/data/harry/result/long_covid/rna/preprocess"
+
+    run_celltypist_only(
+        h5ad_path=H5AD_PATH,
+        output_dir=OUTPUT_DIR,
+        celltypist_model_name=None,  # keep None when using a custom .pkl
+        # Same model location/usage pattern as your example:
+        custom_model_path="/users/hjiang/GenoDistance/long_covid/PaediatricAdult_COVID19_PBMC.pkl",
+        majority_voting=True,
+    )

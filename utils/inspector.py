@@ -278,5 +278,5 @@ def main():
 
 if __name__ == "__main__":
     summarize_h5ad(
-        h5ad_path="/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
+        h5ad_path="/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad"
     )

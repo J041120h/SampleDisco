@@ -127,3 +127,9 @@ if __name__ == "__main__":
     output_csv = "/dcs07/hongkai/data/harry/result/benchmark_summary_run_time.csv"
     method_name = "scPoli"
     df = summarize_json_to_csv(sample_sizes, base_path, output_csv, method_name)
+    
+    sample_sizes = [25, 50, 100, 200, 400]
+    base_path = "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{}_sample/sampledisco_summary.json"
+    output_csv = "/dcs07/hongkai/data/harry/result/benchmark_summary_run_time.csv"
+    method_name = "SD"
+    df = summarize_json_to_csv(sample_sizes, base_path, output_csv, method_name)

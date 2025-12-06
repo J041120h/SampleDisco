@@ -1072,10 +1072,10 @@ if __name__ == "__main__":
     print("="*60 + "\n")
 
     # Example paths (edit these to your dataset)
-    rna_path = "/dcs07/hongkai/data/harry/result/gene_activity/old/rna_corrected.h5ad"
-    atac_path = "/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/gene_activity.h5ad"
-    out_dir = "/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart"
-
+    rna_path = '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/heart.h5ad'
+    atac_path = '/dcs07/hongkai/data/harry/result/gene_activity/true_signac/heart/heart_gene_activity.h5ad'
+    out_dir = "/dcs07/hongkai/data/harry/result/gene_activity/true_signac/heart/results_corr/pseudobulk"
+    
     # 1) Pseudobulk per cell type and Pearson correlation across genes
     result_pseudo = compare_atac_rna_gene_activity(
         atac_h5ad_path=atac_path,

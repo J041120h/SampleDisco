@@ -790,13 +790,13 @@ if __name__ == "__main__":
     print("STARTING DEBUG MODE - RNA-ATAC CORRELATION ANALYSIS")
     print("="*60 + "\n")
 
-    adata_rna = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/rna_corrected.h5ad')
-    adata_atac = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/heart_gene_activity.h5ad')
+    adata_rna = sc.read_h5ad('/dcl01/hongkai/data/data/hjiang/Data/paired/rna/heart.h5ad')
+    adata_atac = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/true_signac/heart/heart_gene_activity.h5ad')
 
     compute_rna_atac_cell_gene_correlations(
         adata_rna,
         adata_atac,
-        output_dir="/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/results_corr",
+        output_dir="/dcs07/hongkai/data/harry/result/gene_activity/true_signac/heart/results_corr",
         # NEW knobs:
         unify_if_needed=True,
         unify_prefer="auto",                    # or 'ensembl' | 'symbol'

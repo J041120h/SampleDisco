@@ -136,7 +136,7 @@ def benchmark_pseudotime_embeddings_custom(
             F, p = f_oneway(*groups)
         else:
             F, p = (np.nan, np.nan)
-        out["anova_anchor_scipy"] = {"F": F, "p": p}
+        out["anova_anchor_scipy"] = {"F": F, "p": p, "eta_sq": eta_sq, "omega_sq": omega_sq}
         print(f"SciPy F-test: F={F:.4f}, p={p:.4g}")
         print(f"Effect sizes: eta²={eta_sq:.4f}, ω²={omega_sq:.4f}")
 

@@ -211,8 +211,10 @@ class BenchmarkWrapper:
                 
                 anova_scipy = result.get("anova_anchor_scipy")
                 if isinstance(anova_scipy, dict):
-                    if "p" in anova_scipy:
-                        all_metrics["Custom_ANOVA_pval"] = anova_scipy["p"]
+                    if "eta_sq" in anova_scipy:
+                        all_metrics["Custom_ANOVA_eta_sq"] = anova_scipy["eta_sq"]
+                    if "omega_sq" in anova_scipy:
+                        all_metrics["Custom_ANOVA_omega_sq"] = anova_scipy["omega_sq"]
         
         logger.info(f"[DEBUG] Collected metrics: {all_metrics}")
         
@@ -814,136 +816,136 @@ if __name__ == "__main__":
         )
 
     
-    # for size in sample_sizes:
-    #     output_base_dir = f'/dcs07/hongkai/data/harry/result/GEDI/{size}_sample'
-    #     pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
-    #     embedding_csv_path = f'{output_base_dir}/gedi_sample_embedding.csv'
-    #     summary_csv_path = f'/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/GEDI/{size}_sample'
+        pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
+        embedding_csv_path = f'{output_base_dir}/gedi_sample_embedding.csv'
+        summary_csv_path = f'/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
 
-    #     results = run_benchmarks(
-    #         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #         pseudotime_csv_path=pseudotime_csv_path,
-    #         embedding_csv_path=embedding_csv_path,
-    #         summary_csv_path=summary_csv_path,
-    #         method_name="GEDI",
-    #         output_base_dir=output_base_dir,
-    #         # per-benchmark overrides (optional)
-    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-    #         batch_removal={"k": 15, "include_self": False},
-    #     )
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="GEDI",
+            output_base_dir=output_base_dir,
+            # per-benchmark overrides (optional)
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )
     
-    # for size in sample_sizes:
-    #     output_base_dir = f'/dcs07/hongkai/data/harry/result/Gloscope/{size}_sample'
-    #     embedding_csv_path = f'{output_base_dir}/knn_divergence_mds_10d.csv'  # Make sure this file exists!
-    #     pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
-    #     summary_csv_path = f'/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/Gloscope/{size}_sample'
+        embedding_csv_path = f'{output_base_dir}/knn_divergence_mds_10d.csv'  # Make sure this file exists!
+        pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
+        summary_csv_path = f'/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
 
-    #     results = run_benchmarks(
-    #         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #         pseudotime_csv_path=pseudotime_csv_path,
-    #         embedding_csv_path=embedding_csv_path,
-    #         summary_csv_path=summary_csv_path,
-    #         method_name="Gloscope",  # <-- Should be "Gloscope", not "GEDI"
-    #         output_base_dir=output_base_dir,
-    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-    #         batch_removal={"k": 15, "include_self": False},
-    #     )
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="Gloscope",  # <-- Should be "Gloscope", not "GEDI"
+            output_base_dir=output_base_dir,
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )
     
-    # for size in sample_sizes:
-    #     output_base_dir = f'/dcs07/hongkai/data/harry/result/MFA/{size}_sample'
-    #     embedding_csv_path = f'{output_base_dir}/sample_embeddings.csv'
-    #     pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
-    #     summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/MFA/{size}_sample'
+        embedding_csv_path = f'{output_base_dir}/sample_embeddings.csv'
+        pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
+        summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
 
-    #     results = run_benchmarks(
-    #         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #         pseudotime_csv_path=pseudotime_csv_path,
-    #         embedding_csv_path=embedding_csv_path,
-    #         summary_csv_path=summary_csv_path,
-    #         method_name="MFA",
-    #         output_base_dir=output_base_dir,
-    #         # per-benchmark overrides (optional)
-    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-    #         batch_removal={"k": 15, "include_self": False},
-    #     )
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="MFA",
+            output_base_dir=output_base_dir,
+            # per-benchmark overrides (optional)
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )
     
-    # for size in sample_sizes:
-    #     output_base_dir = f'/dcs07/hongkai/data/harry/result/naive_pseudobulk/covid_{size}_sample'
-    #     embedding_csv_path = f'{output_base_dir}/pseudobulk/pca_embeddings.csv'
-    #     pseudotime_csv_path = f'{output_base_dir}/pseudobulk/trajectory/pseudotime_results.csv'
-    #     summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/naive_pseudobulk/covid_{size}_sample'
+        embedding_csv_path = f'{output_base_dir}/pseudobulk/pca_embeddings.csv'
+        pseudotime_csv_path = f'{output_base_dir}/pseudobulk/trajectory/pseudotime_results.csv'
+        summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
 
-    #     results = run_benchmarks(
-    #         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #         pseudotime_csv_path=pseudotime_csv_path,
-    #         embedding_csv_path=embedding_csv_path,
-    #         summary_csv_path=summary_csv_path,
-    #         method_name="pseudobulk",
-    #         output_base_dir=output_base_dir,
-    #         # per-benchmark overrides (optional)
-    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-    #         batch_removal={"k": 15, "include_self": False},
-    #     )
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="pseudobulk",
+            output_base_dir=output_base_dir,
+            # per-benchmark overrides (optional)
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )
     
-    # for size in sample_sizes:
-    #     output_base_dir = f'/dcs07/hongkai/data/harry/result/pilot/{size}_sample'
-    #     embedding_csv_path = f'{output_base_dir}/wasserstein_distance_mds_10d.csv'
-    #     pseudotime_csv_path = f'{output_base_dir}/pilot_native_pseudotime.csv'
-    #     summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/pilot/{size}_sample'
+        embedding_csv_path = f'{output_base_dir}/wasserstein_distance_mds_10d.csv'
+        pseudotime_csv_path = f'{output_base_dir}/pilot_native_pseudotime.csv'
+        summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
 
-    #     results = run_benchmarks(
-    #         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #         pseudotime_csv_path=pseudotime_csv_path,
-    #         embedding_csv_path=embedding_csv_path,
-    #         summary_csv_path=summary_csv_path,
-    #         method_name="pilot",
-    #         output_base_dir=output_base_dir,
-    #         # per-benchmark overrides (optional)
-    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-    #         batch_removal={"k": 15, "include_self": False},
-    #     )
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="pilot",
+            output_base_dir=output_base_dir,
+            # per-benchmark overrides (optional)
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )
     
-    # for size in sample_sizes:
-    #     output_base_dir = f'/dcs07/hongkai/data/harry/result/QOT/{size}_sample'
-    #     embedding_csv_path = f'{output_base_dir}/{size}_qot_distance_matrix_mds_10d.csv'
-    #     pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
-    #     summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/QOT/{size}_sample'
+        embedding_csv_path = f'{output_base_dir}/{size}_qot_distance_matrix_mds_10d.csv'
+        pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
+        summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
 
-    #     results = run_benchmarks(
-    #         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #         pseudotime_csv_path=pseudotime_csv_path,
-    #         embedding_csv_path=embedding_csv_path,
-    #         summary_csv_path=summary_csv_path,
-    #         method_name="QOT",
-    #         output_base_dir=output_base_dir,
-    #         # per-benchmark overrides (optional)
-    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-    #         batch_removal={"k": 15, "include_self": False},
-    #     )
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="QOT",
+            output_base_dir=output_base_dir,
+            # per-benchmark overrides (optional)
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )
     
     
-    # for size in sample_sizes:
-    #     output_base_dir = f'/dcs07/hongkai/data/harry/result/scPoli/{size}_sample'
-    #     embedding_csv_path = f'{output_base_dir}/sample_embeddings_full.csv'
-    #     pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
-    #     summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
+    for size in sample_sizes:
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/scPoli/{size}_sample'
+        embedding_csv_path = f'{output_base_dir}/sample_embeddings_full.csv'
+        pseudotime_csv_path = f'{output_base_dir}/trajectory/pseudotime_results.csv'
+        summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
 
-    #     results = run_benchmarks(
-    #         meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-    #         pseudotime_csv_path=pseudotime_csv_path,
-    #         embedding_csv_path=embedding_csv_path,
-    #         summary_csv_path=summary_csv_path,
-    #         method_name="scPoli",
-    #         output_base_dir=output_base_dir,
-    #         # per-benchmark overrides (optional)
-    #         embedding_visualization={"dpi": 300, "figsize": (12, 5)},
-    #         ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
-    #         batch_removal={"k": 15, "include_self": False},
-    #     )
+        results = run_benchmarks(
+            meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+            pseudotime_csv_path=pseudotime_csv_path,
+            embedding_csv_path=embedding_csv_path,
+            summary_csv_path=summary_csv_path,
+            method_name="scPoli",
+            output_base_dir=output_base_dir,
+            # per-benchmark overrides (optional)
+            embedding_visualization={"dpi": 300, "figsize": (12, 5)},
+            ari_clustering={"k_neighbors": 20, "n_clusters": None, "create_plots": True},
+            batch_removal={"k": 15, "include_self": False},
+        )
     
