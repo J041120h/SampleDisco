@@ -374,13 +374,20 @@ def _create_pseudobulk_layers(
     batch_col: str,
     verbose: bool
 ) -> sc.AnnData:
-    """Create pseudobulk AnnData with cell type layers (CPU version)."""
-
-    # Create new AnnData with samples as observations
+    """Optimized pseudobulk creation using sparse indicator matrix multiplication."""
+    from scipy.sparse import csr_matrix
+    
+    n_samples = len(samples)
+    n_celltypes = len(cell_types)
+    n_genes = adata.n_vars
+    
+    # Create index mappings
+    sample_to_idx = {s: i for i, s in enumerate(samples)}
+    ct_to_idx = {ct: i for i, ct in enumerate(cell_types)}
+    
+    # Setup obs dataframe
     obs_df = pd.DataFrame(index=samples)
     obs_df.index.name = 'sample'
-
-    # Add batch information if available
     if batch_col is not None and batch_col in adata.obs.columns:
         sample_batch_map = (
             adata.obs[[sample_col, batch_col]]
@@ -389,35 +396,98 @@ def _create_pseudobulk_layers(
             .to_dict()
         )
         obs_df[batch_col] = [sample_batch_map.get(s, 'Unknown') for s in samples]
-
+    
     var_df = adata.var.copy()
-
-    n_samples = len(samples)
-    n_genes = adata.n_vars
-
-    X_main = np.zeros((n_samples, n_genes), dtype=float)
+    
+    # Create base AnnData
+    X_main = np.zeros((n_samples, n_genes), dtype=np.float32)
     pseudobulk_adata = sc.AnnData(X=X_main, obs=obs_df, var=var_df)
-
-    for cell_type in cell_types:
+    
+    # Map cells to sample/celltype indices (vectorized)
+    cell_sample_idx = adata.obs[sample_col].map(sample_to_idx).values
+    cell_ct_idx = adata.obs[celltype_col].map(ct_to_idx).values
+    
+    # Handle unmapped cells
+    valid_mask = ~(pd.isna(cell_sample_idx) | pd.isna(cell_ct_idx))
+    cell_sample_idx = np.where(valid_mask, cell_sample_idx, -1).astype(int)
+    cell_ct_idx = np.where(valid_mask, cell_ct_idx, -1).astype(int)
+    
+    # Ensure X is in CSR format for efficient row slicing
+    if issparse(adata.X):
+        X = adata.X.tocsr() if not isinstance(adata.X, csr_matrix) else adata.X
+    else:
+        X = adata.X
+    
+    for ct_idx, cell_type in enumerate(cell_types):
         if verbose:
             print(f"[pseudobulk-CPU] Creating layer for {cell_type}")
-
-        layer_matrix = np.zeros((n_samples, n_genes), dtype=float)
-
-        for sample_idx, sample in enumerate(samples):
-            mask = (adata.obs[sample_col] == sample) & (adata.obs[celltype_col] == cell_type)
-            cell_indices = np.where(mask)[0]
-
-            if len(cell_indices) > 0:
-                if issparse(adata.X):
-                    expr_values = np.asarray(adata.X[cell_indices, :].mean(axis=0)).flatten()
-                else:
-                    expr_values = np.asarray(adata.X[cell_indices, :].mean(axis=0)).flatten()
-                layer_matrix[sample_idx, :] = expr_values
-
-        pseudobulk_adata.layers[cell_type] = layer_matrix
-
+        
+        # Get cells belonging to this cell type
+        ct_mask = (cell_ct_idx == ct_idx) & valid_mask
+        ct_cell_indices = np.where(ct_mask)[0]
+        
+        if len(ct_cell_indices) == 0:
+            pseudobulk_adata.layers[cell_type] = np.zeros((n_samples, n_genes), dtype=np.float32)
+            continue
+        
+        # Get sample assignments for these cells
+        ct_sample_idx = cell_sample_idx[ct_cell_indices]
+        
+        # Build sparse indicator matrix (n_samples x n_ct_cells)
+        row_idx = ct_sample_idx
+        col_idx = np.arange(len(ct_cell_indices))
+        data = np.ones(len(ct_cell_indices), dtype=np.float32)
+        
+        indicator = csr_matrix(
+            (data, (row_idx, col_idx)),
+            shape=(n_samples, len(ct_cell_indices))
+        )
+        
+        # Count cells per sample for this cell type
+        counts = np.array(indicator.sum(axis=1)).flatten()
+        counts[counts == 0] = 1  # Avoid division by zero
+        
+        # Extract expression for this cell type's cells
+        X_ct = X[ct_cell_indices, :]
+        
+        # Compute sums via sparse matmul
+        if issparse(X_ct):
+            sums = indicator @ X_ct
+            sums = np.asarray(sums.todense())
+        else:
+            sums = indicator @ X_ct
+        
+        # Compute means
+        layer_matrix = sums / counts[:, np.newaxis]
+        
+        pseudobulk_adata.layers[cell_type] = layer_matrix.astype(np.float32)
+    
     return pseudobulk_adata
+
+
+def _compute_cell_proportions(
+    adata: sc.AnnData,
+    samples: list,
+    cell_types: list,
+    sample_col: str,
+    celltype_col: str
+) -> pd.DataFrame:
+    """Optimized cell proportions using crosstab."""
+    # Use pandas crosstab for vectorized counting
+    counts = pd.crosstab(
+        adata.obs[celltype_col],
+        adata.obs[sample_col]
+    )
+    
+    # Reindex to ensure all cell types and samples are present
+    counts = counts.reindex(index=cell_types, columns=samples, fill_value=0)
+    
+    # Compute proportions (normalize by column sums)
+    totals = counts.sum(axis=0)
+    totals[totals == 0] = 1  # Avoid division by zero
+    proportion_df = counts / totals
+    
+    return proportion_df.astype(float)
 
 
 # ---------------------------------------------------------------------
