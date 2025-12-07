@@ -1,62 +1,299 @@
-[INFO] GPU: NVIDIA L40S
-[INFO] GPU Memory: 47.70 GB
-[INFO] Loading: /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/preprocess/atac_rna_integrated.h5ad
-[INFO] Total: 861,190 cells, 36,601 genes
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
+        "trajectory_analysis": true,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": true
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
 ============================================================
-BARCODE PAIRING DIAGNOSTICS
+RUNNING RNA PIPELINE
+============================================================
+Starting RNA wrapper function with provided parameters...
+Starting dimensionality reduction...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[TIMING] set_global_seed: 0.01s
+[pseudobulk] Using GPU: NVIDIA L40S
+[pseudobulk] Initial GPU memory: 0.00/0.00 GB (alloc/reserved)
+[pseudobulk] Batch correction enabled: True (col='batch')
+[pseudobulk] 13 cell types, 100 samples
+  Index mapping: 0.00s
+  Layer 1/13 (1): 0.08s, 14279 cells
+  Layer 2/13 (10): 0.09s, 26276 cells
+  Layer 3/13 (11): 0.10s, 18181 cells
+  Layer 4/13 (12): 0.07s, 16032 cells
+  Layer 5/13 (13): 0.04s, 5058 cells
+  Layer 6/13 (2): 0.02s, 1662 cells
+  Layer 7/13 (3): 0.03s, 5618 cells
+  Layer 8/13 (4): 0.03s, 2805 cells
+  Layer 9/13 (5): 0.11s, 26747 cells
+  Layer 10/13 (6): 0.13s, 37468 cells
+  Layer 11/13 (7): 0.12s, 31754 cells
+  Layer 12/13 (8): 0.04s, 11197 cells
+  Layer 13/13 (9): 0.14s, 41005 cells
+  Total layer creation: 2.84s
+
+[TIMING] Phase 1 total: 2.85s
+[TIMING] Phase 1 (create pseudobulk layers): 2.85s
+
+[pseudobulk] Processing cell type 1/13: 1
+  - Normalization: 0.22s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.27s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 2/13: 10
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.20s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 3/13: 11
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.22s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 4/13: 12
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.34s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 5/13: 13
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.16s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 6/13: 2
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.16s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 7/13: 3
+  - Normalization: 0.16s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.23s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 8/13: 4
+  - Normalization: 0.16s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.21s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 9/13: 5
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.24s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 10/13: 6
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.24s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 11/13: 7
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.42s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 12/13: 8
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.23s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[pseudobulk] Processing cell type 13/13: 9
+  - Normalization: 0.15s
+  - Trying ComBat (min batch size=3)
+  - ComBat time: 0.27s
+  - ComBat applied successfully.
+  - Batch correction method: ComBat
+  - HVG selection: 0.02s
+  - Selected 2000 HVGs.
+
+[TIMING] Phase 2 (process cell types) total: 6.22s
+  - Layer extraction: 0.01s
+  - Filter genes: 0.07s
+  - Normalization: 2.07s
+  - NaN removal (pre-batch): 0.00s
+  - ComBat batch correction: 3.18s
+  - limma batch correction: 0.00s
+  - NaN removal (post-batch): 0.00s
+  - HVG selection: 0.22s
+  - Data collection: 0.65s
+
+[pseudobulk] Summary:
+  - Successful cell types: 13
+  - Failed/empty cell types: 0
+
+[pseudobulk] Concatenating HVGs across cell types.
+[pseudobulk] Final HVG selection on concatenated matrix (genes=26000).
+
+[TIMING] Phase 3 (concatenate HVGs) total: 0.53s
+  - Build matrix: 0.48s
+  - Create AnnData: 0.00s
+  - Final HVG selection: 0.05s
+[pseudobulk] Final HVGs retained: 2000
+[pseudobulk] Building final HVG expression matrix (CT x sample).
+
+[TIMING] Create final expression matrix: 0.17s
+[TIMING] Phase 4 (cell proportions): 0.31s
+[TIMING] Save outputs: 0.31s
+
+============================================================
+[TIMING] TOTAL RUNTIME: 10.74s
+============================================================
+  Phase 1 (create pseudobulk layers): 2.85s (26.6%)
+  Phase 2 (process cell types):       6.22s (57.9%)
+  Phase 3 (concatenate HVGs):         0.53s (5.0%)
+  Create final expression matrix:     0.17s (1.6%)
+  Phase 4 (cell proportions):         0.31s (2.9%)
+  Save outputs:                       0.31s (2.9%)
 ============================================================
 
-[INFO] obs columns: ['sample', 'modality', 'original_barcode', 'cell_type']
-[INFO] Using barcode column: 'original_barcode'
+[pseudobulk] Done. Runtime: 10.74 s
+[pseudobulk] Final HVG matrix shape: (13, 100)
+[pseudobulk] Final AnnData shape: (100, 2000)
+[TIMING] Extract sample metadata: 0.33s
+[TIMING] Save h5ad: 0.10s
 
-[INFO] Modality distribution:
-modality
-ATAC    430595
-RNA     430595
+[TIMING] compute_pseudobulk_adata_linux total: 11.20s
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - count_output_dir: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(100, 2000), proportion=(100, 13)
+[DimRed] Computing PCA for RNA data with 10 components on (100, 2000) data
+[PCA] Success. Shape: (100, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (100, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (100, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 5 components...
+[run_dimension_reduction_proportion] Applying Harmony with batch: batch
+[run_dimension_reduction_proportion] Harmony completed. Shape: (100, 5)
+[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (100, 5)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file paths:
+  - adata: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess/adata_sample.h5ad
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving adata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess/adata_sample.h5ad
+[Save] ✓ Successfully saved adata (1023.9 MB)
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (1.4 MB)
+[process_anndata_with_dimension_reduction] ✓ All files saved successfully
 
-[INFO] RNA cells: 430,595, ATAC cells: 430,595
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 76.47 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ✓ ATTEMPTED
+RNA analysis completed successfully!
 
-[INFO] Sample column present
-  RNA samples (unique): 44
-  ATAC samples (unique): 44
-  RNA sample examples: ['ENCSR128ZLB', 'ENCSR264JIX', 'ENCSR549KDX', 'ENCSR808RAT', 'ENCSR222ZFD']
-  ATAC sample examples: ['ENCSR212VKB', 'ENCSR449VCG', 'ENCSR662XCU', 'ENCSR636WIB', 'ENCSR925IHI']
-  Sample overlap: 44
-
-[INFO] Barcode examples:
-  RNA:  ['ENCSR128ZLB_AAACAGCCAGCAAATA-1', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1', 'ENCSR128ZLB_AAACATGCACAACCTA-1']
-  ATAC: ['adrenal_gland_ENCSR212VKB_AAACAGCCAAAGGTAC-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCAACAGGAT-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACAACAAA-1']
-
---- Strategy 1: Direct match (strip ATAC tissue prefix) ---
-  RNA normalized:  ['ENCSR128ZLB_AAACAGCCAGCAAATA-1', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1', 'ENCSR128ZLB_AAACATGCACAACCTA-1']
-  ATAC normalized: ['ENCSR212VKB_AAACAGCCAAAGGTAC-1', 'ENCSR212VKB_AAACAGCCAACAGGAT-1', 'ENCSR212VKB_AAACAGCCACAACAAA-1']
-  Overlap: 430,595
-
-[INFO] Merging on column: 'bc_normalized'
-[INFO] Paired cells: 430,595
+✓ RNA pipeline completed successfully!
 
 ============================================================
-PAIRING COMPLETE: 430,595 cells, 36,601 genes
+PIPELINE EXECUTION SUMMARY
 ============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✓
 
-
-[INFO] Computing per-cell Pearson correlation...
-[GPU] Processing 430,595 cells in 44 batches
-  Batch 10/44
-  Batch 20/44
-  Batch 30/44
-  Batch 40/44
-  Batch 44/44
-[GPU] Random baseline in 44 batches
-[INFO] Done in 474.27s (n=430,595)
-[SAVE] /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/per_cell_correlations.csv
-[STAT] MWU p=0.000e+00
-
-[INFO] Computing per-gene Spearman correlation...
-[INFO] Done in 108.66s (genes=36,601)
-[SAVE] /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/per_gene_correlations.csv
-
-[DONE] Results in: /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics
-  Per-cell: Mean=0.6547
-  Per-gene: Mean=0.0661
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/sys_log/main_process_status.json
+Execution time: 108.5711 seconds

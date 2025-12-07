@@ -1,12 +1,33 @@
-WARNING: Gene labels are not shown when more than 50 genes are visualized. To show gene labels set `show_gene_labels=True`
-🔬 Input data has 260328 cells and 18528 genes
-🔗 Matching reference genes in the model
-🧬 1976 features used for prediction
-⚖️ Scaling input data
-🖋️ Predicting labels
-✅ Prediction done!
-👀 Can not detect a neighborhood graph, will construct one before the over-clustering
-⛓️ Over-clustering input data with resolution set to 30
-🗳️ Majority voting the predictions
-✅ Majority voting done!
-... storing 'leiden_with_celltype' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+2025-12-07 01:58:26,136 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-12-07 01:58:26 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-12-07 01:58:26,194 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-12-07 01:58:26 - INFO - sklearn.KMeans initialization complete.
+2025-12-07 01:58:26,194 - harmonypy - INFO - Iteration 1 of 30
+2025-12-07 01:58:26 - INFO - Iteration 1 of 30
+2025-12-07 01:58:26,209 - harmonypy - INFO - Iteration 2 of 30
+2025-12-07 01:58:26 - INFO - Iteration 2 of 30
+2025-12-07 01:58:26,224 - harmonypy - INFO - Iteration 3 of 30
+2025-12-07 01:58:26 - INFO - Iteration 3 of 30
+2025-12-07 01:58:26,234 - harmonypy - INFO - Iteration 4 of 30
+2025-12-07 01:58:26 - INFO - Iteration 4 of 30
+2025-12-07 01:58:26,249 - harmonypy - INFO - Iteration 5 of 30
+2025-12-07 01:58:26 - INFO - Iteration 5 of 30
+2025-12-07 01:58:26,265 - harmonypy - INFO - Converged after 5 iterations
+2025-12-07 01:58:26 - INFO - Converged after 5 iterations
