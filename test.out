@@ -1,33 +1,62 @@
-[INFO] Loading AnnData from: /dcs07/hongkai/data/harry/result/long_covid/QC/long_covid_qc_harmony_umap.h5ad
-[INFO] Shape: 260328 cells × 18528 genes
-[INFO] Using existing Leiden clustering in adata.obs['leiden'].
-[INFO] Using existing UMAP embedding in adata.obsm['X_umap'].
-[INFO] Finding marker genes and generating heatmaps before annotation.
-[INFO] Finding marker genes for clusters in 'leiden'
-[INFO] Plotting combined marker heatmap for all clusters
-[INFO] Plotting combined marker dot plot for all clusters
-[INFO] Plotting marker heatmap for cluster 0
-[INFO] Plotting marker heatmap for cluster 1
-[INFO] Plotting marker heatmap for cluster 2
-[INFO] Plotting marker heatmap for cluster 3
-[INFO] Plotting marker heatmap for cluster 4
-[INFO] Plotting marker heatmap for cluster 5
-[INFO] Plotting marker heatmap for cluster 6
-[INFO] Plotting marker heatmap for cluster 7
-[INFO] Plotting marker heatmap for cluster 8
-[INFO] Plotting marker heatmap for cluster 9
-[INFO] Plotting marker heatmap for cluster 10
-[INFO] Plotting marker heatmap for cluster 11
-[INFO] Plotting marker heatmap for cluster 12
-[INFO] Plotting marker heatmap for cluster 13
-[INFO] Plotting marker heatmap for cluster 14
-[INFO] Plotting marker heatmap for cluster 15
-[INFO] Plotting marker heatmap for cluster 16
-[INFO] Using adata.layers['counts'] as input for CellTypist (raw counts).
-[INFO] Normalizing and log-transforming counts for CellTypist (1e4 + log1p).
-[INFO] No NaN/Inf detected in adata_ct.X before CellTypist.
-[INFO] Loading custom CellTypist model: /users/hjiang/GenoDistance/long_covid/PaediatricAdult_COVID19_PBMC.pkl
-[INFO] Running CellTypist with model: /users/hjiang/GenoDistance/long_covid/PaediatricAdult_COVID19_PBMC.pkl
-[INFO] Stored Leiden → cell_type mapping in adata.uns['leiden_to_cell_type'].
-[INFO] Writing updated AnnData back to: /dcs07/hongkai/data/harry/result/long_covid/QC/long_covid_qc_harmony_umap.h5ad
-[INFO] Annotation and marker analysis complete.
+[INFO] GPU: NVIDIA L40S
+[INFO] GPU Memory: 47.70 GB
+[INFO] Loading: /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/preprocess/atac_rna_integrated.h5ad
+[INFO] Total: 861,190 cells, 36,601 genes
+
+============================================================
+BARCODE PAIRING DIAGNOSTICS
+============================================================
+
+[INFO] obs columns: ['sample', 'modality', 'original_barcode', 'cell_type']
+[INFO] Using barcode column: 'original_barcode'
+
+[INFO] Modality distribution:
+modality
+ATAC    430595
+RNA     430595
+
+[INFO] RNA cells: 430,595, ATAC cells: 430,595
+
+[INFO] Sample column present
+  RNA samples (unique): 44
+  ATAC samples (unique): 44
+  RNA sample examples: ['ENCSR128ZLB', 'ENCSR264JIX', 'ENCSR549KDX', 'ENCSR808RAT', 'ENCSR222ZFD']
+  ATAC sample examples: ['ENCSR212VKB', 'ENCSR449VCG', 'ENCSR662XCU', 'ENCSR636WIB', 'ENCSR925IHI']
+  Sample overlap: 44
+
+[INFO] Barcode examples:
+  RNA:  ['ENCSR128ZLB_AAACAGCCAGCAAATA-1', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1', 'ENCSR128ZLB_AAACATGCACAACCTA-1']
+  ATAC: ['adrenal_gland_ENCSR212VKB_AAACAGCCAAAGGTAC-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCAACAGGAT-1', 'adrenal_gland_ENCSR212VKB_AAACAGCCACAACAAA-1']
+
+--- Strategy 1: Direct match (strip ATAC tissue prefix) ---
+  RNA normalized:  ['ENCSR128ZLB_AAACAGCCAGCAAATA-1', 'ENCSR128ZLB_AAACAGCCAGCACGAA-1', 'ENCSR128ZLB_AAACATGCACAACCTA-1']
+  ATAC normalized: ['ENCSR212VKB_AAACAGCCAAAGGTAC-1', 'ENCSR212VKB_AAACAGCCAACAGGAT-1', 'ENCSR212VKB_AAACAGCCACAACAAA-1']
+  Overlap: 430,595
+
+[INFO] Merging on column: 'bc_normalized'
+[INFO] Paired cells: 430,595
+
+============================================================
+PAIRING COMPLETE: 430,595 cells, 36,601 genes
+============================================================
+
+
+[INFO] Computing per-cell Pearson correlation...
+[GPU] Processing 430,595 cells in 44 batches
+  Batch 10/44
+  Batch 20/44
+  Batch 30/44
+  Batch 40/44
+  Batch 44/44
+[GPU] Random baseline in 44 batches
+[INFO] Done in 474.27s (n=430,595)
+[SAVE] /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/per_cell_correlations.csv
+[STAT] MWU p=0.000e+00
+
+[INFO] Computing per-gene Spearman correlation...
+[INFO] Done in 108.66s (genes=36,601)
+[SAVE] /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics/per_gene_correlations.csv
+
+[DONE] Results in: /dcs07/hongkai/data/harry/result/Benchmark_omics/multiomics
+  Per-cell: Mean=0.6547
+  Per-gene: Mean=0.0661
