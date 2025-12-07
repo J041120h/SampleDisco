@@ -1,3 +1,11 @@
+2025-12-07 11:53:59 - INFO - init
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
 ... storing 'batch' as categorical
 ... storing 'batch' as categorical
 ... storing 'batch' as categorical
@@ -15,19 +23,24 @@
 ... storing 'sex' as categorical
 ... storing 'severity' as categorical
 ... storing 'batch' as categorical
-2025-12-07 01:58:26,136 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-12-07 01:58:26 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-12-07 01:58:26,194 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-12-07 01:58:26 - INFO - sklearn.KMeans initialization complete.
-2025-12-07 01:58:26,194 - harmonypy - INFO - Iteration 1 of 30
-2025-12-07 01:58:26 - INFO - Iteration 1 of 30
-2025-12-07 01:58:26,209 - harmonypy - INFO - Iteration 2 of 30
-2025-12-07 01:58:26 - INFO - Iteration 2 of 30
-2025-12-07 01:58:26,224 - harmonypy - INFO - Iteration 3 of 30
-2025-12-07 01:58:26 - INFO - Iteration 3 of 30
-2025-12-07 01:58:26,234 - harmonypy - INFO - Iteration 4 of 30
-2025-12-07 01:58:26 - INFO - Iteration 4 of 30
-2025-12-07 01:58:26,249 - harmonypy - INFO - Iteration 5 of 30
-2025-12-07 01:58:26 - INFO - Iteration 5 of 30
-2025-12-07 01:58:26,265 - harmonypy - INFO - Converged after 5 iterations
-2025-12-07 01:58:26 - INFO - Converged after 5 iterations
+2025-12-07 11:54:33,254 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-12-07 11:54:33 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-12-07 11:54:33,262 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-12-07 11:54:33 - INFO - sklearn.KMeans initialization complete.
+2025-12-07 11:54:33,262 - harmonypy - INFO - Iteration 1 of 30
+2025-12-07 11:54:33 - INFO - Iteration 1 of 30
+2025-12-07 11:54:33,269 - harmonypy - INFO - Iteration 2 of 30
+2025-12-07 11:54:33 - INFO - Iteration 2 of 30
+2025-12-07 11:54:33,277 - harmonypy - INFO - Iteration 3 of 30
+2025-12-07 11:54:33 - INFO - Iteration 3 of 30
+2025-12-07 11:54:33,284 - harmonypy - INFO - Iteration 4 of 30
+2025-12-07 11:54:33 - INFO - Iteration 4 of 30
+2025-12-07 11:54:33,290 - harmonypy - INFO - Iteration 5 of 30
+2025-12-07 11:54:33 - INFO - Iteration 5 of 30
+2025-12-07 11:54:33,301 - harmonypy - INFO - Converged after 5 iterations
+2025-12-07 11:54:33 - INFO - Converged after 5 iterations
+... storing 'sample' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
