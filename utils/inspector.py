@@ -1,12 +1,83 @@
 import scanpy as sc
 import numpy as np
+import pandas as pd
 from scipy.sparse import issparse
 
-def summarize_h5ad(h5ad_path: str, n_examples: int = 10):
+
+def inspect_column(series: pd.Series, n_examples: int = 5) -> None:
+    """Print detailed info about a single obs/var column."""
+    dtype = series.dtype
+    n_total = len(series)
+    n_na = series.isna().sum()
+    n_unique = series.nunique(dropna=True)
+    
+    print(f"      dtype: {dtype}")
+    print(f"      non-NA: {n_total - n_na}/{n_total} ({100*(n_total-n_na)/n_total:.1f}%)")
+    print(f"      unique: {n_unique}")
+    
+    if pd.api.types.is_categorical_dtype(series) or pd.api.types.is_object_dtype(series):
+        # Categorical/string: show value counts
+        vc = series.value_counts(dropna=False).head(n_examples)
+        print(f"      top values:")
+        for val, cnt in vc.items():
+            pct = 100 * cnt / n_total
+            print(f"        '{val}': {cnt} ({pct:.1f}%)")
+    elif pd.api.types.is_numeric_dtype(series):
+        # Numeric: show stats and examples
+        print(f"      min: {series.min():.6g}, max: {series.max():.6g}, mean: {series.mean():.6g}")
+        examples = series.dropna().unique()[:n_examples]
+        print(f"      example values: {list(examples)}")
+    elif pd.api.types.is_bool_dtype(series):
+        vc = series.value_counts(dropna=False)
+        print(f"      value counts: {dict(vc)}")
+    else:
+        # Fallback: just show some examples
+        examples = series.dropna().unique()[:n_examples]
+        print(f"      example values: {list(examples)}")
+
+
+def _print_sparsity_info(mat, label: str = ".X") -> None:
+    """
+    Print sparsity information (nnz, total, density, sparsity) for a matrix.
+    Works for both sparse and dense matrices.
+    """
+    try:
+        n_rows, n_cols = mat.shape
+        total = n_rows * n_cols
+        if total == 0:
+            print(f"  - {label} sparsity: empty matrix; skipping sparsity check.")
+            return
+
+        if issparse(mat):
+            nnz = mat.nnz
+        else:
+            # convert to array view for count_nonzero, but avoid a full copy if possible
+            arr = np.asarray(mat)
+            nnz = int(np.count_nonzero(arr))
+
+        density = nnz / total
+        sparsity = 1.0 - density
+        print(f"  - {label} nonzeros: {nnz} / {total} "
+              f"({100*density:.4f}% nonzero, {100*sparsity:.4f}% zero)")
+    except Exception as e:
+        print(f"  - ⚠️ Could not compute sparsity for {label}: {e}")
+
+
+def summarize_h5ad(h5ad_path: str, n_examples: int = 10, n_col_examples: int = 5):
     """
     Summarize an AnnData .h5ad file by printing examples of cell names, obs, var,
-    and inspecting .X (dtype, NaN/Inf, integer-like vs fractional, min/max, and example values).
+    and inspecting .X (dtype, NaN/Inf, integer-like vs fractional, min/max, example values,
+    and sparsity).
     Also prints sample values from any additional layers if present, and previews obsm/varm.
+    
+    Parameters
+    ----------
+    h5ad_path : str
+        Path to the .h5ad file.
+    n_examples : int
+        Number of example rows to show for matrices and dataframes.
+    n_col_examples : int
+        Number of example values to show per metadata column.
     """
     try:
         print(f"🔍 Loading AnnData from: {h5ad_path}")
@@ -34,6 +105,9 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10):
             data_array_for_checks = np.asarray(X)
 
         print(f"  - dtype: {dtype}")
+
+        # Sparsity info for .X
+        _print_sparsity_info(X, label=".X")
 
         # Classify dtype using actual data content
         is_numeric = np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)
@@ -122,6 +196,9 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10):
 
                 print(f"  - dtype: {l_dtype}")
 
+                # Sparsity info for this layer
+                _print_sparsity_info(L, label=f"layer '{layer_name}'")
+
                 # Only do light numeric checks here
                 is_numeric_layer = np.issubdtype(l_dtype, np.number) or np.issubdtype(l_dtype, np.bool_)
                 if is_numeric_layer and l_data_array_for_checks.size > 0:
@@ -152,12 +229,30 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10):
         for name in adata.obs_names[:n_examples]:
             print("  -", name)
 
-        # Example obs
-        print("\n📋 Example obs rows:")
+        # ════════════════════════════════════════════════════════════════
+        # 📋 DETAILED OBS COLUMN INSPECTION
+        # ════════════════════════════════════════════════════════════════
+        print("\n" + "="*60)
+        print("📋 Detailed obs columns inspection:")
+        print("="*60)
+        for col in adata.obs.columns:
+            print(f"\n    [{col}]")
+            inspect_column(adata.obs[col], n_examples=n_col_examples)
+
+        print(f"\n📋 Example obs rows (head {n_examples}):")
         print(adata.obs.head(n_examples))
 
-        # Example var
-        print("\n🧬 Example var rows:")
+        # ════════════════════════════════════════════════════════════════
+        # 🧬 DETAILED VAR COLUMN INSPECTION
+        # ════════════════════════════════════════════════════════════════
+        print("\n" + "="*60)
+        print("🧬 Detailed var columns inspection:")
+        print("="*60)
+        for col in adata.var.columns:
+            print(f"\n    [{col}]")
+            inspect_column(adata.var[col], n_examples=n_col_examples)
+
+        print(f"\n🧬 Example var rows (head {n_examples}):")
         print(adata.var.head(n_examples))
 
         # Example obsm
@@ -202,81 +297,7 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10):
         print(f"❌ Error reading {h5ad_path}: {e}")
 
 
-#!/usr/bin/env python3
-"""
-transfer_obs_columns_simple.py
-
-Directly edit PATH_A and PATH_B below to transfer missing .obs columns
-between two .h5ad files. The script will:
-  • Add any missing obs columns from A → B and B → A
-  • Match by shared cell IDs (obs_names)
-  • Preserve categorical dtypes
-  • Write output to "<A>__obs_from_B.h5ad" and "<B>__obs_from_A.h5ad"
-"""
-
-import anndata as ad
-import pandas as pd
-import numpy as np
-import sys
-
-# ────────────────────────────────
-# 🧩 EDIT THESE PATHS
-PATH_A = '/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad'
-PATH_B = '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
-# ────────────────────────────────
-
-
-def transfer_columns(ad_src, ad_dst, overwrite=False):
-    """Transfer missing .obs columns from ad_src → ad_dst for shared cells."""
-    common_cells = ad_src.obs.index.intersection(ad_dst.obs.index)
-    if len(common_cells) == 0:
-        print("[WARN] No overlapping cells; skipping.")
-        return ad_dst, []
-
-    src_cols = set(ad_src.obs.columns)
-    dst_cols = set(ad_dst.obs.columns)
-    missing_cols = src_cols - dst_cols
-    updated_cols = []
-
-    for col in sorted(missing_cols):
-        src_series = ad_src.obs[col]
-        if pd.api.types.is_categorical_dtype(src_series):
-            cat = src_series.cat
-            empty = pd.Categorical([np.nan] * ad_dst.n_obs, categories=cat.categories)
-            ad_dst.obs[col] = empty
-            ad_dst.obs.loc[common_cells, col] = src_series.loc[common_cells].astype("category")
-            ad_dst.obs[col] = ad_dst.obs[col].astype(pd.CategoricalDtype(categories=cat.categories))
-        else:
-            ad_dst.obs[col] = np.nan
-            ad_dst.obs.loc[common_cells, col] = src_series.loc[common_cells].values
-        updated_cols.append(col)
-
-    return ad_dst, updated_cols
-
-
-def main():
-    print(f"📂 Loading A: {PATH_A}")
-    A = ad.read_h5ad(PATH_A)
-    print(f"📂 Loading B: {PATH_B}")
-    B = ad.read_h5ad(PATH_B)
-
-    print("🔍 Checking missing columns...")
-    _, missing_in_A = set(B.obs.columns), set(A.obs.columns)
-    _, missing_in_B = set(A.obs.columns), set(B.obs.columns)
-
-    print("➡️  Transferring from A → B")
-    B_updated, cols_B = transfer_columns(A, B)
-    if cols_B:
-        out_b = PATH_B
-        B_updated.write_h5ad(out_b)
-        print(f"💾 Saved updated B → {out_b}")
-    else:
-        print("✅ No new columns added to B")
-
-    print("🎉 Done.")
-
-
 if __name__ == "__main__":
     summarize_h5ad(
-        h5ad_path= "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad"
+        h5ad_path="/dcs07/hongkai/data/harry/result/Benchmark_omics/gene_activity/h5ad/heart.h5ad"
     )

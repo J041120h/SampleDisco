@@ -152,13 +152,13 @@ def preprocess(
     if sample_meta_path is not None:
         sample_meta = pd.read_csv(sample_meta_path)
 
-    sample_meta = sample_meta.set_index(sample_column)
+        sample_meta = sample_meta.set_index(sample_column)
 
-    adata.obs = adata.obs.join(
-        sample_meta,
-        on=sample_column, 
-        how='left'
-    )
+        adata.obs = adata.obs.join(
+            sample_meta,
+            on=sample_column, 
+            how='left'
+        )
 
     # ---------- Required columns check (robust to None/unhashables) ----------
     required = flat_vars.copy()

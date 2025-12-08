@@ -1,60 +1,148 @@
-🔍 Loading AnnData from: /dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad
 
-📦 Basic Info
-  - Shape (cells × genes): 430595 × 3576085
-  - Layers: []
-  - obs columns: ['sample', 'tissue']
-  - var columns: []
-  - obsm keys: []
-  - varm keys: []
+######################################################################
+# FULL DATA DIAGNOSTIC FOR GPU SINGLE-CELL PROCESSING
+######################################################################
 
-🔎 Inspecting .X matrix:
-  - storage type: sparse (csr_matrix)
-  - dtype: float64
-  - value type: float — values appear integer-like (no fractional parts)
-  - contains NaN: False
-  - contains Inf: False
-  - min value: 1
-  - max value: 57
+Input file: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/paired_rna_atac_merged.h5ad
+Sample column: sample
 
-🧮 Example .X values (first 10 cells × 10 genes):
-[[0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+======================================================================
+CUDA HEALTH CHECK
+======================================================================
 
-🧫 Example cell names:
-  - ENCSR212VKB_AAACAGCCAAAGGTAC-1
-  - ENCSR212VKB_AAACAGCCAACAGGAT-1
-  - ENCSR212VKB_AAACAGCCACAACAAA-1
-  - ENCSR212VKB_AAACAGCCACATTGCA-1
-  - ENCSR212VKB_AAACAGCCACCAGCAT-1
-  - ENCSR212VKB_AAACAGCCAGCACGTT-1
-  - ENCSR212VKB_AAACATGCAATTAGCT-1
-  - ENCSR212VKB_AAACATGCACCCTCAC-1
-  - ENCSR212VKB_AAACATGCATAAGCAA-1
-  - ENCSR212VKB_AAACATGCATAGCTTG-1
+[1] Basic allocation test...
+  ✓ Basic allocation works
 
-📋 Example obs rows:
-                                     sample         tissue
-ENCSR212VKB_AAACAGCCAAAGGTAC-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACAGCCAACAGGAT-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACAGCCACAACAAA-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACAGCCACATTGCA-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACAGCCACCAGCAT-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACAGCCAGCACGTT-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACATGCAATTAGCT-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACATGCACCCTCAC-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACATGCATAAGCAA-1  ENCSR212VKB  adrenal_gland
-ENCSR212VKB_AAACATGCATAGCTTG-1  ENCSR212VKB  adrenal_gland
+[2] GPU memory info...
+  Device: 0
+  Total: 44.4 GB
+  Free: 44.0 GB
+  Used: 0.4 GB
 
-🧬 Example var rows:
-Empty DataFrame
-Columns: []
-Index: [chr1-16140-16200, chr1-51868-52040, chr1-57280-57354, chr1-66370-66482, chr1-79100-79231, chr1-79430-79497, chr1-79580-79760, chr1-87220-87295, chr1-88220-88360, chr1-88700-88814]
+[3] Simple compute test...
+  ✓ Compute test passed (result: 250.5522)
+
+[4] Synchronization test...
+  ✓ Synchronization works
+
+✓ CUDA appears healthy
+======================================================================
+DATA INSPECTOR FOR GPU SINGLE-CELL PROCESSING
+======================================================================
+
+[1/8] BASIC FILE CHECKS
+----------------------------------------
+  File size: 33.02 GB
+  ✓ Successfully loaded h5ad
+  Shape: 861,190 cells × 18,309 genes
+
+[2/8] MATRIX FORMAT CHECKS
+----------------------------------------
+  Matrix type: csr_matrix
+  Data dtype: float64
+  Is sparse: True
+  Sparse format: csr
+  NNZ (non-zeros): 2,209,379,472
+  Sparsity: 85.99%
+  ✓ Dtype compatible
+
+[3/8] DATA VALUE CHECKS
+----------------------------------------
+  ✓ No NaN values
+  ✓ No Inf values
+  ✓ No negative values
+  Value range: [1.0000, 3135.0000]
+  Mean: 1.7295, Std: 3.1490
+
+[4/8] CELL METADATA CHECKS
+----------------------------------------
+  Columns: ['sample', 'tissue', 'original_barcode', 'modality']
+  ✓ Sample column 'sample' found: 44 unique samples
+  Sample sizes: min=9332, max=35634, median=18401
+
+[5/8] GENE METADATA CHECKS
+----------------------------------------
+  Gene name dtype: object
+  ✓ No duplicate gene names
+  ✓ No empty gene names
+  Mitochondrial genes (MT-): 0
+
+[6/8] MEMORY ESTIMATION
+----------------------------------------
+  Sparse matrix memory (float32): ~16.46 GB
+  Dense matrix memory (float32): ~58.74 GB
+  Estimated HVG overhead: ~12.83 GB
+  Estimated total GPU memory needed: ~29.30 GB
+
+[7/8] EXTERNAL METADATA CHECKS
+----------------------------------------
+  No sample metadata path provided or file not found
+  No cell metadata path provided or file not found
+
+[8/8] INSPECTION SUMMARY
+======================================================================
+  ✓ Passed: 7
+  ⚠ Warnings: 0
+  ❌ Errors: 0
+
+======================================================================
+GPU MEMORY STRESS TEST
+======================================================================
+✓ RMM initialized with managed memory
+GPU: 0, Total memory: 44.4 GB
+
+Preparing data for GPU test...
+  Converting from float64 to float32...
+
+Testing fractions: [0.1, 0.25, 0.5, 0.75, 1.0]
+----------------------------------------------------------------------
+
+[10%] Testing with 86,119 cells...
+  GPU memory after transfer: 0.88 GB used
+  ✓ HVG completed in 1.5s
+  Peak GPU memory used: ~1.74 GB
+
+[25%] Testing with 215,297 cells...
+  GPU memory after transfer: 2.14 GB used
+  ✓ HVG completed in 2.6s
+  Peak GPU memory used: ~4.14 GB
+
+[50%] Testing with 430,595 cells...
+  GPU memory after transfer: 4.28 GB used
+  ✓ HVG completed in 4.5s
+  Peak GPU memory used: ~8.26 GB
+
+[75%] Testing with 645,892 cells...
+  GPU memory after transfer: 2.25 GB used
+  ✓ HVG completed in 7.0s
+  Peak GPU memory used: ~12.31 GB
+
+[100%] Testing with 861,190 cells...
+  GPU memory after transfer: 8.66 GB used
+  ❌ FAILED: std::bad_alloc: CUDA error (failed to allocate 146480 bytes) at: /tmp/pip-build-env-rstxswsq/normal/...
+
+  ⚠ Memory error detected - stopping test
+
+======================================================================
+STRESS TEST SUMMARY
+======================================================================
+
+✓ Maximum successful: 75% (645,892 cells)
+  Time: 7.0s, Peak memory: 12.31 GB
+
+❌ First failure: 100% (861,190 cells)
+  Error: std::bad_alloc: CUDA error (failed to allocate 146480 bytes) at: /tmp/pip-build-env-rstxswsq/normal/lib/python3.10/site-packages/librmm/include/rmm/mr/device/managed_memory_resource.hpp:66: cudaErrorI
+
+----------------------------------------------------------------------
+RECOMMENDATIONS:
+  ⚠ Data too large for GPU memory
+  Maximum cells that work: ~645,892
+  Options:
+    1) Subsample to 645,892 cells before GPU processing
+    2) Process in batches by sample
+    3) Use CPU-based HVG (scanpy) instead of GPU
+    4) Use a GPU with more memory
+
+######################################################################
+# DIAGNOSTIC COMPLETE
+######################################################################

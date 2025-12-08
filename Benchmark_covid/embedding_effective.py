@@ -13,7 +13,7 @@ Usage: Edit the function call in main() with your file paths and run the script.
 from __future__ import annotations
 import sys
 from pathlib import Path
-from typing import Tuple, Dict, Optionalxq
+from typing import Tuple, Dict, Optional
 import warnings
 
 import numpy as np

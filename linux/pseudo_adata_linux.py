@@ -69,12 +69,14 @@ def compute_pseudobulk_layers_gpu(
     verbose: bool = False,
     batch_size: int = 100,
     max_cells_per_batch: int = 50000,
-    combat_timeout: float = 1800.0
+    combat_timeout: float = 20.0
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
     GPU-accelerated pseudobulk computation matching CPU version output exactly.
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if verbose:
+        print(f"[Pseudobulk] Using device: {device}")
     clear_gpu_memory()
 
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
@@ -92,18 +94,28 @@ def compute_pseudobulk_layers_gpu(
     samples = sorted(adata.obs[sample_col].unique())
     cell_types = sorted(adata.obs[celltype_col].unique())
 
+    if verbose:
+        print(f"[Pseudobulk] Found {len(samples)} samples, {len(cell_types)} cell types")
+        print(f"[Pseudobulk] Batch correction: {'enabled' if batch_correction else 'disabled'}")
+
     # Phase 1: Create pseudobulk AnnData with layers
+    if verbose:
+        print("[Pseudobulk] Phase 1: Creating pseudobulk layers...")
     pseudobulk_adata = _create_pseudobulk_layers_gpu(
         adata, samples, cell_types, sample_col, celltype_col,
         batch_col, batch_size, max_cells_per_batch, verbose
     )
 
     # Phase 2: Process each cell type layer
+    if verbose:
+        print("[Pseudobulk] Phase 2: Processing cell type layers...")
     all_hvg_data = {}
     all_gene_names = []
     cell_types_to_remove = []
 
     for ct_idx, cell_type in enumerate(cell_types):
+        if verbose:
+            print(f"  Processing cell type {ct_idx + 1}/{len(cell_types)}: {cell_type}")
         try:
             layer_data = pseudobulk_adata.layers[cell_type]
             temp_adata = sc.AnnData(
@@ -115,6 +127,8 @@ def compute_pseudobulk_layers_gpu(
             sc.pp.filter_genes(temp_adata, min_cells=1)
             
             if temp_adata.n_vars == 0:
+                if verbose:
+                    print(f"    Skipping {cell_type}: no genes remaining after filtering")
                 cell_types_to_remove.append(cell_type)
                 continue
 
@@ -152,6 +166,8 @@ def compute_pseudobulk_layers_gpu(
                                 warnings.filterwarnings("ignore")
                                 sc.pp.combat(temp_adata, key=batch_col)
                             batch_correction_applied = True
+                            if verbose:
+                                print(f"    Applied ComBat batch correction")
                         finally:
                             if combat_timeout is not None:
                                 signal.alarm(0)
@@ -173,7 +189,8 @@ def compute_pseudobulk_layers_gpu(
                             temp_adata = temp_adata[:, ~nan_genes_post].copy()
 
                     except (TimeoutError, Exception):
-                        pass
+                        if verbose:
+                            print(f"    ComBat failed, falling back to limma")
 
                 if not batch_correction_applied:
                     try:
@@ -194,6 +211,8 @@ def compute_pseudobulk_layers_gpu(
                     
                         temp_adata.X = X_corrected
                         batch_correction_applied = True
+                        if verbose:
+                            print(f"    Applied limma batch correction")
 
                         if issparse(temp_adata.X):
                             nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
@@ -203,7 +222,8 @@ def compute_pseudobulk_layers_gpu(
                             temp_adata = temp_adata[:, ~nan_genes_post].copy()
 
                     except Exception:
-                        pass
+                        if verbose:
+                            print(f"    Limma batch correction failed, proceeding without correction")
 
             n_hvgs = min(n_features, temp_adata.n_vars)
             sc.pp.highly_variable_genes(
@@ -216,6 +236,8 @@ def compute_pseudobulk_layers_gpu(
             hvg_genes = temp_adata.var.index[hvg_mask].tolist()
 
             if len(hvg_genes) == 0:
+                if verbose:
+                    print(f"    Skipping {cell_type}: no HVGs found")
                 cell_types_to_remove.append(cell_type)
                 continue
 
@@ -232,12 +254,22 @@ def compute_pseudobulk_layers_gpu(
                 for j, gene in enumerate(prefixed_genes):
                     all_hvg_data[sample][gene] = float(hvg_expr[i, j])
 
-        except Exception:
+            if verbose:
+                print(f"    Selected {len(hvg_genes)} HVGs")
+
+        except Exception as e:
+            if verbose:
+                print(f"    Error processing {cell_type}: {e}")
             cell_types_to_remove.append(cell_type)
 
     cell_types = [ct for ct in cell_types if ct not in cell_types_to_remove]
+    
+    if verbose:
+        print(f"[Pseudobulk] Retained {len(cell_types)} cell types after filtering")
 
     # Phase 3: Create concatenated AnnData with all cell type HVGs
+    if verbose:
+        print("[Pseudobulk] Phase 3: Creating concatenated expression matrix...")
     all_unique_genes = sorted(list(set(all_gene_names)))
     concat_matrix = np.zeros((len(samples), len(all_unique_genes)), dtype=float)
 
@@ -260,6 +292,9 @@ def compute_pseudobulk_layers_gpu(
         subset=True
     )
 
+    if verbose:
+        print(f"[Pseudobulk] Final feature count: {concat_adata.n_vars}")
+
     final_expression_df = _create_final_expression_matrix(
         all_hvg_data,
         concat_adata.var.index.tolist(),
@@ -269,6 +304,8 @@ def compute_pseudobulk_layers_gpu(
     )
 
     # Phase 4: Compute cell proportions
+    if verbose:
+        print("[Pseudobulk] Phase 4: Computing cell proportions...")
     cell_proportion_df = _compute_cell_proportions(
         adata, samples, cell_types, sample_col, celltype_col
     )
@@ -276,6 +313,9 @@ def compute_pseudobulk_layers_gpu(
     concat_adata.uns['cell_proportions'] = cell_proportion_df
 
     clear_gpu_memory()
+
+    if verbose:
+        print("[Pseudobulk] Pseudobulk computation complete")
 
     return final_expression_df, cell_proportion_df, concat_adata
 
@@ -297,6 +337,9 @@ def _create_pseudobulk_layers_gpu(
     n_samples = len(samples)
     n_celltypes = len(cell_types)
     n_genes = adata.n_vars
+    
+    if verbose:
+        print(f"  Aggregating {adata.n_obs} cells into {n_samples} samples x {n_celltypes} cell types")
     
     sample_to_idx = {s: i for i, s in enumerate(samples)}
     ct_to_idx = {ct: i for i, ct in enumerate(cell_types)}
@@ -365,6 +408,9 @@ def _create_pseudobulk_layers_gpu(
         layer_matrix = sums / counts[:, np.newaxis]
         
         pseudobulk_adata.layers[cell_type] = layer_matrix.astype(np.float32)
+    
+    if verbose:
+        print(f"  Created {len(cell_types)} cell type layers")
     
     return pseudobulk_adata
 
@@ -473,11 +519,15 @@ def compute_pseudobulk_adata_linux(
     verbose: bool = False,
     batch_size: int = 100,
     max_cells_per_batch: int = 50000,
-    combat_timeout: float = 1800.0
+    combat_timeout: float = 20.0
 ) -> Tuple[Dict, sc.AnnData]:
     """
     Explicit GPU version with additional control parameters.
     """
+    if verbose:
+        print(f"[Pseudobulk] Starting pseudobulk computation...")
+        print(f"[Pseudobulk] Input: {adata.n_obs} cells, {adata.n_vars} genes")
+    
     set_global_seed(seed=42, verbose=verbose)
 
     cell_expression_hvg_df, cell_proportion_df, final_adata = compute_pseudobulk_layers_gpu(
@@ -496,6 +546,9 @@ def compute_pseudobulk_adata_linux(
         combat_timeout=combat_timeout
     )
 
+    if verbose:
+        print("[Pseudobulk] Extracting sample metadata...")
+    
     final_adata = _extract_sample_metadata(
         cell_adata=adata,
         sample_adata=final_adata,
@@ -506,11 +559,16 @@ def compute_pseudobulk_adata_linux(
 
     if Save:
         pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
+        if verbose:
+            print(f"[Pseudobulk] Saving to {pseudobulk_dir}/pseudobulk_sample.h5ad")
         sc.write(os.path.join(pseudobulk_dir, "pseudobulk_sample.h5ad"), final_adata)
 
     pseudobulk = {
         "cell_expression_corrected": cell_expression_hvg_df,
         "cell_proportion": cell_proportion_df.T
     }
+
+    if verbose:
+        print(f"[Pseudobulk] Done. Output: {final_adata.n_obs} samples, {final_adata.n_vars} features")
 
     return pseudobulk, final_adata

@@ -24,16 +24,29 @@ def anndata_cluster(
     verbose=True
 ):
     if verbose:
-        print('=== [GPU] Processing data for clustering ===')
+        print('=== Processing data for clustering ===')
 
-    # Step A1: HVG selection (run on CPU before GPU conversion)
-    rsc.pp.highly_variable_genes(
+    # Ensure on CPU for HVG (memory-intensive on full matrix)
+    rsc.get.anndata_to_CPU(adata_cluster)
+    
+    # Step A1: HVG on CPU (avoids GPU memory issue on large datasets)
+    if verbose:
+        print('Running HVG selection on CPU...')
+    sc.pp.highly_variable_genes(
         adata_cluster,
         n_top_genes=num_features,
         flavor='seurat_v3',
         batch_key=sample_column
     )
     adata_cluster = adata_cluster[:, adata_cluster.var['highly_variable']].copy()
+    
+    if verbose:
+        print(f'After HVG: {adata_cluster.shape[0]} cells × {adata_cluster.shape[1]} genes')
+    
+    # Now safe to use GPU (matrix is much smaller after HVG subset)
+    if verbose:
+        print('Moving to GPU for normalization, PCA, and Harmony...')
+    rsc.get.anndata_to_GPU(adata_cluster)
     rsc.pp.normalize_total(adata_cluster, target_sum=1e4)
     rsc.pp.log1p(adata_cluster)
 
@@ -75,19 +88,20 @@ def anndata_sample(
     verbose=True
 ):
     if verbose:
-        print('=== [GPU] Processing data for sample differences ===')
+        print('=== [CPU] Processing data for sample differences ===')
 
+    # Ensure on CPU (full matrix too large for GPU)
+    rsc.get.anndata_to_CPU(adata_sample_diff)
+    
     # Store original counts
     adata_sample_diff.layers["counts"] = adata_sample_diff.X.copy()
 
-    # Move to GPU and preprocess
-    rsc.get.anndata_to_GPU(adata_sample_diff)
-    rsc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
-    rsc.pp.log1p(adata_sample_diff)
-    rsc.pp.pca(adata_sample_diff, n_comps=num_PCs)
+    # CPU normalize/log/PCA (full matrix operations)
+    sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
+    sc.pp.log1p(adata_sample_diff)
+    sc.pp.pca(adata_sample_diff, n_comps=num_PCs)
 
-    # Back to CPU before saving
-    rsc.get.anndata_to_CPU(adata_sample_diff)
+    # Restore counts
     adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
     del adata_sample_diff.layers["counts"]
     
@@ -97,6 +111,8 @@ def anndata_sample(
 
     return adata_sample_diff
 
+
+from scipy.sparse import issparse
 
 def preprocess_linux(
     h5ad_path,
@@ -113,31 +129,27 @@ def preprocess_linux(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    vars_to_regress=None,     # <-- non-mutable default
+    vars_to_regress=None,
     verbose=True
 ):
     from utils.random_seed import set_global_seed
-    set_global_seed(seed = 42, verbose = verbose)
+    set_global_seed(seed=42, verbose=verbose)
     start_time = time.time()
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        if verbose:
-            print("Created output directory")
 
-    output_dir = os.path.join(output_dir, 'preprocess')
+    os.makedirs(output_dir, exist_ok=True)
+    output_dir = os.path.join(output_dir, "preprocess")
     os.makedirs(output_dir, exist_ok=True)
 
     if verbose:
-        print('=== Reading input dataset ===')
+        print("=== Reading input dataset ===")
 
     adata = sc.read_h5ad(h5ad_path)
     if verbose:
-        print(f'Raw shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
+        print(f"Raw shape: {adata.shape[0]} cells × {adata.shape[1]} genes")
 
-    # ---------- Normalize vars_to_regress, build Harmony covariates ----------
+    # ---------- vars_to_regress & Harmony covariates ----------
     if vars_to_regress is None:
         vars_to_regress = []
-    # Flatten and coerce to strings (guards against arrays/lists)
     flat_vars = []
     for v in vars_to_regress:
         if isinstance(v, (list, tuple, np.ndarray, pd.Index)):
@@ -152,98 +164,90 @@ def preprocess_linux(
     # ---------- Attach metadata ----------
     if cell_meta_path is None:
         if sample_column not in adata.obs.columns:
-            adata.obs[sample_column] = adata.obs_names.str.split(':').str[0]
+            adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
     else:
-        cell_meta = pd.read_csv(cell_meta_path)
-        cell_meta.set_index('barcode', inplace=True)
-        adata.obs = adata.obs.join(cell_meta, how='left')
+        cell_meta = pd.read_csv(cell_meta_path).set_index("barcode")
+        adata.obs = adata.obs.join(cell_meta, how="left")
 
     if sample_meta_path is not None:
-        sample_meta = pd.read_csv(sample_meta_path)
+        sample_meta = pd.read_csv(sample_meta_path).set_index(sample_column)
+        adata.obs = adata.obs.join(sample_meta, on=sample_column, how="left")
 
-    sample_meta = sample_meta.set_index(sample_column)
-
-    adata.obs = adata.obs.join(
-        sample_meta,
-        on=sample_column, 
-        how='left'
-    )
-
-
-    # ---------- Required columns check (robust to None/unhashables) ----------
+    # ---------- Required columns check ----------
     required = flat_vars.copy()
     if batch_key:
         required.append(str(batch_key))
-    # De-duplicate while preserving order
     required = list(dict.fromkeys(required))
     missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
     if missing_vars:
-        raise KeyError(f"The following variables are missing from adata.obs: {missing_vars}")
+        raise KeyError(
+            f"The following variables are missing from adata.obs: {missing_vars}"
+        )
     else:
         print("All required columns are present in adata.obs.")
 
-    print("Before GPU conversion. Type of adata.X:", type(adata.X))
+    # ---------- CPU-side dtype + QC filtering ----------
+    print("Before processing. Type of adata.X:", type(adata.X))
     print("adata.X dtype:", adata.X.dtype)
-    print("adata.X is sparse:", sparse.issparse(adata.X))
+    print("adata.X is sparse:", issparse(adata.X))
 
     if adata.X.dtype != np.float32:
-        print(f"Converting adata.X from {adata.X.dtype} to float32")
-        adata.X = adata.X.astype(np.float32)
-    rsc.get.anndata_to_GPU(adata)
-    print("Converted to GPU. Type of adata.X:", type(adata.X))
+        print(f"Converting adata.X from {adata.X.dtype} to float32 (CPU)")
+        if issparse(adata.X):
+            adata.X = adata.X.astype(np.float32)
+        else:
+            adata.X = np.asarray(adata.X, dtype=np.float32)
 
-    # Filter genes and cells
-    rsc.pp.filter_genes(adata, min_cells=min_cells)
-    rsc.pp.filter_cells(adata, min_genes=min_features)
+    # 1) Filter genes/cells on CPU
+    sc.pp.filter_genes(adata, min_cells=min_cells)
+    sc.pp.filter_cells(adata, min_genes=min_features)
     if verbose:
-        print(f'After initial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
+        print(f"After initial filtering (CPU): {adata.shape[0]} cells × {adata.shape[1]} genes")
 
-    # Calculate mitochondrial gene percentage
-    adata.var['mt'] = adata.var_names.str.startswith('MT-')
-    rsc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], log1p=False)
-    
-    # Filter based on mitochondrial percentage
-    adata = adata[adata.obs['pct_counts_mt'] < pct_mito_cutoff].copy()
+    # 2) QC metrics + mito on CPU
+    adata.var["mt"] = adata.var_names.str.startswith("MT-")
+    sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], log1p=False, inplace=True)
+
+    adata = adata[adata.obs["pct_counts_mt"] < pct_mito_cutoff].copy()
     if verbose:
-        print(f'After mitochondrial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
+        print(f"After mitochondrial filtering (CPU): {adata.shape[0]} cells × {adata.shape[1]} genes")
 
-    # Filter MT genes and excluded genes
-    mt_genes = adata.var_names[adata.var_names.str.startswith('MT-')]
+    # 3) Remove MT genes + excluded genes on CPU
+    mt_genes = adata.var_names[adata.var_names.str.startswith("MT-")]
     genes_to_exclude = set(mt_genes) | set(exclude_genes or [])
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
     if verbose:
-        print(f'After gene exclusion filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
+        print(f"After gene exclusion filtering (CPU): {adata.shape[0]} cells × {adata.shape[1]} genes")
 
-    # Filter samples with too few cells
+    # 4) Filter samples with too few cells on CPU
     cell_counts = adata.obs.groupby(sample_column).size()
     keep = cell_counts[cell_counts >= min_cells].index
     adata = adata[adata.obs[sample_column].isin(keep)].copy()
     if verbose:
-        print(f'After sample filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
-        print(f'Number of samples remaining: {len(keep)}')
+        print(f"After sample filtering (CPU): {adata.shape[0]} cells × {adata.shape[1]} genes")
+        print(f"Number of samples remaining: {len(keep)}")
 
-    # Additional gene filtering based on cell percentage
-    rsc.pp.filter_genes(adata, min_cells=int(0.001 * adata.n_obs))
+    # 5) Final gene filtering on CPU (instead of rsc.pp.filter_genes)
+    min_cells_final = int(0.001 * adata.n_obs)
+    if min_cells_final > 0:
+        sc.pp.filter_genes(adata, min_cells=min_cells_final)
     if verbose:
-        print(f'After final gene filtering: {adata.shape[0]} cells × {adata.shape[1]} genes')
+        print(f"After final gene filtering (CPU): {adata.shape[0]} cells × {adata.shape[1]} genes")
 
-    if verbose:
-        print(f'Processed shape: {adata.shape[0]} cells × {adata.shape[1]} genes')
-
+    # Optionally: scrublet here (CPU) if desired
     # if doublet:
-    #     # Run scrublet quietly and APPLY the filter
     #     with contextlib.redirect_stdout(io.StringIO()):
     #         rsc.pp.scrublet(adata)
-    #     adata = adata[~adata.obs['predicted_doublet']].copy()
+    #     adata = adata[~adata.obs["predicted_doublet"]].copy()
 
     adata.raw = adata.copy()
     if verbose:
-        print("Preprocessing complete!")
+        print("Preprocessing complete on CPU. Proceeding to clustering & sample analysis.")
 
+    # ---------- Stay on CPU; let subfunctions handle GPU transitions ----------
     adata_cluster = adata.copy()
     adata_sample_diff = adata.copy()
 
-    # Updated function call for anndata_cluster - matching its actual signature
     adata_cluster = anndata_cluster(
         adata_cluster=adata_cluster,
         output_dir=output_dir,
@@ -252,17 +256,16 @@ def preprocess_linux(
         num_PCs=num_PCs,
         num_harmony=num_harmony,
         vars_to_regress_for_harmony=vars_to_regress_for_harmony,
-        verbose=verbose
+        verbose=verbose,
     )
 
-    # Updated function call for anndata_sample - matching its actual signature
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
         output_dir=output_dir,
         batch_key=batch_key,
         num_PCs=num_PCs,
         num_harmony=num_harmony,
-        verbose=verbose
+        verbose=verbose,
     )
 
     if verbose:

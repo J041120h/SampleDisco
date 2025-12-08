@@ -5,8 +5,6 @@ import pandas as pd
 import scanpy as sc
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfTransformer
-from Grouping import find_sample_grouping
-from HVG import select_hvf_loess
 import scipy.sparse as sparse
 from muon import atac as ac
 import snapatac2 as snap
@@ -702,18 +700,15 @@ def dimension_reduction(
     # Validate and create output directory structure
     output_dir = os.path.abspath(output_dir)  # Convert to absolute path
     
-    count_output_dir = os.path.join(output_dir, "preprocess")
     pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
 
     
     # Create directories early to catch permission issues
     if not not_save:
         try:
-            os.makedirs(count_output_dir, exist_ok=True)
             os.makedirs(pseudobulk_output_dir, exist_ok=True)
             if verbose:
                 print(f"[process_anndata_with_dimension_reduction] ✓ Created output directories:")
-                print(f"  - count_output_dir: {count_output_dir}")
                 print(f"  - pseudobulk_output_dir: {pseudobulk_output_dir}")
         except Exception as e:
             if verbose:
@@ -790,45 +785,27 @@ def dimension_reduction(
         if verbose:
             print("[process_anndata_with_dimension_reduction] Preparing to save results...")
         
-        # Determine file names based on data type
-        if integrated_data:
-            adata_filename = 'atac_rna_integrated.h5ad'
-        else:
-            adata_filename = 'adata_sample.h5ad'
-        
         pb_filename = 'pseudobulk_sample.h5ad'
-        
-        adata_path = os.path.join(count_output_dir, adata_filename)
         pb_adata_path = os.path.join(pseudobulk_output_dir, pb_filename)
         
         if verbose:
-            print(f"[process_anndata_with_dimension_reduction] Target file paths:")
-            print(f"  - adata: {adata_path}")
+            print(f"[process_anndata_with_dimension_reduction] Target file path:")
             print(f"  - pseudobulk_anndata: {pb_adata_path}")
         
-        # Save with detailed error handling
-        adata_save_success = _save_anndata_with_detailed_error_handling(
-            adata_path, adata, "adata", verbose
-        )
-        
+        # Save with detailed error handling (only pseudobulk)
         pb_save_success = _save_anndata_with_detailed_error_handling(
             pb_adata_path, pseudobulk_anndata, "pseudobulk_anndata", verbose
         )
         
         # Report save results
-        if adata_save_success and pb_save_success:
+        if pb_save_success:
             if verbose:
-                print("[process_anndata_with_dimension_reduction] ✓ All files saved successfully")
-        elif adata_save_success or pb_save_success:
-            if verbose:
-                print(f"[process_anndata_with_dimension_reduction] ⚠ Partial save success:")
-                print(f"  - adata: {'✓' if adata_save_success else '✗'}")
-                print(f"  - pseudobulk_anndata: {'✓' if pb_save_success else '✗'}")
+                print("[process_anndata_with_dimension_reduction] ✓ File saved successfully")
         else:
             if verbose:
-                print("[process_anndata_with_dimension_reduction] ✗ All file saves failed")
+                print("[process_anndata_with_dimension_reduction] ✗ File save failed")
             else:
-                print("WARNING: Failed to save processed data files")
+                print("WARNING: Failed to save processed data file")
     
     # Final summary
     if verbose and start_time is not None:
@@ -846,7 +823,6 @@ def dimension_reduction(
                 print(f"  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns")
         
         if not not_save:
-            save_attempted = True
-            print(f"File saving: {'✓ ATTEMPTED' if save_attempted else 'SKIPPED'}")
+            print(f"File saving: ATTEMPTED (pseudobulk_anndata only)")
     
     return pseudobulk_anndata
