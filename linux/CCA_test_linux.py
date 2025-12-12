@@ -135,7 +135,8 @@ def find_optimal_cell_resolution_linux(
     num_pvalue_simulations: int = 1000,
     n_pcs_for_null: int = 10,
     compute_corrected_pvalues: bool = True,
-    verbose: bool = True
+    verbose: bool = True,
+    preserve_cols: Optional[Union[str, List[str]]] = None,
 ) -> tuple:
     """
     Find optimal clustering resolution by maximizing CCA correlation - Linux GPU version.
@@ -298,7 +299,8 @@ def find_optimal_cell_resolution_linux(
                 n_features=n_features,
                 output_dir=resolution_dir,
                 Save=False,
-                verbose=False
+                verbose=False,
+                preserve_cols = preserve_cols,
             )
             
             result_dict['n_samples'] = len(pseudobulk_adata)

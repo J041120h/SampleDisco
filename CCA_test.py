@@ -13,6 +13,8 @@ from Cell_type import cell_types, cell_type_assign
 from pseudo_adata import compute_pseudobulk_adata 
 from sklearn.preprocessing import StandardScaler
 from CCA import *
+from typing import Optional, Union, List
+
 
 def generate_null_distribution(pseudobulk_adata, column, sev_col,
                                    n_permutations=1000, n_pcs=None,
@@ -731,7 +733,8 @@ def find_optimal_cell_resolution(
     num_pvalue_simulations: int = 1000,
     n_pcs_for_null: int = 10,
     compute_corrected_pvalues: bool = True,
-    verbose: bool = True
+    verbose: bool = True,
+    preserve_cols: Optional[Union[str, List[str]]] = None,
 ) -> tuple:
     """
     Find optimal clustering resolution by maximizing CCA correlation between 
@@ -891,7 +894,8 @@ def find_optimal_cell_resolution(
                 n_features=n_features,
                 output_dir=resolution_dir,
                 Save=False,
-                verbose=False
+                verbose=False,
+                preserve_cols=preserve_cols
             )
             
             result_dict['n_samples'] = len(pseudobulk_adata)

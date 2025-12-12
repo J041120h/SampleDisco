@@ -81,6 +81,7 @@ def rna_wrapper(
     pseudobulk_output_dir=None,
     n_features=2000,
     pseudobulk_verbose=True,
+    preserve_cols_for_sample_embedding = None,
     
     # ===== PCA Parameters =====
     n_expression_components=10,
@@ -92,7 +93,7 @@ def rna_wrapper(
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised=False,
     n_components_for_cca_rna = 2,
-    Listcca_output_dir=None,
+    cca_output_dir=None,
     sev_col_cca="sev.level",
     cca_optimal_cell_resolution=False,
     cca_pvalue=False,
@@ -353,7 +354,8 @@ def rna_wrapper(
                 celltype_col=celltype_col,
                 output_dir=pseudobulk_output_dir,
                 n_features=n_features,
-                verbose=pseudobulk_verbose
+                verbose=pseudobulk_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding
             )
         else:
             pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
@@ -363,7 +365,8 @@ def rna_wrapper(
                 celltype_col=celltype_col,
                 output_dir=pseudobulk_output_dir,
                 n_features=n_features,
-                verbose=pseudobulk_verbose
+                verbose=pseudobulk_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
             )
         
         pseudobulk_adata = dimension_reduction(
@@ -404,7 +407,8 @@ def rna_wrapper(
                 num_PCs = num_PCs,
                 num_DR_components = n_expression_components,
                 n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
             )
 
             find_optimal_cell_resolution_linux(
@@ -419,7 +423,8 @@ def rna_wrapper(
                 num_PCs = num_PCs,
                 num_DR_components = n_proportion_components,
                 n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
             )
         else:
             find_optimal_cell_resolution(
@@ -434,7 +439,8 @@ def rna_wrapper(
                 num_PCs = num_PCs,
                 num_DR_components = n_expression_components,
                 n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
             )
             find_optimal_cell_resolution(
                 AnnData_cell = AnnData_cell,
@@ -448,7 +454,8 @@ def rna_wrapper(
                 num_PCs = num_PCs,
                 num_DR_components = n_proportion_components,
                 n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
             )
 
         from utils.unify_optimal import replace_optimal_dimension_reduction

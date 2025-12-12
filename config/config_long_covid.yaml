@@ -54,7 +54,6 @@ rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: 
 - 'filename_sample_id'
-- 'age_cluster'
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -86,6 +85,7 @@ rna_celltype_col: "cell_type"
 rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
+rna_preserve_cols_for_sample_embedding: null
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
@@ -209,6 +209,7 @@ atac_n_pcs: 30
 atac_leiden_resolution: 0.9
 atac_existing_cell_types: false
 atac_n_target_cell_clusters: null
+atac_preserve_cols_for_sample_embedding: null
 
 # ATAC UMAP parameters
 atac_umap_min_dist: 0.3
@@ -380,6 +381,7 @@ multiomics_n_features: 2000
 multiomics_normalize: true
 multiomics_target_sum: 10000.0
 multiomics_atac: false
+multiomics_preserve_cols_for_sample_embedding: null
 
 # PCA Parameters
 multiomics_pca_sample_col: "sample"

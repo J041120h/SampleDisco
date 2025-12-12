@@ -77,6 +77,7 @@ def atac_wrapper(
     atac_pseudobulk_output_dir=None,
     atac_pseudobulk_n_features=50000,
     atac_pseudobulk_verbose=True,
+    preserve_cols_for_sample_embedding = None,
     
     # ===== Dimensionality Reduction Parameters =====
     atac_dr_output_dir=None,
@@ -303,7 +304,8 @@ def atac_wrapper(
             output_dir=atac_pseudobulk_output_dir,
             n_features=atac_pseudobulk_n_features,
             atac=True,
-            verbose=atac_pseudobulk_verbose
+            verbose=atac_pseudobulk_verbose,
+            preserve_cols = preserve_cols_for_sample_embedding,
         )
         
         pseudobulk_adata = dimension_reduction(

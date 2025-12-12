@@ -7,17 +7,19 @@
 ... storing 'BMI category' as categorical
 ... storing 'Age at enrollment' as categorical
 ... storing 'age_cluster' as categorical
-2025-12-11 22:32:36,959 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-12-11 22:32:36 - INFO - Computing initial centroids with sklearn.KMeans...
-2025-12-11 22:32:37,038 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-12-11 22:32:37 - INFO - sklearn.KMeans initialization complete.
-2025-12-11 22:32:37,038 - harmonypy - INFO - Iteration 1 of 30
-2025-12-11 22:32:37 - INFO - Iteration 1 of 30
-2025-12-11 22:32:37,077 - harmonypy - INFO - Iteration 2 of 30
-2025-12-11 22:32:37 - INFO - Iteration 2 of 30
-2025-12-11 22:32:37,088 - harmonypy - INFO - Iteration 3 of 30
-2025-12-11 22:32:37 - INFO - Iteration 3 of 30
-2025-12-11 22:32:37,100 - harmonypy - INFO - Iteration 4 of 30
-2025-12-11 22:32:37 - INFO - Iteration 4 of 30
-2025-12-11 22:32:37,111 - harmonypy - INFO - Converged after 4 iterations
-2025-12-11 22:32:37 - INFO - Converged after 4 iterations
+2025-12-12 13:59:29,924 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2025-12-12 13:59:29 - INFO - Computing initial centroids with sklearn.KMeans...
+2025-12-12 13:59:30,029 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2025-12-12 13:59:30 - INFO - sklearn.KMeans initialization complete.
+2025-12-12 13:59:30,029 - harmonypy - INFO - Iteration 1 of 30
+2025-12-12 13:59:30 - INFO - Iteration 1 of 30
+2025-12-12 13:59:30,078 - harmonypy - INFO - Iteration 2 of 30
+2025-12-12 13:59:30 - INFO - Iteration 2 of 30
+2025-12-12 13:59:30,126 - harmonypy - INFO - Iteration 3 of 30
+2025-12-12 13:59:30 - INFO - Iteration 3 of 30
+2025-12-12 13:59:30,144 - harmonypy - INFO - Iteration 4 of 30
+2025-12-12 13:59:30 - INFO - Iteration 4 of 30
+2025-12-12 13:59:30,192 - harmonypy - INFO - Iteration 5 of 30
+2025-12-12 13:59:30 - INFO - Iteration 5 of 30
+2025-12-12 13:59:30,225 - harmonypy - INFO - Converged after 5 iterations
+2025-12-12 13:59:30 - INFO - Converged after 5 iterations

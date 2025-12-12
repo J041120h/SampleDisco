@@ -46,93 +46,91 @@ RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
 Starting dimensionality reduction...
-[Pseudobulk] Starting pseudobulk computation...
 [Pseudobulk] Input: 260269 cells, 18514 genes
 [Seed Control] PyTorch GPU deterministic mode enabled with seed=42
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
-[Pseudobulk] Using device: cuda
-[Pseudobulk] Batch columns ['filename_sample_id', 'age_cluster'] detected for correction
-[Pseudobulk] Found 35 samples, 11 cell types
-[Pseudobulk] Batch correction: enabled
-[Pseudobulk] Phase 1: Creating pseudobulk layers...
-  Aggregating 260269 cells into 35 samples x 11 cell types
+[Pseudobulk] Using GPU (rapids_singlecell)
+[Pseudobulk] 35 samples, 11 cell types
+[Pseudobulk] Batch correction: ['filename_sample_id']
+[Pseudobulk] Phase 1: Aggregating...
+  Aggregating 260269 cells -> 35 samples x 11 cell types
   Created 11 cell type layers
-[Pseudobulk] Phase 2: Processing cell type layers...
-  Processing cell type 1/11: 1
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+[Pseudobulk] Phase 2: Processing cell types...
+  [1/11] 1
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 2/11: 10
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [2/11] 10
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 3/11: 11
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [3/11] 11
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 4/11: 2
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [4/11] 2
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 5/11: 3
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [5/11] 3
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 6/11: 4
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [6/11] 4
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 7/11: 5
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [7/11] 5
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 8/11: 6
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [8/11] 6
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 9/11: 7
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [9/11] 7
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 10/11: 8
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [10/11] 8
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  Processing cell type 11/11: 9
-    Batch info: 16 batches, sizes range 1-3
-    Skipping ComBat: batches with <2 samples: {'156|Old': 1, '228|Young': 1}
-    Applied limma batch correction successfully
+  [11/11] 9
+    Batches: 16, sizes: 1-3
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-[Pseudobulk] Retained 11 cell types after filtering
-[Pseudobulk] Phase 3: Creating concatenated expression matrix...
-[Pseudobulk] Final feature count: 2000
-[Pseudobulk] Phase 4: Computing cell proportions...
-[Pseudobulk] Pseudobulk computation complete
+[Pseudobulk] Retained 11 cell types
+[Pseudobulk] Phase 3: Building final matrix...
+[Pseudobulk] Final features: 22000
+[Pseudobulk] Phase 4: Computing proportions...
+[Pseudobulk] Complete
 [Pseudobulk] Extracting sample metadata...
 [Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Done. Output: 35 samples, 2000 features
+[Pseudobulk] Output: 35 samples, 22000 features
 [process_anndata_with_dimension_reduction] Starting dimension reduction computation...
 [process_anndata_with_dimension_reduction] Results will be stored under unified keys:
   - X_DR_expression: for expression data
   - X_DR_proportion: for proportion data
 [process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] Batch correction: Using 2 batch column(s): ['filename_sample_id', 'age_cluster']
+[process_anndata_with_dimension_reduction] Batch correction: Using 1 batch column(s): ['filename_sample_id']
 [process_anndata_with_dimension_reduction] ✓ Created output directories:
   - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk
 [process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(35, 2000), proportion=(35, 11)
-[DimRed] Computing PCA for RNA data with 10 components on (35, 2000) data
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(35, 22000), proportion=(35, 11)
+[DimRed] Computing PCA for RNA data with 10 components on (35, 22000) data
 [PCA] Success. Shape: (35, 10)
 [Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (35, 10))
 [Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (35, 10))
@@ -140,19 +138,19 @@ Starting dimensionality reduction...
 [DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
 [process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
 [run_dimension_reduction_proportion] Computing PCA with 5 components...
-[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['filename_sample_id', 'age_cluster']
-[run_dimension_reduction_proportion] Harmony completed with 2 batch factor(s). Shape: (35, 5)
+[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['filename_sample_id']
+[run_dimension_reduction_proportion] Harmony completed with 1 batch factor(s). Shape: (35, 5)
 [run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (35, 5)
 [process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
 [process_anndata_with_dimension_reduction] Preparing to save results...
 [process_anndata_with_dimension_reduction] Target file path:
   - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
 [Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (0.7 MB)
+[Save] ✓ Successfully saved pseudobulk_anndata (3.5 MB)
 [process_anndata_with_dimension_reduction] ✓ File saved successfully
 
 [process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.31 seconds
+Total runtime: 0.56 seconds
 Expression dimension reduction: ✓ SUCCESS
 Proportion dimension reduction: ✓ SUCCESS
 Results available under unified keys:
@@ -178,4 +176,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/long_covid
 Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
-Execution time: 73.8503 seconds
+Execution time: 71.0753 seconds

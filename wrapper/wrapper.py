@@ -96,6 +96,7 @@ def wrapper(
     rna_pseudobulk_output_dir: Optional[str] = None,
     rna_pseudobulk_n_features: int = 2000,
     rna_pseudobulk_verbose: bool = True,
+    rna_preserve_cols_for_sample_embedding: Optional[List[str]] = None,
     
     # RNA PCA Parameters
     rna_n_expression_components: int = 10,
@@ -174,7 +175,7 @@ def wrapper(
     # ATAC Paths for Skipping Processes - ADDED: Missing parameters
     atac_cell_path: Optional[str] = None,
     atac_sample_path: Optional[str] = None,
-    atac_pseudobulk_adata_path: Optional[str] = None,  # ADDED: Missing parameter
+    atac_pseudobulk_adata_path: Optional[str] = None, 
     
     # ATAC Column specifications
     atac_sample_col: str = "sample",
@@ -206,6 +207,7 @@ def wrapper(
     atac_leiden_resolution: float = 0.8,
     atac_existing_cell_types: bool = False,
     atac_n_target_cell_clusters: Optional[int] = None,
+    atac_preserve_cols_for_sample_embedding: Optional[List[str]] = None,
     
     # ATAC UMAP parameters
     atac_umap_min_dist: float = 0.3,
@@ -376,12 +378,13 @@ def wrapper(
     multiomics_normalize: bool = True,
     multiomics_target_sum: float = 1e4,
     multiomics_atac: bool = False,
+    multiomics_preserve_cols_for_sample_embedding: Optional[List[str]] = None,
     
     # PCA Parameters
     multiomics_pca_sample_col: str = 'sample',
     multiomics_n_expression_pcs: int = 10,
     multiomics_n_proportion_pcs: int = 10,
-    multiomics_harmony_for_proportion: bool = True,  # ADDED: Missing parameter
+    multiomics_harmony_for_proportion: bool = True,
     multiomics_pca_output_dir: Optional[str] = None,
     multiomics_integrated_data: bool = False,
     multiomics_not_save: bool = False,
@@ -691,6 +694,7 @@ def wrapper(
                 pseudobulk_output_dir=rna_pseudobulk_output_dir,
                 n_features=rna_pseudobulk_n_features,
                 pseudobulk_verbose=rna_pseudobulk_verbose,
+                preserve_cols_for_sample_embedding = rna_preserve_cols_for_sample_embedding,
                 
                 # ===== PCA Parameters =====
                 n_expression_components=rna_n_expression_components,
@@ -808,7 +812,7 @@ def wrapper(
                 # UPDATED: Paths for skipping processes
                 atac_cell_path=atac_cell_path,
                 atac_sample_path=atac_sample_path,
-                atac_pseudobulk_adata_path=atac_pseudobulk_adata_path,  # ADDED: Missing parameter
+                atac_pseudobulk_adata_path=atac_pseudobulk_adata_path, 
                 
                 # Basic parameters
                 atac_batch_col=atac_batch_col,
@@ -842,6 +846,7 @@ def wrapper(
                 atac_leiden_resolution=atac_leiden_resolution,
                 atac_existing_cell_types=atac_existing_cell_types,
                 atac_n_target_cell_clusters=atac_n_target_cell_clusters,
+                preserve_cols_for_sample_embedding = atac_preserve_cols_for_sample_embedding,
                 
                 # Pseudobulk parameters
                 atac_pseudobulk_output_dir=atac_pseudobulk_output_dir,
@@ -1051,6 +1056,7 @@ def wrapper(
                 normalize=multiomics_normalize,
                 target_sum=multiomics_target_sum,
                 atac=multiomics_atac,
+                preserve_cols_for_sample_embedding = multiomics_preserve_cols_for_sample_embedding,
                 
                 # PCA Parameters
                 pca_sample_col=multiomics_pca_sample_col,

@@ -109,6 +109,7 @@ def multiomics_wrapper(
     normalize=True,
     target_sum=1e4,
     atac=False,
+    preserve_cols_for_sample_embedding = None,
     
     # PCA Parameters
     pca_sample_col='sample',
@@ -453,7 +454,8 @@ def multiomics_wrapper(
             normalize=normalize,
             target_sum=target_sum,
             atac=atac,
-            verbose=multiomics_verbose
+            verbose=multiomics_verbose,
+            preserve_cols = preserve_cols_for_sample_embedding,
         )
         
         # Sub-step 3b: Process with PCA
