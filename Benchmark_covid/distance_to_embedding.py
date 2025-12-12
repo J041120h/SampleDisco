@@ -1,59 +1,48 @@
 #!/usr/bin/env python3
-# mds_from_distance_simple.py
-# Loops over multiple sample sizes and runs classical MDS on each distance matrix.
+# mds_from_single_distance.py
+# Run classical MDS on a single distance matrix CSV and save the embedding.
 
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import argparse
 
-# ================= USER SETTINGS =================
-# Which method are we processing?
-#   "QOT"      -> /QOT/{n}_sample/{n}_qot_distance_matrix.csv
-#   "Gloscope" -> /Gloscope/{n}_sample/knn_divergence.csv
-#   "pilot"    -> /pilot/{n}_sample/wasserstein_distance.csv
-METHOD = "pilot"
 
-SAMPLE_SIZES = [25, 50, 100, 200, 279, 400]
-N_DIMS = 10
+# ====== DEFAULT USER SETTINGS ======
+# Default distance matrix to process (can override with --input)
+DEFAULT_INPUT_CSV = (
+    "/dcs07/hongkai/data/harry/result/Benchmark_multiomics/Gloscope/"
+    "knn_divergence.csv"
+)
 
-METHOD_CONFIG = {
-    "QOT": {
-        "BASE_DIR": "/dcs07/hongkai/data/harry/result/QOT",
-        "FILE_PATTERN": "{n}_sample/{n}_qot_distance_matrix.csv",
-    },
-    "Gloscope": {
-        "BASE_DIR": "/dcs07/hongkai/data/harry/result/Gloscope",
-        "FILE_PATTERN": "{n}_sample/knn_divergence.csv",
-    },
-    "pilot": {
-        "BASE_DIR": "/dcs07/hongkai/data/harry/result/pilot",
-        "FILE_PATTERN": "{n}_sample/wasserstein_distance.csv",
-    },
-}
-# ==================================================
+DEFAULT_N_DIMS = 10
+# ===================================
 
 
 def read_distance_csv(p: str | Path):
     """
     Read a distance matrix CSV and return (D, labels).
 
-    First tries to read with index labels; if that fails, falls back
-    to a raw numeric matrix with default labels.
+    Strategy:
+      1. Try reading with index as labels (index_col=0).
+      2. If that fails or matrix is not square, fall back to header=None read.
     """
     p = Path(p)
+
+    # First attempt: assume first column is an index of sample IDs
     try:
         df = pd.read_csv(p, index_col=0)
         D = df.values
         labels = df.index.astype(str).tolist()
 
-        if "sample" not in df.columns:
-            print("[INFO] 'sample' column not found. Using index as sample labels.")
-            df.insert(0, "sample", labels)
+        # If there is a 'sample' column, prefer that as labels
+        if "sample" in df.columns:
             labels = df["sample"].astype(str).tolist()
 
         if D.shape[0] != D.shape[1]:
             raise ValueError("Matrix not square; retrying unlabeled read.")
     except Exception:
+        # Fallback: no useful headers, treat as raw numeric matrix
         df = pd.read_csv(p, header=None)
         D = df.values
         labels = [f"item_{i}" for i in range(D.shape[0])]
@@ -68,8 +57,14 @@ def read_distance_csv(p: str | Path):
 def classical_mds(D: np.ndarray, k: int = 2) -> np.ndarray:
     """
     Classical MDS on a distance matrix D, returning an n x k embedding.
+
+    Steps:
+      1. Symmetrize, zero diagonal, clip negatives.
+      2. Double-center the squared distances.
+      3. Eigen-decompose and take top k positive components.
     """
-    D = 0.5 * (D + D.T)  # symmetrize
+    # Force symmetry and clean up numerical junk
+    D = 0.5 * (D + D.T)
     np.fill_diagonal(D, 0.0)
     D[D < 0] = 0.0
 
@@ -97,7 +92,10 @@ def save_embedding(X: np.ndarray, labels, input_path: str | Path, k: int):
     """
     Save MDS embedding next to the input file.
 
-    e.g. wasserstein_distance.csv -> wasserstein_distance_mds_10d.csv/.npy
+    Example:
+      knn_divergence.csv ->
+      knn_divergence_mds_10d.csv
+      knn_divergence_mds_10d.npy
     """
     in_path = Path(input_path)
     out_csv = in_path.with_name(f"{in_path.stem}_mds_{k}d.csv")
@@ -115,41 +113,44 @@ def save_embedding(X: np.ndarray, labels, input_path: str | Path, k: int):
     print(f"[Saved] {out_npy}")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run classical MDS on a single distance matrix CSV."
+    )
+    parser.add_argument(
+        "--input",
+        type=str,
+        default=DEFAULT_INPUT_CSV,
+        help=f"Path to distance matrix CSV (default: {DEFAULT_INPUT_CSV})",
+    )
+    parser.add_argument(
+        "--dims",
+        type=int,
+        default=DEFAULT_N_DIMS,
+        help=f"Number of embedding dimensions (default: {DEFAULT_N_DIMS})",
+    )
+    return parser.parse_args()
+
+
 def main():
-    if METHOD not in METHOD_CONFIG:
-        raise ValueError(f"Unknown METHOD='{METHOD}'. Valid: {list(METHOD_CONFIG)}")
+    args = parse_args()
+    input_csv = Path(args.input)
+    k = args.dims
 
-    base_dir = Path(METHOD_CONFIG[METHOD]["BASE_DIR"])
-    file_pattern = METHOD_CONFIG[METHOD]["FILE_PATTERN"]
+    print("=" * 60)
+    print(f"[INFO] Input CSV : {input_csv}")
+    print(f"[INFO] n_dims    : {k}")
 
-    print(f"[INFO] METHOD     : {METHOD}")
-    print(f"[INFO] BASE_DIR   : {base_dir}")
-    print(f"[INFO] PATTERN    : {file_pattern}")
-    print(f"[INFO] SAMPLE_SIZES: {SAMPLE_SIZES}")
+    if not input_csv.exists():
+        raise FileNotFoundError(f"Input file not found: {input_csv}")
 
-    for n in SAMPLE_SIZES:
-        input_csv = base_dir / file_pattern.format(n=n)
+    D, labels = read_distance_csv(input_csv)
+    print(f"[INFO] Distance matrix shape: {D.shape}")
 
-        print("\n" + "=" * 60)
-        print(f"[INFO] Processing {n} samples")
-        print(f"[INFO] Input CSV: {input_csv}")
+    X = classical_mds(D, k=k)
+    print(f"[INFO] MDS embedding shape  : {X.shape}")
 
-        if not input_csv.exists():
-            print(f"[ERROR] File not found: {input_csv}")
-            continue
-
-        try:
-            D, labels = read_distance_csv(input_csv)
-            print(f"[INFO] Distance matrix shape: {D.shape}")
-
-            X = classical_mds(D, k=N_DIMS)
-            print(f"[INFO] MDS embedding shape: {X.shape}")
-
-            save_embedding(X, labels, input_csv, N_DIMS)
-
-        except Exception as e:
-            print(f"[ERROR] Failed on n={n} with file {input_csv}")
-            print(f"        {type(e).__name__}: {e}")
+    save_embedding(X, labels, input_csv, k)
 
 
 if __name__ == "__main__":

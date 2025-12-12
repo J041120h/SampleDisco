@@ -90,6 +90,12 @@ def compute_pseudobulk_layers_gpu(
     
     if batch_correction and adata.obs[batch_col].isnull().any():
         adata.obs[batch_col] = adata.obs[batch_col].fillna("Unknown")
+    
+    if verbose:
+        if batch_correction:
+            print(f"[Pseudobulk] Batch column '{batch_col}' detected for correction")
+        else:
+            print(f"[Pseudobulk] No valid batch column '{batch_col}' found; skipping batch correction")
 
     samples = sorted(adata.obs[sample_col].unique())
     cell_types = sorted(adata.obs[celltype_col].unique())
@@ -147,83 +153,54 @@ def compute_pseudobulk_layers_gpu(
                 temp_adata = temp_adata[:, ~nan_genes].copy()
 
             batch_correction_applied = False
-
-            if batch_correction and batch_col in temp_adata.obs.columns and len(temp_adata.obs[batch_col].unique()) > 1:
-                min_batch_size = temp_adata.obs[batch_col].value_counts().min()
-
-                if min_batch_size >= 2:
-                    try:
-                        def timeout_handler(signum, frame):
-                            raise TimeoutError("ComBat timed out")
-
-                        old_handler = None
-                        if combat_timeout is not None:
-                            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                            signal.alarm(int(combat_timeout))
-
-                        try:
-                            with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
-                                warnings.filterwarnings("ignore")
-                                sc.pp.combat(temp_adata, key=batch_col)
-                            batch_correction_applied = True
-                            if verbose:
-                                print(f"    Applied ComBat batch correction")
-                        finally:
-                            if combat_timeout is not None:
-                                signal.alarm(0)
-                                if old_handler is not None:
-                                    signal.signal(signal.SIGALRM, old_handler)
-
-                        if issparse(temp_adata.X):
-                            has_nan = np.any(np.isnan(temp_adata.X.data))
-                            if has_nan:
-                                nan_genes_post = np.array(
-                                    np.isnan(temp_adata.X.toarray()).any(axis=0)
-                                ).flatten()
-                            else:
-                                nan_genes_post = np.zeros(temp_adata.n_vars, dtype=bool)
-                        else:
-                            nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
-
-                        if nan_genes_post.any():
-                            temp_adata = temp_adata[:, ~nan_genes_post].copy()
-
-                    except (TimeoutError, Exception):
-                        if verbose:
-                            print(f"    ComBat failed, falling back to limma")
-
-                if not batch_correction_applied:
-                    try:
-                        if issparse(temp_adata.X):
-                            X_dense = temp_adata.X.toarray()
-                        else:
-                            X_dense = temp_adata.X.copy()
-                        covariate_formula = f'~ Q("{batch_col}")'
-
-                        X_corrected = limma(
-                            pheno=temp_adata.obs,
-                            exprs=X_dense,
-                            covariate_formula=covariate_formula,
-                            design_formula='1',
-                            rcond=1e-8,
-                            verbose=False
-                        )
+            
+            # Batch correction logic with detailed diagnostics
+            if batch_correction and batch_col in temp_adata.obs.columns:
+                batch_counts = temp_adata.obs[batch_col].value_counts()
+                n_batches = len(batch_counts)
+                min_batch_size = batch_counts.min()
+                max_batch_size = batch_counts.max()
+                
+                if verbose:
+                    print(f"    Batch info: {n_batches} batches, sizes range {min_batch_size}-{max_batch_size}")
+                
+                if n_batches <= 1:
+                    if verbose:
+                        print(f"    Skipping batch correction: only {n_batches} batch(es) present")
+                elif min_batch_size < 2:
+                    small_batches = batch_counts[batch_counts < 2].to_dict()
+                    if verbose:
+                        print(f"    Skipping ComBat: batches with <2 samples: {small_batches}")
+                    # Try limma directly since ComBat won't work
+                    batch_correction_applied = _try_limma_correction(
+                        temp_adata, batch_col, verbose
+                    )
+                else:
+                    # Try ComBat first
+                    batch_correction_applied = _try_combat_correction(
+                        temp_adata, batch_col, combat_timeout, verbose
+                    )
                     
-                        temp_adata.X = X_corrected
-                        batch_correction_applied = True
+                    # Fallback to limma if ComBat failed
+                    if not batch_correction_applied:
+                        batch_correction_applied = _try_limma_correction(
+                            temp_adata, batch_col, verbose
+                        )
+                
+                # Clean up NaN genes after batch correction
+                if batch_correction_applied:
+                    if issparse(temp_adata.X):
+                        nan_genes_post = np.array(
+                            np.isnan(temp_adata.X.toarray()).any(axis=0)
+                        ).flatten()
+                    else:
+                        nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                    
+                    if nan_genes_post.any():
+                        n_nan = nan_genes_post.sum()
                         if verbose:
-                            print(f"    Applied limma batch correction")
-
-                        if issparse(temp_adata.X):
-                            nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
-                        else:
-                            nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
-                        if nan_genes_post.any():
-                            temp_adata = temp_adata[:, ~nan_genes_post].copy()
-
-                    except Exception:
-                        if verbose:
-                            print(f"    Limma batch correction failed, proceeding without correction")
+                            print(f"    Removing {n_nan} genes with NaN after batch correction")
+                        temp_adata = temp_adata[:, ~nan_genes_post].copy()
 
             n_hvgs = min(n_features, temp_adata.n_vars)
             sc.pp.highly_variable_genes(
@@ -259,7 +236,7 @@ def compute_pseudobulk_layers_gpu(
 
         except Exception as e:
             if verbose:
-                print(f"    Error processing {cell_type}: {e}")
+                print(f"    Error processing {cell_type}: {type(e).__name__}: {e}")
             cell_types_to_remove.append(cell_type)
 
     cell_types = [ct for ct in cell_types if ct not in cell_types_to_remove]
@@ -318,6 +295,97 @@ def compute_pseudobulk_layers_gpu(
         print("[Pseudobulk] Pseudobulk computation complete")
 
     return final_expression_df, cell_proportion_df, concat_adata
+
+
+def _try_combat_correction(
+    temp_adata: sc.AnnData,
+    batch_col: str,
+    combat_timeout: float,
+    verbose: bool
+) -> bool:
+    """Attempt ComBat batch correction with timeout and error handling."""
+    try:
+        def timeout_handler(signum, frame):
+            raise TimeoutError("ComBat timed out")
+
+        old_handler = None
+        if combat_timeout is not None:
+            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(int(combat_timeout))
+
+        try:
+            with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                sc.pp.combat(temp_adata, key=batch_col)
+            
+            if verbose:
+                print(f"    Applied ComBat batch correction successfully")
+            return True
+            
+        finally:
+            if combat_timeout is not None:
+                signal.alarm(0)
+                if old_handler is not None:
+                    signal.signal(signal.SIGALRM, old_handler)
+
+    except TimeoutError:
+        if verbose:
+            print(f"    ComBat failed: timed out after {combat_timeout}s")
+        return False
+    except ValueError as e:
+        if verbose:
+            print(f"    ComBat failed: ValueError: {e}")
+        return False
+    except np.linalg.LinAlgError as e:
+        if verbose:
+            print(f"    ComBat failed: LinAlgError (singular matrix): {e}")
+        return False
+    except Exception as e:
+        if verbose:
+            print(f"    ComBat failed: {type(e).__name__}: {e}")
+        return False
+
+
+def _try_limma_correction(
+    temp_adata: sc.AnnData,
+    batch_col: str,
+    verbose: bool
+) -> bool:
+    """Attempt limma batch correction with error handling."""
+    try:
+        if issparse(temp_adata.X):
+            X_dense = temp_adata.X.toarray()
+        else:
+            X_dense = temp_adata.X.copy()
+        
+        covariate_formula = f'~ Q("{batch_col}")'
+
+        X_corrected = limma(
+            pheno=temp_adata.obs,
+            exprs=X_dense,
+            covariate_formula=covariate_formula,
+            design_formula='1',
+            rcond=1e-8,
+            verbose=False
+        )
+    
+        temp_adata.X = X_corrected
+        if verbose:
+            print(f"    Applied limma batch correction successfully")
+        return True
+
+    except np.linalg.LinAlgError as e:
+        if verbose:
+            print(f"    Limma failed: LinAlgError (singular matrix): {e}")
+        return False
+    except ValueError as e:
+        if verbose:
+            print(f"    Limma failed: ValueError: {e}")
+        return False
+    except Exception as e:
+        if verbose:
+            print(f"    Limma failed: {type(e).__name__}: {e}")
+        return False
 
 
 def _create_pseudobulk_layers_gpu(

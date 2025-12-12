@@ -1,148 +1,113 @@
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
+        "trajectory_analysis": true,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": true
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
-######################################################################
-# FULL DATA DIAGNOSTIC FOR GPU SINGLE-CELL PROCESSING
-######################################################################
+============================================================
+RUNNING RNA PIPELINE
+============================================================
+Starting RNA wrapper function with provided parameters...
+Starting preprocessing...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+=== Reading input dataset ===
+Raw shape: 333202 cells × 38606 genes
+All required columns are present in adata.obs.
+Before processing. Type of adata.X: <class 'scipy.sparse._csr.csr_matrix'>
+adata.X dtype: float32
+adata.X is sparse: True
+After initial filtering (CPU): 261647 cells × 18528 genes
+After mitochondrial filtering (CPU): 260269 cells × 18528 genes
+After gene exclusion filtering (CPU): 260269 cells × 18515 genes
+After sample filtering (CPU): 260269 cells × 18515 genes
+Number of samples remaining: 35
+After final gene filtering (CPU): 260269 cells × 18514 genes
+Preprocessing complete on CPU. Proceeding to clustering & sample analysis.
+=== Processing data for clustering ===
+Running HVG selection on CPU...
+After HVG: 260269 cells × 2000 genes
+Moving to GPU for normalization, PCA, and Harmony...
+=== [GPU] Running Harmony integration ===
+Variables to regress: sample
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+	Completed 3 / 30 iteration(s).
+	Completed 4 / 30 iteration(s).
+Reach convergence after 4 iteration(s).
+End of harmony for adata_cluster.
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 11 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad
+=== [CPU] Processing data for sample differences ===
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_sample.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 11 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_sample.h5ad
+Total runtime: 602.20 seconds
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+RNA analysis completed successfully!
 
-Input file: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/paired_rna_atac_merged.h5ad
-Sample column: sample
+✓ RNA pipeline completed successfully!
 
-======================================================================
-CUDA HEALTH CHECK
-======================================================================
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✓
 
-[1] Basic allocation test...
-  ✓ Basic allocation works
-
-[2] GPU memory info...
-  Device: 0
-  Total: 44.4 GB
-  Free: 44.0 GB
-  Used: 0.4 GB
-
-[3] Simple compute test...
-  ✓ Compute test passed (result: 250.5522)
-
-[4] Synchronization test...
-  ✓ Synchronization works
-
-✓ CUDA appears healthy
-======================================================================
-DATA INSPECTOR FOR GPU SINGLE-CELL PROCESSING
-======================================================================
-
-[1/8] BASIC FILE CHECKS
-----------------------------------------
-  File size: 33.02 GB
-  ✓ Successfully loaded h5ad
-  Shape: 861,190 cells × 18,309 genes
-
-[2/8] MATRIX FORMAT CHECKS
-----------------------------------------
-  Matrix type: csr_matrix
-  Data dtype: float64
-  Is sparse: True
-  Sparse format: csr
-  NNZ (non-zeros): 2,209,379,472
-  Sparsity: 85.99%
-  ✓ Dtype compatible
-
-[3/8] DATA VALUE CHECKS
-----------------------------------------
-  ✓ No NaN values
-  ✓ No Inf values
-  ✓ No negative values
-  Value range: [1.0000, 3135.0000]
-  Mean: 1.7295, Std: 3.1490
-
-[4/8] CELL METADATA CHECKS
-----------------------------------------
-  Columns: ['sample', 'tissue', 'original_barcode', 'modality']
-  ✓ Sample column 'sample' found: 44 unique samples
-  Sample sizes: min=9332, max=35634, median=18401
-
-[5/8] GENE METADATA CHECKS
-----------------------------------------
-  Gene name dtype: object
-  ✓ No duplicate gene names
-  ✓ No empty gene names
-  Mitochondrial genes (MT-): 0
-
-[6/8] MEMORY ESTIMATION
-----------------------------------------
-  Sparse matrix memory (float32): ~16.46 GB
-  Dense matrix memory (float32): ~58.74 GB
-  Estimated HVG overhead: ~12.83 GB
-  Estimated total GPU memory needed: ~29.30 GB
-
-[7/8] EXTERNAL METADATA CHECKS
-----------------------------------------
-  No sample metadata path provided or file not found
-  No cell metadata path provided or file not found
-
-[8/8] INSPECTION SUMMARY
-======================================================================
-  ✓ Passed: 7
-  ⚠ Warnings: 0
-  ❌ Errors: 0
-
-======================================================================
-GPU MEMORY STRESS TEST
-======================================================================
-✓ RMM initialized with managed memory
-GPU: 0, Total memory: 44.4 GB
-
-Preparing data for GPU test...
-  Converting from float64 to float32...
-
-Testing fractions: [0.1, 0.25, 0.5, 0.75, 1.0]
-----------------------------------------------------------------------
-
-[10%] Testing with 86,119 cells...
-  GPU memory after transfer: 0.88 GB used
-  ✓ HVG completed in 1.5s
-  Peak GPU memory used: ~1.74 GB
-
-[25%] Testing with 215,297 cells...
-  GPU memory after transfer: 2.14 GB used
-  ✓ HVG completed in 2.6s
-  Peak GPU memory used: ~4.14 GB
-
-[50%] Testing with 430,595 cells...
-  GPU memory after transfer: 4.28 GB used
-  ✓ HVG completed in 4.5s
-  Peak GPU memory used: ~8.26 GB
-
-[75%] Testing with 645,892 cells...
-  GPU memory after transfer: 2.25 GB used
-  ✓ HVG completed in 7.0s
-  Peak GPU memory used: ~12.31 GB
-
-[100%] Testing with 861,190 cells...
-  GPU memory after transfer: 8.66 GB used
-  ❌ FAILED: std::bad_alloc: CUDA error (failed to allocate 146480 bytes) at: /tmp/pip-build-env-rstxswsq/normal/...
-
-  ⚠ Memory error detected - stopping test
-
-======================================================================
-STRESS TEST SUMMARY
-======================================================================
-
-✓ Maximum successful: 75% (645,892 cells)
-  Time: 7.0s, Peak memory: 12.31 GB
-
-❌ First failure: 100% (861,190 cells)
-  Error: std::bad_alloc: CUDA error (failed to allocate 146480 bytes) at: /tmp/pip-build-env-rstxswsq/normal/lib/python3.10/site-packages/librmm/include/rmm/mr/device/managed_memory_resource.hpp:66: cudaErrorI
-
-----------------------------------------------------------------------
-RECOMMENDATIONS:
-  ⚠ Data too large for GPU memory
-  Maximum cells that work: ~645,892
-  Options:
-    1) Subsample to 645,892 cells before GPU processing
-    2) Process in batches by sample
-    3) Use CPU-based HVG (scanpy) instead of GPU
-    4) Use a GPU with more memory
-
-######################################################################
-# DIAGNOSTIC COMPLETE
-######################################################################
+Results saved to: /dcs07/hongkai/data/harry/result/long_covid
+Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
+Execution time: 604.7857 seconds

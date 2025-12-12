@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/long_covid_batch_removal"
+output_dir: "/dcs07/hongkai/data/harry/result/long_covid"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -27,7 +27,7 @@ rna_output_dir: null
 
 # RNA Process Control Flags
 rna_preprocessing: true
-rna_cell_type_cluster: true
+rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
@@ -52,7 +52,9 @@ rna_grouping_columns:
   - "Age at enrollment"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: "OutSMART short number"
+rna_batch_col: 
+- 'filename_sample_id'
+- 'age_cluster'
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -176,7 +178,8 @@ atac_pseudobulk_adata_path: null
 
 # ATAC Column specifications
 atac_sample_col: "sample"
-atac_batch_col: 'tissue'
+atac_batch_col: 
+- 'tissue'
 atac_cell_type_column: "cell_type"
 atac_grouping_columns:
   - "sev.level"

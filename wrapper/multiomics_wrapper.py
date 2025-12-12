@@ -39,7 +39,7 @@ def multiomics_wrapper(
     atac_sample_column="sample",
     sample_column='sample',
     sample_col='sample',
-    batch_col='batch',
+    batch_col=['batch'],
     celltype_col='cell_type',
     multiomics_verbose=True,
     save_intermediate=True,

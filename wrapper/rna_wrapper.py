@@ -255,14 +255,6 @@ def rna_wrapper(
             )
 
         status_flags["rna"]["preprocessing"] = True
-        
-        # Standardize column names after preprocessing
-        if sample_col != 'sample':
-            AnnData_sample.obs.rename(columns={sample_col: 'sample'}, inplace=True)
-        if batch_col != 'batch':
-            AnnData_sample.obs.rename(columns={batch_col: 'batch'}, inplace=True)
-        sample_col = 'sample'
-        batch_col = 'batch'
 
     else:
         # We offer the option to skip preprocessing and use preprocessed data

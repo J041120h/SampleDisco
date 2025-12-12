@@ -82,9 +82,7 @@ def anndata_cluster(
 def anndata_sample(
     adata_sample_diff,
     output_dir,
-    batch_key,
     num_PCs=20,
-    num_harmony=30,
     verbose=True
 ):
     if verbose:
@@ -111,7 +109,6 @@ def anndata_sample(
 
     return adata_sample_diff
 
-
 from scipy.sparse import issparse
 
 def preprocess_linux(
@@ -120,7 +117,7 @@ def preprocess_linux(
     output_dir,
     sample_column='sample',
     cell_meta_path=None,
-    batch_key='batch',
+    batch_key='batch',  # Can now be a string or list of strings
     num_PCs=20,
     num_harmony=30,
     num_features=2000,
@@ -161,6 +158,14 @@ def preprocess_linux(
     if sample_column not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append(sample_column)
 
+    # ---------- Handle batch_key as string or list ----------
+    flat_batch_keys = []
+    if batch_key:
+        if isinstance(batch_key, (list, tuple, np.ndarray, pd.Index)):
+            flat_batch_keys.extend(map(str, list(batch_key)))
+        else:
+            flat_batch_keys.append(str(batch_key))
+
     # ---------- Attach metadata ----------
     if cell_meta_path is None:
         if sample_column not in adata.obs.columns:
@@ -175,9 +180,8 @@ def preprocess_linux(
 
     # ---------- Required columns check ----------
     required = flat_vars.copy()
-    if batch_key:
-        required.append(str(batch_key))
-    required = list(dict.fromkeys(required))
+    required.extend(flat_batch_keys)  # Add all batch keys
+    required = list(dict.fromkeys(required))  # Remove duplicates while preserving order
     missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
     if missing_vars:
         raise KeyError(
@@ -262,9 +266,7 @@ def preprocess_linux(
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
         output_dir=output_dir,
-        batch_key=batch_key,
         num_PCs=num_PCs,
-        num_harmony=num_harmony,
         verbose=verbose,
     )
 

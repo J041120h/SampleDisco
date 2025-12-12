@@ -1,0 +1,7 @@
+2025-12-08 12:45:54 - INFO - init
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 632, in wrapper
+    rna_results = rna_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 396, in rna_wrapper
+    raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
+ValueError: Dimensionality_reduction is skipped, but no dimensionality_reduction data found.

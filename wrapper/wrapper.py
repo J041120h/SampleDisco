@@ -64,7 +64,7 @@ def wrapper(
     rna_grouping_columns: List[str] = None,
     rna_cell_type_column: str = 'cell_type',
     rna_cell_meta_path: Optional[str] = None,
-    rna_batch_col: str = None,
+    rna_batch_col: List[str] = None,
     rna_markers: Optional[List] = None,
     rna_cluster_resolution: float = 0.8,
     rna_num_pcs: int = 20,
@@ -178,7 +178,7 @@ def wrapper(
     
     # ATAC Column specifications
     atac_sample_col: str = "sample",
-    atac_batch_col: Optional[str] = None,
+    atac_batch_col: List[str] = None,
     atac_cell_type_column: str = "cell_type",
     atac_grouping_columns: List[str] = None,
     
@@ -314,7 +314,7 @@ def wrapper(
     multiomics_atac_sample_column: str = "sample",
     multiomics_sample_column: str = 'sample',
     multiomics_sample_col: str = 'sample',
-    multiomics_batch_col: str = 'batch',
+    multiomics_batch_col: List[str] = None,
     multiomics_celltype_col: str = 'cell_type',
     multiomics_verbose: bool = True,
     large_data_need_extra_memory: bool = False,

@@ -62,9 +62,7 @@ def anndata_cluster(
 def anndata_sample(
     adata_sample_diff,
     output_dir,
-    batch_key,
     num_PCs=20,
-    num_harmony=30,
     verbose=True
 ):
     if verbose:
@@ -88,14 +86,13 @@ def anndata_sample(
 
     return adata_sample_diff
 
-
 def preprocess(
     h5ad_path,
     sample_meta_path,
     output_dir,
     sample_column='sample',
     cell_meta_path=None,
-    batch_key='batch',
+    batch_key=None,  # Changed to None default, will accept string or list
     num_PCs=20,
     num_harmony=30,
     num_features=2000,
@@ -104,7 +101,7 @@ def preprocess(
     pct_mito_cutoff=20,
     exclude_genes=None,
     doublet=True,
-    vars_to_regress=None,     # <-- non-mutable default
+    vars_to_regress=None,
     verbose=True
 ):
     start_time = time.time()
@@ -151,9 +148,7 @@ def preprocess(
 
     if sample_meta_path is not None:
         sample_meta = pd.read_csv(sample_meta_path)
-
         sample_meta = sample_meta.set_index(sample_column)
-
         adata.obs = adata.obs.join(
             sample_meta,
             on=sample_column, 
@@ -162,8 +157,14 @@ def preprocess(
 
     # ---------- Required columns check (robust to None/unhashables) ----------
     required = flat_vars.copy()
-    if batch_key:
-        required.append(str(batch_key))
+    
+    # Handle batch_key as either string or list
+    if batch_key is not None:
+        if isinstance(batch_key, (list, tuple)):
+            required.extend([str(b) for b in batch_key])
+        else:
+            required.append(str(batch_key))
+    
     # De-duplicate while preserving order
     required = list(dict.fromkeys(required))
     missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
@@ -247,9 +248,7 @@ def preprocess(
     adata_sample_diff = anndata_sample(
         adata_sample_diff=adata_sample_diff,
         output_dir=output_dir,
-        batch_key=batch_key,
         num_PCs=num_PCs,
-        num_harmony=num_harmony,
         verbose=verbose
     )
 
