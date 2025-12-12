@@ -1,0 +1,9 @@
+... storing 'filename_sample_id' as categorical
+... storing 'month' as categorical
+... storing 'OutSMART short number' as categorical
+... storing 'OutSMART ID' as categorical
+... storing 'Sex' as categorical
+... storing 'LC/Recovered' as categorical
+... storing 'BMI category' as categorical
+... storing 'Age at enrollment' as categorical
+... storing 'age_cluster' as categorical

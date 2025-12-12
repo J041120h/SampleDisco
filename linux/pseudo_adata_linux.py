@@ -55,10 +55,9 @@ def _extract_sample_metadata(
 
     return sample_adata
 
-
 def compute_pseudobulk_layers_gpu(
     adata: sc.AnnData,
-    batch_col: str = 'batch',
+    batch_col: str | List[str] | None = 'batch',
     sample_col: str = 'sample',
     celltype_col: str = 'cell_type',
     output_dir: str = './',
@@ -73,6 +72,11 @@ def compute_pseudobulk_layers_gpu(
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
     GPU-accelerated pseudobulk computation matching CPU version output exactly.
+    
+    Parameters:
+    -----------
+    batch_col : str | List[str] | None
+        Single batch column name, list of batch column names, or None
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if verbose:
@@ -82,20 +86,33 @@ def compute_pseudobulk_layers_gpu(
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
 
-    batch_correction = (
-        batch_col is not None and
-        batch_col in adata.obs.columns and
-        not adata.obs[batch_col].isnull().all()
-    )
+    # Convert batch_col to list for uniform handling
+    if batch_col is None:
+        batch_cols = []
+    elif isinstance(batch_col, str):
+        batch_cols = [batch_col] if batch_col else []
+    else:
+        batch_cols = list(batch_col)
     
-    if batch_correction and adata.obs[batch_col].isnull().any():
-        adata.obs[batch_col] = adata.obs[batch_col].fillna("Unknown")
+    # Filter to only valid batch columns
+    valid_batch_cols = []
+    for bc in batch_cols:
+        if bc in adata.obs.columns and not adata.obs[bc].isnull().all():
+            valid_batch_cols.append(bc)
+    
+    batch_correction = len(valid_batch_cols) > 0
+    
+    # Fill NaN values in batch columns
+    if batch_correction:
+        for bc in valid_batch_cols:
+            if adata.obs[bc].isnull().any():
+                adata.obs[bc] = adata.obs[bc].fillna("Unknown")
     
     if verbose:
         if batch_correction:
-            print(f"[Pseudobulk] Batch column '{batch_col}' detected for correction")
+            print(f"[Pseudobulk] Batch columns {valid_batch_cols} detected for correction")
         else:
-            print(f"[Pseudobulk] No valid batch column '{batch_col}' found; skipping batch correction")
+            print(f"[Pseudobulk] No valid batch columns found; skipping batch correction")
 
     samples = sorted(adata.obs[sample_col].unique())
     cell_types = sorted(adata.obs[celltype_col].unique())
@@ -109,7 +126,7 @@ def compute_pseudobulk_layers_gpu(
         print("[Pseudobulk] Phase 1: Creating pseudobulk layers...")
     pseudobulk_adata = _create_pseudobulk_layers_gpu(
         adata, samples, cell_types, sample_col, celltype_col,
-        batch_col, batch_size, max_cells_per_batch, verbose
+        valid_batch_cols,verbose
     )
 
     # Phase 2: Process each cell type layer
@@ -154,9 +171,20 @@ def compute_pseudobulk_layers_gpu(
 
             batch_correction_applied = False
             
-            # Batch correction logic with detailed diagnostics
-            if batch_correction and batch_col in temp_adata.obs.columns:
-                batch_counts = temp_adata.obs[batch_col].value_counts()
+            # Batch correction logic with multiple batch columns
+            if batch_correction:
+                # Create combined batch column
+                combined_batch_col = '_combined_batch_'
+                if len(valid_batch_cols) == 1:
+                    temp_adata.obs[combined_batch_col] = temp_adata.obs[valid_batch_cols[0]]
+                else:
+                    # Combine multiple batch columns with separator
+                    batch_values = temp_adata.obs[valid_batch_cols].astype(str)
+                    temp_adata.obs[combined_batch_col] = batch_values.apply(
+                        lambda row: '|'.join(row), axis=1
+                    )
+                
+                batch_counts = temp_adata.obs[combined_batch_col].value_counts()
                 n_batches = len(batch_counts)
                 min_batch_size = batch_counts.min()
                 max_batch_size = batch_counts.max()
@@ -173,18 +201,18 @@ def compute_pseudobulk_layers_gpu(
                         print(f"    Skipping ComBat: batches with <2 samples: {small_batches}")
                     # Try limma directly since ComBat won't work
                     batch_correction_applied = _try_limma_correction(
-                        temp_adata, batch_col, verbose
+                        temp_adata, combined_batch_col, verbose
                     )
                 else:
                     # Try ComBat first
                     batch_correction_applied = _try_combat_correction(
-                        temp_adata, batch_col, combat_timeout, verbose
+                        temp_adata, combined_batch_col, combat_timeout, verbose
                     )
                     
                     # Fallback to limma if ComBat failed
                     if not batch_correction_applied:
                         batch_correction_applied = _try_limma_correction(
-                            temp_adata, batch_col, verbose
+                            temp_adata, combined_batch_col, verbose
                         )
                 
                 # Clean up NaN genes after batch correction
@@ -296,7 +324,6 @@ def compute_pseudobulk_layers_gpu(
 
     return final_expression_df, cell_proportion_df, concat_adata
 
-
 def _try_combat_correction(
     temp_adata: sc.AnnData,
     batch_col: str,
@@ -387,16 +414,13 @@ def _try_limma_correction(
             print(f"    Limma failed: {type(e).__name__}: {e}")
         return False
 
-
 def _create_pseudobulk_layers_gpu(
     adata: sc.AnnData,
     samples: list,
     cell_types: list,
     sample_col: str,
     celltype_col: str,
-    batch_col: str,
-    batch_size: int,
-    max_cells_per_batch: int,
+    batch_cols: List[str],
     verbose: bool
 ) -> sc.AnnData:
     """Optimized pseudobulk creation using sparse indicator matrix multiplication."""
@@ -414,14 +438,17 @@ def _create_pseudobulk_layers_gpu(
     
     obs_df = pd.DataFrame(index=samples)
     obs_df.index.name = 'sample'
-    if batch_col is not None and batch_col in adata.obs.columns:
-        sample_batch_map = (
-            adata.obs[[sample_col, batch_col]]
-            .drop_duplicates()
-            .set_index(sample_col)[batch_col]
-            .to_dict()
-        )
-        obs_df[batch_col] = [sample_batch_map.get(s, 'Unknown') for s in samples]
+    
+    # Handle multiple batch columns
+    if batch_cols:
+        for bc in batch_cols:
+            sample_batch_map = (
+                adata.obs[[sample_col, bc]]
+                .drop_duplicates()
+                .set_index(sample_col)[bc]
+                .to_dict()
+            )
+            obs_df[bc] = [sample_batch_map.get(s, 'Unknown') for s in samples]
     
     var_df = adata.var.copy()
     
@@ -481,7 +508,6 @@ def _create_pseudobulk_layers_gpu(
         print(f"  Created {len(cell_types)} cell type layers")
     
     return pseudobulk_adata
-
 
 def _normalize_gpu(
     temp_adata: sc.AnnData,

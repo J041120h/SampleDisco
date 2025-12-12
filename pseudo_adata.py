@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 from scipy.sparse import issparse
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Union
 from tf_idf import tfidf_memory_efficient
 import contextlib
 import io
@@ -46,7 +46,7 @@ def _extract_sample_metadata(
 
 def compute_pseudobulk_layers(
     adata: sc.AnnData,
-    batch_col: str = 'batch',
+    batch_col: Union[str, List[str], None] = 'batch',
     sample_col: str = 'sample',
     celltype_col: str = 'cell_type',
     output_dir: str = './',
@@ -58,14 +58,20 @@ def compute_pseudobulk_layers(
     combat_timeout: int = 1800  # 30 minutes in seconds
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
-    CPU pseudobulk computation matching the GPU version's logic.
+    CPU pseudobulk computation with support for multiple batch columns.
 
+    Parameters
+    ----------
+    batch_col : str, list of str, or None
+        Single batch column name, list of batch column names, or None.
+        If list, will create combined batch variable for correction.
+    
     - Pseudobulk by sample × cell type into layers
     - Normalize (RNA: normalize_total+log1p; ATAC: TF-IDF)
     - Remove NaNs
     - Batch correction:
         * Try ComBat if ≥2 samples per batch
-        * If ComBat fails/times out, fall back to limma (~ batch)
+        * If ComBat fails/times out, fall back to limma (~ batch1 + batch2 + ...)
     - HVGs per cell type, then global HVGs
     - Final sample × gene AnnData + cell proportions
     """
@@ -75,18 +81,48 @@ def compute_pseudobulk_layers(
     pseudobulk_dir = os.path.join(output_dir, "pseudobulk")
     os.makedirs(pseudobulk_dir, exist_ok=True)
 
-    # Check if batch correction should be applied (based on original cell-level adata)
-    batch_correction = (
-        batch_col is not None and
-        batch_col in adata.obs.columns and
-        not adata.obs[batch_col].isnull().all()
-    )
-
-    if batch_correction and adata.obs[batch_col].isnull().any():
-        adata.obs[batch_col] = adata.obs[batch_col].fillna("Unknown")
+    # Normalize batch_col to list
+    batch_cols = []
+    if batch_col is not None:
+        if isinstance(batch_col, str):
+            batch_cols = [batch_col]
+        else:
+            batch_cols = list(batch_col)
+    
+    # Check if batch correction should be applied
+    batch_correction = False
+    combined_batch_col = None
+    
+    if batch_cols:
+        # Check which batch columns are valid
+        valid_batch_cols = [
+            bc for bc in batch_cols 
+            if bc in adata.obs.columns and not adata.obs[bc].isnull().all()
+        ]
+        
+        if valid_batch_cols:
+            batch_correction = True
+            
+            # Fill NaNs in batch columns
+            for bc in valid_batch_cols:
+                if adata.obs[bc].isnull().any():
+                    adata.obs[bc] = adata.obs[bc].fillna("Unknown")
+            
+            # Create combined batch column
+            combined_batch_col = '_combined_batch_'
+            if len(valid_batch_cols) == 1:
+                adata.obs[combined_batch_col] = adata.obs[valid_batch_cols[0]].astype(str)
+            else:
+                # Combine multiple batch columns with separator
+                adata.obs[combined_batch_col] = adata.obs[valid_batch_cols].astype(str).agg('_'.join, axis=1)
+            
+            batch_cols = valid_batch_cols
 
     if verbose:
-        print(f"[pseudobulk-CPU] Batch correction enabled: {batch_correction} (col='{batch_col}')")
+        print(f"[pseudobulk-CPU] Batch correction enabled: {batch_correction}")
+        if batch_correction:
+            print(f"[pseudobulk-CPU] Batch columns: {batch_cols}")
+            print(f"[pseudobulk-CPU] Combined batch column: {combined_batch_col}")
 
     # Get unique samples and cell types
     samples = sorted(adata.obs[sample_col].unique())
@@ -98,7 +134,9 @@ def compute_pseudobulk_layers(
 
     # Phase 1: Create pseudobulk AnnData with layers
     pseudobulk_adata = _create_pseudobulk_layers(
-        adata, samples, cell_types, sample_col, celltype_col, batch_col, verbose
+        adata, samples, cell_types, sample_col, celltype_col, 
+        combined_batch_col if batch_correction else None, 
+        batch_cols, verbose
     )
 
     # Phase 2: Process each cell type layer
@@ -150,100 +188,107 @@ def compute_pseudobulk_layers(
             batch_correction_applied = False
             batch_correction_method = None
 
-            if batch_correction and batch_col in temp_adata.obs.columns and len(temp_adata.obs[batch_col].unique()) > 1:
-                min_batch_size = temp_adata.obs[batch_col].value_counts().min()
+            if batch_correction and combined_batch_col in temp_adata.obs.columns:
+                n_batches = len(temp_adata.obs[combined_batch_col].unique())
+                
+                if n_batches > 1:
+                    min_batch_size = temp_adata.obs[combined_batch_col].value_counts().min()
 
-                # Try ComBat first if possible
-                if min_batch_size >= 2:
-                    try:
-                        if verbose:
-                            print(f"  - Trying ComBat (min batch size={min_batch_size})")
-
-                        def timeout_handler(signum, frame):
-                            raise TimeoutError("ComBat timed out")
-
-                        old_handler = None
-                        if combat_timeout is not None:
-                            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                            signal.alarm(int(combat_timeout))
-
+                    # Try ComBat first if possible
+                    if min_batch_size >= 2:
                         try:
-                            with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
-                                warnings.filterwarnings("ignore")
-                                sc.pp.combat(temp_adata, key=batch_col)
-                            batch_correction_applied = True
-                            batch_correction_method = "ComBat"
-                        finally:
+                            if verbose:
+                                print(f"  - Trying ComBat (batches={n_batches}, min batch size={min_batch_size})")
+
+                            def timeout_handler(signum, frame):
+                                raise TimeoutError("ComBat timed out")
+
+                            old_handler = None
                             if combat_timeout is not None:
-                                signal.alarm(0)
-                                if old_handler is not None:
-                                    signal.signal(signal.SIGALRM, old_handler)
+                                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+                                signal.alarm(int(combat_timeout))
 
-                        # Remove NaNs generated by ComBat
-                        if issparse(temp_adata.X):
-                            has_nan = np.any(np.isnan(temp_adata.X.data))
-                            if has_nan:
-                                nan_genes_post = np.array(
-                                    np.isnan(temp_adata.X.toarray()).any(axis=0)
-                                ).flatten()
+                            try:
+                                with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+                                    warnings.filterwarnings("ignore")
+                                    sc.pp.combat(temp_adata, key=combined_batch_col)
+                                batch_correction_applied = True
+                                batch_correction_method = "ComBat"
+                            finally:
+                                if combat_timeout is not None:
+                                    signal.alarm(0)
+                                    if old_handler is not None:
+                                        signal.signal(signal.SIGALRM, old_handler)
+
+                            # Remove NaNs generated by ComBat
+                            if issparse(temp_adata.X):
+                                has_nan = np.any(np.isnan(temp_adata.X.data))
+                                if has_nan:
+                                    nan_genes_post = np.array(
+                                        np.isnan(temp_adata.X.toarray()).any(axis=0)
+                                    ).flatten()
+                                else:
+                                    nan_genes_post = np.zeros(temp_adata.n_vars, dtype=bool)
                             else:
-                                nan_genes_post = np.zeros(temp_adata.n_vars, dtype=bool)
-                        else:
-                            nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                                nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
 
-                        if nan_genes_post.any():
-                            temp_adata = temp_adata[:, ~nan_genes_post].copy()
+                            if nan_genes_post.any():
+                                temp_adata = temp_adata[:, ~nan_genes_post].copy()
 
+                            if verbose:
+                                print("  - ComBat applied successfully.")
+
+                        except (TimeoutError, Exception):
+                            if verbose:
+                                print("  - ComBat failed or timed out; will try limma.")
+
+                    else:
                         if verbose:
-                            print("  - ComBat applied successfully.")
+                            print(f"  - Skipping ComBat (min batch size={min_batch_size} < 2).")
 
-                    except (TimeoutError, Exception):
-                        if verbose:
-                            print("  - ComBat failed or timed out; will try limma.")
+                    # limma fallback / alternative
+                    if not batch_correction_applied:
+                        try:
+                            if verbose:
+                                print(f"  - Applying limma batch regression (~ {' + '.join(batch_cols)}).")
 
+                            # Ensure dense
+                            if issparse(temp_adata.X):
+                                X_dense = temp_adata.X.toarray()
+                            else:
+                                X_dense = temp_adata.X.copy()
+
+                            # Create formula with all batch columns
+                            covariate_formula = '~ ' + ' + '.join(batch_cols)
+                            X_corrected = limma(
+                                pheno=temp_adata.obs,
+                                exprs=X_dense,
+                                covariate_formula=covariate_formula,
+                                design_formula='1',
+                                rcond=1e-8,
+                                verbose=False  # keep limma quiet here
+                            )
+                            temp_adata.X = X_corrected
+                            batch_correction_applied = True
+                            batch_correction_method = "limma"
+
+                            # Remove NaNs if any
+                            if issparse(temp_adata.X):
+                                nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
+                            else:
+                                nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
+                            if nan_genes_post.any():
+                                temp_adata = temp_adata[:, ~nan_genes_post].copy()
+
+                            if verbose:
+                                print("  - limma batch regression applied.")
+
+                        except Exception as e:
+                            if verbose:
+                                print(f"  - limma failed ({type(e).__name__}); continuing without batch correction.")
                 else:
                     if verbose:
-                        print(f"  - Skipping ComBat (min batch size={min_batch_size} < 2).")
-
-                # limma fallback / alternative
-                if not batch_correction_applied:
-                    try:
-                        if verbose:
-                            print("  - Applying limma batch regression (~ batch).")
-
-                        # Ensure dense
-                        if issparse(temp_adata.X):
-                            X_dense = temp_adata.X.toarray()
-                        else:
-                            X_dense = temp_adata.X.copy()
-
-                        covariate_formula = f'~ {batch_col}'
-                        X_corrected = limma(
-                            pheno=temp_adata.obs,
-                            exprs=X_dense,
-                            covariate_formula=covariate_formula,
-                            design_formula='1',
-                            rcond=1e-8,
-                            verbose=False  # keep limma quiet here
-                        )
-                        temp_adata.X = X_corrected
-                        batch_correction_applied = True
-                        batch_correction_method = "limma"
-
-                        # Remove NaNs if any
-                        if issparse(temp_adata.X):
-                            nan_genes_post = np.array(np.isnan(temp_adata.X.toarray()).any(axis=0)).flatten()
-                        else:
-                            nan_genes_post = np.isnan(temp_adata.X).any(axis=0)
-                        if nan_genes_post.any():
-                            temp_adata = temp_adata[:, ~nan_genes_post].copy()
-
-                        if verbose:
-                            print("  - limma batch regression applied.")
-
-                    except Exception as e:
-                        if verbose:
-                            print(f"  - limma failed ({type(e).__name__}); continuing without batch correction.")
+                        print("  - Only one batch found, skipping batch correction.")
 
             elif verbose:
                 print("  - Batch correction skipped (conditions not met).")
@@ -371,7 +416,8 @@ def _create_pseudobulk_layers(
     cell_types: list,
     sample_col: str,
     celltype_col: str,
-    batch_col: str,
+    combined_batch_col: Union[str, None],
+    batch_cols: List[str],
     verbose: bool
 ) -> sc.AnnData:
     """Optimized pseudobulk creation using sparse indicator matrix multiplication."""
@@ -388,14 +434,27 @@ def _create_pseudobulk_layers(
     # Setup obs dataframe
     obs_df = pd.DataFrame(index=samples)
     obs_df.index.name = 'sample'
-    if batch_col is not None and batch_col in adata.obs.columns:
+    
+    # Add batch columns
+    if combined_batch_col is not None and combined_batch_col in adata.obs.columns:
         sample_batch_map = (
-            adata.obs[[sample_col, batch_col]]
+            adata.obs[[sample_col, combined_batch_col]]
             .drop_duplicates()
-            .set_index(sample_col)[batch_col]
+            .set_index(sample_col)[combined_batch_col]
             .to_dict()
         )
-        obs_df[batch_col] = [sample_batch_map.get(s, 'Unknown') for s in samples]
+        obs_df[combined_batch_col] = [sample_batch_map.get(s, 'Unknown') for s in samples]
+    
+    # Also add individual batch columns to obs
+    for bc in batch_cols:
+        if bc in adata.obs.columns:
+            sample_batch_map = (
+                adata.obs[[sample_col, bc]]
+                .drop_duplicates()
+                .set_index(sample_col)[bc]
+                .to_dict()
+            )
+            obs_df[bc] = [sample_batch_map.get(s, 'Unknown') for s in samples]
     
     var_df = adata.var.copy()
     
@@ -535,34 +594,9 @@ def _create_final_expression_matrix(
     return final_expression_df
 
 
-def _compute_cell_proportions(
-    adata: sc.AnnData,
-    samples: list,
-    cell_types: list,
-    sample_col: str,
-    celltype_col: str
-) -> pd.DataFrame:
-    """Compute cell type proportions for each sample (identical to GPU version)."""
-    proportion_df = pd.DataFrame(
-        index=cell_types,
-        columns=samples,
-        dtype=float
-    )
-
-    for sample in samples:
-        sample_mask = (adata.obs[sample_col] == sample)
-        total_cells = int(sample_mask.sum())
-        for cell_type in cell_types:
-            ct_mask = sample_mask & (adata.obs[celltype_col] == cell_type)
-            n_cells = int(ct_mask.sum())
-            proportion = n_cells / total_cells if total_cells > 0 else 0.0
-            proportion_df.loc[cell_type, sample] = proportion
-
-    return proportion_df
-
 def compute_pseudobulk_adata(
     adata: sc.AnnData,
-    batch_col: str = 'batch',
+    batch_col: Union[str, List[str], None] = 'batch',
     sample_col: str = 'sample',
     celltype_col: str = 'cell_type',
     output_dir: str = './',
@@ -576,6 +610,12 @@ def compute_pseudobulk_adata(
 ) -> Tuple[Dict, sc.AnnData]:
     """
     Backward compatibility wrapper for the original function signature.
+
+    Parameters
+    ----------
+    batch_col : str, list of str, or None
+        Single batch column name, list of batch column names, or None.
+        If list, will create combined batch variable for correction.
 
     Returns
     -------
