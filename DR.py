@@ -8,6 +8,7 @@ from sklearn.feature_extraction.text import TfidfTransformer
 import scipy.sparse as sparse
 from muon import atac as ac
 import snapatac2 as snap
+from typing import Union, List
 
 def run_lsi_expression(
     pseudobulk_anndata: sc.AnnData,
@@ -462,13 +463,19 @@ def run_dimension_reduction_proportion(
     pseudobulk: dict, 
     pseudobulk_anndata: sc.AnnData = None,
     sample_col: str = 'sample',
-    batch_col: str = None,
+    batch_col: Union[str, List[str], None] = None,
     harmony_for_proportion: bool = False,
     n_components: int = 10, 
     verbose: bool = False
 ) -> None:
     """
     Performs dimension reduction on cell proportion data with small dataset handling.
+    
+    Parameters:
+    -----------
+    batch_col : Union[str, List[str], None]
+        Single batch column name or list of batch column names for Harmony correction.
+        If list, multiple batch factors will be used jointly.
     """
     if "cell_proportion" not in pseudobulk:
         raise KeyError("Missing 'cell_proportion' key in pseudobulk dictionary.")
@@ -513,33 +520,54 @@ def run_dimension_reduction_proportion(
     final_coords = pca_coords
     
     if harmony_for_proportion and batch_col and pseudobulk_anndata is not None:
-        if batch_col not in pseudobulk_anndata.obs.columns:
+        # Convert single string to list for uniform handling
+        batch_cols = [batch_col] if isinstance(batch_col, str) else batch_col
+        
+        # Validate all batch columns exist
+        missing_cols = [col for col in batch_cols if col not in pseudobulk_anndata.obs.columns]
+        if missing_cols:
             if verbose:
-                print(f"[run_dimension_reduction_proportion] Warning: batch column '{batch_col}' not found")
-        else:
+                print(f"[run_dimension_reduction_proportion] Warning: batch column(s) {missing_cols} not found")
+            # Use only valid columns
+            batch_cols = [col for col in batch_cols if col in pseudobulk_anndata.obs.columns]
+        
+        if batch_cols:
             try:
                 import harmonypy as hm
                 
                 if verbose:
-                    print(f"[run_dimension_reduction_proportion] Applying Harmony with batch: {batch_col}")
+                    print(f"[run_dimension_reduction_proportion] Applying Harmony with batch column(s): {batch_cols}")
                 
-                # Check unique batches
-                n_batches = pseudobulk_anndata.obs[batch_col].nunique()
-                if n_batches < 2:
-                    if verbose:
-                        print(f"[run_dimension_reduction_proportion] Skipping Harmony: only {n_batches} batch(es)")
-                else:
+                # Check unique batches for each column
+                valid_batch_cols = []
+                for col in batch_cols:
+                    n_batches = pseudobulk_anndata.obs[col].nunique()
+                    if n_batches < 2:
+                        if verbose:
+                            print(f"[run_dimension_reduction_proportion] Skipping batch column '{col}': only {n_batches} batch(es)")
+                    else:
+                        valid_batch_cols.append(col)
+                
+                if valid_batch_cols:
+                    # Determine appropriate number of clusters
+                    # For multiple batch factors, use the minimum unique values across batches
+                    min_batches = min(pseudobulk_anndata.obs[col].nunique() for col in valid_batch_cols)
+                    nclust = max(2, min(min_batches, n_samples // 2))
+                    
                     harmony_out = hm.run_harmony(
                         pca_coords.T,
                         pseudobulk_anndata.obs,
-                        batch_col,
+                        valid_batch_cols,  # Pass list of batch columns
                         max_iter_harmony=30,
-                        nclust=max(2, min(n_batches, n_samples // 2))  # Ensure valid cluster number
+                        nclust=nclust
                     )
                     final_coords = harmony_out.Z_corr.T
                     
                     if verbose:
-                        print(f"[run_dimension_reduction_proportion] Harmony completed. Shape: {final_coords.shape}")
+                        print(f"[run_dimension_reduction_proportion] Harmony completed with {len(valid_batch_cols)} batch factor(s). Shape: {final_coords.shape}")
+                else:
+                    if verbose:
+                        print(f"[run_dimension_reduction_proportion] No valid batch columns for Harmony. Using PCA only.")
                         
             except Exception as e:
                 if verbose:
@@ -630,7 +658,7 @@ def dimension_reduction(
     sample_col: str = 'sample',
     n_expression_components: int = 10, 
     n_proportion_components: int = 10, 
-    batch_col: str = None,
+    batch_col: Union[str, List[str], None] = None,
     harmony_for_proportion: bool = False,
     output_dir: str = "./", 
     integrated_data: bool = False,
@@ -663,6 +691,11 @@ def dimension_reduction(
         Number of components for expression dimension reduction
     n_proportion_components : int, default 10
         Number of components for proportion dimension reduction
+    batch_col : Union[str, List[str], None]
+        Single batch column name or list of batch column names for Harmony correction.
+        If list, multiple batch factors will be used jointly.
+    harmony_for_proportion : bool, default False
+        Whether to apply Harmony batch correction for proportion dimension reduction
     output_dir : str, default "./"
         Output directory for saving results
     integrated_data : bool, default False
@@ -696,6 +729,13 @@ def dimension_reduction(
                 print("[process_anndata_with_dimension_reduction] ATAC mode: Will use LSI for expression data")
         else:
             print("[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data")
+        
+        # Display batch column information
+        if batch_col:
+            if isinstance(batch_col, list):
+                print(f"[process_anndata_with_dimension_reduction] Batch correction: Using {len(batch_col)} batch column(s): {batch_col}")
+            else:
+                print(f"[process_anndata_with_dimension_reduction] Batch correction: Using batch column: {batch_col}")
     
     # Validate and create output directory structure
     output_dir = os.path.abspath(output_dir)  # Convert to absolute path
@@ -759,8 +799,8 @@ def dimension_reduction(
             pseudobulk_anndata=pseudobulk_anndata,
             sample_col=sample_col,
             n_components=n_proportion_components, 
-            batch_col = batch_col,
-            harmony_for_proportion = harmony_for_proportion,
+            batch_col=batch_col,
+            harmony_for_proportion=harmony_for_proportion,
             verbose=verbose
         )
         proportion_dr_successful = True

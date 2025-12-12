@@ -127,6 +127,7 @@ Starting dimensionality reduction...
   - X_DR_expression: for expression data
   - X_DR_proportion: for proportion data
 [process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] Batch correction: Using 2 batch column(s): ['filename_sample_id', 'age_cluster']
 [process_anndata_with_dimension_reduction] ✓ Created output directories:
   - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk
 [process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
@@ -139,7 +140,10 @@ Starting dimensionality reduction...
 [DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
 [process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
 [run_dimension_reduction_proportion] Computing PCA with 5 components...
-[process_anndata_with_dimension_reduction] ✗ Proportion dimension reduction failed: unhashable type: 'list'
+[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['filename_sample_id', 'age_cluster']
+[run_dimension_reduction_proportion] Harmony completed with 2 batch factor(s). Shape: (35, 5)
+[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (35, 5)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
 [process_anndata_with_dimension_reduction] Preparing to save results...
 [process_anndata_with_dimension_reduction] Target file path:
   - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
@@ -148,11 +152,12 @@ Starting dimensionality reduction...
 [process_anndata_with_dimension_reduction] ✓ File saved successfully
 
 [process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.13 seconds
+Total runtime: 0.31 seconds
 Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✗ FAILED
+Proportion dimension reduction: ✓ SUCCESS
 Results available under unified keys:
   - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
 File saving: ATTEMPTED (pseudobulk_anndata only)
 RNA analysis completed successfully!
 
@@ -173,4 +178,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/long_covid
 Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
-Execution time: 70.5956 seconds
+Execution time: 73.8503 seconds
