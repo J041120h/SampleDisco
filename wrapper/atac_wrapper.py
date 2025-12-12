@@ -246,14 +246,6 @@ def atac_wrapper(
             umap_random_state=atac_umap_random_state,
         )
         status_flags["atac"]["preprocessing"] = True
-
-        # Standardize column names
-        if atac_sample_col != 'sample':
-            atac_sample.obs.rename(columns={atac_sample_col: 'sample'}, inplace=True)
-        if atac_batch_col and atac_batch_col != 'batch':
-            atac_sample.obs.rename(columns={atac_batch_col: 'batch'}, inplace=True)
-        atac_sample_col = 'sample'
-        atac_batch_col = 'batch'
         
     else:
         # We offer the option to skip preprocessing and use preprocessed data

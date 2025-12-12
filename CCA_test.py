@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.cross_decomposition import CCA
 import numpy as np
 import scanpy as sc
+from typing import List
 import os
 import matplotlib.pyplot as plt
 from anndata import AnnData
@@ -722,7 +723,7 @@ def find_optimal_cell_resolution(
     column: str,
     n_features: int = 2000,
     sev_col: str = "sev.level",
-    batch_col: str = "batch",
+    batch_col: List[str] = ["batch"],
     sample_col: str = "sample",
     use_rep: str = 'X_pca',
     num_PCs: int = 20,

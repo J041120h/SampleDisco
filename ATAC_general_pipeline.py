@@ -117,7 +117,7 @@ def run_scatac_pipeline(
     output_dir,
     metadata_path=None,
     sample_column="sample",
-    batch_key=None,
+    batch_key=None,  # Can be a string or list of strings
     verbose=True,
     use_snapatac2_dimred=False,
     # QC and filtering parameters
@@ -155,6 +155,12 @@ def run_scatac_pipeline(
     # Create sub-folder
     output_dir = os.path.join(output_dir, 'preprocess')
     os.makedirs(output_dir, exist_ok=True)
+
+    # Normalize batch_key to list format
+    if batch_key is not None:
+        batch_keys = batch_key if isinstance(batch_key, list) else [batch_key]
+    else:
+        batch_keys = None
 
     # 1. Load data
     atac = sc.read_h5ad(filepath)
@@ -212,8 +218,10 @@ def run_scatac_pipeline(
         dimred_key = 'X_spectral'
     else:
         log("Selecting HVFs", verbose)
+        # For HVG selection, use the first batch key (scanpy HVG doesn't support multiple batches)
+        hvg_batch_key = batch_keys[0] if batch_keys else None
         sc.pp.highly_variable_genes(
-            atac, n_top_genes=num_features, flavor='seurat_v3', batch_key=batch_key
+            atac, n_top_genes=num_features, flavor='seurat_v3', batch_key=hvg_batch_key
         )
         atac.var['HVF'] = atac.var['highly_variable']
 
@@ -225,12 +233,11 @@ def run_scatac_pipeline(
             atac.uns["lsi"]["stdev"] = atac.uns["lsi"]["stdev"][1:]
         dimred_key = 'X_lsi'
 
-    # 6. Harmony
-    if batch_key:
-        log("Harmony batch correction", verbose)
-        batches = batch_key if isinstance(batch_key, list) else [batch_key]
+    # 6. Harmony (supports multiple batch keys)
+    if batch_keys:
+        log(f"Harmony batch correction with batch keys: {batch_keys}", verbose)
         Z = harmonize(atac.obsm[dimred_key], atac.obs,
-                      batch_key=batches, max_iter_harmony=harmony_max_iter,
+                      batch_key=batch_keys, max_iter_harmony=harmony_max_iter,
                       use_gpu=harmony_use_gpu)
         atac.obsm['X_DM_harmony'] = Z
     else:

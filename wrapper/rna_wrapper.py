@@ -92,7 +92,7 @@ def rna_wrapper(
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised=False,
     n_components_for_cca_rna = 2,
-    cca_output_dir=None,
+    Listcca_output_dir=None,
     sev_col_cca="sev.level",
     cca_optimal_cell_resolution=False,
     cca_pvalue=False,

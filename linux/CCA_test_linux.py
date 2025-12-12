@@ -3,10 +3,10 @@ from anndata import AnnData
 import scanpy as sc
 import pandas as pd
 from sklearn.cross_decomposition import CCA
+from typing import List
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import time
 from DR import dimension_reduction
 from CCA_test import * 
 from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
@@ -119,6 +119,7 @@ def cca_pvalue_test_linux(
     except Exception as e:
         print(f"Error in CCA p-value test: {str(e)}")
         return np.nan
+    
 def find_optimal_cell_resolution_linux(
     AnnData_cell: AnnData,
     AnnData_sample: AnnData,
@@ -126,7 +127,7 @@ def find_optimal_cell_resolution_linux(
     column: str,
     n_features: int = 2000,
     sev_col: str = "sev.level",
-    batch_col: str = "batch",
+    batch_col: List[str] = ["batch"],
     sample_col: str = "sample",
     use_rep: str = 'X_pca',
     num_PCs: int = 20,
@@ -155,8 +156,8 @@ def find_optimal_cell_resolution_linux(
         Number of features for pseudobulk
     sev_col : str
         Column name for severity levels
-    batch_col : str
-        Column name for batch information
+    batch_col : List[str]
+        Column names for batch information
     sample_col : str
         Column name for sample identifiers
     use_rep : str
