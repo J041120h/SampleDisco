@@ -9,7 +9,6 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from DR import dimension_reduction
-from utils.batch_mixer import get_mixed_batch_column
 from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
 from integration.integration_glue import *
 from integration.integration_preprocess import *
@@ -437,7 +436,11 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("  Sub-step 3a: Computing pseudobulk...")
         
-        adata_for_dr, batch_col = get_mixed_batch_column(adata_for_dr, batch_column=batch_col)
+        if batch_col is not None and not isinstance(batch_col, list):
+            batch_col.append(resolution_modality_col)
+        else:
+            batch_col = [resolution_modality_col]
+
 
         atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata_linux(
             adata=adata_for_dr,

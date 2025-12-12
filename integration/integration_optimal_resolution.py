@@ -355,8 +355,30 @@ def generate_null_distribution(pseudobulk_adata, modality, column, sev_col,
     return null_distribution
 
 def ensure_non_categorical_columns(adata, columns):
-    """Convert specified columns from categorical to string to avoid categorical errors"""
+    """
+    Convert specified columns from categorical to string to avoid categorical errors.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        AnnData object to modify
+    columns : list
+        List of column names to check and convert. Can contain both strings and lists.
+        
+    Returns:
+    --------
+    AnnData
+        Modified AnnData object
+    """
+    # Flatten the columns list to handle nested lists
+    flat_columns = []
     for col in columns:
+        if isinstance(col, list):
+            flat_columns.extend(col)
+        elif col is not None:
+            flat_columns.append(col)
+    
+    for col in flat_columns:
         if col in adata.obs.columns:
             if pd.api.types.is_categorical_dtype(adata.obs[col]):
                 adata.obs[col] = adata.obs[col].astype(str)
@@ -709,7 +731,7 @@ def find_optimal_cell_resolution_integration(
     dr_type: str = "expression",  # "expression" or "proportion"
     n_features: int = 40000,
     sev_col: str = "sev.level",
-    batch_col: str = None,
+    batch_col: list = None,  # NOW ACCEPTS A LIST OF BATCH COLUMN NAMES
     sample_col: str = "sample",
     modality_col: str = "modality",
     use_rep: str = 'X_glue',
@@ -725,7 +747,50 @@ def find_optimal_cell_resolution_integration(
     Find optimal clustering resolution for integrated RNA+ATAC data by maximizing 
     CCA correlation between dimension reduction and severity levels.
     
-    [Parameters remain the same]
+    Parameters:
+    -----------
+    AnnData_integrated : AnnData
+        Integrated AnnData object containing RNA and ATAC data
+    output_dir : str
+        Directory to save outputs
+    optimization_target : str, default "rna"
+        Which modality to optimize: "rna" or "atac"
+    dr_type : str, default "expression"
+        Which DR type to optimize: "expression" or "proportion"
+    n_features : int, default 40000
+        Number of highly variable features for pseudobulk
+    sev_col : str, default "sev.level"
+        Column name for severity levels
+    batch_col : list or str or None, default None
+        Batch column name(s) for batch correction. Can be:
+        - None: No batch correction
+        - str: Single batch column name
+        - list: Multiple batch column names (e.g., ['batch1', 'batch2'])
+    sample_col : str, default "sample"
+        Column name for sample identifiers
+    modality_col : str, default "modality"
+        Column name for modality labels
+    use_rep : str, default 'X_glue'
+        Representation to use for clustering
+    num_DR_components : int, default 30
+        Number of DR components to compute
+    num_PCs : int, default 20
+        Number of PCs to use for clustering
+    num_pvalue_simulations : int, default 1000
+        Number of permutations for p-value computation
+    n_pcs : int, default 2
+        Number of PCs to use for CCA analysis
+    compute_pvalues : bool, default True
+        Whether to compute p-values
+    visualize_embeddings : bool, default True
+        Whether to create embedding visualizations
+    verbose : bool, default True
+        Whether to print verbose output
+        
+    Returns:
+    --------
+    tuple
+        (optimal_resolution, results_dataframe)
     """
     start_time = time.time()
     
@@ -738,6 +803,12 @@ def find_optimal_cell_resolution_integration(
     if dr_type not in ["expression", "proportion"]:
         raise ValueError("dr_type must be 'expression' or 'proportion'")
 
+    # Convert batch_col to list if it's a string
+    if isinstance(batch_col, str):
+        batch_col = [batch_col]
+    elif batch_col is None:
+        batch_col = []
+
     # Create main output directory
     main_output_dir = os.path.join(output_dir, f"Integration_optimization_{optimization_target}_{dr_type}")
     os.makedirs(main_output_dir, exist_ok=True)
@@ -745,6 +816,8 @@ def find_optimal_cell_resolution_integration(
     print(f"Starting integrated resolution optimization...")
     print(f"Optimization target: {optimization_target.upper()} {dr_type.upper()}")
     print(f"Using representation: {use_rep} with {num_PCs} components")
+    if batch_col:
+        print(f"Batch correction columns: {batch_col}")
     print(f"Testing resolutions from 0.01 to 1.00...")
     if compute_pvalues:
         print(f"Computing p-values with {num_pvalue_simulations} simulations per resolution")
@@ -752,7 +825,7 @@ def find_optimal_cell_resolution_integration(
     # Ensure critical columns are not categorical to avoid errors
     columns_to_check = ['cell_type', modality_col, sev_col, sample_col]
     if batch_col:
-        columns_to_check.append(batch_col)
+        columns_to_check.extend(batch_col)
     AnnData_integrated = ensure_non_categorical_columns(AnnData_integrated, columns_to_check)
     
     # Storage for all results
@@ -816,10 +889,10 @@ def find_optimal_cell_resolution_integration(
                 verbose=False
             )
             
-            # Compute pseudobulk data
+            # Compute pseudobulk data (pass batch_col as list)
             pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=AnnData_integrated, 
-                batch_col=batch_col, 
+                batch_col=batch_col if batch_col else None,  # Pass list or None
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
                 n_features=n_features, 
@@ -999,10 +1072,10 @@ def find_optimal_cell_resolution_integration(
                 verbose=False
             )
             
-            # Compute pseudobulk data
+            # Compute pseudobulk data (pass batch_col as list)
             pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=AnnData_integrated, 
-                batch_col=batch_col, 
+                batch_col=batch_col if batch_col else None,  # Pass list or None
                 sample_col=sample_col, 
                 celltype_col='cell_type', 
                 n_features=n_features, 
@@ -1228,6 +1301,7 @@ if __name__ == "__main__":
         print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
         print(f"GPU Memory Available: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
     
+    # Example with multiple batch columns
     optimal_res, results_df = find_optimal_cell_resolution_integration(
         AnnData_integrated=integrated_adata,
         output_dir=output_dir,
@@ -1235,7 +1309,7 @@ if __name__ == "__main__":
         dr_type="proportion",  # "expression" or "proportion"
         n_features=2000,
         sev_col="sev.level",
-        batch_col="batch",
+        batch_col=["batch", "sequencing_run"],  # NOW SUPPORTS LIST OF BATCH COLUMNS
         sample_col="sample",
         modality_col="modality",
         use_rep='X_glue',
