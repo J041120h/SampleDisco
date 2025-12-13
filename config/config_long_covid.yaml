@@ -85,7 +85,8 @@ rna_celltype_col: "cell_type"
 rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
-rna_preserve_cols_for_sample_embedding: null
+rna_preserve_cols_for_sample_embedding:
+  - "month"
 
 # RNA PCA Parameters
 rna_n_expression_components: 10

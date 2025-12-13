@@ -1,179 +1,399 @@
-Linux system detected with GPU enabled.
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
-        "sample_distance_calculation": true,
-        "trajectory_analysis": true,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": true
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
-}
+================================================================================
+CLUSTERING TEST FRAMEWORK FOR LONG COVID PSEUDOBULK DATA
+================================================================================
 
-============================================================
-RUNNING RNA PIPELINE
-============================================================
-Starting RNA wrapper function with provided parameters...
-Starting dimensionality reduction...
-[Pseudobulk] Input: 260269 cells, 18514 genes
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] 35 samples, 11 cell types
-[Pseudobulk] Batch correction: ['filename_sample_id']
-[Pseudobulk] Phase 1: Aggregating...
-  Aggregating 260269 cells -> 35 samples x 11 cell types
-  Created 11 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/11] 1
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [2/11] 10
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [3/11] 11
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [4/11] 2
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [5/11] 3
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [6/11] 4
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [7/11] 5
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [8/11] 6
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [9/11] 7
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [10/11] 8
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [11/11] 9
-    Batches: 16, sizes: 1-3
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-[Pseudobulk] Retained 11 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 22000
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 35 samples, 22000 features
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] Batch correction: Using 1 batch column(s): ['filename_sample_id']
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(35, 22000), proportion=(35, 11)
-[DimRed] Computing PCA for RNA data with 10 components on (35, 22000) data
-[PCA] Success. Shape: (35, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (35, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (35, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Computing PCA with 5 components...
-[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['filename_sample_id']
-[run_dimension_reduction_proportion] Harmony completed with 1 batch factor(s). Shape: (35, 5)
-[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (35, 5)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file path:
-  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (3.5 MB)
-[process_anndata_with_dimension_reduction] ✓ File saved successfully
+Output directory: /dcs07/hongkai/data/harry/result/long_covid/clustering_evaluation/2
 
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.56 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ATTEMPTED (pseudobulk_anndata only)
-RNA analysis completed successfully!
+----------------------------------------
+STEP 1: Loading Data
+----------------------------------------
+Loading h5ad from: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+  Shape: (35, 22049)
+  obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
 
-✓ RNA pipeline completed successfully!
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
+  Samples in meta: 37
+  Common samples: 35
 
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✓
-  - trajectory_analysis: ✓
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✓
+----------------------------------------
+STEP 2: Extracting Embeddings
+----------------------------------------
+Expression embedding shape: (35, 10)
+Proportion embedding shape: (35, 5)
 
-Results saved to: /dcs07/hongkai/data/harry/result/long_covid
-Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
-Execution time: 71.0753 seconds
+----------------------------------------
+STEP 3: Preparing Metadata Categories
+----------------------------------------
+
+Categories to test:
+  - month: k=3 (Time point (months: 1, 3, 6))
+  - Sex: k=2 (Biological sex (Male/Female))
+  - LC/Recovered: k=2 (Long COVID status)
+  - BMI category: k=2 (BMI category (Normal/Elevated))
+  - Age (binned): k=3 (Age tertiles)
+  - OutSMART ID: k=16 (Patient identifier (16 patients))
+
+----------------------------------------
+STEP 4: Running Clustering Comparisons
+----------------------------------------
+
+======================================================================
+EMBEDDING: EXPRESSION
+======================================================================
+
+  Category: month
+    k=3, description: Time point (months: 1, 3, 6)
+    Running K-means...
+      NMI=0.176, Acc=0.657, p=0.0200 *
+    Running Hierarchical Consensus...
+      NMI=0.021, Acc=0.429, p=0.9370 
+
+  Category: Sex
+    k=2, description: Biological sex (Male/Female)
+    Running K-means...
+      NMI=0.004, Acc=0.543, p=0.7150 
+    Running Hierarchical Consensus...
+      NMI=0.001, Acc=0.543, p=1.0000 
+
+  Category: LC/Recovered
+    k=2, description: Long COVID status
+    Running K-means...
+      NMI=0.010, Acc=0.571, p=0.7100 
+    Running Hierarchical Consensus...
+      NMI=0.003, Acc=0.571, p=1.0000 
+
+  Category: BMI category
+    k=2, description: BMI category (Normal/Elevated)
+    Running K-means...
+      NMI=0.000, Acc=0.514, p=1.0000 
+    Running Hierarchical Consensus...
+      NMI=0.000, Acc=0.514, p=1.0000 
+
+  Category: Age (binned)
+    k=3, description: Age tertiles
+    Running K-means...
+      NMI=0.049, Acc=0.429, p=0.6660 
+    Running Hierarchical Consensus...
+      NMI=0.046, Acc=0.400, p=0.5660 
+
+  Category: OutSMART ID
+    k=16, description: Patient identifier (16 patients)
+    Running K-means...
+      NMI=0.656, Acc=0.343, p=0.6520 
+    Running Hierarchical Consensus...
+      NMI=0.615, Acc=0.343, p=0.9960 
+
+======================================================================
+EMBEDDING: PROPORTION
+======================================================================
+
+  Category: month
+    k=3, description: Time point (months: 1, 3, 6)
+    Running K-means...
+      NMI=0.030, Acc=0.400, p=0.8210 
+    Running Hierarchical Consensus...
+      NMI=0.039, Acc=0.371, p=0.7340 
+
+  Category: Sex
+    k=2, description: Biological sex (Male/Female)
+    Running K-means...
+      NMI=0.044, Acc=0.629, p=0.1820 
+    Running Hierarchical Consensus...
+      NMI=0.145, Acc=0.686, p=0.0290 *
+
+  Category: LC/Recovered
+    k=2, description: Long COVID status
+    Running K-means...
+      NMI=0.022, Acc=0.600, p=0.5040 
+    Running Hierarchical Consensus...
+      NMI=0.017, Acc=0.600, p=0.6990 
+
+  Category: BMI category
+    k=2, description: BMI category (Normal/Elevated)
+    Running K-means...
+      NMI=0.005, Acc=0.543, p=0.7600 
+    Running Hierarchical Consensus...
+      NMI=0.035, Acc=0.571, p=0.4270 
+
+  Category: Age (binned)
+    k=3, description: Age tertiles
+    Running K-means...
+      NMI=0.125, Acc=0.514, p=0.1210 
+    Running Hierarchical Consensus...
+      NMI=0.192, Acc=0.571, p=0.0240 *
+
+  Category: OutSMART ID
+    k=16, description: Patient identifier (16 patients)
+    Running K-means...
+      NMI=0.837, Acc=0.629, p=0.0000 ***
+    Running Hierarchical Consensus...
+      NMI=0.811, Acc=0.600, p=0.0000 ***
+
+----------------------------------------
+STEP 5: Running CCA Trajectory Analysis (Month)
+----------------------------------------
+
+  Processing expression embedding...
+Testing 45 PC combinations...
+  PC1 + PC2: CCA score = 0.3094
+  PC1 + PC3: CCA score = 0.2763
+  PC1 + PC4: CCA score = 0.5141
+  PC1 + PC5: CCA score = 0.2076
+  PC1 + PC6: CCA score = 0.2053
+  PC1 + PC7: CCA score = 0.3816
+  PC1 + PC8: CCA score = 0.2548
+  PC1 + PC9: CCA score = 0.4938
+  PC1 + PC10: CCA score = 0.2333
+  PC2 + PC3: CCA score = 0.3013
+  PC2 + PC4: CCA score = 0.5280
+  PC2 + PC5: CCA score = 0.2399
+  PC2 + PC6: CCA score = 0.2380
+  PC2 + PC7: CCA score = 0.4002
+  PC2 + PC8: CCA score = 0.2818
+  PC2 + PC9: CCA score = 0.5082
+  PC2 + PC10: CCA score = 0.2625
+  PC3 + PC4: CCA score = 0.5093
+  PC3 + PC5: CCA score = 0.1954
+  PC3 + PC6: CCA score = 0.1930
+  PC3 + PC7: CCA score = 0.3751
+  PC3 + PC8: CCA score = 0.2450
+  PC3 + PC9: CCA score = 0.4887
+  PC3 + PC10: CCA score = 0.2225
+  PC4 + PC5: CCA score = 0.4756
+  PC4 + PC6: CCA score = 0.4746
+  PC4 + PC7: CCA score = 0.5734
+  PC4 + PC8: CCA score = 0.4980
+  PC4 + PC9: CCA score = 0.6534
+  PC4 + PC10: CCA score = 0.4874
+  PC5 + PC6: CCA score = 0.0632
+  PC5 + PC7: CCA score = 0.3279
+  PC5 + PC8: CCA score = 0.1636
+  PC5 + PC9: CCA score = 0.4535
+  PC5 + PC10: CCA score = 0.1276
+  PC6 + PC7: CCA score = 0.3264
+  PC6 + PC8: CCA score = 0.1607
+  PC6 + PC9: CCA score = 0.4524
+  PC6 + PC10: CCA score = 0.1238
+  PC7 + PC8: CCA score = 0.3596
+  PC7 + PC9: CCA score = 0.5552
+  PC7 + PC10: CCA score = 0.3447
+  PC8 + PC9: CCA score = 0.4769
+  PC8 + PC10: CCA score = 0.1952
+  PC9 + PC10: CCA score = 0.4658
+  Best combination: PC4 + PC9 with score 0.6534
+    CCA score: 0.6534
+    Best PCs: PC4 + PC9
+    Pseudotime-Month Pearson r: 0.6482 (p=2.5471e-05)
+    Pseudotime-Month Spearman r: 0.6570 (p=1.8133e-05)
+
+  Processing proportion embedding...
+Testing 10 PC combinations...
+  PC1 + PC2: CCA score = 0.0908
+  PC1 + PC3: CCA score = 0.0488
+  PC1 + PC4: CCA score = 0.0692
+  PC1 + PC5: CCA score = 0.0344
+  PC2 + PC3: CCA score = 0.1067
+  PC2 + PC4: CCA score = 0.1162
+  PC2 + PC5: CCA score = 0.0942
+  PC3 + PC4: CCA score = 0.0899
+  PC3 + PC5: CCA score = 0.0570
+  PC4 + PC5: CCA score = 0.0709
+  Best combination: PC2 + PC4 with score 0.1162
+    CCA score: 0.1162
+    Best PCs: PC2 + PC4
+    Pseudotime-Month Pearson r: 0.1016 (p=5.6143e-01)
+    Pseudotime-Month Spearman r: 0.0642 (p=7.1420e-01)
+
+  Generating CCA trajectory plots...
+  Saved: cca_trajectory_expression.pdf
+  Saved: cca_pseudotime_vs_month_expression.pdf
+  Saved: cca_trajectory_proportion.pdf
+  Saved: cca_pseudotime_vs_month_proportion.pdf
+
+  Generating CCA report...
+  Saved: cca_trajectory_report.txt
+
+================================================================================
+CCA TRAJECTORY ANALYSIS REPORT (Month)
+================================================================================
+
+Analysis Date: 2025-12-13 12:40:23
+
+This analysis uses Canonical Correlation Analysis (CCA) to find the
+direction in embedding space that best correlates with temporal progression
+(months 1, 3, 6 post-COVID).
+
+--------------------------------------------------------------------------------
+RESULTS BY EMBEDDING
+--------------------------------------------------------------------------------
+
+EXPRESSION EMBEDDING:
+  Best PC combination: PC4 + PC9
+  CCA Score: 0.6534
+  
+  Individual PC correlations with month:
+    PC4: r = -0.4730
+    PC9: r = -0.4507
+  
+  CCA-derived pseudotime correlation with month:
+    Pearson r:  0.6482 (p = 2.55e-05)
+    Spearman r: 0.6570 (p = 1.81e-05)
+  
+  Interpretation: MODERATE temporal signal ***
+
+PROPORTION EMBEDDING:
+  Best PC combination: PC2 + PC4
+  CCA Score: 0.1162
+  
+  Individual PC correlations with month:
+    PC2: r = -0.0906
+    PC4: r = 0.0667
+  
+  CCA-derived pseudotime correlation with month:
+    Pearson r:  0.1016 (p = 5.61e-01)
+    Spearman r: 0.0642 (p = 7.14e-01)
+  
+  Interpretation: MINIMAL temporal signal 
+
+--------------------------------------------------------------------------------
+INTERPRETATION GUIDE
+--------------------------------------------------------------------------------
+
+  CCA Score: Canonical correlation between PC space and month
+  Pseudotime: Projection onto CCA direction, scaled to [0,1]
+  A high correlation indicates the embedding captures temporal progression
+
+  Significance: * p<0.05, ** p<0.01, *** p<0.001
+
+----------------------------------------
+STEP 6: Generating Clustering Visualizations
+----------------------------------------
+  Saved: nmi_heatmap_by_embedding.pdf
+  Saved: category_comparison.pdf
+  Saved: embedding_visualization.pdf
+  Saved: confusion_matrices.pdf
+  Saved: permutation_distributions.pdf
+  Saved: detailed_metrics.pdf
+
+----------------------------------------
+STEP 7: Generating Summary Report
+----------------------------------------
+
+================================================================================
+CLUSTERING AGREEMENT ANALYSIS SUMMARY REPORT
+================================================================================
+
+Analysis Date: 2025-12-13 12:40:30
+Number of comparisons: 24
+
+================================================================================
+1. CATEGORY RANKING (by mean NMI across all methods/embeddings)
+================================================================================
+
+  1. OutSMART ID
+     NMI:      0.7296 ± 0.1105 (max: 0.8368) ***
+     Accuracy: 0.4786 ± 0.1571
+     p-value:  0.0000
+
+  2. Age (binned)
+     NMI:      0.1031 ± 0.0696 (max: 0.1922) *
+     Accuracy: 0.4786 ± 0.0787
+     p-value:  0.0240
+
+  3. month
+     NMI:      0.0665 ± 0.0733 (max: 0.1759) *
+     Accuracy: 0.4643 ± 0.1307
+     p-value:  0.0200
+
+  4. Sex
+     NMI:      0.0484 ± 0.0672 (max: 0.1446) *
+     Accuracy: 0.6000 ± 0.0700
+     p-value:  0.0290
+
+  5. LC/Recovered
+     NMI:      0.0130 ± 0.0084 (max: 0.0217) 
+     Accuracy: 0.5857 ± 0.0165
+     p-value:  0.5040
+
+  6. BMI category
+     NMI:      0.0100 ± 0.0165 (max: 0.0345) 
+     Accuracy: 0.5357 ± 0.0274
+     p-value:  0.4270
+
+================================================================================
+2. EMBEDDING COMPARISON
+================================================================================
+
+  Expression:
+     Mean NMI: 0.1318 ± 0.2405
+
+  Proportion:
+     Mean NMI: 0.1918 ± 0.3009
+
+================================================================================
+3. STATISTICAL SIGNIFICANCE SUMMARY
+================================================================================
+
+  Highly significant (p < 0.001): 2/24
+  Significant (p < 0.01):         0/24
+  Marginally significant (p < 0.05): 3/24
+  Not significant (p >= 0.05):    19/24
+
+  Highly significant results (p < 0.001):
+    - OutSMART ID | proportion | K-means: NMI=0.8368
+    - OutSMART ID | proportion | Hierarchical Consensus: NMI=0.8108
+
+================================================================================
+4. TOP 5 BEST PERFORMING COMBINATIONS
+================================================================================
+
+  1. OutSMART ID | proportion | K-means
+     NMI=0.8368, Acc=0.6286, p=0.0000 ***
+
+  2. OutSMART ID | proportion | Hierarchical Consensus
+     NMI=0.8108, Acc=0.6000, p=0.0000 ***
+
+  3. OutSMART ID | expression | K-means
+     NMI=0.6557, Acc=0.3429, p=0.6520 
+
+  4. OutSMART ID | expression | Hierarchical Consensus
+     NMI=0.6152, Acc=0.3429, p=0.9960 
+
+  5. Age (binned) | proportion | Hierarchical Consensus
+     NMI=0.1922, Acc=0.5714, p=0.0240 *
+
+================================================================================
+5. INTERPRETATION
+================================================================================
+
+  Best matching category: OutSMART ID
+  Mean NMI: 0.7296
+  Significance: p = 0.0000
+
+  STRONG AGREEMENT: The clustering strongly captures this metadata category.
+  This suggests meaningful biological signal related to this variable.
+
+  Saved: summary_report.txt
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================
+
+All outputs saved to: /dcs07/hongkai/data/harry/result/long_covid/clustering_evaluation/2
+
+Files generated:
+  Clustering Analysis:
+    - summary_report.txt
+    - nmi_heatmap_by_embedding.pdf
+    - category_comparison.pdf
+    - embedding_visualization.pdf
+    - confusion_matrices.pdf
+    - permutation_distributions.pdf
+    - detailed_metrics.pdf
+
+  CCA Trajectory Analysis:
+    - cca_trajectory_report.txt
+    - cca_trajectory_expression.pdf
+    - cca_trajectory_proportion.pdf
+    - cca_pseudotime_vs_month_expression.pdf
+    - cca_pseudotime_vs_month_proportion.pdf
