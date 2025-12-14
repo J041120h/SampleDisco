@@ -320,7 +320,8 @@ def atac_wrapper(
             output_dir=atac_dr_output_dir,
             atac=True,
             use_snapatac2_dimred=use_snapatac2_dimred,
-            verbose=atac_dr_verbose
+            verbose=atac_dr_verbose,
+            preserve_cols = preserve_cols_for_sample_embedding,
         )
         status_flags["atac"]["dimensionality_reduction"] = True
     else:
@@ -347,7 +348,8 @@ def atac_wrapper(
             batch_col=atac_batch_col,
             num_DR_components=atac_dr_n_expression_components,
             num_DMs=atac_n_lsi_components,
-            n_pcs=n_pcs_for_null_atac
+            n_pcs=n_pcs_for_null_atac,
+            preserve_cols = preserve_cols_for_sample_embedding,
         )
         find_optimal_cell_resolution_atac(
             AnnData_cell=atac_cell,
@@ -359,7 +361,8 @@ def atac_wrapper(
             batch_col=atac_batch_col,
             num_DR_components=atac_dr_n_proportion_components,
             num_DMs=atac_n_lsi_components,
-            n_pcs=n_pcs_for_null_atac
+            n_pcs=n_pcs_for_null_atac,
+            preserve_cols = preserve_cols_for_sample_embedding,
         )
         from utils.unify_optimal import replace_optimal_dimension_reduction
         pseudobulk_adata = replace_optimal_dimension_reduction(atac_output_dir)

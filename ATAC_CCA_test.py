@@ -545,7 +545,8 @@ def find_optimal_cell_resolution_atac(
     num_pvalue_simulations: int = 1000,
     n_pcs: int = 10,
     compute_corrected_pvalues: bool = True,
-    verbose: bool = True
+    verbose: bool = True,
+    preserve_cols: list[str] = None
 ) -> tuple:
     """
     Find optimal clustering resolution by maximizing CCA correlation between 
@@ -695,7 +696,8 @@ def find_optimal_cell_resolution_atac(
                 n_features=n_features,
                 output_dir=resolution_dir,
                 Save=False,
-                verbose=False
+                verbose=False,
+                preserve_cols = preserve_cols
             )
             
             result_dict['n_samples'] = len(pseudobulk_adata)
@@ -715,7 +717,8 @@ def find_optimal_cell_resolution_atac(
                 atac=True,  # ATAC data
                 output_dir=resolution_dir,
                 not_save=True,
-                verbose=False
+                verbose=False,
+                preserve_cols = preserve_cols
             )
             pseudobulk_adata.write_h5ad(os.path.join(resolution_dir, "pseudobulk_sample.h5ad"))
 

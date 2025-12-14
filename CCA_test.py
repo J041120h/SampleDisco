@@ -915,7 +915,8 @@ def find_optimal_cell_resolution(
                 atac=False,  # RNA-seq data
                 output_dir=resolution_dir,
                 not_save=True,
-                verbose=False
+                verbose=False,
+                preserve_cols = preserve_cols,
             )
             pseudobulk_adata.write_h5ad(os.path.join(resolution_dir, "pseudobulk_sample.h5ad"))
 

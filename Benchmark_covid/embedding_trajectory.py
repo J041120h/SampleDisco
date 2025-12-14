@@ -329,8 +329,9 @@ if __name__ == "__main__":
 
         # Construct the embedding path for this sample size
         EMBEDDING_CSV_PATH = (
-            f'/dcs07/hongkai/data/harry/result/pilot/{n}_sample/wasserstein_distance_mds_10d.csv'
+            f'/dcs07/hongkai/data/harry/result/pseduobulk_method_test/covid_{n}_sample/fusion_embeddings/fusion_mfa_embedding.csv'
         )
+        
         
         # Run trajectory
         results = compute_trajectory_from_embedding(

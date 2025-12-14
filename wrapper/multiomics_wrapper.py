@@ -472,7 +472,8 @@ def multiomics_wrapper(
             batch_col=batch_col,
             harmony_for_proportion=multiomics_harmony_for_proportion,
             output_dir=pca_output_dir,
-            verbose=multiomics_verbose
+            verbose=multiomics_verbose,
+            preserve_cols = preserve_cols_for_sample_embedding,
         )
         
         # Store results

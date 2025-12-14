@@ -379,7 +379,8 @@ def rna_wrapper(
             batch_col = batch_col,
             harmony_for_proportion = rna_harmony_for_proportion,
             output_dir=dr_output_dir,
-            verbose=dr_verbose
+            verbose=dr_verbose,
+            preserve_cols = preserve_cols_for_sample_embedding,
         )
         status_flags["rna"]["dimensionality_reduction"] = True
     else:
