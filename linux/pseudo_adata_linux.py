@@ -1,29 +1,40 @@
 #!/usr/bin/env python3
 """
-GPU-accelerated pseudobulk computation using rapids_singlecell.
+GPU-accelerated pseudobulk computation using CELL EMBEDDINGS instead of expression.
 
-Cleaner refactoring that leverages rapids_singlecell's native GPU functions
-for normalization, log1p, and HVG selection.
+Embedding mode:
+  - Pseudobulks embeddings per cell type (mean over cells within each sample + cell type)
+  - Applies ComBat batch correction (scanpy.pp.combat) per cell type layer
+  - Concatenates corrected layers into one sample-by-feature AnnData
+  - Saves in the same format as expression-based pseudobulk for downstream compatibility
+
+Notes
+-----
+- ComBat runs on CPU (scanpy implementation). We keep GPU memory clearing utilities for your pipeline style.
+- preserve_cols is now USED as ComBat covariates to preserve (if provided).
 """
 
 import os
 import gc
-import signal
-import io
 import warnings
-import contextlib
+import signal
 from typing import Tuple, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import scanpy as sc
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse
 
 import cupy as cp
-import rapids_singlecell as rsc
 
-from tf_idf import tfidf_memory_efficient
 from utils.random_seed import set_global_seed
+
+
+# =============================================================================
+# USER CONFIGURATION - Modify embedding name here
+# =============================================================================
+EMBEDDING_KEY = "X_glue"  # Change this to your embedding key in adata.obsm
+# =============================================================================
 
 
 # =============================================================================
@@ -43,18 +54,6 @@ def clear_gpu_memory():
             torch.cuda.synchronize()
     except ImportError:
         pass
-
-
-def to_gpu(adata: sc.AnnData) -> sc.AnnData:
-    """Move AnnData to GPU (CuPy sparse array)."""
-    rsc.get.anndata_to_GPU(adata)
-    return adata
-
-
-def to_cpu(adata: sc.AnnData) -> sc.AnnData:
-    """Move AnnData back to CPU."""
-    rsc.get.anndata_to_CPU(adata)
-    return adata
 
 
 # =============================================================================
@@ -89,130 +88,129 @@ def _extract_sample_metadata(
     if meta:
         meta_df = pd.DataFrame(meta)
 
-        # ---- FIX: avoid pandas join crash when columns already exist in sample_adata.obs
         overlap = sample_adata.obs.columns.intersection(meta_df.columns)
         if len(overlap) > 0:
             meta_df = meta_df.drop(columns=list(overlap))
-        # ---- END FIX
 
         if meta_df.shape[1] > 0:
             sample_adata.obs = sample_adata.obs.join(meta_df, how="left")
 
     return sample_adata
 
+
 # =============================================================================
-# Batch Correction
+# Batch Correction with ComBat (scanpy)
 # =============================================================================
+
+class _Timeout(Exception):
+    pass
+
+
+def _alarm_handler(signum, frame):
+    raise _Timeout("ComBat timed out")
+
 
 def _try_combat(
-    adata: sc.AnnData,
+    embeddings: np.ndarray,
+    obs: pd.DataFrame,
     batch_col: str,
-    preserve_cols: List[str],
-    timeout: float,
-    verbose: bool
-) -> bool:
-    """Attempt ComBat correction with timeout."""
-    def timeout_handler(signum, frame):
-        raise TimeoutError("ComBat timed out")
-
-    try:
-        old_handler = signal.signal(signal.SIGALRM, timeout_handler) if timeout else None
-        if timeout:
-            signal.alarm(int(timeout))
-
-        try:
-            with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                sc.pp.combat(
-                    adata,
-                    key=batch_col,
-                    covariates=preserve_cols or None,
-                    inplace=True
-                )
-            if verbose:
-                print(f"    Applied ComBat" + (f" (kept={preserve_cols})" if preserve_cols else ""))
-            return True
-        finally:
-            if timeout:
-                signal.alarm(0)
-                if old_handler:
-                    signal.signal(signal.SIGALRM, old_handler)
-
-    except (TimeoutError, Exception) as e:
-        if verbose:
-            print(f"    ComBat failed: {type(e).__name__}: {e}")
-        return False
-
-
-def _try_limma(
-    adata: sc.AnnData,
-    batch_col: str,
-    preserve_cols: List[str],
-    verbose: bool
-) -> bool:
-    """Attempt limma-style regression correction."""
-    try:
-        from utils.limma import limma
-
-        X = adata.X.toarray() if issparse(adata.X) else np.asarray(adata.X)
-
-        if preserve_cols:
-            terms = [f'Q("{c}")' for c in preserve_cols]
-            keep_formula = "~ " + " + ".join(terms)
-        else:
-            keep_formula = "1"
-        remove_formula = f'~ Q("{batch_col}")'
-
-        adata.X = limma(
-            pheno=adata.obs,
-            exprs=X,
-            covariate_formula=keep_formula,
-            design_formula=remove_formula,
-            rcond=1e-8,
-            verbose=False
-        )
-
-        if verbose:
-            print(f"    Applied limma" + (f" (kept={preserve_cols})" if preserve_cols else ""))
-        return True
-
-    except Exception as e:
-        if verbose:
-            print(f"    Limma failed: {type(e).__name__}: {e}")
-        return False
-
-
-def apply_batch_correction(
-    adata: sc.AnnData,
-    batch_col: str,
-    preserve_cols: List[str],
+    preserve_cols: Optional[Union[str, List[str]]],
     combat_timeout: float,
     verbose: bool
-) -> bool:
-    """Apply batch correction, trying ComBat first, then limma."""
-    batch_counts = adata.obs[batch_col].value_counts()
-    n_batches = len(batch_counts)
+) -> Tuple[np.ndarray, bool]:
+    """
+    Attempt ComBat batch correction on embeddings using scanpy.pp.combat (CPU).
 
-    if verbose:
-        print(f"    Batches: {n_batches}, sizes: {batch_counts.min()}-{batch_counts.max()}")
+    Parameters
+    ----------
+    embeddings : np.ndarray
+        (n_samples, n_dims) matrix
+    obs : pd.DataFrame
+        Sample metadata; must contain batch_col and any covariates you want to preserve
+    batch_col : str
+        Column name in obs defining batch
+    preserve_cols : str|List[str]|None
+        Covariates to preserve (scanpy combat covariates)
+    combat_timeout : float
+        Timeout (seconds); if <= 0, no timeout enforced
+    verbose : bool
+        Print progress
 
-    if n_batches <= 1:
+    Returns
+    -------
+    corrected : np.ndarray
+        ComBat-corrected embeddings
+    success : bool
+        Whether correction was applied
+    """
+    try:
+        if batch_col not in obs.columns:
+            if verbose:
+                print(f"    Skipping ComBat: batch_col '{batch_col}' not in obs")
+            return embeddings, False
+
+        batch_labels = obs[batch_col]
+        n_batches = batch_labels.nunique(dropna=False)
+        if n_batches <= 1:
+            if verbose:
+                print("    Skipping ComBat: only 1 batch")
+            return embeddings, False
+
+        batch_counts = batch_labels.value_counts(dropna=False)
+        if batch_counts.min() < 2:
+            if verbose:
+                print("    Skipping ComBat: batch with <2 samples")
+            return embeddings, False
+
+        covariates = _as_list(preserve_cols)
+        covariates = [c for c in covariates if c in obs.columns]
         if verbose:
-            print("    Skipping: only 1 batch")
-        return False
+            if covariates:
+                print(f"    Running ComBat ({n_batches} batches, sizes: {batch_counts.min()}-{batch_counts.max()}), covariates={covariates}")
+            else:
+                print(f"    Running ComBat ({n_batches} batches, sizes: {batch_counts.min()}-{batch_counts.max()}), covariates=None")
 
-    if batch_counts.min() < 2:
+        # Build temp AnnData for scanpy.pp.combat
+        tmp = sc.AnnData(
+            X=np.asarray(embeddings, dtype=np.float32),
+            obs=obs.copy()
+        )
+
+        # Optional timeout (Linux signal-based)
+        old_handler = None
+        if combat_timeout is not None and combat_timeout > 0:
+            old_handler = signal.signal(signal.SIGALRM, _alarm_handler)
+            signal.setitimer(signal.ITIMER_REAL, float(combat_timeout))
+
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                # scanpy.pp.combat modifies tmp.X in place
+                sc.pp.combat(tmp, key=batch_col, covariates=covariates if covariates else None)
+        finally:
+            if combat_timeout is not None and combat_timeout > 0:
+                signal.setitimer(signal.ITIMER_REAL, 0.0)
+                if old_handler is not None:
+                    signal.signal(signal.SIGALRM, old_handler)
+
+        corrected = np.asarray(tmp.X)
         if verbose:
-            print(f"    Skipping ComBat: batches <2 samples")
-        return _try_limma(adata, batch_col, preserve_cols, verbose)
+            print("    Applied ComBat correction")
 
-    if _try_combat(adata, batch_col, preserve_cols, combat_timeout, verbose):
-        return True
-    return _try_limma(adata, batch_col, preserve_cols, verbose)
+        return corrected, True
+
+    except _Timeout as e:
+        if verbose:
+            print(f"    ComBat timed out: {e}")
+        return embeddings, False
+    except Exception as e:
+        if verbose:
+            print(f"    ComBat failed: {type(e).__name__}: {e}")
+        return embeddings, False
 
 
 # =============================================================================
-# Pseudobulk Aggregation
+# Pseudobulk Embedding Aggregation
 # =============================================================================
 
 def aggregate_pseudobulk(
@@ -220,30 +218,58 @@ def aggregate_pseudobulk(
     sample_col: str,
     celltype_col: str,
     batch_cols: List[str],
+    embedding_key: str,
     verbose: bool
-) -> sc.AnnData:
-    """Aggregate cells into pseudobulk samples with cell-type layers."""
+) -> Tuple[sc.AnnData, Dict[str, np.ndarray]]:
+    """
+    Aggregate cell embeddings into pseudobulk samples with cell-type layers.
+
+    Returns
+    -------
+    pb : sc.AnnData
+        Pseudobulk AnnData with batch info in obs
+    ct_embeddings : Dict[str, np.ndarray]
+        Dict mapping cell_type -> (n_samples, n_dims) embedding matrix
+    """
+    if embedding_key not in adata.obsm:
+        raise ValueError(
+            f"Embedding key '{embedding_key}' not found in adata.obsm. "
+            f"Available keys: {list(adata.obsm.keys())}"
+        )
+
+    embeddings = adata.obsm[embedding_key]
+    if issparse(embeddings):
+        embeddings = embeddings.toarray()
+    embeddings = np.asarray(embeddings)
+
     samples = sorted(adata.obs[sample_col].unique())
     cell_types = sorted(adata.obs[celltype_col].unique())
-    n_samples, n_genes = len(samples), adata.n_vars
+    n_samples = len(samples)
+    n_dims = embeddings.shape[1]
 
     if verbose:
         print(f"  Aggregating {adata.n_obs} cells -> {n_samples} samples x {len(cell_types)} cell types")
+        print(f"  Embedding dimension: {n_dims}")
 
     sample_idx = {s: i for i, s in enumerate(samples)}
     ct_idx = {ct: i for i, ct in enumerate(cell_types)}
 
     # Build obs with batch columns
     obs = pd.DataFrame(index=samples)
-    obs.index.name = 'sample'
+    obs.index.name = "sample"
     for bc in batch_cols:
-        mapping = adata.obs[[sample_col, bc]].drop_duplicates().set_index(sample_col)[bc].to_dict()
-        obs[bc] = [mapping.get(s, 'Unknown') for s in samples]
+        mapping = (
+            adata.obs[[sample_col, bc]]
+            .drop_duplicates()
+            .set_index(sample_col)[bc]
+            .to_dict()
+        )
+        obs[bc] = [mapping.get(s, "Unknown") for s in samples]
 
+    # Create placeholder AnnData (X filled later)
     pb = sc.AnnData(
-        X=np.zeros((n_samples, n_genes), dtype=np.float32),
+        X=np.zeros((n_samples, 1), dtype=np.float32),
         obs=obs,
-        var=adata.var.copy()
     )
 
     # Pre-compute indices
@@ -254,125 +280,108 @@ def aggregate_pseudobulk(
     cell_sample_valid = cell_sample[valid].astype(int)
     cell_ct_valid = cell_ct[valid].astype(int)
 
-    X = adata.X.tocsr() if issparse(adata.X) else adata.X
+    # Aggregate per cell type
+    ct_embeddings: Dict[str, np.ndarray] = {}
 
-    # Aggregate per cell type using sparse indicator matrix
     for i, ct in enumerate(cell_types):
         mask = cell_ct_valid == i
         ct_cells = valid_idx[mask]
         ct_samples = cell_sample_valid[mask]
 
         if len(ct_cells) == 0:
-            pb.layers[ct] = np.zeros((n_samples, n_genes), dtype=np.float32)
+            ct_embeddings[ct] = np.zeros((n_samples, n_dims), dtype=np.float32)
             continue
 
-        indicator = csr_matrix(
-            (np.ones(len(ct_cells), dtype=np.float32), (ct_samples, np.arange(len(ct_cells)))),
-            shape=(n_samples, len(ct_cells))
-        )
+        ct_emb = np.zeros((n_samples, n_dims), dtype=np.float32)
+        counts = np.zeros(n_samples, dtype=np.float32)
 
-        counts = np.array(indicator.sum(axis=1)).flatten()
+        for cell_i, sample_i in zip(ct_cells, ct_samples):
+            ct_emb[sample_i] += embeddings[cell_i]
+            counts[sample_i] += 1
+
         counts[counts == 0] = 1
-
-        X_ct = X[ct_cells, :]
-        sums = indicator @ X_ct
-        if issparse(sums):
-            sums = np.asarray(sums.todense())
-
-        pb.layers[ct] = (sums / counts[:, None]).astype(np.float32)
+        ct_emb = ct_emb / counts[:, None]
+        ct_embeddings[ct] = ct_emb
 
     if verbose:
-        print(f"  Created {len(cell_types)} cell type layers")
+        print(f"  Created embeddings for {len(cell_types)} cell types")
 
-    return pb
+    return pb, ct_embeddings
 
 
 # =============================================================================
-# GPU Processing Pipeline
+# Process Cell Type Embeddings (ComBat)
 # =============================================================================
 
 def process_celltype_layer(
-    layer_data: np.ndarray,
+    embedding_matrix: np.ndarray,
     obs: pd.DataFrame,
-    var: pd.DataFrame,
     cell_type: str,
     batch_col: Optional[str],
-    preserve_cols: List[str],
-    n_features: int,
-    normalize: bool,
-    target_sum: float,
-    atac: bool,
+    preserve_cols: Optional[Union[str, List[str]]],
     combat_timeout: float,
     verbose: bool
 ) -> Optional[Tuple[List[str], np.ndarray]]:
-    """Process a single cell-type layer on GPU."""
+    """
+    Process a single cell-type embedding layer:
+      - validate / drop NaN dims
+      - apply ComBat (if enabled)
+      - return feature names + processed matrix
+    """
+    n_samples, n_dims = embedding_matrix.shape
 
-    temp = sc.AnnData(X=layer_data.copy(), obs=obs.copy(), var=var.copy())
+    sample_sums = np.abs(embedding_matrix).sum(axis=1)
+    n_zero = (sample_sums == 0).sum()
 
-    # Filter empty genes
-    sc.pp.filter_genes(temp, min_cells=1)
-    if temp.n_vars == 0:
+    if n_zero == n_samples:
         if verbose:
-            print(f"    Skipping: no genes after filtering")
+            print(f"    Skipping: all samples have zero embeddings")
         return None
 
-    # Normalize on GPU
-    if normalize:
-        if atac:
-            tfidf_memory_efficient(temp, scale_factor=target_sum)
-        else:
-            to_gpu(temp)
-            rsc.pp.normalize_total(temp, target_sum=target_sum)
-            rsc.pp.log1p(temp)
-            to_cpu(temp)
+    if n_zero > 0 and verbose:
+        print(f"    Warning: {n_zero} samples have zero embeddings (cell type absent)")
 
-    # Remove NaN genes
-    nan_mask = _get_nan_mask(temp.X)
+    # drop NaN dims
+    nan_mask = np.isnan(embedding_matrix).any(axis=0)
     if nan_mask.any():
-        temp = temp[:, ~nan_mask].copy()
+        if verbose:
+            print(f"    Removing {int(nan_mask.sum())} NaN dimensions")
+        embedding_matrix = embedding_matrix[:, ~nan_mask]
+        n_dims = embedding_matrix.shape[1]
+        if n_dims == 0:
+            if verbose:
+                print(f"    Skipping: no valid dimensions")
+            return None
 
-    # Batch correction (CPU - ComBat/limma don't have GPU versions)
-    if batch_col and batch_col in temp.obs.columns:
-        corrected = apply_batch_correction(temp, batch_col, preserve_cols, combat_timeout, verbose)
+    # apply ComBat
+    if batch_col and batch_col in obs.columns:
+        embedding_matrix, corrected = _try_combat(
+            embedding_matrix,
+            obs=obs,
+            batch_col=batch_col,
+            preserve_cols=preserve_cols,
+            combat_timeout=combat_timeout,
+            verbose=verbose
+        )
 
+        # drop NaN dims post-correction (defensive)
         if corrected:
-            nan_mask = _get_nan_mask(temp.X)
+            nan_mask = np.isnan(embedding_matrix).any(axis=0)
             if nan_mask.any():
                 if verbose:
-                    print(f"    Removing {nan_mask.sum()} NaN genes post-correction")
-                temp = temp[:, ~nan_mask].copy()
+                    print(f"    Removing {int(nan_mask.sum())} NaN dimensions post-correction")
+                embedding_matrix = embedding_matrix[:, ~nan_mask]
+                n_dims = embedding_matrix.shape[1]
+                if n_dims == 0:
+                    if verbose:
+                        print(f"    Skipping: no valid dimensions post-correction")
+                    return None
 
-    # HVG selection on GPU
-    n_hvgs = min(n_features, temp.n_vars)
-    to_gpu(temp)
-    rsc.pp.highly_variable_genes(temp, n_top_genes=n_hvgs)
-    to_cpu(temp)
-
-    hvg_mask = temp.var["highly_variable"].values
-    hvg_genes = temp.var.index[hvg_mask].tolist()
-
-    if not hvg_genes:
-        if verbose:
-            print(f"    Skipping: no HVGs found")
-        return None
-
-    hvg_expr = temp[:, hvg_mask].X
-    if issparse(hvg_expr):
-        hvg_expr = hvg_expr.toarray()
-
-    prefixed = [f"{cell_type} - {g}" for g in hvg_genes]
-
+    feature_names = [f"{cell_type} - emb_{i}" for i in range(n_dims)]
     if verbose:
-        print(f"    Selected {len(hvg_genes)} HVGs")
+        print(f"    Output: {n_dims} dimensions")
 
-    return prefixed, hvg_expr
-
-
-def _get_nan_mask(X) -> np.ndarray:
-    """Get mask of genes with any NaN values."""
-    if issparse(X):
-        return np.array(np.isnan(X.toarray()).any(axis=0)).flatten()
-    return np.isnan(X).any(axis=0)
+    return feature_names, embedding_matrix
 
 
 # =============================================================================
@@ -405,10 +414,10 @@ def compute_proportions(
 
 def compute_pseudobulk_gpu(
     adata: sc.AnnData,
-    batch_col: Optional[Union[str, List[str]]] = 'batch',
-    sample_col: str = 'sample',
-    celltype_col: str = 'cell_type',
-    output_dir: str = './',
+    batch_col: Optional[Union[str, List[str]]] = "batch",
+    sample_col: str = "sample",
+    celltype_col: str = "cell_type",
+    output_dir: str = "./",
     n_features: int = 2000,
     normalize: bool = True,
     target_sum: float = 1e4,
@@ -416,24 +425,30 @@ def compute_pseudobulk_gpu(
     verbose: bool = False,
     combat_timeout: float = 20.0,
     preserve_cols: Optional[Union[str, List[str]]] = None,
+    embedding_key: str = EMBEDDING_KEY,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
-    GPU-accelerated pseudobulk computation.
+    GPU-accelerated pseudobulk computation using cell EMBEDDINGS.
+
+    Note: n_features, normalize, target_sum, atac are kept for API compatibility but not used in embedding mode.
+    ComBat is applied per cell-type layer if batch columns exist.
     """
     if verbose:
-        print(f"[Pseudobulk] Using GPU (rapids_singlecell)")
+        print(f"[Pseudobulk-Embedding] Using embedding key: {embedding_key}")
+        if preserve_cols is not None:
+            print(f"[Pseudobulk-Embedding] preserve_cols (ComBat covariates): {preserve_cols}")
     clear_gpu_memory()
 
     os.makedirs(os.path.join(output_dir, "pseudobulk"), exist_ok=True)
 
     # Normalize batch columns
-    batch_cols = [b for b in _as_list(batch_col)
-                  if b and b in adata.obs.columns and not adata.obs[b].isnull().all()]
+    batch_cols = [
+        b for b in _as_list(batch_col)
+        if b and b in adata.obs.columns and not adata.obs[b].isnull().all()
+    ]
 
-    preserve_list = [c for c in _as_list(preserve_cols) if c in adata.obs.columns]
-
-    # Fill NaNs in batch/preserve columns
-    for col in batch_cols + preserve_list:
+    # Fill NaNs in batch columns
+    for col in batch_cols:
         if adata.obs[col].isnull().any():
             adata.obs[col] = adata.obs[col].fillna("Unknown")
 
@@ -441,25 +456,15 @@ def compute_pseudobulk_gpu(
     cell_types = sorted(adata.obs[celltype_col].unique())
 
     if verbose:
-        print(f"[Pseudobulk] {len(samples)} samples, {len(cell_types)} cell types")
-        print(f"[Pseudobulk] Batch correction: {batch_cols if batch_cols else 'disabled'}")
+        print(f"[Pseudobulk-Embedding] {len(samples)} samples, {len(cell_types)} cell types")
+        print(f"[Pseudobulk-Embedding] Batch correction (ComBat): {batch_cols if batch_cols else 'disabled'}")
 
-    # Phase 1: Aggregate
+    # Phase 1: Aggregate embeddings
     if verbose:
-        print("[Pseudobulk] Phase 1: Aggregating...")
-    pb = aggregate_pseudobulk(adata, sample_col, celltype_col, batch_cols, verbose)
-
-    # ---------------- FIX (no other behavior change): attach preserve covariates to pb.obs BEFORE Phase 2
-    if preserve_list:
-        pb = _extract_sample_metadata(
-            cell_adata=adata,
-            sample_adata=pb,
-            sample_col=sample_col,
-            exclude_cols=None,
-        )
-        # Keep preserve_list consistent with what is actually available in pb.obs (prevents patsy NameError)
-        preserve_list = [c for c in preserve_list if c in pb.obs.columns]
-    # ---------------- END FIX
+        print("[Pseudobulk-Embedding] Phase 1: Aggregating embeddings...")
+    pb, ct_embeddings = aggregate_pseudobulk(
+        adata, sample_col, celltype_col, batch_cols, embedding_key, verbose
+    )
 
     # Create combined batch column if needed
     combined_batch = None
@@ -472,11 +477,13 @@ def compute_pseudobulk_gpu(
 
     # Phase 2: Process cell types
     if verbose:
-        print("[Pseudobulk] Phase 2: Processing cell types...")
+        print("[Pseudobulk-Embedding] Phase 2: Processing cell types...")
 
-    hvg_data: Dict[str, Dict[str, float]] = {}
-    all_genes: List[str] = []
+    all_features: List[str] = []
+    all_embeddings: List[np.ndarray] = []
     valid_cts: List[str] = []
+
+    emb_data: Dict[str, Dict[str, float]] = {}
 
     for i, ct in enumerate(cell_types):
         if verbose:
@@ -484,21 +491,27 @@ def compute_pseudobulk_gpu(
 
         try:
             result = process_celltype_layer(
-                pb.layers[ct], pb.obs, pb.var, ct,
-                combined_batch, preserve_list, n_features,
-                normalize, target_sum, atac, combat_timeout, verbose
+                ct_embeddings[ct],
+                pb.obs,
+                ct,
+                combined_batch,
+                preserve_cols=preserve_cols,
+                combat_timeout=combat_timeout,
+                verbose=verbose,
             )
 
             if result is None:
                 continue
 
-            genes, expr = result
-            all_genes.extend(genes)
+            features, emb = result
+            all_features.extend(features)
+            all_embeddings.append(emb)
             valid_cts.append(ct)
 
+            # Store for expr_df compatibility
             for j, sample in enumerate(pb.obs.index):
-                hvg_data.setdefault(sample, {}).update(
-                    {g: float(expr[j, k]) for k, g in enumerate(genes)}
+                emb_data.setdefault(sample, {}).update(
+                    {f: float(emb[j, k]) for k, f in enumerate(features)}
                 )
 
             clear_gpu_memory()
@@ -509,92 +522,87 @@ def compute_pseudobulk_gpu(
 
     cell_types = valid_cts
     if verbose:
-        print(f"[Pseudobulk] Retained {len(cell_types)} cell types")
+        print(f"[Pseudobulk-Embedding] Retained {len(cell_types)} cell types")
 
-    # Phase 3: Final concatenation
+    # Phase 3: Concatenate all embeddings
     if verbose:
-        print("[Pseudobulk] Phase 3: Building final matrix...")
+        print("[Pseudobulk-Embedding] Phase 3: Concatenating...")
 
-    unique_genes = sorted(set(all_genes))
-    gene_idx = {g: j for j, g in enumerate(unique_genes)}
+    if len(all_embeddings) == 0:
+        raise ValueError("No valid cell type embeddings found")
 
-    concat_matrix = np.zeros((len(samples), len(unique_genes)), dtype=np.float32)
-    for i, sample in enumerate(samples):
-        if sample in hvg_data:
-            for g, v in hvg_data[sample].items():
-                if g in gene_idx:
-                    concat_matrix[i, gene_idx[g]] = v
+    concat_matrix = np.hstack(all_embeddings)
 
     concat = sc.AnnData(
         X=concat_matrix,
         obs=pd.DataFrame(index=samples),
-        var=pd.DataFrame(index=unique_genes)
+        var=pd.DataFrame(index=all_features)
     )
 
-    # Final HVG selection on GPU
-    sc.pp.filter_genes(concat, min_cells=1)
-    n_final = min(n_features, concat.n_vars)
-    to_gpu(concat)
-    rsc.pp.highly_variable_genes(concat, n_top_genes=n_final)
-    to_cpu(concat)
-
     if verbose:
-        print(f"[Pseudobulk] Final features: {concat.n_vars}")
+        print(f"[Pseudobulk-Embedding] Final features: {concat.n_vars}")
 
-    # Build expression DataFrame
-    final_genes = set(concat.var.index)
-    ct_groups = {}
-    for g in final_genes:
-        ct = g.split(' - ')[0]
-        ct_groups.setdefault(ct, []).append(g)
-    for ct in ct_groups:
-        ct_groups[ct].sort()
+    # Build expression-style DataFrame for compatibility
+    ct_groups: Dict[str, List[str]] = {}
+    for f in all_features:
+        ct_name = f.split(" - ")[0]
+        ct_groups.setdefault(ct_name, []).append(f)
+    for ct_name in ct_groups:
+        ct_groups[ct_name].sort()
 
     expr_df = pd.DataFrame(index=sorted(cell_types), columns=samples, dtype=object)
-    for ct in expr_df.index:
-        genes = ct_groups.get(ct, [])
+    for ct_name in expr_df.index:
+        feats = ct_groups.get(ct_name, [])
         for sample in expr_df.columns:
             vals, names = [], []
-            for g in genes:
-                if sample in hvg_data and g in hvg_data[sample]:
-                    vals.append(hvg_data[sample][g])
-                    names.append(g)
-            expr_df.at[ct, sample] = pd.Series(vals, index=names) if vals else pd.Series(dtype=float)
+            for f in feats:
+                if sample in emb_data and f in emb_data[sample]:
+                    vals.append(emb_data[sample][f])
+                    names.append(f)
+            expr_df.at[ct_name, sample] = pd.Series(vals, index=names) if vals else pd.Series(dtype=float)
 
     # Phase 4: Proportions
     if verbose:
-        print("[Pseudobulk] Phase 4: Computing proportions...")
+        print("[Pseudobulk-Embedding] Phase 4: Computing proportions...")
     props = compute_proportions(adata, samples, cell_types, sample_col, celltype_col)
     concat.uns["cell_proportions"] = props
 
     clear_gpu_memory()
 
     if verbose:
-        print("[Pseudobulk] Complete")
+        print("[Pseudobulk-Embedding] Complete")
 
     return expr_df, props, concat
 
 
 def compute_pseudobulk_adata_linux(
     adata: sc.AnnData,
-    batch_col: Optional[Union[str, List[str]]] = 'batch',
-    sample_col: str = 'sample',
-    celltype_col: str = 'cell_type',
-    output_dir: str = './',
+    batch_col: Optional[Union[str, List[str]]] = "batch",
+    sample_col: str = "sample",
+    celltype_col: str = "cell_type",
+    output_dir: str = "./",
     save: bool = True,
     n_features: int = 2000,
     normalize: bool = True,
     target_sum: float = 1e4,
     atac: bool = False,
     verbose: bool = False,
+    Save = False,
     combat_timeout: float = 20.0,
     preserve_cols: Optional[Union[str, List[str]]] = None,
+    embedding_key: str = EMBEDDING_KEY,
 ) -> Tuple[Dict, sc.AnnData]:
     """
     Wrapper returning backward-compatible dict plus final AnnData.
+
+    Saves to same location as expression-based pseudobulk for downstream compatibility.
+
+    Note: n_features, normalize, target_sum, atac are kept for API compatibility but not used in embedding mode.
     """
     if verbose:
-        print(f"[Pseudobulk] Input: {adata.n_obs} cells, {adata.n_vars} genes")
+        print(f"[Pseudobulk-Embedding] Input: {adata.n_obs} cells")
+        if embedding_key in adata.obsm:
+            print(f"[Pseudobulk-Embedding] Embedding: {embedding_key} with shape {adata.obsm[embedding_key].shape}")
 
     set_global_seed(seed=42, verbose=verbose)
 
@@ -611,26 +619,30 @@ def compute_pseudobulk_adata_linux(
         verbose=verbose,
         combat_timeout=combat_timeout,
         preserve_cols=preserve_cols,
+        embedding_key=embedding_key,
     )
 
     if verbose:
-        print("[Pseudobulk] Extracting sample metadata...")
+        print("[Pseudobulk-Embedding] Extracting sample metadata...")
 
     final = _extract_sample_metadata(adata, final, sample_col)
     final.uns["cell_proportions"] = props
 
+    # Store embedding key used for reference
+    final.uns["embedding_key"] = embedding_key
+
     if save:
         path = os.path.join(output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         if verbose:
-            print(f"[Pseudobulk] Saving to {path}")
-        sc.write(path, final)
+            print(f"[Pseudobulk-Embedding] Saving to {path}")
+        final.write(path)
 
     result = {
-        "cell_expression_corrected": expr_df,
+        "cell_expression_corrected": expr_df,  # Keep same key name for compatibility
         "cell_proportion": props.T
     }
 
     if verbose:
-        print(f"[Pseudobulk] Output: {final.n_obs} samples, {final.n_vars} features")
+        print(f"[Pseudobulk-Embedding] Output: {final.n_obs} samples, {final.n_vars} features")
 
     return result, final

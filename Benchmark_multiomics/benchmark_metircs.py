@@ -565,6 +565,7 @@ if __name__ == "__main__":
     )
     save_to_summary_csv(results, method_name="SD_expression")
     
+    
     results = evaluate_multimodal_integration(
         meta_csv="/dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv",
         embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/Sample_distance/correlation/proportion_DR_distance/proportion_DR_coordinates.csv",
@@ -573,6 +574,30 @@ if __name__ == "__main__":
     )
     save_to_summary_csv(results, method_name="SD_proportion")
     
+    results = evaluate_multimodal_integration(
+        meta_csv="/dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv",
+        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/fusion_embeddings/fusion_concat_embedding.csv",
+        outdir="/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/concat_fusion",
+        k_neighbors=15,
+    )
+    save_to_summary_csv(results, method_name="concat_fusion")
+    
+    results = evaluate_multimodal_integration(
+        meta_csv="/dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv",
+        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/fusion_embeddings/fusion_mfa_embedding.csv",
+        outdir="/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/mfa_fusion",
+        k_neighbors=15,
+    )
+    save_to_summary_csv(results, method_name="mfa_fusion")
+    
+    results = evaluate_multimodal_integration(
+        meta_csv="/dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv",
+        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/expression_DR_distance/expression_DR_coordinates.csv",
+        outdir="/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/cell_embedding_pseudobulk",
+        k_neighbors=15,
+    )
+    save_to_summary_csv(results, method_name="cell_embedding_pseudobulk")
+
     results = evaluate_multimodal_integration(
         meta_csv="/dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv",
         embedding_csv="/dcs07/hongkai/data/harry/result/Benchmark_multiomics/pilot/pilot_native_embedding.csv",

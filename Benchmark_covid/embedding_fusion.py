@@ -26,8 +26,8 @@ from sklearn.decomposition import PCA
 # ============================
 # USER EDITS HERE
 # ============================
-H5AD_PATH = "/dcs07/hongkai/data/harry/result/pseduobulk_method_test/covid_400_sample/rna/pseudobulk/pseudobulk_sample.h5ad"
-OUTPUT_DIR = "/dcs07/hongkai/data/harry/result/pseduobulk_method_test/covid_400_sample/fusion_embeddings"
+H5AD_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/pseudobulk/pseudobulk_sample.h5ad"
+OUTPUT_DIR = "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/fusion_embeddings"
 
 # how many fused PCs to output
 N_COMPONENTS = 10

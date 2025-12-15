@@ -58,11 +58,31 @@ def integrate_preprocess(
     if verbose:
         print(f'Dimension of raw data (cells x genes): {adata.shape[0]} x {adata.shape[1]}')
 
-    # Modify sample IDs by adding modality information
+    # Modify sample IDs by adding modality information ONLY if needed (duplicate sample names)
     if modality_col is not None and modality_col in adata.obs.columns:
-        adata.obs[sample_column] = adata.obs[sample_column].astype(str) + '_' + adata.obs[modality_col].astype(str)
-        if verbose:
-            print(f"Modified sample IDs by adding modality information from '{modality_col}' column")
+        s = adata.obs[sample_column].astype(str)
+
+        # rows that share the same sample id with at least one other row
+        dup_mask = s.duplicated(keep=False)
+
+        if dup_mask.any():
+            m = adata.obs[modality_col].astype(str)
+
+            # append modality only for duplicated sample ids
+            adata.obs.loc[dup_mask, sample_column] = s[dup_mask] + "_" + m[dup_mask]
+
+            if verbose:
+                n_dup_groups = s[dup_mask].nunique()
+                n_dup_rows = int(dup_mask.sum())
+                print(
+                    f"Detected non-unique '{sample_column}' values "
+                    f"({n_dup_groups} duplicated sample IDs across {n_dup_rows} rows). "
+                    f"Appended modality from '{modality_col}' only for those rows."
+                )
+        else:
+            if verbose:
+                print(f"'{sample_column}' values are already unique; no modality suffix added.")
+
     adata.var_names_make_unique()
     adata.var = adata.var.dropna(axis=1, how="all")
     adata.var["mt"]   = adata.var_names.str.upper().str.startswith("MT-")
@@ -113,52 +133,6 @@ def integrate_preprocess(
     sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
     if verbose:
         print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
-
-    # Optional doublet detection
-    if doublet:
-        if verbose:
-            print(f"Running doublet detection with scrublet on {adata.n_obs} cells...")
-        
-        try:
-            # Store original cell count for comparison
-            original_n_cells = adata.n_obs
-            
-            # Create a copy for scrublet to avoid modifying original
-            adata_scrub = adata.copy()
-            
-            # Run scrublet with suppressed output
-            f = io.StringIO()
-            with contextlib.redirect_stdout(f):
-                sc.pp.scrublet(adata_scrub, batch_key=sample_column)
-            
-            # Check if scrublet results match our data
-            if 'predicted_doublet' not in adata_scrub.obs.columns:
-                if verbose:
-                    print("Warning: Scrublet did not add 'predicted_doublet' column. Skipping doublet removal.")
-            elif adata_scrub.n_obs != original_n_cells:
-                if verbose:
-                    print(f"Warning: Scrublet changed cell count from {original_n_cells} to {adata_scrub.n_obs}. Using original data without doublet removal.")
-            else:
-                # Successfully ran scrublet, now filter doublets
-                n_doublets = adata_scrub.obs['predicted_doublet'].sum()
-                if verbose:
-                    print(f"Detected {n_doublets} doublets out of {original_n_cells} cells")
-                
-                # Copy the scrublet results back to original adata
-                adata.obs['predicted_doublet'] = adata_scrub.obs['predicted_doublet']
-                adata.obs['doublet_score'] = adata_scrub.obs.get('doublet_score', 0)
-                
-                # Filter out doublets
-                adata = adata[~adata.obs['predicted_doublet']].copy()
-                
-                if verbose:
-                    print(f"After doublet removal: {adata.n_obs} cells remaining")
-        
-        except Exception as e:
-            if verbose:
-                print(f"Warning: Scrublet failed with error: {str(e)}")
-                print("Continuing without doublet detection...")
-            # Continue without doublet detection
 
     fill_obs_nan_with_unknown(adata)
     adata.raw = adata.copy()

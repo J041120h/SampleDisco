@@ -968,16 +968,16 @@ if __name__ == "__main__":
     #     )
        
     for size in sample_sizes:
-        output_base_dir = f'/dcs07/hongkai/data/harry/result/pseduobulk_method_test/covid_{size}_sample/fusion_embeddings'
-        embedding_csv_path = f'{output_base_dir}/fusion_mfa_embedding.csv'
-        pseudotime_csv_path = f'{output_base_dir}/trajectory_mfa/pseudotime_results.csv'
+        output_base_dir = f'/dcs07/hongkai/data/harry/result/pseduobulk_method_test/covid_{size}_sample/rna'
+        embedding_csv_path = f'{output_base_dir}/Sample_distance/correlation/expression_DR_distance/expression_DR_coordinates.csv'
+        pseudotime_csv_path = f'{output_base_dir}/CCA/pseudotime_expression.csv'
         summary_csv_path = '/dcs07/hongkai/data/harry/result/benchmark_summary_all_methods.csv'
         results = run_benchmarks(
             meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
             pseudotime_csv_path=pseudotime_csv_path,
             embedding_csv_path=embedding_csv_path,
             summary_csv_path=summary_csv_path,
-            method_name="fusion_mfa",
+            method_name="cell_embedding_pseudobulk",
             output_base_dir=output_base_dir,
             # per-benchmark overrides (optional)
             embedding_visualization={"dpi": 300, "figsize": (12, 5)},

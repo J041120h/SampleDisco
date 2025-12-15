@@ -238,12 +238,6 @@ def preprocess_linux(
     if verbose:
         print(f"After final gene filtering (CPU): {adata.shape[0]} cells × {adata.shape[1]} genes")
 
-    # Optionally: scrublet here (CPU) if desired
-    # if doublet:
-    #     with contextlib.redirect_stdout(io.StringIO()):
-    #         rsc.pp.scrublet(adata)
-    #     adata = adata[~adata.obs["predicted_doublet"]].copy()
-
     adata.raw = adata.copy()
     if verbose:
         print("Preprocessing complete on CPU. Proceeding to clustering & sample analysis.")
