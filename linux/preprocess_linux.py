@@ -194,7 +194,7 @@ def preprocess_linux(
     sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], log1p=False, inplace=True)
     adata = adata[adata.obs["pct_counts_mt"] < pct_mito_cutoff].copy()
 
-    mt_genes = adata.var_names[adata.var_namesstr.startswith("MT-")]
+    mt_genes = adata.var_names[adata.var_names.str.startswith("MT-")]
     genes_to_exclude = set(mt_genes) | set(exclude_genes or [])
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
 

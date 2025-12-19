@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample"
+output_dir: "/dcs07/hongkai/data/harry/result/test"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,13 +21,13 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_25samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad"
 rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
 rna_preprocessing: true
-rna_cell_type_cluster: False
+rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
@@ -38,20 +38,20 @@ rna_cluster_dge: false
 rna_visualize_data: false
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_cell.h5ad"
-rna_anndata_sample_path: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_sample.h5ad"
-rna_pseudobulk_adata_path: '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/pseudobulk/pseudobulk_sample.h5ad'
+rna_anndata_cell_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad
+rna_anndata_sample_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_sample.h5ad
+rna_pseudobulk_adata_path: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-- "sev.level"
-- "batch"
+  - "sev.level"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: 'batch'
+rna_batch_col: 
+- 'batch'
 rna_markers: null
-rna_cluster_resolution: 0.1
+rna_cluster_resolution: 0.180
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -81,6 +81,8 @@ rna_celltype_col: "cell_type"
 rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
+rna_preserve_cols_for_sample_embedding:
+  - "sev.level"
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
@@ -120,9 +122,7 @@ rna_sample_distance_methods:
 
 # RNA Visualization Parameters
 rna_verbose_visualization: true
-rna_trajectory_visualization_label: 
-  - "sev.level"
-  - "batch"
+rna_trajectory_visualization_label: null
 rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 3
@@ -170,7 +170,8 @@ atac_pseudobulk_adata_path: null
 
 # ATAC Column specifications
 atac_sample_col: "sample"
-atac_batch_col: 'tissue'
+atac_batch_col: 
+- 'tissue'
 atac_cell_type_column: "cell_type"
 atac_grouping_columns:
   - "sev.level"
@@ -200,6 +201,7 @@ atac_n_pcs: 30
 atac_leiden_resolution: 0.9
 atac_existing_cell_types: false
 atac_n_target_cell_clusters: null
+atac_preserve_cols_for_sample_embedding: null
 
 # ATAC UMAP parameters
 atac_umap_min_dist: 0.3
@@ -371,6 +373,7 @@ multiomics_n_features: 2000
 multiomics_normalize: true
 multiomics_target_sum: 10000.0
 multiomics_atac: false
+multiomics_preserve_cols_for_sample_embedding: null
 
 # PCA Parameters
 multiomics_pca_sample_col: "sample"

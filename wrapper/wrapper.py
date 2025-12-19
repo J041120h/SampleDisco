@@ -725,7 +725,6 @@ def wrapper(
                 visualize_all_deg=rna_visualize_all_deg,
                 top_n_heatmap=rna_top_n_heatmap,
                 trajectory_diff_gene_verbose=rna_trajectory_diff_gene_verbose,
-                n_pcs_for_null=rna_n_pcs_for_null,
                 
                 # ===== Distance Methods =====
                 sample_distance_methods=rna_sample_distance_methods,

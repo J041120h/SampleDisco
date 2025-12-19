@@ -230,7 +230,6 @@ def rna_wrapper(
                 min_features=min_features,
                 pct_mito_cutoff=pct_mito_cutoff,
                 exclude_genes=exclude_genes,
-                doublet=doublet,
                 vars_to_regress=vars_to_regress,
                 verbose=verbose
             )
@@ -249,7 +248,6 @@ def rna_wrapper(
                 min_features=min_features,
                 pct_mito_cutoff=pct_mito_cutoff,
                 exclude_genes=exclude_genes,
-                doublet=doublet,
                 vars_to_regress=vars_to_regress,
                 verbose=verbose
             )

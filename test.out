@@ -28,9 +28,9 @@ Resuming process from previous progress:
         "glue_gene_activity": false,
         "glue_cell_types": false,
         "glue_visualization": false,
-        "integration_preprocessing": true,
-        "dimensionality_reduction": true,
-        "embedding_visualization": true,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
         "optimal_resolution": false
     },
     "system_info": {
@@ -45,89 +45,55 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
-
-Running sample distance: cosine
-
+Starting preprocessing...
 [Seed Control] PyTorch GPU deterministic mode enabled with seed=42
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
-Computing cosine distance using dimension reduction results...
-Data type: ATAC (affects DR method prioritization)
-Available sample metadata columns: ['modality']
-Number of samples: 88
-Warning: Grouping columns not found in adata.obs: ['tissue']
-Using available grouping columns: []
-Computing sample distances using expression dimension reduction (X_DR_expression)...
-Warning: None of the grouping columns [] found in adata.obs
-Using fallback grouping by sample prefix
-Distance check results saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/cosine/expression_DR_distance/distance_check_results_expression_DR_cosine.txt
-Score for expression_DR (cosine): nan
-Summary updated in /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/summary_sample.csv
-Distance check completed for expression_DR: score = nan
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/cosine/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/cosine/expression_DR_distance
-Computing sample distances using proportion dimension reduction (X_DR_proportion)...
-Warning: None of the grouping columns [] found in adata.obs
-Using fallback grouping by sample prefix
-Distance check results saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/cosine/proportion_DR_distance/distance_check_results_proportion_DR_cosine.txt
-Score for proportion_DR (cosine): nan
-Summary updated in /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/summary_sample.csv
-Distance check completed for proportion_DR: score = nan
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/cosine/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/cosine/proportion_DR_distance
-Sample distance computations completed for: expression_DR, proportion_DR
-Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/cosine/distance_statistics_summary_cosine.csv
+=== Reading input dataset ===
+Raw shape: 16572 cells × 19668 genes
+All required columns are present in adata.obs.
+=== Processing data for clustering ===
+Running HVG selection on CPU...
+After HVG: 16092 cells × 2000 genes
+Moving to GPU for normalization, PCA, and Harmony...
+=== [GPU] Running Harmony integration ===
+Variables to regress: sample
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+Reach convergence after 2 iteration(s).
+End of harmony for adata_cluster.
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_cell.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 10 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_cell.h5ad
+=== [CPU] Processing data for sample differences ===
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_sample.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 10 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_sample.h5ad
+Total runtime: 47.74 seconds
 
-Running sample distance: correlation
-
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-Computing correlation distance using dimension reduction results...
-Data type: ATAC (affects DR method prioritization)
-Available sample metadata columns: ['modality']
-Number of samples: 88
-Warning: Grouping columns not found in adata.obs: ['tissue']
-Using available grouping columns: []
-Computing sample distances using expression dimension reduction (X_DR_expression)...
-Warning: None of the grouping columns [] found in adata.obs
-Using fallback grouping by sample prefix
-Distance check results saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/expression_DR_distance/distance_check_results_expression_DR_correlation.txt
-Score for expression_DR (correlation): nan
-Summary updated in /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/summary_sample.csv
-Distance check completed for expression_DR: score = nan
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-expression_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/expression_DR_distance
-Computing sample distances using proportion dimension reduction (X_DR_proportion)...
-Warning: None of the grouping columns [] found in adata.obs
-Using fallback grouping by sample prefix
-Distance check results saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/proportion_DR_distance/distance_check_results_proportion_DR_correlation.txt
-Score for proportion_DR (correlation): nan
-Summary updated in /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/summary_sample.csv
-Distance check completed for proportion_DR: score = nan
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-proportion_DR-based distance matrix saved to: /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/proportion_DR_distance
-Sample distance computations completed for: expression_DR, proportion_DR
-Distance statistics summary saved to: /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance/correlation/distance_statistics_summary_correlation.csv
-Sample distance calculation completed. Results saved in /dcs07/hongkai/data/harry/result/multi_omics_SD/rna/Sample_distance
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
+✗ RNA pipeline failed with error: Dimensionality_reduction is skipped, but no dimensionality_reduction data found.
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
 RNA Pipeline: ⚠ PARTIAL
   - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✓
+  - cell_type_cluster: ✗
+  - dimensionality_reduction: ✗
+  - sample_distance_calculation: ✗
   - trajectory_analysis: ✗
   - trajectory_dge: ✗
   - cluster_dge: ✗
   - visualization: ✗
 
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_SD
-Status file: /dcs07/hongkai/data/harry/result/multi_omics_SD/sys_log/main_process_status.json
-Execution time: 61.1372 seconds
+Results saved to: /dcs07/hongkai/data/harry/result/test
+Status file: /dcs07/hongkai/data/harry/result/test/sys_log/main_process_status.json
+Execution time: 50.4624 seconds
