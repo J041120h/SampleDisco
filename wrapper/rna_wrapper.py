@@ -112,7 +112,6 @@ def rna_wrapper(
     visualize_all_deg=True,
     top_n_heatmap=50,
     trajectory_diff_gene_verbose=True,
-    n_pcs_for_null=10,
     
     # ===== Distance Methods =====
     sample_distance_methods=None,

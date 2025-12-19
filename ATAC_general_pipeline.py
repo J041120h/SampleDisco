@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from harmony import harmonize
 import muon as mu
 from muon import atac as ac
-import scipy.sparse as sp           # used for re-sparsifying
 from ATAC_cell_type import *
 warnings.filterwarnings("ignore")
 
@@ -28,89 +27,6 @@ def merge_sample_metadata(
         print(f"Merged {meta.shape[1]} sample-level columns")
     return adata
 
-def snapatac2_dimensionality_reduction(
-    adata,
-    adata_sample=None,
-    n_components=50,
-    num_features=50000,
-    doublet=True,
-    verbose=True
-):
-    """
-    Use snapATAC2 only for dimensionality reduction (SVD / spectral).
-    Assumes data has already been processed with TF-IDF and feature selection.
-    
-    If adata_sample is provided, it will be filtered to match the cells
-    remaining in adata after doublet removal.
-    """
-    try:
-        import snapatac2 as snap
-    except ImportError:
-        raise ImportError("snapATAC2 is required. Install with: pip install snapatac2")
-
-    log(f"Running snapATAC2 SVD with {n_components} components", verbose=verbose)
-
-    # Convert to float32 but keep sparse structure if present
-    if adata.X.dtype != np.float32:
-        log("Converting data matrix to float32", verbose=verbose)
-        if sp.issparse(adata.X):
-            adata.X = adata.X.astype(np.float32)
-        else:
-            adata.X = sp.csr_matrix(adata.X.astype(np.float32))
-
-    # Feature selection
-    snap.pp.select_features(adata, n_features=num_features)
-
-    # Doublet filtering
-    if doublet:
-        log("Filtering doublets (scanpy-Scrublet)", verbose=verbose)
-        try:
-            # Complete Scrublet workflow (simulate + score + predict)
-            sc.pp.scrublet(adata, sim_doublet_ratio=2.0, random_seed=42)
-            
-            # Direct filtering
-            is_doublet = adata.obs['predicted_doublet']
-            adata = adata[~is_doublet].copy()
-            
-            if adata_sample is not None:
-                cells_after_doublet = adata.obs.index
-                adata_sample = adata_sample[cells_after_doublet].copy()
-                log(f"Filtered adata_sample to match {len(cells_after_doublet)} remaining cells after doublet removal", verbose=verbose)
-                
-            log(f"Removed {is_doublet.sum()} predicted doublets, {len(adata)} cells remaining", verbose=verbose)
-            
-        except Exception as e:
-            log(f"Doublet filtering failed: {e}", verbose=verbose)
-
-    # Save HVF
-    if 'selected' in adata.var.columns:
-        adata.var['HVF'] = adata.var['selected']
-
-    # Spectral decomposition
-    try:
-        snap.tl.spectral(adata, n_comps=n_components)
-    except RuntimeError as e:
-        if "Cannot convert CsrMatrix" in str(e):
-            if sp.issparse(adata.X):
-                adata.X = adata.X.astype(np.float32)
-            else:
-                adata.X = sp.csr_matrix(adata.X.astype(np.float32))
-            snap.tl.spectral(adata, n_comps=n_components)
-        else:
-            raise e
-
-    log("snapATAC2 dimensionality reduction complete", verbose=verbose)
-
-    # ---------- NEW: convert back to sparse if snapATAC2 returned dense -------- #
-    if not sp.issparse(adata.X):
-        adata.X = sp.csr_matrix(adata.X)
-        log("Re-sparsified adata.X after snapATAC2", verbose=verbose)
-    # -------------------------------------------------------------------------- #
-
-    if adata_sample is not None:
-        return adata, adata_sample
-    else:
-        return adata
 
 def run_scatac_pipeline(
     filepath,
@@ -119,7 +35,6 @@ def run_scatac_pipeline(
     sample_column="sample",
     batch_key=None,  # Can be a string or list of strings
     verbose=True,
-    use_snapatac2_dimred=False,
     # QC and filtering parameters
     min_cells=1,
     min_genes=2000,
@@ -149,11 +64,11 @@ def run_scatac_pipeline(
 ):
     t0 = time.time()
     from utils.random_seed import set_global_seed
-    set_global_seed(seed = 42, verbose = verbose)
+    set_global_seed(seed=42, verbose=verbose)
     log("="*60 + "\nStarting scATAC-seq pipeline\n" + "="*60, verbose)
 
     # Create sub-folder
-    output_dir = os.path.join(output_dir, 'preprocess')
+    output_dir = os.path.join(output_dir, "preprocess")
     os.makedirs(output_dir, exist_ok=True)
 
     # Normalize batch_key to list format
@@ -173,18 +88,18 @@ def run_scatac_pipeline(
     # 3. QC filtering
     log("QC filtering", verbose)
     sc.pp.calculate_qc_metrics(atac, percent_top=None, log1p=False, inplace=True)
-    mu.pp.filter_var(atac, 'n_cells_by_counts', lambda x: x >= min_cells)
-    mu.pp.filter_obs(atac, 'n_genes_by_counts',
+    mu.pp.filter_var(atac, "n_cells_by_counts", lambda x: x >= min_cells)
+    mu.pp.filter_obs(atac, "n_genes_by_counts",
                      lambda x: (x >= min_genes) & (x <= max_genes))
 
-    # 3b. Doublet detection (scanpy path only)
-    if not use_snapatac2_dimred and doublet:
+    # 3b. Doublet detection (scanpy Scrublet)
+    if doublet:
         if atac.n_vars >= 50:
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    n_prin = min(30, atac.n_vars-1, atac.n_obs-1)
+                    n_prin = min(30, atac.n_vars - 1, atac.n_obs - 1)
                     sc.pp.scrublet(atac, batch_key=sample_column, n_prin_comps=n_prin)
-                    atac = atac[~atac.obs['predicted_doublet']].copy()
+                    atac = atac[~atac.obs["predicted_doublet"]].copy()
                 log("Doublets removed", verbose)
             except (ValueError, RuntimeError) as e:
                 log(f"Scrublet failed ({e}) – continuing.", verbose)
@@ -196,7 +111,7 @@ def run_scatac_pipeline(
     log(f"Remaining cells: {atac.n_obs}", verbose)
 
     atac_sample = atac.copy()
-    
+
     # 4. TF-IDF
     log("TF-IDF normalisation", verbose)
     ac.pp.tfidf(atac, scale_factor=tfidf_scale_factor)
@@ -205,63 +120,60 @@ def run_scatac_pipeline(
         log("Log1p transform", verbose)
         sc.pp.log1p(atac)
 
-    if use_snapatac2_dimred:
-        # Pass both atac and atac_sample to handle doublet filtering synchronization
-        atac, atac_sample = snapatac2_dimensionality_reduction(
-            atac,
-            adata_sample=atac_sample,
-            n_components=n_lsi_components,
-            num_features=num_features,
-            doublet=doublet,
-            verbose=verbose
-        )
-        dimred_key = 'X_spectral'
-    else:
-        log("Selecting HVFs", verbose)
-        # For HVG selection, use the first batch key (scanpy HVG doesn't support multiple batches)
-        hvg_batch_key = batch_keys[0] if batch_keys else None
-        sc.pp.highly_variable_genes(
-            atac, n_top_genes=num_features, flavor='seurat_v3', batch_key=hvg_batch_key
-        )
-        atac.var['HVF'] = atac.var['highly_variable']
+    # 5. HVF + LSI
+    log("Selecting HVFs", verbose)
+    # For HVG selection, use the first batch key (scanpy HVG doesn't support multiple batches)
+    hvg_batch_key = batch_keys[0] if batch_keys else None
+    sc.pp.highly_variable_genes(
+        atac, n_top_genes=num_features, flavor="seurat_v3", batch_key=hvg_batch_key
+    )
+    atac.var["HVF"] = atac.var["highly_variable"]
 
-        log("Running LSI", verbose)
-        ac.tl.lsi(atac, n_comps=n_lsi_components)
-        if drop_first_lsi:
-            atac.obsm['X_lsi'] = atac.obsm['X_lsi'][:, 1:]
-            atac.varm["LSI"]   = atac.varm["LSI"][:, 1:]
-            atac.uns["lsi"]["stdev"] = atac.uns["lsi"]["stdev"][1:]
-        dimred_key = 'X_lsi'
+    log("Running LSI", verbose)
+    ac.tl.lsi(atac, n_comps=n_lsi_components)
+    if drop_first_lsi:
+        atac.obsm["X_lsi"] = atac.obsm["X_lsi"][:, 1:]
+        atac.varm["LSI"]   = atac.varm["LSI"][:, 1:]
+        atac.uns["lsi"]["stdev"] = atac.uns["lsi"]["stdev"][1:]
+    dimred_key = "X_lsi"
 
     # 6. Harmony (supports multiple batch keys)
     if batch_keys:
         log(f"Harmony batch correction with batch keys: {batch_keys}", verbose)
-        Z = harmonize(atac.obsm[dimred_key], atac.obs,
-                      batch_key=batch_keys, max_iter_harmony=harmony_max_iter,
-                      use_gpu=harmony_use_gpu)
-        atac.obsm['X_DM_harmony'] = Z
+        Z = harmonize(
+            atac.obsm[dimred_key],
+            atac.obs,
+            batch_key=batch_keys,
+            max_iter_harmony=harmony_max_iter,
+            use_gpu=harmony_use_gpu,
+        )
+        atac.obsm["X_DM_harmony"] = Z
     else:
-        atac.obsm['X_DM_harmony'] = atac.obsm[dimred_key].copy()
-    use_rep = 'X_DM_harmony'
+        atac.obsm["X_DM_harmony"] = atac.obsm[dimred_key].copy()
+    use_rep = "X_DM_harmony"
 
     # 7. Neighbours / UMAP
     n_pcs = min(n_pcs, atac.obsm[use_rep].shape[1])
     sc.pp.neighbors(atac, n_neighbors=n_neighbors, n_pcs=n_pcs, use_rep=use_rep)
-    sc.tl.umap(atac, min_dist=umap_min_dist, spread=umap_spread,
-               random_state=umap_random_state)
+    sc.tl.umap(
+        atac,
+        min_dist=umap_min_dist,
+        spread=umap_spread,
+        random_state=umap_random_state,
+    )
 
     atac = clean_obs_for_saving(atac, verbose=verbose)
     sc.write(os.path.join(output_dir, "adata_cell.h5ad"), atac)
     log("Saved adata_cell.h5ad", verbose)
 
-    # 10. Save
+    # 10. Save sample-level object with copied embeddings
     log("Writing H5AD …", verbose)
-    atac_sample.obsm['X_DM_harmony'] = atac.obsm['X_DM_harmony'].copy()
-    atac_sample.obsm['X_umap'] = atac.obsm['X_umap'].copy()
+    atac_sample.obsm["X_DM_harmony"] = atac.obsm["X_DM_harmony"].copy()
+    atac_sample.obsm["X_umap"] = atac.obsm["X_umap"].copy()
     atac_sample = clean_obs_for_saving(atac_sample, verbose=verbose)
     sc.write(os.path.join(output_dir, "adata_sample.h5ad"), atac_sample)
 
     # 11. Summary
     log("="*60, verbose)
-    log(f"Finished in {(time.time()-t0)/60:.1f} min", verbose)
+    log(f"Finished in {(time.time() - t0) / 60:.1f} min", verbose)
     return atac_sample, atac
