@@ -20,7 +20,7 @@ def cell_types_linux(
     existing_cell_types=False,
     n_target_clusters=None,
     umap=True,
-    Save=False,
+    save=False,
     output_dir=None,
     defined_output_path=None,
     cluster_resolution=0.8,
@@ -149,7 +149,7 @@ def cell_types_linux(
                         existing_cell_types=True,
                         n_target_clusters=n_target_clusters,
                         umap=False,
-                        Save=False,
+                        save=False,
                         use_rep=use_rep,
                         num_PCs=num_PCs,
                         _recursion_depth=_recursion_depth + 1,
@@ -179,7 +179,7 @@ def cell_types_linux(
                         existing_cell_types=False,
                         n_target_clusters=n_target_clusters,
                         umap=False,
-                        Save=False,
+                        save=False,
                         cluster_resolution=new_resolution,
                         use_rep=use_rep,
                         markers=markers,
@@ -286,7 +286,7 @@ def cell_types_linux(
 
             anndata_sample = ensure_cpu_arrays(anndata_sample)
 
-        if Save and output_dir and not defined_output_path:
+        if save and output_dir and not defined_output_path:
             out_pre = os.path.join(output_dir, "preprocess")
             os.makedirs(out_pre, exist_ok=True)
             save_path = os.path.join(out_pre, "adata_cell.h5ad")

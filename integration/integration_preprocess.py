@@ -5,7 +5,7 @@ from DR import *
 import time
 import contextlib
 import io
-from Cell_type import *
+from code.preparation.Cell_type import *
 
 def integrate_preprocess(
     output_dir,

@@ -26,7 +26,7 @@ rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_da
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: false
+rna_preprocessing: true
 rna_cell_type_cluster: true
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false

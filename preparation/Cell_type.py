@@ -16,7 +16,7 @@ def cell_types(
     existing_cell_types=False,
     n_target_clusters=None,
     umap=True,
-    Save=False,
+    save=False,
     output_dir=None,
     defined_output_path=None,
     defined_sample_output_path=None,
@@ -126,7 +126,7 @@ def cell_types(
                     existing_cell_types=True,
                     n_target_clusters=n_target_clusters,
                     umap=False,
-                    Save=False,
+                    save=False,
                     use_rep=use_rep,
                     num_PCs=num_PCs,
                     verbose=verbose,
@@ -143,7 +143,7 @@ def cell_types(
                     existing_cell_types=False,
                     n_target_clusters=n_target_clusters,
                     umap=False,
-                    Save=False,
+                    save=False,
                     cluster_resolution=new_res,
                     use_rep=use_rep,
                     markers=markers,
@@ -216,7 +216,7 @@ def cell_types(
                     anndata_sample.obs_names
                 ).values
 
-        if Save and output_dir:
+        if save and output_dir:
             preprocess = os.path.join(output_dir, "preprocess")
             os.makedirs(preprocess, exist_ok=True)
 

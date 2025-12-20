@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from anndata import AnnData
 import time
 from DR import dimension_reduction
-from Cell_type import cell_types
+from preparation.Cell_type import cell_types
 from pseudo_adata import compute_pseudobulk_adata 
 from sklearn.preprocessing import StandardScaler
 from CCA import *
@@ -777,32 +777,17 @@ def find_optimal_cell_resolution(
     --------
     tuple: (optimal_resolution, results_dataframe)
     """
-    # Helper function for timing
-    def time_function(func_name, func, *args, **kwargs):
-        start = time.time()
-        result = func(*args, **kwargs)
-        end = time.time()
-        if verbose:
-            print(f"  {func_name}: {end - start:.2f} seconds")
-        return result
-    
-    start_time = time.time()
     
     # Extract DR type from column name for clearer output
     dr_type = column.replace('X_DR_', '') if column.startswith('X_DR_') else column
     
     # Setup directories
-    setup_start = time.time()
     main_output_dir = os.path.join(output_dir, f"RNA_resolution_optimization_{dr_type}")
     os.makedirs(main_output_dir, exist_ok=True)
     resolutions_dir = os.path.join(main_output_dir, "resolutions")
     os.makedirs(resolutions_dir, exist_ok=True)
-    # Create summary directory
     summary_dir = os.path.join(main_output_dir, "summary")
     os.makedirs(summary_dir, exist_ok=True)
-    setup_time = time.time() - setup_start
-    if verbose:
-        print(f"Directory setup: {setup_time:.2f} seconds")
 
     print(f"Starting RNA-seq resolution optimization for {column}...")
     print(f"Using representation: {use_rep} with {num_PCs} components")
@@ -818,7 +803,6 @@ def find_optimal_cell_resolution(
     def process_resolution(resolution, search_pass):
         """Process a single resolution"""
         print(f"\n\nTesting resolution: {resolution:.3f}\n")
-        resolution_start = time.time()
         
         # Create resolution-specific directory
         resolution_dir = os.path.join(resolutions_dir, f"resolution_{resolution:.3f}")
@@ -849,33 +833,22 @@ def find_optimal_cell_resolution(
             if 'cell_type' in AnnData_sample.obs.columns:
                 AnnData_sample.obs.drop(columns=['cell_type'], inplace=True, errors='ignore')
             
-            # Perform clustering using RNA-specific function
-            # FIXED: Use cell_type_column consistently (not cell_column)
-            clustering_result = time_function(
-                "Cell clustering",
-                cell_types,
-                AnnData_cell,
-                cell_type_column='cell_type',  # FIXED: consistent parameter name
+            # Perform clustering - now handles both cell and sample assignment
+            AnnData_cell, AnnData_sample = cell_types(
+                anndata_cell=AnnData_cell,
+                anndata_sample=AnnData_sample,
+                cell_type_column='cell_type',
+                existing_cell_types=False,
+                n_target_clusters=None,
+                umap=False,
                 Save=False,
                 output_dir=resolution_dir,
                 cluster_resolution=resolution,
+                use_rep=use_rep,
                 markers=None,
-                method='average',
-                metric='euclidean',
-                distance_mode='centroid',
                 num_PCs=num_PCs,
-                verbose=False
-            )
-            
-            # Assign cell types to samples
-            assignment_result = time_function(
-                "Cell type assignment",
-                cell_type_assign,
-                AnnData_cell,
-                AnnData_sample,
-                Save=False,
-                output_dir=resolution_dir,
-                verbose=False
+                verbose=False,
+                generate_plots=False
             )
             
             # Record number of clusters
@@ -884,9 +857,7 @@ def find_optimal_cell_resolution(
             print(f"Number of clusters: {n_clusters}")
             
             # Compute pseudobulk data
-            pseudobulk_dict, pseudobulk_adata = time_function(
-                "Pseudobulk computation",
-                compute_pseudobulk_adata,
+            pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata(
                 adata=AnnData_sample, 
                 batch_col=batch_col, 
                 sample_col=sample_col, 
@@ -901,9 +872,7 @@ def find_optimal_cell_resolution(
             result_dict['n_samples'] = len(pseudobulk_adata)
             
             # Perform dimension reduction
-            dr_result = time_function(
-                "Dimension reduction",
-                dimension_reduction,
+            dr_result = dimension_reduction(
                 adata=AnnData_sample,
                 pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata,
@@ -916,7 +885,7 @@ def find_optimal_cell_resolution(
                 output_dir=resolution_dir,
                 not_save=True,
                 verbose=False,
-                preserve_cols = preserve_cols,
+                preserve_cols=preserve_cols,
             )
             pseudobulk_adata.write_h5ad(os.path.join(resolution_dir, "pseudobulk_sample.h5ad"))
 
@@ -937,7 +906,6 @@ def find_optimal_cell_resolution(
                 )
                 
                 # Calculate CCA score using the specified number of PCs
-                # Use first n_pcs_for_null components for consistency
                 pca_coords_analysis = pca_coords_full[:, :min(n_pcs_for_null, pca_coords_full.shape[1])]
                 sev_levels_2d = sev_levels.reshape(-1, 1)
                 
@@ -980,9 +948,7 @@ def find_optimal_cell_resolution(
                 # Generate null distribution if computing corrected p-values
                 if compute_corrected_pvalues:
                     try:
-                        null_distribution = time_function(
-                            f"Null distribution ({num_pvalue_simulations} sims)",
-                            generate_null_distribution,
+                        null_distribution = generate_null_distribution(
                             pseudobulk_adata=pseudobulk_adata,
                             column=column,
                             sev_col=sev_col,
@@ -1007,24 +973,15 @@ def find_optimal_cell_resolution(
         except Exception as e:
             print(f"Error at resolution {resolution:.3f}: {str(e)}")
         
-        resolution_time = time.time() - resolution_start
-        if verbose:
-            print(f"TOTAL for resolution {resolution:.3f}: {resolution_time:.2f} seconds")
-        
         return result_dict, resolution_null_result
 
     # First pass: coarse search
     print("\n=== FIRST PASS: Coarse Search ===")
-    coarse_start = time.time()
     
     for resolution in np.arange(0.1, 1.01, 0.1):
         result_dict, resolution_null_result = process_resolution(resolution, 'coarse')
         all_results.append(result_dict)
         all_resolution_null_results.append(resolution_null_result)
-
-    coarse_time = time.time() - coarse_start
-    if verbose:
-        print(f"\nCOARSE SEARCH TOTAL: {coarse_time:.2f} seconds")
 
     # Find best resolution from first pass
     coarse_results = [r for r in all_results if not np.isnan(r['cca_score'])]
@@ -1038,7 +995,6 @@ def find_optimal_cell_resolution(
 
     # Second pass: fine-tuned search
     print("\n=== SECOND PASS: Fine-tuned Search ===")
-    fine_start = time.time()
     
     search_range_start = max(0.01, best_resolution - 0.02)
     search_range_end = min(1.00, best_resolution + 0.02)
@@ -1056,10 +1012,6 @@ def find_optimal_cell_resolution(
         all_results.append(result_dict)
         all_resolution_null_results.append(resolution_null_result)
 
-    fine_time = time.time() - fine_start
-    if verbose:
-        print(f"\nFINE SEARCH TOTAL: {fine_time:.2f} seconds")
-
     # Create comprehensive results dataframe
     df_results = pd.DataFrame(all_results)
     df_results = df_results.sort_values("resolution")
@@ -1068,16 +1020,12 @@ def find_optimal_cell_resolution(
     if compute_corrected_pvalues:
         print("\n=== GENERATING CORRECTED NULL DISTRIBUTION ===")
         print("Accounting for resolution selection bias...")
-        corrected_start = time.time()
         
         # Filter out null results that failed to generate
         valid_null_results = [r for r in all_resolution_null_results if r['null_scores'] is not None]
         
         if valid_null_results:
-            # Use the same function from ATAC
-            corrected_null_distribution = time_function(
-                "Corrected null distribution generation",
-                generate_corrected_null_distribution,
+            corrected_null_distribution = generate_corrected_null_distribution(
                 all_resolution_results=valid_null_results,
                 n_permutations=num_pvalue_simulations
             )
@@ -1091,9 +1039,7 @@ def find_optimal_cell_resolution(
             
             # Compute corrected p-values for all resolutions
             print("\n=== COMPUTING CORRECTED P-VALUES ===")
-            df_results = time_function(
-                "Corrected p-values computation",
-                compute_corrected_pvalues_rna,
+            df_results = compute_corrected_pvalues_rna(
                 df_results=df_results,
                 corrected_null_distribution=corrected_null_distribution,
                 output_dir=main_output_dir,
@@ -1126,10 +1072,6 @@ def find_optimal_cell_resolution(
         else:
             print("Warning: No valid null distributions generated, cannot compute corrected p-values")
             compute_corrected_pvalues = False
-        
-        corrected_time = time.time() - corrected_start
-        if verbose:
-            print(f"CORRECTED P-VALUES TOTAL: {corrected_time:.2f} seconds")
     
     # Find final best resolution
     valid_results = df_results[~df_results['cca_score'].isna()]
@@ -1160,16 +1102,16 @@ def find_optimal_cell_resolution(
         df_results=df_results,
         best_resolution=final_best_resolution,
         column=column,
-        output_dir=summary_dir,  # CHANGE 1: Pass summary_dir instead of main_output_dir
+        output_dir=summary_dir,
         has_corrected_pvalues=compute_corrected_pvalues
     )
 
-    # CHANGE 1: Save complete results to summary directory
+    # Save complete results to summary directory
     results_csv_path = os.path.join(summary_dir, f"all_resolution_results_{dr_type}.csv")
     df_results.to_csv(results_csv_path, index=False)
     print(f"\nAll results saved to: {results_csv_path}")
 
-    # CHANGE 2: Copy the optimal resolution's pseudobulk_anndata to summary directory
+    # Copy the optimal resolution's pseudobulk_anndata to summary directory
     optimal_resolution_dir = os.path.join(resolutions_dir, f"resolution_{final_best_resolution:.3f}")
     optimal_pseudobulk_path = os.path.join(optimal_resolution_dir, "pseudobulk_sample.h5ad")
     optimal_pseudobulk_summary_path = os.path.join(summary_dir, f"optimal.h5ad")
@@ -1182,21 +1124,11 @@ def find_optimal_cell_resolution(
         print(f"Warning: Could not find pseudobulk file at {optimal_pseudobulk_path}")
 
     # Create a final summary report
-    total_runtime = time.time() - start_time
     final_summary_path = os.path.join(main_output_dir, "FINAL_SUMMARY.txt")
     with open(final_summary_path, 'w') as f:
-        f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY (CPU Version)\n")
+        f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY\n")
         f.write("=" * 60 + "\n\n")
-        f.write(f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"Total runtime: {total_runtime:.2f} seconds\n\n")
-        
-        f.write("TIMING BREAKDOWN:\n")
-        f.write(f"  - Setup: {setup_time:.2f} seconds\n")
-        f.write(f"  - Coarse search: {coarse_time:.2f} seconds\n")
-        f.write(f"  - Fine search: {fine_time:.2f} seconds\n")
-        if compute_corrected_pvalues and 'corrected_time' in locals():
-            f.write(f"  - Corrected p-values: {corrected_time:.2f} seconds\n")
-        f.write("\n")
+        f.write(f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
         f.write("OPTIMIZATION PARAMETERS:\n")
         f.write(f"  - Column analyzed: {column}\n")
@@ -1232,14 +1164,5 @@ def find_optimal_cell_resolution(
             f.write(f"  - Corrected null distribution: {os.path.join(main_output_dir, 'corrected_null')}\n")
     
     print(f"\nFinal summary saved to: {final_summary_path}")
-    
-    if verbose:
-        print(f"\n[Find Optimal Resolution RNA-seq] Total runtime: {total_runtime:.2f} seconds")
-        print("\nPERFORMANCE SUMMARY:")
-        print(f"  Setup: {setup_time:.1f}s")
-        print(f"  Coarse search: {coarse_time:.1f}s ({coarse_time/total_runtime*100:.1f}%)")
-        print(f"  Fine search: {fine_time:.1f}s ({fine_time/total_runtime*100:.1f}%)")
-        if compute_corrected_pvalues and 'corrected_time' in locals():
-            print(f"  Corrected p-values: {corrected_time:.1f}s ({corrected_time/total_runtime*100:.1f}%)")
 
     return final_best_resolution, df_results

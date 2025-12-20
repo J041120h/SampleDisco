@@ -6,12 +6,12 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pseudo_adata import compute_pseudobulk_adata
-from preprocess import preprocess
+from preparation.preprocess import preprocess
 from sample_distance.sample_distance import sample_distance
 from visualization.visualization_other import visualization
 from DR import dimension_reduction
 from CCA import CCA_Call
-from Cell_type import cell_types
+from preparation.Cell_type import cell_types
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from trajectory_diff_gene import run_integrated_differential_analysis
@@ -147,8 +147,8 @@ def rna_wrapper(
     print("Starting RNA wrapper function with provided parameters...")
     
     if linux_system and use_gpu:
-        from linux.preprocess_linux import preprocess_linux
-        from linux.CellType_linux import cell_types_linux
+        from preparation.preprocess_linux import preprocess_linux
+        from preparation.Cell_type_linux import cell_types_linux
         from linux.CCA_test_linux import find_optimal_cell_resolution_linux
         from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
         from cell_type_annotation import annotate_cell_types_with_celltypist
@@ -295,7 +295,7 @@ def rna_wrapper(
                 num_PCs=num_PCs,
                 verbose=verbose,
                 generate_plots=True,
-                Save=True, 
+                save=True, 
             )
 
         else:
@@ -312,7 +312,7 @@ def rna_wrapper(
                 num_PCs=num_PCs,
                 verbose=verbose,
                 generate_plots=True,
-                Save=True,
+                save=True,
             )
 
         if cell_type_annotation:
@@ -324,60 +324,6 @@ def rna_wrapper(
             )
         
         status_flags["rna"]["cell_type_cluster"] = True
-    
-    # Step 3: Pseudobulk and PCA
-    if DimensionalityReduction:
-        print("Starting dimensionality reduction...")
-        if not status_flags["rna"]["cell_type_cluster"]:
-            raise ValueError("Cell type clustering is required before dimension reduction.")
-        
-        if linux_system and use_gpu:
-            pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata_linux(
-                adata=AnnData_sample,
-                batch_col=batch_col,
-                sample_col=sample_col,
-                celltype_col=celltype_col,
-                output_dir=pseudobulk_output_dir,
-                n_features=n_features,
-                verbose=pseudobulk_verbose,
-                preserve_cols = preserve_cols_for_sample_embedding
-            )
-        else:
-            pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
-                adata=AnnData_sample,
-                batch_col=batch_col,
-                sample_col=sample_col,
-                celltype_col=celltype_col,
-                output_dir=pseudobulk_output_dir,
-                n_features=n_features,
-                verbose=pseudobulk_verbose,
-                preserve_cols = preserve_cols_for_sample_embedding,
-            )
-        
-        pseudobulk_adata = dimension_reduction(
-            adata=AnnData_sample,
-            pseudobulk=pseudobulk_df,
-            pseudobulk_anndata=pseudobulk_adata,
-            sample_col=sample_col,
-            n_expression_components=n_expression_components,
-            n_proportion_components=n_proportion_components,
-            batch_col = batch_col,
-            harmony_for_proportion = rna_harmony_for_proportion,
-            output_dir=dr_output_dir,
-            verbose=dr_verbose,
-            preserve_cols = preserve_cols_for_sample_embedding,
-        )
-        status_flags["rna"]["dimensionality_reduction"] = True
-    else:
-        if not pseudobulk_adata_path:
-            temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
-        else:
-            temp_pseudobulk_path = pseudobulk_adata_path
-        if not os.path.exists(temp_pseudobulk_path):
-            raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
-        status_flags["rna"]["dimensionality_reduction"] = True
-        print(f"Reading Pseudobulk from provided or default path: {temp_pseudobulk_path}")
-        pseudobulk_adata = sc.read(temp_pseudobulk_path)
     
     if cca_optimal_cell_resolution:
         if linux_system and use_gpu:
@@ -446,6 +392,61 @@ def rna_wrapper(
 
         from utils.unify_optimal import replace_optimal_dimension_reduction
         pseudobulk_adata = replace_optimal_dimension_reduction(rna_output_dir)
+    
+    # Step 3: Pseudobulk and PCA
+    if DimensionalityReduction:
+        print("Starting dimensionality reduction...")
+        if not status_flags["rna"]["cell_type_cluster"]:
+            raise ValueError("Cell type clustering is required before dimension reduction.")
+        
+        if linux_system and use_gpu:
+            pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata_linux(
+                adata=AnnData_sample,
+                batch_col=batch_col,
+                sample_col=sample_col,
+                celltype_col=celltype_col,
+                output_dir=pseudobulk_output_dir,
+                n_features=n_features,
+                verbose=pseudobulk_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding
+            )
+        else:
+            pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata(
+                adata=AnnData_sample,
+                batch_col=batch_col,
+                sample_col=sample_col,
+                celltype_col=celltype_col,
+                output_dir=pseudobulk_output_dir,
+                n_features=n_features,
+                verbose=pseudobulk_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
+            )
+        
+        pseudobulk_adata = dimension_reduction(
+            adata=AnnData_sample,
+            pseudobulk=pseudobulk_df,
+            pseudobulk_anndata=pseudobulk_adata,
+            sample_col=sample_col,
+            n_expression_components=n_expression_components,
+            n_proportion_components=n_proportion_components,
+            batch_col = batch_col,
+            harmony_for_proportion = rna_harmony_for_proportion,
+            output_dir=dr_output_dir,
+            verbose=dr_verbose,
+            preserve_cols = preserve_cols_for_sample_embedding,
+        )
+        status_flags["rna"]["dimensionality_reduction"] = True
+    else:
+        if not pseudobulk_adata_path:
+            temp_pseudobulk_path = os.path.join(pseudobulk_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
+        else:
+            temp_pseudobulk_path = pseudobulk_adata_path
+        if not os.path.exists(temp_pseudobulk_path):
+            if trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or visualize_data:
+                raise ValueError("Dimensionality_reduction is skipped, but no dimensionality_reduction data found.")
+        status_flags["rna"]["dimensionality_reduction"] = True
+        print(f"Reading Pseudobulk from provided or default path: {temp_pseudobulk_path}")
+        pseudobulk_adata = sc.read(temp_pseudobulk_path)
     
     # Step 5: Sample Distance Calculation - UNIFIED NAMING
     if sample_distance_calculation:

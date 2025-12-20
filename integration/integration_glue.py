@@ -25,8 +25,8 @@ from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
 from cupyx.scipy import sparse as cusparse
 
 # Local/project
-from Cell_type import *
-from linux.CellType_linux import cell_types_linux
+from code.preparation.Cell_type import *
+from code.preparation.CellType_linux import cell_types_linux
 
 
 def clean_anndata_for_saving(adata, verbose=True):
@@ -1518,7 +1518,7 @@ def glue(
     
         # Apply cell type assignment
         if use_gpu:
-                from linux.CellType_linux import cell_types_linux
+                from code.preparation.CellType_linux import cell_types_linux
 
                 print(" Using Linux Cell Type Assignment for cell type assignment...")
 
