@@ -9,7 +9,7 @@ import os
 import matplotlib.pyplot as plt
 from DR import dimension_reduction
 from CCA_test import * 
-from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
+from linux.CellType_linux import cell_types_linux
 from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
 
 def cca_pvalue_test_linux(

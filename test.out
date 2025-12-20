@@ -2,8 +2,8 @@ Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
+        "preprocessing": true,
+        "cell_type_cluster": true,
         "dimensionality_reduction": false,
         "sample_distance_calculation": false,
         "trajectory_analysis": false,
@@ -45,39 +45,35 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Starting preprocessing...
+Starting cell type clustering at resolution: 0.18
 [Seed Control] PyTorch GPU deterministic mode enabled with seed=42
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
-=== Reading input dataset ===
-Raw shape: 16572 cells × 19668 genes
-All required columns are present in adata.obs.
-=== Processing data for clustering ===
-Running HVG selection on CPU...
-After HVG: 16092 cells × 2000 genes
-Moving to GPU for normalization, PCA, and Harmony...
-=== [GPU] Running Harmony integration ===
-Variables to regress: sample
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-Reach convergence after 2 iteration(s).
-End of harmony for adata_cluster.
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.18)...
+[cell_types] Found 11 clusters after Leiden clustering.
+[cell_types] Finished assigning cell types.
+[cell_types] Computing UMAP...
+[cell_types] Converting GPU arrays to CPU...
+[cell_types] Generating UMAP visualizations...
+[generate_umap_visualizations] Generating UMAP plots...
+[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (11 categories)
+[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/test/rna/preprocess/umap_cell_type.png
+[cell_types] Assigning cell_type labels to anndata_sample...
 [safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_cell.h5ad
 [clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
 [clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 10 categorical columns processed
+[clean_obs_for_saving] 12 categorical columns processed
 [safe_h5ad_write] Writing H5AD file...
 [safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_cell.h5ad
-=== [CPU] Processing data for sample differences ===
 [safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_sample.h5ad
 [clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
 [clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 10 categorical columns processed
+[clean_obs_for_saving] 12 categorical columns processed
 [safe_h5ad_write] Writing H5AD file...
 [safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/test/rna/preprocess/adata_sample.h5ad
-Total runtime: 47.74 seconds
+[cell_types] Total runtime: 347.96 seconds
 
 ✗ RNA pipeline failed with error: Dimensionality_reduction is skipped, but no dimensionality_reduction data found.
 
@@ -86,7 +82,7 @@ PIPELINE EXECUTION SUMMARY
 ============================================================
 RNA Pipeline: ⚠ PARTIAL
   - preprocessing: ✓
-  - cell_type_cluster: ✗
+  - cell_type_cluster: ✓
   - dimensionality_reduction: ✗
   - sample_distance_calculation: ✗
   - trajectory_analysis: ✗
@@ -96,4 +92,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/test
 Status file: /dcs07/hongkai/data/harry/result/test/sys_log/main_process_status.json
-Execution time: 50.4624 seconds
+Execution time: 411.9285 seconds

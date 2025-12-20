@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from anndata import AnnData
 import time
 from DR import dimension_reduction
-from Cell_type import cell_types, cell_type_assign
+from Cell_type import cell_types
 from pseudo_adata import compute_pseudobulk_adata 
 from sklearn.preprocessing import StandardScaler
 from CCA import *

@@ -11,7 +11,7 @@ from sample_distance.sample_distance import sample_distance
 from visualization.visualization_other import visualization
 from DR import dimension_reduction
 from CCA import CCA_Call
-from Cell_type import cell_types, cell_type_assign
+from Cell_type import cell_types
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
 from trajectory_diff_gene import run_integrated_differential_analysis
@@ -148,7 +148,7 @@ def rna_wrapper(
     
     if linux_system and use_gpu:
         from linux.preprocess_linux import preprocess_linux
-        from linux.CellType_linux import cell_types_linux, cell_type_assign_linux
+        from linux.CellType_linux import cell_types_linux
         from linux.CCA_test_linux import find_optimal_cell_resolution_linux
         from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
         from cell_type_annotation import annotate_cell_types_with_celltypist
@@ -279,9 +279,12 @@ def rna_wrapper(
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
         print("Starting cell type clustering at resolution:", cluster_resolution)
+
         if linux_system and use_gpu:
-            AnnData_cell = cell_types_linux(
-                adata=AnnData_cell,
+            # Always save AnnData_cell (cluster result); optionally save AnnData_sample (assigned labels)
+            AnnData_cell, AnnData_sample = cell_types_linux(
+                anndata_cell=AnnData_cell,
+                anndata_sample=AnnData_sample,
                 cell_type_column=cell_type_column,
                 existing_cell_types=existing_cell_types,
                 n_target_clusters=n_target_cell_clusters,
@@ -289,44 +292,29 @@ def rna_wrapper(
                 output_dir=rna_output_dir,
                 cluster_resolution=cluster_resolution,
                 markers=markers,
-                method=method,
-                metric=metric,
-                Save = True,
-                distance_mode=distance_mode,
                 num_PCs=num_PCs,
-                verbose=verbose
+                verbose=verbose,
+                generate_plots=True,
+                Save=True, 
             )
-            cell_type_assign_linux(
-                adata_cluster=AnnData_cell,
-                adata=AnnData_sample,
-                Save=assign_save,
-                output_dir=rna_output_dir,
-                verbose=verbose
-            )
+
         else:
-            AnnData_cell = cell_types(
-                adata = AnnData_cell,
-                cell_type_column = cell_type_column,
-                existing_cell_types = existing_cell_types,
-                n_target_clusters = n_target_cell_clusters,
-                umap = umap,
-                Save = True,
-                output_dir = rna_output_dir,
-                cluster_resolution =cluster_resolution,
-                markers=markers,
-                method=method,
-                metric=metric,
-                distance_mode=distance_mode,
-                num_PCs=num_PCs,
-                verbose=verbose
-            )
-            cell_type_assign(
-                adata_cluster=AnnData_cell,
-                adata=AnnData_sample,
-                Save=assign_save,
+            AnnData_cell, AnnData_sample = cell_types(
+                anndata_cell=AnnData_cell,
+                anndata_sample=AnnData_sample,
+                cell_type_column=cell_type_column,
+                existing_cell_types=existing_cell_types,
+                n_target_clusters=n_target_cell_clusters,
+                umap=umap,
                 output_dir=rna_output_dir,
-                verbose=verbose
+                cluster_resolution=cluster_resolution,
+                markers=markers,
+                num_PCs=num_PCs,
+                verbose=verbose,
+                generate_plots=True,
+                Save=True,
             )
+
         if cell_type_annotation:
             annotate_cell_types_with_celltypist(
                 adata = AnnData_sample,
