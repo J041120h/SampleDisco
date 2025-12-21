@@ -1,193 +1,73 @@
-🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Pipeline] Loading data...
+  Cell data: (823700, 2000)
+  Pseudobulk: (88, 2000)
+  Pseudobulk samples: ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC']...
 
-📦 Basic Info
-  - Shape (cells × genes): 88 × 2000
-  - Layers: []
-  - obs columns: ['modality', 'original_sample']
-  - var columns: ['n_cells', 'highly_variable', 'means', 'dispersions', 'dispersions_norm']
-  - obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
-  - varm keys: []
+[Pipeline] Extracting embeddings from pseudobulk...
+  Found X_DR_expression: shape (88, 10)
+  Found X_DR_proportion: shape (88, 10)
 
-🔎 Inspecting .X matrix:
-  - storage type: dense (ndarray)
-  - dtype: float32
-  - .X nonzeros: 176000 / 176000 (100.0000% nonzero, 0.0000% zero)
-  - value type: float — fractional values detected
-  - contains NaN: False
-  - contains Inf: False
-  - min value: -0.726199
-  - max value: 7.53543
+[Pipeline] Pseudobulk modalities:
+  ATAC samples: 44
+  RNA samples: 44
+  Paired samples: 44
 
-🧮 Example .X values (first 10 cells × 10 genes):
-[[-0.04408208 -0.04794601  1.2296427  -0.04279843 -0.05361553 -0.04308337
-  -0.04517248 -0.05196938  2.2162125  -0.06001053]
- [ 0.06940814  0.094357    0.05238177  0.06619823  0.09525786  0.0685314
-   0.10031488  0.13951805  0.2506373   0.10541029]
- [-0.04408208 -0.04794601  2.5493174  -0.04279843 -0.05361553 -0.04308337
-  -0.04517248  0.9421291   1.4579312   0.5942348 ]
- [ 0.06940814  0.094357    0.05238177  0.06619823  0.09525786  0.0685314
-   0.10031488  0.13951805  0.2506373   0.10541029]
- [-0.04408208  0.10981569 -0.04916595  0.4301531   0.3486197   0.1190037
-   0.65763724  0.5087779   1.2093382   0.21728654]
- [ 0.06940814  0.094357    0.05238177  0.06619823  0.09525786  0.0685314
-   0.10031488  0.13951805  0.2506373   0.10541029]
- [ 0.5801795   1.1344973  -0.04916595  0.85936904 -0.05361553 -0.04308337
-   1.3994763   1.0829982   1.2218869   0.8524029 ]
- [ 0.06940814  0.094357    0.05238177  0.06619823  0.09525786  0.0685314
-   0.10031488  0.13951805  0.2506373   0.10541029]
- [-0.04408208 -0.04794601 -0.04916595 -0.04279843 -0.05361553 -0.04308337
-  -0.04517248 -0.05196938 -0.07372496 -0.06001053]
- [ 0.06940814  0.094357    0.05238177  0.06619823  0.09525786  0.0685314
-   0.10031488  0.13951805  0.2506373   0.10541029]]
+[Pipeline] Target features: 32 cell types, 2000 total genes
 
-🧫 Example cell names:
-  - ENCSR033MDU_ATAC
-  - ENCSR033MDU_RNA
-  - ENCSR128ZLB_ATAC
-  - ENCSR128ZLB_RNA
-  - ENCSR158DQA_ATAC
-  - ENCSR158DQA_RNA
-  - ENCSR201BHG_ATAC
-  - ENCSR201BHG_RNA
-  - ENCSR212VKB_ATAC
-  - ENCSR212VKB_RNA
+[Pipeline] Creating ATAC pseudobulk...
+[Aggregate ATAC] Filtered to ATAC: 419524 cells
+[Aggregate ATAC] Samples: 44, Cell types: 11
+[Aggregate ATAC] Target features: 393
+[Aggregate ATAC] Output shape: (44, 393)
 
-============================================================
-📋 Detailed obs columns inspection:
-============================================================
+[Pipeline] Creating RNA pseudobulk...
+[Aggregate RNA] Filtered to RNA: 404176 cells
+[Aggregate RNA] Samples: 44, Cell types: 22
+[Aggregate RNA] Target features: 433
+[Aggregate RNA] Output shape: (44, 433)
 
-    [modality]
-      dtype: category
-      non-NA: 88/88 (100.0%)
-      unique: 2
-      top values:
-        'ATAC': 44 (50.0%)
-        'RNA': 44 (50.0%)
+[Pipeline] Common features between ATAC and RNA: 103
 
-    [original_sample]
-      dtype: category
-      non-NA: 88/88 (100.0%)
-      unique: 44
-      top values:
-        'ENCSR033MDU': 2 (2.3%)
-        'ENCSR128ZLB': 2 (2.3%)
-        'ENCSR158DQA': 2 (2.3%)
-        'ENCSR201BHG': 2 (2.3%)
-        'ENCSR212VKB': 2 (2.3%)
+[Pipeline] Matched samples:
+  ATAC (cell-level -> multiomics pb): 44
+  RNA (cell-level -> multiomics pb): 44
+  ATAC expression matrix: (44, 103)
+  RNA expression matrix: (44, 103)
 
-📋 Example obs rows (head 10):
-                 modality original_sample
-ENCSR033MDU_ATAC     ATAC     ENCSR033MDU
-ENCSR033MDU_RNA       RNA     ENCSR033MDU
-ENCSR128ZLB_ATAC     ATAC     ENCSR128ZLB
-ENCSR128ZLB_RNA       RNA     ENCSR128ZLB
-ENCSR158DQA_ATAC     ATAC     ENCSR158DQA
-ENCSR158DQA_RNA       RNA     ENCSR158DQA
-ENCSR201BHG_ATAC     ATAC     ENCSR201BHG
-ENCSR201BHG_RNA       RNA     ENCSR201BHG
-ENCSR212VKB_ATAC     ATAC     ENCSR212VKB
-ENCSR212VKB_RNA       RNA     ENCSR212VKB
+======================================================================
+CROSS-MODAL EMBEDDING EVALUATION
+(For each ATAC sample, check correlation with nearest RNA sample)
+======================================================================
 
-============================================================
-🧬 Detailed var columns inspection:
-============================================================
+  X_DR_expression:
+    Avg correlation (nearest RNA):     -0.2828
+    Avg correlation (k=1 nearest RNA): -0.2828
+    Avg correlation (paired samples):  -0.2764
+    Samples: 44 ATAC, 44 RNA, 44 paired
 
-    [n_cells]
-      dtype: int64
-      non-NA: 2000/2000 (100.0%)
-      unique: 47
-      min: 3, max: 88, mean: 54.4775
-      example values: [np.int64(51), np.int64(57), np.int64(50), np.int64(56), np.int64(55)]
+  X_DR_proportion:
+    Avg correlation (nearest RNA):     -0.2646
+    Avg correlation (k=1 nearest RNA): -0.2646
+    Avg correlation (paired samples):  -0.2764
+    Samples: 44 ATAC, 44 RNA, 44 paired
 
-    [highly_variable]
-      dtype: bool
-      non-NA: 2000/2000 (100.0%)
-      unique: 1
-      min: 1, max: 1, mean: 1
-      example values: [np.True_]
+----------------------------------------------------------------------
+BEST EMBEDDING: X_DR_proportion
+  avg_nearest_rna_corr = -0.2646
+======================================================================
 
-    [means]
-      dtype: float64
-      non-NA: 2000/2000 (100.0%)
-      unique: 2000
-      min: 0.00293437, max: 3.19974, mean: 0.503545
-      example values: [np.float64(0.35319162708131113), np.float64(0.4056725325453506), np.float64(0.20628354143132893), np.float64(0.3153098709786834), np.float64(0.517720531748155)]
+[Pipeline] Saving results to /dcs07/hongkai/data/harry/result/multi_omics_SD/embedding_selection...
 
-    [dispersions]
-      dtype: float64
-      non-NA: 2000/2000 (100.0%)
-      unique: 2000
-      min: 1.91071, max: 7.43221, mean: 2.7532
-      example values: [np.float64(2.5112007621020624), np.float64(2.333225592469753), np.float64(2.012742945985346), np.float64(2.2104102421870797), np.float64(2.866652675606482)]
+[Pipeline] Complete!
+  Evaluation results: /dcs07/hongkai/data/harry/result/multi_omics_SD/embedding_selection/embedding_evaluation.csv
+  Best embedding: X_DR_proportion
 
-    [dispersions_norm]
-      dtype: float32
-      non-NA: 2000/2000 (100.0%)
-      unique: 2000
-      min: 1.51039, max: 5.19295, mean: 1.82199
-      example values: [np.float32(2.091212), np.float32(1.919065), np.float32(1.609077), np.float32(1.8002714), np.float32(1.555891)]
+Best embedding: X_DR_proportion
 
-🧬 Example var rows (head 10):
-                 n_cells  highly_variable  ...  dispersions  dispersions_norm
-1 - ABCB11            51             True  ...     2.511201          2.091212
-1 - AC007364.1        57             True  ...     2.333226          1.919065
-1 - AC018742.1        50             True  ...     2.012743          1.609077
-1 - AC068051.1        56             True  ...     2.210410          1.800271
-1 - ACSM2A            55             True  ...     2.866653          1.555891
-1 - ACSM2B            53             True  ...     2.352898          1.938094
-1 - ADAMTS12          61             True  ...     2.327425          1.913454
-1 - ADAMTS2           63             True  ...     2.861476          1.551262
-1 - ADAMTS9-AS2       65             True  ...     4.767377          1.871930
-1 - ADAMTSL1          59             True  ...     3.580154          2.193932
+Evaluation summary:
+                 avg_nearest_rna_corr  avg_knn_corr  ...  n_rna_samples  n_paired
+embedding                                            ...                         
+X_DR_expression             -0.282799     -0.282799  ...             44        44
+X_DR_proportion             -0.264551     -0.264551  ...             44        44
 
-[10 rows x 5 columns]
-
-📌 Example obsm entries:
-  ▶ 'X_DR_expression': shape=(88, 10), dtype=float32
-    first 10 rows × 5 cols:
-[[  0.08237748  11.386316    -5.5355396   -2.7015293    0.6470645 ]
- [  2.7019124   13.226301   -13.362312     1.4938126   -6.967455  ]
- [ 16.280025    -4.093664     6.580106    -4.1226134    2.1421187 ]
- [ -1.1637783    3.97275     -5.36484     -2.6139565    0.99904436]
- [ 11.194716    13.461769    -3.3979433   -1.9338402    4.0581384 ]
- [  7.313741    26.071182   -19.61215      2.777572    -0.5397706 ]
- [ -6.7673464    0.266685     7.3804917    1.817084     4.2802544 ]
- [ -3.7984338   -2.351088    -1.3941178   -3.25367     -1.5444802 ]
- [  6.880902    -2.855024    -5.4179378   -5.3506064    3.7413673 ]
- [ -3.8075216   -2.2665215   -1.7728542   -3.3498006   -0.6840868 ]]
-  ▶ 'X_DR_proportion': shape=(88, 10), dtype=float64
-    first 10 rows × 5 cols:
-[[-0.0680596   0.10196733  0.13431679  0.02468549  0.17439599]
- [-0.05659332  0.08569658  0.11827931  0.02171805  0.20448591]
- [-0.07591098  0.00331069  0.16713652  0.30971757 -0.15523004]
- [-0.07133314  0.03738486  0.24579484  0.42783045 -0.18419433]
- [-0.06175797  0.09064168  0.11517009  0.02153238  0.1375756 ]
- [-0.05269244  0.06560037  0.08912659  0.01719425  0.14937735]
- [-0.12362568 -0.15491299 -0.12868572 -0.05111468 -0.05179594]
- [-0.12595902 -0.16234107 -0.13814038 -0.05926838 -0.05205093]
- [-0.03185026  0.08050844  0.0991633   0.04821165  0.61242486]
- [-0.01741566  0.08820101  0.10557409  0.05894579  0.76872505]]
-  ▶ 'X_pca_expression_method': shape=(88, 10), dtype=float32
-    first 10 rows × 5 cols:
-[[  0.08237748  11.386316    -5.5355396   -2.7015293    0.6470645 ]
- [  2.7019124   13.226301   -13.362312     1.4938126   -6.967455  ]
- [ 16.280025    -4.093664     6.580106    -4.1226134    2.1421187 ]
- [ -1.1637783    3.97275     -5.36484     -2.6139565    0.99904436]
- [ 11.194716    13.461769    -3.3979433   -1.9338402    4.0581384 ]
- [  7.313741    26.071182   -19.61215      2.777572    -0.5397706 ]
- [ -6.7673464    0.266685     7.3804917    1.817084     4.2802544 ]
- [ -3.7984338   -2.351088    -1.3941178   -3.25367     -1.5444802 ]
- [  6.880902    -2.855024    -5.4179378   -5.3506064    3.7413673 ]
- [ -3.8075216   -2.2665215   -1.7728542   -3.3498006   -0.6840868 ]]
-  ▶ 'X_pca_proportion': shape=(88, 10), dtype=float64
-    first 10 rows × 5 cols:
-[[-0.06224772  0.08602457  0.11866111  0.02227867  0.17961742]
- [-0.06240611  0.10162873  0.13392438  0.02412191  0.19926431]
- [-0.07009894 -0.01263013  0.15148278  0.30731129 -0.15000858]
- [-0.07714485  0.05332958  0.26145247  0.43023782 -0.18941573]
- [-0.05594622  0.07469748  0.09951297  0.01912516  0.14279701]
- [-0.05850457  0.08154018  0.10477931  0.01960025  0.14415588]
- [-0.1157694  -0.14717179 -0.12066979 -0.04691199 -0.0462012 ]
- [-0.13381531 -0.17008227 -0.14615632 -0.06347107 -0.05764567]
- [-0.02603613  0.06459176  0.08353369  0.04581211  0.6176467 ]
- [-0.02323092  0.10410457  0.12119058  0.06134167  0.763503  ]]
+[2 rows x 6 columns]
