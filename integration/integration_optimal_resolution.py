@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cross_decomposition import CCA
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from code.preparation.CellType_linux import cell_types_linux
+from preparation.Cell_type_linux import cell_types_linux
 from integration.integration_visualization import *
 from CCA import *
 from CCA_test import *

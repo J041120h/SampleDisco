@@ -1442,7 +1442,7 @@ def glue(
     
         # Apply cell type assignment
         if use_gpu:
-                from code.preparation.CellType_linux import cell_types_linux
+                from preparation.Cell_type_linux import cell_types_linux
 
                 print(" Using Linux Cell Type Assignment for cell type assignment...")
 
