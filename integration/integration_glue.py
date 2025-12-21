@@ -25,74 +25,9 @@ from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
 from cupyx.scipy import sparse as cusparse
 
 # Local/project
-from code.preparation.Cell_type import *
-from code.preparation.CellType_linux import cell_types_linux
-
-
-def clean_anndata_for_saving(adata, verbose=True):
-    """
-    Clean AnnData object to ensure it can be saved to HDF5 format.
-    
-    Parameters:
-    -----------
-    adata : AnnData
-        AnnData object to clean
-    verbose : bool
-        Whether to print cleaning statistics
-    
-    Returns:
-    --------
-    adata : AnnData
-        Cleaned AnnData object
-    """
-    if verbose:
-        print("🧹 Cleaning AnnData object for HDF5 compatibility...")
-    
-    # Clean obs dataframe
-    for col in adata.obs.columns:
-        if verbose:
-            print(f"   Processing column: {col}")
-        
-        # Convert object columns to string, handling NaN values
-        if adata.obs[col].dtype == 'object':
-            # Fill NaN values with 'Unknown' or appropriate default
-            adata.obs[col] = adata.obs[col].fillna('Unknown')
-            # Convert to string
-            adata.obs[col] = adata.obs[col].astype(str)
-            # Convert to category for memory efficiency
-            adata.obs[col] = adata.obs[col].astype('category')
-        
-        # Handle numeric columns with NaN
-        elif adata.obs[col].dtype in ['float64', 'float32']:
-            # Fill NaN values with appropriate defaults
-            if adata.obs[col].isna().any():
-                adata.obs[col] = adata.obs[col].fillna(0.0)
-        
-        # Handle integer columns
-        elif adata.obs[col].dtype in ['int64', 'int32']:
-            # Ensure no NaN values in integer columns
-            if adata.obs[col].isna().any():
-                adata.obs[col] = adata.obs[col].fillna(0).astype('int64')
-    
-    # Clean var dataframe
-    for col in adata.var.columns:
-        if adata.var[col].dtype == 'object':
-            # Fill NaN values and convert to string
-            adata.var[col] = adata.var[col].fillna('Unknown').astype(str)
-            # Convert to category for memory efficiency
-            adata.var[col] = adata.var[col].astype('category')
-        elif adata.var[col].dtype in ['float64', 'float32']:
-            if adata.var[col].isna().any():
-                adata.var[col] = adata.var[col].fillna(0.0)
-        elif adata.var[col].dtype in ['int64', 'int32']:
-            if adata.var[col].isna().any():
-                adata.var[col] = adata.var[col].fillna(0).astype('int64')
-    
-    if verbose:
-        print("✅ AnnData cleaning complete")
-    
-    return adata
-
+from preparation.Cell_type import *
+from preparation.Cell_type_linux import cell_types_linux
+from utils.safe_save import safe_h5ad_write
 
 def merge_sample_metadata(
     adata, 
@@ -508,11 +443,6 @@ def glue_preprocess_pipeline(
         print(f"❌ Error constructing guidance graph: {e}")
         raise
     
-    # Clean data before saving
-    print(f"🧹 Preparing data for saving...")
-    rna = clean_anndata_for_saving(rna, verbose=True)
-    atac = clean_anndata_for_saving(atac, verbose=True)
-    
     # Save preprocessed data
     print(f"💾 Saving preprocessed data...")
     print(f"   Output directory: {output_dir}")
@@ -523,9 +453,9 @@ def glue_preprocess_pipeline(
     
     try:
         print("   Saving RNA data...")
-        rna.write(rna_path, compression=compression)
+        safe_h5ad_write(rna, rna_path)
         print("   Saving ATAC data...")
-        atac.write(atac_path, compression=compression)
+        safe_h5ad_write(atac, atac_path)
         print("   Saving guidance graph...")
         nx.write_graphml(guidance, guidance_path)
         
@@ -1146,17 +1076,11 @@ def compute_gene_activity_from_knn(
         merged_adata.X.sort_indices()
         merged_adata.X.eliminate_zeros()
     
-    # Clean for saving
-    merged_adata = clean_anndata_for_saving(merged_adata, verbose=False)
-    
     # Save with optimized compression
     output_dir = os.path.join(output_path, 'preprocess')
     os.makedirs(output_dir, exist_ok=True)
     output_path_anndata = os.path.join(output_dir, 'atac_rna_integrated.h5ad')
-    
-    merged_adata.write(output_path_anndata, 
-                      compression='gzip',
-                      compression_opts=4)
+    safe_h5ad_write(merged_adata, output_path_anndata)
     
     if verbose:
         print(f"\n✅ Gene activity computation and merging complete!")
