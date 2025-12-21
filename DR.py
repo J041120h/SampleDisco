@@ -660,131 +660,61 @@ def _save_embeddings_to_csv(
     verbose: bool = False
 ) -> None:
     """
-    Save both cell embeddings and sample embeddings to CSV files.
+    Save ONLY unified (canonical) sample-level embeddings to CSV.
     
-    Parameters:
-    -----------
-    adata : sc.AnnData
-        The original AnnData object containing cell-level data
-    pseudobulk_anndata : sc.AnnData
-        The pseudobulk AnnData object containing sample-level data
-    output_dir : str
-        Base output directory
-    verbose : bool
-        Whether to print verbose output
+    Saved outputs:
+      - sample_expression_embedding.csv  (X_DR_expression)
+      - sample_proportion_embedding.csv  (X_DR_proportion)
+
+    Method-specific or intermediate embeddings (PCA/LSI/Harmony) are NOT saved.
     """
-    if verbose:
-        print("\n[SaveEmbeddings] Saving embeddings to CSV files...")
-    
-    # Create embedding output directory
+
     embedding_dir = os.path.join(output_dir, "embeddings")
     os.makedirs(embedding_dir, exist_ok=True)
-    
-    saved_count = 0
-    
-    # ========================================
-    # 1. Save CELL embeddings from adata.obsm
-    # ========================================
-    if verbose:
-        print(f"[SaveEmbeddings] Checking for cell embeddings in adata.obsm...")
-    
-    cell_embedding_keys = ['X_pca', 'X_umap', 'X_tsne', 'X_harmony', 'X_lsi', 
-                           'X_diffmap', 'X_draw_graph_fa']
-    
-    for key in cell_embedding_keys:
-        if key in adata.obsm:
-            output_path = os.path.join(embedding_dir, f"cell_{key}.csv")
-            
-            # Create DataFrame with cell IDs as index
-            emb_df = pd.DataFrame(
-                adata.obsm[key],
-                index=adata.obs_names
-            )
-            
-            if _save_embedding_csv(emb_df, output_path, f"cell {key}", verbose):
-                saved_count += 1
-    
-    # ========================================
-    # 2. Save SAMPLE EXPRESSION embedding
-    # ========================================
-    if verbose:
-        print(f"[SaveEmbeddings] Checking for sample expression embeddings...")
-    
-    # Try to get from pseudobulk_anndata.uns first (as DataFrame)
-    if 'X_DR_expression' in pseudobulk_anndata.uns:
-        output_path = os.path.join(embedding_dir, "sample_expression_embedding.csv")
-        if _save_embedding_csv(
-            pseudobulk_anndata.uns['X_DR_expression'], 
-            output_path, 
-            "sample expression embedding",
-            verbose
-        ):
-            saved_count += 1
-    # Fallback to obsm
-    elif 'X_DR_expression' in pseudobulk_anndata.obsm:
-        output_path = os.path.join(embedding_dir, "sample_expression_embedding.csv")
-        emb_df = pd.DataFrame(
-            pseudobulk_anndata.obsm['X_DR_expression'],
-            index=pseudobulk_anndata.obs_names
+
+    saved = 0
+
+    # ===============================
+    # Expression (canonical only)
+    # ===============================
+    if "X_DR_expression" in pseudobulk_anndata.uns:
+        output_path = os.path.join(
+            embedding_dir, "sample_expression_embedding.csv"
         )
-        if _save_embedding_csv(emb_df, output_path, "sample expression embedding", verbose):
-            saved_count += 1
-    
-    # Also save method-specific embeddings if available
-    method_keys_expression = ['X_pca_expression_method', 'X_lsi_expression_method']
-    for key in method_keys_expression:
-        if key in pseudobulk_anndata.uns:
-            method_name = key.replace('X_', '').replace('_expression_method', '')
-            output_path = os.path.join(embedding_dir, f"sample_expression_{method_name}.csv")
-            if _save_embedding_csv(
-                pseudobulk_anndata.uns[key],
-                output_path,
-                f"sample expression {method_name}",
-                verbose
-            ):
-                saved_count += 1
-    
-    # ========================================
-    # 3. Save SAMPLE PROPORTION embedding
-    # ========================================
-    if verbose:
-        print(f"[SaveEmbeddings] Checking for sample proportion embeddings...")
-    
-    # Try to get from pseudobulk_anndata.uns first (as DataFrame)
-    if 'X_DR_proportion' in pseudobulk_anndata.uns:
-        output_path = os.path.join(embedding_dir, "sample_proportion_embedding.csv")
         if _save_embedding_csv(
-            pseudobulk_anndata.uns['X_DR_proportion'],
+            pseudobulk_anndata.uns["X_DR_expression"],
+            output_path,
+            "sample expression embedding",
+            verbose,
+        ):
+            saved += 1
+    else:
+        if verbose:
+            print("[SaveEmbeddings] X_DR_expression not found; skipping expression CSV")
+
+    # ===============================
+    # Proportion (canonical only)
+    # ===============================
+    if "X_DR_proportion" in pseudobulk_anndata.uns:
+        output_path = os.path.join(
+            embedding_dir, "sample_proportion_embedding.csv"
+        )
+        if _save_embedding_csv(
+            pseudobulk_anndata.uns["X_DR_proportion"],
             output_path,
             "sample proportion embedding",
-            verbose
+            verbose,
         ):
-            saved_count += 1
-    # Fallback to obsm
-    elif 'X_DR_proportion' in pseudobulk_anndata.obsm:
-        output_path = os.path.join(embedding_dir, "sample_proportion_embedding.csv")
-        emb_df = pd.DataFrame(
-            pseudobulk_anndata.obsm['X_DR_proportion'],
-            index=pseudobulk_anndata.obs_names
-        )
-        if _save_embedding_csv(emb_df, output_path, "sample proportion embedding", verbose):
-            saved_count += 1
-    
-    # Also save PCA proportion if available
-    if 'X_pca_proportion' in pseudobulk_anndata.obsm:
-        output_path = os.path.join(embedding_dir, "sample_proportion_pca.csv")
-        emb_df = pd.DataFrame(
-            pseudobulk_anndata.obsm['X_pca_proportion'],
-            index=pseudobulk_anndata.obs_names
-        )
-        if _save_embedding_csv(emb_df, output_path, "sample proportion PCA", verbose):
-            saved_count += 1
-    
-    # ========================================
-    # Summary
-    # ========================================
+            saved += 1
+    else:
+        if verbose:
+            print("[SaveEmbeddings] X_DR_proportion not found; skipping proportion CSV")
+
     if verbose:
-        print(f"\n[SaveEmbeddings] ✓ Successfully saved {saved_count} embedding file(s) to: {embedding_dir}")
+        print(
+            f"[SaveEmbeddings] ✓ Saved {saved} canonical embedding file(s) to: {embedding_dir}"
+        )
+
 
 
 def _save_anndata_with_detailed_error_handling(file_path, adata, object_name, verbose=False):

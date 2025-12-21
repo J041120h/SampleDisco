@@ -5,7 +5,7 @@ import scanpy as sc
 
 from pseudo_adata import *
 from DR import *
-from code.preparation.Cell_type import *
+from preparation.Cell_type import *
 
 
 def _store_original_sample_ids(
@@ -30,7 +30,6 @@ def _store_original_sample_ids(
     if verbose:
         print(f"Stored original sample IDs in adata.obs['{original_sample_col}'].")
 
-
 def _maybe_append_modality_to_duplicates(
     adata: sc.AnnData,
     sample_column: str,
@@ -42,6 +41,7 @@ def _maybe_append_modality_to_duplicates(
             print(f"'{modality_col}' not found in .obs; no modality suffix added.")
         return
 
+    # Work on string views to detect duplicates safely
     s = adata.obs[sample_column].astype(str)
     dup_mask = s.duplicated(keep=False)
 
@@ -50,9 +50,14 @@ def _maybe_append_modality_to_duplicates(
             print(f"'{sample_column}' values are already unique; no modality suffix added.")
         return
 
+    # 🔑 Ensure the target column is NOT categorical before assignment
+    adata.obs[sample_column] = adata.obs[sample_column].astype(str)
+
     m = adata.obs[modality_col].astype(str)
 
-    adata.obs.loc[dup_mask, sample_column] = s[dup_mask] + "_" + m[dup_mask]
+    adata.obs.loc[dup_mask, sample_column] = (
+        s[dup_mask] + "_" + m[dup_mask]
+    )
 
     if verbose:
         n_dup_groups = s[dup_mask].nunique()
@@ -62,7 +67,6 @@ def _maybe_append_modality_to_duplicates(
             f"({n_dup_groups} duplicated sample IDs across {n_dup_rows} rows). "
             f"Appended modality from '{modality_col}' only for those rows."
         )
-
 
 def integrate_preprocess(
     output_dir,

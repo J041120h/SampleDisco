@@ -449,7 +449,7 @@ def multiomics_wrapper(
             sample_col=sample_col,
             celltype_col=celltype_col,
             output_dir=pseudobulk_output_dir,
-            Save=Save,
+            save=Save,
             n_features=n_features,
             normalize=normalize,
             target_sum=target_sum,
