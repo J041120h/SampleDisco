@@ -7,7 +7,6 @@ from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfTransformer
 import scipy.sparse as sparse
 from muon import atac as ac
-import snapatac2 as snap
 from typing import Union, List, Optional
 
 
@@ -181,61 +180,6 @@ def run_lsi_expression(
             return None
 
 
-def run_snapatac2_spectral(
-    pseudobulk_anndata: sc.AnnData,
-    n_components: int = 10,
-    verbose: bool = False
-) -> pd.DataFrame:
-    """
-    Performs snapATAC2 spectral embedding on pseudobulk ATAC-seq data.
-    """
-    if verbose:
-        print(f"[snapATAC2] Computing spectral embedding with {n_components} components on {pseudobulk_anndata.shape} data")
-
-    pb_adata = pseudobulk_anndata.copy()
-
-    try:
-        # Fix data type issues - ensure data is in correct format for snapATAC2
-        if sparse.issparse(pb_adata.X):
-            pb_adata.X = pb_adata.X.tocsr().astype(np.float32)
-        else:
-            pb_adata.X = pb_adata.X.astype(np.float32)
-
-        # Handle any infinite or NaN values
-        if sparse.issparse(pb_adata.X):
-            pb_adata.X.data = np.nan_to_num(pb_adata.X.data, nan=0.0, posinf=0.0, neginf=0.0)
-        else:
-            pb_adata.X = np.nan_to_num(pb_adata.X, nan=0.0, posinf=0.0, neginf=0.0)
-
-        if verbose:
-            print(f"[snapATAC2] Data preprocessing complete. Matrix type: {type(pb_adata.X)}, dtype: {pb_adata.X.dtype}")
-
-        # Select features (keeping all since they're already filtered)
-        n_features_to_select = min(50000, pb_adata.shape[1])
-        snap.pp.select_features(pb_adata, n_features=n_features_to_select)
-
-        # Compute spectral embedding
-        snap.tl.spectral(pb_adata, n_comps=n_components, random_state=42)
-
-        # Extract spectral coordinates
-        spectral_coords = pb_adata.obsm['X_spectral']
-        spectral_df = pd.DataFrame(
-            data=spectral_coords,
-            index=pb_adata.obs_names,
-            columns=[f"Spectral{i+1}" for i in range(spectral_coords.shape[1])]
-        )
-
-        if verbose:
-            print(f"[snapATAC2] Success. Shape: {spectral_df.shape}")
-
-        return spectral_df
-
-    except Exception as e:
-        if verbose:
-            print(f"[snapATAC2] Failed: {str(e)}")
-        return None
-
-
 def _store_results_in_both_objects(adata, pseudobulk_anndata, key, df_result, obsm_key=None, verbose=False):
     """Helper function to store results consistently in both adata and pseudobulk_anndata objects."""
     if df_result is not None:
@@ -255,7 +199,6 @@ def run_dimension_reduction_expression(
     pseudobulk_anndata: sc.AnnData,
     n_components: int = 10,
     atac: bool = False,
-    use_snapatac2_dimred: bool = False,
     verbose: bool = False
 ) -> None:
     """
@@ -267,10 +210,7 @@ def run_dimension_reduction_expression(
 
     if verbose:
         if atac:
-            if use_snapatac2_dimred:
-                print(f"[DimRed] Computing snapATAC2 spectral (with LSI fallback) for ATAC data with {n_components} components on {pseudobulk_anndata.shape} data")
-            else:
-                print(f"[DimRed] Computing LSI for ATAC data with {n_components} components on {pseudobulk_anndata.shape} data")
+            print(f"[DimRed] Computing LSI for ATAC data with {n_components} components on {pseudobulk_anndata.shape} data")
         else:
             print(f"[DimRed] Computing PCA for RNA data with {n_components} components on {pseudobulk_anndata.shape} data")
 
@@ -285,62 +225,35 @@ def run_dimension_reduction_expression(
         raise ValueError(f"Cannot perform dimension reduction: insufficient data dimensions (samples={n_samples}, genes={n_genes}).")
 
     if atac:
-        primary_result = None
-        method_used = None
+        # For ATAC data, use LSI
+        lsi_df = run_lsi_expression(
+            pseudobulk_anndata=pseudobulk_anndata,
+            n_components=n_components,
+            verbose=verbose
+        )
 
-        if use_snapatac2_dimred:
-            spectral_df = run_snapatac2_spectral(
-                pseudobulk_anndata=pseudobulk_anndata,
-                n_components=n_components,
-                verbose=verbose
-            )
-
-            if spectral_df is not None:
-                primary_result = spectral_df
-                method_used = "snapATAC2_spectral"
-
-                _store_results_in_both_objects(
-                    adata, pseudobulk_anndata,
-                    "X_spectral_expression_method", spectral_df,
-                    obsm_key="X_spectral_expression_method",
-                    verbose=verbose
-                )
-            else:
-                if verbose:
-                    print("[DimRed] snapATAC2 spectral failed, falling back to LSI...")
-
-        if primary_result is None:
-            lsi_df = run_lsi_expression(
-                pseudobulk_anndata=pseudobulk_anndata,
-                n_components=n_components,
-                verbose=verbose
-            )
-
-            if lsi_df is not None:
-                primary_result = lsi_df
-                method_used = "LSI"
-
-                _store_results_in_both_objects(
-                    adata, pseudobulk_anndata,
-                    "X_lsi_expression_method", lsi_df,
-                    obsm_key="X_lsi_expression_method",
-                    verbose=verbose
-                )
-            else:
-                raise RuntimeError("Both snapATAC2 spectral and LSI methods failed for ATAC data")
-
-        if primary_result is not None:
+        if lsi_df is not None:
             _store_results_in_both_objects(
                 adata, pseudobulk_anndata,
-                "X_DR_expression", primary_result,
+                "X_DR_expression", lsi_df,
                 obsm_key="X_DR_expression",
                 verbose=verbose
             )
 
+            _store_results_in_both_objects(
+                adata, pseudobulk_anndata,
+                "X_lsi_expression_method", lsi_df,
+                obsm_key="X_lsi_expression_method",
+                verbose=verbose
+            )
+
             if verbose:
-                print(f"[DimRed] Successfully used {method_used} for ATAC dimension reduction")
+                print(f"[DimRed] Successfully used LSI for ATAC dimension reduction")
+        else:
+            raise RuntimeError("LSI method failed for ATAC data")
 
     else:
+        # For RNA data, use PCA
         try:
             if pb_adata.X.max() > 100:
                 sc.pp.log1p(pb_adata)
@@ -696,6 +609,183 @@ def run_dimension_reduction_proportion(
         print(f"[run_dimension_reduction_proportion] Completed using {method}. Shape: {final_df.shape}")
 
 
+def _save_embedding_csv(embedding_data, output_path, embedding_name, verbose=False):
+    """
+    Helper function to save embedding data to CSV file.
+    
+    Parameters:
+    -----------
+    embedding_data : pd.DataFrame or np.ndarray
+        The embedding data to save
+    output_path : str
+        Full path where the CSV should be saved
+    embedding_name : str
+        Name of the embedding (for logging)
+    verbose : bool
+        Whether to print verbose output
+    """
+    try:
+        # Convert to DataFrame if needed
+        if isinstance(embedding_data, np.ndarray):
+            df = pd.DataFrame(embedding_data)
+        elif isinstance(embedding_data, pd.DataFrame):
+            df = embedding_data
+        else:
+            if verbose:
+                print(f"[SaveCSV] Skipping {embedding_name}: unsupported data type {type(embedding_data)}")
+            return False
+        
+        # Create directory if needed
+        directory = os.path.dirname(output_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+        
+        # Save to CSV
+        df.to_csv(output_path)
+        
+        if verbose:
+            print(f"[SaveCSV] ✓ Saved {embedding_name}: {output_path} (shape: {df.shape})")
+        return True
+        
+    except Exception as e:
+        if verbose:
+            print(f"[SaveCSV] ✗ Failed to save {embedding_name}: {str(e)}")
+        return False
+
+
+def _save_embeddings_to_csv(
+    adata: sc.AnnData,
+    pseudobulk_anndata: sc.AnnData,
+    output_dir: str,
+    verbose: bool = False
+) -> None:
+    """
+    Save both cell embeddings and sample embeddings to CSV files.
+    
+    Parameters:
+    -----------
+    adata : sc.AnnData
+        The original AnnData object containing cell-level data
+    pseudobulk_anndata : sc.AnnData
+        The pseudobulk AnnData object containing sample-level data
+    output_dir : str
+        Base output directory
+    verbose : bool
+        Whether to print verbose output
+    """
+    if verbose:
+        print("\n[SaveEmbeddings] Saving embeddings to CSV files...")
+    
+    # Create embedding output directory
+    embedding_dir = os.path.join(output_dir, "embeddings")
+    os.makedirs(embedding_dir, exist_ok=True)
+    
+    saved_count = 0
+    
+    # ========================================
+    # 1. Save CELL embeddings from adata.obsm
+    # ========================================
+    if verbose:
+        print(f"[SaveEmbeddings] Checking for cell embeddings in adata.obsm...")
+    
+    cell_embedding_keys = ['X_pca', 'X_umap', 'X_tsne', 'X_harmony', 'X_lsi', 
+                           'X_diffmap', 'X_draw_graph_fa']
+    
+    for key in cell_embedding_keys:
+        if key in adata.obsm:
+            output_path = os.path.join(embedding_dir, f"cell_{key}.csv")
+            
+            # Create DataFrame with cell IDs as index
+            emb_df = pd.DataFrame(
+                adata.obsm[key],
+                index=adata.obs_names
+            )
+            
+            if _save_embedding_csv(emb_df, output_path, f"cell {key}", verbose):
+                saved_count += 1
+    
+    # ========================================
+    # 2. Save SAMPLE EXPRESSION embedding
+    # ========================================
+    if verbose:
+        print(f"[SaveEmbeddings] Checking for sample expression embeddings...")
+    
+    # Try to get from pseudobulk_anndata.uns first (as DataFrame)
+    if 'X_DR_expression' in pseudobulk_anndata.uns:
+        output_path = os.path.join(embedding_dir, "sample_expression_embedding.csv")
+        if _save_embedding_csv(
+            pseudobulk_anndata.uns['X_DR_expression'], 
+            output_path, 
+            "sample expression embedding",
+            verbose
+        ):
+            saved_count += 1
+    # Fallback to obsm
+    elif 'X_DR_expression' in pseudobulk_anndata.obsm:
+        output_path = os.path.join(embedding_dir, "sample_expression_embedding.csv")
+        emb_df = pd.DataFrame(
+            pseudobulk_anndata.obsm['X_DR_expression'],
+            index=pseudobulk_anndata.obs_names
+        )
+        if _save_embedding_csv(emb_df, output_path, "sample expression embedding", verbose):
+            saved_count += 1
+    
+    # Also save method-specific embeddings if available
+    method_keys_expression = ['X_pca_expression_method', 'X_lsi_expression_method']
+    for key in method_keys_expression:
+        if key in pseudobulk_anndata.uns:
+            method_name = key.replace('X_', '').replace('_expression_method', '')
+            output_path = os.path.join(embedding_dir, f"sample_expression_{method_name}.csv")
+            if _save_embedding_csv(
+                pseudobulk_anndata.uns[key],
+                output_path,
+                f"sample expression {method_name}",
+                verbose
+            ):
+                saved_count += 1
+    
+    # ========================================
+    # 3. Save SAMPLE PROPORTION embedding
+    # ========================================
+    if verbose:
+        print(f"[SaveEmbeddings] Checking for sample proportion embeddings...")
+    
+    # Try to get from pseudobulk_anndata.uns first (as DataFrame)
+    if 'X_DR_proportion' in pseudobulk_anndata.uns:
+        output_path = os.path.join(embedding_dir, "sample_proportion_embedding.csv")
+        if _save_embedding_csv(
+            pseudobulk_anndata.uns['X_DR_proportion'],
+            output_path,
+            "sample proportion embedding",
+            verbose
+        ):
+            saved_count += 1
+    # Fallback to obsm
+    elif 'X_DR_proportion' in pseudobulk_anndata.obsm:
+        output_path = os.path.join(embedding_dir, "sample_proportion_embedding.csv")
+        emb_df = pd.DataFrame(
+            pseudobulk_anndata.obsm['X_DR_proportion'],
+            index=pseudobulk_anndata.obs_names
+        )
+        if _save_embedding_csv(emb_df, output_path, "sample proportion embedding", verbose):
+            saved_count += 1
+    
+    # Also save PCA proportion if available
+    if 'X_pca_proportion' in pseudobulk_anndata.obsm:
+        output_path = os.path.join(embedding_dir, "sample_proportion_pca.csv")
+        emb_df = pd.DataFrame(
+            pseudobulk_anndata.obsm['X_pca_proportion'],
+            index=pseudobulk_anndata.obs_names
+        )
+        if _save_embedding_csv(emb_df, output_path, "sample proportion PCA", verbose):
+            saved_count += 1
+    
+    # ========================================
+    # Summary
+    # ========================================
+    if verbose:
+        print(f"\n[SaveEmbeddings] ✓ Successfully saved {saved_count} embedding file(s) to: {embedding_dir}")
+
 
 def _save_anndata_with_detailed_error_handling(file_path, adata, object_name, verbose=False):
     """Save an AnnData object with detailed error handling and reporting."""
@@ -746,11 +836,11 @@ def dimension_reduction(
     integrated_data: bool = False,
     not_save: bool = False,
     atac: bool = False,
-    use_snapatac2_dimred: bool = False,
     verbose: bool = True
 ) -> None:
     """
     Computes dimension reduction for both cell expression and cell proportion data.
+    Saves both cell embeddings and sample embeddings to CSV files.
 
     Change: added preserve_cols and passed it to run_dimension_reduction_proportion().
     All other behavior unchanged; saving still uses pseudobulk/pseudobulk_sample.h5ad.
@@ -769,10 +859,7 @@ def dimension_reduction(
         print("  - X_DR_expression: for expression data")
         print("  - X_DR_proportion: for proportion data")
         if atac:
-            if use_snapatac2_dimred:
-                print("[process_anndata_with_dimension_reduction] ATAC mode: Will try snapATAC2 spectral first, fallback to LSI if needed")
-            else:
-                print("[process_anndata_with_dimension_reduction] ATAC mode: Will use LSI for expression data")
+            print("[process_anndata_with_dimension_reduction] ATAC mode: Will use LSI for expression data")
         else:
             print("[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data")
 
@@ -821,7 +908,6 @@ def dimension_reduction(
             pseudobulk_anndata=pseudobulk_anndata,
             n_components=n_expression_components,
             atac=atac,
-            use_snapatac2_dimred=use_snapatac2_dimred,
             verbose=verbose
         )
         expression_dr_successful = True
@@ -860,6 +946,25 @@ def dimension_reduction(
             error_msg += f"Proportion error: {proportion_error}"
         raise RuntimeError(error_msg)
 
+    # ========================================
+    # NEW: Save embeddings to CSV files
+    # ========================================
+    if not not_save:
+        try:
+            _save_embeddings_to_csv(
+                adata=adata,
+                pseudobulk_anndata=pseudobulk_anndata,
+                output_dir=output_dir,
+                verbose=verbose
+            )
+        except Exception as e:
+            if verbose:
+                print(f"[process_anndata_with_dimension_reduction] Warning: Failed to save embeddings to CSV: {str(e)}")
+            # Don't fail the entire function if CSV saving fails
+    
+    # ========================================
+    # Save h5ad files (original behavior)
+    # ========================================
     if not not_save:
         if verbose:
             print("[process_anndata_with_dimension_reduction] Preparing to save results...")
@@ -899,6 +1004,8 @@ def dimension_reduction(
                 print(f"  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns")
 
         if not not_save:
-            print(f"File saving: ATTEMPTED (pseudobulk_anndata only)")
+            print(f"File saving: ATTEMPTED")
+            print(f"  - H5AD: pseudobulk_anndata only")
+            print(f"  - CSV embeddings: {output_dir}/embeddings/")
 
     return pseudobulk_anndata
