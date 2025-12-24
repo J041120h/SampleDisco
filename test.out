@@ -1,73 +1,197 @@
-[Pipeline] Loading data...
-  Cell data: (823700, 2000)
-  Pseudobulk: (88, 2000)
-  Pseudobulk samples: ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC']...
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
-[Pipeline] Extracting embeddings from pseudobulk...
-  Found X_DR_expression: shape (88, 10)
-  Found X_DR_proportion: shape (88, 10)
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
+Step 1: Running GLUE integration...
+  Sub-steps: Preprocessing=True, Training=True, Gene Activity=True, Cell Types=True, Visualization=True
+Running preprocessing...
 
-[Pipeline] Pseudobulk modalities:
-  ATAC samples: 44
-  RNA samples: 44
-  Paired samples: 44
+🚀 Starting GLUE preprocessing pipeline...
 
-[Pipeline] Target features: 32 cell types, 2000 total genes
+   Feature selection mode: Highly Variable
 
-[Pipeline] Creating ATAC pseudobulk...
-[Aggregate ATAC] Filtered to ATAC: 419524 cells
-[Aggregate ATAC] Samples: 44, Cell types: 11
-[Aggregate ATAC] Target features: 393
-[Aggregate ATAC] Output shape: (44, 393)
+📊 Loading data files...
+   RNA: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad
+   ATAC: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/atac_raw.h5ad
+✅ Data loaded successfully
+   RNA shape: (99438, 38606)
+   ATAC shape: (99438, 3576085)
 
-[Pipeline] Creating RNA pseudobulk...
-[Aggregate RNA] Filtered to RNA: 404176 cells
-[Aggregate RNA] Samples: 44, Cell types: 22
-[Aggregate RNA] Target features: 433
-[Aggregate RNA] Output shape: (44, 433)
+📋 Loading and merging sample metadata...
+   Processing RNA metadata: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+   Merged 11 sample-level columns
+   Matched metadata for 99438/99438 samples
+   Processing ATAC metadata: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+   Merged 11 sample-level columns
+   Matched metadata for 99438/99438 samples
 
-[Pipeline] Common features between ATAC and RNA: 103
+✅ Metadata integration and standardization complete
+   RNA obs columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11']
+   ATAC obs columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11']
 
-[Pipeline] Matched samples:
-  ATAC (cell-level -> multiomics pb): 44
-  RNA (cell-level -> multiomics pb): 44
-  ATAC expression matrix: (44, 103)
-  RNA expression matrix: (44, 103)
+🧬 Setting up Ensembl annotation...
+   Release: 110
+   Species: homo_sapiens
+✅ Ensembl annotation ready
 
-======================================================================
-CROSS-MODAL EMBEDDING EVALUATION
-(For each ATAC sample, check correlation with nearest RNA sample)
-======================================================================
+🧬 Preprocessing scRNA-seq data...
+   Selecting 1500 highly variable genes
+   Computing 50 PCA components
+✅ RNA preprocessing complete
 
-  X_DR_expression:
-    Avg correlation (nearest RNA):     -0.2828
-    Avg correlation (k=1 nearest RNA): -0.2828
-    Avg correlation (paired samples):  -0.2764
-    Samples: 44 ATAC, 44 RNA, 44 paired
+🏔️ Preprocessing scATAC-seq data...
+   Computing feature statistics for peak selection
+   Selected 50000 highly accessible peaks
+   Computing 50 LSI components (15 iterations)
+✅ ATAC preprocessing complete
 
-  X_DR_proportion:
-    Avg correlation (nearest RNA):     -0.2646
-    Avg correlation (k=1 nearest RNA): -0.2646
-    Avg correlation (paired samples):  -0.2764
-    Samples: 44 ATAC, 44 RNA, 44 paired
+🔍 Detecting gene ID format...
+   Detected Ensembl gene IDs format
 
-----------------------------------------------------------------------
-BEST EMBEDDING: X_DR_proportion
-  avg_nearest_rna_corr = -0.2646
-======================================================================
+🗺️ Processing gene coordinates...
+   Processing 38606 genes...
+✅ Gene coordinate processing complete
+   38606 genes retained
+   Final RNA shape: (99438, 38606)
 
-[Pipeline] Saving results to /dcs07/hongkai/data/harry/result/multi_omics_SD/embedding_selection...
+🏔️ Processing ATAC peak coordinates...
+   Processing 3576085 peaks...
+✅ ATAC peak coordinates extracted successfully
 
-[Pipeline] Complete!
-  Evaluation results: /dcs07/hongkai/data/harry/result/multi_omics_SD/embedding_selection/embedding_evaluation.csv
-  Best embedding: X_DR_proportion
+🕸️ Constructing guidance graph...
+   Using highly variable features for graph construction
+[INFO] check_graph: Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+[INFO] check_graph: All checks passed!
+✅ Guidance graph constructed successfully
+   Nodes: 3,614,691
+   Edges: 9,176,261
 
-Best embedding: X_DR_proportion
+💾 Saving preprocessed data...
+   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue
+   Saving RNA data...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue/rna-pp.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 10 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue/rna-pp.h5ad
+   Saving ATAC data...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue/atac-pp.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 10 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue/atac-pp.h5ad
+   Saving guidance graph...
 
-Evaluation summary:
-                 avg_nearest_rna_corr  avg_knn_corr  ...  n_rna_samples  n_paired
-embedding                                            ...                         
-X_DR_expression             -0.282799     -0.282799  ...             44        44
-X_DR_proportion             -0.264551     -0.264551  ...             44        44
+🎉 GLUE preprocessing pipeline completed successfully!
 
-[2 rows x 6 columns]
+Preprocessing completed.
+Running training...
+
+
+
+🚀 Starting GLUE training pipeline...
+
+
+
+   Feature mode: Highly Variable Only
+   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue
+
+
+
+
+📊 Loading preprocessed data from /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue...
+
+
+
+
+
+
+Data loaded - RNA: (99438, 38606), ATAC: (99438, 3576085), Graph: 3614691 nodes
+
+
+
+
+
+
+⚙️ Configuring datasets...
+
+
+
+
+
+
+🔍 Extracting highly variable feature subgraph...
+
+
+
+HVF subgraph extracted - RNA HVF: 1500, ATAC HVF: 315354
+HVF graph: 316854 nodes, 954896 edges
+
+
+
+
+
+
+🤖 Training GLUE model...
+
+
+
+[INFO] fit_SCGLUE: Pretraining SCGLUE model...
+[INFO] autodevice: Using GPU 0 as computation device.
+[INFO] check_graph: Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+[INFO] SCGLUEModel: Setting `graph_batch_size` = 328246
+[INFO] SCGLUEModel: Setting `patience` = 4
+[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 2
+[INFO] SCGLUETrainer: Using training directory: "/dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/integration/glue/training/pretrain"

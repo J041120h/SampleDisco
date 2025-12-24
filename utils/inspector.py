@@ -298,6 +298,12 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10, n_col_examples: int = 5
 
 
 if __name__ == "__main__":
+    import scanpy as sc
+    adata = sc.read('/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad')
+    adata.obs['sample'] = adata.obs['dataset'].str.replace(r'PMID_31436334_', '', regex=True)
+    # Verify the changes
+    print(adata.obs[['dataset', 'sample']].head())
+    adata.write('/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad')
     summarize_h5ad(
-        h5ad_path="/dcs07/hongkai/data/harry/result/Benchmark_multiomics/adata_cell.h5ad"
+        h5ad_path="/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad"
     )

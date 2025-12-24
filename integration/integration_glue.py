@@ -95,7 +95,6 @@ def merge_sample_metadata(
     
     return adata
 
-
 def glue_preprocess_pipeline(
     rna_file: str,
     atac_file: str,
@@ -121,6 +120,8 @@ def glue_preprocess_pipeline(
 ) -> Tuple[ad.AnnData, ad.AnnData, nx.MultiDiGraph]:
     """
     Complete GLUE preprocessing pipeline for scRNA-seq and scATAC-seq data integration.
+    
+    Now supports both gene symbols and Ensembl gene IDs for RNA data.
     
     Parameters:
     -----------
@@ -353,31 +354,60 @@ def glue_preprocess_pipeline(
     
     print("✅ ATAC preprocessing complete\n")
     
+    # Detect gene ID format
+    print(f"🔍 Detecting gene ID format...")
+    sample_genes = rna.var_names[:100]
+    ensembl_pattern = sample_genes.str.match(r'^ENS[A-Z]*G\d+')
+    use_ensembl_ids = ensembl_pattern.sum() > 50  # If >50% are Ensembl IDs
+    
+    if use_ensembl_ids:
+        print(f"   Detected Ensembl gene IDs format")
+    else:
+        print(f"   Detected gene symbol format")
+    print()
+    
     # Get gene coordinates from Ensembl
-    def get_gene_coordinates(gene_names, ensembl_db):
-        """Extract gene coordinates from pyensembl database with improved error handling"""
+    def get_gene_coordinates(gene_ids, ensembl_db, use_ensembl_id=False):
+        """Extract gene coordinates from pyensembl database with support for both gene symbols and Ensembl IDs"""
         coords = []
         failed_genes = []
         
-        for gene_name in gene_names:
+        for gene_id in gene_ids:
             try:
-                genes = ensembl_db.genes_by_name(gene_name)
-                if genes:
-                    gene = genes[0]  # Take first match
-                    # Convert strand to +/- format
-                    strand = '+' if gene.strand == '+' else '-'
-                    coords.append({
-                        'chrom': f"chr{gene.contig}",
-                        'chromStart': gene.start,
-                        'chromEnd': gene.end,
-                        'strand': strand
-                    })
+                if use_ensembl_id:
+                    # Handle Ensembl IDs - remove version suffix if present
+                    clean_id = gene_id.split('.')[0] if '.' in gene_id else gene_id
+                    try:
+                        gene = ensembl_db.gene_by_id(clean_id)
+                        strand = '+' if gene.strand == '+' else '-'
+                        coords.append({
+                            'chrom': f"chr{gene.contig}",
+                            'chromStart': gene.start,
+                            'chromEnd': gene.end,
+                            'strand': strand
+                        })
+                    except ValueError:
+                        # Gene ID not found
+                        coords.append({'chrom': None, 'chromStart': None, 'chromEnd': None, 'strand': None})
+                        failed_genes.append(gene_id)
                 else:
-                    coords.append({'chrom': None, 'chromStart': None, 'chromEnd': None, 'strand': None})
-                    failed_genes.append(gene_name)
+                    # Handle gene symbols
+                    genes = ensembl_db.genes_by_name(gene_id)
+                    if genes:
+                        gene = genes[0]  # Take first match
+                        strand = '+' if gene.strand == '+' else '-'
+                        coords.append({
+                            'chrom': f"chr{gene.contig}",
+                            'chromStart': gene.start,
+                            'chromEnd': gene.end,
+                            'strand': strand
+                        })
+                    else:
+                        coords.append({'chrom': None, 'chromStart': None, 'chromEnd': None, 'strand': None})
+                        failed_genes.append(gene_id)
             except Exception as e:
                 coords.append({'chrom': None, 'chromStart': None, 'chromEnd': None, 'strand': None})
-                failed_genes.append(gene_name)
+                failed_genes.append(gene_id)
         
         if failed_genes and len(failed_genes) <= 10:
             print(f"   ⚠️ Could not find coordinates for genes: {', '.join(failed_genes[:10])}")
@@ -390,7 +420,7 @@ def glue_preprocess_pipeline(
     print(f"🗺️ Processing gene coordinates...")
     print(f"   Processing {len(rna.var_names)} genes...")
     
-    gene_coords = get_gene_coordinates(rna.var_names, ensembl)
+    gene_coords = get_gene_coordinates(rna.var_names, ensembl, use_ensembl_id=use_ensembl_ids)
     rna.var['chrom'] = [c['chrom'] for c in gene_coords]
     rna.var['chromStart'] = [c['chromStart'] for c in gene_coords]
     rna.var['chromEnd'] = [c['chromEnd'] for c in gene_coords]
@@ -418,6 +448,11 @@ def glue_preprocess_pipeline(
         atac.var["chrom"] = split.map(lambda x: x[0])
         atac.var["chromStart"] = split.map(lambda x: x[1]).astype(int)
         atac.var["chromEnd"] = split.map(lambda x: x[2]).astype(int)
+        
+        # Add strand information for ATAC peaks (default to '+' as peaks are strand-agnostic)
+        if 'strand' not in atac.var.columns:
+            atac.var['strand'] = '+'
+        
         print("✅ ATAC peak coordinates extracted successfully\n")
     except Exception as e:
         print(f"❌ Error processing ATAC peak coordinates: {e}")

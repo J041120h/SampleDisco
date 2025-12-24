@@ -1,60 +1,23 @@
-🔍 Loading AnnData from: /dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad
+✅ Successfully loaded RNA and ATAC files
 
-📦 Basic Info
-  - Shape (cells × genes): 12402 × 3576085
-  - Layers: []
-  - obs columns: ['sample']
-  - var columns: []
-  - obsm keys: []
-  - varm keys: []
+🔍 RNA Data Information
+   RNA Shape: (99438, 38606)
+   RNA var_names (first 10 features):
+Index(['ENSG00000290825', 'ENSG00000243485', 'ENSG00000237613',
+       'ENSG00000290826', 'ENSG00000186092', 'ENSG00000238009',
+       'ENSG00000239945', 'ENSG00000239906', 'ENSG00000241860',
+       'ENSG00000241599'],
+      dtype='object')
+   RNA var columns: []
+   RNA does not contain 'strand' column
 
-🔎 Inspecting .X matrix:
-  - storage type: sparse (csc_matrix)
-  - dtype: float64
-  - value type: float — values appear integer-like (no fractional parts)
-  - contains NaN: False
-  - contains Inf: False
-  - min value: 1
-  - max value: 11
-
-🧮 Example .X values (first 10 cells × 10 genes):
-[[0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
-
-🧫 Example cell names:
-  - ENCSR284PXA_AAACAGCCAAATACCT-1
-  - ENCSR284PXA_AAACAGCCAAATATCC-1
-  - ENCSR284PXA_AAACAGCCAACCTGGT-1
-  - ENCSR284PXA_AAACAGCCACAGAAAC-1
-  - ENCSR284PXA_AAACAGCCAGTTGCGT-1
-  - ENCSR284PXA_AAACAGCCATAAGCAA-1
-  - ENCSR284PXA_AAACAGCCATGTTTGG-1
-  - ENCSR284PXA_AAACATGCAAGCTTTG-1
-  - ENCSR284PXA_AAACATGCAAGGAATC-1
-  - ENCSR284PXA_AAACATGCAATCCTAG-1
-
-📋 Example obs rows:
-                                     sample
-ENCSR284PXA_AAACAGCCAAATACCT-1  ENCSR284PXA
-ENCSR284PXA_AAACAGCCAAATATCC-1  ENCSR284PXA
-ENCSR284PXA_AAACAGCCAACCTGGT-1  ENCSR284PXA
-ENCSR284PXA_AAACAGCCACAGAAAC-1  ENCSR284PXA
-ENCSR284PXA_AAACAGCCAGTTGCGT-1  ENCSR284PXA
-ENCSR284PXA_AAACAGCCATAAGCAA-1  ENCSR284PXA
-ENCSR284PXA_AAACAGCCATGTTTGG-1  ENCSR284PXA
-ENCSR284PXA_AAACATGCAAGCTTTG-1  ENCSR284PXA
-ENCSR284PXA_AAACATGCAAGGAATC-1  ENCSR284PXA
-ENCSR284PXA_AAACATGCAATCCTAG-1  ENCSR284PXA
-
-🧬 Example var rows:
-Empty DataFrame
-Columns: []
-Index: [chr1-16140-16200, chr1-51868-52040, chr1-57280-57354, chr1-66370-66482, chr1-79100-79231, chr1-79430-79497, chr1-79580-79760, chr1-87220-87295, chr1-88220-88360, chr1-88700-88814]
+🔍 ATAC Data Information
+   ATAC Shape: (99438, 3576085)
+   ATAC var_names (first 10 features):
+Index(['chr1-16140-16200', 'chr1-51868-52040', 'chr1-57280-57354',
+       'chr1-66370-66482', 'chr1-79100-79231', 'chr1-79430-79497',
+       'chr1-79580-79760', 'chr1-87220-87295', 'chr1-88220-88360',
+       'chr1-88700-88814'],
+      dtype='object')
+   ATAC var columns: []
+   ATAC does not contain 'strand' column
