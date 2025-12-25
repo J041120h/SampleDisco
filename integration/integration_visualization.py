@@ -989,3 +989,195 @@ def add_cca_vectors(ax, cca_results_df, embedding_key, modality,
         print(f"Added CCA vector for {modality} {embedding_key}")
     
     return cca_score_text
+
+
+import os
+import scanpy as sc
+import anndata as ad
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend to prevent figure warnings
+
+def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
+    """
+    Load integrated RNA-ATAC data and create joint UMAP visualization
+    
+    Parameters:
+    -----------
+    integrated_path : str
+        Path to integrated h5ad file (e.g., atac_rna_integrated.h5ad)
+    output_dir : str, optional
+        Output directory. If None, uses directory of integrated file
+    plot_columns : list, optional
+        List of column names to plot. If None, defaults to ['modality', 'cell_type']
+    """
+    
+    # Load the integrated data
+    print("Loading integrated RNA-ATAC data...")
+    combined = ad.read_h5ad(integrated_path)
+    
+    # Set output directory
+    if output_dir is None:
+        output_dir = os.path.dirname(integrated_path)
+    
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Check if scGLUE embeddings exist
+    if "X_glue" not in combined.obsm:
+        print("Error: X_glue embeddings not found in integrated data. Run scGLUE integration first.")
+        return
+    
+    print("Computing UMAP from scGLUE embeddings...")
+    # Compute neighbors and UMAP using the scGLUE embeddings
+    sc.pp.neighbors(combined, use_rep="X_glue", metric="cosine")
+    sc.tl.umap(combined)
+    
+    # Set up plotting parameters
+    sc.settings.set_figure_params(dpi=80, facecolor='white', figsize=(8, 6))
+    plt.rcParams['figure.max_open_warning'] = 50  # Increase the warning threshold
+    
+    # Set default columns if none specified
+    if plot_columns is None:
+        plot_columns = ['modality', 'cell_type']
+    
+    print(f"Generating visualizations for columns: {plot_columns}")
+    
+    # Generate plots for specified columns
+    for col in plot_columns:
+        if col not in combined.obs.columns:
+            print(f"Warning: Column '{col}' not found in data. Skipping...")
+            continue
+        
+        # Skip columns that also exist in var_names to avoid ambiguity
+        if col in combined.var_names:
+            print(f"Warning: Column '{col}' exists in both obs.columns and var_names. Skipping...")
+            continue
+        
+        try:
+            plt.figure(figsize=(12, 8))
+            sc.pl.umap(combined, color=col, 
+                       title=f"scGLUE Integration: {col}",
+                       save=False, show=False, wspace=0.65)
+            plt.tight_layout()
+            col_plot_path = os.path.join(output_dir, f"scglue_umap_{col}.png")
+            plt.savefig(col_plot_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f"Saved {col} plot: {col_plot_path}")
+        except Exception as e:
+            print(f"Error plotting {col}: {str(e)}")
+            plt.close()  # Close the figure even if there's an error
+    
+    # Create modality-cell type distribution heatmap if both columns exist and are in plot_columns
+    if ("modality" in plot_columns and "modality" in combined.obs.columns and 
+        "cell_type" in plot_columns and "cell_type" in combined.obs.columns):
+        print("\nCreating modality-cell type distribution heatmap...")
+        
+        # Create a cross-tabulation of modality and cell type
+        modality_celltype_counts = pd.crosstab(
+            combined.obs['cell_type'], 
+            combined.obs['modality']
+        )
+        
+        # Calculate proportions (percentage of each modality within each cell type)
+        modality_celltype_props = modality_celltype_counts.div(
+            modality_celltype_counts.sum(axis=1), 
+            axis=0
+        ) * 100
+        
+        # Create two heatmaps: one for counts and one for proportions
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+        
+        # Heatmap 1: Raw counts
+        sns.heatmap(
+            modality_celltype_counts,
+            annot=True,
+            fmt='d',
+            cmap='Blues',
+            cbar_kws={'label': 'Number of cells'},
+            ax=ax1
+        )
+        ax1.set_title('Cell Count Distribution: Modality vs Cell Type', fontsize=14, pad=20)
+        ax1.set_xlabel('Modality', fontsize=12)
+        ax1.set_ylabel('Cell Type', fontsize=12)
+        
+        # Heatmap 2: Proportions
+        sns.heatmap(
+            modality_celltype_props,
+            annot=True,
+            fmt='.1f',
+            cmap='YlOrRd',
+            cbar_kws={'label': 'Percentage (%)'},
+            ax=ax2
+        )
+        ax2.set_title('Modality Distribution within Each Cell Type (%)', fontsize=14, pad=20)
+        ax2.set_xlabel('Modality', fontsize=12)
+        ax2.set_ylabel('Cell Type', fontsize=12)
+        
+        plt.tight_layout()
+        heatmap_plot_path = os.path.join(output_dir, "scglue_modality_celltype_heatmap.png")
+        plt.savefig(heatmap_plot_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Saved modality-cell type heatmap: {heatmap_plot_path}")
+        
+        # Also create a stacked bar plot for better visualization
+        plt.figure(figsize=(14, 8))
+        
+        # Calculate percentages for stacked bar
+        modality_celltype_props_T = modality_celltype_props.T
+        
+        # Create stacked bar plot
+        modality_celltype_props_T.plot(
+            kind='bar',
+            stacked=True,
+            colormap='tab20',
+            width=0.8
+        )
+        
+        plt.title('Modality Composition by Cell Type', fontsize=16, pad=20)
+        plt.xlabel('Modality', fontsize=12)
+        plt.ylabel('Percentage of Cells (%)', fontsize=12)
+        plt.legend(title='Cell Type', bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        
+        stacked_plot_path = os.path.join(output_dir, "scglue_modality_celltype_stacked.png")
+        plt.savefig(stacked_plot_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Saved modality-cell type stacked plot: {stacked_plot_path}")
+        
+        # Print summary statistics
+        print("\n=== Modality-Cell Type Distribution Summary ===")
+        print(f"Total cell types: {len(modality_celltype_counts.index)}")
+        print(f"Total modalities: {len(modality_celltype_counts.columns)}")
+        
+        # Print cells per modality per cell type
+        print("\nCell counts by modality and cell type:")
+        print(modality_celltype_counts.to_string())
+        
+        # Save the distribution table as CSV
+        csv_path = os.path.join(output_dir, "scglue_modality_celltype_distribution.csv")
+        modality_celltype_counts.to_csv(csv_path)
+        print(f"\nSaved distribution table to: {csv_path}")
+        
+    # Generate summary statistics
+    print("\n=== Integration Summary ===")
+    print(f"Total cells: {combined.n_obs}")
+    print(f"Total features: {combined.n_vars}")
+    print(f"Available metadata columns: {list(combined.obs.columns)}")
+    
+    # Show breakdown by modality if available
+    if "modality" in combined.obs.columns:
+        modality_counts = combined.obs['modality'].value_counts()
+        print(f"\nModality breakdown:")
+        for modality, count in modality_counts.items():
+            print(f"  {modality}: {count} cells")
+    
+    # Check feature usage
+    hvg_used = combined.var['highly_variable'].sum() if 'highly_variable' in combined.var else combined.n_vars
+    print(f"\nFeatures used: {hvg_used}/{combined.n_vars}")
+    
+    print("\nVisualization complete!")
+    

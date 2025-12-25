@@ -28,6 +28,7 @@ from cupyx.scipy import sparse as cusparse
 from preparation.Cell_type import *
 from preparation.Cell_type_linux import cell_types_linux
 from utils.safe_save import safe_h5ad_write
+from integration.integration_visualization import glue_visualize
 
 def merge_sample_metadata(
     adata, 
@@ -642,13 +643,13 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     if not is_reliable:
         print("\n\n\n⚠️ Low consistency detected. Consider adjusting parameters or checking data quality.\n\n\n")
     
-    print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n")
+    print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n") 
 
 def compute_gene_activity_from_knn(
     glue_dir: str,
     output_path: str,
     raw_rna_path: str,
-    k_neighbors: int = 50,
+    k_neighbors: int = 1,
     use_rep: str = "X_glue",
     metric: str = "cosine",
     use_gpu: bool = True,
@@ -749,16 +750,33 @@ def compute_gene_activity_from_knn(
     del atac
     gc.collect()
     
-    # Load raw RNA counts
+    # Load raw RNA counts - load FULLY into memory to avoid backed file indexing issues
     if verbose:
-        print("📂 Loading raw RNA counts...")
+        print("📂 Loading raw RNA counts into memory...")
     
-    rna_raw = ad.read_h5ad(raw_rna_path, backed='r')
+    # Load without backing to get full data in memory
+    rna_raw = ad.read_h5ad(raw_rna_path)
     
     # Get raw RNA metadata
     raw_rna_obs = rna_raw.obs.copy()
     raw_rna_var = rna_raw.var.copy()
     raw_rna_varm_dict = {k: v.copy() for k, v in rna_raw.varm.items()} if hasattr(rna_raw, 'varm') else {}
+    
+    # Get the expression matrix and convert to CSR for efficient row access
+    if sparse.issparse(rna_raw.X):
+        rna_X_full = rna_raw.X.tocsr()
+    else:
+        rna_X_full = rna_raw.X
+    
+    if verbose:
+        if sparse.issparse(rna_X_full):
+            print(f"   RNA matrix loaded: {rna_X_full.shape}, sparse CSR")
+        else:
+            print(f"   RNA matrix loaded: {rna_X_full.shape}, dense")
+    
+    # Clean up the AnnData object but keep the matrix
+    del rna_raw
+    gc.collect()
     
     # Align cells between processed RNA embeddings and raw RNA counts
     common_cells = processed_rna_cells.intersection(raw_rna_obs.index)
@@ -776,9 +794,14 @@ def compute_gene_activity_from_knn(
     # Use raw RNA obs for the aligned cells
     rna_obs = raw_rna_obs.loc[common_cells].copy()
     
+    # Create mapping from common_cells to integer indices in the full matrix
+    raw_rna_cell_to_idx = {cell: idx for idx, cell in enumerate(raw_rna_obs.index)}
+    common_cells_list = list(common_cells)
+    common_cells_raw_indices = np.array([raw_rna_cell_to_idx[cell] for cell in common_cells_list], dtype=np.int64)
+    
     # Get dimensions
-    n_rna_cells = len(common_cells)
-    n_genes = rna_raw.n_vars
+    n_rna_cells = len(common_cells_list)
+    n_genes = rna_X_full.shape[1]
     
     if verbose:
         print(f"   RNA cells: {n_rna_cells}, ATAC cells: {n_atac_cells}, Genes: {n_genes}")
@@ -826,15 +849,28 @@ def compute_gene_activity_from_knn(
     min_sim = cp.min(similarities, axis=1, keepdims=True)
     max_sim = cp.max(similarities, axis=1, keepdims=True)
     
-    # Handle case where all similarities are the same
+    # Handle case where all similarities are the same (e.g., k=1)
     sim_range = max_sim - min_sim
-    sim_range = cp.where(sim_range > 0, sim_range, 1.0)
+    all_equal = sim_range == 0
     
-    # Shift minimum to 0, maximum to 1
-    similarities = (similarities - min_sim) / sim_range
-    
-    # Normalize to sum to 1 (create weights)
-    weights_gpu = similarities / cp.sum(similarities, axis=1, keepdims=True)
+    if cp.any(all_equal):
+        # For cells where all similarities are equal, assign uniform weights
+        weights_gpu = cp.ones_like(similarities, dtype=cp.float32) / k_neighbors
+        
+        # For cells with varying similarities, apply shift-scale normalization
+        if not cp.all(all_equal):
+            # Shift minimum to 0, maximum to 1 for cells with range > 0
+            similarities = cp.where(all_equal, 0, (similarities - min_sim) / sim_range)
+            # Normalize to sum to 1
+            similarities = similarities / cp.sum(similarities, axis=1, keepdims=True)
+            # Replace weights for cells with varying similarities
+            weights_gpu = cp.where(all_equal, weights_gpu, similarities)
+    else:
+        # Normal case: all cells have varying similarities
+        # Shift minimum to 0, maximum to 1
+        similarities = (similarities - min_sim) / sim_range
+        # Normalize to sum to 1 (create weights)
+        weights_gpu = similarities / cp.sum(similarities, axis=1, keepdims=True)
     
     # Verify weights are valid
     if verbose:
@@ -875,8 +911,8 @@ def compute_gene_activity_from_knn(
     # Pre-allocate output matrix as float64 for final precision
     gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float64)
     
-    # Optimize RNA data loading - check if sparse
-    is_sparse_rna = sparse.issparse(rna_raw.X)
+    # Check if sparse
+    is_sparse_rna = sparse.issparse(rna_X_full)
     
     for batch_idx in range(n_batches):
         start_idx = batch_idx * optimal_batch_size
@@ -887,21 +923,33 @@ def compute_gene_activity_from_knn(
         batch_indices_gpu = indices_gpu[start_idx:end_idx]
         batch_weights_gpu = weights_gpu[start_idx:end_idx]
         
-        # Get unique RNA indices for this batch
+        # Get unique RNA indices for this batch (these are indices into common_cells, 0 to n_rna_cells-1)
         batch_indices_cpu = cp.asnumpy(batch_indices_gpu).flatten()
-        unique_rna_indices = np.unique(batch_indices_cpu)
+        unique_common_indices = np.unique(batch_indices_cpu)
         
-        # Load RNA expression for batch neighbors
+        # Convert to raw file indices (integer positions in the full matrix)
+        unique_raw_indices = common_cells_raw_indices[unique_common_indices]
+        
+        # Load RNA expression - now from in-memory matrix (no backed file issues!)
         if is_sparse_rna:
-            rna_expr_subset = rna_raw[common_cells[unique_rna_indices], :].X
+            rna_expr_subset = rna_X_full[unique_raw_indices, :]
             if sparse.issparse(rna_expr_subset):
+                # Check density
                 if rna_expr_subset.nnz / rna_expr_subset.size > 0.1:  # If >10% dense
                     rna_expr_subset = rna_expr_subset.toarray()
                 else:
                     # Keep sparse and use sparse GPU operations
                     rna_expr_subset = cusparse.csr_matrix(rna_expr_subset, dtype=cp.float32)
+            else:
+                rna_expr_subset = np.asarray(rna_expr_subset)
         else:
-            rna_expr_subset = rna_raw[common_cells[unique_rna_indices], :].X[:]
+            rna_expr_subset = rna_X_full[unique_raw_indices, :]
+        
+        # Create mapping: raw_index -> position in rna_expr_subset
+        raw_idx_to_subset_idx = {raw_idx: subset_idx for subset_idx, raw_idx in enumerate(unique_raw_indices)}
+        
+        # Create mapping: common_index -> position in rna_expr_subset
+        common_to_subset = np.array([raw_idx_to_subset_idx[common_cells_raw_indices[ci]] for ci in unique_common_indices], dtype=np.int32)
         
         # Transfer to GPU if not already
         if not isinstance(rna_expr_subset, (cp.ndarray, cusparse.csr_matrix)):
@@ -909,9 +957,9 @@ def compute_gene_activity_from_knn(
         else:
             rna_expr_gpu = rna_expr_subset
         
-        # Create mapping for indices
+        # Create mapping for common_cells indices to subset indices
         idx_map = cp.zeros(n_rna_cells, dtype=cp.int32) - 1
-        idx_map[unique_rna_indices] = cp.arange(len(unique_rna_indices), dtype=cp.int32)
+        idx_map[unique_common_indices] = cp.asarray(common_to_subset, dtype=cp.int32)
         mapped_indices_gpu = idx_map[batch_indices_gpu]
         
         # Vectorized computation using advanced indexing
@@ -993,9 +1041,9 @@ def compute_gene_activity_from_knn(
     if verbose:
         print("\n🔗 Preparing RNA data for merging...")
     
-    # Load RNA data efficiently
+    # Extract RNA data for common cells from in-memory matrix
     if is_sparse_rna:
-        rna_X = rna_raw[common_cells, :].X
+        rna_X = rna_X_full[common_cells_raw_indices, :]
         if sparse.issparse(rna_X):
             rna_X = rna_X.tocsr().astype(np.float64)
             # Fix sparse matrix dtype to int64
@@ -1004,7 +1052,7 @@ def compute_gene_activity_from_knn(
                 rna_sparsity = 1 - (rna_X.nnz / (rna_X.shape[0] * rna_X.shape[1]))
                 print(f"   RNA sparsity: {rna_sparsity:.1%} zeros")
         else:
-            rna_X = rna_X[:].astype(np.float64)
+            rna_X = np.asarray(rna_X).astype(np.float64)
             nnz = np.count_nonzero(rna_X)
             sparsity = 1 - (nnz / rna_X.size)
             if sparsity > 0.5:
@@ -1013,7 +1061,7 @@ def compute_gene_activity_from_knn(
                 rna_X = sparse.csr_matrix(rna_X, dtype=np.float64)
                 rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
     else:
-        rna_X = rna_raw[common_cells, :].X[:].astype(np.float64)
+        rna_X = rna_X_full[common_cells_raw_indices, :].astype(np.float64)
         nnz = np.count_nonzero(rna_X)
         sparsity = 1 - (nnz / rna_X.size)
         if sparsity > 0.5:
@@ -1022,9 +1070,8 @@ def compute_gene_activity_from_knn(
             rna_X = sparse.csr_matrix(rna_X, dtype=np.float64)
             rna_X = fix_sparse_matrix_dtype(rna_X, verbose=verbose)
     
-    # Close the backed file
-    rna_raw.file.close()
-    del rna_raw
+    # Clean up full matrix
+    del rna_X_full
     gc.collect()
     
     # Create RNA AnnData with raw RNA obs/var
@@ -1150,188 +1197,6 @@ def compute_gene_activity_from_knn(
     gc.collect()
     
     return merged_adata
-
-matplotlib.use('Agg')  # Use non-interactive backend to prevent figure warnings
-
-def glue_visualize(integrated_path, output_dir=None, plot_columns=None):
-    """
-    Load integrated RNA-ATAC data and create joint UMAP visualization
-    
-    Parameters:
-    -----------
-    integrated_path : str
-        Path to integrated h5ad file (e.g., atac_rna_integrated.h5ad)
-    output_dir : str, optional
-        Output directory. If None, uses directory of integrated file
-    plot_columns : list, optional
-        List of column names to plot. If None, defaults to ['modality', 'cell_type']
-    """
-    
-    # Load the integrated data
-    print("Loading integrated RNA-ATAC data...")
-    combined = ad.read_h5ad(integrated_path)
-    
-    # Set output directory
-    if output_dir is None:
-        output_dir = os.path.dirname(integrated_path)
-    
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Check if scGLUE embeddings exist
-    if "X_glue" not in combined.obsm:
-        print("Error: X_glue embeddings not found in integrated data. Run scGLUE integration first.")
-        return
-    
-    print("Computing UMAP from scGLUE embeddings...")
-    # Compute neighbors and UMAP using the scGLUE embeddings
-    sc.pp.neighbors(combined, use_rep="X_glue", metric="cosine")
-    sc.tl.umap(combined)
-    
-    # Set up plotting parameters
-    sc.settings.set_figure_params(dpi=80, facecolor='white', figsize=(8, 6))
-    plt.rcParams['figure.max_open_warning'] = 50  # Increase the warning threshold
-    
-    # Set default columns if none specified
-    if plot_columns is None:
-        plot_columns = ['modality', 'cell_type']
-    
-    print(f"Generating visualizations for columns: {plot_columns}")
-    
-    # Generate plots for specified columns
-    for col in plot_columns:
-        if col not in combined.obs.columns:
-            print(f"Warning: Column '{col}' not found in data. Skipping...")
-            continue
-        
-        # Skip columns that also exist in var_names to avoid ambiguity
-        if col in combined.var_names:
-            print(f"Warning: Column '{col}' exists in both obs.columns and var_names. Skipping...")
-            continue
-        
-        try:
-            plt.figure(figsize=(12, 8))
-            sc.pl.umap(combined, color=col, 
-                       title=f"scGLUE Integration: {col}",
-                       save=False, show=False, wspace=0.65)
-            plt.tight_layout()
-            col_plot_path = os.path.join(output_dir, f"scglue_umap_{col}.png")
-            plt.savefig(col_plot_path, dpi=300, bbox_inches='tight')
-            plt.close()
-            print(f"Saved {col} plot: {col_plot_path}")
-        except Exception as e:
-            print(f"Error plotting {col}: {str(e)}")
-            plt.close()  # Close the figure even if there's an error
-    
-    # Create modality-cell type distribution heatmap if both columns exist and are in plot_columns
-    if ("modality" in plot_columns and "modality" in combined.obs.columns and 
-        "cell_type" in plot_columns and "cell_type" in combined.obs.columns):
-        print("\nCreating modality-cell type distribution heatmap...")
-        
-        # Create a cross-tabulation of modality and cell type
-        modality_celltype_counts = pd.crosstab(
-            combined.obs['cell_type'], 
-            combined.obs['modality']
-        )
-        
-        # Calculate proportions (percentage of each modality within each cell type)
-        modality_celltype_props = modality_celltype_counts.div(
-            modality_celltype_counts.sum(axis=1), 
-            axis=0
-        ) * 100
-        
-        # Create two heatmaps: one for counts and one for proportions
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
-        
-        # Heatmap 1: Raw counts
-        sns.heatmap(
-            modality_celltype_counts,
-            annot=True,
-            fmt='d',
-            cmap='Blues',
-            cbar_kws={'label': 'Number of cells'},
-            ax=ax1
-        )
-        ax1.set_title('Cell Count Distribution: Modality vs Cell Type', fontsize=14, pad=20)
-        ax1.set_xlabel('Modality', fontsize=12)
-        ax1.set_ylabel('Cell Type', fontsize=12)
-        
-        # Heatmap 2: Proportions
-        sns.heatmap(
-            modality_celltype_props,
-            annot=True,
-            fmt='.1f',
-            cmap='YlOrRd',
-            cbar_kws={'label': 'Percentage (%)'},
-            ax=ax2
-        )
-        ax2.set_title('Modality Distribution within Each Cell Type (%)', fontsize=14, pad=20)
-        ax2.set_xlabel('Modality', fontsize=12)
-        ax2.set_ylabel('Cell Type', fontsize=12)
-        
-        plt.tight_layout()
-        heatmap_plot_path = os.path.join(output_dir, "scglue_modality_celltype_heatmap.png")
-        plt.savefig(heatmap_plot_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        print(f"Saved modality-cell type heatmap: {heatmap_plot_path}")
-        
-        # Also create a stacked bar plot for better visualization
-        plt.figure(figsize=(14, 8))
-        
-        # Calculate percentages for stacked bar
-        modality_celltype_props_T = modality_celltype_props.T
-        
-        # Create stacked bar plot
-        modality_celltype_props_T.plot(
-            kind='bar',
-            stacked=True,
-            colormap='tab20',
-            width=0.8
-        )
-        
-        plt.title('Modality Composition by Cell Type', fontsize=16, pad=20)
-        plt.xlabel('Modality', fontsize=12)
-        plt.ylabel('Percentage of Cells (%)', fontsize=12)
-        plt.legend(title='Cell Type', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.xticks(rotation=45, ha='right')
-        plt.tight_layout()
-        
-        stacked_plot_path = os.path.join(output_dir, "scglue_modality_celltype_stacked.png")
-        plt.savefig(stacked_plot_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        print(f"Saved modality-cell type stacked plot: {stacked_plot_path}")
-        
-        # Print summary statistics
-        print("\n=== Modality-Cell Type Distribution Summary ===")
-        print(f"Total cell types: {len(modality_celltype_counts.index)}")
-        print(f"Total modalities: {len(modality_celltype_counts.columns)}")
-        
-        # Print cells per modality per cell type
-        print("\nCell counts by modality and cell type:")
-        print(modality_celltype_counts.to_string())
-        
-        # Save the distribution table as CSV
-        csv_path = os.path.join(output_dir, "scglue_modality_celltype_distribution.csv")
-        modality_celltype_counts.to_csv(csv_path)
-        print(f"\nSaved distribution table to: {csv_path}")
-        
-    # Generate summary statistics
-    print("\n=== Integration Summary ===")
-    print(f"Total cells: {combined.n_obs}")
-    print(f"Total features: {combined.n_vars}")
-    print(f"Available metadata columns: {list(combined.obs.columns)}")
-    
-    # Show breakdown by modality if available
-    if "modality" in combined.obs.columns:
-        modality_counts = combined.obs['modality'].value_counts()
-        print(f"\nModality breakdown:")
-        for modality, count in modality_counts.items():
-            print(f"  {modality}: {count} cells")
-    
-    # Check feature usage
-    hvg_used = combined.var['highly_variable'].sum() if 'highly_variable' in combined.var else combined.n_vars
-    print(f"\nFeatures used: {hvg_used}/{combined.n_vars}")
-    
-    print("\nVisualization complete!")
     
 def glue(
     # Data files
@@ -1487,15 +1352,12 @@ def glue(
                     existing_cell_types=existing_cell_types,
                     n_target_clusters=n_target_clusters,
                     umap=False,  # We'll handle UMAP separately
-                    Save=False,  # We'll save the final result
+                    save=False,  # We'll save the final result
                     output_dir=output_dir,
                     defined_output_path = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad"),
                     cluster_resolution=cluster_resolution,
                     use_rep=use_rep_celltype,
                     markers=markers,
-                    method=method,
-                    metric=metric_celltype,
-                    distance_mode=distance_mode,
                     num_PCs=n_lsi_comps,
                     verbose=verbose
                 )

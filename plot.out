@@ -1,0 +1,126 @@
+🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/preprocess/atac_rna_integrated.h5ad
+
+📦 Basic Info
+  - Shape (cells × genes): 861190 × 36601
+  - Layers: []
+  - obs columns: ['sample', 'modality', 'original_barcode', 'cell_type']
+  - var columns: []
+  - obsm keys: ['X_glue']
+  - varm keys: []
+
+🔎 Inspecting .X matrix:
+  - storage type: sparse (csr_matrix)
+  - dtype: float64
+  - .X nonzeros: 1790796546 / 31520415190 (5.6814% nonzero, 94.3186% zero)
+  - value type: float — values appear integer-like (no fractional parts)
+  - contains NaN: False
+  - contains Inf: False
+  - min value: 1
+  - max value: 8376
+
+🧮 Example .X values (first 10 cells × 10 genes):
+[[0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+
+🧫 Example cell names:
+  - ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA
+  - ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA
+  - ENCSR128ZLB_AAACATGCACAACCTA-1_RNA
+  - ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA
+  - ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA
+  - ENCSR128ZLB_AAACCAACAAAGCGCA-1_RNA
+  - ENCSR128ZLB_AAACCAACAAGCCACT-1_RNA
+  - ENCSR128ZLB_AAACCGAAGCTAAGTC-1_RNA
+  - ENCSR128ZLB_AAACCGAAGCTCCTTA-1_RNA
+  - ENCSR128ZLB_AAACCGAAGGCGAATA-1_RNA
+
+============================================================
+📋 Detailed obs columns inspection:
+============================================================
+
+    [sample]
+      dtype: category
+      non-NA: 861190/861190 (100.0%)
+      unique: 44
+      top values:
+        'ENCSR568QKW': 35634 (4.1%)
+        'ENCSR618WVK': 32904 (3.8%)
+        'ENCSR245BNT': 32302 (3.8%)
+        'ENCSR265ZRW': 31518 (3.7%)
+        'ENCSR158DQA': 29738 (3.5%)
+
+    [modality]
+      dtype: category
+      non-NA: 861190/861190 (100.0%)
+      unique: 2
+      top values:
+        'ATAC': 430595 (50.0%)
+        'RNA': 430595 (50.0%)
+
+    [original_barcode]
+      dtype: category
+      non-NA: 861190/861190 (100.0%)
+      unique: 861190
+      top values:
+        'psoas_muscle_ENCSR851GBP_TTTGTTGGTTGTTGCT-1': 1 (0.0%)
+        'ENCSR033MDU_AAACAGCCAACCTGGT-1': 1 (0.0%)
+        'ENCSR033MDU_AAACAGCCAAGTGTTT-1': 1 (0.0%)
+        'ENCSR033MDU_AAACATGCAATTGAGA-1': 1 (0.0%)
+        'ENCSR033MDU_AAACATGCACAGCCTG-1': 1 (0.0%)
+
+    [cell_type]
+      dtype: category
+      non-NA: 861190/861190 (100.0%)
+      unique: 32
+      top values:
+        '10': 97680 (11.3%)
+        '2': 64994 (7.5%)
+        '13': 62537 (7.3%)
+        '16': 60234 (7.0%)
+        '3': 50502 (5.9%)
+
+📋 Example obs rows (head 10):
+                                         sample  ... cell_type
+ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA  ENCSR128ZLB  ...         7
+ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA  ENCSR128ZLB  ...        17
+ENCSR128ZLB_AAACATGCACAACCTA-1_RNA  ENCSR128ZLB  ...        17
+ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA  ENCSR128ZLB  ...         5
+ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA  ENCSR128ZLB  ...        17
+ENCSR128ZLB_AAACCAACAAAGCGCA-1_RNA  ENCSR128ZLB  ...         5
+ENCSR128ZLB_AAACCAACAAGCCACT-1_RNA  ENCSR128ZLB  ...         5
+ENCSR128ZLB_AAACCGAAGCTAAGTC-1_RNA  ENCSR128ZLB  ...         5
+ENCSR128ZLB_AAACCGAAGCTCCTTA-1_RNA  ENCSR128ZLB  ...         5
+ENCSR128ZLB_AAACCGAAGGCGAATA-1_RNA  ENCSR128ZLB  ...         5
+
+[10 rows x 4 columns]
+
+============================================================
+🧬 Detailed var columns inspection:
+============================================================
+
+🧬 Example var rows (head 10):
+Empty DataFrame
+Columns: []
+Index: [MIR1302-2HG, FAM138A, OR4F5, AL627309.1, AL627309.3, AL627309.2, AL627309.5, AL627309.4, AP006222.2, AL732372.1]
+
+📌 Example obsm entries:
+  ▶ 'X_glue': shape=(861190, 50), dtype=float32
+    first 10 rows × 5 cols:
+[[-0.0183493  -0.01844277  0.01684693 -0.02284369 -0.01235604]
+ [-0.02348048 -0.02483136 -0.01836007 -0.25654876 -0.01347054]
+ [ 0.00718582 -0.02097763  0.00114159  0.08288988 -0.00520047]
+ [-0.00747819  0.02167585  0.03955019  0.53543186  0.00588457]
+ [-0.04252481 -0.02390092 -0.02847717 -0.13772932 -0.01768971]
+ [-0.06456138  0.00401107  0.03016483  0.78690076  0.00651312]
+ [-0.0345455  -0.0037087   0.03663746  0.697804   -0.00243077]
+ [-0.03781135  0.00941927  0.04794052  0.7658974  -0.01089083]
+ [-0.04481348  0.00910257  0.03921634  0.49582723 -0.00675585]
+ [-0.02400819 -0.01831563  0.02593021  0.00235021 -0.00433666]]

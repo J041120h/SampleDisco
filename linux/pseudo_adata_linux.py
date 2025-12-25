@@ -577,7 +577,7 @@ def compute_pseudobulk_gpu(
 
 def compute_pseudobulk_adata_linux(
     adata: sc.AnnData,
-    batch_col: Optional[Union[str, List[str]]] = 'batch',
+    batch_col: Optional[Union[str, List[str]]] = None,
     sample_col: str = 'sample',
     celltype_col: str = 'cell_type',
     output_dir: str = './',
