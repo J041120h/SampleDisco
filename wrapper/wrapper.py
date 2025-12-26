@@ -394,6 +394,7 @@ def wrapper(
     # Visualization Parameters
     multiomics_modality_col: str = 'modality',
     multiomics_color_col: str = 'color',
+    multiomics_visualization_grouping_column: Optional[List[str]] = None,
     multiomics_target_modality: str = 'ATAC',
     multiomics_expression_key: str = 'X_DR_expression',
     multiomics_proportion_key: str = 'X_DR_proportion',
@@ -1071,6 +1072,7 @@ def wrapper(
                 # ===== Visualization Parameters =====
                 modality_col=multiomics_modality_col,
                 color_col=multiomics_color_col,
+                visualization_grouping_column = multiomics_visualization_grouping_column,
                 target_modality=multiomics_target_modality,
                 expression_key=multiomics_expression_key,
                 proportion_key=multiomics_proportion_key,

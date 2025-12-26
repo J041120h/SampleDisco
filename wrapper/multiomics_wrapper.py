@@ -124,7 +124,8 @@ def multiomics_wrapper(
     
     # ===== Visualization Parameters =====
     modality_col='modality',
-    color_col='color',
+    color_col= None,
+    visualization_grouping_column = None,
     target_modality='ATAC',
     expression_key='X_DR_expression',
     proportion_key='X_DR_proportion',
@@ -529,6 +530,7 @@ def multiomics_wrapper(
             adata=adata_for_viz,
             modality_col=modality_col,
             color_col=color_col,
+            visualization_grouping_column = visualization_grouping_column,
             target_modality=target_modality,
             expression_key=expression_key,
             proportion_key=proportion_key,
@@ -539,7 +541,7 @@ def multiomics_wrapper(
             output_dir=viz_output_dir,
             show_sample_names=show_sample_names,
             force_data_type=force_data_type,
-            verbose=multiomics_verbose
+            verbose=multiomics_verbose,
         )
         
         results['visualization'] = {'fig': fig, 'axes': axes}

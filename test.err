@@ -1,42 +1,4 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
-2025-12-24 22:08:27 | [INFO] init
 ... storing 'sample' as categorical
 ... storing 'original_sample' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'database' as categorical
-... storing 'dataset' as categorical
-... storing 'batch' as categorical
-... storing 'tissue' as categorical
-... storing 'source_file' as categorical
-... storing 'modality' as categorical
-... storing 'original_sample' as categorical
-2025-12-24 22:11:38,307 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2025-12-24 22:11:38 | [INFO] Computing initial centroids with sklearn.KMeans...
-2025-12-24 22:11:38,394 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2025-12-24 22:11:38 | [INFO] sklearn.KMeans initialization complete.
-2025-12-24 22:11:38,394 - harmonypy - INFO - Iteration 1 of 30
-2025-12-24 22:11:38 | [INFO] Iteration 1 of 30
-2025-12-24 22:11:38,399 - harmonypy - INFO - Iteration 2 of 30
-2025-12-24 22:11:38 | [INFO] Iteration 2 of 30
-2025-12-24 22:11:38,404 - harmonypy - INFO - Iteration 3 of 30
-2025-12-24 22:11:38 | [INFO] Iteration 3 of 30
-2025-12-24 22:11:38,409 - harmonypy - INFO - Converged after 3 iterations
-2025-12-24 22:11:38 | [INFO] Converged after 3 iterations

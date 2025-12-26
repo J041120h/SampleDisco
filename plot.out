@@ -1,22 +1,22 @@
-🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/preprocess/atac_rna_integrated.h5ad
+🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/preprocess/adata_sample.h5ad
 
 📦 Basic Info
-  - Shape (cells × genes): 861190 × 36601
+  - Shape (cells × genes): 79418 × 16049
   - Layers: []
-  - obs columns: ['sample', 'modality', 'original_barcode', 'cell_type']
-  - var columns: []
+  - obs columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'original_sample', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
+  - var columns: ['mt', 'MT', 'n_cells_by_counts', 'mean_counts', 'pct_dropout_by_counts', 'total_counts', 'n_cells']
   - obsm keys: ['X_glue']
   - varm keys: []
 
 🔎 Inspecting .X matrix:
   - storage type: sparse (csr_matrix)
   - dtype: float64
-  - .X nonzeros: 1790796546 / 31520415190 (5.6814% nonzero, 94.3186% zero)
+  - .X nonzeros: 137576157 / 1274579482 (10.7938% nonzero, 89.2062% zero)
   - value type: float — values appear integer-like (no fractional parts)
   - contains NaN: False
   - contains Inf: False
   - min value: 1
-  - max value: 8376
+  - max value: 11303
 
 🧮 Example .X values (first 10 cells × 10 genes):
 [[0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
@@ -24,103 +24,393 @@
  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+ [0. 0. 0. 0. 0. 0. 2. 0. 0. 0.]
  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+ [0. 0. 0. 0. 0. 0. 0. 0. 1. 0.]]
 
 🧫 Example cell names:
-  - ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA
-  - ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA
-  - ENCSR128ZLB_AAACATGCACAACCTA-1_RNA
-  - ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA
-  - ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA
-  - ENCSR128ZLB_AAACCAACAAAGCGCA-1_RNA
-  - ENCSR128ZLB_AAACCAACAAGCCACT-1_RNA
-  - ENCSR128ZLB_AAACCGAAGCTAAGTC-1_RNA
-  - ENCSR128ZLB_AAACCGAAGCTCCTTA-1_RNA
-  - ENCSR128ZLB_AAACCGAAGGCGAATA-1_RNA
+  - AAACAGCCAGGACCAA-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACATGCAATCCTAG-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACATGCACATAGCC-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACATGCACTTACAG-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACATGCAGCAAGGC-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACATGCATCCCGCT-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACCGAAGGTCTTGG-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACCGCGTTAGCGTA-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACCGCGTTCGCTTG-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
+  - AAACCGGCAATAACCT-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm_RNA
 
 ============================================================
 📋 Detailed obs columns inspection:
 ============================================================
 
+    [database]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        'HCA': 79418 (100.0%)
+
+    [dataset]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 22
+      top values:
+        'GSE218392_MA10_heart': 7204 (9.1%)
+        'GSE218392_MA9_heart': 7143 (9.0%)
+        'GSE218392_MA14_heart': 6860 (8.6%)
+        'GSE218392_MA31_heart': 6221 (7.8%)
+        'GSE218392_MA29_heart': 5676 (7.1%)
+
+    [batch]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 22
+      top values:
+        'HCA-GSE218392_MA10_heart': 7204 (9.1%)
+        'HCA-GSE218392_MA9_heart': 7143 (9.0%)
+        'HCA-GSE218392_MA14_heart': 6860 (8.6%)
+        'HCA-GSE218392_MA31_heart': 6221 (7.8%)
+        'HCA-GSE218392_MA29_heart': 5676 (7.1%)
+
+    [tissue]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        'Heart': 79418 (100.0%)
+
+    [libsize_rna]
+      dtype: float32
+      non-NA: 79418/79418 (100.0%)
+      unique: 9669
+      min: 2, max: 237456, mean: 2693.27
+      example values: [np.float32(665.0), np.float32(2165.0), np.float32(971.0), np.float32(2669.0), np.float32(815.0)]
+
+    [libsize_atac]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 38601
+      min: 45, max: 1.15908e+06, mean: 41217.3
+      example values: [np.float64(6136.0), np.float64(41882.0), np.float64(8912.0), np.float64(24545.0), np.float64(10117.0)]
+
+    [source_file]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 22
+      top values:
+        'multi_GSE218392_MA10_heart_DHS_blacklist_rm': 7204 (9.1%)
+        'multi_GSE218392_MA9_heart_DHS_blacklist_rm': 7143 (9.0%)
+        'multi_GSE218392_MA14_heart_DHS_blacklist_rm': 6860 (8.6%)
+        'multi_GSE218392_MA31_heart_DHS_blacklist_rm': 6221 (7.8%)
+        'multi_GSE218392_MA29_heart_DHS_blacklist_rm': 5676 (7.1%)
+
     [sample]
       dtype: category
-      non-NA: 861190/861190 (100.0%)
+      non-NA: 79418/79418 (100.0%)
       unique: 44
       top values:
-        'ENCSR568QKW': 35634 (4.1%)
-        'ENCSR618WVK': 32904 (3.8%)
-        'ENCSR245BNT': 32302 (3.8%)
-        'ENCSR265ZRW': 31518 (3.7%)
-        'ENCSR158DQA': 29738 (3.5%)
+        'MA14_heart_RNA': 4203 (5.3%)
+        'MA10_heart_RNA': 4197 (5.3%)
+        'MA9_heart_RNA': 4047 (5.1%)
+        'MA31_heart_ATAC': 3611 (4.5%)
+        'MA29_heart_ATAC': 3401 (4.3%)
+
+    [age]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        'post-embryonic stage': 79418 (100.0%)
+
+    [sex]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        'unknown': 79418 (100.0%)
+
+    [disease_state]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 3
+      top values:
+        'cardiomyopathy': 37192 (46.8%)
+        'acute myocardial infarction': 21579 (27.2%)
+        'normal': 20647 (26.0%)
+
+    [organ_part]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        'heart': 79418 (100.0%)
+
+    [Unnamed: 5]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        '-1.0': 79418 (100.0%)
+
+    [Unnamed: 6]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        '-1.0': 79418 (100.0%)
+
+    [Unnamed: 7]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        '-1.0': 79418 (100.0%)
+
+    [Unnamed: 8]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        '-1.0': 79418 (100.0%)
+
+    [Unnamed: 9]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        '-1.0': 79418 (100.0%)
+
+    [Unnamed: 10]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        '-1.0': 79418 (100.0%)
+
+    [Unnamed: 11]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      top values:
+        '-1.0': 79418 (100.0%)
+
+    [balancing_weight]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 35
+      min: 0, max: 9.66839, mean: 1.1807
+      example values: [np.float64(0.6801032686185389), np.float64(0.7736764747753809), np.float64(0.8761587566250884), np.float64(1.3488141456659988), np.float64(0.550499374249372)]
 
     [modality]
       dtype: category
-      non-NA: 861190/861190 (100.0%)
+      non-NA: 79418/79418 (100.0%)
       unique: 2
       top values:
-        'ATAC': 430595 (50.0%)
-        'RNA': 430595 (50.0%)
+        'ATAC': 42953 (54.1%)
+        'RNA': 36465 (45.9%)
 
     [original_barcode]
       dtype: category
-      non-NA: 861190/861190 (100.0%)
-      unique: 861190
+      non-NA: 79418/79418 (100.0%)
+      unique: 59821
       top values:
-        'psoas_muscle_ENCSR851GBP_TTTGTTGGTTGTTGCT-1': 1 (0.0%)
-        'ENCSR033MDU_AAACAGCCAACCTGGT-1': 1 (0.0%)
-        'ENCSR033MDU_AAACAGCCAAGTGTTT-1': 1 (0.0%)
-        'ENCSR033MDU_AAACATGCAATTGAGA-1': 1 (0.0%)
-        'ENCSR033MDU_AAACATGCACAGCCTG-1': 1 (0.0%)
+        'AAACAGCCACGTTACA-1-multi_GSE218392_MA9_heart_DHS_blacklist_rm': 2 (0.0%)
+        'AAACAGCCAGCACCAT-1-multi_GSE218392_MA31_heart_DHS_blacklist_rm': 2 (0.0%)
+        'AAACAGCCAGGACCAA-1-multi_GSE218392_MA10_heart_DHS_blacklist_rm': 2 (0.0%)
+        'TTTGTTGGTTAGTACG-1-multi_GSE218392_MA14_heart_DHS_blacklist_rm': 2 (0.0%)
+        'TTTGTTGGTTTCGCGC-1-multi_GSE218392_MA6_heart_DHS_blacklist_rm': 2 (0.0%)
 
     [cell_type]
       dtype: category
-      non-NA: 861190/861190 (100.0%)
-      unique: 32
+      non-NA: 79418/79418 (100.0%)
+      unique: 12
       top values:
-        '10': 97680 (11.3%)
-        '2': 64994 (7.5%)
-        '13': 62537 (7.3%)
-        '16': 60234 (7.0%)
-        '3': 50502 (5.9%)
+        '6': 26590 (33.5%)
+        '7': 11052 (13.9%)
+        '4': 9660 (12.2%)
+        '1': 9190 (11.6%)
+        '10': 6665 (8.4%)
+
+    [original_sample]
+      dtype: category
+      non-NA: 79418/79418 (100.0%)
+      unique: 22
+      top values:
+        'MA10_heart': 7204 (9.1%)
+        'MA9_heart': 7143 (9.0%)
+        'MA14_heart': 6860 (8.6%)
+        'MA31_heart': 6221 (7.8%)
+        'MA29_heart': 5676 (7.1%)
+
+    [n_genes_by_counts]
+      dtype: int32
+      non-NA: 79418/79418 (100.0%)
+      unique: 5322
+      min: 500, max: 16496, mean: 1769.22
+      example values: [np.int32(528), np.int32(1204), np.int32(747), np.int32(1333), np.int32(585)]
+
+    [total_counts]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 9098
+      min: 558, max: 237456, mean: 3902.88
+      example values: [np.float64(665.0), np.float64(2165.0), np.float64(971.0), np.float64(2669.0), np.float64(815.0)]
+
+    [pct_counts_in_top_50_genes]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 33663
+      min: 8.78914, max: 85.1326, mean: 24.7444
+      example values: [np.float64(23.909774436090224), np.float64(34.78060046189376), np.float64(20.803295571575696), np.float64(34.13263394529786), np.float64(29.447852760736197)]
+
+    [pct_counts_in_top_100_genes]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 33782
+      min: 12.2543, max: 86.673, mean: 32.5698
+      example values: [np.float64(35.6390977443609), np.float64(41.98614318706698), np.float64(31.10195674562307), np.float64(42.11315099288122), np.float64(40.49079754601227)]
+
+    [pct_counts_in_top_200_genes]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 33828
+      min: 17.5673, max: 89.0614, mean: 43.1552
+      example values: [np.float64(50.67669172932331), np.float64(51.224018475750576), np.float64(43.666323377960865), np.float64(51.81715998501312), np.float64(52.760736196319016)]
+
+    [pct_counts_in_top_500_genes]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 34566
+      min: 28.303, max: 100, mean: 66.1177
+      example values: [np.float64(95.78947368421052), np.float64(67.48267898383372), np.float64(74.56230690010298), np.float64(68.78980891719745), np.float64(89.57055214723927)]
+
+    [total_counts_mt]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      min: 0, max: 0, mean: 0
+      example values: [np.float64(0.0)]
+
+    [pct_counts_mt]
+      dtype: float64
+      non-NA: 79418/79418 (100.0%)
+      unique: 1
+      min: 0, max: 0, mean: 0
+      example values: [np.float64(0.0)]
+
+    [n_genes]
+      dtype: int64
+      non-NA: 79418/79418 (100.0%)
+      unique: 5322
+      min: 500, max: 16496, mean: 1769.22
+      example values: [np.int64(528), np.int64(1204), np.int64(747), np.int64(1333), np.int64(585)]
 
 📋 Example obs rows (head 10):
-                                         sample  ... cell_type
-ENCSR128ZLB_AAACAGCCAGCAAATA-1_RNA  ENCSR128ZLB  ...         7
-ENCSR128ZLB_AAACAGCCAGCACGAA-1_RNA  ENCSR128ZLB  ...        17
-ENCSR128ZLB_AAACATGCACAACCTA-1_RNA  ENCSR128ZLB  ...        17
-ENCSR128ZLB_AAACATGCACTGGCTG-1_RNA  ENCSR128ZLB  ...         5
-ENCSR128ZLB_AAACCAACAAAGCCTC-1_RNA  ENCSR128ZLB  ...        17
-ENCSR128ZLB_AAACCAACAAAGCGCA-1_RNA  ENCSR128ZLB  ...         5
-ENCSR128ZLB_AAACCAACAAGCCACT-1_RNA  ENCSR128ZLB  ...         5
-ENCSR128ZLB_AAACCGAAGCTAAGTC-1_RNA  ENCSR128ZLB  ...         5
-ENCSR128ZLB_AAACCGAAGCTCCTTA-1_RNA  ENCSR128ZLB  ...         5
-ENCSR128ZLB_AAACCGAAGGCGAATA-1_RNA  ENCSR128ZLB  ...         5
+                                                   database  ... n_genes
+AAACAGCCAGGACCAA-1-multi_GSE218392_MA10_heart_D...      HCA  ...     528
+AAACATGCAATCCTAG-1-multi_GSE218392_MA10_heart_D...      HCA  ...    1204
+AAACATGCACATAGCC-1-multi_GSE218392_MA10_heart_D...      HCA  ...     747
+AAACATGCACTTACAG-1-multi_GSE218392_MA10_heart_D...      HCA  ...    1333
+AAACATGCAGCAAGGC-1-multi_GSE218392_MA10_heart_D...      HCA  ...     585
+AAACATGCATCCCGCT-1-multi_GSE218392_MA10_heart_D...      HCA  ...    1833
+AAACCGAAGGTCTTGG-1-multi_GSE218392_MA10_heart_D...      HCA  ...    1698
+AAACCGCGTTAGCGTA-1-multi_GSE218392_MA10_heart_D...      HCA  ...     564
+AAACCGCGTTCGCTTG-1-multi_GSE218392_MA10_heart_D...      HCA  ...     600
+AAACCGGCAATAACCT-1-multi_GSE218392_MA10_heart_D...      HCA  ...    3264
 
-[10 rows x 4 columns]
+[10 rows x 33 columns]
 
 ============================================================
 🧬 Detailed var columns inspection:
 ============================================================
 
+    [mt]
+      dtype: bool
+      non-NA: 16049/16049 (100.0%)
+      unique: 1
+      min: 0, max: 0, mean: 0
+      example values: [np.False_]
+
+    [MT]
+      dtype: bool
+      non-NA: 16049/16049 (100.0%)
+      unique: 1
+      min: 0, max: 0, mean: 0
+      example values: [np.False_]
+
+    [n_cells_by_counts]
+      dtype: int64
+      non-NA: 16049/16049 (100.0%)
+      unique: 10759
+      min: 821, max: 193731, mean: 10006.4
+      example values: [np.int64(2144), np.int64(7560), np.int64(3138), np.int64(1325), np.int64(2162)]
+
+    [mean_counts]
+      dtype: float64
+      non-NA: 16049/16049 (100.0%)
+      unique: 11729
+      min: 0.00436956, max: 128.768, mean: 0.1053
+      example values: [np.float64(0.011761097367203684), np.float64(0.04644099841107022), np.float64(0.01774472535650355), np.float64(0.006999336269836481), np.float64(0.01152979746173495)]
+
+    [pct_dropout_by_counts]
+      dtype: float64
+      non-NA: 16049/16049 (100.0%)
+      unique: 10759
+      min: 2.58704, max: 99.5872, mean: 94.9685
+      example values: [np.float64(98.92194131016312), np.float64(96.1986363362095), np.float64(98.42213238399808), np.float64(99.33375570707376), np.float64(98.91289044429695)]
+
+    [total_counts]
+      dtype: float64
+      non-NA: 16049/16049 (100.0%)
+      unique: 11729
+      min: 869, max: 2.56089e+07, mean: 20941.7
+      example values: [np.float64(2339.0), np.float64(9236.0), np.float64(3529.0), np.float64(1392.0), np.float64(2293.0)]
+
+    [n_cells]
+      dtype: int64
+      non-NA: 16049/16049 (100.0%)
+      unique: 10224
+      min: 794, max: 79393, mean: 8572.26
+      example values: [np.int64(1968), np.int64(6824), np.int64(2743), np.int64(1184), np.int64(1878)]
+
 🧬 Example var rows (head 10):
-Empty DataFrame
-Columns: []
-Index: [MIR1302-2HG, FAM138A, OR4F5, AL627309.1, AL627309.3, AL627309.2, AL627309.5, AL627309.4, AP006222.2, AL732372.1]
+                    mt     MT  ...  total_counts  n_cells
+ENSG00000241860  False  False  ...        2339.0     1968
+ENSG00000291215  False  False  ...        9236.0     6824
+ENSG00000237491  False  False  ...        3529.0     2743
+ENSG00000290784  False  False  ...        1392.0     1184
+ENSG00000225880  False  False  ...        2293.0     1878
+ENSG00000228794  False  False  ...       22126.0    13261
+ENSG00000223764  False  False  ...        1464.0     1165
+ENSG00000187634  False  False  ...        2983.0     2135
+ENSG00000188976  False  False  ...       10087.0     7406
+ENSG00000187961  False  False  ...        3644.0     2782
+
+[10 rows x 7 columns]
 
 📌 Example obsm entries:
-  ▶ 'X_glue': shape=(861190, 50), dtype=float32
+  ▶ 'X_glue': shape=(79418, 50), dtype=float32
     first 10 rows × 5 cols:
-[[-0.0183493  -0.01844277  0.01684693 -0.02284369 -0.01235604]
- [-0.02348048 -0.02483136 -0.01836007 -0.25654876 -0.01347054]
- [ 0.00718582 -0.02097763  0.00114159  0.08288988 -0.00520047]
- [-0.00747819  0.02167585  0.03955019  0.53543186  0.00588457]
- [-0.04252481 -0.02390092 -0.02847717 -0.13772932 -0.01768971]
- [-0.06456138  0.00401107  0.03016483  0.78690076  0.00651312]
- [-0.0345455  -0.0037087   0.03663746  0.697804   -0.00243077]
- [-0.03781135  0.00941927  0.04794052  0.7658974  -0.01089083]
- [-0.04481348  0.00910257  0.03921634  0.49582723 -0.00675585]
- [-0.02400819 -0.01831563  0.02593021  0.00235021 -0.00433666]]
+[[ 5.5759996e-01  8.5668545e-04 -2.9227734e-02 -3.8508255e-02
+  -3.4049224e-02]
+ [ 1.8456370e-02 -4.3533783e-02 -6.5404777e-03 -4.8614531e-03
+   1.6757646e-03]
+ [-3.5696521e-02 -5.0468445e-03 -9.2361337e-03  2.9443270e-03
+  -2.5834257e-02]
+ [-1.7441380e+00 -2.2507984e-02  3.8873916e-03 -1.6668169e-02
+   2.2114318e-02]
+ [-5.1960325e-01  4.8126867e-03  6.4489455e-03 -1.6864443e-02
+  -6.3700704e-03]
+ [ 5.6883073e-01 -2.8529316e-03 -3.9144143e-02 -3.2876603e-02
+  -4.0086787e-03]
+ [-1.2148391e+00 -3.1463880e-02 -1.5920956e-02  9.3621043e-03
+  -2.7081054e-02]
+ [ 3.6464751e-01 -4.6004985e-02  8.8021597e-03 -4.3628544e-02
+   2.2521179e-02]
+ [ 7.4990585e-02 -4.6232369e-02  6.4283228e-03 -4.3635372e-02
+   1.7423241e-03]
+ [-3.2957029e-01 -1.6273187e-02 -8.2660578e-03 -1.0057677e-02
+  -1.9588610e-02]]

@@ -363,12 +363,316 @@ def plot_default_embedding(adata, embedding_key, ax, point_size=60, alpha=0.8,
     return ax
 
 
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+
+
+def detect_data_type(values):
+    """
+    Detect whether values are numerical or categorical.
+    
+    Returns:
+    --------
+    data_type : str
+        'numerical' or 'categorical'
+    unique_values : list
+        List of unique values
+    """
+    # Remove NaN values
+    valid_values = [v for v in values if pd.notna(v)]
+    
+    if len(valid_values) == 0:
+        return 'categorical', []
+    
+    # Check if values are numeric
+    try:
+        numeric_values = [float(v) for v in valid_values]
+        unique_values = sorted(set(numeric_values))
+        
+        # If few unique values and they look like integers, might be categorical
+        if len(unique_values) <= 10 and all(v == int(v) for v in unique_values):
+            # Could be either - default to numerical but could be overridden
+            return 'numerical', unique_values
+        return 'numerical', unique_values
+    except (ValueError, TypeError):
+        # Not numeric, treat as categorical
+        unique_values = list(set(valid_values))
+        return 'categorical', unique_values
+
+
+def get_embedding_data(adata, embedding_key):
+    """
+    Get embedding data from adata.obsm or adata.uns.
+    
+    Returns:
+    --------
+    embedding : np.ndarray
+        2D embedding array
+    """
+    if embedding_key in adata.obsm:
+        embedding = adata.obsm[embedding_key]
+    elif embedding_key in adata.uns:
+        embedding = adata.uns[embedding_key]
+    else:
+        raise ValueError(f"Embedding key '{embedding_key}' not found in adata.obsm or adata.uns")
+    
+    # Ensure 2D
+    if embedding.ndim == 1:
+        raise ValueError(f"Embedding '{embedding_key}' is 1D, expected 2D")
+    
+    return embedding
+
+
+def plot_default_embedding(adata, embedding_key, ax, point_size=60, alpha=0.8, 
+                           show_sample_names=False):
+    """
+    Plot default embedding without any coloring (all samples in same color).
+    """
+    embedding = get_embedding_data(adata, embedding_key)
+    
+    ax.scatter(embedding[:, 0], embedding[:, 1], 
+               s=point_size, alpha=alpha, c='steelblue', edgecolors='white', linewidths=0.5)
+    
+    if show_sample_names:
+        for i, sample_name in enumerate(adata.obs_names):
+            ax.annotate(sample_name, (embedding[i, 0], embedding[i, 1]),
+                       fontsize=6, alpha=0.7, ha='center', va='bottom')
+    
+    ax.set_xlabel('Dimension 1')
+    ax.set_ylabel('Dimension 2')
+    
+    return ax
+
+
+def plot_embedding_colored_by_column(adata, embedding_key, color_col, ax, 
+                                     point_size=60, alpha=0.8, 
+                                     colormap='viridis', categorical_cmap='tab10',
+                                     show_sample_names=False, force_data_type=None,
+                                     verbose=True):
+    """
+    Plot embedding colored by a specific column.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Annotated data object
+    embedding_key : str
+        Key for the embedding in adata.obsm or adata.uns
+    color_col : str
+        Column name in adata.obs to color by
+    ax : matplotlib axis
+        Axis to plot on
+    point_size : int
+        Size of scatter points
+    alpha : float
+        Transparency
+    colormap : str
+        Colormap for numerical data
+    categorical_cmap : str
+        Colormap for categorical data
+    show_sample_names : bool
+        Whether to show sample names
+    force_data_type : str or None
+        Force 'numerical' or 'categorical'
+    verbose : bool
+        Print messages
+    
+    Returns:
+    --------
+    ax : matplotlib axis
+    data_type : str
+    unique_values : list
+    """
+    embedding = get_embedding_data(adata, embedding_key)
+    color_values = adata.obs[color_col].values
+    
+    # Detect or force data type
+    if force_data_type is not None:
+        if force_data_type not in ['numerical', 'categorical']:
+            raise ValueError("force_data_type must be 'numerical' or 'categorical'")
+        data_type = force_data_type
+        if data_type == 'categorical':
+            unique_values = list(set([v for v in color_values if pd.notna(v)]))
+        else:
+            unique_values = sorted(set([float(v) for v in color_values if pd.notna(v)]))
+    else:
+        data_type, unique_values = detect_data_type(color_values)
+    
+    if verbose:
+        print(f"  Column '{color_col}': {data_type} with {len(unique_values)} unique values")
+    
+    if data_type == 'numerical':
+        # Numerical coloring
+        valid_mask = pd.notna(color_values)
+        numeric_values = np.array([float(v) if pd.notna(v) else np.nan for v in color_values])
+        
+        # Plot NaN values first (in gray)
+        if (~valid_mask).any():
+            ax.scatter(embedding[~valid_mask, 0], embedding[~valid_mask, 1],
+                      s=point_size, alpha=alpha*0.5, c='lightgray', 
+                      edgecolors='white', linewidths=0.5, label='NA')
+        
+        # Plot valid values with colormap
+        if valid_mask.any():
+            scatter = ax.scatter(embedding[valid_mask, 0], embedding[valid_mask, 1],
+                                s=point_size, alpha=alpha, c=numeric_values[valid_mask],
+                                cmap=colormap, edgecolors='white', linewidths=0.5)
+            
+            # Add colorbar
+            cbar = plt.colorbar(scatter, ax=ax, shrink=0.8)
+            cbar.set_label(color_col, rotation=270, labelpad=15)
+    
+    else:
+        # Categorical coloring
+        # Get colormap
+        if isinstance(categorical_cmap, str):
+            cmap = plt.cm.get_cmap(categorical_cmap)
+        else:
+            cmap = categorical_cmap
+        
+        # Sort unique values for consistent coloring
+        try:
+            sorted_values = sorted(unique_values)
+        except TypeError:
+            sorted_values = list(unique_values)
+        
+        # Create color mapping
+        n_colors = len(sorted_values)
+        colors = {val: cmap(i / max(n_colors - 1, 1)) for i, val in enumerate(sorted_values)}
+        colors['NA'] = (0.8, 0.8, 0.8, 1.0)  # Gray for NA
+        
+        # Plot each category
+        for val in sorted_values:
+            mask = color_values == val
+            if mask.any():
+                ax.scatter(embedding[mask, 0], embedding[mask, 1],
+                          s=point_size, alpha=alpha, c=[colors[val]],
+                          edgecolors='white', linewidths=0.5, label=str(val))
+        
+        # Plot NA values
+        na_mask = pd.isna(color_values)
+        if na_mask.any():
+            ax.scatter(embedding[na_mask, 0], embedding[na_mask, 1],
+                      s=point_size, alpha=alpha*0.5, c=[colors['NA']],
+                      edgecolors='white', linewidths=0.5, label='NA')
+        
+        # Add legend
+        legend = ax.legend(title=color_col, bbox_to_anchor=(1.02, 1), loc='upper left',
+                          fontsize=8, title_fontsize=9, framealpha=0.9)
+    
+    # Add sample names if requested
+    if show_sample_names:
+        for i, sample_name in enumerate(adata.obs_names):
+            ax.annotate(sample_name, (embedding[i, 0], embedding[i, 1]),
+                       fontsize=6, alpha=0.7, ha='center', va='bottom')
+    
+    ax.set_xlabel('Dimension 1')
+    ax.set_ylabel('Dimension 2')
+    
+    return ax, data_type, unique_values
+
+
+def plot_multimodal_embedding(adata, modality_col, color_col, target_modality, embedding_key, ax,
+                              point_size=60, alpha=0.8, colormap='viridis', show_sample_names=False,
+                              data_type=None, unique_values=None):
+    """
+    Plot embedding with modality-specific coloring (original function logic).
+    """
+    embedding = get_embedding_data(adata, embedding_key)
+    
+    # Get masks
+    target_mask = adata.obs[modality_col].values == target_modality
+    other_mask = ~target_mask
+    
+    # Plot other modality samples in gray
+    if other_mask.any():
+        ax.scatter(embedding[other_mask, 0], embedding[other_mask, 1],
+                  s=point_size * 0.5, alpha=alpha * 0.3, c='lightgray',
+                  edgecolors='none', label='Other')
+    
+    # Get color values for target modality
+    color_values = adata.obs[color_col].values
+    target_colors = color_values[target_mask]
+    target_embedding = embedding[target_mask]
+    
+    # Detect data type if not provided
+    if data_type is None:
+        data_type, unique_values = detect_data_type(target_colors)
+    
+    if data_type == 'numerical':
+        valid_mask = pd.notna(target_colors)
+        numeric_values = np.array([float(v) if pd.notna(v) else np.nan for v in target_colors])
+        
+        # Plot valid values
+        if valid_mask.any():
+            scatter = ax.scatter(target_embedding[valid_mask, 0], target_embedding[valid_mask, 1],
+                                s=point_size, alpha=alpha, c=numeric_values[valid_mask],
+                                cmap=colormap, edgecolors='white', linewidths=0.5)
+    else:
+        # Categorical
+        cmap = plt.cm.get_cmap('tab10')
+        try:
+            sorted_values = sorted(unique_values)
+        except TypeError:
+            sorted_values = list(unique_values)
+        
+        n_colors = len(sorted_values)
+        colors = {val: cmap(i / max(n_colors - 1, 1)) for i, val in enumerate(sorted_values)}
+        
+        for val in sorted_values:
+            mask = target_colors == val
+            if mask.any():
+                ax.scatter(target_embedding[mask, 0], target_embedding[mask, 1],
+                          s=point_size, alpha=alpha, c=[colors[val]],
+                          edgecolors='white', linewidths=0.5, label=str(val))
+        
+        ax.legend(title=color_col, bbox_to_anchor=(1.02, 1), loc='upper left',
+                 fontsize=8, title_fontsize=9)
+    
+    # Add sample names for target modality only
+    if show_sample_names:
+        target_names = adata.obs_names[target_mask]
+        for i, sample_name in enumerate(target_names):
+            ax.annotate(sample_name, (target_embedding[i, 0], target_embedding[i, 1]),
+                       fontsize=6, alpha=0.7, ha='center', va='bottom')
+    
+    return ax, data_type, unique_values
+
+
+def create_single_embedding_plot(adata, modality_col, color_col, target_modality,
+                                 embedding_key, embedding_type, figsize=(10, 8),
+                                 point_size=60, alpha=0.8, colormap='viridis',
+                                 show_sample_names=False, verbose=True):
+    """
+    Create a single embedding plot for modality-specific visualization.
+    """
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    
+    ax, data_type, unique_values = plot_multimodal_embedding(
+        adata, modality_col, color_col, target_modality, embedding_key, ax,
+        point_size, alpha, colormap, show_sample_names
+    )
+    
+    title = f'{embedding_type} Embedding: {target_modality} by {color_col}'
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    
+    plt.tight_layout()
+    
+    return fig, ax
+
+
 def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, target_modality=None,
                                   expression_key='X_DR_expression', proportion_key='X_DR_proportion',
                                   figsize=(20, 8), point_size=60, alpha=0.8, 
-                                  colormap='viridis', output_dir=None, 
+                                  colormap='viridis', categorical_cmap='tab10',
+                                  output_dir=None, 
                                   show_sample_names=False, force_data_type=None, 
-                                  show_default=True, verbose=True):
+                                  show_default=True, verbose=True,
+                                  visualization_grouping_column=None):
     """
     Visualize multimodal embeddings with flexible coloring by any column.
     
@@ -394,6 +698,8 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
         Transparency of points (default: 0.8)
     colormap : str
         Colormap to use for numerical data (default: 'viridis')
+    categorical_cmap : str
+        Colormap to use for categorical data (default: 'tab10')
     output_dir : str
         Directory or file path to save plots
     show_sample_names : bool
@@ -401,9 +707,13 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
     force_data_type : str or None
         Force data type to 'numerical' or 'categorical' instead of auto-detection (default: None)
     show_default : bool
-        If True, show default embedding without modality separation or coloring (default: False)
+        If True, show default embedding without modality separation or coloring (default: True)
     verbose : bool
         Print progress messages (default: True)
+    visualization_grouping_column : list of str or None
+        List of column names in adata.obs to create separate colored visualizations for.
+        Each column will generate its own set of plots. If provided in default mode,
+        will create plots colored by each of these columns. (default: None)
     
     Returns:
     --------
@@ -428,6 +738,8 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
             print(f"Coloring by: {color_col}")
         print(f"Expression key: {expression_key}")
         print(f"Proportion key: {proportion_key}")
+        if visualization_grouping_column:
+            print(f"Additional color columns: {visualization_grouping_column}")
         if show_sample_names:
             if show_default:
                 print("Sample names will be shown for all samples")
@@ -473,8 +785,150 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
         available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
         raise ValueError(f"No embeddings found. Available in obsm: {available_obsm}, uns: {available_uns}")
     
+    # Validate visualization_grouping_column
+    if visualization_grouping_column is not None:
+        if isinstance(visualization_grouping_column, str):
+            visualization_grouping_column = [visualization_grouping_column]
+        
+        # Check all columns exist
+        missing_cols = [col for col in visualization_grouping_column if col not in adata.obs.columns]
+        if missing_cols:
+            raise ValueError(f"Columns not found in adata.obs: {missing_cols}. "
+                           f"Available columns: {list(adata.obs.columns)}")
+    
     # Handle default plot case
     if show_default:
+        # =====================================================================
+        # NEW: Handle visualization_grouping_column in default mode
+        # =====================================================================
+        if visualization_grouping_column is not None and len(visualization_grouping_column) > 0:
+            if verbose:
+                print(f"\nCreating colored visualizations for {len(visualization_grouping_column)} column(s)...")
+            
+            all_figures = {}
+            
+            for color_col_item in visualization_grouping_column:
+                if verbose:
+                    print(f"\n--- Processing color column: {color_col_item} ---")
+                
+                # If output_dir is provided, save separate plots for each embedding and color column
+                if output_dir:
+                    for embedding_type, embedding_key in available_embeddings:
+                        fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+                        
+                        ax, data_type, unique_values = plot_embedding_colored_by_column(
+                            adata, embedding_key, color_col_item, ax,
+                            point_size=point_size, alpha=alpha,
+                            colormap=colormap, categorical_cmap=categorical_cmap,
+                            show_sample_names=show_sample_names,
+                            force_data_type=force_data_type, verbose=verbose
+                        )
+                        
+                        title = f'{embedding_type} Embedding: All Samples colored by {color_col_item}'
+                        ax.set_title(title, fontsize=14, fontweight='bold')
+                        
+                        plt.tight_layout()
+                        
+                        # Create safe filename (replace problematic characters)
+                        safe_col_name = color_col_item.replace('/', '_').replace('\\', '_').replace(' ', '_')
+                        filename = f"all_samples_{embedding_type.lower()}_by_{safe_col_name}.png"
+                        save_path = os.path.join(output_dir, filename)
+                        
+                        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                        
+                        if verbose:
+                            print(f"  Saved: {save_path}")
+                        
+                        plt.close(fig)
+                    
+                    # Also create combined plot for this color column
+                    n_plots = len(available_embeddings)
+                    fig_combined, axes_combined = plt.subplots(1, n_plots, figsize=figsize)
+                    
+                    if n_plots == 1:
+                        axes_combined = [axes_combined]
+                    
+                    for i, (embedding_type, embedding_key) in enumerate(available_embeddings):
+                        ax = axes_combined[i]
+                        
+                        ax, data_type, unique_values = plot_embedding_colored_by_column(
+                            adata, embedding_key, color_col_item, ax,
+                            point_size=point_size, alpha=alpha,
+                            colormap=colormap, categorical_cmap=categorical_cmap,
+                            show_sample_names=show_sample_names,
+                            force_data_type=force_data_type, verbose=False
+                        )
+                        
+                        if embedding_type == 'Expression':
+                            title = 'Expression Embedding'
+                        else:
+                            title = 'Cell Proportion Embedding'
+                        
+                        ax.set_title(title, fontsize=14, fontweight='bold')
+                        if i == 0:
+                            ax.set_ylabel('Dimension 2')
+                    
+                    fig_combined.suptitle(f'Multi-modal Embedding: All Samples colored by {color_col_item}', 
+                                         fontsize=16, fontweight='bold', y=0.98)
+                    plt.tight_layout()
+                    
+                    safe_col_name = color_col_item.replace('/', '_').replace('\\', '_').replace(' ', '_')
+                    combined_filename = f"all_samples_combined_by_{safe_col_name}.png"
+                    combined_save_path = os.path.join(output_dir, combined_filename)
+                    plt.savefig(combined_save_path, dpi=300, bbox_inches='tight')
+                    
+                    if verbose:
+                        print(f"  Combined saved: {combined_save_path}")
+                    
+                    plt.close(fig_combined)
+                
+                else:
+                    # No output_dir, create and store figures
+                    n_plots = len(available_embeddings)
+                    fig, axes = plt.subplots(1, n_plots, figsize=figsize)
+                    
+                    if n_plots == 1:
+                        axes = [axes]
+                    
+                    for i, (embedding_type, embedding_key) in enumerate(available_embeddings):
+                        ax = axes[i]
+                        
+                        ax, data_type, unique_values = plot_embedding_colored_by_column(
+                            adata, embedding_key, color_col_item, ax,
+                            point_size=point_size, alpha=alpha,
+                            colormap=colormap, categorical_cmap=categorical_cmap,
+                            show_sample_names=show_sample_names,
+                            force_data_type=force_data_type, verbose=verbose
+                        )
+                        
+                        if embedding_type == 'Expression':
+                            title = 'Expression Embedding'
+                        else:
+                            title = 'Cell Proportion Embedding'
+                        
+                        ax.set_title(title, fontsize=14, fontweight='bold')
+                        if i == 0:
+                            ax.set_ylabel('Dimension 2')
+                    
+                    fig.suptitle(f'Multi-modal Embedding: All Samples colored by {color_col_item}', 
+                                fontsize=16, fontweight='bold', y=0.98)
+                    plt.tight_layout()
+                    
+                    all_figures[color_col_item] = (fig, axes)
+            
+            # Return based on what was created
+            if output_dir:
+                return None, None
+            elif len(all_figures) == 1:
+                return list(all_figures.values())[0]
+            else:
+                return all_figures
+        
+        # =====================================================================
+        # Original default plot logic (no visualization_grouping_column)
+        # =====================================================================
+        
         # If both embeddings are available and output_dir is provided, save separately
         if len(available_embeddings) == 2 and output_dir:
             saved_files = []
@@ -557,7 +1011,9 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
         
         return fig, axes
     
+    # =========================================================================
     # If not default plot, continue with the original modality-specific logic
+    # =========================================================================
     
     # Detect data type early
     target_mask = adata.obs[modality_col].values == target_modality
