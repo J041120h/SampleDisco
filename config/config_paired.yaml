@@ -298,8 +298,8 @@ multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/a
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: false
-multiomics_run_integrate_preprocess: false
+multiomics_run_glue: true
+multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
@@ -308,8 +308,8 @@ multiomics_run_find_optimal_resolution: false
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: false
-multiomics_run_glue_cell_types: false
-multiomics_run_glue_visualization: false
+multiomics_run_glue_cell_types: true
+multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv'

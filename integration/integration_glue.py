@@ -29,6 +29,7 @@ from preparation.Cell_type import *
 from preparation.Cell_type_linux import cell_types_linux
 from utils.safe_save import safe_h5ad_write
 from utils.merge_sample_meta import merge_sample_metadata
+from utils.imbalance_cell_type_handeler import filter_modality_imbalanced_clusters
 from integration.integration_visualization import glue_visualize
 
 def glue_preprocess_pipeline(
@@ -1112,6 +1113,15 @@ def glue(
                     verbose=verbose
                 )
 
+    # After cell type assignment
+    merged_adata = filter_modality_imbalanced_clusters(
+        adata=merged_adata,
+        modality_column="modality",
+        cluster_column="cell_type",
+        min_proportion_of_expected=0.05,  # 95% imbalance threshold
+        verbose=True
+    )
+    
     # Step 5: Visualization
     if run_visualization:
         print("Running visualization...")
