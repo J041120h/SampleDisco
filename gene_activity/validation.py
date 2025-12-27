@@ -882,7 +882,7 @@ if __name__ == "__main__":
     
     # Example usage
     rna_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad'
-    atac_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/heart_gene_activity.rds'
+    atac_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/heart_gene_activity.h5ad'
     out_dir = "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/gene_activity_validation"
     
     print("[Main] Loading data...")

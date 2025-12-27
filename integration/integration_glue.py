@@ -1042,11 +1042,8 @@ def glue(
             n_top_genes=n_top_genes,
             n_pca_comps=n_pca_comps,
             n_lsi_comps=n_lsi_comps,
-            gtf_by=gtf_by,
             flavor=flavor,
             generate_umap=generate_umap,
-            compression=compression,
-            random_state=random_state,
             rna_sample_column=rna_sample_column,
             atac_sample_column=atac_sample_column
         )

@@ -293,9 +293,9 @@ def merge_single_rna_atac(
 if __name__ == "__main__":
     # out_file = Path("/dcs07/hongkai/data/harry/result/Benchmark_omics/paired_rna_atac_merged.h5ad")
     # merged = merge_paired_rna_atac(output_path=out_file)
-    rna_file = Path("/path/to/rna_gene_expression.h5ad")
-    atac_file = Path("/path/to/atac_gene_activity.h5ad")
-    out_file = Path("/path/to/merged_rna_atac_single.h5ad")
+    rna_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad")
+    atac_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_heart/data/heart_gene_activity.h5ad")
+    out_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_heart/data/paired_rna_atac_merged.h5ad")
 
     merged = merge_single_rna_atac(
         rna_path=rna_file,

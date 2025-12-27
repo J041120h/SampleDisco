@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import spmatrix
 import scanpy as sc
-
+from utils.merge_sample_meta import merge_sample_metadata
 
 def add_raw_counts_layer_by_obs_names(
     preprocessed_h5ad_path,
@@ -136,49 +136,97 @@ def print_batch_sample_counts(h5ad_path, batch_col="batch"):
 
 import pandas as pd
 
+from pathlib import Path
+from typing import Union, Tuple
 
-def add_age_bins_to_csv(
-    csv_path,
-    age_col="Age at enrollment",
-    new_col="age_cluster",
-    labels=("Young", "Middle", "Old")
-):
+import anndata as ad
+from anndata import AnnData
+
+# assuming merge_sample_metadata is already defined / imported above
+
+
+def split_h5ad_by_organ_part(
+    h5ad_path: Union[str, Path],
+    metadata_path: Union[str, Path],
+    sample_column: str = "sample",
+    organ_part_col: str = "organ_part",
+    verbose: bool = True,
+) -> Tuple[AnnData, AnnData]:
     """
-    Add an age-binned categorical column (tertiles) to a CSV and overwrite it.
+    1) Load an h5ad file.
+    2) Merge sample-level metadata using `merge_sample_metadata`.
+    3) Split cells into two AnnData objects based on `organ_part`:
+          - "macula lutea"      -> lutea.h5ad
+          - "peripheral region of retina" -> retina.h5ad
+    4) Save the two new h5ad files in the SAME directory as the input.
 
-    Parameters
-    ----------
-    csv_path : str
-        Path to the CSV file.
-    age_col : str
-        Name of the column containing numeric age values.
-    new_col : str
-        Name of the new binned age column.
-    labels : tuple of str
-        Labels for the bins (default: Young, Middle, Old).
+    Returns
+    -------
+    lutea_adata, retina_adata
     """
+    h5ad_path = Path(h5ad_path)
+    out_dir = h5ad_path.parent
 
-    df = pd.read_csv(csv_path)
+    if verbose:
+        print(f"📥 Loading AnnData from: {h5ad_path}")
 
-    if age_col not in df.columns:
-        raise ValueError(f"Column '{age_col}' not found in CSV.")
+    adata = ad.read_h5ad(h5ad_path)
 
-    age = df[age_col]
+    # --- merge sample metadata ---
+    if verbose:
+        print("🔗 Merging sample-level metadata...")
+    adata = merge_sample_metadata(
+        adata=adata,
+        metadata_path=metadata_path,
+        sample_column=sample_column,
+        verbose=verbose,
+    )
 
-    # Try quantile-based binning (equal counts)
-    try:
-        age_bins = pd.qcut(age, q=3, labels=labels, duplicates="drop")
-    except ValueError:
-        # Fallback to equal-width bins
-        age_bins = pd.cut(age, bins=3, labels=labels)
+    # --- check organ_part column ---
+    if organ_part_col not in adata.obs.columns:
+        raise KeyError(
+            f"Column '{organ_part_col}' not found in adata.obs. "
+            f"Available columns: {list(adata.obs.columns)}"
+        )
 
-    df[new_col] = age_bins.astype(str)
+    organ_series = (
+        adata.obs[organ_part_col]
+        .astype(str)
+        .str.strip()
+        .str.lower()
+    )
 
-    # Overwrite original CSV
-    df.to_csv(csv_path, index=False)
+    # Define label mapping (case-insensitive)
+    lutea_label = "macula lutea"
+    retina_label = "peripheral region of retina"
 
-    print(f"✔ Added column '{new_col}' and overwrote CSV:")
-    print(f"  {csv_path}")
+    mask_lutea = organ_series == lutea_label
+    mask_retina = organ_series == retina_label
+
+    if verbose:
+        print(f"🔍 Cells with '{lutea_label}': {mask_lutea.sum()}")
+        print(f"🔍 Cells with '{retina_label}': {mask_retina.sum()}")
+
+    if mask_lutea.sum() == 0 or mask_retina.sum() == 0:
+        print("⚠️ Warning: one of the organ parts has zero cells after filtering.")
+
+    # --- subset and copy ---
+    lutea_adata = adata[mask_lutea].copy()
+    retina_adata = adata[mask_retina].copy()
+
+    # --- save to same directory, names 'lutea.h5ad' and 'retina.h5ad' ---
+    lutea_path = out_dir / "lutea.h5ad"
+    retina_path = out_dir / "retina.h5ad"
+
+    if verbose:
+        print(f"💾 Saving macula lutea subset to: {lutea_path}")
+    lutea_adata.write_h5ad(lutea_path)
+
+    if verbose:
+        print(f"💾 Saving peripheral retina subset to: {retina_path}")
+    retina_adata.write_h5ad(retina_path)
+
+    return lutea_adata, retina_adata
 
 if __name__ == "__main__":
     # add_raw_counts_layer_by_obs_names(
@@ -188,8 +236,10 @@ if __name__ == "__main__":
     #     verbose=True,
     # )
     # print_batch_sample_counts("/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad")
-    add_age_bins_to_csv(
-        csv_path="/dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv",
-        age_col="Age at enrollment"
+    split_h5ad_by_organ_part(
+    "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad",
+    "//dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv",  # or .csv / .xlsx etc.
+    sample_column="sample",          # or whatever your sample column is
     )
+
 

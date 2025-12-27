@@ -22,15 +22,15 @@ Resuming process from previous progress:
         "visualization": false
     },
     "multiomics": {
-        "glue_integration": true,
-        "glue_preprocessing": true,
-        "glue_training": true,
-        "glue_gene_activity": true,
-        "glue_cell_types": true,
-        "glue_visualization": true,
-        "integration_preprocessing": true,
-        "dimensionality_reduction": true,
-        "embedding_visualization": true,
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
         "optimal_resolution": false
     },
     "system_info": {
@@ -44,355 +44,44 @@ Resuming process from previous progress:
 ============================================================
 RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics
-Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/lutea
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
 Step 1: Running GLUE integration...
-  Sub-steps: Preprocessing=False, Training=False, Gene Activity=False, Cell Types=True, Visualization=True
-Assigning cell types...
- Using Linux Cell Type Assignment for cell type assignment...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.5)...
-[cell_types] Found 15 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Converting GPU arrays to CPU...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/preprocess/atac_rna_integrated.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 20 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/preprocess/atac_rna_integrated.h5ad
-[Modality Balance] Removed 3 imbalanced cluster(s): ['11', '14', '15']
-[Modality Balance] Cells removed: 1,714 (0.9%)
-Running visualization...
-Loading integrated RNA-ATAC data...
-Computing UMAP from scGLUE embeddings...
-Generating visualizations for columns: ['modality', 'cell_type']
-Saved modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/scglue_umap_modality.png
-Saved cell_type plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/scglue_umap_cell_type.png
+  Sub-steps: Preprocessing=True, Training=True, Gene Activity=True, Cell Types=True, Visualization=True
+Running preprocessing...
 
-Creating modality-cell type distribution heatmap...
-Saved modality-cell type heatmap: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/scglue_modality_celltype_heatmap.png
-Saved modality-cell type stacked plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/scglue_modality_celltype_stacked.png
+🚀 Starting GLUE preprocessing pipeline...
 
-=== Modality-Cell Type Distribution Summary ===
-Total cell types: 15
-Total modalities: 2
+   Feature selection mode: Highly Variable
 
-Cell counts by modality and cell type:
-modality    ATAC    RNA
-cell_type              
-1           7741   8520
-10          2617   1933
-11             2    254
-12           895    767
-13          3495   3368
-14            15    661
-15             0    782
-2           9611  10525
-3          16615  14357
-4          16027  17584
-5          16495  18844
-6           9958   4837
-7           2519   2752
-8           4340   4158
-9           9108  10096
+📊 Loading data files...
+   RNA: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/lutea.h5ad
+   ATAC: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/lutea.h5ad
+✅ Data loaded successfully
+   RNA shape: (144343, 38606)
+   ATAC shape: (144343, 3576085)
 
-Saved distribution table to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/scglue_modality_celltype_distribution.csv
+📋 Loading and merging sample metadata...
+   Processing RNA metadata: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
 
-=== Integration Summary ===
-Total cells: 198876
-Total features: 38606
-Available metadata columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'balancing_weight', 'modality', 'original_barcode', 'cell_type']
-
-Modality breakdown:
-  ATAC: 99438 cells
-  RNA: 99438 cells
-
-Features used: 38606/38606
-
-Visualization complete!
-Visualization completed.
-
-Total runtime: 5.81 minutes
-✓ GLUE integration completed successfully
-  Completed 2/5 GLUE sub-steps
-Step 2: Running integration preprocessing...
-=== Read input dataset ===
-Dimension of raw data (cells x genes): 198876 x 38606
-Stored original sample IDs in adata.obs['original_sample'].
-Detected non-unique 'sample' values (22 duplicated sample IDs across 198876 rows). Appended modality from 'modality' only for those rows.
-After cell filtering -- Cells remaining: 79418, Genes remaining: 38606
-After gene filtering -- Cells remaining: 79418, Genes remaining: 24086
-After remove MT_gene and user input gene -- Cells remaining: 79418, Genes remaining: 24086
-Sample counts BEFORE filtering:
-sample
-MA14_heart_RNA     4203
-MA10_heart_RNA     4197
-MA9_heart_RNA      4047
-MA31_heart_ATAC    3611
-MA29_heart_ATAC    3401
-MA9_heart_ATAC     3096
-MA10_heart_ATAC    3007
-MA8_heart_RNA      2941
-MA14_heart_ATAC    2657
-MA31_heart_RNA     2610
-MA33_heart_ATAC    2578
-MA23_heart_ATAC    2561
-MA19_heart_ATAC    2376
-MA24_heart_ATAC    2343
-MA8_heart_ATAC     2290
-MA29_heart_RNA     2275
-MA28_heart_ATAC    2093
-MA22_heart_ATAC    1869
-MA28_heart_RNA     1767
-MA33_heart_RNA     1759
-MA6_heart_RNA      1738
-MA25_heart_ATAC    1656
-MA11_heart_RNA     1653
-MA19_heart_RNA     1514
-MA27_heart_ATAC    1492
-MA32_heart_ATAC    1475
-MA6_heart_ATAC     1452
-MA27_heart_RNA     1397
-MA5_heart_RNA      1303
-MA20_heart_ATAC    1282
-MA5_heart_ATAC     1108
-MA32_heart_RNA     1060
-MA11_heart_ATAC    1050
-MA26_heart_ATAC     991
-MA24_heart_RNA      885
-MA22_heart_RNA      777
-MA23_heart_RNA      607
-MA7_heart_RNA       440
-MA13_heart_RNA      417
-MA20_heart_RNA      340
-MA7_heart_ATAC      331
-MA25_heart_RNA      312
-MA13_heart_ATAC     234
-MA26_heart_RNA      223
-dtype: int64
-
-Samples retained (>= 100 cells): ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC', 'MA13_heart_RNA', 'MA14_heart_ATAC', 'MA14_heart_RNA', 'MA19_heart_ATAC', 'MA19_heart_RNA', 'MA20_heart_ATAC', 'MA20_heart_RNA', 'MA22_heart_ATAC', 'MA22_heart_RNA', 'MA23_heart_ATAC', 'MA23_heart_RNA', 'MA24_heart_ATAC', 'MA24_heart_RNA', 'MA25_heart_ATAC', 'MA25_heart_RNA', 'MA26_heart_ATAC', 'MA26_heart_RNA', 'MA27_heart_ATAC', 'MA27_heart_RNA', 'MA28_heart_ATAC', 'MA28_heart_RNA', 'MA29_heart_ATAC', 'MA29_heart_RNA', 'MA31_heart_ATAC', 'MA31_heart_RNA', 'MA32_heart_ATAC', 'MA32_heart_RNA', 'MA33_heart_ATAC', 'MA33_heart_RNA', 'MA5_heart_ATAC', 'MA5_heart_RNA', 'MA6_heart_ATAC', 'MA6_heart_RNA', 'MA7_heart_ATAC', 'MA7_heart_RNA', 'MA8_heart_ATAC', 'MA8_heart_RNA', 'MA9_heart_ATAC', 'MA9_heart_RNA']
-
-Sample counts AFTER filtering:
-sample
-MA14_heart_RNA     4203
-MA10_heart_RNA     4197
-MA9_heart_RNA      4047
-MA31_heart_ATAC    3611
-MA29_heart_ATAC    3401
-MA9_heart_ATAC     3096
-MA10_heart_ATAC    3007
-MA8_heart_RNA      2941
-MA14_heart_ATAC    2657
-MA31_heart_RNA     2610
-MA33_heart_ATAC    2578
-MA23_heart_ATAC    2561
-MA19_heart_ATAC    2376
-MA24_heart_ATAC    2343
-MA8_heart_ATAC     2290
-MA29_heart_RNA     2275
-MA28_heart_ATAC    2093
-MA22_heart_ATAC    1869
-MA28_heart_RNA     1767
-MA33_heart_RNA     1759
-MA6_heart_RNA      1738
-MA25_heart_ATAC    1656
-MA11_heart_RNA     1653
-MA19_heart_RNA     1514
-MA27_heart_ATAC    1492
-MA32_heart_ATAC    1475
-MA6_heart_ATAC     1452
-MA27_heart_RNA     1397
-MA5_heart_RNA      1303
-MA20_heart_ATAC    1282
-MA5_heart_ATAC     1108
-MA32_heart_RNA     1060
-MA11_heart_ATAC    1050
-MA26_heart_ATAC     991
-MA24_heart_RNA      885
-MA22_heart_RNA      777
-MA23_heart_RNA      607
-MA7_heart_RNA       440
-MA13_heart_RNA      417
-MA20_heart_RNA      340
-MA7_heart_ATAC      331
-MA25_heart_RNA      312
-MA13_heart_ATAC     234
-MA26_heart_RNA      223
-Name: count, dtype: int64
-Final filtering -- Cells remaining: 79418, Genes remaining: 16049
-Preprocessing complete!
-Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/preprocess/adata_sample.h5ad
-Original sample IDs stored in: adata.obs['original_sample']
-Function execution time: 35.84 seconds
-✓ Integration preprocessing completed successfully
-Step 3: Running dimensionality reduction (pseudobulk + PCA)...
-  Sub-step 3a: Computing pseudobulk...
-[Pseudobulk] Input: 79418 cells, 16049 genes
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[Pseudobulk] Using CPU
-[Pseudobulk] 44 samples, 14 cell types
-[Pseudobulk] Batch correction: ['modality']
-[Pseudobulk] Phase 1: Aggregating...
-  Aggregating 79418 cells -> 44 samples x 14 cell types
-  Created 14 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/14] 1
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [2/14] 10
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [3/14] 11
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2004 HVGs
-  [4/14] 12
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [5/14] 13
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [6/14] 14
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [7/14] 2
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [8/14] 3
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [9/14] 4
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [10/14] 5
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [11/14] 6
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [12/14] 7
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [13/14] 8
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-  [14/14] 9
-    Batches: 2, sizes: 22-22
-    Applied ComBat
-    Selected 2000 HVGs
-[Pseudobulk] Retained 14 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 2000
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete (5.1s)
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 44 samples, 2000 features
-  Sub-step 3b: Processing with PCA...
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] Batch correction: Using 1 batch column(s): ['modality']
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(44, 2000), proportion=(44, 14)
-[DimRed] Computing PCA for RNA data with 10 components on (44, 2000) data
-[PCA] Success. Shape: (44, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (44, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (44, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Computing PCA with 10 components...
-[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['modality']
-[run_dimension_reduction_proportion] Harmony completed with 1 batch factor(s). Shape: (44, 10)
-[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (44, 10)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings/sample_expression_embedding.csv (shape: (44, 10))
-[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings/sample_proportion_embedding.csv (shape: (44, 10))
-[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file path:
-  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (0.7 MB)
-[process_anndata_with_dimension_reduction] ✓ File saved successfully
-
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.35 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ATTEMPTED
-  - H5AD: pseudobulk_anndata only
-  - CSV embeddings: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings/
-✓ Dimensionality reduction completed successfully
-Step 4: Visualizing multimodal embedding...
-Creating default embedding visualization (all samples)
-Expression key: X_DR_expression
-Proportion key: X_DR_proportion
-Additional color columns: ['disease_state']
-Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization
-
-Creating colored visualizations for 1 column(s)...
-
---- Processing color column: disease_state ---
-  Column 'disease_state': categorical with 3 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/all_samples_expression_by_disease_state.png
-  Column 'disease_state': categorical with 3 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/all_samples_proportion_by_disease_state.png
-  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/all_samples_combined_by_disease_state.png
-✓ Embedding visualization completed successfully
-
-Pipeline completed successfully!
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics
-Available results: ['glue', 'adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
-Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Completed steps: 9/10
-GLUE sub-steps completed: 5/5
-
-✓ Multiomics pipeline completed successfully!
+✗ Multiomics pipeline failed with error: columns overlap but no suffix specified: Index(['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5'], dtype='object')
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
 Multiomics Pipeline: ⚠ PARTIAL
-  - glue_integration: ✓
-  - glue_preprocessing: ✓
-  - glue_training: ✓
-  - glue_gene_activity: ✓
-  - glue_cell_types: ✓
-  - glue_visualization: ✓
-  - integration_preprocessing: ✓
-  - dimensionality_reduction: ✓
-  - embedding_visualization: ✓
+  - glue_integration: ✗
+  - glue_preprocessing: ✗
+  - glue_training: ✗
+  - glue_gene_activity: ✗
+  - glue_cell_types: ✗
+  - glue_visualization: ✗
+  - integration_preprocessing: ✗
+  - dimensionality_reduction: ✗
+  - embedding_visualization: ✗
   - optimal_resolution: ✗
 
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart
-Status file: /dcs07/hongkai/data/harry/result/multi_omics_heart/sys_log/main_process_status.json
-Execution time: 400.8008 seconds
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/lutea
+Status file: /dcs07/hongkai/data/harry/result/multi_omics_eye/lutea/sys_log/main_process_status.json
+Execution time: 84.9328 seconds
