@@ -284,27 +284,23 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
             print(f"  Sub-steps: Preprocessing={run_glue_preprocessing}, Training={run_glue_training}, "
-                  f"Gene Activity={run_glue_gene_activity}, Cell Types={run_glue_cell_types}, "
-                  f"Visualization={run_glue_visualization}")
-        
+                f"Gene Activity={run_glue_gene_activity}, Cell Types={run_glue_cell_types}, "
+                f"Visualization={run_glue_visualization}")
         if not rna_file or not atac_file:
             raise ValueError("rna_file and atac_file must be provided when run_glue=True")
-        
         glue_result = glue(
             # Data files
             rna_file=rna_file,
             atac_file=atac_file,
             rna_sample_meta_file=rna_sample_meta_file,
             atac_sample_meta_file=atac_sample_meta_file,
-            additional_hvg_file = additional_hvg_file,
-            
+            additional_hvg_file=additional_hvg_file,
             # Process control flags for GLUE sub-steps
             run_preprocessing=run_glue_preprocessing,
             run_training=run_glue_training,
             run_gene_activity=run_glue_gene_activity,
             run_cell_types=run_glue_cell_types,
             run_visualization=run_glue_visualization,
-            
             # Preprocessing parameters
             ensembl_release=ensembl_release,
             species=species,
@@ -312,46 +308,35 @@ def multiomics_wrapper(
             n_top_genes=n_top_genes,
             n_pca_comps=n_pca_comps,
             n_lsi_comps=n_lsi_comps,
-            lsi_n_iter=lsi_n_iter,
             gtf_by=gtf_by,
             flavor=flavor,
             generate_umap=generate_umap,
             compression=compression,
             random_state=random_state,
-            metadata_sep=metadata_sep,
             rna_sample_column=rna_sample_column,
             atac_sample_column=atac_sample_column,
-            
             # Training parameters
             consistency_threshold=consistency_threshold,
-            treat_sample_as_batch = treat_sample_as_batch,
+            treat_sample_as_batch=treat_sample_as_batch,
             save_prefix=save_prefix,
-            
             # Gene activity computation parameters
             k_neighbors=k_neighbors,
             use_rep=use_rep,
             metric=metric,
             use_gpu=use_gpu,
             verbose=multiomics_verbose,
-            
             # Cell type assignment parameters
             existing_cell_types=existing_cell_types,
             n_target_clusters=n_target_clusters,
             cluster_resolution=cluster_resolution,
             use_rep_celltype=use_rep_celltype,
             markers=markers,
-            method=method,
-            metric_celltype=metric_celltype,
-            distance_mode=distance_mode,
-            generate_umap_celltype=generate_umap_celltype,
-            
             # Visualization parameters
             plot_columns=plot_columns,
-            
             # Output directory
             output_dir=multiomics_output_dir
         )
-        
+            
         results['glue'] = glue_result
         
         # Update status flags for completed GLUE sub-steps

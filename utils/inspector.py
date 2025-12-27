@@ -305,5 +305,5 @@ if __name__ == "__main__":
     # print(adata.obs[['dataset', 'sample']].head())
     # adata.write('/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad')
     summarize_h5ad(
-        h5ad_path="/dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/preprocess/adata_sample.h5ad"
+        h5ad_path= '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad'
     )

@@ -1,99 +1,100 @@
 #!/usr/bin/env python3
+"""
+Comprehensive Gene Activity Validation Function.
 
-# ----------------- Imports (headless plotting) -----------------
+Combines:
+- Per-cell RNA-ATAC correlation
+- Per-gene RNA-ATAC correlation  
+- Pseudobulk/KNN aggregation correlation analysis (k=1 to 50)
+- Detailed overlap statistics
+
+Memory-efficient implementation with optional GPU acceleration.
+"""
+
 import os
 import re
 import json
+import gc
 import numpy as np
 import pandas as pd
 import scanpy as sc
 from scipy import sparse
+from scipy import stats as sp_stats
+from typing import Optional, List, Dict, Any
+from tqdm import tqdm
+import warnings
+warnings.filterwarnings('ignore')
 
 import matplotlib
-matplotlib.use("Agg")  # ensure no X server is required
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# ----------------- ID utilities -----------------
+# =============================================================================
+# ID UTILITIES (for gene name harmonization)
+# =============================================================================
+
 _ENSEMBL_RE = re.compile(r"^ENSG\d+(?:\.\d+)?$", re.IGNORECASE)
 
 def _looks_like_ensembl(x: str) -> bool:
     return bool(_ENSEMBL_RE.match(x or ""))
 
 def _strip_ens_version(x: str) -> str:
-    # ENSG00000141510.16 -> ENSG00000141510
     if x is None:
         return x
     return x.split(".", 1)[0] if x.upper().startswith("ENSG") else x
 
 def _normalize_symbol(x: str) -> str:
-    # standardize symbol casing; avoid None
     return (x or "").upper()
 
 def _candidate_cols(var_df: pd.DataFrame) -> dict:
-    """Return best-guess columns for ensembl and symbol in .var."""
     cols = {c.lower(): c for c in var_df.columns}
     ens_cols = [cols[k] for k in ["gene_id", "ensembl", "ensembl_id", "gene_ids"] if k in cols]
     sym_cols = [cols[k] for k in ["gene_name", "symbol", "gene_symbol", "genesymbol"] if k in cols]
     return {"ensembl": ens_cols, "symbol": sym_cols}
 
 def _derive_ids(var_names: pd.Index, var_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build a dataframe with columns:
-      - ens_from_varname, sym_from_varname
-      - ens_from_cols,   sym_from_cols
-    (strings; may contain NaN where unavailable)
-    """
     df = pd.DataFrame(index=var_names)
-
-    # From var_names directly
-    df["ens_from_varname"] = pd.Series([_strip_ens_version(v) if _looks_like_ensembl(str(v)) else np.nan
-                                        for v in var_names], index=var_names, dtype="object")
-    df["sym_from_varname"] = pd.Series([_normalize_symbol(v) if not _looks_like_ensembl(str(v)) else np.nan
-                                        for v in var_names], index=var_names, dtype="object")
-
-    # From known columns (pick the first available)
+    df["ens_from_varname"] = pd.Series(
+        [_strip_ens_version(v) if _looks_like_ensembl(str(v)) else np.nan for v in var_names],
+        index=var_names, dtype="object"
+    )
+    df["sym_from_varname"] = pd.Series(
+        [_normalize_symbol(v) if not _looks_like_ensembl(str(v)) else np.nan for v in var_names],
+        index=var_names, dtype="object"
+    )
     cand = _candidate_cols(var_df)
-
+    
     ens_col_val = None
     for c in cand["ensembl"]:
         if c in var_df.columns:
             ens_col_val = var_df[c].astype(str).map(_strip_ens_version)
             break
-
+    
     sym_col_val = None
     for c in cand["symbol"]:
         if c in var_df.columns:
             sym_col_val = var_df[c].astype(str).map(_normalize_symbol)
             break
-
+    
     df["ens_from_cols"] = ens_col_val.reindex(var_names) if ens_col_val is not None else np.nan
     df["sym_from_cols"] = sym_col_val.reindex(var_names) if sym_col_val is not None else np.nan
-
     return df
 
-def _choose_unified_key(rna_ids: pd.DataFrame,
-                        atac_ids: pd.DataFrame,
-                        prefer: str = "auto") -> str:
-    """
-    Decide to unify on 'ensembl' or 'symbol'.
-    prefer='auto' picks the ID space with the larger potential overlap.
-    """
-    # Potential usable keys
+def _choose_unified_key(rna_ids: pd.DataFrame, atac_ids: pd.DataFrame, prefer: str = "auto") -> str:
     rna_ens = pd.Series(rna_ids["ens_from_cols"]).fillna(rna_ids["ens_from_varname"])
     rna_sym = pd.Series(rna_ids["sym_from_cols"]).fillna(rna_ids["sym_from_varname"])
-
     atac_ens = pd.Series(atac_ids["ens_from_cols"]).fillna(atac_ids["ens_from_varname"])
     atac_sym = pd.Series(atac_ids["sym_from_cols"]).fillna(atac_ids["sym_from_varname"])
-
+    
     ens_overlap = len(set(rna_ens.dropna()) & set(atac_ens.dropna()))
     sym_overlap = len(set(rna_sym.dropna()) & set(atac_sym.dropna()))
-
+    
     if prefer in ("ensembl", "symbol"):
         return prefer
-    # auto: pick the bigger
     return "ensembl" if ens_overlap >= sym_overlap else "symbol"
+
 
 def unify_and_align_genes(
     adata_rna: sc.AnnData,
@@ -104,32 +105,18 @@ def unify_and_align_genes(
     atac_layer: str | None = "GeneActivity",
     verbose: bool = True,
 ):
-    """
-    Try multiple strategies to place RNA and ATAC into the same gene ID space.
-
-    - Detect Ensembl IDs (with/without version) and symbols from var_names and common .var columns.
-    - If mapping_csv is provided (columns must include both 'gene_id' and 'gene_name'),
-      it is used as an extra source.
-    - prefer='ensembl' | 'symbol' | 'auto' (default: auto)
-    - If atac_layer is set and present, use that layer as the ATAC matrix.
-
-    Returns: rna_sub, atac_sub, shared_ids, mapping_df
-    """
+    """Unify gene IDs between RNA and ATAC modalities."""
     os.makedirs(output_dir, exist_ok=True)
 
-    # Use ATAC layer, e.g., GeneActivity, if provided
     if atac_layer and atac_layer in (adata_atac.layers.keys() if hasattr(adata_atac.layers, "keys") else {}):
         if verbose:
             print(f"[unify] Using ATAC layer '{atac_layer}' as X")
         X = adata_atac.layers[atac_layer]
-        # Preserve var/obs; replace X view only for correlation
         adata_atac = sc.AnnData(X=X, obs=adata_atac.obs.copy(), var=adata_atac.var.copy())
 
-    # Derive IDs for both
     rna_ids = _derive_ids(adata_rna.var_names, adata_rna.var)
     atac_ids = _derive_ids(adata_atac.var_names, adata_atac.var)
 
-    # Optional external mapping
     sym2ens = {}
     ens2sym = {}
     if mapping_csv and os.path.exists(mapping_csv):
@@ -138,27 +125,19 @@ def unify_and_align_genes(
             mdf = mdf.dropna(subset=["gene_id", "gene_name"]).copy()
             mdf["gene_id"] = mdf["gene_id"].astype(str).map(_strip_ens_version)
             mdf["gene_name"] = mdf["gene_name"].astype(str).map(_normalize_symbol)
-            # prefer 1-1 (drop duplicates keeping first)
             mdf = mdf.drop_duplicates(subset=["gene_id"], keep="first")
             ens2sym = pd.Series(mdf["gene_name"].values, index=mdf["gene_id"].values).to_dict()
             sym2ens = pd.Series(mdf["gene_id"].values, index=mdf["gene_name"].values).to_dict()
             if verbose:
                 print(f"[unify] Loaded mapping_csv with {len(mdf)} rows")
-        else:
-            if verbose:
-                print("[unify] mapping_csv missing required columns 'gene_id' and 'gene_name' — ignoring")
 
-    # Choose unified space
     target = _choose_unified_key(rna_ids, atac_ids, prefer=prefer)
     if verbose:
         print(f"[unify] Unifying on: {target.upper()}")
 
-    # Build preferred ID columns for each modality
     if target == "ensembl":
         rna_id = rna_ids["ens_from_cols"].fillna(rna_ids["ens_from_varname"])
         atac_id = atac_ids["ens_from_cols"].fillna(atac_ids["ens_from_varname"])
-
-        # If missing, try convert via symbol -> ensembl using mapping_csv
         if mapping_csv:
             rna_missing = rna_id.isna()
             atac_missing = atac_id.isna()
@@ -168,16 +147,11 @@ def unify_and_align_genes(
             if atac_missing.any():
                 sym = atac_ids.loc[atac_missing, "sym_from_cols"].fillna(atac_ids.loc[atac_missing, "sym_from_varname"])
                 atac_id.loc[atac_missing] = sym.map(sym2ens)
-
-        # Clean
         rna_id = rna_id.dropna().astype(str).map(_strip_ens_version)
         atac_id = atac_id.dropna().astype(str).map(_strip_ens_version)
-
-    else:  # target == "symbol"
+    else:
         rna_id = rna_ids["sym_from_cols"].fillna(rna_ids["sym_from_varname"])
         atac_id = atac_ids["sym_from_cols"].fillna(atac_ids["sym_from_varname"])
-
-        # If missing, try ensembl -> symbol via mapping_csv
         if mapping_csv:
             rna_missing = rna_id.isna()
             atac_missing = atac_id.isna()
@@ -187,36 +161,27 @@ def unify_and_align_genes(
             if atac_missing.any():
                 ens = atac_ids.loc[atac_missing, "ens_from_cols"].fillna(atac_ids.loc[atac_missing, "ens_from_varname"])
                 atac_id.loc[atac_missing] = ens.map(ens2sym)
-
-        # Clean
         rna_id = rna_id.dropna().astype(str).map(_normalize_symbol)
         atac_id = atac_id.dropna().astype(str).map(_normalize_symbol)
 
-    # Build mapping dataframe for provenance
     map_rna = pd.DataFrame({"orig": adata_rna.var_names, "unified_id": rna_id.reindex(adata_rna.var_names).values})
     map_atac = pd.DataFrame({"orig": adata_atac.var_names, "unified_id": atac_id.reindex(adata_atac.var_names).values})
 
-    # Shared unified ids
     shared = sorted(set(map_rna["unified_id"].dropna()) & set(map_atac["unified_id"].dropna()))
     if verbose:
         print(f"[unify] Shared unified IDs: {len(shared)}")
 
-    # Align both objects on the shared unified ids
     if len(shared) == 0:
-        raise ValueError("[unify] No overlap after ID harmonization. "
-                         "Provide a mapping_csv or check species/build.")
+        raise ValueError("[unify] No overlap after ID harmonization.")
 
-    # Indexers to reorder columns
     rna_idx = pd.Index(map_rna["unified_id"]).get_indexer(shared)
     atac_idx = pd.Index(map_atac["unified_id"]).get_indexer(shared)
 
-    # Subset (columns) and overwrite var_names with unified ids
     rna_aligned = adata_rna[:, rna_idx].copy()
     atac_aligned = adata_atac[:, atac_idx].copy()
     rna_aligned.var_names = pd.Index(shared)
     atac_aligned.var_names = pd.Index(shared)
 
-    # Save mapping CSV for debugging
     md = pd.DataFrame({
         "unified_id": shared,
         "rna_orig": map_rna.set_index("unified_id").reindex(shared)["orig"].values,
@@ -231,579 +196,718 @@ def unify_and_align_genes(
     return rna_aligned, atac_aligned, shared, md
 
 
-# ----------------- Function -----------------
-def analyze_rna_atac_with_markers(
-    rna_h5ad_path,
-    atac_gene_activity_path,
-    output_dir='./results',
-    min_genes=200,
-    min_cells=3,
-    max_mt_percent=20.0,
-    n_top_genes=3000,
-    n_neighbors=15,
-    n_pcs=40,
-    resolution=0.8,
-    max_celltypes=6,          # show at most this many clusters (by size)
-    markers_per_type=10       # exactly this many markers per selected cluster
-):
-    """
-    Complete function for RNA preprocessing, clustering, marker gene identification,
-    and visualization of marker genes in both RNA and ATAC modalities.
-    """
-    os.makedirs(output_dir, exist_ok=True)
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
 
-    # Save-only plotting (no GUI)
-    sc.settings.autoshow = False
-    sc.settings.figdir = output_dir  # harmless; we save manually anyway
-
-    # =========================================================================
-    # RNA PREPROCESSING AND CLUSTERING
-    # =========================================================================
-    print("1. Loading and preprocessing RNA data...")
-    adata_rna = sc.read_h5ad(rna_h5ad_path)
-    print(f"   Loaded: {adata_rna.shape[0]} cells x {adata_rna.shape[1]} genes")
-    print(f"   [DEBUG] RNA obs_names dtype: {adata_rna.obs_names.dtype}")
-    print(f"   [DEBUG] First 5 RNA cell names: {list(adata_rna.obs_names[:5])}")
-    print(f"   [DEBUG] First 5 RNA gene names: {list(adata_rna.var_names[:5])}")
-
-    # QC metrics
-    adata_rna.var['mt'] = adata_rna.var_names.str.startswith('MT-')
-    sc.pp.calculate_qc_metrics(adata_rna, qc_vars=['mt'], inplace=True)
-
-    # Filter cells and genes
-    sc.pp.filter_cells(adata_rna, min_genes=min_genes)
-    sc.pp.filter_genes(adata_rna, min_cells=min_cells)
-    adata_rna = adata_rna[adata_rna.obs['pct_counts_mt'] < max_mt_percent, :].copy()
-    print(f"   After filtering: {adata_rna.shape[0]} cells x {adata_rna.shape[1]} genes")
-    print(f"   [DEBUG] After filtering, first 5 RNA cell names: {list(adata_rna.obs_names[:5])}")
-
-    # Normalize and log transform
-    sc.pp.normalize_total(adata_rna, target_sum=1e4)
-    sc.pp.log1p(adata_rna)
-
-    # IMPORTANT: set .raw after log1p so rank_genes_groups uses log data
-    adata_rna.raw = adata_rna.copy()
-
-    # HVGs
-    sc.pp.highly_variable_genes(adata_rna, n_top_genes=n_top_genes)
-    adata_rna = adata_rna[:, adata_rna.var.highly_variable].copy()
-
-    # Scale / PCA / neighbors / UMAP / Leiden
-    sc.pp.scale(adata_rna, max_value=10)
-    sc.tl.pca(adata_rna, svd_solver='arpack', n_comps=n_pcs)
-    sc.pp.neighbors(adata_rna, n_neighbors=n_neighbors, n_pcs=n_pcs)
-    sc.tl.umap(adata_rna)
-    sc.tl.leiden(adata_rna, resolution=resolution)
-    print(f"   Found {len(adata_rna.obs['leiden'].unique())} clusters")
-
-    # =========================================================================
-    # MARKER GENE IDENTIFICATION
-    # =========================================================================
-    print("\n2. Finding marker genes for each cluster...")
-    adata_rna_raw = adata_rna.raw.to_adata()
-    adata_rna_raw.obs['leiden'] = adata_rna.obs['leiden']
-
-    sc.tl.rank_genes_groups(adata_rna_raw, 'leiden', method='wilcoxon')
-
-    # Determine which clusters to show: top N by size
-    cluster_sizes = (
-        adata_rna.obs['leiden']
-        .value_counts()
-        .sort_values(ascending=False)
-    )
-    selected_clusters = list(cluster_sizes.index.astype(str))[:max_celltypes]
-    print(f"   Selected clusters (top by size): {selected_clusters}")
-
-    # Get exactly markers_per_type marker genes per selected cluster
-    # Build an ordered gene list; keep uniqueness while preserving order
-    ordered_marker_genes = []
-    for cl in selected_clusters:
-        genes_for_cl = list(adata_rna_raw.uns['rank_genes_groups']['names'][cl][:markers_per_type])
-        for g in genes_for_cl:
-            if g not in ordered_marker_genes:
-                ordered_marker_genes.append(g)
-    print(f"   Total unique selected markers: {len(ordered_marker_genes)} "
-          f"(<= {markers_per_type} per cluster)")
-    print(f"   [DEBUG] First 10 marker genes: {ordered_marker_genes[:10]}")
-
-    # Subset RNA (for visualization) to selected clusters only
-    adata_rna_raw_sel = adata_rna_raw[adata_rna_raw.obs['leiden'].isin(selected_clusters), :].copy()
-
-    # =========================================================================
-    # VISUALIZE MARKER GENE EXPRESSION IN RNA (SAVE ONLY)
-    # =========================================================================
-    print("\n3. Visualizing marker gene expression across selected clusters...")
-
-    # 3.1 UMAP with clusters
-    umap_fig = sc.pl.umap(
-        adata_rna,
-        color='leiden',
-        legend_loc='on data',
-        title='Cell Clusters (All)',
-        show=False,
-        return_fig=True,
-    )
-    umap_fig.savefig(os.path.join(output_dir, "rna_marker_umap.png"), dpi=150, bbox_inches="tight")
-    plt.close(umap_fig)
-
-    # 3.2 Dotplot of selected markers
-    sc.pl.dotplot(
-        adata_rna_raw_sel,
-        var_names=ordered_marker_genes,
-        groupby='leiden',
-        show=False
-    )
-    fig = plt.gcf()
-    fig.savefig(os.path.join(output_dir, "rna_markers_dotplot.png"), dpi=150, bbox_inches="tight")
-    plt.close(fig)
-
-    # 3.3 Heatmap of selected markers
-    sc.pl.heatmap(
-        adata_rna_raw_sel,
-        var_names=ordered_marker_genes,
-        groupby='leiden',
-        cmap='RdBu_r',
-        show=False
-    )
-    fig = plt.gcf()
-    fig.savefig(os.path.join(output_dir, "rna_markers_heatmap.png"), dpi=150, bbox_inches="tight")
-    plt.close(fig)
-
-    # 3.4 Violin plot: top 3 from the first selected cluster
-    if selected_clusters:
-        first_cluster = selected_clusters[0]
-        first3 = list(adata_rna_raw.uns['rank_genes_groups']['names'][first_cluster][:3])
-        sc.pl.violin(
-            adata_rna_raw_sel,
-            keys=first3,
-            groupby='leiden',
-            rotation=0,
-            show=False
-        )
-        fig = plt.gcf()
-        fig.savefig(os.path.join(output_dir, "rna_top3_violin.png"), dpi=150, bbox_inches="tight")
-        plt.close(fig)
-
-    # =========================================================================
-    # ATAC DATA PROCESSING
-    # =========================================================================
-    print("\n4. Loading and processing ATAC gene activity data...")
-    adata_atac = sc.read_h5ad(atac_gene_activity_path)
-    print(f"   Loaded: {adata_atac.shape[0]} cells x {adata_atac.shape[1]} genes")
-    print(f"   [DEBUG] ATAC obs_names dtype: {adata_atac.obs_names.dtype}")
-    print(f"   [DEBUG] First 5 ATAC cell names: {list(adata_atac.obs_names[:5])}")
-    print(f"   [DEBUG] First 5 ATAC gene names: {list(adata_atac.var_names[:5])}")
-
-    sc.pp.normalize_total(adata_atac, target_sum=1e4)
-    sc.pp.log1p(adata_atac)
-
-    # Find common cells (paired)
-    common_cells = list(set(adata_rna.obs_names) & set(adata_atac.obs_names))
-    print(f"   Found {len(common_cells)} paired cells")
-    print(f"   [DEBUG] First 5 common cell names: {common_cells[:5]}")
-    print(f"   [DEBUG] Total RNA cells: {len(adata_rna.obs_names)}")
-    print(f"   [DEBUG] Total ATAC cells: {len(adata_atac.obs_names)}")
-
-    markers_in_atac = []  # default if no pairing/overlap
-    if len(common_cells) > 0:
-        adata_rna_paired = adata_rna_raw[common_cells, :].copy()
-        adata_atac_paired = adata_atac[common_cells, :].copy()
-        adata_atac_paired.obs['cluster'] = adata_rna[common_cells, :].obs['leiden'].values
-
-        # Subset both paired objects to the selected clusters
-        adata_rna_paired_sel = adata_rna_paired[adata_rna_paired.obs['leiden'].isin(selected_clusters), :].copy()
-        adata_atac_paired_sel = adata_atac_paired[adata_atac_paired.obs['cluster'].isin(selected_clusters), :].copy()
-
-        # Restrict markers to genes present in ATAC data
-        markers_in_atac = [g for g in ordered_marker_genes if g in adata_atac_paired_sel.var_names]
-        print(f"   For ATAC: {len(markers_in_atac)}/{len(ordered_marker_genes)} selected markers present")
-        print(f"   [DEBUG] First 10 markers present in ATAC: {markers_in_atac[:10]}")
-
-        if len(markers_in_atac) > 0:
-            print("\n5. Comparing marker gene activity between RNA and ATAC (violins + ATAC dotplot)...")
-
-            # --- Paired violins ---
-            markers_to_plot = markers_in_atac[:min(6, len(markers_in_atac))]
-            fig, axes = plt.subplots(len(markers_to_plot), 2, figsize=(10, 4 * len(markers_to_plot)))
-            if len(markers_to_plot) == 1:
-                axes = np.array([axes])
-
-            for i, gene in enumerate(markers_to_plot):
-                sc.pl.violin(
-                    adata_rna_paired_sel,
-                    keys=[gene],
-                    groupby='leiden',
-                    show=False,
-                    ax=axes[i, 0]
-                )
-                axes[i, 0].set_title(f'RNA: {gene}')
-                axes[i, 0].set_xlabel('Cluster')
-
-                sc.pl.violin(
-                    adata_atac_paired_sel,
-                    keys=[gene],
-                    groupby='cluster',
-                    show=False,
-                    ax=axes[i, 1]
-                )
-                axes[i, 1].set_title(f'ATAC: {gene}')
-                axes[i, 1].set_xlabel('Cluster')
-
-            plt.suptitle('Marker Gene Expression: RNA vs ATAC Gene Activity (selected clusters)', fontsize=14)
-            plt.tight_layout()
-            fig.savefig(os.path.join(output_dir, "rna_atac_marker_comparison.png"), dpi=150, bbox_inches='tight')
-            plt.close(fig)
-
-            # --- ATAC dot plot ---
-            sc.pl.dotplot(
-                adata_atac_paired_sel,
-                var_names=markers_in_atac,
-                groupby='cluster',
-                show=False
-            )
-            fig = plt.gcf()
-            fig.savefig(os.path.join(output_dir, "atac_markers_dotplot.png"), dpi=150, bbox_inches="tight")
-            plt.close(fig)
-
-            # --- Cluster-wise correlations heatmap ---
-            print("\n6. Computing cluster-wise RNA-ATAC correlations (selected clusters)...")
-            correlations = []
-            for cluster in selected_clusters:
-                cluster_mask_rna = adata_rna_paired_sel.obs['leiden'] == cluster
-                cluster_mask_atac = adata_atac_paired_sel.obs['cluster'] == cluster
-                for gene in markers_in_atac[:min(20, len(markers_in_atac))]:
-                    if gene in adata_rna_paired_sel.var_names:
-                        rna_expr = adata_rna_paired_sel[cluster_mask_rna, gene].X
-                        atac_expr = adata_atac_paired_sel[cluster_mask_atac, gene].X
-                        if sparse.issparse(rna_expr):
-                            rna_expr = rna_expr.toarray().flatten()
-                        else:
-                            rna_expr = np.asarray(rna_expr).flatten()
-                        if sparse.issparse(atac_expr):
-                            atac_expr = atac_expr.toarray().flatten()
-                        else:
-                            atac_expr = np.asarray(atac_expr).flatten()
-                        if rna_expr.size > 1 and atac_expr.size > 1:
-                            corr = np.corrcoef(rna_expr, atac_expr)[0, 1]
-                        else:
-                            corr = np.nan
-                        correlations.append({'cluster': cluster, 'gene': gene, 'correlation': corr})
-
-            corr_df = pd.DataFrame(correlations)
-            if not corr_df.empty:
-                corr_matrix = corr_df.pivot(index='gene', columns='cluster', values='correlation')
-                plt.figure(figsize=(10, 8))
-                sns.heatmap(
-                    corr_matrix,
-                    cmap='RdBu_r',
-                    center=0,
-                    vmin=-1,
-                    vmax=1,
-                    cbar_kws={'label': 'RNA-ATAC Correlation'}
-                )
-                plt.title('RNA-ATAC Correlation for Selected Marker Genes by Cluster')
-                plt.xlabel('Cluster')
-                plt.ylabel('Marker Gene')
-                plt.tight_layout()
-                plt.savefig(os.path.join(output_dir, "rna_atac_correlation_heatmap.png"), dpi=150, bbox_inches='tight')
-                plt.close("all")
-
-                corr_df.to_csv(os.path.join(output_dir, "rna_atac_marker_correlations.csv"), index=False)
-                print(f"   Saved correlations to {os.path.join(output_dir, 'rna_atac_marker_correlations.csv')}")
-
-    # Save marker genes list
-    marker_rows = []
-    for cl in selected_clusters:
-        genes = list(adata_rna_raw.uns['rank_genes_groups']['names'][cl][:markers_per_type])
-        scores = list(adata_rna_raw.uns['rank_genes_groups']['scores'][cl][:markers_per_type])
-        marker_rows.append(pd.DataFrame({'cluster': cl, 'gene': genes, 'score': scores}))
-    marker_df = pd.concat(marker_rows, ignore_index=True) if marker_rows else pd.DataFrame(columns=['cluster', 'gene', 'score'])
-    marker_df.to_csv(os.path.join(output_dir, "marker_genes_selected.csv"), index=False)
-    print(f"\n7. Saved selected marker genes to {os.path.join(output_dir, 'marker_genes_selected.csv')}")
-    print("\nAnalysis complete!")
-
-    return {
-        'rna_data': adata_rna_raw,
-        'atac_data': adata_atac,
-        'selected_clusters': selected_clusters,
-        'marker_genes_selected': marker_df,
-        'markers_in_atac_selected': markers_in_atac
-    }
+def _to_array(X):
+    """Convert sparse matrix to dense array."""
+    if sparse.issparse(X):
+        return X.toarray()
+    return np.asarray(X)
 
 
-def compute_rna_atac_cell_gene_correlations(
-    adata_rna,
-    adata_atac,
+def _compute_pca_cpu(X: np.ndarray, n_pcs: int = 30, n_hvgs: int = 2000) -> np.ndarray:
+    """Compute PCA embedding on CPU (memory-efficient for smaller datasets)."""
+    if sparse.issparse(X):
+        X = X.toarray()
+    X = np.asarray(X, dtype=np.float32)
+    
+    n_cells, n_genes = X.shape
+    
+    # Normalize (CPM + log1p)
+    row_sums = X.sum(axis=1, keepdims=True)
+    row_sums = np.maximum(row_sums, 1e-10)
+    X = X / row_sums * 1e4
+    np.log1p(X, out=X)
+    
+    # Select HVGs by variance
+    gene_vars = X.var(axis=0)
+    n_hvgs = min(n_hvgs, n_genes)
+    hvg_indices = np.argsort(gene_vars)[-n_hvgs:]
+    X_hvg = X[:, hvg_indices]
+    
+    # Standardize
+    means = X_hvg.mean(axis=0)
+    stds = X_hvg.std(axis=0)
+    stds = np.where(stds == 0, 1, stds)
+    X_hvg = (X_hvg - means) / stds
+    
+    # PCA via SVD
+    n_components = min(n_pcs, n_hvgs - 1, n_cells - 1)
+    U, S, Vt = np.linalg.svd(X_hvg, full_matrices=False)
+    pca_coords = U[:, :n_components] * S[:n_components]
+    
+    return pca_coords.astype(np.float32)
+
+
+def _compute_knn_cpu(pca_coords: np.ndarray, k: int, batch_size: int = 5000) -> np.ndarray:
+    """Compute KNN indices on CPU using batched distance computation."""
+    n_samples = pca_coords.shape[0]
+    knn_indices = np.zeros((n_samples, k), dtype=np.int64)
+    
+    X_norm_sq = (pca_coords ** 2).sum(axis=1)
+    
+    for start in range(0, n_samples, batch_size):
+        end = min(start + batch_size, n_samples)
+        batch = pca_coords[start:end]
+        batch_norm_sq = X_norm_sq[start:end]
+        
+        # Squared distances
+        dists_sq = batch_norm_sq[:, None] + X_norm_sq[None, :] - 2 * (batch @ pca_coords.T)
+        
+        # Get k smallest
+        if k < n_samples:
+            partition_idx = np.argpartition(dists_sq, k, axis=1)[:, :k]
+            batch_indices = np.arange(end - start)[:, None]
+            k_dists = dists_sq[batch_indices, partition_idx]
+            sort_idx = np.argsort(k_dists, axis=1)
+            knn_indices[start:end] = partition_idx[batch_indices, sort_idx]
+        else:
+            knn_indices[start:end] = np.argsort(dists_sq, axis=1)[:, :k]
+    
+    return knn_indices
+
+
+def _aggregate_and_correlate_cpu(
+    rna_X: np.ndarray,
+    atac_X: np.ndarray,
+    knn_indices: np.ndarray,
+    k: int,
+    min_nonzero: int = 10,
+    batch_size: int = 5000,
+) -> tuple:
+    """Aggregate cells by KNN and compute correlations (CPU version)."""
+    n_cells = rna_X.shape[0]
+    knn_k = knn_indices[:, :k]
+    
+    all_corrs = []
+    rna_zero_count = 0
+    atac_zero_count = 0
+    total_elements = 0
+    
+    for start in range(0, n_cells, batch_size):
+        end = min(start + batch_size, n_cells)
+        batch_knn = knn_k[start:end]
+        
+        # Gather and aggregate
+        rna_neighbors = rna_X[batch_knn]
+        atac_neighbors = atac_X[batch_knn]
+        rna_agg = rna_neighbors.mean(axis=1).astype(np.float32)
+        atac_agg = atac_neighbors.mean(axis=1).astype(np.float32)
+        
+        del rna_neighbors, atac_neighbors
+        
+        # Track sparsity
+        rna_zero_count += (rna_agg == 0).sum()
+        atac_zero_count += (atac_agg == 0).sum()
+        total_elements += rna_agg.size
+        
+        # Compute correlations
+        batch_corrs = np.full(end - start, np.nan, dtype=np.float64)
+        
+        for i in range(rna_agg.shape[0]):
+            r = rna_agg[i]
+            a = atac_agg[i]
+            mask = (r != 0) | (a != 0)
+            n_valid = mask.sum()
+            
+            if n_valid >= min_nonzero:
+                r_m = r[mask]
+                a_m = a[mask]
+                r_mean = r_m.mean()
+                a_mean = a_m.mean()
+                r_c = r_m - r_mean
+                a_c = a_m - a_mean
+                cov = (r_c * a_c).sum()
+                r_std = np.sqrt((r_c ** 2).sum())
+                a_std = np.sqrt((a_c ** 2).sum())
+                if r_std > 1e-10 and a_std > 1e-10:
+                    batch_corrs[i] = cov / (r_std * a_std)
+        
+        all_corrs.append(batch_corrs)
+    
+    corrs = np.concatenate(all_corrs)
+    rna_sparsity = rna_zero_count / total_elements * 100 if total_elements > 0 else 0
+    atac_sparsity = atac_zero_count / total_elements * 100 if total_elements > 0 else 0
+    
+    return corrs, rna_sparsity, atac_sparsity
+
+
+# =============================================================================
+# MAIN VALIDATION FUNCTION
+# =============================================================================
+
+def validate_gene_activity(
+    adata_rna: sc.AnnData,
+    adata_atac: sc.AnnData,
     output_dir: str,
+    # Correlation parameters
     min_cells_for_gene_corr: int = 3,
-    sample_genes: int | None = 1000,   # set None to use all shared genes
-    verbose: bool = True,
-    # ---- NEW flexible ID unifier knobs ----
+    sample_genes: int | None = None,
+    # Pseudobulk parameters
+    run_pseudobulk: bool = True,
+    k_values: Optional[List[int]] = None,
+    max_k: int = 50,
+    n_pcs: int = 30,
+    n_hvgs: int = 2000,
+    use_rna_for_knn: bool = True,
+    # ID unification
     unify_if_needed: bool = True,
-    unify_prefer: str = "auto",              # 'ensembl' | 'symbol' | 'auto'
-    unify_mapping_csv: str | None = None,    # optional mapping with gene_id,gene_name
-    atac_layer: str | None = "GeneActivity", # if present, use this ATAC layer as X
-) -> dict:
+    unify_prefer: str = "auto",
+    unify_mapping_csv: str | None = None,
+    atac_layer: str | None = "GeneActivity",
+    # Other
+    verbose: bool = True,
+    random_state: int = 42,
+) -> Dict[str, Any]:
     """
-    Compute per-cell and per-gene RNA–ATAC correlations for paired cells.
-    If gene names don't overlap, automatically unify ID spaces (Ensembl vs Symbol).
+    Comprehensive gene activity validation function.
+    
+    Computes:
+    1. Overlap statistics (cells and genes)
+    2. Per-cell RNA-ATAC correlation (Pearson across genes)
+    3. Per-gene RNA-ATAC correlation (Spearman across cells)
+    4. Pseudobulk/KNN aggregation correlation (k=1 to max_k)
+    
+    Parameters
+    ----------
+    adata_rna : AnnData
+        RNA expression data
+    adata_atac : AnnData
+        ATAC gene activity data
+    output_dir : str
+        Directory to save results
+    min_cells_for_gene_corr : int
+        Minimum co-expressing cells for per-gene correlation
+    sample_genes : int or None
+        If set, randomly sample this many genes for analysis
+    run_pseudobulk : bool
+        Whether to run KNN aggregation analysis
+    k_values : list or None
+        K values for pseudobulk. If None, auto-generated up to max_k
+    max_k : int
+        Maximum k value for pseudobulk (default 50)
+    n_pcs : int
+        Number of PCs for KNN graph
+    n_hvgs : int
+        Number of HVGs for PCA
+    use_rna_for_knn : bool
+        Use RNA (True) or ATAC (False) for KNN graph
+    unify_if_needed : bool
+        Attempt ID unification if no gene overlap
+    unify_prefer : str
+        'auto', 'ensembl', or 'symbol'
+    unify_mapping_csv : str or None
+        Optional mapping file for ID conversion
+    atac_layer : str or None
+        ATAC layer to use (e.g., 'GeneActivity')
+    verbose : bool
+        Print progress
+    random_state : int
+        Random seed
+        
+    Returns
+    -------
+    dict with keys:
+        - overlap_stats: dict with cell/gene overlap info
+        - per_cell_corr: DataFrame with per-cell correlations
+        - per_gene_corr: DataFrame with per-gene correlations
+        - pseudobulk_results: DataFrame with k vs correlation (if run_pseudobulk)
+        - summary: dict with summary statistics
     """
-    import matplotlib.pyplot as plt
-    from tqdm import tqdm
-
     os.makedirs(output_dir, exist_ok=True)
-
-    def _to_array(X):
-        if sparse.issparse(X):
-            return X.toarray()
-        return np.asarray(X)
-
-    # -----------------------------
-    # DEBUG: Print input data info
-    # -----------------------------
-    print("\n[DEBUG] ===== INPUT DATA INFO =====")
-    print(f"[DEBUG] RNA data shape: {adata_rna.shape}")
-    print(f"[DEBUG] First 5 RNA cell names: {list(adata_rna.obs_names[:5])}")
-    print(f"[DEBUG] First 5 RNA gene names: {list(adata_rna.var_names[:5])}")
-    print(f"[DEBUG] RNA X type: {type(adata_rna.X)}")
-
-    print(f"\n[DEBUG] ATAC data shape: {adata_atac.shape}")
-    print(f"[DEBUG] First 5 ATAC cell names: {list(adata_atac.obs_names[:5])}")
-    print(f"[DEBUG] First 5 ATAC gene names: {list(adata_atac.var_names[:5])}")
-    print(f"[DEBUG] ATAC X type: {type(adata_atac.X)}")
-
-    # -----------------------------
-    # 1) Pair cells by name
-    # -----------------------------
+    
+    if k_values is None:
+        # Generate k values: 1, 2, 3, 5, 10, 15, 20, 30, 40, 50 (up to max_k)
+        k_values = [k for k in [1, 2, 3, 5, 10, 15, 20, 30, 40, 50] if k <= max_k]
+    
+    # =========================================================================
+    # 1. OVERLAP STATISTICS
+    # =========================================================================
+    if verbose:
+        print("\n" + "="*60)
+        print("GENE ACTIVITY VALIDATION")
+        print("="*60)
+        print("\n[1/4] Computing overlap statistics...")
+    
+    # Cell overlap
     rna_cells = set(map(str, adata_rna.obs_names))
     atac_cells = set(map(str, adata_atac.obs_names))
-
-    print(f"\n[DEBUG] ===== CELL PAIRING =====")
-    print(f"[DEBUG] Total RNA cells: {len(rna_cells)} | Total ATAC cells: {len(atac_cells)}")
-
     common_cells = sorted(rna_cells & atac_cells)
-    print(f"[DEBUG] Common cells found: {len(common_cells)}")
+    
+    overlap_stats = {
+        "rna_total_cells": len(rna_cells),
+        "atac_total_cells": len(atac_cells),
+        "common_cells": len(common_cells),
+        "cell_overlap_pct_rna": len(common_cells) / len(rna_cells) * 100 if rna_cells else 0,
+        "cell_overlap_pct_atac": len(common_cells) / len(atac_cells) * 100 if atac_cells else 0,
+        "rna_total_genes": adata_rna.n_vars,
+        "atac_total_genes": adata_atac.n_vars,
+    }
+    
+    if verbose:
+        print(f"    RNA cells: {overlap_stats['rna_total_cells']}")
+        print(f"    ATAC cells: {overlap_stats['atac_total_cells']}")
+        print(f"    Common cells: {overlap_stats['common_cells']} "
+              f"({overlap_stats['cell_overlap_pct_rna']:.1f}% of RNA, "
+              f"{overlap_stats['cell_overlap_pct_atac']:.1f}% of ATAC)")
+    
     if len(common_cells) == 0:
         raise ValueError("No paired cells found (no overlap in obs_names).")
-
-    # Subset & align rows
+    
+    # Subset to common cells
     rna_sub = adata_rna[common_cells, :].copy()
     atac_sub = adata_atac[common_cells, :].copy()
-
-    print(f"[DEBUG] After subsetting to common cells → RNA: {rna_sub.shape}, ATAC: {atac_sub.shape}")
-
-    # -----------------------------
-    # 2) Align genes by name
-    # -----------------------------
+    
+    # Handle ATAC layer
+    if atac_layer and atac_layer in (atac_sub.layers.keys() if hasattr(atac_sub.layers, "keys") else {}):
+        if verbose:
+            print(f"    Using ATAC layer: '{atac_layer}'")
+        atac_sub = sc.AnnData(
+            X=atac_sub.layers[atac_layer],
+            obs=atac_sub.obs.copy(),
+            var=atac_sub.var.copy()
+        )
+    
+    # Gene overlap
     rna_genes = set(map(str, rna_sub.var_names))
     atac_genes = set(map(str, atac_sub.var_names))
     shared_genes = sorted(rna_genes & atac_genes)
-
-    print(f"\n[DEBUG] ===== GENE ALIGNMENT =====")
-    print(f"[DEBUG] Overlap by current var_names: {len(shared_genes)}")
-
+    
+    overlap_stats["shared_genes_direct"] = len(shared_genes)
+    
+    if verbose:
+        print(f"    RNA genes: {overlap_stats['rna_total_genes']}")
+        print(f"    ATAC genes: {overlap_stats['atac_total_genes']}")
+        print(f"    Direct gene overlap: {len(shared_genes)}")
+    
+    # Attempt unification if needed
     if len(shared_genes) == 0 and unify_if_needed:
-        print("[DEBUG] No shared genes. Attempting ID unification (Ensembl/Symbol)…")
+        if verbose:
+            print("    No direct gene overlap. Attempting ID unification...")
         rna_sub, atac_sub, shared_genes, mapping_df = unify_and_align_genes(
             rna_sub, atac_sub,
             output_dir=output_dir,
             prefer=unify_prefer,
             mapping_csv=unify_mapping_csv,
-            atac_layer=atac_layer,
+            atac_layer=None,  # Already handled above
             verbose=verbose,
         )
-        print(f"[DEBUG] Unified & aligned genes: {len(shared_genes)}")
-
+        overlap_stats["shared_genes_after_unification"] = len(shared_genes)
+        overlap_stats["unification_performed"] = True
+    else:
+        overlap_stats["shared_genes_after_unification"] = len(shared_genes)
+        overlap_stats["unification_performed"] = False
+    
     if len(shared_genes) == 0:
-        # Still no luck
-        print("[DEBUG] !!! NO SHARED GENES FOUND EVEN AFTER UNIFICATION !!!")
         raise ValueError("No shared genes between RNA and ATAC.")
-
-    # Optional downsampling
+    
+    # Optional gene sampling
     if sample_genes is not None and sample_genes < len(shared_genes):
-        rng = np.random.default_rng(42)
+        rng = np.random.default_rng(random_state)
         shared_genes = sorted(rng.choice(shared_genes, size=sample_genes, replace=False).tolist())
-        print(f"[DEBUG] Sampled down to {len(shared_genes)} genes")
-
-    # Column-align
+        if verbose:
+            print(f"    Sampled {len(shared_genes)} genes for analysis")
+    
+    overlap_stats["genes_used_for_analysis"] = len(shared_genes)
+    overlap_stats["gene_overlap_pct_rna"] = len(shared_genes) / overlap_stats["rna_total_genes"] * 100
+    overlap_stats["gene_overlap_pct_atac"] = len(shared_genes) / overlap_stats["atac_total_genes"] * 100
+    
+    if verbose:
+        print(f"    Final genes for analysis: {len(shared_genes)} "
+              f"({overlap_stats['gene_overlap_pct_rna']:.1f}% of RNA, "
+              f"{overlap_stats['gene_overlap_pct_atac']:.1f}% of ATAC)")
+    
+    # Align genes
     rna_sub = rna_sub[:, shared_genes].copy()
     atac_sub = atac_sub[:, shared_genes].copy()
-
-    # Extract dense arrays
-    rna_X = _to_array(rna_sub.X)
-    atac_X = _to_array(atac_sub.X)
-
+    
+    # Extract and normalize matrices
+    rna_X = _to_array(rna_sub.X).astype(np.float32)
+    atac_X = _to_array(atac_sub.X).astype(np.float32)
+    
+    # Normalize (CPM + log1p)
+    rna_sums = rna_X.sum(axis=1, keepdims=True)
+    rna_sums = np.maximum(rna_sums, 1e-10)
+    rna_X = rna_X / rna_sums * 1e4
+    np.log1p(rna_X, out=rna_X)
+    
+    atac_sums = atac_X.sum(axis=1, keepdims=True)
+    atac_sums = np.maximum(atac_sums, 1e-10)
+    atac_X = atac_X / atac_sums * 1e4
+    np.log1p(atac_X, out=atac_X)
+    
     n_cells, n_genes = rna_X.shape
-    print(f"\n[DEBUG] ===== FINAL MATRICES =====")
-    print(f"[DEBUG] Final matrix shape: {n_cells} cells × {n_genes} genes")
-
-    # -----------------------------
-    # 3) Per-cell correlations
-    # -----------------------------
-    print(f"\n[DEBUG] ===== PER-CELL CORRELATIONS =====")
-    per_cell_corr = np.full(n_cells, np.nan, dtype=float)
-    n_valid_cells = 0
-    for i in range(n_cells):
+    
+    if verbose:
+        print(f"\n    Final matrix: {n_cells} cells × {n_genes} genes")
+        print(f"    Memory per matrix: {rna_X.nbytes / 1e6:.1f} MB")
+    
+    # Save overlap stats
+    overlap_df = pd.DataFrame([overlap_stats])
+    overlap_df.to_csv(os.path.join(output_dir, "overlap_statistics.csv"), index=False)
+    
+    # =========================================================================
+    # 2. PER-CELL CORRELATIONS
+    # =========================================================================
+    if verbose:
+        print("\n[2/4] Computing per-cell correlations (Pearson across genes)...")
+    
+    per_cell_corr = np.full(n_cells, np.nan, dtype=np.float64)
+    
+    for i in tqdm(range(n_cells), desc="    Per-cell", disable=not verbose, leave=False):
         r = rna_X[i, :]
         a = atac_X[i, :]
         mask = (r != 0) | (a != 0)
-        if mask.sum() >= 3 and np.std(r[mask]) > 0 and np.std(a[mask]) > 0:
-            per_cell_corr[i] = np.corrcoef(r[mask], a[mask])[0, 1]
-            n_valid_cells += 1
-            if i < 3:
-                print(f"[DEBUG] Cell {i} ({common_cells[i]}): {mask.sum()} non-zero genes, corr={per_cell_corr[i]:.3f}")
-    print(f"[DEBUG] Valid per-cell correlations: {n_valid_cells}/{n_cells}")
-
-    per_cell_df = pd.DataFrame({"cell": common_cells, "pearson_corr": per_cell_corr})
-
-    # -----------------------------
-    # 4) Per-gene correlations (Spearman on co-expressing cells)
-    # -----------------------------
-    from scipy import stats as sp_stats
-    from tqdm import tqdm
-
-    print(f"\n[DEBUG] ===== PER-GENE CORRELATIONS =====")
-    per_gene_corr = np.full(n_genes, np.nan, dtype=float)
-    per_gene_nco = np.zeros(n_genes, dtype=int)
-
+        if mask.sum() >= 3:
+            r_m, a_m = r[mask], a[mask]
+            if np.std(r_m) > 0 and np.std(a_m) > 0:
+                per_cell_corr[i] = np.corrcoef(r_m, a_m)[0, 1]
+    
+    per_cell_df = pd.DataFrame({
+        "cell": common_cells,
+        "pearson_corr": per_cell_corr
+    })
+    
+    valid_cell_corr = np.isfinite(per_cell_corr)
+    per_cell_stats = {
+        "n_valid": int(valid_cell_corr.sum()),
+        "mean": float(np.nanmean(per_cell_corr)) if valid_cell_corr.any() else np.nan,
+        "median": float(np.nanmedian(per_cell_corr)) if valid_cell_corr.any() else np.nan,
+        "std": float(np.nanstd(per_cell_corr)) if valid_cell_corr.any() else np.nan,
+        "pct_positive": float((per_cell_corr[valid_cell_corr] > 0).mean() * 100) if valid_cell_corr.any() else 0,
+    }
+    
+    if verbose:
+        print(f"    Valid cells: {per_cell_stats['n_valid']}/{n_cells}")
+        print(f"    Mean: {per_cell_stats['mean']:.4f}, Median: {per_cell_stats['median']:.4f}")
+        print(f"    % Positive: {per_cell_stats['pct_positive']:.1f}%")
+    
+    per_cell_df.to_csv(os.path.join(output_dir, "per_cell_correlations.csv"), index=False)
+    
+    # =========================================================================
+    # 3. PER-GENE CORRELATIONS
+    # =========================================================================
+    if verbose:
+        print("\n[3/4] Computing per-gene correlations (Spearman across cells)...")
+    
+    per_gene_corr = np.full(n_genes, np.nan, dtype=np.float64)
+    per_gene_nco = np.zeros(n_genes, dtype=np.int32)
+    
     rna_T = rna_X.T
     atac_T = atac_X.T
-
-    n_valid_genes = 0
-    for j in tqdm(range(n_genes), desc="[correlation] per-gene", disable=not verbose):
+    
+    for j in tqdm(range(n_genes), desc="    Per-gene", disable=not verbose, leave=False):
         r = rna_T[j, :]
         a = atac_T[j, :]
         co_mask = (r != 0) & (a != 0)
         nco = int(co_mask.sum())
         per_gene_nco[j] = nco
-        if nco >= min_cells_for_gene_corr and np.std(r[co_mask]) > 0 and np.std(a[co_mask]) > 0:
-            try:
-                per_gene_corr[j], _ = sp_stats.spearmanr(r[co_mask], a[co_mask])
-                n_valid_genes += 1
-                if j < 5:
-                    print(f"[DEBUG] Gene {j} ({shared_genes[j]}): {nco} co-expressing cells, corr={per_gene_corr[j]:.3f}")
-            except Exception:
-                pass
-
+        
+        if nco >= min_cells_for_gene_corr:
+            r_m, a_m = r[co_mask], a[co_mask]
+            if np.std(r_m) > 0 and np.std(a_m) > 0:
+                try:
+                    per_gene_corr[j], _ = sp_stats.spearmanr(r_m, a_m)
+                except Exception:
+                    pass
+    
     per_gene_df = pd.DataFrame({
         "gene": shared_genes,
         "spearman_corr": per_gene_corr,
         "n_coexpressing_cells": per_gene_nco
     })
-
-    # -----------------------------
-    # 5) Save CSVs
-    # -----------------------------
-    per_cell_csv = os.path.join(output_dir, "per_cell_correlations.csv")
-    per_gene_csv = os.path.join(output_dir, "per_gene_correlations.csv")
-    per_cell_df.to_csv(per_cell_csv, index=False)
-    per_gene_df.to_csv(per_gene_csv, index=False)
-
-    # -----------------------------
-    # 6) Plots (PNG)
-    # -----------------------------
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-
-    # Per-cell histogram
-    valid_cc = np.isfinite(per_cell_corr)
-    if valid_cc.any():
-        axes[0, 0].hist(per_cell_corr[valid_cc], bins=50, edgecolor='black', alpha=0.8)
-        axes[0, 0].axvline(np.nanmean(per_cell_corr), ls='--', color='r',
-                           label=f"Mean={np.nanmean(per_cell_corr):.3f}")
-        axes[0, 0].set_title("Per-cell Pearson correlation")
-        axes[0, 0].set_xlabel("Correlation")
-        axes[0, 0].set_ylabel("Cells")
-        axes[0, 0].legend()
-
-    # Per-gene histogram
-    valid_gc = np.isfinite(per_gene_corr)
-    if valid_gc.any():
-        axes[0, 1].hist(per_gene_corr[valid_gc], bins=50, edgecolor='black', alpha=0.8, label="per-gene corr")
-        axes[0, 1].axvline(np.nanmean(per_gene_corr), ls='--', color='r',
-                           label=f"Mean={np.nanmean(per_gene_corr):.3f}")
-        axes[0, 1].set_title(f"Per-gene Spearman correlation (n≥{min_cells_for_gene_corr} co-expressing cells)")
-        axes[0, 1].set_xlabel("Correlation")
-        axes[0, 1].set_ylabel("Genes")
-        axes[0, 1].legend()
-
-    # Co-expressing cells distribution (log scale on x)
-    nz_co = per_gene_nco[per_gene_nco > 0]
-    if nz_co.size > 0:
-        axes[1, 0].hist(nz_co, bins=50, edgecolor='black', alpha=0.8)
-        axes[1, 0].set_xscale('log')
-        axes[1, 0].set_title("Co-expressing cell counts per gene")
-        axes[1, 0].set_xlabel("Number of co-expressing cells (log)")
-        axes[1, 0].set_ylabel("Genes")
-
-    # Corr vs co-expressing cells
-    if valid_gc.any():
-        axes[1, 1].scatter(per_gene_nco[valid_gc], per_gene_corr[valid_gc], s=8, alpha=0.5)
-        axes[1, 1].set_xscale('log')
-        axes[1, 1].set_xlabel("Co-expressing cells (log)")
-        axes[1, 1].set_ylabel("Gene correlation")
-        axes[1, 1].set_title("Per-gene corr vs co-expressing cells")
-        axes[1, 1].grid(alpha=0.3)
-
-    plt.tight_layout()
-    plot_path = os.path.join(output_dir, "correlation_plots.png")
-    plt.savefig(plot_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-
-    # -----------------------------
-    # 7) Summary JSON
-    # -----------------------------
-    summary = {
-        "n_paired_cells": int(n_cells),
-        "n_shared_genes": int(n_genes),
-        "per_cell_mean_corr": float(np.nanmean(per_cell_corr)) if valid_cc.any() else float("nan"),
-        "per_cell_median_corr": float(np.nanmedian(per_cell_corr)) if valid_cc.any() else float("nan"),
-        "per_gene_mean_corr": float(np.nanmean(per_gene_corr)) if valid_gc.any() else float("nan"),
-        "per_gene_median_corr": float(np.nanmedian(per_gene_corr)) if valid_gc.any() else float("nan"),
-        "min_cells_for_gene_corr": int(min_cells_for_gene_corr),
-        "sample_genes": (int(sample_genes) if sample_genes is not None else None),
-        "paths": {
-            "per_cell_csv": per_cell_csv,
-            "per_gene_csv": per_gene_csv,
-            "plots_png": plot_path,
-        },
-    }
-    with open(os.path.join(output_dir, "correlation_summary.json"), "w") as f:
-        json.dump(summary, f, indent=2)
-
-    if verbose:
-        print(f"[correlation] Saved:\n  {per_cell_csv}\n  {per_gene_csv}\n  {plot_path}")
     
-    print("\n[DEBUG] ===== CORRELATION SUMMARY =====")
-    print(f"[DEBUG] Per-cell correlation - Mean: {summary['per_cell_mean_corr']:.3f}, Median: {summary['per_cell_median_corr']:.3f}")
-    print(f"[DEBUG] Per-gene correlation - Mean: {summary['per_gene_mean_corr']:.3f}, Median: {summary['per_gene_median_corr']:.3f}")
-
+    valid_gene_corr = np.isfinite(per_gene_corr)
+    per_gene_stats = {
+        "n_valid": int(valid_gene_corr.sum()),
+        "mean": float(np.nanmean(per_gene_corr)) if valid_gene_corr.any() else np.nan,
+        "median": float(np.nanmedian(per_gene_corr)) if valid_gene_corr.any() else np.nan,
+        "std": float(np.nanstd(per_gene_corr)) if valid_gene_corr.any() else np.nan,
+        "pct_positive": float((per_gene_corr[valid_gene_corr] > 0).mean() * 100) if valid_gene_corr.any() else 0,
+    }
+    
+    if verbose:
+        print(f"    Valid genes: {per_gene_stats['n_valid']}/{n_genes}")
+        print(f"    Mean: {per_gene_stats['mean']:.4f}, Median: {per_gene_stats['median']:.4f}")
+        print(f"    % Positive: {per_gene_stats['pct_positive']:.1f}%")
+    
+    per_gene_df.to_csv(os.path.join(output_dir, "per_gene_correlations.csv"), index=False)
+    
+    # =========================================================================
+    # 4. PSEUDOBULK / KNN AGGREGATION CORRELATIONS
+    # =========================================================================
+    pseudobulk_results = None
+    per_k_correlations = {}
+    
+    if run_pseudobulk:
+        if verbose:
+            print(f"\n[4/4] Computing pseudobulk correlations (k=1 to {max_k})...")
+        
+        # Compute PCA for KNN
+        if verbose:
+            print("    Computing PCA for KNN graph...")
+        
+        if use_rna_for_knn:
+            X_for_pca = rna_sub.X
+        else:
+            X_for_pca = atac_sub.X
+        
+        pca_coords = _compute_pca_cpu(X_for_pca, n_pcs=n_pcs, n_hvgs=n_hvgs)
+        
+        # Build KNN graph
+        actual_max_k = min(max(k_values), n_cells - 1)
+        k_values = [k for k in k_values if k < n_cells]
+        
+        if verbose:
+            print(f"    Building KNN graph (max_k={actual_max_k})...")
+        
+        knn_indices = _compute_knn_cpu(pca_coords, k=actual_max_k)
+        
+        del pca_coords
+        gc.collect()
+        
+        # Compute correlations for each k
+        pseudobulk_rows = []
+        
+        for k in tqdm(k_values, desc="    Pseudobulk k", disable=not verbose):
+            corrs, rna_sparsity, atac_sparsity = _aggregate_and_correlate_cpu(
+                rna_X, atac_X, knn_indices, k, min_nonzero=10
+            )
+            
+            per_k_correlations[k] = corrs
+            
+            valid = np.isfinite(corrs)
+            n_valid = valid.sum()
+            
+            if n_valid > 0:
+                mean_corr = float(np.nanmean(corrs))
+                median_corr = float(np.nanmedian(corrs))
+                std_corr = float(np.nanstd(corrs))
+                pct_positive = float((corrs[valid] > 0).mean() * 100)
+                pct_negative = float((corrs[valid] < 0).mean() * 100)
+            else:
+                mean_corr = median_corr = std_corr = np.nan
+                pct_positive = pct_negative = 0
+            
+            pseudobulk_rows.append({
+                'k': k,
+                'n_valid': n_valid,
+                'mean_corr': mean_corr,
+                'median_corr': median_corr,
+                'std_corr': std_corr,
+                'pct_positive': pct_positive,
+                'pct_negative': pct_negative,
+                'rna_sparsity_pct': rna_sparsity,
+                'atac_sparsity_pct': atac_sparsity,
+            })
+        
+        pseudobulk_results = pd.DataFrame(pseudobulk_rows)
+        pseudobulk_results.to_csv(os.path.join(output_dir, "pseudobulk_correlations.csv"), index=False)
+        
+        if verbose:
+            print("\n    Pseudobulk results:")
+            print(f"    k=1:  mean_r={pseudobulk_rows[0]['mean_corr']:.4f}")
+            print(f"    k={k_values[-1]}: mean_r={pseudobulk_rows[-1]['mean_corr']:.4f}")
+    
+    # =========================================================================
+    # 5. VISUALIZATION
+    # =========================================================================
+    if verbose:
+        print("\n[5/5] Creating visualizations...")
+    
+    n_plots = 4 if run_pseudobulk else 3
+    fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+    axes = axes.flatten()
+    
+    # Plot 1: Per-cell correlation histogram
+    ax = axes[0]
+    if valid_cell_corr.any():
+        ax.hist(per_cell_corr[valid_cell_corr], bins=50, edgecolor='black', alpha=0.7, color='steelblue')
+        ax.axvline(per_cell_stats['mean'], ls='--', color='red', lw=2, 
+                   label=f"Mean={per_cell_stats['mean']:.3f}")
+        ax.axvline(0, ls='-', color='gray', alpha=0.5)
+    ax.set_xlabel("Pearson Correlation", fontsize=12)
+    ax.set_ylabel("Number of Cells", fontsize=12)
+    ax.set_title(f"Per-cell RNA-ATAC Correlation\n(n={per_cell_stats['n_valid']} cells)", fontsize=14)
+    ax.legend(fontsize=10)
+    ax.grid(alpha=0.3)
+    
+    # Plot 2: Per-gene correlation histogram
+    ax = axes[1]
+    if valid_gene_corr.any():
+        ax.hist(per_gene_corr[valid_gene_corr], bins=50, edgecolor='black', alpha=0.7, color='coral')
+        ax.axvline(per_gene_stats['mean'], ls='--', color='red', lw=2,
+                   label=f"Mean={per_gene_stats['mean']:.3f}")
+        ax.axvline(0, ls='-', color='gray', alpha=0.5)
+    ax.set_xlabel("Spearman Correlation", fontsize=12)
+    ax.set_ylabel("Number of Genes", fontsize=12)
+    ax.set_title(f"Per-gene RNA-ATAC Correlation\n(n={per_gene_stats['n_valid']} genes)", fontsize=14)
+    ax.legend(fontsize=10)
+    ax.grid(alpha=0.3)
+    
+    # Plot 3: Co-expressing cells vs correlation
+    ax = axes[2]
+    if valid_gene_corr.any():
+        ax.scatter(per_gene_nco[valid_gene_corr], per_gene_corr[valid_gene_corr], 
+                   s=8, alpha=0.5, c='coral')
+        ax.axhline(0, ls='-', color='gray', alpha=0.5)
+    ax.set_xscale('log')
+    ax.set_xlabel("Number of Co-expressing Cells (log)", fontsize=12)
+    ax.set_ylabel("Gene Correlation (Spearman)", fontsize=12)
+    ax.set_title("Gene Correlation vs Co-expression", fontsize=14)
+    ax.grid(alpha=0.3)
+    
+    # Plot 4: Pseudobulk correlation vs k
+    ax = axes[3]
+    if run_pseudobulk and pseudobulk_results is not None:
+        ax.plot(pseudobulk_results['k'], pseudobulk_results['mean_corr'], 
+                'b-o', label='Mean', linewidth=2, markersize=8)
+        ax.plot(pseudobulk_results['k'], pseudobulk_results['median_corr'],
+                'g-s', label='Median', linewidth=2, markersize=6)
+        ax.fill_between(pseudobulk_results['k'],
+                        pseudobulk_results['mean_corr'] - pseudobulk_results['std_corr'],
+                        pseudobulk_results['mean_corr'] + pseudobulk_results['std_corr'],
+                        alpha=0.2, color='blue')
+        ax.axhline(0, ls='--', color='gray', alpha=0.5)
+        ax.set_xlabel("Number of Neighbors (k)", fontsize=12)
+        ax.set_ylabel("Pearson Correlation", fontsize=12)
+        ax.set_title("Pseudobulk Correlation vs Aggregation Size", fontsize=14)
+        ax.legend(fontsize=10)
+        ax.grid(alpha=0.3)
+    else:
+        ax.text(0.5, 0.5, "Pseudobulk analysis\nnot run", ha='center', va='center',
+                fontsize=14, transform=ax.transAxes)
+        ax.set_axis_off()
+    
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, "validation_summary.png")
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    
+    # Additional pseudobulk plot
+    if run_pseudobulk and pseudobulk_results is not None:
+        fig2, ax = plt.subplots(figsize=(10, 7))
+        
+        ax.plot(pseudobulk_results['k'], pseudobulk_results['mean_corr'], 
+                'b-o', linewidth=2.5, markersize=10, label='Mean Correlation')
+        ax.fill_between(pseudobulk_results['k'],
+                        pseudobulk_results['mean_corr'] - pseudobulk_results['std_corr'],
+                        pseudobulk_results['mean_corr'] + pseudobulk_results['std_corr'],
+                        alpha=0.2, color='blue')
+        ax.axhline(0, ls='--', color='red', lw=1.5, alpha=0.7, label='Zero correlation')
+        
+        # Annotate key points
+        k1_row = pseudobulk_results[pseudobulk_results['k'] == 1]
+        if len(k1_row) > 0:
+            ax.annotate(f"Single-cell: {k1_row['mean_corr'].values[0]:.3f}",
+                        xy=(1, k1_row['mean_corr'].values[0]),
+                        xytext=(3, k1_row['mean_corr'].values[0] - 0.05),
+                        fontsize=10, arrowprops=dict(arrowstyle='->', color='gray'))
+        
+        max_row = pseudobulk_results.iloc[-1]
+        ax.annotate(f"k={int(max_row['k'])}: {max_row['mean_corr']:.3f}",
+                    xy=(max_row['k'], max_row['mean_corr']),
+                    xytext=(max_row['k'] * 0.7, max_row['mean_corr'] + 0.05),
+                    fontsize=10, arrowprops=dict(arrowstyle='->', color='gray'))
+        
+        ax.set_xlabel("Number of Neighbors (k) in Aggregation", fontsize=14)
+        ax.set_ylabel("Pearson Correlation (RNA vs ATAC)", fontsize=14)
+        ax.set_title("RNA-ATAC Correlation Increases with Cell Aggregation\n(KNN-based pseudobulk)", fontsize=14)
+        ax.legend(loc='lower right', fontsize=11)
+        ax.grid(alpha=0.3)
+        
+        plt.tight_layout()
+        pseudobulk_plot_path = os.path.join(output_dir, "pseudobulk_correlation_curve.png")
+        plt.savefig(pseudobulk_plot_path, dpi=150, bbox_inches='tight')
+        plt.close(fig2)
+    
+    # =========================================================================
+    # 6. SUMMARY
+    # =========================================================================
+    summary = {
+        "overlap": overlap_stats,
+        "per_cell": per_cell_stats,
+        "per_gene": per_gene_stats,
+        "pseudobulk": {
+            "k_values": k_values if run_pseudobulk else None,
+            "k1_mean_corr": float(pseudobulk_results.iloc[0]['mean_corr']) if run_pseudobulk else None,
+            "max_k_mean_corr": float(pseudobulk_results.iloc[-1]['mean_corr']) if run_pseudobulk else None,
+        } if run_pseudobulk else None,
+        "paths": {
+            "overlap_csv": os.path.join(output_dir, "overlap_statistics.csv"),
+            "per_cell_csv": os.path.join(output_dir, "per_cell_correlations.csv"),
+            "per_gene_csv": os.path.join(output_dir, "per_gene_correlations.csv"),
+            "pseudobulk_csv": os.path.join(output_dir, "pseudobulk_correlations.csv") if run_pseudobulk else None,
+            "summary_plot": plot_path,
+        }
+    }
+    
+    with open(os.path.join(output_dir, "validation_summary.json"), "w") as f:
+        json.dump(summary, f, indent=2, default=str)
+    
+    if verbose:
+        print("\n" + "="*60)
+        print("VALIDATION COMPLETE")
+        print("="*60)
+        print(f"\nResults saved to: {output_dir}")
+        print("\nKey findings:")
+        print(f"  Cell overlap: {overlap_stats['common_cells']} cells")
+        print(f"  Gene overlap: {overlap_stats['genes_used_for_analysis']} genes")
+        print(f"  Per-cell correlation: mean={per_cell_stats['mean']:.4f}, {per_cell_stats['pct_positive']:.1f}% positive")
+        print(f"  Per-gene correlation: mean={per_gene_stats['mean']:.4f}, {per_gene_stats['pct_positive']:.1f}% positive")
+        if run_pseudobulk:
+            print(f"  Pseudobulk (k=1): mean={pseudobulk_results.iloc[0]['mean_corr']:.4f}")
+            print(f"  Pseudobulk (k={k_values[-1]}): mean={pseudobulk_results.iloc[-1]['mean_corr']:.4f}")
+    
     return {
-        "per_cell": per_cell_df,
-        "per_gene": per_gene_df,
+        "overlap_stats": overlap_stats,
+        "per_cell_corr": per_cell_df,
+        "per_gene_corr": per_gene_df,
+        "pseudobulk_results": pseudobulk_results,
+        "per_k_correlations": per_k_correlations if run_pseudobulk else None,
         "summary": summary,
     }
 
 
-# ----------------- Script entrypoint -----------------
+# =============================================================================
+# ENTRYPOINT
+# =============================================================================
+
 if __name__ == "__main__":
     print("\n" + "="*60)
-    print("STARTING DEBUG MODE - RNA-ATAC CORRELATION ANALYSIS")
+    print("GENE ACTIVITY VALIDATION - DEMO")
     print("="*60 + "\n")
-
-    adata_rna = sc.read_h5ad('/dcl01/hongkai/data/data/hjiang/Data/paired/rna/heart.h5ad')
-    adata_atac = sc.read_h5ad('/dcs07/hongkai/data/harry/result/gene_activity/true_signac/heart/heart_gene_activity.h5ad')
-
-    compute_rna_atac_cell_gene_correlations(
-        adata_rna,
-        adata_atac,
-        output_dir="/dcs07/hongkai/data/harry/result/gene_activity/true_signac/heart/results_corr",
-        # NEW knobs:
+    
+    # Example usage
+    rna_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad'
+    atac_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/heart_gene_activity.rds'
+    out_dir = "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/gene_activity_validation"
+    
+    print("[Main] Loading data...")
+    adata_rna = sc.read_h5ad(rna_path)
+    adata_atac = sc.read_h5ad(atac_path)
+    
+    print(f"[Main] RNA shape: {adata_rna.shape}")
+    print(f"[Main] ATAC shape: {adata_atac.shape}")
+    
+    result = validate_gene_activity(
+        adata_rna=adata_rna,
+        adata_atac=adata_atac,
+        output_dir=out_dir,
+        run_pseudobulk=True,
+        max_k=50,
+        k_values=[1, 2, 3, 5, 10, 15, 20, 30, 40, 50],
+        n_pcs=30,
+        n_hvgs=2000,
+        use_rna_for_knn=True,
+        atac_layer="GeneActivity",
         unify_if_needed=True,
-        unify_prefer="auto",                    # or 'ensembl' | 'symbol'
-        # unify_mapping_csv="/users/hjiang/r/signac_outputs/ensg_to_symbol.csv",  # optional
-        atac_layer="GeneActivity",              # use this layer if present
+        unify_prefer="auto",
+        verbose=True,
     )
     
     print("\n" + "="*60)
-    print("DEBUG MODE COMPLETE")
+    print("DONE")
     print("="*60 + "\n")

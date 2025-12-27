@@ -482,13 +482,14 @@ def example_cross_modal_plot():
     
     # Load data
     print("Loading data...")
-    adata = sc.read_h5ad('/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/pseudobulk/pseudobulk_sample.h5ad')
+    print("/dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad")    
+    adata = sc.read_h5ad('/dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad')
     
     # Basic usage - creates two separate PNG files
     fig1, fig2 = plot_cross_modal_connections(
         adata=adata,
-        output_dir='/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics',
-        filename_prefix='sample_connections',
+        output_dir='/dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/validation',
+        filename_prefix='heart_connections',
         dpi=300
     )
     

@@ -46,122 +46,140 @@ RUNNING MULTIOMICS PIPELINE
 ============================================================
 Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics
 Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Step 2: Running integration preprocessing...
-=== Read input dataset ===
-Dimension of raw data (cells x genes): 198876 x 38606
-Stored original sample IDs in adata.obs['original_sample'].
-Detected non-unique 'sample' values (22 duplicated sample IDs across 198876 rows). Appended modality from 'modality' only for those rows.
-After cell filtering -- Cells remaining: 79418, Genes remaining: 38606
-After gene filtering -- Cells remaining: 79418, Genes remaining: 24086
-After remove MT_gene and user input gene -- Cells remaining: 79418, Genes remaining: 24086
-Sample counts BEFORE filtering:
-sample
-MA14_heart_RNA     4203
-MA10_heart_RNA     4197
-MA9_heart_RNA      4047
-MA31_heart_ATAC    3611
-MA29_heart_ATAC    3401
-MA9_heart_ATAC     3096
-MA10_heart_ATAC    3007
-MA8_heart_RNA      2941
-MA14_heart_ATAC    2657
-MA31_heart_RNA     2610
-MA33_heart_ATAC    2578
-MA23_heart_ATAC    2561
-MA19_heart_ATAC    2376
-MA24_heart_ATAC    2343
-MA8_heart_ATAC     2290
-MA29_heart_RNA     2275
-MA28_heart_ATAC    2093
-MA22_heart_ATAC    1869
-MA28_heart_RNA     1767
-MA33_heart_RNA     1759
-MA6_heart_RNA      1738
-MA25_heart_ATAC    1656
-MA11_heart_RNA     1653
-MA19_heart_RNA     1514
-MA27_heart_ATAC    1492
-MA32_heart_ATAC    1475
-MA6_heart_ATAC     1452
-MA27_heart_RNA     1397
-MA5_heart_RNA      1303
-MA20_heart_ATAC    1282
-MA5_heart_ATAC     1108
-MA32_heart_RNA     1060
-MA11_heart_ATAC    1050
-MA26_heart_ATAC     991
-MA24_heart_RNA      885
-MA22_heart_RNA      777
-MA23_heart_RNA      607
-MA7_heart_RNA       440
-MA13_heart_RNA      417
-MA20_heart_RNA      340
-MA7_heart_ATAC      331
-MA25_heart_RNA      312
-MA13_heart_ATAC     234
-MA26_heart_RNA      223
-dtype: int64
+Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/preprocess/adata_sample.h5ad
+Step 3: Running dimensionality reduction (pseudobulk + PCA)...
+  Sub-step 3a: Computing pseudobulk...
+[Pseudobulk] Input: 79418 cells, 16049 genes
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[Pseudobulk] Using CPU
+[Pseudobulk] 44 samples, 12 cell types
+[Pseudobulk] Batch correction: ['modality']
+[Pseudobulk] Phase 1: Aggregating...
+  Aggregating 79418 cells -> 44 samples x 12 cell types
+  Created 12 cell type layers
+[Pseudobulk] Phase 2: Processing cell types...
+  [1/12] 1
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [2/12] 10
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [3/12] 11
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [4/12] 12
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2114 HVGs
+  [5/12] 2
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [6/12] 3
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [7/12] 4
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [8/12] 5
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [9/12] 6
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [10/12] 7
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [11/12] 8
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+  [12/12] 9
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Selected 2000 HVGs
+[Pseudobulk] Retained 12 cell types
+[Pseudobulk] Phase 3: Building final matrix...
+[Pseudobulk] Final features: 2000
+[Pseudobulk] Phase 4: Computing proportions...
+[Pseudobulk] Complete (2.0s)
+[Pseudobulk] Extracting sample metadata...
+[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Pseudobulk] Output: 44 samples, 2000 features
+  Sub-step 3b: Processing with PCA...
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] Batch correction: Using 1 batch column(s): ['modality']
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(44, 2000), proportion=(44, 12)
+[DimRed] Computing PCA for RNA data with 10 components on (44, 2000) data
+[PCA] Success. Shape: (44, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (44, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (44, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 10 components...
+[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['modality']
+[run_dimension_reduction_proportion] Harmony completed with 1 batch factor(s). Shape: (44, 10)
+[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (44, 10)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings/sample_expression_embedding.csv (shape: (44, 10))
+[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings/sample_proportion_embedding.csv (shape: (44, 10))
+[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file path:
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (0.7 MB)
+[process_anndata_with_dimension_reduction] ✓ File saved successfully
 
-Samples retained (>= 100 cells): ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC', 'MA13_heart_RNA', 'MA14_heart_ATAC', 'MA14_heart_RNA', 'MA19_heart_ATAC', 'MA19_heart_RNA', 'MA20_heart_ATAC', 'MA20_heart_RNA', 'MA22_heart_ATAC', 'MA22_heart_RNA', 'MA23_heart_ATAC', 'MA23_heart_RNA', 'MA24_heart_ATAC', 'MA24_heart_RNA', 'MA25_heart_ATAC', 'MA25_heart_RNA', 'MA26_heart_ATAC', 'MA26_heart_RNA', 'MA27_heart_ATAC', 'MA27_heart_RNA', 'MA28_heart_ATAC', 'MA28_heart_RNA', 'MA29_heart_ATAC', 'MA29_heart_RNA', 'MA31_heart_ATAC', 'MA31_heart_RNA', 'MA32_heart_ATAC', 'MA32_heart_RNA', 'MA33_heart_ATAC', 'MA33_heart_RNA', 'MA5_heart_ATAC', 'MA5_heart_RNA', 'MA6_heart_ATAC', 'MA6_heart_RNA', 'MA7_heart_ATAC', 'MA7_heart_RNA', 'MA8_heart_ATAC', 'MA8_heart_RNA', 'MA9_heart_ATAC', 'MA9_heart_RNA']
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 0.19 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ATTEMPTED
+  - H5AD: pseudobulk_anndata only
+  - CSV embeddings: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/embeddings/
+✓ Dimensionality reduction completed successfully
+Step 4: Visualizing multimodal embedding...
+Creating default embedding visualization (all samples)
+Expression key: X_DR_expression
+Proportion key: X_DR_proportion
+Additional color columns: ['disease_state']
+Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization
 
-Sample counts AFTER filtering:
-sample
-MA14_heart_RNA     4203
-MA10_heart_RNA     4197
-MA9_heart_RNA      4047
-MA31_heart_ATAC    3611
-MA29_heart_ATAC    3401
-MA9_heart_ATAC     3096
-MA10_heart_ATAC    3007
-MA8_heart_RNA      2941
-MA14_heart_ATAC    2657
-MA31_heart_RNA     2610
-MA33_heart_ATAC    2578
-MA23_heart_ATAC    2561
-MA19_heart_ATAC    2376
-MA24_heart_ATAC    2343
-MA8_heart_ATAC     2290
-MA29_heart_RNA     2275
-MA28_heart_ATAC    2093
-MA22_heart_ATAC    1869
-MA28_heart_RNA     1767
-MA33_heart_RNA     1759
-MA6_heart_RNA      1738
-MA25_heart_ATAC    1656
-MA11_heart_RNA     1653
-MA19_heart_RNA     1514
-MA27_heart_ATAC    1492
-MA32_heart_ATAC    1475
-MA6_heart_ATAC     1452
-MA27_heart_RNA     1397
-MA5_heart_RNA      1303
-MA20_heart_ATAC    1282
-MA5_heart_ATAC     1108
-MA32_heart_RNA     1060
-MA11_heart_ATAC    1050
-MA26_heart_ATAC     991
-MA24_heart_RNA      885
-MA22_heart_RNA      777
-MA23_heart_RNA      607
-MA7_heart_RNA       440
-MA13_heart_RNA      417
-MA20_heart_RNA      340
-MA7_heart_ATAC      331
-MA25_heart_RNA      312
-MA13_heart_ATAC     234
-MA26_heart_RNA      223
-Name: count, dtype: int64
-Final filtering -- Cells remaining: 79418, Genes remaining: 16049
-Preprocessing complete!
-Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/preprocess/adata_sample.h5ad
-Original sample IDs stored in: adata.obs['original_sample']
-Function execution time: 19.96 seconds
-✓ Integration preprocessing completed successfully
-Loaded dimensionality reduction data from existing files
+Creating colored visualizations for 1 column(s)...
+
+--- Processing color column: disease_state ---
+  Column 'disease_state': categorical with 3 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/all_samples_expression_by_disease_state.png
+  Column 'disease_state': categorical with 3 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/all_samples_proportion_by_disease_state.png
+  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics/visualization/all_samples_combined_by_disease_state.png
+✓ Embedding visualization completed successfully
 
 Pipeline completed successfully!
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/multiomics
-Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'status_flags']
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
 Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
 Completed steps: 9/10
 GLUE sub-steps completed: 5/5
@@ -185,4 +203,4 @@ Multiomics Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_heart/sys_log/main_process_status.json
-Execution time: 26.9258 seconds
+Execution time: 11.4420 seconds

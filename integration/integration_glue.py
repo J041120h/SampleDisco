@@ -28,73 +28,8 @@ from cupyx.scipy import sparse as cusparse
 from preparation.Cell_type import *
 from preparation.Cell_type_linux import cell_types_linux
 from utils.safe_save import safe_h5ad_write
+from utils.merge_sample_meta import merge_sample_metadata
 from integration.integration_visualization import glue_visualize
-
-def merge_sample_metadata(
-    adata, 
-    metadata_path, 
-    sample_column="sample", 
-    sep=",", 
-    verbose=True
-):
-    """
-    Merge sample-level metadata with AnnData object and standardize sample column to 'sample'.
-    
-    Parameters:
-    -----------
-    adata : AnnData
-        Annotated data object
-    metadata_path : str
-        Path to metadata CSV file
-    sample_column : str
-        Column name to use as index for merging
-    sep : str
-        Separator for CSV file
-    verbose : bool
-        Whether to print merge statistics
-    
-    Returns:
-    --------
-    adata : AnnData
-        AnnData object with merged metadata and standardized 'sample' column
-    """
-    meta = pd.read_csv(metadata_path, sep=sep).set_index(sample_column)
-    
-    # Store original column count for comparison
-    original_cols = adata.obs.shape[1]
-    
-    # Clean metadata before merging
-    for col in meta.columns:
-        if meta[col].dtype == 'object':
-            meta[col] = meta[col].fillna('Unknown').astype(str)
-    
-    # Perform the merge
-    adata.obs = adata.obs.join(meta, on=sample_column, how='left')
-    
-    # Standardize sample column name to 'sample'
-    if sample_column != 'sample':
-        if sample_column in adata.obs.columns:
-            adata.obs['sample'] = adata.obs[sample_column]
-            adata.obs = adata.obs.drop(columns=[sample_column])
-            if verbose:
-                print(f"   Standardized sample column '{sample_column}' to 'sample'")
-        elif 'sample' not in adata.obs.columns:
-            # If the original sample column doesn't exist, check if we can infer it
-            if verbose:
-                print(f"   Warning: Sample column '{sample_column}' not found")
-    
-    # Calculate merge statistics
-    new_cols = adata.obs.shape[1] - original_cols
-    matched_samples = adata.obs[meta.columns].notna().any(axis=1).sum()
-    total_samples = adata.obs.shape[0]
-    
-    if verbose:
-        print(f"   Merged {new_cols} sample-level columns")
-        print(f"   Matched metadata for {matched_samples}/{total_samples} samples")
-        if matched_samples < total_samples:
-            print(f"   ⚠️ Warning: {total_samples - matched_samples} samples have no metadata")
-    
-    return adata
 
 def glue_preprocess_pipeline(
     rna_file: str,
@@ -109,13 +44,9 @@ def glue_preprocess_pipeline(
     n_top_genes: int = 2000,
     n_pca_comps: int = 100,
     n_lsi_comps: int = 100,
-    lsi_n_iter: int = 15,
     gtf_by: str = "gene_name",
     flavor: str = "seurat_v3",
     generate_umap: bool = False,
-    compression: str = "gzip",
-    random_state: int = 42,
-    metadata_sep: str = ",",
     rna_sample_column: str = "sample",
     atac_sample_column: str = "sample"
 ) -> Tuple[ad.AnnData, ad.AnnData, nx.MultiDiGraph]:
@@ -152,8 +83,6 @@ def glue_preprocess_pipeline(
         Number of PCA components
     n_lsi_comps : int
         Number of LSI components for ATAC
-    lsi_n_iter : int
-        Number of LSI iterations
     gtf_by : str
         Gene annotation method
     flavor : str
@@ -164,8 +93,7 @@ def glue_preprocess_pipeline(
         Compression method for output files
     random_state : int
         Random seed for reproducibility
-    metadata_sep : str
-        Separator for metadata CSV files
+
     rna_sample_column : str
         Column name for RNA sample IDs in metadata
     atac_sample_column : str
@@ -205,7 +133,6 @@ def glue_preprocess_pipeline(
                 rna, 
                 rna_sample_meta_file, 
                 sample_column=rna_sample_column,
-                sep=metadata_sep,
                 verbose=True
             )
         
@@ -215,7 +142,6 @@ def glue_preprocess_pipeline(
                 atac, 
                 atac_sample_meta_file, 
                 sample_column=atac_sample_column,
-                sep=metadata_sep,
                 verbose=True
             )
         
@@ -248,9 +174,6 @@ def glue_preprocess_pipeline(
     ensembl.download()
     ensembl.index()
     print("✅ Ensembl annotation ready\n")
-    
-    # Set random seed
-    sc.settings.seed = random_state
     
     # Preprocess scRNA-seq data
     print(f"🧬 Preprocessing scRNA-seq data...")
@@ -344,9 +267,8 @@ def glue_preprocess_pipeline(
         peak_cells = np.array((atac.X > 0).sum(axis=0)).flatten()
         atac.var['n_cells'] = peak_cells
         atac.var['n_counts'] = peak_counts
-    
-    print(f"   Computing {n_lsi_comps} LSI components ({lsi_n_iter} iterations)")
-    scglue.data.lsi(atac, n_components=n_lsi_comps, n_iter=lsi_n_iter)
+
+    scglue.data.lsi(atac, n_components=n_lsi_comps)
     
     if generate_umap:
         print("   Computing UMAP embedding...")
@@ -645,7 +567,6 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     
     print(f"\n\n\n🎉 GLUE training pipeline completed successfully!\nResults saved to: {output_dir}\n\n\n") 
 
-
 def compute_gene_activity_from_knn(
     glue_dir: str,
     output_path: str,
@@ -656,14 +577,8 @@ def compute_gene_activity_from_knn(
     use_gpu: bool = True,
     verbose: bool = True,
 ) -> ad.AnnData:
-    """
-    Compute gene activity from k-NN with shift-scale weight normalization.
     
-    Uses shift-scale approach that preserves all relative differences while
-    ensuring weights are in [0,1] and sum to 1.
-    """    
     def fix_sparse_matrix_dtype(X, verbose=False):
-        """Fix sparse matrix by converting to int64 indices"""
         if not sparse.issparse(X):
             return X
             
@@ -682,18 +597,15 @@ def compute_gene_activity_from_knn(
         
         return X_fixed
     
-    # Memory pool settings for GPU
     mempool = cp.get_default_memory_pool()
     pinned_mempool = cp.get_default_pinned_memory_pool()
     
     gpu_mem = cp.cuda.Device().mem_info[0] / 1e9
     cpu_mem = psutil.virtual_memory().available / 1e9
     
-    # Construct file paths
     rna_processed_path = os.path.join(glue_dir, "glue-rna-emb.h5ad")
     atac_path = os.path.join(glue_dir, "glue-atac-emb.h5ad")
     
-    # Check if files exist
     if not os.path.exists(rna_processed_path):
         raise FileNotFoundError(f"Processed RNA embedding file not found: {rna_processed_path}")
     if not os.path.exists(atac_path):
@@ -709,9 +621,6 @@ def compute_gene_activity_from_knn(
         print(f"   Available GPU memory: {gpu_mem:.2f} GB")
         print(f"   Available CPU memory: {cpu_mem:.2f} GB")
     
-    # =========================================================================
-    # Load processed RNA - for embeddings AND metadata
-    # =========================================================================
     if verbose:
         print("\n📂 Loading processed RNA embeddings and metadata...")
     
@@ -719,8 +628,6 @@ def compute_gene_activity_from_knn(
     rna_embedding = rna_processed.obsm[use_rep].copy()
     processed_rna_cells = rna_processed.obs.index.copy()
     rna_obsm_dict = {k: v.copy() for k, v in rna_processed.obsm.items()}
-    
-    # CRITICAL FIX: Store processed obs (which has merged sample metadata)
     processed_rna_obs = rna_processed.obs.copy()
     
     if verbose:
@@ -729,10 +636,7 @@ def compute_gene_activity_from_knn(
     
     del rna_processed
     gc.collect()
-    
-    # =========================================================================
-    # Load ATAC
-    # =========================================================================
+
     if verbose:
         print("\n📂 Loading ATAC embeddings...")
     
@@ -748,16 +652,13 @@ def compute_gene_activity_from_knn(
     del atac
     gc.collect()
     
-    # =========================================================================
-    # Load raw RNA counts
-    # =========================================================================
     if verbose:
         print("\n📂 Loading raw RNA counts...")
     
     rna_raw = ad.read_h5ad(raw_rna_path)
     raw_rna_var = rna_raw.var.copy()
     raw_rna_varm_dict = {k: v.copy() for k, v in rna_raw.varm.items()} if hasattr(rna_raw, 'varm') else {}
-    raw_rna_obs_index = rna_raw.obs.index.copy()  # Only keep index for alignment
+    raw_rna_obs_index = rna_raw.obs.index.copy()
     
     if sparse.issparse(rna_raw.X):
         rna_X_full = rna_raw.X.tocsr()
@@ -769,10 +670,7 @@ def compute_gene_activity_from_knn(
     
     del rna_raw
     gc.collect()
-    
-    # =========================================================================
-    # Align cells between processed and raw RNA
-    # =========================================================================
+
     if verbose:
         print("\n🔗 Aligning cells...")
     
@@ -790,10 +688,8 @@ def compute_gene_activity_from_knn(
         for key in rna_obsm_dict:
             rna_obsm_dict[key] = rna_obsm_dict[key][embedding_mask]
     
-    # CRITICAL FIX: Use PROCESSED RNA obs (has merged sample metadata)
     rna_obs = processed_rna_obs.loc[common_cells].copy()
     
-    # Create mapping
     raw_rna_cell_to_idx = {cell: idx for idx, cell in enumerate(raw_rna_obs_index)}
     common_cells_list = list(common_cells)
     common_cells_raw_indices = np.array([raw_rna_cell_to_idx[cell] for cell in common_cells_list], dtype=np.int64)
@@ -803,14 +699,9 @@ def compute_gene_activity_from_knn(
     
     if verbose:
         print(f"   RNA cells: {n_rna_cells}, ATAC cells: {n_atac_cells}, Genes: {n_genes}")
-    
-    # =========================================================================
-    # k-NN search
-    # =========================================================================
+
     if verbose:
         print("\n🔍 Finding k-nearest RNA neighbors...")
-    
-    start_time = time.time()
     
     rna_embedding_gpu = cp.asarray(rna_embedding, dtype=cp.float32)
     atac_embedding_gpu = cp.asarray(atac_embedding, dtype=cp.float32)
@@ -826,12 +717,6 @@ def compute_gene_activity_from_knn(
     nn.fit(rna_embedding_gpu)
     distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_gpu)
     
-    if verbose:
-        print(f"   k-NN search completed in {time.time() - start_time:.2f} seconds")
-    
-    # =========================================================================
-    # Compute weights
-    # =========================================================================
     if verbose:
         print("\n📐 Computing similarity weights...")
     
@@ -860,9 +745,6 @@ def compute_gene_activity_from_knn(
     
     del similarities, distances_gpu
     
-    # =========================================================================
-    # Compute gene activity
-    # =========================================================================
     estimated_memory_per_cell = (k_neighbors * n_genes * 8) / 1e9
     optimal_batch_size = int(min(
         gpu_mem * 0.5 / estimated_memory_per_cell,
@@ -875,7 +757,6 @@ def compute_gene_activity_from_knn(
         print(f"\n🧮 Computing weighted gene activity...")
         print(f"   Batch size: {optimal_batch_size}")
     
-    start_time = time.time()
     n_batches = (n_atac_cells + optimal_batch_size - 1) // optimal_batch_size
     gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float64)
     is_sparse_rna = sparse.issparse(rna_X_full)
@@ -942,12 +823,6 @@ def compute_gene_activity_from_knn(
     pinned_mempool.free_all_blocks()
     
     if verbose:
-        print(f"   Gene activity completed in {time.time() - start_time:.2f} seconds")
-    
-    # =========================================================================
-    # Create gene activity AnnData
-    # =========================================================================
-    if verbose:
         print("\n📦 Creating gene activity AnnData...")
     
     gene_activity_matrix = np.nan_to_num(gene_activity_matrix, 0)
@@ -974,9 +849,6 @@ def compute_gene_activity_from_knn(
     for key, value in raw_rna_varm_dict.items():
         gene_activity_adata.varm[key] = value
     
-    # =========================================================================
-    # Create RNA AnnData for merging
-    # =========================================================================
     if verbose:
         print("\n📦 Creating RNA AnnData for merging...")
     
@@ -1003,7 +875,6 @@ def compute_gene_activity_from_knn(
     del rna_X_full
     gc.collect()
     
-    # CRITICAL FIX: Use rna_obs from processed_rna_obs (has sample metadata)
     rna_for_merge = ad.AnnData(
         X=rna_X,
         obs=rna_obs.copy(),
@@ -1018,9 +889,6 @@ def compute_gene_activity_from_knn(
     for key, value in raw_rna_varm_dict.items():
         rna_for_merge.varm[key] = value
     
-    # =========================================================================
-    # Merge datasets
-    # =========================================================================
     if verbose:
         print("\n🔗 Merging RNA and ATAC datasets...")
     
@@ -1031,7 +899,6 @@ def compute_gene_activity_from_knn(
     if verbose and overlap:
         print(f"   Found {len(overlap)} overlapping indices, adding modality suffix...")
     
-    # Store original barcodes and create unique indices
     rna_for_merge.obs['original_barcode'] = rna_for_merge.obs.index
     gene_activity_adata.obs['original_barcode'] = gene_activity_adata.obs.index
     
@@ -1060,9 +927,6 @@ def compute_gene_activity_from_knn(
             print("   ⚠️ Fixing non-unique indices...")
         merged_adata.obs_names_make_unique()
     
-    # =========================================================================
-    # Final processing and save
-    # =========================================================================
     if verbose:
         print("\n💾 Saving merged dataset...")
     
@@ -1114,13 +978,11 @@ def glue(
     n_top_genes: int = 2000,
     n_pca_comps: int = 50,
     n_lsi_comps: int = 50,
-    lsi_n_iter: int = 15,
     gtf_by: str = "gene_name",
     flavor: str = "seurat_v3",
     generate_umap: bool = False,
     compression: str = "gzip",
     random_state: int = 42,
-    metadata_sep: str = ",",
     rna_sample_column: str = "sample",
     atac_sample_column: str = "sample",
     
@@ -1142,10 +1004,6 @@ def glue(
     cluster_resolution: float = 0.8,
     use_rep_celltype: str = "X_glue",
     markers: Optional[List] = None,
-    method: str = 'average',
-    metric_celltype: str = 'euclidean',
-    distance_mode: str = 'centroid',
-    generate_umap_celltype: bool = True,
     
     # Visualization parameters
     plot_columns: Optional[List[str]] = None,
@@ -1183,13 +1041,11 @@ def glue(
             n_top_genes=n_top_genes,
             n_pca_comps=n_pca_comps,
             n_lsi_comps=n_lsi_comps,
-            lsi_n_iter=lsi_n_iter,
             gtf_by=gtf_by,
             flavor=flavor,
             generate_umap=generate_umap,
             compression=compression,
             random_state=random_state,
-            metadata_sep=metadata_sep,
             rna_sample_column=rna_sample_column,
             atac_sample_column=atac_sample_column
         )
