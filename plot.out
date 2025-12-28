@@ -1,9 +1,63 @@
-📥 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad
-🔗 Merging sample-level metadata...
-   📄 Reading CSV metadata file: //dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   ✅ Added 5 new metadata columns
-   🔗 Matched 279248/279248 entries (100.0%)
-🔍 Cells with 'macula lutea': 144343
-🔍 Cells with 'peripheral region of retina': 134905
-💾 Saving macula lutea subset to: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/lutea.h5ad
-💾 Saving peripheral retina subset to: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/retina.h5ad
+
+============================================================
+GENE ACTIVITY VALIDATION - DEMO
+============================================================
+
+[Main] Loading data...
+[Main] RNA shape: (144343, 38606)
+[Main] ATAC shape: (144343, 38133)
+
+============================================================
+GENE ACTIVITY VALIDATION
+============================================================
+
+[1/4] Computing overlap statistics...
+    RNA cells: 144343
+    ATAC cells: 144343
+    Common cells: 144343 (100.0% of RNA, 100.0% of ATAC)
+    RNA genes: 38606
+    ATAC genes: 38133
+    Direct gene overlap: 38133
+    Final genes for analysis: 38133 (98.8% of RNA, 100.0% of ATAC)
+
+    Final matrix: 144343 cells × 38133 genes
+    Memory per matrix: 22016.9 MB
+
+[2/4] Computing per-cell correlations (Pearson across genes)...
+    Valid cells: 144343/144343
+    Mean: -0.3458, Median: -0.3722
+    % Positive: 14.4%
+
+[3/4] Computing per-gene correlations (Spearman across cells)...
+    Valid genes: 31428/38133
+    Mean: 0.5394, Median: 0.5467
+    % Positive: 99.5%
+
+[4/4] Computing pseudobulk correlations (k=1 to 50)...
+    Computing PCA for KNN graph...
+    Building KNN graph (max_k=20)...
+
+    Pseudobulk results:
+    k=1:  mean_r=-0.3458
+    k=20: mean_r=0.4080
+
+[5/5] Creating visualizations...
+
+============================================================
+VALIDATION COMPLETE
+============================================================
+
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/lutea/gene_activity_validation
+
+Key findings:
+  Cell overlap: 144343 cells
+  Gene overlap: 38133 genes
+  Per-cell correlation: mean=-0.3458, 14.4% positive
+  Per-gene correlation: mean=0.5394, 99.5% positive
+  Pseudobulk (k=1): mean=-0.3458
+  Pseudobulk (k=20): mean=0.4080
+
+============================================================
+DONE
+============================================================
+

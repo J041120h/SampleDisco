@@ -7,7 +7,6 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import StandardScaler
 from scipy.sparse import issparse
 from Grouping import find_sample_grouping
-from HVG import select_hvf_loess
 
 def run_lsi_expression(
     adata: sc.AnnData, 

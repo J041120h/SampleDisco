@@ -881,9 +881,9 @@ if __name__ == "__main__":
     print("="*60 + "\n")
     
     # Example usage
-    rna_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad'
-    atac_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/heart_gene_activity.h5ad'
-    out_dir = "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/gene_activity_validation"
+    rna_path = '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/lutea.h5ad'
+    atac_path = '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/lutea_gene_activity.h5ad'
+    out_dir = "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/lutea/gene_activity_validation"
     
     print("[Main] Loading data...")
     adata_rna = sc.read_h5ad(rna_path)
@@ -898,7 +898,7 @@ if __name__ == "__main__":
         output_dir=out_dir,
         run_pseudobulk=True,
         max_k=50,
-        k_values=[1, 2, 3, 5, 10, 15, 20, 30, 40, 50],
+        k_values=[1, 2, 3, 5, 10, 15, 20],
         n_pcs=30,
         n_hvgs=2000,
         use_rna_for_knn=True,

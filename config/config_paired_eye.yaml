@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/lutea"
+output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/retina"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -293,9 +293,9 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
 # Multiomics Required Parameters
-multiomics_rna_file: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/lutea.h5ad'
-multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/lutea.h5ad"
-multiomics_output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/lutea"
+multiomics_rna_file: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad'
+multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/retina.h5ad"
+multiomics_output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/retina"
 
 # Multiomics Main Control Flags
 multiomics_run_glue: true
@@ -388,9 +388,9 @@ multiomics_use_snapatac2_dimred: false
 
 # Multiomics Visualization Parameters
 multiomics_modality_col: "modality"
-multiomics_color_col: "disease_state"
+multiomics_color_col: "age"
 multiomics_visualization_grouping_column:
-  - "disease_state"
+  - "age"
 multiomics_target_modality: "ATAC"
 multiomics_expression_key: "X_DR_expression"
 multiomics_proportion_key: "X_DR_proportion"

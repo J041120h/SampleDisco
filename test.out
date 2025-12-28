@@ -1,50 +1,10 @@
 Linux system detected with GPU enabled.
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
-}
+Initializing main process status file.
 
 ============================================================
 RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/lutea
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina
 Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
 Step 1: Running GLUE integration...
   Sub-steps: Preprocessing=True, Training=True, Gene Activity=True, Cell Types=True, Visualization=True
@@ -55,33 +15,5 @@ Running preprocessing...
    Feature selection mode: Highly Variable
 
 📊 Loading data files...
-   RNA: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/lutea.h5ad
-   ATAC: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/lutea.h5ad
-✅ Data loaded successfully
-   RNA shape: (144343, 38606)
-   ATAC shape: (144343, 3576085)
-
-📋 Loading and merging sample metadata...
-   Processing RNA metadata: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-
-✗ Multiomics pipeline failed with error: columns overlap but no suffix specified: Index(['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5'], dtype='object')
-
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-Multiomics Pipeline: ⚠ PARTIAL
-  - glue_integration: ✗
-  - glue_preprocessing: ✗
-  - glue_training: ✗
-  - glue_gene_activity: ✗
-  - glue_cell_types: ✗
-  - glue_visualization: ✗
-  - integration_preprocessing: ✗
-  - dimensionality_reduction: ✗
-  - embedding_visualization: ✗
-  - optimal_resolution: ✗
-
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/lutea
-Status file: /dcs07/hongkai/data/harry/result/multi_omics_eye/lutea/sys_log/main_process_status.json
-Execution time: 84.9328 seconds
+   RNA: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad
+   ATAC: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/retina.h5ad

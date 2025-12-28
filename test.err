@@ -1,24 +1,2 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 968, in wrapper
-    multiomics_results = multiomics_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 291, in multiomics_wrapper
-    glue_result = glue(
-  File "/users/hjiang/GenoDistance/code/integration/integration_glue.py", line 1032, in glue
-    rna, atac, guidance = glue_preprocess_pipeline(
-  File "/users/hjiang/GenoDistance/code/integration/integration_glue.py", line 133, in glue_preprocess_pipeline
-    rna = merge_sample_metadata(
-  File "/users/hjiang/GenoDistance/code/utils/merge_sample_meta.py", line 65, in merge_sample_metadata
-    adata.obs = adata.obs.join(meta, on=sample_column, how="left")
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/frame.py", line 10764, in join
-    return merge(
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/merge.py", line 184, in merge
-    return op.get_result(copy=copy)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/merge.py", line 888, in get_result
-    result = self._reindex_and_concat(
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/merge.py", line 840, in _reindex_and_concat
-    llabels, rlabels = _items_overlap_with_suffix(
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/reshape/merge.py", line 2721, in _items_overlap_with_suffix
-    raise ValueError(f"columns overlap but no suffix specified: {to_rename}")
-ValueError: columns overlap but no suffix specified: Index(['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5'], dtype='object')
