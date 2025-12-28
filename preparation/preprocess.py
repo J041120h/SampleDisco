@@ -9,6 +9,7 @@ from scipy.sparse import issparse
 
 from utils.safe_save import safe_h5ad_write
 from utils.random_seed import set_global_seed
+from utils.merge_sample_meta import merge_sample_metadata
 
 
 def anndata_cluster(
@@ -124,6 +125,43 @@ def preprocess(
     if verbose:
         print(f"Raw shape: {adata.shape[0]} cells × {adata.shape[1]} genes")
 
+    # ----------------------------
+    # 1) Attach cell-level metadata
+    # ----------------------------
+    if cell_meta_path is None:
+        if sample_column not in adata.obs.columns:
+            if verbose:
+                print(f"   ℹ️ No '{sample_column}' column in adata.obs; inferring from obs_names")
+            adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
+    else:
+        if verbose:
+            print(f"   📄 Merging cell-level metadata from: {cell_meta_path}")
+        cell_meta = pd.read_csv(cell_meta_path).set_index("barcode")
+        adata.obs = adata.obs.join(cell_meta, how="left")
+
+        if sample_column not in adata.obs.columns:
+            if verbose:
+                print(f"   ℹ️ Still no '{sample_column}' column after cell_meta merge; "
+                      f"inferring from obs_names")
+            adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
+
+    # --------------------------------------
+    # 2) Attach *sample-level* metadata (NEW)
+    # --------------------------------------
+    if sample_meta_path is not None:
+        if verbose:
+            print("=== Merging sample-level metadata into adata.obs ===")
+        adata = merge_sample_metadata(
+            adata=adata,
+            metadata_path=sample_meta_path,
+            sample_column=sample_column,
+            verbose=verbose,
+        )
+        
+    # ------------------------------------------------
+    # 3) Build vars_to_regress & batch keys *after* all
+    #    metadata merges so required columns exist
+    # ------------------------------------------------
     vars_to_regress = vars_to_regress or []
     flat_vars = []
     for v in vars_to_regress:
@@ -136,31 +174,28 @@ def preprocess(
     if sample_column not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append(sample_column)
 
-    if cell_meta_path is None:
-        if sample_column not in adata.obs.columns:
-            adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
-    else:
-        cell_meta = pd.read_csv(cell_meta_path).set_index("barcode")
-        adata.obs = adata.obs.join(cell_meta, how="left")
-
-    if sample_meta_path is not None:
-        sample_meta = pd.read_csv(sample_meta_path).set_index(sample_column)
-        adata.obs = adata.obs.join(sample_meta, on=sample_column, how="left")
-
-    required = flat_vars.copy()
+    flat_batch_keys = []
     if batch_key is not None:
         if isinstance(batch_key, (list, tuple, np.ndarray, pd.Index)):
-            required.extend([str(b) for b in list(batch_key)])
+            flat_batch_keys.extend([str(b) for b in list(batch_key)])
         else:
-            required.append(str(batch_key))
+            flat_batch_keys.append(str(batch_key))
 
-    required = list(dict.fromkeys(required))
-    missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
+    required = list(dict.fromkeys(flat_vars + flat_batch_keys))
+    if required:
+        missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
+    else:
+        missing_vars = []
+
     if missing_vars:
         raise KeyError(f"The following variables are missing from adata.obs: {missing_vars}")
     else:
-        print("All required columns are present in adata.obs.")
+        if verbose:
+            print("All required columns are present in adata.obs.")
 
+    # ---------------------------
+    # 4) QC, filtering, and genes
+    # ---------------------------
     print("Type of adata.X:", type(adata.X))
     print("adata.X dtype:", adata.X.dtype)
     print("adata.X is sparse:", issparse(adata.X))
@@ -178,7 +213,13 @@ def preprocess(
         print(f"After initial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes")
 
     adata.var["mt"] = adata.var_names.str.startswith("MT-")
-    sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], percent_top=None, log1p=False, inplace=True)
+    sc.pp.calculate_qc_metrics(
+        adata,
+        qc_vars=["mt"],
+        percent_top=None,
+        log1p=False,
+        inplace=True,
+    )
 
     adata = adata[adata.obs["pct_counts_mt"] < pct_mito_cutoff].copy()
     if verbose:
@@ -206,6 +247,9 @@ def preprocess(
     if verbose:
         print("Preprocessing complete!")
 
+    # -----------------------------------
+    # 5) Split into cluster / sample views
+    # -----------------------------------
     adata_cluster = adata.copy()
     adata_sample_diff = adata.copy()
 

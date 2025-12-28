@@ -13,6 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from utils.safe_save import safe_h5ad_write
 from utils.random_seed import set_global_seed
+from utils.merge_sample_meta import merge_sample_metadata
 
 
 def anndata_cluster(
@@ -98,7 +99,6 @@ def anndata_sample(
 
     return adata_sample_diff
 
-
 def preprocess_linux(
     h5ad_path,
     sample_meta_path,
@@ -144,6 +144,45 @@ def preprocess_linux(
     if verbose:
         print(f"Raw shape: {adata.shape[0]} cells × {adata.shape[1]} genes")
 
+    # ----------------------------
+    # 1) Attach cell-level metadata
+    # ----------------------------
+    if cell_meta_path is None:
+        # Infer sample from barcode if not present
+        if sample_column not in adata.obs.columns:
+            if verbose:
+                print(f"   ℹ️ No '{sample_column}' column in adata.obs; inferring from obs_names")
+            adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
+    else:
+        if verbose:
+            print(f"   📄 Merging cell-level metadata from: {cell_meta_path}")
+        cell_meta = pd.read_csv(cell_meta_path).set_index("barcode")
+        adata.obs = adata.obs.join(cell_meta, how="left")
+
+        # If sample_column still missing, try to infer
+        if sample_column not in adata.obs.columns:
+            if verbose:
+                print(f"   ℹ️ Still no '{sample_column}' column after cell_meta merge; "
+                      f"inferring from obs_names")
+            adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
+
+    # --------------------------------------
+    # 2) Attach *sample-level* metadata (NEW)
+    # --------------------------------------
+    if sample_meta_path is not None:
+        if verbose:
+            print("=== Merging sample-level metadata into adata.obs ===")
+        adata = merge_sample_metadata(
+            adata=adata,
+            metadata_path=sample_meta_path,
+            sample_column=sample_column,
+            verbose=verbose,
+        )
+
+    # ------------------------------------------------
+    # 3) Build vars_to_regress & batch keys *after* all
+    #    metadata merges so required columns exist
+    # ------------------------------------------------
     vars_to_regress = vars_to_regress or []
     flat_vars = []
     for v in vars_to_regress:
@@ -152,6 +191,7 @@ def preprocess_linux(
         else:
             flat_vars.append(str(v))
 
+    # For Harmony we also regress out the sample column (if not already there)
     vars_to_regress_for_harmony = flat_vars.copy()
     if sample_column not in vars_to_regress_for_harmony:
         vars_to_regress_for_harmony.append(sample_column)
@@ -163,24 +203,18 @@ def preprocess_linux(
         else:
             flat_batch_keys.append(str(batch_key))
 
-    if cell_meta_path is None:
-        if sample_column not in adata.obs.columns:
-            adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
-    else:
-        cell_meta = pd.read_csv(cell_meta_path).set_index("barcode")
-        adata.obs = adata.obs.join(cell_meta, how="left")
-
-    if sample_meta_path is not None:
-        sample_meta = pd.read_csv(sample_meta_path).set_index(sample_column)
-        adata.obs = adata.obs.join(sample_meta, on=sample_column, how="left")
-
+    # Check that all required columns are present
     required = list(dict.fromkeys(flat_vars + flat_batch_keys))
     missing_vars = sorted(set(required) - set(map(str, adata.obs.columns)))
     if missing_vars:
         raise KeyError(f"The following variables are missing from adata.obs: {missing_vars}")
     else:
-        print("All required columns are present in adata.obs.")
+        if verbose:
+            print("All required columns are present in adata.obs.")
 
+    # ---------------------------
+    # 4) QC, filtering, and genes
+    # ---------------------------
     if adata.X.dtype != np.float32:
         if issparse(adata.X):
             adata.X = adata.X.astype(np.float32)
@@ -198,16 +232,22 @@ def preprocess_linux(
     genes_to_exclude = set(mt_genes) | set(exclude_genes or [])
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
 
+    # Remove samples with too few cells
     cell_counts = adata.obs.groupby(sample_column).size()
     keep = cell_counts[cell_counts >= min_cells].index
     adata = adata[adata.obs[sample_column].isin(keep)].copy()
 
+    # Final minimum cell filter across all cells
     min_cells_final = int(0.001 * adata.n_obs)
     if min_cells_final > 0:
         sc.pp.filter_genes(adata, min_cells=min_cells_final)
 
+    # Save raw counts snapshot
     adata.raw = adata.copy()
 
+    # -----------------------------------
+    # 5) Split into cluster / sample views
+    # -----------------------------------
     adata_cluster = adata.copy()
     adata_sample_diff = adata.copy()
 

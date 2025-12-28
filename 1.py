@@ -229,17 +229,17 @@ def split_h5ad_by_organ_part(
     return lutea_adata, retina_adata
 
 if __name__ == "__main__":
-    # add_raw_counts_layer_by_obs_names(
-    #     preprocessed_h5ad_path="/dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/rna/preprocess/adata_cell.h5ad",
-    #     raw_h5ad_path="/dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/paired_rna_atac_merged.h5ad",
-    #     layer_name="raw_counts",
-    #     verbose=True,
-    # )
-    # print_batch_sample_counts("/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad")
-    split_h5ad_by_organ_part(
-    "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad",
-    "//dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv",  # or .csv / .xlsx etc.
-    sample_column="sample",          # or whatever your sample column is
+    add_raw_counts_layer_by_obs_names(
+        preprocessed_h5ad_path="/dcs07/hongkai/data/harry/result/multi_omics_heart/SD/rna/preprocess/adata_cell.h5ad",
+        raw_h5ad_path= "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/paired_rna_atac_merged.h5ad",
+        layer_name="raw_counts",
+        verbose=True,
     )
+    # print_batch_sample_counts("/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/pseudobulk/pseudobulk_sample.h5ad")
+    # split_h5ad_by_organ_part(
+    # "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac_raw.h5ad",
+    # "//dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv",  # or .csv / .xlsx etc.
+    # sample_column="sample",          # or whatever your sample column is
+    # )
 
 

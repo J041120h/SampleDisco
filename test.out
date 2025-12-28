@@ -17,3 +17,149 @@ Running preprocessing...
 📊 Loading data files...
    RNA: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad
    ATAC: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/retina.h5ad
+✅ Data loaded successfully
+   RNA shape: (134905, 38606)
+   ATAC shape: (134905, 3576085)
+
+📋 Loading and merging sample metadata...
+   Processing RNA metadata: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+   🔄 Dropping 5 overlapping columns from adata.obs: ['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
+      Will use metadata versions instead
+   ✅ Added 0 new metadata columns
+   🔗 Matched 134905/134905 entries (100.0%)
+   Processing ATAC metadata: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+   🔄 Dropping 5 overlapping columns from adata.obs: ['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
+      Will use metadata versions instead
+   ✅ Added 0 new metadata columns
+   🔗 Matched 134905/134905 entries (100.0%)
+
+✅ Metadata integration and standardization complete
+   RNA obs columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
+   ATAC obs columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
+
+🧬 Setting up Ensembl annotation...
+   Release: 110
+   Species: homo_sapiens
+✅ Ensembl annotation ready
+
+🧬 Preprocessing scRNA-seq data...
+   Selecting 1500 highly variable genes
+   Computing 50 PCA components
+✅ RNA preprocessing complete
+
+🏔️ Preprocessing scATAC-seq data...
+   Computing feature statistics for peak selection
+   Selected 50000 highly accessible peaks
+✅ ATAC preprocessing complete
+
+🔍 Detecting gene ID format...
+   Detected Ensembl gene IDs format
+
+🗺️ Processing gene coordinates...
+   Processing 38606 genes...
+✅ Gene coordinate processing complete
+   38606 genes retained
+   Final RNA shape: (134905, 38606)
+
+🏔️ Processing ATAC peak coordinates...
+   Processing 3576085 peaks...
+✅ ATAC peak coordinates extracted successfully
+
+🕸️ Constructing guidance graph...
+   Using highly variable features for graph construction
+[INFO] check_graph: Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+[INFO] check_graph: All checks passed!
+✅ Guidance graph constructed successfully
+   Nodes: 3,614,691
+   Edges: 9,176,261
+
+💾 Saving preprocessed data...
+   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue
+   Saving RNA data...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/rna-pp.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 10 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/rna-pp.h5ad
+   Saving ATAC data...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/atac-pp.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 10 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/atac-pp.h5ad
+   Saving guidance graph...
+
+🎉 GLUE preprocessing pipeline completed successfully!
+
+Preprocessing completed.
+Running training...
+
+
+
+🚀 Starting GLUE training pipeline...
+
+
+
+   Feature mode: Highly Variable Only
+   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue
+
+
+
+
+📊 Loading preprocessed data from /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue...
+
+
+
+
+
+
+Data loaded - RNA: (134905, 38606), ATAC: (134905, 3576085), Graph: 3614691 nodes
+
+
+
+
+
+
+⚙️ Configuring datasets...
+
+
+
+
+
+
+🔍 Extracting highly variable feature subgraph...
+
+
+
+HVF subgraph extracted - RNA HVF: 1500, ATAC HVF: 431680
+HVF graph: 433180 nodes, 1313784 edges
+
+
+
+
+
+
+🤖 Training GLUE model...
+
+
+
+[INFO] fit_SCGLUE: Pretraining SCGLUE model...
+[INFO] autodevice: Using GPU 0 as computation device.
+[INFO] check_graph: Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+[INFO] SCGLUEModel: Setting `graph_batch_size` = 451614
+[INFO] SCGLUEModel: Setting `patience` = 4
+[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 2
+[INFO] SCGLUETrainer: Using training directory: "/dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/training/pretrain"
+[INFO] LRScheduler: Learning rate reduction: step 1
+[INFO] SCGLUETrainer: [Epoch 10] train={'g_nll': 0.398, 'g_kl': 0.0, 'g_elbo': 0.398, 'x_rna_nll': 0.333, 'x_rna_kl': 0.013, 'x_rna_elbo': 0.345, 'x_atac_nll': 0.016, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.016, 'dsc_loss': 0.693, 'vae_loss': 0.377, 'gen_loss': 0.343}, val={'g_nll': 0.397, 'g_kl': 0.0, 'g_elbo': 0.398, 'x_rna_nll': 0.334, 'x_rna_kl': 0.013, 'x_rna_elbo': 0.346, 'x_atac_nll': 0.016, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.016, 'dsc_loss': 0.692, 'vae_loss': 0.378, 'gen_loss': 0.344}, 721.4s elapsed
+[INFO] LRScheduler: Learning rate reduction: step 2

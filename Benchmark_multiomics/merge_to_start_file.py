@@ -178,6 +178,7 @@ from pathlib import Path
 from typing import Optional
 
 import anndata as ad
+import numpy as np
 
 
 def merge_single_rna_atac(
@@ -195,8 +196,9 @@ def merge_single_rna_atac(
       3) Add obs['modality'] = 'RNA' / 'ATAC'
          Add obs['original_barcode'] = original obs_names
          Rename obs_names to "<barcode>_RNA" / "<barcode>_ATAC"
-      4) Concatenate along cells (axis=0) with gene join given by `join_genes`
-      5) Optionally save to `output_path`
+      4) Append modality to sample column, e.g. MA9_heart_ATAC (if 'sample' exists)
+      5) Concatenate along cells (axis=0) with gene join given by `join_genes`
+      6) Optionally save to `output_path`
     """
 
     print("============================================================")
@@ -267,6 +269,19 @@ def merge_single_rna_atac(
     for old, new in list(zip(atac.obs["original_barcode"], atac.obs_names))[:3]:
         print(f"    {old} -> {new}")
 
+    # --- 3b) Append modality to sample column (if present) ---
+    print("\nUpdating 'sample' column to include modality (e.g. MA9_heart_ATAC)...")
+    for adata_part, name in [(rna, "RNA"), (atac, "ATAC")]:
+        if "sample" in adata_part.obs.columns:
+            # sample := sample + "_" + modality
+            adata_part.obs["sample"] = (
+                adata_part.obs["sample"].astype(str) + "_" + adata_part.obs["modality"].astype(str)
+            ).astype("category")
+            print(f"  [{name}] Updated 'sample' example values:")
+            print(adata_part.obs["sample"].head())
+        else:
+            print(f"  [{name}] No 'sample' column found; skipping sample update.")
+
     # --- 4) Concatenate along cells (axis=0) ---
     print(f"\nConcatenating RNA + ATAC (join={join_genes!r})...")
     merged = ad.concat(
@@ -293,9 +308,9 @@ def merge_single_rna_atac(
 if __name__ == "__main__":
     # out_file = Path("/dcs07/hongkai/data/harry/result/Benchmark_omics/paired_rna_atac_merged.h5ad")
     # merged = merge_paired_rna_atac(output_path=out_file)
-    rna_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad")
-    atac_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_heart/data/heart_gene_activity.h5ad")
-    out_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_heart/data/paired_rna_atac_merged.h5ad")
+    rna_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad")
+    atac_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/retina_gene_activity.h5ad")
+    out_file = Path("/dcs07/hongkai/data/harry/result/multi_omics_eye/data/retina/paired_rna_atac_merged.h5ad")
 
     merged = merge_single_rna_atac(
         rna_path=rna_file,
