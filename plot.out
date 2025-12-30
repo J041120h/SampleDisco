@@ -1,0 +1,462 @@
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_expression_embedding.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 22.0773
+  Std paired distance:  10.1663
+  Median paired distance: 24.9418
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.5071
+  iLISI normalized: 0.7536
+  ASW modality:     0.4237
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  20.8417
+  Mean between-group distance: 20.5080
+  Preservation score:          0.9840
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/SD_expression/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'SD_expression'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_proportion_embedding.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 0.2616
+  Std paired distance:  0.1338
+  Median paired distance: 0.2213
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.7477
+  iLISI normalized: 0.8739
+  ASW modality:     0.4863
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  0.3790
+  Mean between-group distance: 0.4890
+  Preservation score:          1.2900
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/SD_proportion/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'SD_proportion'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/pilot/wasserstein_distance_mds_10d.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 0.7714
+  Std paired distance:  0.0547
+  Median paired distance: 0.7673
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.0349
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  0.4354
+  Mean between-group distance: 0.4136
+  Preservation score:          0.9501
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/pilot/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'pilot'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/pseudobulk/pseudobulk/pca_embeddings.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 37.0629
+  Std paired distance:  4.4526
+  Median paired distance: 36.9987
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.1628
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  25.1811
+  Mean between-group distance: 25.1090
+  Preservation score:          0.9971
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/pseudobulk/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'pseudobulk'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/QOT/44_qot_distance_matrix_mds_10d.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 0.3495
+  Std paired distance:  0.1580
+  Median paired distance: 0.3275
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.9348
+  iLISI normalized: 0.9674
+  ASW modality:     0.5132
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  0.9216
+  Mean between-group distance: 0.9155
+  Preservation score:          0.9933
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/QOT/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'QOT'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/GEDI/gedi_sample_embedding.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 3.7582
+  Std paired distance:  0.4843
+  Median paired distance: 3.8651
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.2034
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  2.7448
+  Mean between-group distance: 2.6904
+  Preservation score:          0.9802
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/GEDI/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'GEDI'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/Gloscope/knn_divergence_mds_10d.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 54.1986
+  Std paired distance:  4.6062
+  Median paired distance: 53.1636
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.1446
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  35.6246
+  Mean between-group distance: 35.6348
+  Preservation score:          1.0003
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Gloscope/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'Gloscope'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/MFA/sample_embeddings.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 2.2494
+  Std paired distance:  1.1210
+  Median paired distance: 1.8868
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.7652
+  iLISI normalized: 0.8826
+  ASW modality:     0.4747
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  2.1345
+  Mean between-group distance: 2.3741
+  Preservation score:          1.1123
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/MFA/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'MFA'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/mustard/sample_embedding.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 0.5820
+  Std paired distance:  0.0801
+  Median paired distance: 0.5847
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.1104
+  iLISI normalized: 0.5552
+  ASW modality:     0.2531
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  0.4429
+  Mean between-group distance: 0.4306
+  Preservation score:          0.9723
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/mustard/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'mustard'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Expanded metadata from 23 samples to 46 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/scPoli/sample_embeddings_full.csv
+Aligned data: 44 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 22
+Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease_state preservation...
+============================================================
+Multimodal Integration Evaluation Summary
+============================================================
+
+Total samples: 44
+Unique biological samples: 22
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 22
+  Mean paired distance: 1.3386
+  Std paired distance:  0.0491
+  Median paired distance: 1.3367
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.2961
+
+--- 3. Disease State Preservation (higher = better) ---
+  Number of disease_state groups: 3
+  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-group distance:  1.0574
+  Mean between-group distance: 1.1387
+  Preservation score:          1.0769
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/scPoli/Multimodal_Integration_Evaluation
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'scPoli'
+Multimodal Integration Benchmark module loaded.
+Use evaluate_multimodal_integration() to run evaluation.

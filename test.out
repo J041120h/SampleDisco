@@ -1,165 +1,492 @@
-Linux system detected with GPU enabled.
-Initializing main process status file.
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/embeddings/sample_expression_embedding.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.7793
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_SD_expression.png
+============================================================
+Multimodal Integration Evaluation: SD_expression
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 14.9796
+  Std paired distance:  11.6609
+  Median paired distance: 9.3134
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.2500
+  iLISI normalized: 0.6250
+  ASW modality:     0.4948
+
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.7793
+  Pseudotime-age corr: 0.7792
+  Age range:           70.0 - 165.0
 
 ============================================================
-RUNNING MULTIOMICS PIPELINE
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/SD_expression
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina
-Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': False, 'dimensionality_reduction': False, 'embedding_visualization': False, 'optimal_resolution': False}
-Step 1: Running GLUE integration...
-  Sub-steps: Preprocessing=True, Training=True, Gene Activity=True, Cell Types=True, Visualization=True
-Running preprocessing...
 
-🚀 Starting GLUE preprocessing pipeline...
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'SD_expression'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/embeddings/sample_proportion_embedding.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
-   Feature selection mode: Highly Variable
+1. Computing paired sample distances...
 
-📊 Loading data files...
-   RNA: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad
-   ATAC: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/retina.h5ad
-✅ Data loaded successfully
-   RNA shape: (134905, 38606)
-   ATAC shape: (134905, 3576085)
+2. Computing modality mixing (iLISI, ASW)...
 
-📋 Loading and merging sample metadata...
-   Processing RNA metadata: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   🔄 Dropping 5 overlapping columns from adata.obs: ['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
-      Will use metadata versions instead
-   ✅ Added 0 new metadata columns
-   🔗 Matched 134905/134905 entries (100.0%)
-   Processing ATAC metadata: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   🔄 Dropping 5 overlapping columns from adata.obs: ['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
-      Will use metadata versions instead
-   ✅ Added 0 new metadata columns
-   🔗 Matched 134905/134905 entries (100.0%)
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.9782
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_SD_proportion.png
+============================================================
+Multimodal Integration Evaluation: SD_proportion
+============================================================
 
-✅ Metadata integration and standardization complete
-   RNA obs columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
-   ATAC obs columns: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
 
-🧬 Setting up Ensembl annotation...
-   Release: 110
-   Species: homo_sapiens
-✅ Ensembl annotation ready
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 0.0721
+  Std paired distance:  0.0409
+  Median paired distance: 0.0735
 
-🧬 Preprocessing scRNA-seq data...
-   Selecting 1500 highly variable genes
-   Computing 50 PCA components
-✅ RNA preprocessing complete
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.7500
+  iLISI normalized: 0.8750
+  ASW modality:     0.5345
 
-🏔️ Preprocessing scATAC-seq data...
-   Computing feature statistics for peak selection
-   Selected 50000 highly accessible peaks
-✅ ATAC preprocessing complete
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.9782
+  Pseudotime-age corr: -0.9635
+  Age range:           70.0 - 165.0
 
-🔍 Detecting gene ID format...
-   Detected Ensembl gene IDs format
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/SD_proportion
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
 
-🗺️ Processing gene coordinates...
-   Processing 38606 genes...
-✅ Gene coordinate processing complete
-   38606 genes retained
-   Final RNA shape: (134905, 38606)
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'SD_proportion'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/pilot/wasserstein_distance_mds_10d.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
-🏔️ Processing ATAC peak coordinates...
-   Processing 3576085 peaks...
-✅ ATAC peak coordinates extracted successfully
+1. Computing paired sample distances...
 
-🕸️ Constructing guidance graph...
-   Using highly variable features for graph construction
-[INFO] check_graph: Checking variable coverage...
-[INFO] check_graph: Checking edge attributes...
-[INFO] check_graph: Checking self-loops...
-[INFO] check_graph: Checking graph symmetry...
-[INFO] check_graph: All checks passed!
-✅ Guidance graph constructed successfully
-   Nodes: 3,614,691
-   Edges: 9,176,261
+2. Computing modality mixing (iLISI, ASW)...
 
-💾 Saving preprocessed data...
-   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue
-   Saving RNA data...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/rna-pp.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 10 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/rna-pp.h5ad
-   Saving ATAC data...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/atac-pp.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 10 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/atac-pp.h5ad
-   Saving guidance graph...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.8328
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_pilot.png
+============================================================
+Multimodal Integration Evaluation: pilot
+============================================================
 
-🎉 GLUE preprocessing pipeline completed successfully!
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
 
-Preprocessing completed.
-Running training...
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 0.5413
+  Std paired distance:  0.0976
+  Median paired distance: 0.5025
 
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.1312
 
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.8328
+  Pseudotime-age corr: -0.7855
+  Age range:           70.0 - 165.0
 
-🚀 Starting GLUE training pipeline...
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/pilot
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
 
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'pilot'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/pseudobulk/pseudobulk/pca_embeddings.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
+1. Computing paired sample distances...
 
-   Feature mode: Highly Variable Only
-   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue
+2. Computing modality mixing (iLISI, ASW)...
 
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.8561
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_pseudobulk.png
+============================================================
+Multimodal Integration Evaluation: pseudobulk
+============================================================
 
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
 
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 31.9184
+  Std paired distance:  3.5055
+  Median paired distance: 30.7693
 
-📊 Loading preprocessed data from /dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue...
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.1689
 
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.8561
+  Pseudotime-age corr: -0.8470
+  Age range:           70.0 - 165.0
 
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/pseudobulk
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
 
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'pseudobulk'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/QOT/24_qot_distance_matrix_mds_10d.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
+1. Computing paired sample distances...
 
+2. Computing modality mixing (iLISI, ASW)...
 
-Data loaded - RNA: (134905, 38606), ATAC: (134905, 3576085), Graph: 3614691 nodes
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.9215
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_QOT.png
+============================================================
+Multimodal Integration Evaluation: QOT
+============================================================
 
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
 
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 0.3179
+  Std paired distance:  0.1276
+  Median paired distance: 0.3034
 
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.5833
+  iLISI normalized: 0.7917
+  ASW modality:     0.5201
 
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.9215
+  Pseudotime-age corr: -0.9168
+  Age range:           70.0 - 165.0
 
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/QOT
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
 
-⚙️ Configuring datasets...
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'QOT'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/GEDI/gedi_sample_embedding.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
+1. Computing paired sample distances...
 
+2. Computing modality mixing (iLISI, ASW)...
 
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.3330
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_GEDI.png
+============================================================
+Multimodal Integration Evaluation: GEDI
+============================================================
 
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
 
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 3.3914
+  Std paired distance:  0.6222
+  Median paired distance: 3.3367
 
-🔍 Extracting highly variable feature subgraph...
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.2137
 
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.3330
+  Pseudotime-age corr: 0.3066
+  Age range:           70.0 - 165.0
 
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/GEDI
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
 
-HVF subgraph extracted - RNA HVF: 1500, ATAC HVF: 431680
-HVF graph: 433180 nodes, 1313784 edges
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'GEDI'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Gloscope/knn_divergence_mds_10d.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
+1. Computing paired sample distances...
 
+2. Computing modality mixing (iLISI, ASW)...
 
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.7784
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_Gloscope.png
+============================================================
+Multimodal Integration Evaluation: Gloscope
+============================================================
 
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
 
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 55.2163
+  Std paired distance:  5.1895
+  Median paired distance: 53.7521
 
-🤖 Training GLUE model...
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.1533
 
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.7784
+  Pseudotime-age corr: -0.7782
+  Age range:           70.0 - 165.0
 
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/Gloscope
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
 
-[INFO] fit_SCGLUE: Pretraining SCGLUE model...
-[INFO] autodevice: Using GPU 0 as computation device.
-[INFO] check_graph: Checking variable coverage...
-[INFO] check_graph: Checking edge attributes...
-[INFO] check_graph: Checking self-loops...
-[INFO] check_graph: Checking graph symmetry...
-[INFO] SCGLUEModel: Setting `graph_batch_size` = 451614
-[INFO] SCGLUEModel: Setting `patience` = 4
-[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 2
-[INFO] SCGLUETrainer: Using training directory: "/dcs07/hongkai/data/harry/result/multi_omics_eye/retina/integration/glue/training/pretrain"
-[INFO] LRScheduler: Learning rate reduction: step 1
-[INFO] SCGLUETrainer: [Epoch 10] train={'g_nll': 0.398, 'g_kl': 0.0, 'g_elbo': 0.398, 'x_rna_nll': 0.333, 'x_rna_kl': 0.013, 'x_rna_elbo': 0.345, 'x_atac_nll': 0.016, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.016, 'dsc_loss': 0.693, 'vae_loss': 0.377, 'gen_loss': 0.343}, val={'g_nll': 0.397, 'g_kl': 0.0, 'g_elbo': 0.398, 'x_rna_nll': 0.334, 'x_rna_kl': 0.013, 'x_rna_elbo': 0.346, 'x_atac_nll': 0.016, 'x_atac_kl': 0.0, 'x_atac_elbo': 0.016, 'dsc_loss': 0.692, 'vae_loss': 0.378, 'gen_loss': 0.344}, 721.4s elapsed
-[INFO] LRScheduler: Learning rate reduction: step 2
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'Gloscope'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/MFA/sample_embeddings.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.1607
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_MFA.png
+============================================================
+Multimodal Integration Evaluation: MFA
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 3.6392
+  Std paired distance:  0.0614
+  Median paired distance: 3.6479
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.0369
+
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.1607
+  Pseudotime-age corr: -0.1526
+  Age range:           70.0 - 165.0
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/MFA
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'MFA'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/mustard/sample_embedding.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.5204
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_mustard.png
+============================================================
+Multimodal Integration Evaluation: mustard
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 0.8459
+  Std paired distance:  0.0322
+  Median paired distance: 0.8483
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.1935
+
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.5204
+  Pseudotime-age corr: 0.3239
+  Age range:           70.0 - 165.0
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/mustard
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'mustard'
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/scPoli/sample_embeddings_full.csv
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  Using first 2 dimensions (PC1 and PC2) for CCA...
+  CCA score (PC1 & PC2): 0.6477
+  Saved trajectory plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots/trajectory_scPoli.png
+============================================================
+Multimodal Integration Evaluation: scPoli
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+
+--- 1. Paired Sample Distance (lower = better) ---
+  Number of pairs: 12
+  Mean paired distance: 1.3111
+  Std paired distance:  0.0437
+  Median paired distance: 1.3105
+
+--- 2. Modality Mixing (higher = better) ---
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  ASW modality:     0.3436
+
+--- 3. Trajectory Analysis (age) using PC1 & PC2 (higher = better) ---
+  Dimension pair: (1, 2) (PC1 & PC2)
+  CCA score:           0.6477
+  Pseudotime-age corr: 0.6474
+  Age range:           70.0 - 165.0
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/evaluation_details/scPoli
+Trajectory plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/trajectory_plots
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/summary.csv with column 'scPoli'
+Multimodal Integration Benchmark module loaded.
+Use evaluate_multimodal_integration() to run evaluation.
