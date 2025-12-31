@@ -7,10 +7,11 @@ Improved Multimodal Integration Benchmark v2
 Evaluates multimodal embeddings based on three criteria:
 1. Paired sample matching: samples with same sample_id but different modality should be close
 2. Modality mixing: modalities should be well-mixed (iLISI_norm, ASW_batch on modality)
-3. Tissue preservation: within-tissue distances should be smaller than between-tissue distances
+3. Disease state preservation: within-disease_state distances should be smaller than between-disease_state distances
 
 Improvements:
-- Infers modality from sample name suffix (_RNA, _ATAC)
+- Infers modality from sample name suffix (_RNA, _ATAC) - case insensitive
+- Handles case-insensitive sample matching
 - Generates three visualization graphs per method
 - Supports permutation testing for p-values
 - Organized output directory structure with method subfolders
@@ -90,16 +91,16 @@ class BenchmarkConfig:
     })
     connection_color: str = '#7f8c8d'
     
-    # Tissue color palette (extended for many tissues)
-    tissue_palette: str = 'husl'
+    # Disease state color palette (extended for many disease states)
+    disease_state_palette: str = 'husl'
 
 
 # =============================================================================
 # Professional Color Palettes
 # =============================================================================
 
-# Custom tissue color palette - visually distinct and colorblind-friendly
-TISSUE_COLORS = [
+# Custom disease state color palette - visually distinct and colorblind-friendly
+DISEASE_STATE_COLORS = [
     '#e41a1c',  # Red
     '#377eb8',  # Blue
     '#4daf4a',  # Green
@@ -123,55 +124,63 @@ TISSUE_COLORS = [
 ]
 
 
-def get_tissue_colors(n_tissues: int) -> List[str]:
-    """Get a list of distinct colors for tissues."""
-    if n_tissues <= len(TISSUE_COLORS):
-        return TISSUE_COLORS[:n_tissues]
+def get_disease_state_colors(n_disease_states: int) -> List[str]:
+    """Get a list of distinct colors for disease states."""
+    if n_disease_states <= len(DISEASE_STATE_COLORS):
+        return DISEASE_STATE_COLORS[:n_disease_states]
     else:
         # Generate additional colors using HSL
-        colors = TISSUE_COLORS.copy()
-        for i in range(len(TISSUE_COLORS), n_tissues):
+        colors = DISEASE_STATE_COLORS.copy()
+        for i in range(len(DISEASE_STATE_COLORS), n_disease_states):
             hue = (i * 0.618033988749895) % 1  # Golden ratio for distribution
             colors.append(plt.cm.hsv(hue))
         return colors
 
 
 # =============================================================================
-# Modality Inference from Sample Names
+# Modality Inference from Sample Names (Case Insensitive)
 # =============================================================================
 
-def infer_modality_from_name(sample_name: str) -> Tuple[str, str]:
+def infer_modality_from_name(sample_name: str) -> Tuple[str, str, str]:
     """
-    Infer sample_id and modality from sample name suffix.
+    Infer sample_id and modality from sample name suffix (case insensitive).
     
     Supports formats:
-    - suffix: SAMPLEID_RNA, SAMPLEID_ATAC
-    - prefix: RNA_SAMPLEID, ATAC_SAMPLEID
+    - suffix: SAMPLEID_RNA, SAMPLEID_ATAC (or _rna, _atac, _Rna, etc.)
+    - prefix: RNA_SAMPLEID, ATAC_SAMPLEID (or rna_, atac_, Rna_, etc.)
     
     Returns:
     --------
-    Tuple[str, str]: (sample_id, modality)
+    Tuple[str, str, str]: (sample_id_normalized, modality, original_sample_name)
+        - sample_id_normalized: lowercase version for matching
+        - modality: 'RNA' or 'ATAC' (uppercase)
+        - original_sample_name: preserved original case
     """
     sample_name = str(sample_name)
+    sample_name_lower = sample_name.lower()
     
     # Check suffix format first (more common)
-    if sample_name.endswith('_RNA'):
-        return sample_name[:-4], 'RNA'
-    elif sample_name.endswith('_ATAC'):
-        return sample_name[:-5], 'ATAC'
+    if sample_name_lower.endswith('_rna'):
+        sample_id = sample_name[:-4]
+        return sample_id.lower(), 'RNA', sample_name
+    elif sample_name_lower.endswith('_atac'):
+        sample_id = sample_name[:-5]
+        return sample_id.lower(), 'ATAC', sample_name
     # Check prefix format
-    elif sample_name.startswith('RNA_'):
-        return sample_name[4:], 'RNA'
-    elif sample_name.startswith('ATAC_'):
-        return sample_name[5:], 'ATAC'
+    elif sample_name_lower.startswith('rna_'):
+        sample_id = sample_name[4:]
+        return sample_id.lower(), 'RNA', sample_name
+    elif sample_name_lower.startswith('atac_'):
+        sample_id = sample_name[5:]
+        return sample_id.lower(), 'ATAC', sample_name
     else:
         # Return original name with unknown modality
-        return sample_name, 'unknown'
+        return sample_name.lower(), 'unknown', sample_name
 
 
 def parse_sample_names(sample_names: np.ndarray) -> pd.DataFrame:
     """
-    Parse sample names to extract sample_id and modality.
+    Parse sample names to extract sample_id and modality (case insensitive).
     
     Parameters:
     -----------
@@ -180,14 +189,17 @@ def parse_sample_names(sample_names: np.ndarray) -> pd.DataFrame:
         
     Returns:
     --------
-    pd.DataFrame with columns: sample, sample_id, modality
+    pd.DataFrame with columns: sample, sample_id_norm, modality
+        - sample: original sample name (index)
+        - sample_id_norm: normalized (lowercase) sample_id for matching
+        - modality: 'RNA' or 'ATAC'
     """
     records = []
     for name in sample_names:
-        sample_id, modality = infer_modality_from_name(name)
+        sample_id_norm, modality, original_name = infer_modality_from_name(name)
         records.append({
-            'sample': name,
-            'sample_id': sample_id,
+            'sample': original_name,
+            'sample_id_norm': sample_id_norm,
             'modality': modality,
         })
     
@@ -205,7 +217,7 @@ def read_metadata(meta_csv: str) -> pd.DataFrame:
     md = pd.read_csv(meta_csv, index_col=0)
     md.columns = [c.lower() for c in md.columns]
     
-    # Only require tissue column - modality will be inferred
+    # Only require disease_state column - modality will be inferred
     if 'disease_state' not in md.columns:
         raise ValueError("Metadata must contain 'disease_state' column")
     
@@ -219,7 +231,6 @@ def read_embedding(embedding_csv: str) -> pd.DataFrame:
         raise ValueError("Embedding file must have ≥1 dimension columns.")
     return df
 
-
 def align_data(
     md: pd.DataFrame, 
     emb: pd.DataFrame, 
@@ -228,29 +239,135 @@ def align_data(
     """
     Align metadata, embedding, and sample info by sample index.
     
+    Metadata samples don't have modality suffix (e.g., 'MA10_heart')
+    Embedding/sample_info samples have modality suffix (e.g., 'MA10_heart_RNA', 'MA10_heart_ATAC')
+    
+    We match metadata samples to sample_info's sample_id_norm column.
+    
     Returns:
     --------
     Tuple of aligned (metadata, embedding, sample_info) DataFrames
     """
-    # Find common samples across all three
-    common = md.index.intersection(emb.index).intersection(sample_info.index)
+    print("\n" + "="*60)
+    print("DEBUG: align_data() function")
+    print("="*60)
     
-    if len(common) == 0:
+    # Print sizes
+    print(f"\n1. Input sizes:")
+    print(f"   - Metadata: {len(md)} samples")
+    print(f"   - Embedding: {len(emb)} samples")
+    print(f"   - Sample info: {len(sample_info)} samples")
+    
+    # Print sample examples
+    print(f"\n2. Sample name examples (first 5):")
+    print(f"   - Metadata index: {list(md.index[:5])}")
+    print(f"   - Embedding index: {list(emb.index[:5])}")
+    print(f"   - Sample info index: {list(sample_info.index[:5])}")
+    print(f"   - Sample info sample_id_norm: {list(sample_info['sample_id_norm'][:5])}")
+    
+    # Check for duplicates
+    print(f"\n3. Checking for duplicate indices:")
+    print(f"   - Metadata duplicates: {md.index.duplicated().sum()}")
+    if md.index.duplicated().sum() > 0:
+        print(f"     Duplicate samples in metadata: {list(md.index[md.index.duplicated()])}")
+    print(f"   - Embedding duplicates: {emb.index.duplicated().sum()}")
+    print(f"   - Sample info duplicates: {sample_info.index.duplicated().sum()}")
+    
+    # Create mapping from metadata sample name to embedding/sample_info sample names
+    print(f"\n4. Creating sample mapping:")
+    
+    # Normalize metadata index for case-insensitive matching
+    md_index_lower = md.index.str.lower()
+    
+    # Find which embedding/sample_info samples correspond to each metadata sample
+    # by matching metadata index to sample_id_norm
+    matched_embedding_samples = []
+    matched_metadata_samples = []
+    
+    for emb_sample in sample_info.index:
+        sample_id_norm = sample_info.loc[emb_sample, 'sample_id_norm']
+        
+        # Try to find this sample_id_norm in metadata index (case insensitive)
+        matching_md = md_index_lower == sample_id_norm
+        
+        if matching_md.any():
+            # Found a match
+            md_sample = md.index[matching_md][0]  # Get the original case version
+            matched_embedding_samples.append(emb_sample)
+            matched_metadata_samples.append(md_sample)
+    
+    print(f"   - Found {len(matched_embedding_samples)} embedding samples with matching metadata")
+    print(f"   - Matched {len(set(matched_metadata_samples))} unique metadata samples")
+    
+    if len(matched_embedding_samples) == 0:
+        print("\n" + "="*60)
+        print("ERROR DIAGNOSIS:")
+        print("="*60)
+        print("No matching samples found!")
+        print("\nMetadata samples (first 10):")
+        print(f"  Original: {list(md.index[:10])}")
+        print(f"  Lowercase: {list(md_index_lower[:10])}")
+        print("\nEmbedding sample_id_norm (first 10):")
+        print(f"  {list(sample_info['sample_id_norm'][:10])}")
+        print("\nPossible issues:")
+        print("1. Metadata sample names don't match the base part of embedding sample names")
+        print("2. Sample naming convention differs between metadata and embedding")
+        print("="*60 + "\n")
+        
         raise ValueError("No overlapping sample IDs between metadata, embedding, and sample info.")
     
-    if len(common) < len(md):
-        print(f"Note: dropping {len(md) - len(common)} metadata rows without embedding.", file=sys.stderr)
-    if len(common) < len(emb):
-        print(f"Note: dropping {len(emb) - len(common)} embedding rows without metadata.", file=sys.stderr)
+    # Show some examples of matches
+    print(f"\n5. Example matches (first 5):")
+    for i in range(min(5, len(matched_embedding_samples))):
+        print(f"   Metadata: {matched_metadata_samples[i]} → Embedding: {matched_embedding_samples[i]}")
     
-    # Sort to ensure consistent ordering
-    common_sorted = sorted(common)
-    return (
-        md.loc[common_sorted].copy(),
-        emb.loc[common_sorted].copy(),
-        sample_info.loc[common_sorted].copy()
-    )
-
+    # Check if embedding samples are also in the embedding dataframe
+    common_emb_samples = [s for s in matched_embedding_samples if s in emb.index]
+    
+    if len(common_emb_samples) < len(matched_embedding_samples):
+        print(f"\n   WARNING: {len(matched_embedding_samples) - len(common_emb_samples)} matched samples not found in embedding!")
+    
+    print(f"\n6. Final intersection:")
+    print(f"   - Embedding samples that match metadata: {len(common_emb_samples)}")
+    
+    # Create aligned dataframes
+    # For metadata: we need to expand it to match each embedding sample
+    # For example, MA10_heart in metadata should match both MA10_heart_RNA and MA10_heart_ATAC
+    
+    aligned_md_list = []
+    aligned_emb_list = []
+    aligned_info_list = []
+    
+    for emb_sample in common_emb_samples:
+        sample_id_norm = sample_info.loc[emb_sample, 'sample_id_norm']
+        matching_md = md_index_lower == sample_id_norm
+        
+        if matching_md.any():
+            md_sample = md.index[matching_md][0]
+            aligned_md_list.append(md_sample)
+            aligned_emb_list.append(emb_sample)
+            aligned_info_list.append(emb_sample)
+    
+    # Create aligned dataframes
+    md_aligned = md.loc[aligned_md_list].copy()
+    md_aligned.index = aligned_emb_list  # Use embedding sample names as index
+    
+    emb_aligned = emb.loc[aligned_emb_list].copy()
+    sample_info_aligned = sample_info.loc[aligned_info_list].copy()
+    
+    print(f"\n7. Aligned datasets:")
+    print(f"   - Total aligned samples: {len(md_aligned)}")
+    print(f"   - Unique metadata samples used: {len(set(aligned_md_list))}")
+    print(f"   - First 5 aligned sample names: {list(md_aligned.index[:5])}")
+    
+    # Summary
+    unique_md_used = len(set(aligned_md_list))
+    if unique_md_used < len(md):
+        print(f"\nNote: {len(md) - unique_md_used} metadata samples have no corresponding embedding data")
+    
+    print("="*60 + "\n")
+    
+    return md_aligned, emb_aligned, sample_info_aligned
 
 # =============================================================================
 # Metric 1: Paired Sample Distance
@@ -262,15 +379,15 @@ def compute_paired_distance(
     metric: str = "euclidean",
 ) -> Dict[str, Any]:
     """
-    Compute average distance between paired samples (same sample_id, different modality).
+    Compute average distance between paired samples (same sample_id_norm, different modality).
     
     Lower distance = better pairing/alignment of modalities.
     """
-    # Build sample_id -> {modality: row_idx} mapping
+    # Build sample_id_norm -> {modality: row_idx} mapping
     sample_id_to_idx: Dict[str, Dict[str, int]] = {}
     
     for i, (idx, row) in enumerate(sample_info.iterrows()):
-        sid = str(row['sample_id'])
+        sid = str(row['sample_id_norm'])  # Use normalized ID
         mod = str(row['modality'])
         if sid not in sample_id_to_idx:
             sample_id_to_idx[sid] = {}
@@ -295,7 +412,7 @@ def compute_paired_distance(
             paired_distances.append(dist)
             paired_indices.append((idx1, idx2))
             paired_info.append({
-                "sample_id": sid,
+                "sample_id_norm": sid,
                 "modality_1": modalities[0],
                 "modality_2": modalities[1],
                 "distance": dist,
@@ -415,89 +532,89 @@ def compute_modality_mixing(
 
 
 # =============================================================================
-# Metric 3: Tissue Preservation
+# Metric 3: Disease State Preservation
 # =============================================================================
 
-def compute_tissue_preservation(
+def compute_disease_state_preservation(
     md: pd.DataFrame,
     emb: np.ndarray,
-    tissue_col: str = "disease_state",
+    disease_state_col: str = "disease_state",
     metric: str = "euclidean",
 ) -> Dict[str, Any]:
     """
-    Compute tissue preservation: ratio of between-tissue to within-tissue distance.
+    Compute disease state preservation: ratio of between-disease_state to within-disease_state distance.
     
-    Higher ratio = better tissue separation (biological signal preserved).
+    Higher ratio = better disease state separation (biological signal preserved).
     """
-    tissues_str = md[tissue_col].astype(str).values
-    unique_tissues, tissue_labels = np.unique(tissues_str, return_inverse=True)
-    n_tissues = len(unique_tissues)
+    disease_states_str = md[disease_state_col].astype(str).values
+    unique_disease_states, disease_state_labels = np.unique(disease_states_str, return_inverse=True)
+    n_disease_states = len(unique_disease_states)
     
-    if n_tissues < 2:
+    if n_disease_states < 2:
         return {
-            "n_tissues": n_tissues,
-            "tissues": list(unique_tissues),
-            "mean_within_tissue_distance": np.nan,
-            "mean_between_tissue_distance": np.nan,
-            "tissue_preservation_score": np.nan,
-            "tissue_details": {},
-            "tissue_labels": tissue_labels,
+            "n_disease_states": n_disease_states,
+            "disease_states": list(unique_disease_states),
+            "mean_within_disease_state_distance": np.nan,
+            "mean_between_disease_state_distance": np.nan,
+            "disease_state_preservation_score": np.nan,
+            "disease_state_details": {},
+            "disease_state_labels": disease_state_labels,
         }
     
     # Compute pairwise distance matrix
     dist_matrix = squareform(pdist(emb, metric=metric))
     
-    # Compute within-tissue and between-tissue distances
+    # Compute within-disease_state and between-disease_state distances
     within_distances = []
     between_distances = []
-    tissue_details = {}
+    disease_state_details = {}
     
-    for t_idx, tissue in enumerate(unique_tissues):
-        tissue_mask = tissue_labels == t_idx
-        tissue_indices = np.where(tissue_mask)[0]
-        other_indices = np.where(~tissue_mask)[0]
+    for ds_idx, disease_state in enumerate(unique_disease_states):
+        disease_state_mask = disease_state_labels == ds_idx
+        disease_state_indices = np.where(disease_state_mask)[0]
+        other_indices = np.where(~disease_state_mask)[0]
         
-        # Within-tissue distances (upper triangle only to avoid double counting)
-        if len(tissue_indices) > 1:
+        # Within-disease_state distances (upper triangle only to avoid double counting)
+        if len(disease_state_indices) > 1:
             within_dists = []
-            for i in range(len(tissue_indices)):
-                for j in range(i + 1, len(tissue_indices)):
-                    within_dists.append(dist_matrix[tissue_indices[i], tissue_indices[j]])
+            for i in range(len(disease_state_indices)):
+                for j in range(i + 1, len(disease_state_indices)):
+                    within_dists.append(dist_matrix[disease_state_indices[i], disease_state_indices[j]])
             within_distances.extend(within_dists)
-            tissue_details[tissue] = {
-                "n_samples": len(tissue_indices),
+            disease_state_details[disease_state] = {
+                "n_samples": len(disease_state_indices),
                 "mean_within_distance": float(np.mean(within_dists)) if within_dists else np.nan,
             }
         else:
-            tissue_details[tissue] = {
-                "n_samples": len(tissue_indices),
+            disease_state_details[disease_state] = {
+                "n_samples": len(disease_state_indices),
                 "mean_within_distance": np.nan,
             }
         
-        # Between-tissue distances
-        if len(tissue_indices) > 0 and len(other_indices) > 0:
-            between_dists = dist_matrix[np.ix_(tissue_indices, other_indices)].flatten()
+        # Between-disease_state distances
+        if len(disease_state_indices) > 0 and len(other_indices) > 0:
+            between_dists = dist_matrix[np.ix_(disease_state_indices, other_indices)].flatten()
             between_distances.extend(between_dists.tolist())
     
     mean_within = float(np.mean(within_distances)) if within_distances else np.nan
     mean_between = float(np.mean(between_distances)) if between_distances else np.nan
     
-    # Tissue preservation score: higher = better separation
+    # Disease state preservation score: higher = better separation
     if mean_within > 0 and not np.isnan(mean_within):
         preservation_score = mean_between / mean_within
     else:
         preservation_score = np.nan
     
     return {
-        "n_tissues": n_tissues,
-        "tissues": list(unique_tissues),
-        "mean_within_tissue_distance": mean_within,
-        "std_within_tissue_distance": float(np.std(within_distances, ddof=1)) if len(within_distances) > 1 else 0.0,
-        "mean_between_tissue_distance": mean_between,
-        "std_between_tissue_distance": float(np.std(between_distances, ddof=1)) if len(between_distances) > 1 else 0.0,
-        "tissue_preservation_score": float(preservation_score) if not np.isnan(preservation_score) else np.nan,
-        "tissue_details": tissue_details,
-        "tissue_labels": tissue_labels,
+        "n_disease_states": n_disease_states,
+        "disease_states": list(unique_disease_states),
+        "mean_within_disease_state_distance": mean_within,
+        "std_within_disease_state_distance": float(np.std(within_distances, ddof=1)) if len(within_distances) > 1 else 0.0,
+        "mean_between_disease_state_distance": mean_between,
+        "std_between_disease_state_distance": float(np.std(between_distances, ddof=1)) if len(between_distances) > 1 else 0.0,
+        "disease_state_preservation_score": float(preservation_score) if not np.isnan(preservation_score) else np.nan,
+        "disease_state_details": disease_state_details,
+        "disease_state_labels": disease_state_labels,
     }
 
 
@@ -628,27 +745,27 @@ def permutation_test_modality_mixing(
     }
 
 
-def permutation_test_tissue_preservation(
+def permutation_test_disease_state_preservation(
     md: pd.DataFrame,
     emb: np.ndarray,
     observed_score: float,
-    tissue_col: str = "disease_state",
+    disease_state_col: str = "disease_state",
     n_permutations: int = 1000,
     metric: str = "euclidean",
     random_seed: int = 42,
 ) -> Dict[str, Any]:
     """
-    Permutation test for tissue preservation score.
+    Permutation test for disease state preservation score.
     
-    Null hypothesis: Tissue labels are random (no association with embedding).
-    Shuffle tissue labels.
+    Null hypothesis: Disease state labels are random (no association with embedding).
+    Shuffle disease state labels.
     """
     rng = np.random.default_rng(random_seed)
-    tissues = md[tissue_col].values.copy()
-    unique_tissues, tissue_labels = np.unique(tissues, return_inverse=True)
-    n_tissues = len(unique_tissues)
+    disease_states = md[disease_state_col].values.copy()
+    unique_disease_states, disease_state_labels = np.unique(disease_states, return_inverse=True)
+    n_disease_states = len(unique_disease_states)
     
-    if n_tissues < 2 or np.isnan(observed_score):
+    if n_disease_states < 2 or np.isnan(observed_score):
         return {
             "p_value": np.nan,
             "null_distribution": [],
@@ -660,25 +777,25 @@ def permutation_test_tissue_preservation(
     null_scores = []
     
     for _ in range(n_permutations):
-        # Shuffle tissue labels
-        perm_labels = rng.permutation(tissue_labels)
+        # Shuffle disease state labels
+        perm_labels = rng.permutation(disease_state_labels)
         
         # Compute within and between distances
         within_dists = []
         between_dists = []
         
-        for t_idx in range(n_tissues):
-            tissue_mask = perm_labels == t_idx
-            tissue_indices = np.where(tissue_mask)[0]
-            other_indices = np.where(~tissue_mask)[0]
+        for ds_idx in range(n_disease_states):
+            disease_state_mask = perm_labels == ds_idx
+            disease_state_indices = np.where(disease_state_mask)[0]
+            other_indices = np.where(~disease_state_mask)[0]
             
-            if len(tissue_indices) > 1:
-                for i in range(len(tissue_indices)):
-                    for j in range(i + 1, len(tissue_indices)):
-                        within_dists.append(dist_matrix[tissue_indices[i], tissue_indices[j]])
+            if len(disease_state_indices) > 1:
+                for i in range(len(disease_state_indices)):
+                    for j in range(i + 1, len(disease_state_indices)):
+                        within_dists.append(dist_matrix[disease_state_indices[i], disease_state_indices[j]])
             
-            if len(tissue_indices) > 0 and len(other_indices) > 0:
-                between_dists.extend(dist_matrix[np.ix_(tissue_indices, other_indices)].flatten())
+            if len(disease_state_indices) > 0 and len(other_indices) > 0:
+                between_dists.extend(dist_matrix[np.ix_(disease_state_indices, other_indices)].flatten())
         
         mean_within = np.mean(within_dists) if within_dists else np.nan
         mean_between = np.mean(between_dists) if between_dists else np.nan
@@ -795,39 +912,39 @@ def plot_embedding_by_modality(
     plt.close(fig)
 
 
-def plot_embedding_by_tissue(
+def plot_embedding_by_disease_state(
     emb_2d: np.ndarray,
     md: pd.DataFrame,
     output_path: str,
     config: BenchmarkConfig,
-    tissue_col: str = "disease_state",
+    disease_state_col: str = "disease_state",
     method_name: str = "",
-    tissue_results: Optional[Dict] = None,
+    disease_state_results: Optional[Dict] = None,
 ) -> plt.Figure:
-    """Plot 2D embedding colored by tissue with enhanced styling."""
+    """Plot 2D embedding colored by disease state with enhanced styling."""
     fig, ax = plt.subplots(figsize=config.figsize)
     
     # Set background
     ax.set_facecolor('#fafafa')
     fig.patch.set_facecolor('white')
     
-    tissues = md[tissue_col].values
-    unique_tissues = sorted(np.unique(tissues))
-    n_tissues = len(unique_tissues)
+    disease_states = md[disease_state_col].values
+    unique_disease_states = sorted(np.unique(disease_states))
+    n_disease_states = len(unique_disease_states)
     
     # Get colors
-    colors = get_tissue_colors(n_tissues)
-    color_map = {t: colors[i] for i, t in enumerate(unique_tissues)}
+    colors = get_disease_state_colors(n_disease_states)
+    color_map = {ds: colors[i] for i, ds in enumerate(unique_disease_states)}
     
-    # Plot each tissue
-    for tissue in unique_tissues:
-        mask = tissues == tissue
+    # Plot each disease state
+    for disease_state in unique_disease_states:
+        mask = disease_states == disease_state
         ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
             s=config.point_size,
-            c=[color_map[tissue]],
+            c=[color_map[disease_state]],
             alpha=config.point_alpha,
-            label=f'{tissue}',
+            label=f'{disease_state}',
             edgecolors='white',
             linewidths=0.8,
             zorder=3,
@@ -836,12 +953,12 @@ def plot_embedding_by_tissue(
     # Styling
     ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
     ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Embedding by Tissue', fontsize=16, fontweight='bold', pad=20)
+    ax.set_title('Embedding by Disease State', fontsize=16, fontweight='bold', pad=20)
     
     # Legend - always inside the plot
-    ncol = 1 if n_tissues <= 10 else 2
+    ncol = 1 if n_disease_states <= 10 else 2
     legend = ax.legend(
-        title='Tissue', 
+        title='Disease State', 
         loc='best',
         frameon=True,
         fancybox=True,
@@ -884,11 +1001,11 @@ def plot_paired_connections(
     ax.set_facecolor('#fafafa')
     fig.patch.set_facecolor('white')
     
-    # Build sample_id -> {modality: row_idx} mapping
+    # Build sample_id_norm -> {modality: row_idx} mapping
     sample_id_to_idx: Dict[str, Dict[str, int]] = {}
     
     for i, (idx, row) in enumerate(sample_info.iterrows()):
-        sid = str(row['sample_id'])
+        sid = str(row['sample_id_norm'])  # Use normalized ID
         mod = str(row['modality'])
         if sid not in sample_id_to_idx:
             sample_id_to_idx[sid] = {}
@@ -984,7 +1101,7 @@ def create_all_visualizations(
     config: BenchmarkConfig,
     paired_results: Optional[Dict] = None,
     mixing_results: Optional[Dict] = None,
-    tissue_results: Optional[Dict] = None,
+    disease_state_results: Optional[Dict] = None,
 ) -> Dict[str, str]:
     """Create all three visualization plots for a method."""
     # Reduce to 2D
@@ -1002,12 +1119,12 @@ def create_all_visualizations(
         mixing_results=mixing_results,
     )
     
-    # Plot 2: By tissue
-    tissue_path = viz_dir / f"{method_name}_by_tissue.png"
-    plot_embedding_by_tissue(
-        emb_2d, md, str(tissue_path), config,
+    # Plot 2: By disease state
+    disease_state_path = viz_dir / f"{method_name}_by_disease_state.png"
+    plot_embedding_by_disease_state(
+        emb_2d, md, str(disease_state_path), config,
         method_name=method_name,
-        tissue_results=tissue_results,
+        disease_state_results=disease_state_results,
     )
     
     # Plot 3: Paired connections
@@ -1020,7 +1137,7 @@ def create_all_visualizations(
     
     return {
         "modality_plot": str(modality_path),
-        "tissue_plot": str(tissue_path),
+        "disease_state_plot": str(disease_state_path),
         "paired_plot": str(paired_path),
     }
 
@@ -1034,7 +1151,7 @@ def evaluate_multimodal_integration(
     embedding_csv: str,
     method_name: str,
     general_outdir: str,
-    tissue_col: str = "disease_state",
+    disease_state_col: str = "disease_state",
     k_neighbors: int = 15,
     distance_metric: str = "euclidean",
     include_self: bool = False,
@@ -1049,15 +1166,15 @@ def evaluate_multimodal_integration(
     Parameters
     ----------
     meta_csv : str
-        Path to metadata CSV with columns: tissue (modality inferred from sample names)
+        Path to metadata CSV with columns: disease_state (modality inferred from sample names)
     embedding_csv : str
         Path to embedding CSV (samples × dimensions), indexed by sample name
     method_name : str
         Name of the integration method being evaluated
     general_outdir : str
         General output directory (method will have its own subfolder)
-    tissue_col : str
-        Column name for tissue type
+    disease_state_col : str
+        Column name for disease state type
     k_neighbors : int
         Number of neighbors for iLISI computation
     distance_metric : str
@@ -1105,8 +1222,8 @@ def evaluate_multimodal_integration(
     print(f"Loading embedding from: {embedding_csv}")
     emb_df = read_embedding(embedding_csv)
     
-    # Parse sample names to extract modality
-    print("Inferring modality from sample names...")
+    # Parse sample names to extract modality (case insensitive)
+    print("Inferring modality from sample names (case insensitive)...")
     sample_info = parse_sample_names(emb_df.index.values)
     
     # Check modality distribution
@@ -1136,10 +1253,10 @@ def evaluate_multimodal_integration(
         include_self=include_self,
     )
     
-    print("\n3. Computing tissue preservation...")
-    tissue_results = compute_tissue_preservation(
+    print("\n3. Computing disease state preservation...")
+    disease_state_results = compute_disease_state_preservation(
         md_aligned, emb_array,
-        tissue_col=tissue_col,
+        disease_state_col=disease_state_col,
         metric=distance_metric,
     )
     
@@ -1166,11 +1283,11 @@ def evaluate_multimodal_integration(
         random_seed=random_seed,
     )
     
-    print("   - Tissue preservation permutation test...")
-    tissue_perm = permutation_test_tissue_preservation(
+    print("   - Disease state preservation permutation test...")
+    disease_state_perm = permutation_test_disease_state_preservation(
         md_aligned, emb_array,
-        tissue_results['tissue_preservation_score'],
-        tissue_col=tissue_col,
+        disease_state_results['disease_state_preservation_score'],
+        disease_state_col=disease_state_col,
         n_permutations=n_permutations,
         metric=distance_metric,
         random_seed=random_seed,
@@ -1185,18 +1302,18 @@ def evaluate_multimodal_integration(
             method_outdir, method_name, config,
             paired_results=paired_results,
             mixing_results=mixing_results,
-            tissue_results=tissue_results,
+            disease_state_results=disease_state_results,
         )
         print(f"   - Modality plot: {viz_paths['modality_plot']}")
-        print(f"   - Tissue plot: {viz_paths['tissue_plot']}")
+        print(f"   - Disease state plot: {viz_paths['disease_state_plot']}")
         print(f"   - Paired connections plot: {viz_paths['paired_plot']}")
     
     # Save per-sample metrics
     per_sample_df = pd.DataFrame({
         "sample": md_aligned.index,
-        "sample_id": sample_info_aligned['sample_id'].values,
+        "sample_id_norm": sample_info_aligned['sample_id_norm'].values,
         "modality": sample_info_aligned['modality'].values,
-        "disease_state": md_aligned[tissue_col].values,
+        "disease_state": md_aligned[disease_state_col].values,
         "iLISI": mixing_results["iLISI_per_sample"],
         "ASW_modality": mixing_results["ASW_per_sample"],
     }).set_index("sample")
@@ -1211,11 +1328,11 @@ def evaluate_multimodal_integration(
         paired_path = method_outdir / "paired_sample_distances.csv"
         paired_df.to_csv(paired_path, index=False)
     
-    # Save tissue details
-    tissue_details_df = pd.DataFrame(tissue_results["tissue_details"]).T
-    tissue_details_df.index.name = "tissue"
-    tissue_details_path = method_outdir / "tissue_details.csv"
-    tissue_details_df.to_csv(tissue_details_path)
+    # Save disease state details
+    disease_state_details_df = pd.DataFrame(disease_state_results["disease_state_details"]).T
+    disease_state_details_df.index.name = "disease_state"
+    disease_state_details_path = method_outdir / "disease_state_details.csv"
+    disease_state_details_df.to_csv(disease_state_details_path)
     
     # Generate summary
     summary_lines = [
@@ -1237,9 +1354,9 @@ def evaluate_multimodal_integration(
         f"   Value: {mixing_results['ASW_modality_overall']:.4f}",
         f"   P-value: {mixing_perm['ASW_p_value']:.2e}",
         "",
-        "3. Tissue Preservation Score (higher = better)",
-        f"   Value: {tissue_results['tissue_preservation_score']:.4f}",
-        f"   P-value: {tissue_perm['p_value']:.2e}",
+        "3. Disease State Preservation Score (higher = better)",
+        f"   Value: {disease_state_results['disease_state_preservation_score']:.4f}",
+        f"   P-value: {disease_state_perm['p_value']:.2e}",
         "",
         "--- ADDITIONAL DETAILS ---",
         "",
@@ -1254,11 +1371,11 @@ def evaluate_multimodal_integration(
         f"  iLISI normalized: {mixing_results['iLISI_norm_mean']:.4f}",
         f"  iLISI P-value:    {mixing_perm['iLISI_p_value']:.2e}",
         "",
-        "Tissue Preservation:",
-        f"  Number of tissues: {tissue_results['n_tissues']}",
-        f"  Tissues: {tissue_results['tissues']}",
-        f"  Mean within-tissue distance:  {tissue_results['mean_within_tissue_distance']:.4f}",
-        f"  Mean between-tissue distance: {tissue_results['mean_between_tissue_distance']:.4f}",
+        "Disease State Preservation:",
+        f"  Number of disease states: {disease_state_results['n_disease_states']}",
+        f"  Disease states: {disease_state_results['disease_states']}",
+        f"  Mean within-disease_state distance:  {disease_state_results['mean_within_disease_state_distance']:.4f}",
+        f"  Mean between-disease_state distance: {disease_state_results['mean_between_disease_state_distance']:.4f}",
         "",
         "=" * 60,
         f"Results saved to: {method_outdir}",
@@ -1287,20 +1404,20 @@ def evaluate_multimodal_integration(
         "iLISI_pvalue": mixing_perm["iLISI_p_value"],
         "ASW_modality_overall": mixing_results["ASW_modality_overall"],
         "ASW_pvalue": mixing_perm["ASW_p_value"],
-        "tissue_preservation_score": tissue_results["tissue_preservation_score"],
-        "tissue_preservation_pvalue": tissue_perm["p_value"],
-        "mean_within_tissue_distance": tissue_results["mean_within_tissue_distance"],
-        "mean_between_tissue_distance": tissue_results["mean_between_tissue_distance"],
+        "disease_state_preservation_score": disease_state_results["disease_state_preservation_score"],
+        "disease_state_preservation_pvalue": disease_state_perm["p_value"],
+        "mean_within_disease_state_distance": disease_state_results["mean_within_disease_state_distance"],
+        "mean_between_disease_state_distance": disease_state_results["mean_between_disease_state_distance"],
         # Metadata
         "n_modalities": mixing_results["n_modalities"],
         "modalities": mixing_results["modalities"],
-        "n_tissues": tissue_results["n_tissues"],
-        "tissues": tissue_results["tissues"],
+        "n_disease_states": disease_state_results["n_disease_states"],
+        "disease_states": disease_state_results["disease_states"],
         # File paths
         "method_outdir": str(method_outdir),
         "per_sample_path": str(per_sample_path),
         "paired_path": str(paired_path) if paired_path else None,
-        "tissue_details_path": str(tissue_details_path),
+        "disease_state_details_path": str(disease_state_details_path),
         "summary_path": str(summary_path),
         "visualization_paths": viz_paths,
     }
@@ -1338,10 +1455,10 @@ def save_to_summary_csv(
         "iLISI_pvalue": results.get("iLISI_pvalue"),
         "ASW_modality": results.get("ASW_modality_overall"),
         "ASW_pvalue": results.get("ASW_pvalue"),
-        "tissue_preservation_score": results.get("tissue_preservation_score"),
-        "tissue_preservation_pvalue": results.get("tissue_preservation_pvalue"),
-        "mean_within_tissue_distance": results.get("mean_within_tissue_distance"),
-        "mean_between_tissue_distance": results.get("mean_between_tissue_distance"),
+        "disease_state_preservation_score": results.get("disease_state_preservation_score"),
+        "disease_state_preservation_pvalue": results.get("disease_state_preservation_pvalue"),
+        "mean_within_disease_state_distance": results.get("mean_within_disease_state_distance"),
+        "mean_between_disease_state_distance": results.get("mean_between_disease_state_distance"),
     }
     
     # Load existing or create new
