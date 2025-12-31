@@ -2,1164 +2,1014 @@
 ============================================================
 Evaluating method: SD_expression
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_expression_embedding.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'ATAC': np.int64(22), 'RNA': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_expression_embedding.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info sample_id_norm: ['ma10_heart', 'ma10_heart', 'ma11_heart', 'ma11_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA10_heart → Embedding: MA10_heart_ATAC
-   Metadata: MA10_heart → Embedding: MA10_heart_RNA
-   Metadata: MA11_heart → Embedding: MA11_heart_ATAC
-   Metadata: MA11_heart → Embedding: MA11_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_ATAC
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9442
+  Pseudotime-age correlation: 0.9442
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_expression/visualizations/SD_expression_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_expression/visualizations/SD_expression_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_expression/visualizations/SD_expression_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: SD_expression
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 22.0773
-   P-value: 9.57e-01
+   Value: 12.8480
+   P-value: 0.00e+00
 
 2. ASW Modality (higher = better)
-   Value: 0.4237
-   P-value: 1.00e+00
+   Value: 0.5025
+   P-value: 5.23e-01
 
-3. Disease State Preservation Score (higher = better)
-   Value: 0.9840
-   P-value: 6.19e-01
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9442
+   P-value: 0.00e+00
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  10.1663
-  Median paired distance: 24.9418
+  Number of pairs: 12
+  Std paired distance: 8.8650
+  Median paired distance: 9.7791
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.5071
-  iLISI normalized: 0.7536
-  iLISI P-value:    1.00e+00
+  iLISI mean: 1.3333
+  iLISI normalized: 0.6667
+  iLISI P-value: 9.42e-01
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  20.8417
-  Mean between-disease_state distance: 20.5080
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9442
+  Pseudotime-age correlation: 0.9442
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_expression
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_expression
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'SD_expression'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'SD_expression'
 
 ============================================================
 Evaluating method: SD_proportion
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_proportion_embedding.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'ATAC': np.int64(22), 'RNA': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_proportion_embedding.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['ma10_heart_atac', 'ma10_heart_rna', 'ma11_heart_atac', 'ma11_heart_rna', 'ma13_heart_atac']
-   - Sample info index: ['ma10_heart_atac', 'ma10_heart_rna', 'ma11_heart_atac', 'ma11_heart_rna', 'ma13_heart_atac']
-   - Sample info sample_id_norm: ['ma10_heart', 'ma10_heart', 'ma11_heart', 'ma11_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_fr_atac', '10w_fr_rna', '11w2d_fr_atac', '11w2d_fr_rna', '12w3d_fr_atac']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA10_heart → Embedding: ma10_heart_atac
-   Metadata: MA10_heart → Embedding: ma10_heart_rna
-   Metadata: MA11_heart → Embedding: ma11_heart_atac
-   Metadata: MA11_heart → Embedding: ma11_heart_rna
-   Metadata: MA13_heart → Embedding: ma13_heart_atac
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['ma10_heart_atac', 'ma10_heart_rna', 'ma11_heart_atac', 'ma11_heart_rna', 'ma13_heart_atac']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_fr_atac', '10w_fr_rna', '11w2d_fr_atac', '11w2d_fr_rna', '12w3d_fr_atac']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9775
+  Pseudotime-age correlation: -0.9764
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_proportion/visualizations/SD_proportion_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_proportion/visualizations/SD_proportion_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_proportion/visualizations/SD_proportion_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: SD_proportion
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 0.2616
+   Value: 0.0759
    P-value: 0.00e+00
 
 2. ASW Modality (higher = better)
-   Value: 0.4863
-   P-value: 9.48e-01
+   Value: 0.5319
+   P-value: 5.00e-03
 
-3. Disease State Preservation Score (higher = better)
-   Value: 1.2900
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9775
    P-value: 0.00e+00
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  0.1338
-  Median paired distance: 0.2213
+  Number of pairs: 12
+  Std paired distance: 0.0476
+  Median paired distance: 0.0603
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.7477
-  iLISI normalized: 0.8739
-  iLISI P-value:    9.86e-01
+  iLISI mean: 1.6250
+  iLISI normalized: 0.8125
+  iLISI P-value: 2.44e-01
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  0.3790
-  Mean between-disease_state distance: 0.4890
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9775
+  Pseudotime-age correlation: -0.9764
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SD_proportion
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SD_proportion
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'SD_proportion'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'SD_proportion'
 
 ============================================================
 Evaluating method: pilot
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/pilot/wasserstein_distance_mds_10d.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'RNA': np.int64(22), 'ATAC': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pilot/wasserstein_distance_mds_10d.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info sample_id_norm: ['ma8_heart', 'ma9_heart', 'ma14_heart', 'ma6_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '23w1d_FR_RNA', '16w4d_FR_RNA']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA8_heart → Embedding: MA8_heart_RNA
-   Metadata: MA9_heart → Embedding: MA9_heart_RNA
-   Metadata: MA14_heart → Embedding: MA14_heart_RNA
-   Metadata: MA6_heart → Embedding: MA6_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_RNA
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.8717
+  Pseudotime-age correlation: -0.8574
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pilot/visualizations/pilot_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pilot/visualizations/pilot_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pilot/visualizations/pilot_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pilot/visualizations/pilot_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pilot/visualizations/pilot_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pilot/visualizations/pilot_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pilot/visualizations/pilot_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: pilot
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 0.7714
-   P-value: 1.00e+00
+   Value: 0.5890
+   P-value: 9.99e-01
 
 2. ASW Modality (higher = better)
-   Value: 0.0349
+   Value: 0.1211
    P-value: 1.00e+00
 
-3. Disease State Preservation Score (higher = better)
-   Value: 0.9501
-   P-value: 8.97e-01
+3. Trajectory CCA Score (higher = better)
+   Value: 0.8717
+   P-value: 0.00e+00
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  0.0547
-  Median paired distance: 0.7673
+  Number of pairs: 12
+  Std paired distance: 0.0676
+  Median paired distance: 0.5793
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
+  iLISI mean: 1.0000
   iLISI normalized: 0.5000
-  iLISI P-value:    1.00e+00
+  iLISI P-value: 1.00e+00
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  0.4354
-  Mean between-disease_state distance: 0.4136
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.8717
+  Pseudotime-age correlation: -0.8574
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pilot
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pilot
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'pilot'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'pilot'
 
 ============================================================
 Evaluating method: pseudobulk
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/pseudobulk/pseudobulk/pca_embeddings.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'ATAC': np.int64(22), 'RNA': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pseudobulk/pseudobulk/pca_embeddings.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info sample_id_norm: ['ma10_heart', 'ma10_heart', 'ma11_heart', 'ma11_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA10_heart → Embedding: MA10_heart_ATAC
-   Metadata: MA10_heart → Embedding: MA10_heart_RNA
-   Metadata: MA11_heart → Embedding: MA11_heart_ATAC
-   Metadata: MA11_heart → Embedding: MA11_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_ATAC
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.8349
+  Pseudotime-age correlation: 0.8334
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pseudobulk/visualizations/pseudobulk_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pseudobulk/visualizations/pseudobulk_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pseudobulk/visualizations/pseudobulk_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: pseudobulk
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 37.0629
-   P-value: 1.00e+00
+   Value: 33.0818
+   P-value: 9.99e-01
 
 2. ASW Modality (higher = better)
-   Value: 0.1628
+   Value: 0.1583
    P-value: 1.00e+00
 
-3. Disease State Preservation Score (higher = better)
-   Value: 0.9971
-   P-value: 4.05e-01
+3. Trajectory CCA Score (higher = better)
+   Value: 0.8349
+   P-value: 0.00e+00
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  4.4526
-  Median paired distance: 36.9987
+  Number of pairs: 12
+  Std paired distance: 3.2426
+  Median paired distance: 32.5832
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
+  iLISI mean: 1.0000
   iLISI normalized: 0.5000
-  iLISI P-value:    1.00e+00
+  iLISI P-value: 1.00e+00
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  25.1811
-  Mean between-disease_state distance: 25.1090
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.8349
+  Pseudotime-age correlation: 0.8334
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/pseudobulk
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/pseudobulk
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'pseudobulk'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'pseudobulk'
 
 ============================================================
 Evaluating method: QOT
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/QOT/44_qot_distance_matrix_mds_10d.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'ATAC': np.int64(22), 'RNA': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/QOT/24_qot_distance_matrix_mds_10d.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info sample_id_norm: ['ma10_heart', 'ma10_heart', 'ma11_heart', 'ma11_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA10_heart → Embedding: MA10_heart_ATAC
-   Metadata: MA10_heart → Embedding: MA10_heart_RNA
-   Metadata: MA11_heart → Embedding: MA11_heart_ATAC
-   Metadata: MA11_heart → Embedding: MA11_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_ATAC
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9006
+  Pseudotime-age correlation: -0.8872
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/QOT/visualizations/QOT_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/QOT/visualizations/QOT_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/QOT/visualizations/QOT_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/QOT/visualizations/QOT_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/QOT/visualizations/QOT_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/QOT/visualizations/QOT_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/QOT/visualizations/QOT_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: QOT
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 0.3495
+   Value: 0.2583
    P-value: 0.00e+00
 
 2. ASW Modality (higher = better)
-   Value: 0.5132
-   P-value: 1.84e-01
+   Value: 0.5280
+   P-value: 1.07e-01
 
-3. Disease State Preservation Score (higher = better)
-   Value: 0.9933
-   P-value: 4.38e-01
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9006
+   P-value: 0.00e+00
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  0.1580
-  Median paired distance: 0.3275
+  Number of pairs: 12
+  Std paired distance: 0.1150
+  Median paired distance: 0.2408
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.9348
-  iLISI normalized: 0.9674
-  iLISI P-value:    4.70e-01
+  iLISI mean: 1.6250
+  iLISI normalized: 0.8125
+  iLISI P-value: 2.84e-01
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  0.9216
-  Mean between-disease_state distance: 0.9155
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9006
+  Pseudotime-age correlation: -0.8872
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/QOT
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/QOT
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'QOT'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'QOT'
 
 ============================================================
 Evaluating method: GEDI
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/GEDI/gedi_sample_embedding.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'ATAC': np.int64(22), 'RNA': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/GEDI/gedi_sample_embedding.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-   - Sample info sample_id_norm: ['ma10_heart', 'ma10_heart', 'ma11_heart', 'ma11_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA10_heart → Embedding: MA10_heart_ATAC
-   Metadata: MA10_heart → Embedding: MA10_heart_RNA
-   Metadata: MA11_heart → Embedding: MA11_heart_ATAC
-   Metadata: MA11_heart → Embedding: MA11_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_ATAC
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.3925
+  Pseudotime-age correlation: 0.3698
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/GEDI/visualizations/GEDI_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/GEDI/visualizations/GEDI_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/GEDI/visualizations/GEDI_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/GEDI/visualizations/GEDI_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/GEDI/visualizations/GEDI_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/GEDI/visualizations/GEDI_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/GEDI/visualizations/GEDI_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: GEDI
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 3.7582
-   P-value: 1.00e+00
+   Value: 3.2161
+   P-value: 9.99e-01
 
 2. ASW Modality (higher = better)
-   Value: 0.2034
+   Value: 0.1972
    P-value: 1.00e+00
 
-3. Disease State Preservation Score (higher = better)
-   Value: 0.9802
-   P-value: 6.80e-01
+3. Trajectory CCA Score (higher = better)
+   Value: 0.3925
+   P-value: 1.64e-01
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  0.4843
-  Median paired distance: 3.8651
+  Number of pairs: 12
+  Std paired distance: 0.5459
+  Median paired distance: 3.1526
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
+  iLISI mean: 1.0000
   iLISI normalized: 0.5000
-  iLISI P-value:    1.00e+00
+  iLISI P-value: 1.00e+00
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  2.7448
-  Mean between-disease_state distance: 2.6904
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.3925
+  Pseudotime-age correlation: 0.3698
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/GEDI
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/GEDI
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'GEDI'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'GEDI'
 
 ============================================================
 Evaluating method: Gloscope
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/Gloscope/knn_divergence_mds_10d.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'RNA': np.int64(22), 'ATAC': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Gloscope/knn_divergence_mds_10d.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info sample_id_norm: ['ma8_heart', 'ma9_heart', 'ma14_heart', 'ma6_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '23w1d_FR_RNA', '16w4d_FR_RNA']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA8_heart → Embedding: MA8_heart_RNA
-   Metadata: MA9_heart → Embedding: MA9_heart_RNA
-   Metadata: MA14_heart → Embedding: MA14_heart_RNA
-   Metadata: MA6_heart → Embedding: MA6_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_RNA
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.7513
+  Pseudotime-age correlation: -0.7513
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/Gloscope/visualizations/Gloscope_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/Gloscope/visualizations/Gloscope_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/Gloscope/visualizations/Gloscope_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: Gloscope
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 54.1986
-   P-value: 1.00e+00
+   Value: 57.7641
+   P-value: 9.99e-01
 
 2. ASW Modality (higher = better)
-   Value: 0.1446
+   Value: 0.1387
    P-value: 1.00e+00
 
-3. Disease State Preservation Score (higher = better)
-   Value: 1.0003
-   P-value: 4.04e-01
+3. Trajectory CCA Score (higher = better)
+   Value: 0.7513
+   P-value: 0.00e+00
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  4.6062
-  Median paired distance: 53.1636
+  Number of pairs: 12
+  Std paired distance: 5.3848
+  Median paired distance: 56.7271
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
+  iLISI mean: 1.0000
   iLISI normalized: 0.5000
-  iLISI P-value:    1.00e+00
+  iLISI P-value: 1.00e+00
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  35.6246
-  Mean between-disease_state distance: 35.6348
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.7513
+  Pseudotime-age correlation: -0.7513
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/Gloscope
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/Gloscope
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'Gloscope'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'Gloscope'
 
 ============================================================
 Evaluating method: MFA
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/MFA/sample_embeddings.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'RNA': np.int64(22), 'ATAC': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/MFA/sample_embeddings.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info sample_id_norm: ['ma8_heart', 'ma9_heart', 'ma14_heart', 'ma6_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '16w4d_FR_RNA', '12w3d_FR_RNA', '11w2d_FR_RNA', '14w2d_FR_RNA']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA8_heart → Embedding: MA8_heart_RNA
-   Metadata: MA9_heart → Embedding: MA9_heart_RNA
-   Metadata: MA14_heart → Embedding: MA14_heart_RNA
-   Metadata: MA6_heart → Embedding: MA6_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_RNA
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.6937
+  Pseudotime-age correlation: 0.6908
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/MFA/visualizations/MFA_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/MFA/visualizations/MFA_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/MFA/visualizations/MFA_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/MFA/visualizations/MFA_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/MFA/visualizations/MFA_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/MFA/visualizations/MFA_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/MFA/visualizations/MFA_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: MFA
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 2.2494
-   P-value: 3.68e-01
+   Value: 3.7068
+   P-value: 9.99e-01
 
 2. ASW Modality (higher = better)
-   Value: 0.4747
-   P-value: 9.83e-01
+   Value: 0.1112
+   P-value: 1.00e+00
 
-3. Disease State Preservation Score (higher = better)
-   Value: 1.1123
-   P-value: 1.60e-02
+3. Trajectory CCA Score (higher = better)
+   Value: 0.6937
+   P-value: 1.00e-03
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  1.1210
-  Median paired distance: 1.8868
+  Number of pairs: 12
+  Std paired distance: 0.1288
+  Median paired distance: 3.6851
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.7652
-  iLISI normalized: 0.8826
-  iLISI P-value:    9.81e-01
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  2.1345
-  Mean between-disease_state distance: 2.3741
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.6937
+  Pseudotime-age correlation: 0.6908
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/MFA
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/MFA
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'MFA'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'MFA'
 
 ============================================================
 Evaluating method: mustard
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/mustard/sample_embedding.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'RNA': np.int64(22), 'ATAC': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/mustard/sample_embedding.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info sample_id_norm: ['ma8_heart', 'ma9_heart', 'ma14_heart', 'ma6_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '16w4d_FR_RNA', '11w2d_FR_RNA']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA8_heart → Embedding: MA8_heart_RNA
-   Metadata: MA9_heart → Embedding: MA9_heart_RNA
-   Metadata: MA14_heart → Embedding: MA14_heart_RNA
-   Metadata: MA6_heart → Embedding: MA6_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_RNA
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.7629
+  Pseudotime-age correlation: 0.7375
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/mustard/visualizations/mustard_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/mustard/visualizations/mustard_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/mustard/visualizations/mustard_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/mustard/visualizations/mustard_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/mustard/visualizations/mustard_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/mustard/visualizations/mustard_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/mustard/visualizations/mustard_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: mustard
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 0.5820
+   Value: 0.7775
    P-value: 1.00e+00
 
 2. ASW Modality (higher = better)
-   Value: 0.2531
+   Value: 0.1503
    P-value: 1.00e+00
 
-3. Disease State Preservation Score (higher = better)
-   Value: 0.9723
-   P-value: 7.70e-01
+3. Trajectory CCA Score (higher = better)
+   Value: 0.7629
+   P-value: 0.00e+00
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  0.0801
-  Median paired distance: 0.5847
+  Number of pairs: 12
+  Std paired distance: 0.1219
+  Median paired distance: 0.7155
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.1104
-  iLISI normalized: 0.5552
-  iLISI P-value:    1.00e+00
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  0.4429
-  Mean between-disease_state distance: 0.4306
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.7629
+  Pseudotime-age correlation: 0.7375
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/mustard
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/mustard
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'mustard'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'mustard'
 
 ============================================================
 Evaluating method: scPoli
 ============================================================
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/scPoli/sample_embeddings_full.csv
-Inferring modality from sample names (case insensitive)...
-Modality distribution: {'RNA': np.int64(22), 'ATAC': np.int64(22)}
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/scPoli/sample_embeddings_full.csv
 
 ============================================================
 DEBUG: align_data() function
 ============================================================
 
 1. Input sizes:
-   - Metadata: 25 samples
-   - Embedding: 44 samples
-   - Sample info: 44 samples
+   - Metadata: 48 samples
+   - Embedding: 24 samples
 
 2. Sample name examples (first 5):
-   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
-   - Embedding index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info index: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-   - Sample info sample_id_norm: ['ma8_heart', 'ma9_heart', 'ma14_heart', 'ma6_heart', 'ma13_heart']
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '23w1d_FR_RNA', '16w4d_FR_RNA']
 
-3. Checking for duplicate indices:
-   - Metadata duplicates: 1
-     Duplicate samples in metadata: [nan]
-   - Embedding duplicates: 0
-   - Sample info duplicates: 0
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
 
-4. Creating sample mapping:
-   - Found 44 embedding samples with matching metadata
-   - Matched 22 unique metadata samples
-
-5. Example matches (first 5):
-   Metadata: MA8_heart → Embedding: MA8_heart_RNA
-   Metadata: MA9_heart → Embedding: MA9_heart_RNA
-   Metadata: MA14_heart → Embedding: MA14_heart_RNA
-   Metadata: MA6_heart → Embedding: MA6_heart_RNA
-   Metadata: MA13_heart → Embedding: MA13_heart_RNA
-
-6. Final intersection:
-   - Embedding samples that match metadata: 44
-
-7. Aligned datasets:
-   - Total aligned samples: 44
-   - Unique metadata samples used: 22
-   - First 5 aligned sample names: ['MA8_heart_RNA', 'MA9_heart_RNA', 'MA14_heart_RNA', 'MA6_heart_RNA', 'MA13_heart_RNA']
-
-Note: 3 metadata samples have no corresponding embedding data
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
 ============================================================
 
-Aligned data: 44 samples, 10 dimensions
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
 
 1. Computing paired sample distances...
 
 2. Computing modality mixing (iLISI, ASW)...
 
-3. Computing disease state preservation...
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.3005
+  Pseudotime-age correlation: 0.2965
 
 4. Running permutation tests...
    - Paired distance permutation test...
    - Modality mixing permutation test...
-   - Disease state preservation permutation test...
+   - Trajectory CCA permutation test...
 
 5. Creating visualizations...
-   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/scPoli/visualizations/scPoli_by_modality.png
-   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/scPoli/visualizations/scPoli_by_disease_state.png
-   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/scPoli/visualizations/scPoli_paired_connections.png
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/scPoli/visualizations/scPoli_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/scPoli/visualizations/scPoli_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/scPoli/visualizations/scPoli_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/scPoli/visualizations/scPoli_trajectory_scatter.png
 
 ============================================================
 Multimodal Integration Evaluation: scPoli
 ============================================================
 
-Total samples: 44
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
 Embedding dimensions: 10
 Permutations: 1000
 
 --- KEY METRICS ---
 
 1. Mean Paired Distance (lower = better)
-   Value: 1.3386
-   P-value: 1.00e+00
+   Value: 1.3166
+   P-value: 9.75e-01
 
 2. ASW Modality (higher = better)
-   Value: 0.2961
+   Value: 0.3327
    P-value: 1.00e+00
 
-3. Disease State Preservation Score (higher = better)
-   Value: 1.0769
-   P-value: 7.00e-03
+3. Trajectory CCA Score (higher = better)
+   Value: 0.3005
+   P-value: 3.84e-01
 
 --- ADDITIONAL DETAILS ---
 
 Paired Sample Distance:
-  Number of pairs: 22
-  Std paired distance:  0.0491
-  Median paired distance: 1.3367
+  Number of pairs: 12
+  Std paired distance: 0.0876
+  Median paired distance: 1.3223
 
 Modality Mixing:
   Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
+  iLISI mean: 1.0000
   iLISI normalized: 0.5000
-  iLISI P-value:    1.00e+00
+  iLISI P-value: 1.00e+00
 
-Disease State Preservation:
-  Number of disease states: 3
-  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-disease_state distance:  1.0574
-  Mean between-disease_state distance: 1.1387
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.3005
+  Pseudotime-age correlation: 0.2965
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/scPoli
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/scPoli
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv with column 'scPoli'
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'scPoli'
 
 ============================================================
 Benchmark suite completed!
-Summary saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv
+Summary saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv
 ============================================================
