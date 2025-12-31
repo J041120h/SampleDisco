@@ -1,10 +1,8 @@
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
-Note: dropping 24 metadata rows without embedding.
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/Benchmark_multiomics/benchmark_heart.py", line 1423, in <module>
+    results = evaluate_multimodal_integration(
+  File "/users/hjiang/GenoDistance/code/Benchmark_multiomics/benchmark_heart.py", line 1120, in evaluate_multimodal_integration
+    md_aligned, emb_aligned, sample_info_aligned = align_data(md, emb_df, sample_info)
+  File "/users/hjiang/GenoDistance/code/Benchmark_multiomics/benchmark_heart.py", line 239, in align_data
+    raise ValueError("No overlapping sample IDs between metadata, embedding, and sample info.")
+ValueError: No overlapping sample IDs between metadata, embedding, and sample info.
