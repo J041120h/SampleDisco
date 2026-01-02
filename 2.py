@@ -1,41 +1,56 @@
+#!/usr/bin/env python3
+import os
+import scanpy as sc
+import pandas as pd
 from pathlib import Path
-import anndata as ad
 
-def append_modality_to_sample(h5ad_path: str, sample_col: str = "sample", modality_col: str = "modality"):
+def export_dr_embeddings(h5ad_path, output_dir):
     """
-    Load .h5ad → sample := sample + "_" + modality → overwrite the same file.
+    Read a .h5ad file and export X_DR_expression and X_DR_proportion to CSV if found.
 
-    Example result: MA9_heart_ATAC
+    Parameters
+    ----------
+    h5ad_path : str or Path
+        Path to the AnnData file (.h5ad)
+    output_dir : str or Path
+        Directory to save the CSV files
     """
     h5ad_path = Path(h5ad_path)
-    if not h5ad_path.exists():
-        raise FileNotFoundError(f"File not found: {h5ad_path}")
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"🔧 Loading: {h5ad_path}")
-    adata = ad.read_h5ad(h5ad_path)
+    print(f"📂 Loading: {h5ad_path}")
+    adata = sc.read_h5ad(h5ad_path)
 
-    # check columns
-    if sample_col not in adata.obs:
-        raise KeyError(f"'{sample_col}' column not in adata.obs")
-    if modality_col not in adata.obs:
-        raise KeyError(f"'{modality_col}' column not in adata.obs")
+    # ---- Helper to save cleanly ----
+    def save_df(name, data):
+        df = pd.DataFrame(data, index=adata.obs_names)
+        out = output_dir / f"{name}.csv"
+        df.to_csv(out)
+        print(f"   ✓ Saved {name} → {out} (shape={df.shape})")
 
-    # build new sample values
-    new_sample = (
-        adata.obs[sample_col].astype(str).str.replace("^PMID_\\d+_", "", regex=True) # optional cleanup
-        + "_" +
-        adata.obs[modality_col].astype(str)
+    # ---- X_DR_expression ----
+    if "X_DR_expression" in adata.uns:
+        save_df("X_DR_expression", adata.uns["X_DR_expression"])
+    elif "X_DR_expression" in adata.obsm:
+        save_df("X_DR_expression", adata.obsm["X_DR_expression"])
+    else:
+        print("   ⚠️ X_DR_expression not found")
+
+    # ---- X_DR_proportion ----
+    if "X_DR_proportion" in adata.uns:
+        save_df("X_DR_proportion", adata.uns["X_DR_proportion"])
+    elif "X_DR_proportion" in adata.obsm:
+        save_df("X_DR_proportion", adata.obsm["X_DR_proportion"])
+    else:
+        print("   ⚠️ X_DR_proportion not found")
+
+
+# ---------------------------
+# Example usage
+# ---------------------------
+if __name__ == "__main__":
+    export_dr_embeddings(
+        h5ad_path = "/dcl01/hongkai/data/data/hjiang/result/integration/pseudobulk/pseudobulk_sample.h5ad",
+        output_dir = "/dcl01/hongkai/data/data/hjiang/result/integration/"
     )
-
-    adata.obs[sample_col] = new_sample.astype("category")
-
-    print("📌 Updated sample column example:")
-    print(adata.obs[sample_col].head())
-
-    # overwrite file
-    adata.write_h5ad(h5ad_path)
-    print(f"💾 Saved & overwritten: {h5ad_path}")
-
-append_modality_to_sample(
-    "/dcs07/hongkai/data/harry/result/multi_omics_heart/SD/rna/preprocess/adata_cell.h5ad"
-)
