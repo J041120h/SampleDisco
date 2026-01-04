@@ -9,7 +9,8 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from DR import dimension_reduction
-from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
+# from linux.pseudo_adata_linux import compute_pseudobulk_adata_linux
+from integration.test_pseudobulk import compute_pseudobulk_adata_linux
 from integration.integration_glue import *
 from integration.integration_preprocess import *
 from integration.integration_CCA_test import *

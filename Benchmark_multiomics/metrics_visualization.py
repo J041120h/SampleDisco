@@ -75,6 +75,6 @@ def plot_benchmark_metrics(csv_path, output_dir):
 
 if __name__ == "__main__":
     csv_path = '/dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/summary.csv'
-    output_dir = '/dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result'
+    output_dir = '/dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/updated'
     
     plot_benchmark_metrics(csv_path, output_dir)

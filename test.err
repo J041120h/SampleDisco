@@ -1,0 +1,60 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'database' as categorical
+... storing 'dataset' as categorical
+... storing 'batch' as categorical
+... storing 'tissue' as categorical
+... storing 'source_file' as categorical
+... storing 'age' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'Unnamed: 5' as categorical
+... storing 'Unnamed: 6' as categorical
+... storing 'Unnamed: 7' as categorical
+... storing 'Unnamed: 8' as categorical
+... storing 'Unnamed: 9' as categorical
+... storing 'Unnamed: 10' as categorical
+... storing 'Unnamed: 11' as categorical
+... storing 'modality' as categorical
+... storing 'original_sample' as categorical
+2026-01-03 12:00:57,081 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-01-03 12:00:57 | [INFO] Computing initial centroids with sklearn.KMeans...
+2026-01-03 12:00:57,154 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-01-03 12:00:57 | [INFO] sklearn.KMeans initialization complete.
+2026-01-03 12:00:57,154 - harmonypy - INFO - Iteration 1 of 30
+2026-01-03 12:00:57 | [INFO] Iteration 1 of 30
+2026-01-03 12:00:57,163 - harmonypy - INFO - Iteration 2 of 30
+2026-01-03 12:00:57 | [INFO] Iteration 2 of 30
+2026-01-03 12:00:57,175 - harmonypy - INFO - Iteration 3 of 30
+2026-01-03 12:00:57 | [INFO] Iteration 3 of 30
+2026-01-03 12:00:57,184 - harmonypy - INFO - Converged after 3 iterations
+2026-01-03 12:00:57 | [INFO] Converged after 3 iterations

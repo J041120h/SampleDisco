@@ -1,47 +1,302 @@
-============================================================
-MULTIOMICS EMBEDDING VISUALIZATION (v2)
-With separate CCA directions for RNA and ATAC
-============================================================
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": true,
+        "dimensionality_reduction": true,
+        "embedding_visualization": true,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
-Loading data...
-Expression embedding shape: (429, 10)
-Proportion embedding has data: False
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/preprocess/adata_sample.h5ad
+Step 3: Running dimensionality reduction (pseudobulk + PCA)...
+  Sub-step 3a: Computing pseudobulk...
+DEBUG MODULE PATH: /users/hjiang/GenoDistance/code/integration/test_pseudobulk.py
+DEBUG MODULE: integration.test_pseudobulk
 
-Creating merged metadata...
-Total samples: 429
-ATAC samples: 24
-RNA samples: 405
-Unique batches: 13
+
+
+This is a test run of the new pseudobulk
+
+
+
+[Pseudobulk] Input: 79418 cells, 16049 genes
+[Pseudobulk] HVG selection modality: RNA
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[Pseudobulk] Using GPU (rapids_singlecell)
+[Pseudobulk] HVG selection will use RNA cells only
+[Pseudobulk] 44 samples, 14 cell types
+[Pseudobulk] Batch correction: ['modality']
+[Pseudobulk] Modality distribution: {'ATAC': np.int64(42953), 'RNA': np.int64(36465)}
+[Pseudobulk] Phase 1a: Aggregating ALL cells...
+  Aggregating 79418 cells -> 44 samples x 14 cell types
+  Created 14 cell type layers
+[Pseudobulk] Phase 1b: Aggregating RNA cells for HVG selection...
+  Filtered to RNA cells: 36465 / 79418
+  Aggregating 36465 cells -> 22 samples x 14 cell types
+  Created 14 cell type layers
+[Pseudobulk] Phase 2: Processing cell types...
+  Step 2a: Selecting HVGs from RNA cells
+  Step 2b: Extracting expression from ALL cells
+  [1/14] 1
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [2/14] 10
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [3/14] 11
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2001 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2001 HVGs
+  [4/14] 12
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [5/14] 13
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [6/14] 14
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [7/14] 2
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [8/14] 3
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [9/14] 4
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [10/14] 5
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [11/14] 6
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [12/14] 7
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [13/14] 8
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+  [14/14] 9
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 22-22
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 2, sizes: 22-22
+    Applied ComBat
+    Using 2000 HVGs
+[Pseudobulk] Retained 14 cell types
+[Pseudobulk] Phase 3: Building final matrix...
+[Pseudobulk] Final features: 28001
+[Pseudobulk] Phase 4: Computing proportions...
+[Pseudobulk] Complete
+[Pseudobulk] Extracting sample metadata...
+[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Pseudobulk] Output: 44 samples, 28001 features
+  Sub-step 3b: Processing with PCA...
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] Batch correction: Using 1 batch column(s): ['modality']
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(44, 28001), proportion=(44, 14)
+[DimRed] Computing PCA for RNA data with 10 components on (44, 28001) data
+[PCA] Success. Shape: (44, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (44, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (44, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 10 components...
+[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['modality']
+[run_dimension_reduction_proportion] Harmony completed with 1 batch factor(s). Shape: (44, 10)
+[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (44, 10)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_expression_embedding.csv (shape: (44, 10))
+[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_proportion_embedding.csv (shape: (44, 10))
+[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file path:
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (5.9 MB)
+[process_anndata_with_dimension_reduction] ✓ File saved successfully
+
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 0.48 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ATTEMPTED
+  - H5AD: pseudobulk_anndata only
+  - CSV embeddings: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/
+✓ Dimensionality reduction completed successfully
+Step 4: Visualizing multimodal embedding...
+Creating default embedding visualization (all samples)
+Expression key: X_DR_expression
+Proportion key: X_DR_proportion
+Additional color columns: ['disease_state']
+Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/visualization
+
+Creating colored visualizations for 1 column(s)...
+
+--- Processing color column: disease_state ---
+  Column 'disease_state': categorical with 3 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/visualization/all_samples_expression_by_disease_state.png
+  Column 'disease_state': categorical with 3 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/visualization/all_samples_proportion_by_disease_state.png
+  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/visualization/all_samples_combined_by_disease_state.png
+✓ Embedding visualization completed successfully
+
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
+Final status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': False, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Completed steps: 3/10
+GLUE sub-steps completed: 0/5
+
+✓ Multiomics pipeline completed successfully!
 
 ============================================================
-EXPRESSION EMBEDDING ANALYSIS
+PIPELINE EXECUTION SUMMARY
 ============================================================
+Multiomics Pipeline: ⚠ PARTIAL
+  - glue_integration: ✗
+  - glue_preprocessing: ✗
+  - glue_training: ✗
+  - glue_gene_activity: ✗
+  - glue_cell_types: ✗
+  - glue_visualization: ✗
+  - integration_preprocessing: ✓
+  - dimensionality_reduction: ✓
+  - embedding_visualization: ✓
+  - optimal_resolution: ✗
 
-1. Modality mixing analysis...
-Saved: /dcl01/hongkai/data/data/hjiang/result/visualization/expression_modality.png
-   Modality ASW: 0.1663, p-value: 0.0010
-
-2. Batch analysis...
-Saved: /dcl01/hongkai/data/data/hjiang/result/visualization/expression_batch.png
-   Batch ASW: -0.2299, p-value: 0.0519
-
-3. CCA trajectory analysis (RNA and ATAC separately)...
-Saved: /dcl01/hongkai/data/data/hjiang/result/visualization/expression_cca_trajectory.png
-   RNA CCA Score: 0.5743, p-value: 0.0010
-   ATAC CCA Score: 0.8320, p-value: 0.0290
-   All CCA Score: 0.5487, p-value: 0.0010
-   Cosine similarity (RNA vs ATAC): -0.2735
-
-============================================================
-PROPORTION EMBEDDING: NO DATA AVAILABLE
-============================================================
-The proportion embedding file contains only empty values.
-
-============================================================
-WRITING SUMMARY
-============================================================
-Summary written to: /dcl01/hongkai/data/data/hjiang/result/visualization/summary.txt
-
-============================================================
-ANALYSIS COMPLETE
-============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD
+Status file: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/sys_log/main_process_status.json
+Execution time: 23.1491 seconds

@@ -185,7 +185,7 @@ def integrate_preprocess(
     if verbose:
         print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
 
-    adata.raw = adata.copy()
+    # adata.raw = adata.copy()
 
     if verbose:
         print("Preprocessing complete!")

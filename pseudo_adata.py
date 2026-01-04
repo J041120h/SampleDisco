@@ -623,4 +623,3 @@ def compute_pseudobulk_adata(
 
 # Keep old function names working
 compute_pseudobulk_layers = compute_pseudobulk_cpu
-compute_pseudobulk_adata_linux = compute_pseudobulk_adata

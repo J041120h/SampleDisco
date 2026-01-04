@@ -760,7 +760,7 @@ def dimension_reduction(
     n_expression_components: int = 10,
     n_proportion_components: int = 10,
     batch_col: Union[str, List[str], None] = None,
-    harmony_for_proportion: bool = False,
+    harmony_for_proportion: bool = True,
     preserve_cols: Optional[Union[str, List[str]]] = None,
     output_dir: str = "./",
     integrated_data: bool = False,

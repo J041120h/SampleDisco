@@ -1,462 +1,452 @@
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_expression_embedding.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-
-1. Computing paired sample distances...
-
-2. Computing modality mixing (iLISI, ASW)...
-
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
-
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
-
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 22.0773
-  Std paired distance:  10.1663
-  Median paired distance: 24.9418
-
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.5071
-  iLISI normalized: 0.7536
-  ASW modality:     0.4237
-
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  20.8417
-  Mean between-group distance: 20.5080
-  Preservation score:          0.9840
-
-============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/SD_expression/Multimodal_Integration_Evaluation
-============================================================
-
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'SD_expression'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/embeddings/sample_proportion_embedding.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-
-1. Computing paired sample distances...
-
-2. Computing modality mixing (iLISI, ASW)...
-
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
-
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
-
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 0.2616
-  Std paired distance:  0.1338
-  Median paired distance: 0.2213
-
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.7477
-  iLISI normalized: 0.8739
-  ASW modality:     0.4863
-
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  0.3790
-  Mean between-group distance: 0.4890
-  Preservation score:          1.2900
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": true,
+        "glue_preprocessing": true,
+        "glue_training": true,
+        "glue_gene_activity": true,
+        "glue_cell_types": true,
+        "glue_visualization": true,
+        "integration_preprocessing": true,
+        "dimensionality_reduction": true,
+        "embedding_visualization": true,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/SD_proportion/Multimodal_Integration_Evaluation
+RUNNING MULTIOMICS PIPELINE
 ============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
+Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
+Loaded dimensionality reduction data from existing files
+Step 4: Visualizing multimodal embedding...
+Creating default embedding visualization (all samples)
+Expression key: X_DR_expression
+Proportion key: X_DR_proportion
+Additional color columns: ['sev.level']
+Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'SD_proportion'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/pilot/wasserstein_distance_mds_10d.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+Creating colored visualizations for 1 column(s)...
 
-1. Computing paired sample distances...
+--- Processing color column: sev.level ---
+  Column 'sev.level': numerical with 4 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_expression_by_sev.level.png
+  Column 'sev.level': numerical with 4 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_proportion_by_sev.level.png
+  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_combined_by_sev.level.png
+✓ Embedding visualization completed successfully
+Step 5: Finding optimal cell resolution...
+GPU Memory: 47.70 GB
+GPU Memory Available: 0.00 GB
 
-2. Computing modality mixing (iLISI, ASW)...
+================================================================================
+MULTI-OMICS RESOLUTION OPTIMIZATION
+================================================================================
 
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
-
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
-
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 0.7714
-  Std paired distance:  0.0547
-  Median paired distance: 0.7673
-
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
-  iLISI normalized: 0.5000
-  ASW modality:     0.0349
-
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  0.4354
-  Mean between-group distance: 0.4136
-  Preservation score:          0.9501
+Configuration:
+  Optimization target: RNA EXPRESSION
+  Representation: X_glue (20 components)
+  DR components: 30
+  CCA PCs: 2
+  Output: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/pilot/Multimodal_Integration_Evaluation
+PASS 1: Coarse Search (0.1 - 1.0, step 0.1)
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'pilot'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/pseudobulk/pseudobulk/pca_embeddings.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+--- Resolution: 0.100 (coarse) ---
+  Clusters: 5
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1002
+  RNA proportion: 0.0164
+  ATAC expression: 0.4071
+  ATAC proportion: 0.1431
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-1. Computing paired sample distances...
+--- Resolution: 0.200 (coarse) ---
+  Clusters: 12
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1950
+  RNA proportion: 0.0341
+  ATAC expression: 0.3545
+  ATAC proportion: 0.1928
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-2. Computing modality mixing (iLISI, ASW)...
+--- Resolution: 0.300 (coarse) ---
+  Clusters: 14
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1986
+  RNA proportion: 0.0519
+  ATAC expression: 0.2699
+  ATAC proportion: 0.0695
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
+--- Resolution: 0.400 (coarse) ---
+  Clusters: 17
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.2498
+  RNA proportion: 0.0181
+  ATAC expression: 0.2832
+  ATAC proportion: 0.1020
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
+--- Resolution: 0.500 (coarse) ---
+  Clusters: 22
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1885
+  RNA proportion: 0.0213
+  ATAC expression: 0.3913
+  ATAC proportion: 0.2507
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 37.0629
-  Std paired distance:  4.4526
-  Median paired distance: 36.9987
+--- Resolution: 0.600 (coarse) ---
+  Clusters: 24
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.0415
+  RNA proportion: 0.1242
+  ATAC expression: 0.3949
+  ATAC proportion: 0.1686
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
-  iLISI normalized: 0.5000
-  ASW modality:     0.1628
+--- Resolution: 0.700 (coarse) ---
+  Clusters: 29
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1955
+  RNA proportion: 0.1288
+  ATAC expression: 0.3697
+  ATAC proportion: 0.1035
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  25.1811
-  Mean between-group distance: 25.1090
-  Preservation score:          0.9971
+--- Resolution: 0.800 (coarse) ---
+  Clusters: 29
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.3417
+  RNA proportion: 0.0600
+  ATAC expression: 0.4676
+  ATAC proportion: 0.2542
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/pseudobulk/Multimodal_Integration_Evaluation
-============================================================
+--- Resolution: 0.900 (coarse) ---
+  Clusters: 31
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.3549
+  RNA proportion: 0.1969
+  ATAC expression: 0.3486
+  ATAC proportion: 0.2261
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'pseudobulk'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/QOT/44_qot_distance_matrix_mds_10d.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+--- Resolution: 1.000 (coarse) ---
+  Clusters: 36
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.2453
+  RNA proportion: 0.2546
+  ATAC expression: 0.4035
+  ATAC proportion: 0.3226
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-1. Computing paired sample distances...
-
-2. Computing modality mixing (iLISI, ASW)...
-
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
-
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
-
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 0.3495
-  Std paired distance:  0.1580
-  Median paired distance: 0.3275
-
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.9348
-  iLISI normalized: 0.9674
-  ASW modality:     0.5132
-
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  0.9216
-  Mean between-group distance: 0.9155
-  Preservation score:          0.9933
-
-============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/QOT/Multimodal_Integration_Evaluation
-============================================================
-
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'QOT'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/GEDI/gedi_sample_embedding.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-
-1. Computing paired sample distances...
-
-2. Computing modality mixing (iLISI, ASW)...
-
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
-
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
-
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 3.7582
-  Std paired distance:  0.4843
-  Median paired distance: 3.8651
-
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
-  iLISI normalized: 0.5000
-  ASW modality:     0.2034
-
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  2.7448
-  Mean between-group distance: 2.6904
-  Preservation score:          0.9802
+Best coarse resolution: 0.90
+Best RNA expression CCA: 0.3549
+     ATAC expression CCA: 0.3486
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/GEDI/Multimodal_Integration_Evaluation
+PASS 2: Fine Search (±0.05 around best, step 0.01)
 ============================================================
+Search range: 0.85 to 0.95
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'GEDI'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/Gloscope/knn_divergence_mds_10d.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+--- Resolution: 0.850 (fine) ---
+  Clusters: 34
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.2891
+  RNA proportion: 0.2501
+  ATAC expression: 0.4412
+  ATAC proportion: 0.3008
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-1. Computing paired sample distances...
+--- Resolution: 0.860 (fine) ---
+  Clusters: 29
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1586
+  RNA proportion: 0.2775
+  ATAC expression: 0.5464
+  ATAC proportion: 0.2823
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-2. Computing modality mixing (iLISI, ASW)...
+--- Resolution: 0.870 (fine) ---
+  Clusters: 35
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.0826
+  RNA proportion: 0.0327
+  ATAC expression: 0.3723
+  ATAC proportion: 0.1505
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
+--- Resolution: 0.880 (fine) ---
+  Clusters: 33
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.2488
+  RNA proportion: 0.1077
+  ATAC expression: 0.5227
+  ATAC proportion: 0.2612
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
+--- Resolution: 0.890 (fine) ---
+  Clusters: 36
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.2384
+  RNA proportion: 0.2666
+  ATAC expression: 0.3842
+  ATAC proportion: 0.2945
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 54.1986
-  Std paired distance:  4.6062
-  Median paired distance: 53.1636
+--- Resolution: 0.910 (fine) ---
+  Clusters: 37
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.2465
+  RNA proportion: 0.1701
+  ATAC expression: 0.3358
+  ATAC proportion: 0.1426
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
-  iLISI normalized: 0.5000
-  ASW modality:     0.1446
+--- Resolution: 0.920 (fine) ---
+  Clusters: 33
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1114
+  RNA proportion: 0.2655
+  ATAC expression: 0.3412
+  ATAC proportion: 0.2713
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  35.6246
-  Mean between-group distance: 35.6348
-  Preservation score:          1.0003
+--- Resolution: 0.930 (fine) ---
+  Clusters: 33
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.3143
+  RNA proportion: 0.2198
+  ATAC expression: 0.4524
+  ATAC proportion: 0.2881
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Gloscope/Multimodal_Integration_Evaluation
-============================================================
+--- Resolution: 0.940 (fine) ---
+  Clusters: 33
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1164
+  RNA proportion: 0.2460
+  ATAC expression: 0.4286
+  ATAC proportion: 0.2437
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'Gloscope'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/MFA/sample_embeddings.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-
-1. Computing paired sample distances...
-
-2. Computing modality mixing (iLISI, ASW)...
-
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
-
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
-
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 2.2494
-  Std paired distance:  1.1210
-  Median paired distance: 1.8868
-
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.7652
-  iLISI normalized: 0.8826
-  ASW modality:     0.4747
-
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  2.1345
-  Mean between-group distance: 2.3741
-  Preservation score:          1.1123
-
-============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/MFA/Multimodal_Integration_Evaluation
-============================================================
-
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'MFA'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/mustard/sample_embedding.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-
-1. Computing paired sample distances...
-
-2. Computing modality mixing (iLISI, ASW)...
-
-3. Computing disease_state preservation...
-============================================================
-Multimodal Integration Evaluation Summary
-============================================================
-
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
-
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 0.5820
-  Std paired distance:  0.0801
-  Median paired distance: 0.5847
-
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.1104
-  iLISI normalized: 0.5552
-  ASW modality:     0.2531
-
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  0.4429
-  Mean between-group distance: 0.4306
-  Preservation score:          0.9723
+--- Resolution: 0.950 (fine) ---
+  Clusters: 39
+  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
+  RNA expression: 0.1618
+  RNA proportion: 0.2379
+  ATAC expression: 0.5065
+  ATAC proportion: 0.2513
+  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/mustard/Multimodal_Integration_Evaluation
+GENERATING CORRECTED NULL DISTRIBUTIONS
 ============================================================
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'mustard'
-Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
-Expanded metadata from 23 samples to 46 samples (2 modalities)
-Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/scPoli/sample_embeddings_full.csv
-Aligned data: 44 samples, 10 dimensions
-Detected modalities: ['ATAC', 'RNA']
-Number of unique biological samples: 22
-Preservation grouping by 'disease_state': ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+Generating corrected null for RNA...
+  Saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/corrected_null_rna_expression.npy
 
-1. Computing paired sample distances...
+Generating corrected null for ATAC...
+  Saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/corrected_null_atac_expression.npy
 
-2. Computing modality mixing (iLISI, ASW)...
+Computing corrected p-values...
+Computing corrected p-values for resolution 0.100
+  RNA expression: CCA=0.1002, p=0.3990
+  RNA proportion: CCA=0.0164, p=1.0000
+  ATAC expression: CCA=0.4071, p=0.5100
+  ATAC proportion: CCA=0.1431, p=1.0000
+Computing corrected p-values for resolution 0.200
+  RNA expression: CCA=0.1950, p=0.0030
+  RNA proportion: CCA=0.0341, p=1.0000
+  ATAC expression: CCA=0.3545, p=0.7220
+  ATAC proportion: CCA=0.1928, p=0.9980
+Computing corrected p-values for resolution 0.300
+  RNA expression: CCA=0.1986, p=0.0030
+  RNA proportion: CCA=0.0519, p=0.9540
+  ATAC expression: CCA=0.2699, p=0.9410
+  ATAC proportion: CCA=0.0695, p=1.0000
+Computing corrected p-values for resolution 0.400
+  RNA expression: CCA=0.2498, p=0.0000
+  RNA proportion: CCA=0.0181, p=1.0000
+  ATAC expression: CCA=0.2832, p=0.9140
+  ATAC proportion: CCA=0.1020, p=1.0000
+Computing corrected p-values for resolution 0.500
+  RNA expression: CCA=0.1885, p=0.0040
+  RNA proportion: CCA=0.0213, p=1.0000
+  ATAC expression: CCA=0.3913, p=0.5880
+  ATAC proportion: CCA=0.2507, p=0.9670
+Computing corrected p-values for resolution 0.600
+  RNA expression: CCA=0.0415, p=0.9950
+  RNA proportion: CCA=0.1242, p=0.1850
+  ATAC expression: CCA=0.3949, p=0.5720
+  ATAC proportion: CCA=0.1686, p=0.9990
+Computing corrected p-values for resolution 0.700
+  RNA expression: CCA=0.1955, p=0.0030
+  RNA proportion: CCA=0.1288, p=0.1500
+  ATAC expression: CCA=0.3697, p=0.6750
+  ATAC proportion: CCA=0.1035, p=1.0000
+Computing corrected p-values for resolution 0.800
+  RNA expression: CCA=0.3417, p=0.0000
+  RNA proportion: CCA=0.0600, p=0.8910
+  ATAC expression: CCA=0.4676, p=0.2700
+  ATAC proportion: CCA=0.2542, p=0.9640
+Computing corrected p-values for resolution 0.850
+  RNA expression: CCA=0.2891, p=0.0000
+  RNA proportion: CCA=0.2501, p=0.0000
+  ATAC expression: CCA=0.4412, p=0.3640
+  ATAC proportion: CCA=0.3008, p=0.8720
+Computing corrected p-values for resolution 0.860
+  RNA expression: CCA=0.1586, p=0.0330
+  RNA proportion: CCA=0.2775, p=0.0000
+  ATAC expression: CCA=0.5464, p=0.0880
+  ATAC proportion: CCA=0.2823, p=0.9160
+Computing corrected p-values for resolution 0.870
+  RNA expression: CCA=0.0826, p=0.6490
+  RNA proportion: CCA=0.0327, p=1.0000
+  ATAC expression: CCA=0.3723, p=0.6700
+  ATAC proportion: CCA=0.1505, p=1.0000
+Computing corrected p-values for resolution 0.880
+  RNA expression: CCA=0.2488, p=0.0000
+  RNA proportion: CCA=0.1077, p=0.3320
+  ATAC expression: CCA=0.5227, p=0.1370
+  ATAC proportion: CCA=0.2612, p=0.9590
+Computing corrected p-values for resolution 0.890
+  RNA expression: CCA=0.2384, p=0.0000
+  RNA proportion: CCA=0.2666, p=0.0000
+  ATAC expression: CCA=0.3842, p=0.6220
+  ATAC proportion: CCA=0.2945, p=0.8870
+Computing corrected p-values for resolution 0.900
+  RNA expression: CCA=0.3549, p=0.0000
+  RNA proportion: CCA=0.1969, p=0.0030
+  ATAC expression: CCA=0.3486, p=0.7450
+  ATAC proportion: CCA=0.2261, p=0.9840
+Computing corrected p-values for resolution 0.910
+  RNA expression: CCA=0.2465, p=0.0000
+  RNA proportion: CCA=0.1701, p=0.0140
+  ATAC expression: CCA=0.3358, p=0.7880
+  ATAC proportion: CCA=0.1426, p=1.0000
+Computing corrected p-values for resolution 0.920
+  RNA expression: CCA=0.1114, p=0.2940
+  RNA proportion: CCA=0.2655, p=0.0000
+  ATAC expression: CCA=0.3412, p=0.7730
+  ATAC proportion: CCA=0.2713, p=0.9370
+Computing corrected p-values for resolution 0.930
+  RNA expression: CCA=0.3143, p=0.0000
+  RNA proportion: CCA=0.2198, p=0.0000
+  ATAC expression: CCA=0.4524, p=0.3210
+  ATAC proportion: CCA=0.2881, p=0.9030
+Computing corrected p-values for resolution 0.940
+  RNA expression: CCA=0.1164, p=0.2540
+  RNA proportion: CCA=0.2460, p=0.0000
+  ATAC expression: CCA=0.4286, p=0.4210
+  ATAC proportion: CCA=0.2437, p=0.9730
+Computing corrected p-values for resolution 0.950
+  RNA expression: CCA=0.1618, p=0.0280
+  RNA proportion: CCA=0.2379, p=0.0000
+  ATAC expression: CCA=0.5065, p=0.1690
+  ATAC proportion: CCA=0.2513, p=0.9670
+Computing corrected p-values for resolution 1.000
+  RNA expression: CCA=0.2453, p=0.0000
+  RNA proportion: CCA=0.2546, p=0.0000
+  ATAC expression: CCA=0.4035, p=0.5240
+  ATAC proportion: CCA=0.3226, p=0.8190
+P-value plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/p_value
 
-3. Computing disease_state preservation...
+--- Creating CCA visualizations ---
+
 ============================================================
-Multimodal Integration Evaluation Summary
+MODALITY ALIGNMENT ANALYSIS
 ============================================================
 
-Total samples: 44
-Unique biological samples: 22
-Modalities: ['ATAC', 'RNA']
-Embedding dimensions: 10
+--- Modality Correlation (expression) ---
+Pearson r = 0.0382 (p = 0.8728)
+Spearman r = -0.0045 (p = 0.9849)
+Interpretation: Weak/no alignment
 
---- 1. Paired Sample Distance (lower = better) ---
-  Number of pairs: 22
-  Mean paired distance: 1.3386
-  Std paired distance:  0.0491
-  Median paired distance: 1.3367
+================================================================================
+FINAL RESULTS
+================================================================================
 
---- 2. Modality Mixing (higher = better) ---
-  Modalities: ['ATAC', 'RNA']
-  iLISI mean:       1.0000
-  iLISI normalized: 0.5000
-  ASW modality:     0.2961
+Optimization Target: RNA EXPRESSION
+Best Resolution: 0.900
+Best CCA Score: 0.3549
+Number of Clusters: 31
+Corrected P-value: 0.0000
 
---- 3. Disease State Preservation (higher = better) ---
-  Number of disease_state groups: 3
-  Groups: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
-  Mean within-group distance:  1.0574
-  Mean between-group distance: 1.1387
-  Preservation score:          1.0769
+All CCA scores at resolution 0.900:
+  RNA Expression:  0.3549
+  RNA Proportion:  0.1969
+  ATAC Expression: 0.3486
+  ATAC Proportion: 0.2261
+
+Modality Alignment (expression):
+  Pearson r = 0.0382
+  Weak/no alignment
+
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/resolution_results_rna_expression.csv
+Optimal pseudobulk saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/optimal.h5ad
+Final summary: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/FINAL_SUMMARY.txt
+
+================================================================================
+✓ Optimal resolution finding completed successfully
+
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'visualization', 'optimal_resolution', 'resolution_results_df', 'status_flags']
+Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
+Completed steps: 10/10
+GLUE sub-steps completed: 5/5
+
+✓ Multiomics pipeline completed successfully!
 
 ============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/scPoli/Multimodal_Integration_Evaluation
+PIPELINE EXECUTION SUMMARY
 ============================================================
+Multiomics Pipeline: ✓ COMPLETE
+  - glue_integration: ✓
+  - glue_preprocessing: ✓
+  - glue_training: ✓
+  - glue_gene_activity: ✓
+  - glue_cell_types: ✓
+  - glue_visualization: ✓
+  - integration_preprocessing: ✓
+  - dimensionality_reduction: ✓
+  - embedding_visualization: ✓
+  - optimal_resolution: ✓
 
-Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'scPoli'
-Multimodal Integration Benchmark module loaded.
-Use evaluate_multimodal_integration() to run evaluation.
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
+Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
+Execution time: 2257.2122 seconds

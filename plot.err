@@ -1,10 +1,65 @@
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
-Note: dropping 2 metadata rows without embedding.
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+2026-01-03 12:08:36 | [INFO] init
+... storing 'sample' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical

@@ -1,15 +1,15 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_SD"
+output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: true
+run_rna_pipeline: false
 run_atac_pipeline: false
-run_multiomics_pipeline: false
+run_multiomics_pipeline: true
 
 # System configuration
 use_gpu: true
@@ -21,16 +21,16 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/preprocess/atac_rna_integrated.h5ad"
-rna_sample_meta_path: null
+rna_count_data_path: "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/retina/paired_rna_atac_merged.h5ad"
+rna_sample_meta_path: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: false
-rna_cell_type_cluster: false
+rna_preprocessing: true
+rna_cell_type_cluster: true
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
-rna_sample_distance_calculation: true
+rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
@@ -38,17 +38,16 @@ rna_cluster_dge: false
 rna_visualize_data: false
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/preprocess/atac_rna_integrated.h5ad"
-rna_anndata_sample_path: '/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/preprocess/adata_sample.h5ad'
-rna_pseudobulk_adata_path: /dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
+rna_anndata_cell_path: null
+rna_anndata_sample_path: null
+rna_pseudobulk_adata_path: null
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
-rna_grouping_columns: 
-- "tissue"
+rna_grouping_columns: null
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: 'batch'
+rna_batch_col: null
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -80,7 +79,8 @@ rna_celltype_col: "cell_type"
 rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
-rna_preserve_cols_for_sample_embedding: null
+rna_preserve_cols_for_sample_embedding:
+  - "sev.level"
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
@@ -93,7 +93,7 @@ rna_dr_verbose: true
 rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
-rna_sev_col_cca: "tissue"
+rna_sev_col_cca: "sev.level"
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null
@@ -120,8 +120,7 @@ rna_sample_distance_methods:
 
 # RNA Visualization Parameters
 rna_verbose_visualization: true
-rna_trajectory_visualization_label: 
-  - "tissue"
+rna_trajectory_visualization_label: null
 rna_age_bin_size: null
 rna_age_column: "age"
 rna_dot_size: 3
@@ -153,8 +152,8 @@ atac_metadata_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
 
 # ATAC Process Control Flags
 atac_preprocessing: false
-atac_cell_type_cluster: true
-atac_pseudobulk_dimensionality_reduction: true
+atac_cell_type_cluster: false
+atac_pseudobulk_dimensionality_reduction: false
 atac_visualization_processing: false
 atac_trajectory_analysis: false
 atac_sample_distance_calculation: false
@@ -288,32 +287,33 @@ atac_plot_cell_type_expression_pca_flag: true
 atac_plot_pseudobulk_batch_test_expression_flag: false
 atac_plot_pseudobulk_batch_test_proportion_flag: false
 
+
 # ========================================
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
 # Multiomics Required Parameters
-multiomics_rna_file: '/dcl01/hongkai/data/data/hjiang/Data/paired/rna/all.h5ad'
-multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/all.h5ad"
+multiomics_rna_file: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad'
+multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
 multiomics_run_glue: false
-multiomics_run_integrate_preprocess: FALSE
-multiomics_run_dimensionality_reduction: true
+multiomics_run_integrate_preprocess: false
+multiomics_run_dimensionality_reduction: false
 multiomics_run_visualize_embedding: true
-multiomics_run_find_optimal_resolution: false
+multiomics_run_find_optimal_resolution: true
 
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: true
 multiomics_run_glue_training: true
 multiomics_run_glue_gene_activity: true
 multiomics_run_glue_cell_types: true
-multiomics_run_glue_visualization: false
+multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
-multiomics_rna_sample_meta_file: null
-multiomics_atac_sample_meta_file: null
-multiomics_additional_hvg_file : '/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt'
+multiomics_rna_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
+multiomics_atac_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/ATAC_Metadata.csv'
+multiomics_additional_hvg_file : null
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"
@@ -341,12 +341,12 @@ multiomics_metadata_sep: ","
 multiomics_consistency_threshold: 0.05
 treat_sample_as_batch: False
 multiomics_save_prefix: "glue"
-multiomics_k_neighbors: 200
+multiomics_k_neighbors: 1
 multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: null
-multiomics_cluster_resolution: 1.00
+multiomics_cluster_resolution: 0.5
 multiomics_use_rep_celltype: "X_glue"
 multiomics_markers: null
 multiomics_method: "average"
@@ -357,12 +357,12 @@ multiomics_plot_columns: null
 
 # Multiomics Integration Preprocessing Parameters
 multiomics_integrate_output_dir: null
-multiomics_min_cells_sample: 1
-multiomics_min_cell_gene: 10
+multiomics_min_cells_sample: 100
+multiomics_min_cell_gene: 100
 multiomics_min_features: 500
 multiomics_pct_mito_cutoff: 20
 multiomics_exclude_genes: null
-multiomics_doublet: true
+multiomics_doublet: false
 
 # Multiomics Combined Dimensionality Reduction Parameters
 # Pseudobulk Parameters
@@ -387,7 +387,9 @@ multiomics_use_snapatac2_dimred: false
 
 # Multiomics Visualization Parameters
 multiomics_modality_col: "modality"
-multiomics_color_col: "modality"
+multiomics_color_col: "sev.level"
+multiomics_visualization_grouping_column:
+  - "sev.level"
 multiomics_target_modality: "ATAC"
 multiomics_expression_key: "X_DR_expression"
 multiomics_proportion_key: "X_DR_proportion"
@@ -417,5 +419,5 @@ multiomics_visualize_embeddings: true
 multiomics_resolution_output_dir: null
 
 # Multiomics Paths for Skipping Steps
-multiomics_integrated_h5ad_path: "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/preprocess/atac_rna_integrated.h5ad"
+multiomics_integrated_h5ad_path: null
 multiomics_pseudobulk_h5ad_path: null
