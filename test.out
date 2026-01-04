@@ -49,85 +49,186 @@ Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'gl
 Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/preprocess/adata_sample.h5ad
 Step 3: Running dimensionality reduction (pseudobulk + PCA)...
   Sub-step 3a: Computing pseudobulk...
+
+
+
+This is a test run of the new pseudobulk
+
+
+
 [Pseudobulk] Input: 285729 cells, 18873 genes
+[Pseudobulk] HVG selection modality: RNA
 [Seed Control] PyTorch GPU deterministic mode enabled with seed=42
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 [Pseudobulk] Using GPU (rapids_singlecell)
+[Pseudobulk] HVG selection will use RNA cells only
 [Pseudobulk] 24 samples, 17 cell types
 [Pseudobulk] Batch correction: ['modality']
-[Pseudobulk] Phase 1: Aggregating...
+[Pseudobulk] Modality distribution: {'ATAC': np.int64(143788), 'RNA': np.int64(141941)}
+[Pseudobulk] Phase 1a: Aggregating ALL cells...
   Aggregating 285729 cells -> 24 samples x 17 cell types
   Created 17 cell type layers
+[Pseudobulk] Phase 1b: Aggregating RNA cells for HVG selection...
+  Filtered to RNA cells: 141941 / 285729
+  Aggregating 141941 cells -> 12 samples x 17 cell types
+  Created 17 cell type layers
 [Pseudobulk] Phase 2: Processing cell types...
+  Step 2a: Selecting HVGs from RNA cells
+  Step 2b: Extracting expression from ALL cells
   [1/17] 1
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [2/17] 10
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [3/17] 11
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [4/17] 12
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [5/17] 13
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [6/17] 14
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [7/17] 15
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [8/17] 16
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [9/17] 17
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [10/17] 2
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [11/17] 3
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [12/17] 4
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [13/17] 5
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [14/17] 6
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [15/17] 7
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [16/17] 8
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
   [17/17] 9
+    Selecting HVGs from RNA cells...
+    Batches: 1, sizes: 12-12
+    Skipping: only 1 batch
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
     Batches: 2, sizes: 12-12
     Applied ComBat
-    Selected 2000 HVGs
+    Using 2000 HVGs
 [Pseudobulk] Retained 17 cell types
 [Pseudobulk] Phase 3: Building final matrix...
 [Pseudobulk] Final features: 34000
@@ -213,4 +314,4 @@ Multiomics Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/sys_log/main_process_status.json
-Execution time: 20.9762 seconds
+Execution time: 24.9071 seconds

@@ -46,18 +46,18 @@
 ... storing 'Unnamed: 5' as categorical
 ... storing 'modality' as categorical
 ... storing 'original_sample' as categorical
-2026-01-03 22:47:03,500 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2026-01-03 22:47:03 | [INFO] Computing initial centroids with sklearn.KMeans...
-2026-01-03 22:47:03,551 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2026-01-03 22:47:03 | [INFO] sklearn.KMeans initialization complete.
-2026-01-03 22:47:03,551 - harmonypy - INFO - Iteration 1 of 30
-2026-01-03 22:47:03 | [INFO] Iteration 1 of 30
-2026-01-03 22:47:03,556 - harmonypy - INFO - Converged after 1 iteration
-2026-01-03 22:47:03 | [INFO] Converged after 1 iteration
+2026-01-03 22:53:37,974 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-01-03 22:53:37 | [INFO] Computing initial centroids with sklearn.KMeans...
+2026-01-03 22:53:38,025 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-01-03 22:53:38 | [INFO] sklearn.KMeans initialization complete.
+2026-01-03 22:53:38,025 - harmonypy - INFO - Iteration 1 of 30
+2026-01-03 22:53:38 | [INFO] Iteration 1 of 30
+2026-01-03 22:53:38,030 - harmonypy - INFO - Converged after 1 iteration
+2026-01-03 22:53:38 | [INFO] Converged after 1 iteration
 Traceback (most recent call last):
   File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 968, in wrapper
     multiomics_results = multiomics_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 515, in multiomics_wrapper
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 514, in multiomics_wrapper
     fig, axes = visualize_multimodal_embedding(
   File "/users/hjiang/GenoDistance/code/integration/integration_visualization.py", line 797, in visualize_multimodal_embedding
     ax, data_type, unique_values = plot_embedding_colored_by_column(

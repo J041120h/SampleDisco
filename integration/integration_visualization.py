@@ -95,46 +95,28 @@ def create_quantitative_colormap(values, colormap='viridis'):
     
     return color_map
 
-def get_embedding_data(adata, embedding_key, verbose=True):
+
+def get_embedding_data(adata, embedding_key):
     """
-    Extract embedding coordinates from AnnData object.
+    Get embedding data from adata.obsm or adata.uns.
+    
+    Returns:
+    --------
+    embedding : np.ndarray
+        2D embedding array
     """
     if embedding_key in adata.obsm:
         embedding = adata.obsm[embedding_key]
-        coord_source = "obsm"
-        if verbose:
-            print(f"Found embedding '{embedding_key}' in adata.obsm")
     elif embedding_key in adata.uns:
         embedding = adata.uns[embedding_key]
-        coord_source = "uns"
-        if verbose:
-            print(f"Found embedding '{embedding_key}' in adata.uns")
     else:
-        available_obsm = list(adata.obsm.keys()) if hasattr(adata, 'obsm') else []
-        available_uns = list(adata.uns.keys()) if hasattr(adata, 'uns') else []
-        raise KeyError(f"Embedding '{embedding_key}' not found in adata.obsm {available_obsm} or adata.uns {available_uns}")
+        raise ValueError(f"Embedding key '{embedding_key}' not found in adata.obsm or adata.uns")
     
-    if verbose:
-        print(f"Embedding shape: {embedding.shape}")
+    # Ensure 2D
+    if embedding.ndim == 1:
+        raise ValueError(f"Embedding '{embedding_key}' is 1D, expected 2D")
     
-    if embedding.shape[1] < 2:
-        raise ValueError(f"Need at least 2 dimensions for visualization (found {embedding.shape[1]})")
-    
-    if coord_source == "obsm":
-        x_coords = embedding[:, 0]
-        y_coords = embedding[:, 1]
-        sample_names = adata.obs.index
-    else:
-        if isinstance(embedding, pd.DataFrame):
-            x_coords = embedding.iloc[:, 0]
-            y_coords = embedding.iloc[:, 1]
-            sample_names = embedding.index
-        else:
-            x_coords = embedding[:, 0]
-            y_coords = embedding[:, 1]
-            sample_names = adata.obs.index
-    
-    return x_coords, y_coords, sample_names, coord_source
+    return embedding
 
 def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
                              embedding_key, ax, point_size=60, alpha=0.8, 
@@ -162,7 +144,7 @@ def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
         Whether to show sample names (only for target modality)
     """
     
-    x_coords, y_coords, sample_names, coord_source = get_embedding_data(adata, embedding_key, verbose=False)
+    x_coords, y_coords, sample_names, coord_source = get_embedding_data(adata, embedding_key)
     
     modality_values = adata.obs[modality_col].values
     color_values = adata.obs[color_col].values
@@ -340,7 +322,7 @@ def plot_default_embedding(adata, embedding_key, ax, point_size=60, alpha=0.8,
         Color for all samples
     """
     
-    x_coords, y_coords, sample_names, _ = get_embedding_data(adata, embedding_key, verbose=False)
+    x_coords, y_coords, sample_names, _ = get_embedding_data(adata, embedding_key)
     
     # Plot all samples with the same color
     ax.scatter(x_coords, y_coords, 
@@ -1188,7 +1170,7 @@ def visualize_multimodal_embedding_with_cca(
         fig, ax = plt.subplots(figsize=figsize)
         
         # Get data using helper function
-        x_coords, y_coords, sample_names, _ = get_embedding_data(adata, emb_key, verbose=False)
+        x_coords, y_coords, sample_names, _ = get_embedding_data(adata, emb_key)
         
         # Get modality and color values
         modalities = adata.obs[modality_col].values
@@ -1327,7 +1309,7 @@ def create_modality_comparison_plot(adata, modality_col, embeddings,
         ax = axes[idx]
         
         # Get embedding data
-        x_coords, y_coords, _, _ = get_embedding_data(adata, emb_key, verbose=False)
+        x_coords, y_coords, _, _ = get_embedding_data(adata, emb_key)
         modalities = adata.obs[modality_col].values
         
         # Plot each modality with different colors
