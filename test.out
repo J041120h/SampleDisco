@@ -271,7 +271,7 @@ This is a test run of the new pseudobulk
 [process_anndata_with_dimension_reduction] ✓ File saved successfully
 
 [process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.26 seconds
+Total runtime: 0.27 seconds
 Expression dimension reduction: ✓ SUCCESS
 Proportion dimension reduction: ✓ SUCCESS
 Results available under unified keys:
@@ -291,11 +291,21 @@ Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_om
 Creating colored visualizations for 1 column(s)...
 
 --- Processing color column: age ---
-Found embedding 'X_DR_expression' in adata.obsm
-Embedding shape: (24, 10)
   Column 'age': numerical with 12 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/visualization/all_samples_expression_by_age.png
+  Column 'age': numerical with 12 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/visualization/all_samples_proportion_by_age.png
+  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/visualization/all_samples_combined_by_age.png
+✓ Embedding visualization completed successfully
 
-✗ Multiomics pipeline failed with error: tuple indices must be integers or slices, not tuple
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
+Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Completed steps: 9/10
+GLUE sub-steps completed: 5/5
+
+✓ Multiomics pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
@@ -314,4 +324,4 @@ Multiomics Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/sys_log/main_process_status.json
-Execution time: 24.9071 seconds
+Execution time: 26.3664 seconds

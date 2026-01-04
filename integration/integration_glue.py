@@ -25,11 +25,8 @@ from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
 from cupyx.scipy import sparse as cusparse
 
 # Local/project
-from preparation.Cell_type import *
-from preparation.Cell_type_linux import cell_types_linux
 from utils.safe_save import safe_h5ad_write
 from utils.merge_sample_meta import merge_sample_metadata
-from utils.imbalance_cell_type_handeler import filter_modality_imbalanced_clusters
 from integration.integration_visualization import glue_visualize
 
 def glue_preprocess_pipeline(
@@ -90,11 +87,6 @@ def glue_preprocess_pipeline(
         Method for highly variable gene selection
     generate_umap : bool
         Whether to generate UMAP embeddings
-    compression : str
-        Compression method for output files
-    random_state : int
-        Random seed for reproducibility
-
     rna_sample_column : str
         Column name for RNA sample IDs in metadata
     atac_sample_column : str
@@ -969,7 +961,6 @@ def glue(
     run_preprocessing: bool = True,
     run_training: bool = True,
     run_gene_activity: bool = True,
-    run_cell_types: bool = True,
     run_visualization: bool = True,
     
     # Preprocessing parameters
@@ -999,26 +990,18 @@ def glue(
     use_gpu: bool = True,
     verbose: bool = True,
     
-    # Cell type assignment parameters
-    existing_cell_types: bool = False,
-    n_target_clusters: int = 10,
-    cluster_resolution: float = 0.8,
-    use_rep_celltype: str = "X_glue",
-    markers: Optional[List] = None,
-    
     # Visualization parameters
     plot_columns: Optional[List[str]] = None,
     
     # Output directory
     output_dir: str = "./glue_results",
 ):
-    """Complete GLUE pipeline that runs preprocessing, training, gene activity computation, cell type assignment, and visualization.
+    """Complete GLUE pipeline that runs preprocessing, training, gene activity computation, and visualization.
     
     Use process flags to control which steps to run:
     - run_preprocessing: Run data preprocessing
     - run_training: Run model training
     - run_gene_activity: Compute gene activity
-    - run_cell_types: Assign cell types
     - run_visualization: Generate visualizations
     """
     
@@ -1034,7 +1017,7 @@ def glue(
             atac_file=atac_file,
             rna_sample_meta_file=rna_sample_meta_file,
             atac_sample_meta_file=atac_sample_meta_file,
-            additional_hvg_file = additional_hvg_file,
+            additional_hvg_file=additional_hvg_file,
             ensembl_release=ensembl_release,
             species=species,
             output_dir=glue_output_dir,
@@ -1056,7 +1039,7 @@ def glue(
             preprocess_output_dir=glue_output_dir,
             save_prefix=save_prefix,
             consistency_threshold=consistency_threshold,
-            treat_sample_as_batch = treat_sample_as_batch,
+            treat_sample_as_batch=treat_sample_as_batch,
             use_highly_variable=use_highly_variable,
             output_dir=glue_output_dir
         )
@@ -1084,42 +1067,7 @@ def glue(
         else:
             raise FileNotFoundError(f"Integrated file not found: {integrated_file}. Run gene activity computation first.")
     
-    # Step 4: Cell type assignment
-    if run_cell_types:
-        print("Assigning cell types...")
-    
-        # Apply cell type assignment
-        if use_gpu:
-                from preparation.Cell_type_linux import cell_types_linux
-
-                print(" Using Linux Cell Type Assignment for cell type assignment...")
-
-                merged_adata = cell_types_linux(
-                    merged_adata,
-                    cell_type_column='cell_type',
-                    existing_cell_types=existing_cell_types,
-                    n_target_clusters=n_target_clusters,
-                    umap=True,  # We'll handle UMAP separately
-                    save=True,  # We'll save the final result
-                    output_dir=output_dir,
-                    defined_output_path = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad"),
-                    cluster_resolution=cluster_resolution,
-                    use_rep=use_rep_celltype,
-                    markers=markers,
-                    num_PCs=n_lsi_comps,
-                    verbose=verbose
-                )
-
-    # After cell type assignment
-    merged_adata = filter_modality_imbalanced_clusters(
-        adata=merged_adata,
-        modality_column="modality",
-        cluster_column="cell_type",
-        min_proportion_of_expected=0.05,  # 95% imbalance threshold
-        verbose=True
-    )
-    
-    # Step 5: Visualization
+    # Step 4: Visualization
     if run_visualization:
         print("Running visualization...")
         integrated_file_path = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad")
@@ -1135,7 +1083,7 @@ def glue(
     print(f"\nTotal runtime: {elapsed_minutes:.2f} minutes")
 
     # Return the merged data if it was computed in this run
-    if run_gene_activity or run_cell_types:
+    if run_gene_activity:
         return merged_adata
     else:
         return None

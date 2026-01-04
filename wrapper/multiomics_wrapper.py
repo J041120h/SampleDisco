@@ -16,6 +16,7 @@ from integration.integration_CCA_test import *
 from integration.integration_optimal_resolution import *
 from integration.integration_validation import *
 from integration.integration_visualization import *
+from integration.integration_cell_type import cell_types_multiomics
 
 def multiomics_wrapper(
     # ===== Required Parameters =====
@@ -284,7 +285,7 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
             print(f"  Sub-steps: Preprocessing={run_glue_preprocessing}, Training={run_glue_training}, "
-                f"Gene Activity={run_glue_gene_activity}, Cell Types={run_glue_cell_types}, "
+                f"Gene Activity={run_glue_gene_activity}, "
                 f"Visualization={run_glue_visualization}")
         if not rna_file or not atac_file:
             raise ValueError("rna_file and atac_file must be provided when run_glue=True")
@@ -299,7 +300,6 @@ def multiomics_wrapper(
             run_preprocessing=run_glue_preprocessing,
             run_training=run_glue_training,
             run_gene_activity=run_glue_gene_activity,
-            run_cell_types=run_glue_cell_types,
             run_visualization=run_glue_visualization,
             # Preprocessing parameters
             ensembl_release=ensembl_release,
@@ -325,12 +325,6 @@ def multiomics_wrapper(
             metric=metric,
             use_gpu=use_gpu,
             verbose=multiomics_verbose,
-            # Cell type assignment parameters
-            existing_cell_types=existing_cell_types,
-            n_target_clusters=n_target_clusters,
-            cluster_resolution=cluster_resolution,
-            use_rep_celltype=use_rep_celltype,
-            markers=markers,
             # Visualization parameters
             plot_columns=plot_columns,
             # Output directory
@@ -347,17 +341,15 @@ def multiomics_wrapper(
             status_flags["multiomics"]["glue_training"] = True
         if run_glue_gene_activity:
             status_flags["multiomics"]["glue_gene_activity"] = True
-        if run_glue_cell_types:
-            status_flags["multiomics"]["glue_cell_types"] = True
         if run_glue_visualization:
             status_flags["multiomics"]["glue_visualization"] = True
         if multiomics_verbose:
             print("✓ GLUE integration completed successfully")
             completed_substeps = sum([
                 run_glue_preprocessing, run_glue_training, run_glue_gene_activity,
-                run_glue_cell_types, run_glue_visualization
+                run_glue_visualization
             ])
-            print(f"  Completed {completed_substeps}/5 GLUE sub-steps")
+            print(f"  Completed {completed_substeps}/4 GLUE sub-steps")
 
     if integrated_h5ad_path and os.path.exists(integrated_h5ad_path):
         h5ad_path = integrated_h5ad_path
@@ -365,6 +357,45 @@ def multiomics_wrapper(
             print(f"Skipping GLUE integration, using existing data: {h5ad_path}")
     else:
         h5ad_path = f"{multiomics_output_dir}/preprocess/atac_rna_integrated.h5ad"
+    
+    # Step 1b: Cell type assignment (separate from GLUE)
+    if run_glue_cell_types:
+        if multiomics_verbose:
+            print("Step 1b: Running cell type assignment...")
+        
+        # Load integrated data if not already in memory
+        if results.get('glue') is not None:
+            merged_adata = results['glue']
+        elif os.path.exists(h5ad_path):
+            merged_adata = ad.read_h5ad(h5ad_path)
+        else:
+            raise ValueError(f"Integrated data not found at {h5ad_path}. Run GLUE gene activity first.")
+        
+        # Run cell type assignment
+        merged_adata = cell_types_multiomics(
+            adata=merged_adata,
+            modality_column=modality_col,
+            rna_modality_value="RNA",
+            atac_modality_value="ATAC",
+            cell_type_column=celltype_col,
+            cluster_resolution=cluster_resolution,
+            use_rep=use_rep_celltype,
+            num_PCs=n_lsi_comps,
+            k_neighbors=k_neighbors,
+            transfer_metric=metric,
+            compute_umap=generate_umap_celltype,
+            save=True,
+            output_dir=multiomics_output_dir,
+            defined_output_path=h5ad_path,
+            verbose=multiomics_verbose,
+            generate_plots=run_glue_visualization,
+        )
+        
+        results['glue'] = merged_adata
+        status_flags["multiomics"]["glue_cell_types"] = True
+        
+        if multiomics_verbose:
+            print("✓ Cell type assignment completed successfully")
     
     # Step 2: Integration preprocessing
     if run_integrate_preprocess:

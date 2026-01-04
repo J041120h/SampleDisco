@@ -31,7 +31,7 @@ Resuming process from previous progress:
         "integration_preprocessing": true,
         "dimensionality_reduction": true,
         "embedding_visualization": true,
-        "optimal_resolution": false
+        "optimal_resolution": true
     },
     "system_info": {
         "platform": "Linux",
@@ -45,387 +45,227 @@ Resuming process from previous progress:
 RUNNING MULTIOMICS PIPELINE
 ============================================================
 Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
+Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
+Step 1: Running GLUE integration...
+  Sub-steps: Preprocessing=False, Training=False, Gene Activity=True, Visualization=True
+Computing gene activity...
+
+🧬 Computing gene activity using raw RNA counts...
+   k_neighbors: 1
+   metric: cosine
+   GPU acceleration: enabled
+   Available GPU memory: 47.25 GB
+   Available CPU memory: 995.19 GB
+
+📂 Loading processed RNA embeddings and metadata...
+   RNA cells: 898489
+   Obs columns: ['celltype', 'sample', 'old', 'large', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level', 'balancing_weight']
+
+📂 Loading ATAC embeddings...
+   ATAC cells: 88985
+
+📂 Loading raw RNA counts...
+   RNA matrix shape: (898489, 14881)
+
+🔗 Aligning cells...
+   RNA cells: 898489, ATAC cells: 88985, Genes: 14881
+
+🔍 Finding k-nearest RNA neighbors...
+
+📐 Computing similarity weights...
+   Weight stats: min=1.000000, max=1.000000
+
+🧮 Computing weighted gene activity...
+   Batch size: 10000
+   Progress: 11.1% (1/9 batches)
+   Progress: 22.2% (2/9 batches)
+   Progress: 33.3% (3/9 batches)
+   Progress: 44.4% (4/9 batches)
+   Progress: 55.6% (5/9 batches)
+   Progress: 66.7% (6/9 batches)
+   Progress: 77.8% (7/9 batches)
+   Progress: 88.9% (8/9 batches)
+   Progress: 100.0% (9/9 batches)
+
+📦 Creating gene activity AnnData...
+   Converting sparse matrix indices to int64...
+
+📦 Creating RNA AnnData for merging...
+   Converting sparse matrix indices to int64...
+
+🔗 Merging RNA and ATAC datasets...
+   RNA cells: 898489
+   ATAC cells: 88985
+
+💾 Saving merged dataset...
+   Converting sparse matrix indices to int64...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 4 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+
+✅ Gene activity computation complete!
+   Output: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+   Shape: (987474, 14881)
+   RNA cells: 898489
+   ATAC cells: 88985
+   Obs columns: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode']
+Gene activity computation completed.
+Running visualization...
+Loading integrated RNA-ATAC data...
+Computing UMAP from scGLUE embeddings...
+Generating visualizations for columns: ['modality']
+Saved modality plot: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/scglue_umap_modality.png
+
+=== Integration Summary ===
+Total cells: 987474
+Total features: 14881
+Available metadata columns: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode']
+
+Modality breakdown:
+  RNA: 898489 cells
+  ATAC: 88985 cells
+
+Features used: 14881/14881
+
+Visualization complete!
+Visualization completed.
+
+Total runtime: 24.58 minutes
+✓ GLUE integration completed successfully
+  Completed 2/4 GLUE sub-steps
+Step 1b: Running cell type assignment...
+
+============================================================
+Cell Type Assignment for Multi-omics Data
+============================================================
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+
+Data composition:
+  RNA cells: 898489
+  ATAC cells: 88985
+  Total cells: 987474
+
+--- Step 1: Clustering RNA cells ---
+  Resolution: 0.5
+  Building neighborhood graph for RNA cells...
+  Performing Leiden clustering...
+  Found 24 clusters in RNA cells
+
+--- Step 2: Transferring labels to ATAC cells ---
+  Using k=1 nearest neighbors
+  Metric: cosine
+  Label transfer complete
+  Mean transfer confidence: 1.000
+
+--- Step 3: Combining cell type assignments ---
+  Cell type assignments complete
+
+  Cell type distribution:
+    Cluster 1: RNA=32951, ATAC=3846
+    Cluster 10: RNA=27822, ATAC=720
+    Cluster 11: RNA=157019, ATAC=6278
+    Cluster 12: RNA=43429, ATAC=3950
+    Cluster 13: RNA=127569, ATAC=9743
+    Cluster 14: RNA=48575, ATAC=5024
+    Cluster 15: RNA=22573, ATAC=3292
+    Cluster 16: RNA=21130, ATAC=512
+    Cluster 17: RNA=39348, ATAC=4447
+    Cluster 18: RNA=33112, ATAC=2628
+    Cluster 19: RNA=3734, ATAC=417
+    Cluster 2: RNA=4014, ATAC=1393
+    Cluster 20: RNA=15383, ATAC=1490
+    Cluster 21: RNA=5054, ATAC=213
+    Cluster 22: RNA=7584, ATAC=781
+    Cluster 23: RNA=941, ATAC=212
+    Cluster 24: RNA=10608, ATAC=1161
+    Cluster 3: RNA=6218, ATAC=758
+    Cluster 4: RNA=18499, ATAC=2286
+    Cluster 5: RNA=128347, ATAC=17679
+    Cluster 6: RNA=41316, ATAC=6542
+    Cluster 7: RNA=12106, ATAC=1404
+    Cluster 8: RNA=39280, ATAC=9000
+    Cluster 9: RNA=51877, ATAC=5209
+
+--- Step 4: Filtering modality-imbalanced clusters ---
+[Modality Balance] All clusters balanced, no filtering needed
+
+--- Step 5: Computing UMAP ---
+
+--- Step 6: Generating visualizations ---
+  Generating cell type UMAP...
+  Generating modality UMAP...
+  Generating split modality UMAPs...
+  Generating label transfer confidence plot...
+  Generating cell type composition heatmap...
+  Saved distribution table to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/celltype_modality_distribution.csv
+  Visualizations complete!
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 6 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+
+============================================================
+Cell type assignment complete!
+============================================================
+
+✓ Cell type assignment completed successfully
+Step 2: Running integration preprocessing...
+=== Read input dataset ===
+Dimension of raw data (cells x genes): 987474 x 14881
+Stored original sample IDs in adata.obs['original_sample'].
+Detected non-unique 'sample' values (432 duplicated sample IDs across 987474 rows). Appended modality from 'modality' only for those rows.
+After cell filtering -- Cells remaining: 987474, Genes remaining: 14881
+After gene filtering -- Cells remaining: 987474, Genes remaining: 14778
+After remove MT_gene and user input gene -- Cells remaining: 987415, Genes remaining: 14765
+Sample counts BEFORE filtering:
+sample
+HD-16-Yu_RNA           12304
+HD-7-Wen_RNA           11411
+HD-9-Wen_RNA           11357
+CoV-29-Yu_RNA          11301
+CoV-85.1-Su_RNA        11066
+                       ...  
+CoV-73.1-SS2_RNA         515
+CoV-153.2-Su_RNA         515
+SRR14466471_ATAC         354
+re_SRR14466469_ATAC      344
+SRR14466469_ATAC          17
+Length: 432, dtype: int64
+
+Samples retained (>= 100 cells): ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA', 'CoV-101.2-Su_RNA', 'CoV-102.1-Su_RNA', 'CoV-102.2-Su_RNA', 'CoV-103.1-Su_RNA', 'CoV-103.2-Su_RNA', 'CoV-104.1-Su_RNA', 'CoV-104.2-Su_RNA', 'CoV-105.1-Su_RNA', 'CoV-105.2-Su_RNA', 'CoV-106.1-Su_RNA', 'CoV-106.2-Su_RNA', 'CoV-107.1-Su_RNA', 'CoV-107.2-Su_RNA', 'CoV-108.1-Su_RNA', 'CoV-108.2-Su_RNA', 'CoV-109.1-Su_RNA', 'CoV-109.2-Su_RNA', 'CoV-110.1-Su_RNA', 'CoV-110.2-Su_RNA', 'CoV-111.1-Su_RNA', 'CoV-111.2-Su_RNA', 'CoV-112.1-Su_RNA', 'CoV-112.2-Su_RNA', 'CoV-113.1-Su_RNA', 'CoV-113.2-Su_RNA', 'CoV-114.1-Su_RNA', 'CoV-114.2-Su_RNA', 'CoV-115.1-Su_RNA', 'CoV-115.2-Su_RNA', 'CoV-116.1-Su_RNA', 'CoV-116.2-Su_RNA', 'CoV-117.1-Su_RNA', 'CoV-117.2-Su_RNA', 'CoV-118.2-Su_RNA', 'CoV-119.1-Su_RNA', 'CoV-119.2-Su_RNA', 'CoV-120.1-Su_RNA', 'CoV-120.2-Su_RNA', 'CoV-121.2-Su_RNA', 'CoV-122.2-Su_RNA', 'CoV-123.1-Su_RNA', 'CoV-123.2-Su_RNA', 'CoV-124.2-Su_RNA', 'CoV-125-Su_RNA', 'CoV-126.1-Su_RNA', 'CoV-126.2-Su_RNA', 'CoV-127.1-Su_RNA', 'CoV-127.2-Su_RNA', 'CoV-128.1-Su_RNA', 'CoV-128.2-Su_RNA', 'CoV-129.1-Su_RNA', 'CoV-129.2-Su_RNA', 'CoV-130.1-Su_RNA', 'CoV-130.2-Su_RNA', 'CoV-132.1-Su_RNA', 'CoV-132.2-Su_RNA', 'CoV-133.1-Su_RNA', 'CoV-133.2-Su_RNA', 'CoV-134.1-Su_RNA', 'CoV-134.2-Su_RNA', 'CoV-135.1-Su_RNA', 'CoV-135.2-Su_RNA', 'CoV-136.1-Su_RNA', 'CoV-136.2-Su_RNA', 'CoV-137.1-Su_RNA', 'CoV-137.2-Su_RNA', 'CoV-138.1-Su_RNA', 'CoV-138.2-Su_RNA', 'CoV-139.1-Su_RNA', 'CoV-139.2-Su_RNA', 'CoV-140.1-Su_RNA', 'CoV-140.2-Su_RNA', 'CoV-141.1-Su_RNA', 'CoV-141.2-Su_RNA', 'CoV-142.1-Su_RNA', 'CoV-142.2-Su_RNA', 'CoV-143.1-Su_RNA', 'CoV-143.2-Su_RNA', 'CoV-144.1-Su_RNA', 'CoV-144.2-Su_RNA', 'CoV-145.1-Su_RNA', 'CoV-145.2-Su_RNA', 'CoV-146.1-Su_RNA', 'CoV-146.2-Su_RNA', 'CoV-147.1-Su_RNA', 'CoV-148.1-Su_RNA', 'CoV-149.1-Su_RNA', 'CoV-149.2-Su_RNA', 'CoV-150.1-Su_RNA', 'CoV-150.2-Su_RNA', 'CoV-151.1-Su_RNA', 'CoV-151.2-Su_RNA', 'CoV-152.1-Su_RNA', 'CoV-152.2-Su_RNA', 'CoV-153.1-Su_RNA', 'CoV-153.2-Su_RNA', 'CoV-154.2-Su_RNA', 'CoV-155.1-Su_RNA', 'CoV-155.2-Su_RNA', 'CoV-156.1-Su_RNA', 'CoV-156.2-Su_RNA', 'CoV-157.1-Su_RNA', 'CoV-157.2-Su_RNA', 'CoV-158.1-Su_RNA', 'CoV-158.2-Su_RNA', 'CoV-159.1-Su_RNA', 'CoV-159.2-Su_RNA', 'CoV-160.1-Su_RNA', 'CoV-160.2-Su_RNA', 'CoV-161.1-Su_RNA', 'CoV-161.2-Su_RNA', 'CoV-162.1-Su_RNA', 'CoV-162.2-Su_RNA', 'CoV-163.1-Su_RNA', 'CoV-163.2-Su_RNA', 'CoV-164.1-Su_RNA', 'CoV-164.2-Su_RNA', 'CoV-165.1-Su_RNA', 'CoV-165.2-Su_RNA', 'CoV-166.2-Su_RNA', 'CoV-167.2-Su_RNA', 'CoV-168.1-Su_RNA', 'CoV-169.1-Su_RNA', 'CoV-169.2-Su_RNA', 'CoV-170.1-Su_RNA', 'CoV-171.1-Su_RNA', 'CoV-171.2-Su_RNA', 'CoV-172.1-Su_RNA', 'CoV-172.2-Su_RNA', 'CoV-173.1-Su_RNA', 'CoV-173.2-Su_RNA', 'CoV-174.2-Su_RNA', 'CoV-175.1-Su_RNA', 'CoV-175.2-Su_RNA', 'CoV-176.1-Su_RNA', 'CoV-176.2-Su_RNA', 'CoV-177.2-Su_RNA', 'CoV-179.1-Su_RNA', 'CoV-179.2-Su_RNA', 'CoV-18-Lee_RNA', 'CoV-180.1-Su_RNA', 'CoV-180.2-Su_RNA', 'CoV-181.1-Su_RNA', 'CoV-181.2-Su_RNA', 'CoV-182.1-Su_RNA', 'CoV-182.2-Su_RNA', 'CoV-183.1-Su_RNA', 'CoV-183.2-Su_RNA', 'CoV-184.1-Su_RNA', 'CoV-184.2-Su_RNA', 'CoV-185.1-Su_RNA', 'CoV-185.2-Su_RNA', 'CoV-186.1-Su_RNA', 'CoV-186.2-Su_RNA', 'CoV-187.1-Su_RNA', 'CoV-187.2-Su_RNA', 'CoV-188.1-Su_RNA', 'CoV-188.2-Su_RNA', 'CoV-189.1-Su_RNA', 'CoV-189.2-Su_RNA', 'CoV-19-Lee_RNA', 'CoV-190.1-Su_RNA', 'CoV-190.2-Su_RNA', 'CoV-191.1-Su_RNA', 'CoV-191.2-Su_RNA', 'CoV-192.1-Su_RNA', 'CoV-192.2-Su_RNA', 'CoV-193.1-Su_RNA', 'CoV-193.2-Su_RNA', 'CoV-194.1-Su_RNA', 'CoV-194.2-Su_RNA', 'CoV-195.1-Su_RNA', 'CoV-195.2-Su_RNA', 'CoV-196.1-Su_RNA', 'CoV-196.2-Su_RNA', 'CoV-197.1-Su_RNA', 'CoV-197.2-Su_RNA', 'CoV-198.1-Su_RNA', 'CoV-198.2-Su_RNA', 'CoV-199.1-Su_RNA', 'CoV-199.2-Su_RNA', 'CoV-2-Wilk_RNA', 'CoV-20.2-Lee_RNA', 'CoV-200.2-Su_RNA', 'CoV-201.2-Su_RNA', 'CoV-202.2-Su_RNA', 'CoV-203.1-Su_RNA', 'CoV-203.2-Su_RNA', 'CoV-204.1-Su_RNA', 'CoV-204.2-Su_RNA', 'CoV-205.1-Su_RNA', 'CoV-205.2-Su_RNA', 'CoV-206.1-Su_RNA', 'CoV-206.2-Su_RNA', 'CoV-207.1-Su_RNA', 'CoV-207.2-Su_RNA', 'CoV-208.1-Su_RNA', 'CoV-208.2-Su_RNA', 'CoV-209.1-Su_RNA', 'CoV-21-Lee_RNA', 'CoV-210.1-Su_RNA', 'CoV-210.2-Su_RNA', 'CoV-211.1-Zhu_RNA', 'CoV-211.2-Zhu_RNA', 'CoV-212.2-Zhu_RNA', 'CoV-212.3-Zhu_RNA', 'CoV-212.5-Zhu_RNA', 'CoV-213.1-Zhu_RNA', 'CoV-213.2-Zhu_RNA', 'CoV-214.1-Zhu_RNA', 'CoV-214.2-Zhu_RNA', 'CoV-215.1-Zhu_RNA', 'CoV-215.3-Zhu_RNA', 'CoV-216-Mudd_RNA', 'CoV-217-Mudd_RNA', 'CoV-218-Mudd_RNA', 'CoV-22-Lee_RNA', 'CoV-23.1-Lee_RNA', 'CoV-23.2-Lee_RNA', 'CoV-24.1-Lee_RNA', 'CoV-24.2-Lee_RNA', 'CoV-25-Lee_RNA', 'CoV-26.1-Guo_RNA', 'CoV-27.1-Guo_RNA', 'CoV-28-Yu_RNA', 'CoV-29-Yu_RNA', 'CoV-3-Wilk_RNA', 'CoV-30-Yu_RNA', 'CoV-31-Yu_RNA', 'CoV-32-Yu_RNA', 'CoV-33-Yu_RNA', 'CoV-34-Aruna_RNA', 'CoV-35-Aruna_RNA', 'CoV-36-Aruna_RNA', 'CoV-37-Aruna_RNA', 'CoV-38-Aruna_RNA', 'CoV-39-Aruna_RNA', 'CoV-4-Wilk_RNA', 'CoV-40-Aruna_RNA', 'CoV-41.1-SS1_RNA', 'CoV-41.2-SS1_RNA', 'CoV-42.1-SS1_RNA', 'CoV-42.2-SS1_RNA', 'CoV-43.1-SS1_RNA', 'CoV-43.2-SS1_RNA', 'CoV-44.2-SS1_RNA', 'CoV-45-SS1_RNA', 'CoV-46-SS1_RNA', 'CoV-47-SS1_RNA', 'CoV-48-SS1_RNA', 'CoV-49.1-SS1_RNA', 'CoV-49.2-SS1_RNA', 'CoV-5-Wilk_RNA', 'CoV-50.1-SS1_RNA', 'CoV-50.2-SS1_RNA', 'CoV-51-SS1_RNA', 'CoV-52.1-SS1_RNA', 'CoV-52.2-SS1_RNA', 'CoV-53.1-SS1_RNA', 'CoV-53.2-SS1_RNA', 'CoV-54-SS1_RNA', 'CoV-55-SS1_RNA', 'CoV-56-SS1_RNA', 'CoV-57-SS1_RNA', 'CoV-58-SS1_RNA', 'CoV-59.1-SS2_RNA', 'CoV-59.2-SS2_RNA', 'CoV-59.3-SS2_RNA', 'CoV-60-SS2_RNA', 'CoV-61-SS2_RNA', 'CoV-62.1-SS2_RNA', 'CoV-62.2-SS2_RNA', 'CoV-62.3-SS2_RNA', 'CoV-62.4-SS2_RNA', 'CoV-63.1-SS2_RNA', 'CoV-63.2-SS2_RNA', 'CoV-63.3-SS2_RNA', 'CoV-63.4-SS2_RNA', 'CoV-63.5-SS2_RNA', 'CoV-63.6-SS2_RNA', 'CoV-63.7-SS2_RNA', 'CoV-64.1-SS2_RNA', 'CoV-64.2-SS2_RNA', 'CoV-64.3-SS2_RNA', 'CoV-65.1-SS2_RNA', 'CoV-65.2-SS2_RNA', 'CoV-67.1-SS2_RNA', 'CoV-67.2-SS2_RNA', 'CoV-68.1-SS2_RNA', 'CoV-68.2-SS2_RNA', 'CoV-68.3-SS2_RNA', 'CoV-68.4-SS2_RNA', 'CoV-69.1-SS2_RNA', 'CoV-69.4-SS2_RNA', 'CoV-69.6-SS2_RNA', 'CoV-7-Wilk_RNA', 'CoV-70.1-SS2_RNA', 'CoV-70.3-SS2_RNA', 'CoV-71.1-SS2_RNA', 'CoV-71.2-SS2_RNA', 'CoV-71.3-SS2_RNA', 'CoV-71.4-SS2_RNA', 'CoV-72.1-SS2_RNA', 'CoV-72.2-SS2_RNA', 'CoV-72.3-SS2_RNA', 'CoV-73.1-SS2_RNA', 'CoV-73.2-SS2_RNA', 'CoV-73.3-SS2_RNA', 'CoV-74.1-SS2_RNA', 'CoV-74.2-SS2_RNA', 'CoV-76.5-SS2_RNA', 'CoV-77.2-Silvin_RNA', 'CoV-79.1-Silvin_RNA', 'CoV-82.1-Su_RNA', 'CoV-82.2-Su_RNA', 'CoV-83.1-Su_RNA', 'CoV-83.2-Su_RNA', 'CoV-84.1-Su_RNA', 'CoV-84.2-Su_RNA', 'CoV-85.1-Su_RNA', 'CoV-85.2-Su_RNA', 'CoV-86.1-Su_RNA', 'CoV-86.2-Su_RNA', 'CoV-87.1-Su_RNA', 'CoV-87.2-Su_RNA', 'CoV-88.1-Su_RNA', 'CoV-88.2-Su_RNA', 'CoV-89.1-Su_RNA', 'CoV-90.1-Su_RNA', 'CoV-90.2-Su_RNA', 'CoV-91.1-Su_RNA', 'CoV-91.2-Su_RNA', 'CoV-92.1-Su_RNA', 'CoV-92.2-Su_RNA', 'CoV-93.1-Su_RNA', 'CoV-93.2-Su_RNA', 'CoV-94.1-Su_RNA', 'CoV-94.2-Su_RNA', 'CoV-95-Su_RNA', 'CoV-96.1-Su_RNA', 'CoV-96.2-Su_RNA', 'CoV-97.1-Su_RNA', 'CoV-97.2-Su_RNA', 'CoV-98.1-Su_RNA', 'CoV-98.2-Su_RNA', 'CoV-99.2-Su_RNA', 'HD-1-Wilk_RNA', 'HD-10-Wen_RNA', 'HD-11-Wen_RNA', 'HD-12-Lee_RNA', 'HD-13-Lee_RNA', 'HD-14-Lee_RNA', 'HD-15-Lee_RNA', 'HD-16-Yu_RNA', 'HD-17-Yu_RNA', 'HD-18-Yu_RNA', 'HD-19-Aruna_RNA', 'HD-2-Wilk_RNA', 'HD-20-Aruna_RNA', 'HD-21-Aruna_RNA', 'HD-22-Aruna_RNA', 'HD-23-Aruna_RNA', 'HD-24-SS2_RNA', 'HD-28-SS2_RNA', 'HD-29-SS2_RNA', 'HD-3-Wilk_RNA', 'HD-30-SS2_RNA', 'HD-31-SS2_RNA', 'HD-32-SS2_RNA', 'HD-33-SS2_RNA', 'HD-35-SS2_RNA', 'HD-36-SS2_RNA', 'HD-37-SS2_RNA', 'HD-39-SS2_RNA', 'HD-4-Wilk_RNA', 'HD-43-Su_RNA', 'HD-44-Su_RNA', 'HD-45-Su_RNA', 'HD-46-Su_RNA', 'HD-47-Su_RNA', 'HD-48-Su_RNA', 'HD-49-Su_RNA', 'HD-5-Wilk_RNA', 'HD-50-Su_RNA', 'HD-51-Su_RNA', 'HD-52-Su_RNA', 'HD-53-Su_RNA', 'HD-54-Su_RNA', 'HD-55-Su_RNA', 'HD-56-Su_RNA', 'HD-57-Su_RNA', 'HD-58-Su_RNA', 'HD-58-Zhu_RNA', 'HD-59-Zhu_RNA', 'HD-6-Wilk_RNA', 'HD-60-Zhu_RNA', 'HD-61-Mudd_RNA', 'HD-7-Wen_RNA', 'HD-8-Wen_RNA', 'HD-9-Wen_RNA', 'SRR14466459_ATAC', 'SRR14466460_ATAC', 'SRR14466461_ATAC', 'SRR14466462_ATAC', 'SRR14466463_ATAC', 'SRR14466464_ATAC', 'SRR14466465_ATAC', 'SRR14466466_ATAC', 'SRR14466467_ATAC', 'SRR14466468_ATAC', 'SRR14466470_ATAC', 'SRR14466471_ATAC', 'SRR14466472_ATAC', 'SRR14466473_ATAC', 'SRR14466474_ATAC', 'SRR14466475_ATAC', 'SRR14466476_ATAC', 'SRR14466477_ATAC', 'SRR14466478_ATAC', 'SRR14466479_ATAC', 'SRR14466480_ATAC', 'SRR14466481_ATAC', 'SRR14466482_ATAC', 'SRR14466483_ATAC', 're_SRR14466469_ATAC', 're_SRR14466471_ATAC']
+
+Sample counts AFTER filtering:
+sample
+HD-16-Yu_RNA           12304
+HD-7-Wen_RNA           11411
+HD-9-Wen_RNA           11357
+CoV-29-Yu_RNA          11301
+CoV-85.1-Su_RNA        11066
+                       ...  
+CoV-102.1-Su_RNA         520
+CoV-73.1-SS2_RNA         515
+CoV-153.2-Su_RNA         515
+SRR14466471_ATAC         354
+re_SRR14466469_ATAC      344
+Name: count, Length: 431, dtype: int64
+Final filtering -- Cells remaining: 987398, Genes remaining: 10186
+Preprocessing complete!
+Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
+Original sample IDs stored in: adata.obs['original_sample']
+Function execution time: 109.81 seconds
+✓ Integration preprocessing completed successfully
 Loaded dimensionality reduction data from existing files
-Step 4: Visualizing multimodal embedding...
-Creating default embedding visualization (all samples)
-Expression key: X_DR_expression
-Proportion key: X_DR_proportion
-Additional color columns: ['sev.level']
-Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization
-
-Creating colored visualizations for 1 column(s)...
-
---- Processing color column: sev.level ---
-  Column 'sev.level': numerical with 4 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_expression_by_sev.level.png
-  Column 'sev.level': numerical with 4 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_proportion_by_sev.level.png
-  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_combined_by_sev.level.png
-✓ Embedding visualization completed successfully
-Step 5: Finding optimal cell resolution...
-GPU Memory: 47.70 GB
-GPU Memory Available: 0.00 GB
-
-================================================================================
-MULTI-OMICS RESOLUTION OPTIMIZATION
-================================================================================
-
-Configuration:
-  Optimization target: RNA EXPRESSION
-  Representation: X_glue (20 components)
-  DR components: 30
-  CCA PCs: 2
-  Output: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression
-
-============================================================
-PASS 1: Coarse Search (0.1 - 1.0, step 0.1)
-============================================================
-
---- Resolution: 0.100 (coarse) ---
-  Clusters: 5
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1002
-  RNA proportion: 0.0164
-  ATAC expression: 0.4071
-  ATAC proportion: 0.1431
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.200 (coarse) ---
-  Clusters: 12
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1950
-  RNA proportion: 0.0341
-  ATAC expression: 0.3545
-  ATAC proportion: 0.1928
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.300 (coarse) ---
-  Clusters: 14
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1986
-  RNA proportion: 0.0519
-  ATAC expression: 0.2699
-  ATAC proportion: 0.0695
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.400 (coarse) ---
-  Clusters: 17
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.2498
-  RNA proportion: 0.0181
-  ATAC expression: 0.2832
-  ATAC proportion: 0.1020
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.500 (coarse) ---
-  Clusters: 22
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1885
-  RNA proportion: 0.0213
-  ATAC expression: 0.3913
-  ATAC proportion: 0.2507
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.600 (coarse) ---
-  Clusters: 24
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.0415
-  RNA proportion: 0.1242
-  ATAC expression: 0.3949
-  ATAC proportion: 0.1686
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.700 (coarse) ---
-  Clusters: 29
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1955
-  RNA proportion: 0.1288
-  ATAC expression: 0.3697
-  ATAC proportion: 0.1035
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.800 (coarse) ---
-  Clusters: 29
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.3417
-  RNA proportion: 0.0600
-  ATAC expression: 0.4676
-  ATAC proportion: 0.2542
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.900 (coarse) ---
-  Clusters: 31
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.3549
-  RNA proportion: 0.1969
-  ATAC expression: 0.3486
-  ATAC proportion: 0.2261
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 1.000 (coarse) ---
-  Clusters: 36
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.2453
-  RNA proportion: 0.2546
-  ATAC expression: 0.4035
-  ATAC proportion: 0.3226
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
-Best coarse resolution: 0.90
-Best RNA expression CCA: 0.3549
-     ATAC expression CCA: 0.3486
-
-============================================================
-PASS 2: Fine Search (±0.05 around best, step 0.01)
-============================================================
-Search range: 0.85 to 0.95
-
---- Resolution: 0.850 (fine) ---
-  Clusters: 34
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.2891
-  RNA proportion: 0.2501
-  ATAC expression: 0.4412
-  ATAC proportion: 0.3008
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.860 (fine) ---
-  Clusters: 29
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1586
-  RNA proportion: 0.2775
-  ATAC expression: 0.5464
-  ATAC proportion: 0.2823
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.870 (fine) ---
-  Clusters: 35
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.0826
-  RNA proportion: 0.0327
-  ATAC expression: 0.3723
-  ATAC proportion: 0.1505
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.880 (fine) ---
-  Clusters: 33
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.2488
-  RNA proportion: 0.1077
-  ATAC expression: 0.5227
-  ATAC proportion: 0.2612
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.890 (fine) ---
-  Clusters: 36
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.2384
-  RNA proportion: 0.2666
-  ATAC expression: 0.3842
-  ATAC proportion: 0.2945
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.910 (fine) ---
-  Clusters: 37
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.2465
-  RNA proportion: 0.1701
-  ATAC expression: 0.3358
-  ATAC proportion: 0.1426
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.920 (fine) ---
-  Clusters: 33
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1114
-  RNA proportion: 0.2655
-  ATAC expression: 0.3412
-  ATAC proportion: 0.2713
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.930 (fine) ---
-  Clusters: 33
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.3143
-  RNA proportion: 0.2198
-  ATAC expression: 0.4524
-  ATAC proportion: 0.2881
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.940 (fine) ---
-  Clusters: 33
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1164
-  RNA proportion: 0.2460
-  ATAC expression: 0.4286
-  ATAC proportion: 0.2437
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
---- Resolution: 0.950 (fine) ---
-  Clusters: 39
-  Null distribution (RNA): 2 PCs, 100.0% success (1000/1000)
-  RNA expression: 0.1618
-  RNA proportion: 0.2379
-  ATAC expression: 0.5065
-  ATAC proportion: 0.2513
-  Warning: Embedding viz failed: get_embedding_data() got an unexpected keyword argument 'verbose'
-
-============================================================
-GENERATING CORRECTED NULL DISTRIBUTIONS
-============================================================
-
-Generating corrected null for RNA...
-  Saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/corrected_null_rna_expression.npy
-
-Generating corrected null for ATAC...
-  Saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/corrected_null_atac_expression.npy
-
-Computing corrected p-values...
-Computing corrected p-values for resolution 0.100
-  RNA expression: CCA=0.1002, p=0.3990
-  RNA proportion: CCA=0.0164, p=1.0000
-  ATAC expression: CCA=0.4071, p=0.5100
-  ATAC proportion: CCA=0.1431, p=1.0000
-Computing corrected p-values for resolution 0.200
-  RNA expression: CCA=0.1950, p=0.0030
-  RNA proportion: CCA=0.0341, p=1.0000
-  ATAC expression: CCA=0.3545, p=0.7220
-  ATAC proportion: CCA=0.1928, p=0.9980
-Computing corrected p-values for resolution 0.300
-  RNA expression: CCA=0.1986, p=0.0030
-  RNA proportion: CCA=0.0519, p=0.9540
-  ATAC expression: CCA=0.2699, p=0.9410
-  ATAC proportion: CCA=0.0695, p=1.0000
-Computing corrected p-values for resolution 0.400
-  RNA expression: CCA=0.2498, p=0.0000
-  RNA proportion: CCA=0.0181, p=1.0000
-  ATAC expression: CCA=0.2832, p=0.9140
-  ATAC proportion: CCA=0.1020, p=1.0000
-Computing corrected p-values for resolution 0.500
-  RNA expression: CCA=0.1885, p=0.0040
-  RNA proportion: CCA=0.0213, p=1.0000
-  ATAC expression: CCA=0.3913, p=0.5880
-  ATAC proportion: CCA=0.2507, p=0.9670
-Computing corrected p-values for resolution 0.600
-  RNA expression: CCA=0.0415, p=0.9950
-  RNA proportion: CCA=0.1242, p=0.1850
-  ATAC expression: CCA=0.3949, p=0.5720
-  ATAC proportion: CCA=0.1686, p=0.9990
-Computing corrected p-values for resolution 0.700
-  RNA expression: CCA=0.1955, p=0.0030
-  RNA proportion: CCA=0.1288, p=0.1500
-  ATAC expression: CCA=0.3697, p=0.6750
-  ATAC proportion: CCA=0.1035, p=1.0000
-Computing corrected p-values for resolution 0.800
-  RNA expression: CCA=0.3417, p=0.0000
-  RNA proportion: CCA=0.0600, p=0.8910
-  ATAC expression: CCA=0.4676, p=0.2700
-  ATAC proportion: CCA=0.2542, p=0.9640
-Computing corrected p-values for resolution 0.850
-  RNA expression: CCA=0.2891, p=0.0000
-  RNA proportion: CCA=0.2501, p=0.0000
-  ATAC expression: CCA=0.4412, p=0.3640
-  ATAC proportion: CCA=0.3008, p=0.8720
-Computing corrected p-values for resolution 0.860
-  RNA expression: CCA=0.1586, p=0.0330
-  RNA proportion: CCA=0.2775, p=0.0000
-  ATAC expression: CCA=0.5464, p=0.0880
-  ATAC proportion: CCA=0.2823, p=0.9160
-Computing corrected p-values for resolution 0.870
-  RNA expression: CCA=0.0826, p=0.6490
-  RNA proportion: CCA=0.0327, p=1.0000
-  ATAC expression: CCA=0.3723, p=0.6700
-  ATAC proportion: CCA=0.1505, p=1.0000
-Computing corrected p-values for resolution 0.880
-  RNA expression: CCA=0.2488, p=0.0000
-  RNA proportion: CCA=0.1077, p=0.3320
-  ATAC expression: CCA=0.5227, p=0.1370
-  ATAC proportion: CCA=0.2612, p=0.9590
-Computing corrected p-values for resolution 0.890
-  RNA expression: CCA=0.2384, p=0.0000
-  RNA proportion: CCA=0.2666, p=0.0000
-  ATAC expression: CCA=0.3842, p=0.6220
-  ATAC proportion: CCA=0.2945, p=0.8870
-Computing corrected p-values for resolution 0.900
-  RNA expression: CCA=0.3549, p=0.0000
-  RNA proportion: CCA=0.1969, p=0.0030
-  ATAC expression: CCA=0.3486, p=0.7450
-  ATAC proportion: CCA=0.2261, p=0.9840
-Computing corrected p-values for resolution 0.910
-  RNA expression: CCA=0.2465, p=0.0000
-  RNA proportion: CCA=0.1701, p=0.0140
-  ATAC expression: CCA=0.3358, p=0.7880
-  ATAC proportion: CCA=0.1426, p=1.0000
-Computing corrected p-values for resolution 0.920
-  RNA expression: CCA=0.1114, p=0.2940
-  RNA proportion: CCA=0.2655, p=0.0000
-  ATAC expression: CCA=0.3412, p=0.7730
-  ATAC proportion: CCA=0.2713, p=0.9370
-Computing corrected p-values for resolution 0.930
-  RNA expression: CCA=0.3143, p=0.0000
-  RNA proportion: CCA=0.2198, p=0.0000
-  ATAC expression: CCA=0.4524, p=0.3210
-  ATAC proportion: CCA=0.2881, p=0.9030
-Computing corrected p-values for resolution 0.940
-  RNA expression: CCA=0.1164, p=0.2540
-  RNA proportion: CCA=0.2460, p=0.0000
-  ATAC expression: CCA=0.4286, p=0.4210
-  ATAC proportion: CCA=0.2437, p=0.9730
-Computing corrected p-values for resolution 0.950
-  RNA expression: CCA=0.1618, p=0.0280
-  RNA proportion: CCA=0.2379, p=0.0000
-  ATAC expression: CCA=0.5065, p=0.1690
-  ATAC proportion: CCA=0.2513, p=0.9670
-Computing corrected p-values for resolution 1.000
-  RNA expression: CCA=0.2453, p=0.0000
-  RNA proportion: CCA=0.2546, p=0.0000
-  ATAC expression: CCA=0.4035, p=0.5240
-  ATAC proportion: CCA=0.3226, p=0.8190
-P-value plots saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/p_value
-
---- Creating CCA visualizations ---
-
-============================================================
-MODALITY ALIGNMENT ANALYSIS
-============================================================
-
---- Modality Correlation (expression) ---
-Pearson r = 0.0382 (p = 0.8728)
-Spearman r = -0.0045 (p = 0.9849)
-Interpretation: Weak/no alignment
-
-================================================================================
-FINAL RESULTS
-================================================================================
-
-Optimization Target: RNA EXPRESSION
-Best Resolution: 0.900
-Best CCA Score: 0.3549
-Number of Clusters: 31
-Corrected P-value: 0.0000
-
-All CCA scores at resolution 0.900:
-  RNA Expression:  0.3549
-  RNA Proportion:  0.1969
-  ATAC Expression: 0.3486
-  ATAC Proportion: 0.2261
-
-Modality Alignment (expression):
-  Pearson r = 0.0382
-  Weak/no alignment
-
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/resolution_results_rna_expression.csv
-Optimal pseudobulk saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/summary/optimal.h5ad
-Final summary: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression/FINAL_SUMMARY.txt
-
-================================================================================
-✓ Optimal resolution finding completed successfully
 
 Pipeline completed successfully!
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'visualization', 'optimal_resolution', 'resolution_results_df', 'status_flags']
+Available results: ['glue', 'adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'status_flags']
 Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
 Completed steps: 10/10
 GLUE sub-steps completed: 5/5
@@ -449,4 +289,4 @@ Multiomics Pipeline: ✓ COMPLETE
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 2257.2122 seconds
+Execution time: 1873.2774 seconds
