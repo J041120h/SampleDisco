@@ -28,6 +28,12 @@
 ... storing '_combined_batch_' as categorical
 ... storing 'modality' as categorical
 ... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
 ... storing 'database' as categorical
 ... storing 'dataset' as categorical
 ... storing 'batch' as categorical
@@ -38,23 +44,23 @@
 ... storing 'disease_state' as categorical
 ... storing 'organ_part' as categorical
 ... storing 'Unnamed: 5' as categorical
-... storing 'Unnamed: 6' as categorical
-... storing 'Unnamed: 7' as categorical
-... storing 'Unnamed: 8' as categorical
-... storing 'Unnamed: 9' as categorical
-... storing 'Unnamed: 10' as categorical
-... storing 'Unnamed: 11' as categorical
 ... storing 'modality' as categorical
 ... storing 'original_sample' as categorical
-2026-01-03 12:00:57,081 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2026-01-03 12:00:57 | [INFO] Computing initial centroids with sklearn.KMeans...
-2026-01-03 12:00:57,154 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2026-01-03 12:00:57 | [INFO] sklearn.KMeans initialization complete.
-2026-01-03 12:00:57,154 - harmonypy - INFO - Iteration 1 of 30
-2026-01-03 12:00:57 | [INFO] Iteration 1 of 30
-2026-01-03 12:00:57,163 - harmonypy - INFO - Iteration 2 of 30
-2026-01-03 12:00:57 | [INFO] Iteration 2 of 30
-2026-01-03 12:00:57,175 - harmonypy - INFO - Iteration 3 of 30
-2026-01-03 12:00:57 | [INFO] Iteration 3 of 30
-2026-01-03 12:00:57,184 - harmonypy - INFO - Converged after 3 iterations
-2026-01-03 12:00:57 | [INFO] Converged after 3 iterations
+2026-01-03 22:47:03,500 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-01-03 22:47:03 | [INFO] Computing initial centroids with sklearn.KMeans...
+2026-01-03 22:47:03,551 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-01-03 22:47:03 | [INFO] sklearn.KMeans initialization complete.
+2026-01-03 22:47:03,551 - harmonypy - INFO - Iteration 1 of 30
+2026-01-03 22:47:03 | [INFO] Iteration 1 of 30
+2026-01-03 22:47:03,556 - harmonypy - INFO - Converged after 1 iteration
+2026-01-03 22:47:03 | [INFO] Converged after 1 iteration
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 968, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 515, in multiomics_wrapper
+    fig, axes = visualize_multimodal_embedding(
+  File "/users/hjiang/GenoDistance/code/integration/integration_visualization.py", line 797, in visualize_multimodal_embedding
+    ax, data_type, unique_values = plot_embedding_colored_by_column(
+  File "/users/hjiang/GenoDistance/code/integration/integration_visualization.py", line 499, in plot_embedding_colored_by_column
+    scatter = ax.scatter(embedding[valid_mask, 0], embedding[valid_mask, 1],
+TypeError: tuple indices must be integers or slices, not tuple

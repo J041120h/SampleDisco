@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/retina"
+output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -293,13 +293,13 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
 # Multiomics Required Parameters
-multiomics_rna_file: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad'
-multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/retina.h5ad"
-multiomics_output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/retina"
+multiomics_rna_file: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/lutea.h5ad'
+multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/lutea.h5ad"
+multiomics_output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea"
 
 # Multiomics Main Control Flags
-multiomics_run_glue: true
-multiomics_run_integrate_preprocess: true
+multiomics_run_glue: false
+multiomics_run_integrate_preprocess: false
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
