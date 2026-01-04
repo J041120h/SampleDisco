@@ -39,7 +39,7 @@ def cell_types_multiomics(
     
     This function:
     1. Clusters only RNA cells using Leiden clustering
-    2. Transfers cell type labels to ATAC cells using k-NN in the scGLUE embedding space
+    2. Transfers cell type labels to ATAC cells using Jaccard-weighted SNN in the scGLUE embedding space
     
     Parameters:
     -----------
@@ -176,58 +176,120 @@ def cell_types_multiomics(
     # =========================================
     if verbose:
         print(f"\n--- Step 2: Transferring labels to ATAC cells ---")
-        print(f"  Using k={k_neighbors} nearest neighbors")
+        print(f"  Using k={k_neighbors} nearest neighbors with Jaccard-weighted SNN")
         print(f"  Metric: {transfer_metric}")
     
     # Get RNA and ATAC embeddings
     rna_embedding = embedding[rna_mask]
     atac_embedding = embedding[atac_mask]
     
-    # Use GPU for k-NN
+    # Use GPU for k-NN and Jaccard computation
     import cupy as cp
+    import cupyx.scipy.sparse as cp_sparse
     from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
     
     rna_embedding_gpu = cp.asarray(rna_embedding, dtype=cp.float32)
     atac_embedding_gpu = cp.asarray(atac_embedding, dtype=cp.float32)
     
-    # Find k nearest RNA neighbors for each ATAC cell
-    nn = cuNearestNeighbors(
+    # Build k-NN models for RNA and ATAC
+    if verbose:
+        print("  Building k-NN graphs...")
+    
+    rna_nn = cuNearestNeighbors(
         n_neighbors=k_neighbors,
         metric=transfer_metric,
         algorithm='brute' if n_rna < 50000 else 'auto'
     )
-    nn.fit(rna_embedding_gpu)
-    distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_gpu)
+    rna_nn.fit(rna_embedding_gpu)
     
-    # Transfer to CPU
-    indices = cp.asnumpy(indices_gpu)
-    distances = cp.asnumpy(distances_gpu)
+    atac_nn = cuNearestNeighbors(
+        n_neighbors=k_neighbors,
+        metric=transfer_metric,
+        algorithm='brute' if n_atac < 50000 else 'auto'
+    )
+    atac_nn.fit(atac_embedding_gpu)
+    
+    # Get k-NN graphs
+    # xx: RNA neighbors of RNA
+    rna_rna_dist, rna_rna_idx = rna_nn.kneighbors(rna_embedding_gpu)
+    # xy: ATAC neighbors of RNA  
+    rna_atac_dist, rna_atac_idx = atac_nn.kneighbors(rna_embedding_gpu)
+    # yx: RNA neighbors of ATAC
+    atac_rna_dist, atac_rna_idx = rna_nn.kneighbors(atac_embedding_gpu)
+    # yy: ATAC neighbors of ATAC
+    atac_atac_dist, atac_atac_idx = atac_nn.kneighbors(atac_embedding_gpu)
+    
+    # Convert to sparse adjacency matrices on GPU
+    if verbose:
+        print("  Computing Jaccard-weighted adjacency matrices...")
+    
+    def knn_to_sparse_gpu(indices, n_samples, n_features):
+        """Convert k-NN indices to sparse adjacency matrix on GPU"""
+        row_idx = cp.repeat(cp.arange(n_samples), k_neighbors)
+        col_idx = indices.ravel()
+        data = cp.ones(n_samples * k_neighbors, dtype=cp.float32)
+        return cp_sparse.csr_matrix(
+            (data, (row_idx, col_idx)), 
+            shape=(n_samples, n_features)
+        )
+    
+    xx = knn_to_sparse_gpu(rna_rna_idx, n_rna, n_rna)
+    xy = knn_to_sparse_gpu(rna_atac_idx, n_rna, n_atac)
+    yx = knn_to_sparse_gpu(atac_rna_idx, n_atac, n_rna)
+    yy = knn_to_sparse_gpu(atac_atac_idx, n_atac, n_atac)
+    
+    # Compute Jaccard index: (xx @ yx.T) + (xy @ yy.T)
+    # This measures shared nearest neighbors between RNA and ATAC cells
+    jaccard = (xx @ yx.T) + (xy @ yy.T)
+    
+    # Normalize Jaccard values: divide by (4*k - intersection_size)
+    jaccard.data /= (4 * k_neighbors - jaccard.data)
+    
+    # Normalize per query (ATAC) cell to form mapping matrix
+    # Each row sums to 1
+    row_sums = cp.array(jaccard.sum(axis=0)).ravel()
+    row_sums[row_sums == 0] = 1  # Avoid division by zero
+    normalized_jaccard = jaccard.multiply(1.0 / row_sums)
+    
+    # Transfer to CPU for one-hot encoding (sklearn doesn't have GPU version)
+    if verbose:
+        print("  Computing label predictions...")
+    
+    # Clean up intermediate GPU arrays
+    del xx, xy, yx, yy, rna_rna_dist, rna_rna_idx, rna_atac_dist, rna_atac_idx
+    del atac_rna_dist, atac_rna_idx, atac_atac_dist, atac_atac_idx
+    
+    # Convert to scipy sparse on CPU
+    normalized_jaccard_cpu = normalized_jaccard.get()
     
     # Clean up GPU memory
-    del rna_embedding_gpu, atac_embedding_gpu, distances_gpu, indices_gpu
+    del jaccard, normalized_jaccard, rna_embedding_gpu, atac_embedding_gpu
     cp.get_default_memory_pool().free_all_blocks()
     
-    # Convert RNA cell types to array for indexing
-    rna_cell_types_array = rna_cell_types.values
+    # One-hot encode RNA cell types
+    from sklearn.preprocessing import OneHotEncoder
+    onehot = OneHotEncoder(sparse_output=True)
+    rna_labels_onehot = onehot.fit_transform(rna_cell_types.values.reshape(-1, 1))
     
-    # Perform majority voting for label transfer
-    atac_cell_types = []
-    atac_confidence = []
+    # Compute predicted labels: normalized_jaccard.T @ one-hot matrix
+    # Shape: (n_atac, n_categories)
+    atac_scores = normalized_jaccard_cpu.T @ rna_labels_onehot
     
-    for i in range(n_atac):
-        neighbor_indices = indices[i]
-        neighbor_labels = rna_cell_types_array[neighbor_indices]
-        
-        # Majority voting
-        unique_labels, counts = np.unique(neighbor_labels, return_counts=True)
-        majority_label = unique_labels[np.argmax(counts)]
-        confidence = np.max(counts) / k_neighbors
-        
-        atac_cell_types.append(majority_label)
-        atac_confidence.append(confidence)
+    # Get predictions and confidence
+    atac_pred_idx = atac_scores.argmax(axis=1).A1
+    atac_pred_labels = onehot.categories_[0][atac_pred_idx]
+    atac_confidence = atac_scores.max(axis=1).toarray().ravel()
     
-    atac_cell_types = pd.Series(atac_cell_types, index=adata.obs.index[atac_mask])
-    atac_confidence = pd.Series(atac_confidence, index=adata.obs.index[atac_mask])
+    # Create series with proper index
+    atac_cell_types = pd.Series(
+        atac_pred_labels,
+        index=adata.obs.index[atac_mask],
+        dtype=rna_cell_types.dtype
+    )
+    atac_confidence = pd.Series(
+        atac_confidence,
+        index=adata.obs.index[atac_mask]
+    )
     
     if verbose:
         mean_confidence = np.mean(atac_confidence)

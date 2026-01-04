@@ -1,6 +1,42 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
-2026-01-04 00:28:12 | [INFO] init
-... storing 'modality' as categorical
+2026-01-04 05:29:29 | [INFO] init
 ... storing 'sample' as categorical
-... storing 'original_sample' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'modality' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 69, in <module>
+    main()
+  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 63, in main
+    wrapper(**config)
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 968, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 592, in multiomics_wrapper
+    optimal_res, results_df = find_optimal_cell_resolution_integration(
+  File "/users/hjiang/GenoDistance/code/integration/integration_optimal_resolution.py", line 1468, in find_optimal_cell_resolution_integration
+    result_dict = process_resolution(resolution, 'coarse')
+  File "/users/hjiang/GenoDistance/code/integration/integration_optimal_resolution.py", line 1389, in process_resolution
+    AnnData_integrated = cell_types_multiomics(
+  File "/users/hjiang/GenoDistance/code/integration/integration_cell_type.py", line 139, in cell_types_multiomics
+    rna_adata = adata[rna_mask].copy()
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_core/anndata.py", line 1440, in copy
+    X=_subset(self._adata_ref.X, (self._oidx, self._vidx)).copy()
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/functools.py", line 889, in wrapper
+    return dispatch(args[0].__class__)(*args, **kw)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_core/index.py", line 168, in _subset_spmatrix
+    return a[subset_idx]
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_index.py", line 87, in __getitem__
+    res = self._get_arrayXslice(row, col)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_csr.py", line 277, in _get_arrayXslice
+    return self._major_index_fancy(row)._get_submatrix(minor=col)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scipy/sparse/_compressed.py", line 769, in _major_index_fancy
+    csr_row_index(
+KeyboardInterrupt

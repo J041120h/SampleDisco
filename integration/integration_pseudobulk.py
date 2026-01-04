@@ -757,7 +757,6 @@ def compute_pseudobulk_adata_linux(
     modality_col : str
         Column name in adata.obs containing modality information (default: 'modality')
     """
-    print("\n\n\nThis is a test run of the new pseudobulk\n\n\n")
     if verbose:
         print(f"[Pseudobulk] Input: {adata.n_obs} cells, {adata.n_vars} genes")
         print(f"[Pseudobulk] HVG selection modality: {hvg_modality}")

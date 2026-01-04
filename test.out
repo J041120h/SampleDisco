@@ -2,10 +2,10 @@ Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
         "trajectory_analysis": false,
         "trajectory_dge": false,
         "cluster_dge": false,
@@ -22,12 +22,12 @@ Resuming process from previous progress:
         "visualization": false
     },
     "multiomics": {
-        "glue_integration": true,
-        "glue_preprocessing": true,
-        "glue_training": true,
-        "glue_gene_activity": true,
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
         "glue_cell_types": true,
-        "glue_visualization": true,
+        "glue_visualization": false,
         "integration_preprocessing": true,
         "dimensionality_reduction": true,
         "embedding_visualization": true,
@@ -44,284 +44,99 @@ Resuming process from previous progress:
 ============================================================
 RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea
-Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/preprocess/adata_sample.h5ad
-Step 3: Running dimensionality reduction (pseudobulk + PCA)...
-  Sub-step 3a: Computing pseudobulk...
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics
+Initial status flags: {'glue_integration': False, 'glue_preprocessing': False, 'glue_training': False, 'glue_gene_activity': False, 'glue_cell_types': True, 'glue_visualization': False, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
+Step 1b: Running cell type assignment...
 
-
-
-This is a test run of the new pseudobulk
-
-
-
-[Pseudobulk] Input: 285729 cells, 18873 genes
-[Pseudobulk] HVG selection modality: RNA
+============================================================
+Cell Type Assignment for Multi-omics Data
+============================================================
 [Seed Control] PyTorch GPU deterministic mode enabled with seed=42
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] HVG selection will use RNA cells only
-[Pseudobulk] 24 samples, 17 cell types
-[Pseudobulk] Batch correction: ['modality']
-[Pseudobulk] Modality distribution: {'ATAC': np.int64(143788), 'RNA': np.int64(141941)}
-[Pseudobulk] Phase 1a: Aggregating ALL cells...
-  Aggregating 285729 cells -> 24 samples x 17 cell types
-  Created 17 cell type layers
-[Pseudobulk] Phase 1b: Aggregating RNA cells for HVG selection...
-  Filtered to RNA cells: 141941 / 285729
-  Aggregating 141941 cells -> 12 samples x 17 cell types
-  Created 17 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  Step 2a: Selecting HVGs from RNA cells
-  Step 2b: Extracting expression from ALL cells
-  [1/17] 1
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [2/17] 10
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [3/17] 11
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [4/17] 12
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [5/17] 13
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [6/17] 14
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [7/17] 15
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [8/17] 16
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [9/17] 17
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [10/17] 2
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [11/17] 3
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [12/17] 4
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [13/17] 5
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [14/17] 6
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [15/17] 7
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [16/17] 8
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-  [17/17] 9
-    Selecting HVGs from RNA cells...
-    Batches: 1, sizes: 12-12
-    Skipping: only 1 batch
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 2, sizes: 12-12
-    Applied ComBat
-    Using 2000 HVGs
-[Pseudobulk] Retained 17 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 34000
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 24 samples, 34000 features
-  Sub-step 3b: Processing with PCA...
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] Batch correction: Using 1 batch column(s): ['modality']
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=10
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(24, 34000), proportion=(24, 17)
-[DimRed] Computing PCA for RNA data with 10 components on (24, 34000) data
-[PCA] Success. Shape: (24, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (24, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (24, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Computing PCA with 10 components...
-[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['modality']
-[run_dimension_reduction_proportion] Harmony completed with 1 batch factor(s). Shape: (24, 10)
-[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (24, 10)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_expression_embedding.csv (shape: (24, 10))
-[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_proportion_embedding.csv (shape: (24, 10))
-[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file path:
-  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (5.2 MB)
-[process_anndata_with_dimension_reduction] ✓ File saved successfully
 
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.27 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ATTEMPTED
-  - H5AD: pseudobulk_anndata only
-  - CSV embeddings: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/
-✓ Dimensionality reduction completed successfully
-Step 4: Visualizing multimodal embedding...
-Creating default embedding visualization (all samples)
-Expression key: X_DR_expression
-Proportion key: X_DR_proportion
-Additional color columns: ['age']
-Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/visualization
+Data composition:
+  RNA cells: 427752
+  ATAC cells: 430544
+  Total cells: 858296
 
-Creating colored visualizations for 1 column(s)...
+--- Step 1: Clustering RNA cells ---
+  Resolution: 0.8
+  Building neighborhood graph for RNA cells...
+  Performing Leiden clustering...
+  Found 42 clusters in RNA cells
 
---- Processing color column: age ---
-  Column 'age': numerical with 12 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/visualization/all_samples_expression_by_age.png
-  Column 'age': numerical with 12 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/visualization/all_samples_proportion_by_age.png
-  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/visualization/all_samples_combined_by_age.png
-✓ Embedding visualization completed successfully
+--- Step 2: Transferring labels to ATAC cells ---
+  Using k=3 nearest neighbors with Jaccard-weighted SNN
+  Metric: cosine
+  Building k-NN graphs...
+  Computing Jaccard-weighted adjacency matrices...
+  Computing label predictions...
+  Label transfer complete
+  Mean transfer confidence: 0.944
 
-Pipeline completed successfully!
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea
-Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
-Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': False}
-Completed steps: 9/10
-GLUE sub-steps completed: 5/5
+--- Step 3: Combining cell type assignments ---
+  Cell type assignments complete
 
-✓ Multiomics pipeline completed successfully!
+  Cell type distribution:
+    Cluster 1: RNA=7510, ATAC=3518
+    Cluster 10: RNA=4337, ATAC=1872
+    Cluster 11: RNA=18163, ATAC=19400
+    Cluster 12: RNA=3002, ATAC=3335
+    Cluster 13: RNA=11252, ATAC=13858
+    Cluster 14: RNA=3474, ATAC=2467
+    Cluster 15: RNA=4492, ATAC=4883
+    Cluster 16: RNA=24469, ATAC=29898
+    Cluster 17: RNA=31198, ATAC=22091
+    Cluster 18: RNA=8765, ATAC=8684
+    Cluster 19: RNA=8381, ATAC=7133
+    Cluster 2: RNA=19821, ATAC=22399
+    Cluster 20: RNA=5512, ATAC=2790
+    Cluster 21: RNA=6172, ATAC=7865
+    Cluster 22: RNA=3876, ATAC=1885
+    Cluster 23: RNA=6288, ATAC=2168
+    Cluster 24: RNA=5615, ATAC=5283
+    Cluster 25: RNA=9200, ATAC=10879
+    Cluster 26: RNA=17797, ATAC=12839
+    Cluster 27: RNA=15527, ATAC=14469
+    Cluster 28: RNA=15745, ATAC=15025
+    Cluster 29: RNA=5101, ATAC=6021
+    Cluster 3: RNA=5274, ATAC=9087
+    Cluster 30: RNA=9054, ATAC=8087
+    Cluster 31: RNA=9057, ATAC=10318
+    Cluster 32: RNA=13240, ATAC=11700
+    Cluster 33: RNA=10584, ATAC=11385
+    Cluster 34: RNA=2167, ATAC=5615
+    Cluster 35: RNA=9686, ATAC=8188
+    Cluster 36: RNA=1158, ATAC=1031
+    Cluster 37: RNA=14739, ATAC=11629
+    Cluster 38: RNA=681, ATAC=95
+    Cluster 39: RNA=1479, ATAC=287
+    Cluster 4: RNA=3719, ATAC=3857
+    Cluster 40: RNA=6082, ATAC=6205
+    Cluster 41: RNA=563, ATAC=213
+    Cluster 42: RNA=12402, ATAC=10068
+    Cluster 5: RNA=18936, ATAC=24338
+    Cluster 6: RNA=30474, ATAC=34965
+    Cluster 7: RNA=1547, ATAC=4447
+    Cluster 8: RNA=1776, ATAC=3497
+    Cluster 9: RNA=39437, ATAC=46770
 
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-Multiomics Pipeline: ⚠ PARTIAL
-  - glue_integration: ✓
-  - glue_preprocessing: ✓
-  - glue_training: ✓
-  - glue_gene_activity: ✓
-  - glue_cell_types: ✓
-  - glue_visualization: ✓
-  - integration_preprocessing: ✓
-  - dimensionality_reduction: ✓
-  - embedding_visualization: ✓
-  - optimal_resolution: ✗
+--- Step 4: Filtering modality-imbalanced clusters ---
+[Modality Balance] All clusters balanced, no filtering needed
 
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea
-Status file: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/sys_log/main_process_status.json
-Execution time: 26.3664 seconds
+--- Step 5: Computing UMAP ---
+
+--- Step 6: Generating visualizations ---
+  Generating cell type UMAP...
+  Generating modality UMAP...
+  Generating split modality UMAPs...
+  Generating label transfer confidence plot...
+  Generating cell type composition heatmap...
+  Saved distribution table to: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/visualization/celltype_modality_distribution.csv
+  Visualizations complete!
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/preprocess/atac_rna_integrated.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 4 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...

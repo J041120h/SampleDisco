@@ -1,56 +1,39 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'modality' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'database' as categorical
-... storing 'dataset' as categorical
-... storing 'batch' as categorical
-... storing 'tissue' as categorical
-... storing 'source_file' as categorical
-... storing 'age' as categorical
-... storing 'sex' as categorical
-... storing 'disease_state' as categorical
-... storing 'organ_part' as categorical
-... storing 'Unnamed: 5' as categorical
-... storing 'modality' as categorical
-... storing 'original_sample' as categorical
-2026-01-03 23:03:26,003 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2026-01-03 23:03:26 | [INFO] Computing initial centroids with sklearn.KMeans...
-2026-01-03 23:03:26,054 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2026-01-03 23:03:26 | [INFO] sklearn.KMeans initialization complete.
-2026-01-03 23:03:26,054 - harmonypy - INFO - Iteration 1 of 30
-2026-01-03 23:03:26 | [INFO] Iteration 1 of 30
-2026-01-03 23:03:26,059 - harmonypy - INFO - Converged after 1 iteration
-2026-01-03 23:03:26 | [INFO] Converged after 1 iteration
+2026-01-04 08:28:15 | [INFO] init
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 69, in <module>
+    main()
+  File "/users/hjiang/GenoDistance/code/SampleDisc.py", line 63, in main
+    wrapper(**config)
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 968, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 375, in multiomics_wrapper
+    merged_adata = cell_types_multiomics(
+  File "/users/hjiang/GenoDistance/code/integration/integration_cell_type.py", line 397, in cell_types_multiomics
+    safe_h5ad_write(adata, defined_output_path, verbose=verbose)
+  File "/users/hjiang/GenoDistance/code/utils/safe_save.py", line 206, in safe_h5ad_write
+    sc.write(filepath, adata_copy)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py", line 82, in fn_compatible
+    return fn(*args_all, **kw)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scanpy/readwrite.py", line 676, in write
+    adata.write(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_core/anndata.py", line 1863, in write_h5ad
+    write_h5ad(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/h5ad.py", line 88, in write_h5ad
+    write_elem(f, "X", adata.X, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 378, in write_elem
+    Writer(_REGISTRY).write_elem(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/utils.py", line 247, in func_wrapper
+    return func(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 328, in write_elem
+    return write_func(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 71, in wrapper
+    result = func(g, k, *args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/methods.py", line 602, in write_sparse_compressed
+    g.create_dataset("indices", data=value.indices, **dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/group.py", line 186, in create_dataset
+    dsid = dataset.make_new_dset(group, shape, dtype, data, name, **kwds)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/dataset.py", line 178, in make_new_dset
+    dset_id.write(h5s.ALL, h5s.ALL, data)
+KeyboardInterrupt

@@ -300,6 +300,7 @@ multiomics_output_dir: null
 # Multiomics Main Control Flags
 multiomics_run_glue: false
 multiomics_run_integrate_preprocess: false
+multiomics_run_glue_cell_types: true
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: true
 multiomics_run_find_optimal_resolution: false
@@ -308,7 +309,6 @@ multiomics_run_find_optimal_resolution: false
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: false
-multiomics_run_glue_cell_types: true
 multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
@@ -347,7 +347,7 @@ multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: null
-multiomics_cluster_resolution: 0.5
+multiomics_cluster_resolution: 0.8
 multiomics_use_rep_celltype: "X_glue"
 multiomics_markers: null
 multiomics_method: "average"

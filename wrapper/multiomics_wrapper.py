@@ -150,7 +150,7 @@ def multiomics_wrapper(
     num_DR_components=30,
     num_PCs=20,
     num_pvalue_simulations=1000,
-    n_pcs=2,
+    n_pcs=10,
     compute_pvalues=True,
     visualize_embeddings=True,
     resolution_output_dir=None,
@@ -380,8 +380,7 @@ def multiomics_wrapper(
             cell_type_column=celltype_col,
             cluster_resolution=cluster_resolution,
             use_rep=use_rep_celltype,
-            num_PCs=n_lsi_comps,
-            k_neighbors=k_neighbors,
+            k_neighbors=3,
             transfer_metric=metric,
             compute_umap=generate_umap_celltype,
             save=True,
@@ -590,7 +589,6 @@ def multiomics_wrapper(
         
         # Suppress warnings
         suppress_warnings()
-        
         optimal_res, results_df = find_optimal_cell_resolution_integration(
             AnnData_integrated=integrated_adata_for_resolution,
             output_dir=resolution_output_dir,
@@ -604,10 +602,8 @@ def multiomics_wrapper(
             use_rep=resolution_use_rep,
             num_DR_components=num_DR_components,
             num_PCs=num_PCs,
-            num_pvalue_simulations=num_pvalue_simulations,
             n_pcs=n_pcs,
-            compute_pvalues=compute_pvalues,
-            visualize_embeddings=visualize_embeddings,
+            visualize_cell_types=True,  # Uses cell_types_multiomics built-in visualization
             verbose=multiomics_verbose
         )
         

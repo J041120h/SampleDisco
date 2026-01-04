@@ -1431,11 +1431,11 @@ if __name__ == "__main__":
     embedding_configs = [
         {
             "method_name": "SD_expression",
-            "embedding_csv": "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/Sample_distance/correlation/expression_DR_distance/expression_DR_coordinates.csv",
+            "embedding_csv": "/dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/embeddings/sample_expression_embedding.csv",
         },
         {
             "method_name": "SD_proportion",
-            "embedding_csv": "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/rna/Sample_distance/correlation/proportion_DR_distance/proportion_DR_coordinates.csv",
+            "embedding_csv": "/dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/embeddings/sample_proportion_embedding.csv",
         },
         {
             "method_name": "pilot",

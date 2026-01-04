@@ -297,17 +297,17 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
 multiomics_output_dir: null
 
 # Multiomics Main Control Flags
-multiomics_run_glue: true
-multiomics_run_integrate_preprocess: true
+multiomics_run_glue: false
+multiomics_run_integrate_preprocess: false
+multiomics_run_glue_cell_types: false
 multiomics_run_dimensionality_reduction: false
 multiomics_run_visualize_embedding: false
-multiomics_run_find_optimal_resolution: false
+multiomics_run_find_optimal_resolution: true
 
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: true
-multiomics_run_glue_cell_types: true
 multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
@@ -413,7 +413,7 @@ multiomics_resolution_use_rep: "X_glue"
 multiomics_num_dr_components: 30
 multiomics_num_pcs: 20
 multiomics_num_pvalue_simulations: 1000
-multiomics_n_pcs: 2
+multiomics_n_pcs: 10
 multiomics_compute_pvalues: true
 multiomics_visualize_embeddings: true
 multiomics_resolution_output_dir: null
