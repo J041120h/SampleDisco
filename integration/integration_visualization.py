@@ -404,28 +404,6 @@ def detect_data_type(values):
         return 'categorical', unique_values
 
 
-def get_embedding_data(adata, embedding_key):
-    """
-    Get embedding data from adata.obsm or adata.uns.
-    
-    Returns:
-    --------
-    embedding : np.ndarray
-        2D embedding array
-    """
-    if embedding_key in adata.obsm:
-        embedding = adata.obsm[embedding_key]
-    elif embedding_key in adata.uns:
-        embedding = adata.uns[embedding_key]
-    else:
-        raise ValueError(f"Embedding key '{embedding_key}' not found in adata.obsm or adata.uns")
-    
-    # Ensure 2D
-    if embedding.ndim == 1:
-        raise ValueError(f"Embedding '{embedding_key}' is 1D, expected 2D")
-    
-    return embedding
-
 
 def plot_default_embedding(adata, embedding_key, ax, point_size=60, alpha=0.8, 
                            show_sample_names=False):

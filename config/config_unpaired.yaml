@@ -298,10 +298,10 @@ multiomics_output_dir: null
 
 # Multiomics Main Control Flags
 multiomics_run_glue: false
-multiomics_run_integrate_preprocess: false
+multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: false
-multiomics_run_visualize_embedding: true
-multiomics_run_find_optimal_resolution: true
+multiomics_run_visualize_embedding: false
+multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: true

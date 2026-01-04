@@ -1099,8 +1099,8 @@ def glue(
                     cell_type_column='cell_type',
                     existing_cell_types=existing_cell_types,
                     n_target_clusters=n_target_clusters,
-                    umap=False,  # We'll handle UMAP separately
-                    save=False,  # We'll save the final result
+                    umap=True,  # We'll handle UMAP separately
+                    save=True,  # We'll save the final result
                     output_dir=output_dir,
                     defined_output_path = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad"),
                     cluster_resolution=cluster_resolution,
