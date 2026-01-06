@@ -1,15 +1,15 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_heart/SD"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_heart_rna"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
 use_gpu: true
@@ -21,13 +21,13 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: '/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/preprocess/atac_rna_integrated.h5ad'
+rna_count_data_path: '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rna_raw.h5ad'
 rna_sample_meta_path: '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
 rna_preprocessing: true
-rna_cell_type_cluster: false
+rna_cell_type_cluster: true
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
@@ -38,14 +38,13 @@ rna_cluster_dge: false
 rna_visualize_data: false
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad
-rna_anndata_sample_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_sample.h5ad
-rna_pseudobulk_adata_path: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
-
+rna_anndata_cell_path: null
+rna_anndata_sample_path: null
+rna_pseudobulk_adata_path: null
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-  - "sev.level"
+  - "disease_state"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: 

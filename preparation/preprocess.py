@@ -58,7 +58,6 @@ def anndata_cluster(
 
     return adata_cluster
 
-
 def anndata_sample(
     adata_sample_diff,
     output_dir,
@@ -68,19 +67,26 @@ def anndata_sample(
     if verbose:
         print("=== [CPU] Processing data for sample differences ===")
 
-    adata_sample_diff.layers["counts"] = adata_sample_diff.X.copy()
+    # Temporarily save original expression
+    X_orig = adata_sample_diff.X.copy()
 
     sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
     sc.pp.log1p(adata_sample_diff)
-    sc.tl.pca(adata_sample_diff, n_comps=num_PCs, svd_solver="arpack")
+    sc.tl.pca(
+        adata_sample_diff,
+        n_comps=num_PCs,
+        svd_solver="arpack",
+    )
 
-    adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
-    del adata_sample_diff.layers["counts"]
+    # Restore original expression
+    adata_sample_diff.X = X_orig
+    del X_orig  # explicitly free memory
 
     save_path = os.path.join(output_dir, "adata_sample.h5ad")
     safe_h5ad_write(adata_sample_diff, save_path, verbose=verbose)
 
     return adata_sample_diff
+
 
 
 def preprocess(

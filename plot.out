@@ -1,87 +1,75 @@
 Linux system detected with GPU enabled.
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": true,
-        "glue_preprocessing": true,
-        "glue_training": true,
-        "glue_gene_activity": true,
-        "glue_cell_types": true,
-        "glue_visualization": true,
-        "integration_preprocessing": true,
-        "dimensionality_reduction": true,
-        "embedding_visualization": true,
-        "optimal_resolution": true
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
-}
+Initializing main process status file.
 
 ============================================================
-RUNNING MULTIOMICS PIPELINE
+RUNNING RNA PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
-Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
-Loaded dimensionality reduction data from existing files
-Step 5: Finding optimal cell resolution...
-GPU Memory: 47.70 GB
-GPU Memory Available: 0.00 GB
-
-================================================================================
-MULTI-OMICS RESOLUTION OPTIMIZATION
-================================================================================
-
-Configuration:
-  Optimization target: RNA EXPRESSION
-  Representation: X_glue (20 components)
-  DR components: 30
-  CCA PCs: 2
-  Cell type method: cell_types_multiomics (RNA clustering + ATAC label transfer)
-  Cell type visualization: True
-  Output: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization/Integration_optimization_rna_expression
-
-============================================================
-PASS 1: Coarse Search (0.1 - 1.0, step 0.1)
-============================================================
-
---- Resolution: 0.100 (coarse) ---
-  Clusters: 12
-  RNA expression: 0.1690
-  ATAC expression: 0.4271
-
---- Resolution: 0.200 (coarse) ---
-  Clusters: 16
-  RNA expression: 0.0909
-  ATAC expression: 0.3893
-
---- Resolution: 0.300 (coarse) ---
-  Clusters: 21
-  RNA expression: 0.0591
-  ATAC expression: 0.1908
-
---- Resolution: 0.400 (coarse) ---
+Starting RNA wrapper function with provided parameters...
+Starting preprocessing...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+=== Reading input dataset ===
+Raw shape: 134905 cells × 38606 genes
+=== Merging sample-level metadata into adata.obs ===
+   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+   🔄 Dropping 5 overlapping columns from adata.obs: ['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
+      Will use metadata versions instead
+   ✅ Added 0 new metadata columns
+   🔗 Matched 134905/134905 entries (100.0%)
+All required columns are present in adata.obs.
+=== Processing data for clustering ===
+Running HVG selection on CPU...
+After HVG: 133293 cells × 2000 genes
+Moving to GPU for normalization, PCA, and Harmony...
+=== [GPU] Running Harmony integration ===
+Variables to regress: sample
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+	Completed 3 / 30 iteration(s).
+	Completed 4 / 30 iteration(s).
+	Completed 5 / 30 iteration(s).
+	Completed 6 / 30 iteration(s).
+	Completed 7 / 30 iteration(s).
+	Completed 8 / 30 iteration(s).
+	Completed 9 / 30 iteration(s).
+	Completed 10 / 30 iteration(s).
+Reach convergence after 10 iteration(s).
+End of harmony for adata_cluster.
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 12 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
+=== [CPU] Processing data for sample differences ===
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 12 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
+Total runtime: 506.93 seconds
+Starting cell type clustering at resolution: 0.18
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.18)...
+[cell_types] Found 8 clusters after Leiden clustering.
+[cell_types] Finished assigning cell types.
+[cell_types] Computing UMAP...
+[cell_types] Converting GPU arrays to CPU...
+[cell_types] Generating UMAP visualizations...
+[generate_umap_visualizations] Generating UMAP plots...
+[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (8 categories)
+[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/umap_cell_type.png
+[cell_types] Assigning cell_type labels to anndata_sample...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 13 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...

@@ -83,16 +83,25 @@ def anndata_sample(
     if verbose:
         print("=== [CPU] Processing data for sample differences ===")
 
+    # Ensure CPU
     rsc.get.anndata_to_CPU(adata_sample_diff)
 
-    adata_sample_diff.layers["counts"] = adata_sample_diff.X.copy()
+    if verbose:
+        print("Saving original expression matrix (temporary variable)")
+
+    # TEMPORARY copy (not stored in AnnData)
+    X_orig = adata_sample_diff.X.copy()
+
+    if verbose:
+        print("Normalizing and PCA on CPU...")
 
     sc.pp.normalize_total(adata_sample_diff, target_sum=1e4)
     sc.pp.log1p(adata_sample_diff)
     sc.pp.pca(adata_sample_diff, n_comps=num_PCs)
 
-    adata_sample_diff.X = adata_sample_diff.layers["counts"].copy()
-    del adata_sample_diff.layers["counts"]
+    # Restore original expression
+    adata_sample_diff.X = X_orig
+    del X_orig  # explicitly free memory
 
     save_path = os.path.join(output_dir, "adata_sample.h5ad")
     safe_h5ad_write(adata_sample_diff, save_path, verbose=verbose)

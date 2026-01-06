@@ -28,9 +28,9 @@ warnings.filterwarnings('ignore')
 # =============================================================================
 # USER CONFIGURATION - Set your paths and parameters here
 # =============================================================================
-CELL_ADATA_PATH = "/dcs07/hongkai/data/harry/result/Benchmark_multiomics/adata_cell.h5ad"
-PSEUDOBULK_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_SD/multiomics/pseudobulk/pseudobulk_sample.h5ad"
-OUTPUT_DIR = "/dcs07/hongkai/data/harry/result/multi_omics_SD/embedding_selection"
+CELL_ADATA_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_heart/SD/rna/preprocess/adata_cell.h5ad"
+PSEUDOBULK_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/pseudobulk/pseudobulk_sample.h5ad"
+OUTPUT_DIR = "/dcs07/hongkai/data/harry/result/multi_omics_heart/SD/embedding_selection"
 
 SAMPLE_COL = "sample"
 CELLTYPE_COL = "cell_type"
