@@ -73,3 +73,30 @@ Starting cell type clustering at resolution: 0.18
 [clean_obs_for_saving] Cleaning completed successfully
 [clean_obs_for_saving] 13 categorical columns processed
 [safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 13 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/pseudobulk/pseudobulk_sample.h5ad
+
+✗ RNA pipeline failed with error: [Errno 2] Unable to synchronously open file (unable to open file: name = '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/pseudobulk/pseudobulk_sample.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✗
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✗
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/sys_log/main_process_status.json
+Execution time: 829.2488 seconds

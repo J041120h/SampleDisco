@@ -218,7 +218,8 @@ def preprocess(
     if verbose:
         print(f"After initial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes")
 
-    adata.var["mt"] = adata.var_names.str.startswith("MT-")
+    mt_mask = adata.var_names.str.startswith(("MT-", "mt-"))
+    adata.var["mt"] = mt_mask
     sc.pp.calculate_qc_metrics(
         adata,
         qc_vars=["mt"],
@@ -248,8 +249,7 @@ def preprocess(
     if verbose:
         print(f"After final gene filtering: {adata.shape[0]} cells × {adata.shape[1]} genes")
         print(f"Processed shape: {adata.shape[0]} cells × {adata.shape[1]} genes")
-
-    adata.raw = adata.copy()
+        
     if verbose:
         print("Preprocessing complete!")
 
@@ -258,6 +258,7 @@ def preprocess(
     # -----------------------------------
     adata_cluster = adata.copy()
     adata_sample_diff = adata.copy()
+    del adata  # free memory
 
     adata_cluster = anndata_cluster(
         adata_cluster=adata_cluster,

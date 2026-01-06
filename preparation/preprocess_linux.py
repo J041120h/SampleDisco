@@ -233,7 +233,8 @@ def preprocess_linux(
     sc.pp.filter_genes(adata, min_cells=min_cells)
     sc.pp.filter_cells(adata, min_genes=min_features)
 
-    adata.var["mt"] = adata.var_names.str.startswith("MT-")
+    mt_mask = adata.var_names.str.startswith(("MT-", "mt-"))
+    adata.var["mt"] = mt_mask
     sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], log1p=False, inplace=True)
     adata = adata[adata.obs["pct_counts_mt"] < pct_mito_cutoff].copy()
 
@@ -250,9 +251,6 @@ def preprocess_linux(
     min_cells_final = int(0.001 * adata.n_obs)
     if min_cells_final > 0:
         sc.pp.filter_genes(adata, min_cells=min_cells_final)
-
-    # Save raw counts snapshot
-    adata.raw = adata.copy()
 
     # -----------------------------------
     # 5) Split into cluster / sample views
