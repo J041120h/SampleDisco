@@ -10,17 +10,15 @@ Starting preprocessing...
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 === Reading input dataset ===
-Raw shape: 134905 cells × 38606 genes
+Raw shape: 99438 cells × 38606 genes
 === Merging sample-level metadata into adata.obs ===
-   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   🔄 Dropping 5 overlapping columns from adata.obs: ['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
-      Will use metadata versions instead
-   ✅ Added 0 new metadata columns
-   🔗 Matched 134905/134905 entries (100.0%)
+   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+   ✅ Added 11 new metadata columns
+   🔗 Matched 99438/99438 entries (100.0%)
 All required columns are present in adata.obs.
 === Processing data for clustering ===
 Running HVG selection on CPU...
-After HVG: 133293 cells × 2000 genes
+After HVG: 34273 cells × 2000 genes
 Moving to GPU for normalization, PCA, and Harmony...
 === [GPU] Running Harmony integration ===
 Variables to regress: sample
@@ -31,72 +29,14 @@ Use GPU mode.
 	Completed 3 / 30 iteration(s).
 	Completed 4 / 30 iteration(s).
 	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-	Completed 9 / 30 iteration(s).
-	Completed 10 / 30 iteration(s).
-Reach convergence after 10 iteration(s).
+Reach convergence after 5 iteration(s).
 End of harmony for adata_cluster.
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_cell.h5ad
 [clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
 [clean_obs_for_saving] Cleaning completed successfully
 [clean_obs_for_saving] 12 categorical columns processed
 [safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_cell.h5ad
 === [CPU] Processing data for sample differences ===
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 12 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
-Total runtime: 506.93 seconds
-Starting cell type clustering at resolution: 0.18
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.18)...
-[cell_types] Found 8 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Generating UMAP visualizations...
-[generate_umap_visualizations] Generating UMAP plots...
-[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (8 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/umap_cell_type.png
-[cell_types] Assigning cell_type labels to anndata_sample...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 13 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 13 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_sample.h5ad
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/pseudobulk/pseudobulk_sample.h5ad
-
-✗ RNA pipeline failed with error: [Errno 2] Unable to synchronously open file (unable to open file: name = '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/pseudobulk/pseudobulk_sample.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
-
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✗
-  - trajectory_analysis: ✗
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✗
-
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina
-Status file: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/sys_log/main_process_status.json
-Execution time: 829.2488 seconds
+Saving original expression matrix (temporary variable)
+Normalizing and PCA on CPU...

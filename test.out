@@ -50,31 +50,3 @@ Starting preprocessing...
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
 === Reading input dataset ===
-Raw shape: 430595 cells × 36601 genes
-All required columns are present in adata.obs.
-=== Processing data for clustering ===
-Running HVG selection on CPU...
-After HVG: 415665 cells × 2000 genes
-Moving to GPU for normalization, PCA, and Harmony...
-=== [GPU] Running Harmony integration ===
-Variables to regress: sample
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-	Completed 9 / 30 iteration(s).
-Reach convergence after 9 iteration(s).
-End of harmony for adata_cluster.
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_ENCODE_rna/rna/preprocess/adata_cell.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 3 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_ENCODE_rna/rna/preprocess/adata_cell.h5ad
-=== [CPU] Processing data for sample differences ===
