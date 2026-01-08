@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-ARI-based Evaluation of Embedding/Distance Quality for Disease Severity Clustering.
+KMeans-based Evaluation of Embedding Quality for Disease Severity Clustering.
 
-This script evaluates how well KNN-based clustering aligns with known disease severity levels
+This script evaluates how well KMeans clustering aligns with known disease severity levels
 using Adjusted Rand Index (ARI) as the primary metric.
 
 Usage: Edit the function call in main() with your file paths and run the script.
@@ -18,83 +18,138 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
-from sklearn.cluster import AgglomerativeClustering, SpectralClustering
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from scipy.spatial.distance import squareform
+from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def read_metadata(meta_csv: str) -> pd.DataFrame:
-    """Read metadata CSV containing sample IDs and severity levels."""
-    md = pd.read_csv(meta_csv)
+def _load_csv_robust(filepath: str, index_col: Optional[int] = None) -> pd.DataFrame:
+    """
+    Load CSV with robust handling of encoding issues (BOM, etc.) and NaN sample IDs.
+    
+    Parameters
+    ----------
+    filepath : str
+        Path to CSV file
+    index_col : int, optional
+        Column to use as index
+        
+    Returns
+    -------
+    pd.DataFrame
+        Loaded dataframe with NaN sample IDs removed (if 'sample' column exists)
+    """
+    # Try reading with UTF-8-sig first (handles BOM)
+    try:
+        df = pd.read_csv(filepath, encoding='utf-8-sig', index_col=index_col)
+    except Exception:
+        # Fallback to default encoding
+        df = pd.read_csv(filepath, index_col=index_col)
+    
+    # If this is metadata (has 'sample' column), remove rows where sample is NaN or empty
+    if 'sample' in df.columns:
+        n_before = len(df)
+        # Remove rows with NaN sample IDs
+        df = df[df['sample'].notna()].copy()
+        # Also remove rows with empty string sample IDs
+        df = df[df['sample'].astype(str).str.strip() != ''].copy()
+        n_after = len(df)
+        if n_before != n_after:
+            print(f"[INFO] Removed {n_before - n_after} rows with missing/empty sample IDs from metadata", file=sys.stderr)
+    
+    return df
+
+
+def read_metadata(meta_csv: str, label_col: str = "tissue") -> pd.DataFrame:
+    """
+    Read metadata CSV containing sample IDs and labels for clustering.
+    
+    Parameters
+    ----------
+    meta_csv : str
+        Path to metadata CSV file
+    label_col : str
+        Name of the label column to use (e.g., 'tissue', 'sev.level', 'cell_type')
+    
+    Returns
+    -------
+    pd.DataFrame
+        Metadata with 'sample' and specified label column
+    """
+    # Use robust CSV loading
+    md = _load_csv_robust(meta_csv)
     md.columns = [c.lower().strip() for c in md.columns]
     
     # Check for required columns
-    required = {"sample", "sev.level"}
+    required = {"sample", label_col.lower()}
     missing = required - set(md.columns)
     if missing:
-        # Try alternative column names
-        if "sev_level" in md.columns:
-            md["sev.level"] = md["sev_level"]
-        elif "severity" in md.columns:
-            md["sev.level"] = md["severity"]
-        elif "severity.level" in md.columns:
-            md["sev.level"] = md["severity.level"]
-        else:
-            raise ValueError(f"Metadata must contain columns {sorted(required)}; missing: {sorted(missing)}")
+        raise ValueError(f"Metadata must contain columns {sorted(required)}; missing: {sorted(missing)}")
     
-    # Validate sample uniqueness
+    # Normalize sample IDs to lowercase for case-insensitive matching
+    md["sample"] = md["sample"].astype(str).str.lower().str.strip()
+    
+    # Validate sample uniqueness (after removing NaN/empty)
     if md["sample"].duplicated().any():
         dups = md.loc[md["sample"].duplicated(), "sample"].unique()
-        raise ValueError(f"'sample' IDs must be unique. Duplicates: {dups[:10]}")
+        raise ValueError(f"'sample' IDs must be unique. Duplicates: {list(dups[:10])}")
     
-    # Validate severity levels
-    sev_levels = md["sev.level"].dropna().unique()
-    print(f"Found severity levels: {sorted(sev_levels)}", file=sys.stderr)
+    # Validate labels
+    label_values = md[label_col].dropna().unique()
+    print(f"Found {len(label_values)} unique values in '{label_col}': {sorted(label_values)}", file=sys.stderr)
     
     return md
 
 
 def read_embedding_or_distance(data_csv: str, mode: str) -> Tuple[pd.DataFrame, bool]:
-    """Read embedding matrix or distance matrix from CSV."""
-    df = pd.read_csv(data_csv, index_col=0)
+    """
+    Read embedding matrix (only) from CSV.
+
+    Parameters
+    ----------
+    data_csv : str
+        Path to data CSV
+    mode : str
+        Must be 'embedding'. Distance mode is not supported in this version.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        Embedding matrix (samples × dimensions)
+    is_distance : bool
+        Always False in this version
+    """
+    if mode != "embedding":
+        raise ValueError(f"This script now only supports mode='embedding', got mode='{mode}'")
     
-    if mode == "distance":
-        # Validate distance matrix
-        if df.shape[0] != df.shape[1]:
-            raise ValueError(f"Distance matrix must be square, got shape {df.shape}")
-        
-        # Ensure zero diagonal and symmetry
-        vals = df.values.astype(float)
-        np.fill_diagonal(vals, 0.0)
-        
-        if not np.allclose(vals, vals.T, equal_nan=True, rtol=1e-5, atol=1e-8):
-            print("Warning: distance matrix not exactly symmetric; symmetrizing.", file=sys.stderr)
-            vals = (vals + vals.T) / 2.0
-            np.fill_diagonal(vals, 0.0)
-        
-        df.iloc[:, :] = vals
-        return df, True
-        
-    elif mode == "embedding":
-        if df.shape[1] < 1:
-            raise ValueError(f"Embedding must have ≥1 dimension, got {df.shape[1]}")
-        print(f"Loaded embedding with shape {df.shape} (samples × dimensions)", file=sys.stderr)
-        return df, False
-    else:
-        raise ValueError(f"mode must be 'embedding' or 'distance', got '{mode}'")
+    # Use robust CSV loading
+    df = _load_csv_robust(data_csv, index_col=0)
+    if df.shape[1] < 1:
+        raise ValueError(f"Embedding must have ≥1 dimension, got {df.shape[1]}")
+    print(f"Loaded embedding with shape {df.shape} (samples × dimensions)", file=sys.stderr)
+    return df, False
 
 
 def align_by_samples(md: pd.DataFrame, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Align metadata and data by common sample IDs."""
+    """Align metadata and data by common sample IDs (case-insensitive)."""
     if md.index.name != "sample":
         md = md.set_index("sample", drop=False)
     
+    # NORMALIZE CASE: Convert both indices to lowercase for case-insensitive matching
+    print("Normalizing sample IDs to lowercase for case-insensitive matching...", file=sys.stderr)
+    md.index = md.index.astype(str).str.lower().str.strip()
+    data.index = data.index.astype(str).str.lower().str.strip()
+    
     common = md.index.intersection(data.index)
     if len(common) == 0:
+        # Provide helpful diagnostics
+        print("\n" + "="*60, file=sys.stderr)
+        print("ERROR: No overlapping sample IDs!", file=sys.stderr)
+        print("="*60, file=sys.stderr)
+        print(f"Metadata samples (first 10): {list(md.index[:10])}", file=sys.stderr)
+        print(f"Data samples (first 10): {list(data.index[:10])}", file=sys.stderr)
+        print("="*60 + "\n", file=sys.stderr)
         raise ValueError("No overlapping sample IDs between metadata and data.")
     
     if len(common) < len(md):
@@ -107,66 +162,9 @@ def align_by_samples(md: pd.DataFrame, data: pd.DataFrame) -> Tuple[pd.DataFrame
     md2 = md.loc[common_sorted].copy()
     data2 = data.loc[common_sorted].copy()
     
+    print(f"Successfully aligned {len(common)} samples.", file=sys.stderr)
+    
     return md2, data2
-
-
-def knn_clustering(data: np.ndarray, n_clusters: int, k: int = 10, is_distance: bool = False) -> np.ndarray:
-    """
-    Perform KNN-based clustering using connectivity graph.
-    
-    Parameters
-    ----------
-    data : np.ndarray
-        Either embedding matrix (n_samples × n_features) or distance matrix (n_samples × n_samples)
-    n_clusters : int
-        Number of clusters to form
-    k : int
-        Number of neighbors for KNN graph
-    is_distance : bool
-        Whether data is a distance matrix
-        
-    Returns
-    -------
-    labels : np.ndarray
-        Cluster labels for each sample
-    """
-    n_samples = data.shape[0]
-    k_eff = min(k, n_samples - 1)
-    
-    # Build KNN connectivity matrix
-    if is_distance:
-        # Use distance matrix to find k nearest neighbors
-        knn_idx = np.argsort(data, axis=1)[:, 1:k_eff+1]  # exclude self
-        connectivity = np.zeros((n_samples, n_samples))
-        for i in range(n_samples):
-            connectivity[i, knn_idx[i]] = 1
-        connectivity = (connectivity + connectivity.T) / 2.0
-    else:
-        # Use embedding to find k nearest neighbors
-        nn = NearestNeighbors(n_neighbors=k_eff + 1, metric='euclidean')
-        nn.fit(data)
-        connectivity = nn.kneighbors_graph(data, mode='connectivity')
-        connectivity = connectivity.toarray()
-    
-    # Perform clustering using the connectivity constraint
-    clustering = AgglomerativeClustering(
-        n_clusters=n_clusters,
-        connectivity=connectivity,
-        linkage='average'
-    )
-    
-    if is_distance:
-        # For distance matrix, use precomputed distance in clustering
-        clustering = AgglomerativeClustering(
-            n_clusters=n_clusters,
-            metric='precomputed',
-            linkage='average'
-        )
-        labels = clustering.fit_predict(data)
-    else:
-        labels = clustering.fit_predict(data)
-    
-    return labels
 
 
 def compute_ari_metrics(
@@ -231,44 +229,66 @@ def plot_clustering_results(
     pred_labels: np.ndarray,
     metrics: Dict[str, float],
     output_path: Path,
-    is_distance: bool = False
+    is_distance: bool = False,
+    label_name: str = "Label"
 ) -> None:
-    """Generate visualization of clustering results."""
+    """
+    Generate visualization of clustering results.
+    
+    Parameters
+    ----------
+    data : np.ndarray
+        Data array for visualization
+    true_labels : np.ndarray
+        True labels (ground truth)
+    pred_labels : np.ndarray
+        Predicted cluster labels
+    metrics : dict
+        Metrics dictionary
+    output_path : Path
+        Output directory path
+    is_distance : bool
+        Whether data is a distance matrix (unused here; assumed False)
+    label_name : str
+        Name of the label column for plot titles
+    """
     
     # Use PCA for visualization if high-dimensional
-    if not is_distance and data.shape[1] > 2:
+    if data.shape[1] > 2:
         from sklearn.decomposition import PCA
         pca = PCA(n_components=2)
         data_2d = pca.fit_transform(data)
         explained_var = pca.explained_variance_ratio_
-    elif not is_distance and data.shape[1] == 2:
+    elif data.shape[1] == 2:
         data_2d = data
         explained_var = [1.0, 0.0]
     else:
-        # Use MDS for distance matrix
-        from sklearn.manifold import MDS
-        mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
-        data_2d = mds.fit_transform(data)
-        explained_var = [0.5, 0.5]  # MDS doesn't provide explained variance
+        # 1D embedding: pad with zeros
+        data_2d = np.column_stack([data[:, 0], np.zeros_like(data[:, 0])])
+        explained_var = [1.0, 0.0]
     
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     
-    # Plot true labels (severity levels)
-    scatter1 = axes[0].scatter(data_2d[:, 0], data_2d[:, 1], 
-                               c=true_labels, cmap='viridis', 
-                               alpha=0.7, s=50)
-    axes[0].set_title(f'True Severity Levels\n(1=healthy, 4=most severe)')
-    axes[0].set_xlabel(f'Dim 1 ({explained_var[0]:.1%} var)' if not is_distance else 'MDS 1')
-    axes[0].set_ylabel(f'Dim 2 ({explained_var[1]:.1%} var)' if not is_distance else 'MDS 2')
-    plt.colorbar(scatter1, ax=axes[0], label='Severity')
+    # Plot true labels
+    scatter1 = axes[0].scatter(
+        data_2d[:, 0], data_2d[:, 1],
+        c=true_labels, cmap='viridis',
+        alpha=0.7, s=50
+    )
+    axes[0].set_title(f'True {label_name}')
+    axes[0].set_xlabel(f'Dim 1 ({explained_var[0]:.1%} var)')
+    axes[0].set_ylabel(f'Dim 2 ({explained_var[1]:.1%} var)')
+    plt.colorbar(scatter1, ax=axes[0], label=label_name)
     
     # Plot predicted clusters
-    scatter2 = axes[1].scatter(data_2d[:, 0], data_2d[:, 1], 
-                               c=pred_labels, cmap='tab10', 
-                               alpha=0.7, s=50)
-    axes[1].set_title(f'KNN Clusters\n(ARI={metrics["ari"]:.3f})')
-    axes[1].set_xlabel(f'Dim 1 ({explained_var[0]:.1%} var)' if not is_distance else 'MDS 1')
-    axes[1].set_ylabel(f'Dim 2 ({explained_var[1]:.1%} var)' if not is_distance else 'MDS 2')
+    scatter2 = axes[1].scatter(
+        data_2d[:, 0], data_2d[:, 1],
+        c=pred_labels, cmap='tab10',
+        alpha=0.7, s=50
+    )
+    axes[1].set_title(f'KMeans Clusters\n(ARI={metrics["ari"]:.3f})')
+    axes[1].set_xlabel(f'Dim 1 ({explained_var[0]:.1%} var)')
+    axes[1].set_ylabel(f'Dim 2 ({explained_var[1]:.1%} var)')
     plt.colorbar(scatter2, ax=axes[1], label='Cluster')
     
     plt.tight_layout()
@@ -282,7 +302,7 @@ def plot_clustering_results(
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
     ax.set_xlabel('Predicted Cluster')
-    ax.set_ylabel('True Severity Level')
+    ax.set_ylabel(f'True {label_name}')
     ax.set_title(f'Confusion Matrix\nARI={metrics["ari"]:.3f}, NMI={metrics["nmi"]:.3f}')
     plt.tight_layout()
     plt.savefig(output_path / 'confusion_matrix.png', dpi=300, bbox_inches='tight')
@@ -294,27 +314,30 @@ def evaluate_ari_clustering(
     data_csv: str,
     mode: str,
     outdir: str,
-    k_neighbors: int = 15,
+    label_col: str = "tissue",
+    k_neighbors: int = 15,  # kept for API compatibility; unused in KMeans
     n_clusters: Optional[int] = None,
     create_plots: bool = True
 ) -> Dict[str, object]:
     """
-    Evaluate embedding/distance quality using ARI between KNN clusters and severity levels.
+    Evaluate embedding quality using ARI between KMeans clusters and true labels.
     
     Parameters
     ----------
     meta_csv : str
-        Path to metadata CSV with 'sample' and 'sev.level' columns
+        Path to metadata CSV with 'sample' and label column
     data_csv : str
-        Path to data CSV (embedding: samples×dims, distance: samples×samples)
+        Path to data CSV (embedding: samples×dims)
     mode : str
-        'embedding' or 'distance'
+        Must be 'embedding' in this version
     outdir : str
         Output directory for results
+    label_col : str, default='tissue'
+        Name of the label column in metadata (e.g., 'tissue', 'sev.level', 'cell_type')
     k_neighbors : int, default=15
-        Number of neighbors for KNN clustering
+        Kept for backward compatibility; not used in KMeans version
     n_clusters : int, optional
-        Number of clusters (defaults to number of unique severity levels)
+        Number of clusters (defaults to number of unique label values)
     create_plots : bool, default=True
         Whether to generate visualization plots
     
@@ -326,68 +349,61 @@ def evaluate_ari_clustering(
     import os
     from pathlib import Path
     
-    # FIX: Use 'outdir' parameter correctly
+    # Use 'outdir' parameter correctly
     os.makedirs(outdir, exist_ok=True)
     output_dir_path = os.path.join(outdir, 'ARI_Clustering_Evaluation')
     os.makedirs(output_dir_path, exist_ok=True)
     
-    # FIX: Define outdir_p as Path object
+    # Define outdir_p as Path object
     outdir_p = Path(output_dir_path)
     
     # Read and align data
     print("Reading metadata and data files...", file=sys.stderr)
-    md = read_metadata(meta_csv)
+    md = read_metadata(meta_csv, label_col=label_col)
     data_df, is_distance = read_embedding_or_distance(data_csv, mode)
     md_aln, data_aln = align_by_samples(md, data_df)
     
-    # Extract severity labels
-    severity_labels = md_aln["sev.level"].values
-    unique_severities = np.unique(severity_labels[~pd.isna(severity_labels)])
-    n_severity_levels = len(unique_severities)
+    # Extract labels
+    true_labels = md_aln[label_col].values
+    unique_labels = np.unique(true_labels[~pd.isna(true_labels)])
+    n_unique_labels = len(unique_labels)
     
     if n_clusters is None:
-        n_clusters = n_severity_levels
+        n_clusters = n_unique_labels
     
-    print(f"Found {n_severity_levels} unique severity levels: {unique_severities}", file=sys.stderr)
-    print(f"Using {n_clusters} clusters for KNN clustering", file=sys.stderr)
+    print(f"Found {n_unique_labels} unique {label_col} values: {unique_labels}", file=sys.stderr)
+    print(f"Using {n_clusters} clusters for KMeans clustering", file=sys.stderr)
     
-    # Prepare data array
-    if is_distance:
-        data_array = data_aln.values.astype(float)
-    else:
-        data_array = data_aln.values.astype(float)
-    
+    # Prepare data array (embedding)
+    data_array = data_aln.values.astype(float)
     n_samples = data_array.shape[0]
-    k_eff = min(k_neighbors, n_samples - 1)
     
-    # Perform KNN-based clustering
-    print(f"Performing KNN clustering with k={k_eff}...", file=sys.stderr)
-    cluster_labels = knn_clustering(
-        data_array, 
-        n_clusters=n_clusters, 
-        k=k_eff, 
-        is_distance=is_distance
-    )
+    # Perform KMeans clustering
+    print(f"Performing KMeans clustering with k={n_clusters}...", file=sys.stderr)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
+    cluster_labels = kmeans.fit_predict(data_array)
     
-    # Map severity levels to integers (1=healthy, 4=most severe)
-    severity_mapping = {v: i for i, v in enumerate(sorted(unique_severities))}
-    severity_labels_int = np.array([severity_mapping[v] if not pd.isna(v) else -1 
-                                    for v in severity_labels])
+    # Map label values to integers
+    label_mapping = {v: i for i, v in enumerate(sorted(unique_labels))}
+    true_labels_int = np.array([
+        label_mapping[v] if not pd.isna(v) else -1
+        for v in true_labels
+    ])
     
     # Compute metrics
     print("Computing ARI and other metrics...", file=sys.stderr)
-    valid_mask = severity_labels_int >= 0
+    valid_mask = true_labels_int >= 0
     metrics = compute_ari_metrics(
-        severity_labels_int[valid_mask],
+        true_labels_int[valid_mask],
         cluster_labels[valid_mask]
     )
     
     # Create per-sample results
     per_sample_df = pd.DataFrame({
         'sample': md_aln.index.astype(str),
-        'severity_level': severity_labels,
-        'knn_cluster': cluster_labels,
-        'severity_int': severity_labels_int
+        f'{label_col}': true_labels,
+        'kmeans_cluster': cluster_labels,
+        f'{label_col}_int': true_labels_int
     }).set_index('sample')
     
     per_sample_path = outdir_p / 'per_sample_clusters.csv'
@@ -398,24 +414,25 @@ def evaluate_ari_clustering(
         print("Generating visualizations...", file=sys.stderr)
         plot_clustering_results(
             data_array[valid_mask],
-            severity_labels_int[valid_mask],
+            true_labels_int[valid_mask],
             cluster_labels[valid_mask],
             metrics,
             outdir_p,
-            is_distance=is_distance
+            is_distance=False,
+            label_name=label_col
         )
     
     # Create summary
     summary_lines = [
         "=" * 60,
-        "ARI-based Clustering Evaluation Summary",
+        "ARI-based Clustering Evaluation Summary (KMeans)",
         "=" * 60,
+        f"Label column: {label_col}",
         f"Data mode: {mode}",
         f"Total samples: {n_samples}",
-        f"Samples with valid severity: {metrics['n_samples']}",
-        f"Unique severity levels: {n_severity_levels} -> {list(unique_severities)}",
+        f"Samples with valid labels: {metrics['n_samples']}",
+        f"Unique {label_col} values: {n_unique_labels} -> {list(unique_labels)}",
         f"Number of clusters used: {n_clusters}",
-        f"K neighbors for KNN: {k_eff}",
         "",
         "METRICS:",
         "-" * 30,
@@ -429,15 +446,15 @@ def evaluate_ari_clustering(
     
     # Add interpretation
     if metrics['ari'] > 0.7:
-        interpretation = "EXCELLENT: Strong agreement between clusters and severity levels"
+        interpretation = f"EXCELLENT: Strong agreement between clusters and {label_col}"
     elif metrics['ari'] > 0.5:
-        interpretation = "GOOD: Moderate agreement between clusters and severity levels"
+        interpretation = f"GOOD: Moderate agreement between clusters and {label_col}"
     elif metrics['ari'] > 0.3:
-        interpretation = "FAIR: Weak agreement between clusters and severity levels"
+        interpretation = f"FAIR: Weak agreement between clusters and {label_col}"
     elif metrics['ari'] > 0.1:
-        interpretation = "POOR: Very weak agreement between clusters and severity levels"
+        interpretation = f"POOR: Very weak agreement between clusters and {label_col}"
     else:
-        interpretation = "VERY POOR: Almost no agreement between clusters and severity levels"
+        interpretation = f"VERY POOR: Almost no agreement between clusters and {label_col}"
     
     summary_lines.append(interpretation)
     summary_lines.append("")
@@ -453,8 +470,9 @@ def evaluate_ari_clustering(
     import json
     metrics_json = {
         **metrics,
-        'k_neighbors': k_eff,
-        'unique_severities': unique_severities.tolist(),
+        'k_neighbors': k_neighbors,  # kept for compatibility
+        'label_column': label_col,
+        f'unique_{label_col}': unique_labels.tolist(),
         'interpretation': interpretation
     }
     metrics_path = outdir_p / 'metrics.json'
@@ -465,7 +483,8 @@ def evaluate_ari_clustering(
         'metrics': metrics,
         'interpretation': interpretation,
         'n_samples': n_samples,
-        'severity_levels': list(unique_severities),
+        'label_column': label_col,
+        f'{label_col}_values': list(unique_labels),
         'per_sample_path': str(per_sample_path),
         'summary_path': str(summary_path),
         'metrics_json_path': str(metrics_path)
@@ -473,12 +492,24 @@ def evaluate_ari_clustering(
 
 
 if __name__ == "__main__":
+    # Example CLI-style usage (edit or wrap with argparse as needed)
+    if len(sys.argv) < 5:
+        print(
+            "Usage: python embedding_effective.py META_CSV DATA_CSV MODE OUTDIR [LABEL_COL]",
+            file=sys.stderr
+        )
+        sys.exit(1)
+    
+    meta_csv = sys.argv[1]
+    data_csv = sys.argv[2]
+    mode = sys.argv[3]  # must be 'embedding'
+    outdir = sys.argv[4]
+    label_col = sys.argv[5] if len(sys.argv) > 5 else "tissue"
+    
     evaluate_ari_clustering(
-        meta_csv="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        data_csv="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/Sample_distance/cosine/expression_DR_distance/expression_DR_coordinates.csv",
-        mode="embedding",
-        outdir="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample",
-        k_neighbors=15,
-        n_clusters=None,
-        create_plots=True
+        meta_csv=meta_csv,
+        data_csv=data_csv,
+        mode=mode,
+        outdir=outdir,
+        label_col=label_col
     )

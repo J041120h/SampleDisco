@@ -775,7 +775,7 @@ def run_benchmarks(
  
 # ------------------------- examples -------------------------
 if __name__ == "__main__":
-    sample_sizes = [25, 50, 100, 200, 279, 400]
+    
     
     # for size in sample_sizes:
     #     output_base_dir = f'/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{size}_sample'

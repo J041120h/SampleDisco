@@ -2,14 +2,14 @@ Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
         "sample_distance_calculation": false,
         "trajectory_analysis": false,
         "trajectory_dge": false,
         "cluster_dge": false,
-        "visualization": false
+        "visualization": true
     },
     "atac": {
         "preprocessing": false,
@@ -45,8 +45,60 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Starting preprocessing...
+Starting cell type clustering at resolution: 0.18
 [Seed Control] PyTorch GPU deterministic mode enabled with seed=42
 [Seed Control] CuPy seed set to 42
 [Seed Control] Scanpy seed set to 42
-=== Reading input dataset ===
+[cell_types] No cell type annotation found. Performing clustering.
+[cell_types] Building neighborhood graph...
+[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.18)...
+[cell_types] Found 5 clusters after Leiden clustering.
+[cell_types] Finished assigning cell types.
+[cell_types] Computing UMAP...
+[cell_types] Converting GPU arrays to CPU...
+[cell_types] Generating UMAP visualizations...
+[generate_umap_visualizations] Generating UMAP plots...
+[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (5 categories)
+[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/umap_cell_type.png
+[cell_types] Assigning cell_type labels to anndata_sample...
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_cell.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 20 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_cell.h5ad
+[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_sample.h5ad
+[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
+[clean_obs_for_saving] Cleaning completed successfully
+[clean_obs_for_saving] 20 categorical columns processed
+[safe_h5ad_write] Writing H5AD file...
+[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_sample.h5ad
+Starting dimensionality reduction...
+[Pseudobulk] Input: 35966 cells, 15235 genes
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[Pseudobulk] Using GPU (rapids_singlecell)
+[Pseudobulk] 22 samples, 5 cell types
+[Pseudobulk] Batch correction: ['sample']
+[Pseudobulk] Phase 1: Aggregating...
+  Aggregating 35966 cells -> 22 samples x 5 cell types
+
+✗ RNA pipeline failed with error: 'sample'
+
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✗
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✓
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna
+Status file: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/sys_log/main_process_status.json
+Execution time: 29.7457 seconds

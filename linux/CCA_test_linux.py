@@ -266,7 +266,7 @@ def find_optimal_cell_resolution_linux(
                 celltype_col='cell_type', 
                 n_features=n_features,
                 output_dir=resolution_dir,
-                Save=False,
+                save=False,
                 verbose=False,
                 preserve_cols=preserve_cols,
             )

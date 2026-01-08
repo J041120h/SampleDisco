@@ -314,32 +314,25 @@ def compute_trajectory_from_embedding(
 # ============================================================================
 if __name__ == "__main__":
     # ========== CONSTANT PATHS ==========
-    SAMPLE_METADATA_CSV_PATH = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
-    SEVERITY_COLUMN = "sev.level"
+    SAMPLE_METADATA_CSV_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv"
+    SEVERITY_COLUMN = "age"
     SAMPLE_COLUMN = "sample"
     # =====================================
 
-    # Sample sizes to loop over
-    sample_sizes = [25, 50, 100, 200, 279, 400]
 
-    for n in sample_sizes:
-        print(f"\n=======================")
-        print(f" Running trajectory for {n} samples")
-        print(f"=======================\n")
-
-        # Construct the embedding path for this sample size
-        EMBEDDING_CSV_PATH = (
-            f'/dcs07/hongkai/data/harry/result/pseduobulk_method_test/covid_{n}_sample/fusion_embeddings/fusion_mfa_embedding.csv'
-        )
-        
-        
-        # Run trajectory
-        results = compute_trajectory_from_embedding(
-            embedding_csv_path=EMBEDDING_CSV_PATH,
-            sample_metadata_csv_path=SAMPLE_METADATA_CSV_PATH,
-            severity_column=SEVERITY_COLUMN,
-            sample_column=SAMPLE_COLUMN,
-            auto_select_best_2d=True,
-            save_plot=True,
-            verbose=True
-        )
+    # Construct the embedding path for this sample size
+    EMBEDDING_CSV_PATH = (
+        f'/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/pilot/wasserstein_distance_mds_10d.csv'
+    )
+    
+    
+    # Run trajectory
+    results = compute_trajectory_from_embedding(
+        embedding_csv_path=EMBEDDING_CSV_PATH,
+        sample_metadata_csv_path=SAMPLE_METADATA_CSV_PATH,
+        severity_column=SEVERITY_COLUMN,
+        sample_column=SAMPLE_COLUMN,
+        auto_select_best_2d=True,
+        save_plot=True,
+        verbose=True
+    )

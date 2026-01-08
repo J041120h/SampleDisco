@@ -28,14 +28,14 @@ rna_output_dir: null
 # RNA Process Control Flags
 rna_preprocessing: true
 rna_cell_type_cluster: true
-rna_dimensionality_reduction: false
-rna_cca_optimal_cell_resolution: false
+rna_cca_optimal_cell_resolution: true
+rna_dimensionality_reduction: true
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: false
+rna_trajectory_analysis: true
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Paths for Skipping Processes
 rna_anndata_cell_path: null
@@ -81,8 +81,7 @@ rna_celltype_col: "cell_type"
 rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
-rna_preserve_cols_for_sample_embedding:
-  - "sev.level"
+rna_preserve_cols_for_sample_embedding: null
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
@@ -95,7 +94,7 @@ rna_dr_verbose: true
 rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
-rna_sev_col_cca: "sev.level"
+rna_sev_col_cca: "age"
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null

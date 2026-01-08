@@ -17,6 +17,7 @@ from integration.integration_optimal_resolution import *
 from integration.integration_validation import *
 from integration.integration_visualization import *
 from integration.integration_cell_type import cell_types_multiomics
+from utils.multi_omics_unify_optimal import replace_optimal_dimension_reduction
 
 def multiomics_wrapper(
     # ===== Required Parameters =====
@@ -140,7 +141,6 @@ def multiomics_wrapper(
     
     # ===== Optimal Resolution Parameters =====
     optimization_target="rna",
-    dr_type="expression",
     resolution_n_features=40000,
     sev_col="sev.level",
     resolution_batch_col=None,
@@ -166,6 +166,9 @@ def multiomics_wrapper(
     Comprehensive wrapper for multi-modal single-cell analysis pipeline with combined
     dimensionality reduction step (pseudobulk + PCA) to match RNA wrapper structure.
     
+    UPDATED: When run_find_optimal_resolution=True, automatically runs optimization for
+    both expression and proportion, then updates the pseudobulk embeddings with optimal results.
+    
     Parameters:
     -----------
     
@@ -180,6 +183,7 @@ def multiomics_wrapper(
         Whether to run the visualize_multimodal_embedding function
     run_find_optimal_resolution : bool, default False
         Whether to run the find_optimal_cell_resolution_integration function
+        NOTE: Now automatically runs both expression AND proportion optimizations
     
     GLUE SUB-STEP CONTROL:
     run_glue_preprocessing : bool, default True
@@ -219,6 +223,7 @@ def multiomics_wrapper(
         - Results from each executed step
         - Updated status_flags tracking completion
         - All intermediate data objects
+        - When optimal resolution is run: both expression and proportion results
     """
     
     if any(var is None for var in [rna_file, atac_file, multiomics_output_dir]):
@@ -565,10 +570,10 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("✓ Embedding visualization completed successfully")
     
-    # Step 5: Find optimal resolution (optional)
+    # Step 5: Find optimal resolution (optional) - runs both expression and proportion
     if run_find_optimal_resolution:
         if multiomics_verbose:
-            print("Step 5: Finding optimal cell resolution...")
+            print("Step 5: Finding optimal cell resolution for both expression and proportion...")
         import torch
         if torch.cuda.is_available() and multiomics_verbose:
             print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
@@ -589,11 +594,16 @@ def multiomics_wrapper(
         
         # Suppress warnings
         suppress_warnings()
-        optimal_res, results_df = find_optimal_cell_resolution_integration(
+        
+        # Run optimization for expression
+        if multiomics_verbose:
+            print("\n  Running optimization for EXPRESSION...")
+        expression_resolution_dir = f"{resolution_output_dir}_expression"
+        optimal_res_expression, results_df_expression = find_optimal_cell_resolution_integration(
             AnnData_integrated=integrated_adata_for_resolution,
-            output_dir=resolution_output_dir,
+            output_dir=expression_resolution_dir,
             optimization_target=optimization_target,
-            dr_type=dr_type,
+            dr_type="expression",
             n_features=resolution_n_features,
             sev_col=sev_col,
             batch_col=resolution_batch_col,
@@ -603,16 +613,54 @@ def multiomics_wrapper(
             num_DR_components=num_DR_components,
             num_PCs=num_PCs,
             n_pcs=n_pcs,
-            visualize_cell_types=True,  # Uses cell_types_multiomics built-in visualization
+            visualize_cell_types=True,
             verbose=multiomics_verbose
         )
         
-        results['optimal_resolution'] = optimal_res
-        results['resolution_results_df'] = results_df
-        status_flags["multiomics"]["optimal_resolution"] = True
+        if multiomics_verbose:
+            print("  ✓ Expression optimization completed")
+        
+        # Run optimization for proportion
+        if multiomics_verbose:
+            print("\n  Running optimization for PROPORTION...")
+        proportion_resolution_dir = f"{resolution_output_dir}_proportion"
+        optimal_res_proportion, results_df_proportion = find_optimal_cell_resolution_integration(
+            AnnData_integrated=integrated_adata_for_resolution,
+            output_dir=proportion_resolution_dir,
+            optimization_target=optimization_target,
+            dr_type="proportion",
+            n_features=resolution_n_features,
+            sev_col=sev_col,
+            batch_col=resolution_batch_col,
+            sample_col=resolution_sample_col,
+            modality_col=resolution_modality_col,
+            use_rep=resolution_use_rep,
+            num_DR_components=num_DR_components,
+            num_PCs=num_PCs,
+            n_pcs=n_pcs,
+            visualize_cell_types=True,
+            verbose=multiomics_verbose
+        )
         
         if multiomics_verbose:
-            print("✓ Optimal resolution finding completed successfully")
+            print("  ✓ Proportion optimization completed")
+        status_flags["multiomics"]["optimal_resolution"] = True
+        
+        # Update pseudobulk with optimal embeddings
+        if multiomics_verbose:
+            print("\n  Updating pseudobulk with optimal embeddings...")
+        
+        pseudobulk_sample_updated = replace_optimal_dimension_reduction(
+            base_path=multiomics_output_dir,
+            expression_resolution_dir=expression_resolution_dir,
+            proportion_resolution_dir=proportion_resolution_dir,
+            verbose=multiomics_verbose
+        )
+        
+        results['pseudobulk_adata'] = pseudobulk_sample_updated
+        
+        if multiomics_verbose:
+            print("✓ Optimal resolution finding and embedding update completed successfully")
     
     # Add status_flags to results
     results['status_flags'] = status_flags

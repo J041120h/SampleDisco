@@ -75,7 +75,11 @@ def merge_data(meta_df, pseudotime_df):
     return merged_df
 
 
-def calculate_spearman_correlation(merged_df, pseudotime_col='pseudotime'):
+def calculate_spearman_correlation(
+    merged_df,
+    pseudotime_col: str = 'pseudotime',
+    severity_col: str = 'sev.level'
+):
     """
     Calculate Spearman correlation between pseudotime and severity level
     
@@ -84,7 +88,9 @@ def calculate_spearman_correlation(merged_df, pseudotime_col='pseudotime'):
     merged_df : pd.DataFrame
         Merged dataframe with severity and pseudotime
     pseudotime_col : str
-        Name of pseudotime column (default: 'Pseudotime')
+        Name of pseudotime column (default: 'pseudotime')
+    severity_col : str
+        Name of severity column (default: 'sev.level')
     
     Returns:
     --------
@@ -93,26 +99,32 @@ def calculate_spearman_correlation(merged_df, pseudotime_col='pseudotime'):
     print("\nCalculating Spearman correlation...")
     
     # Check for required columns
-    if 'sev.level' not in merged_df.columns:
-        raise ValueError("'sev.level' column not found in data")
+    if severity_col not in merged_df.columns:
+        raise ValueError(f"'{severity_col}' column not found in data")
     
     if pseudotime_col not in merged_df.columns:
-        raise ValueError(f"'{pseudotime_col}' column not found in data. Available columns: {list(merged_df.columns)}")
+        raise ValueError(
+            f"'{pseudotime_col}' column not found in data. "
+            f"Available columns: {list(merged_df.columns)}"
+        )
     
     # Remove rows with NaN values
-    clean_df = merged_df[['sample', 'sev.level', pseudotime_col]].dropna()
+    clean_df = merged_df[['sample', severity_col, pseudotime_col]].dropna()
     print(f"  Analyzing {clean_df.shape[0]} samples with complete data")
     
     # Calculate Spearman correlation
-    spearman_corr, p_value = stats.spearmanr(clean_df['sev.level'], 
-                                             clean_df[pseudotime_col])
+    spearman_corr, p_value = stats.spearmanr(
+        clean_df[severity_col],
+        clean_df[pseudotime_col]
+    )
     
     results = {
         'spearman_corr': spearman_corr,
         'spearman_p': p_value,
         'n_samples': clean_df.shape[0],
         'data': clean_df,
-        'pseudotime_col': pseudotime_col
+        'pseudotime_col': pseudotime_col,
+        'severity_col': severity_col,
     }
     
     return results
@@ -133,37 +145,48 @@ def create_visualizations(results, output_dir):
     
     data = results['data']
     pseudotime_col = results['pseudotime_col']
+    severity_col = results['severity_col']
     
     # Create figure with subplots
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     
     # 1. Scatter plot with regression line
     ax1 = axes[0, 0]
-    ax1.scatter(data['sev.level'], data[pseudotime_col], alpha=0.6)
-    z = np.polyfit(data['sev.level'], data[pseudotime_col], 1)
+    ax1.scatter(data[severity_col], data[pseudotime_col], alpha=0.6)
+    z = np.polyfit(data[severity_col], data[pseudotime_col], 1)
     p = np.poly1d(z)
-    ax1.plot(data['sev.level'].unique(), p(data['sev.level'].unique()), 
-            "r--", alpha=0.8, label='Linear fit')
+    x_vals = np.sort(data[severity_col].unique())
+    ax1.plot(x_vals, p(x_vals), "r--", alpha=0.8, label='Linear fit')
     ax1.set_xlabel('Severity Level')
     ax1.set_ylabel('Pseudotime')
-    ax1.set_title(f'Pseudotime vs Severity\n(Spearman ρ = {results["spearman_corr"]:.3f}, p = {results["spearman_p"]:.3e})')
+    ax1.set_title(
+        f'Pseudotime vs Severity\n'
+        f'(Spearman ρ = {results["spearman_corr"]:.3f}, '
+        f'p = {results["spearman_p"]:.3e})'
+    )
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     
     # 2. Box plot by severity level
     ax2 = axes[0, 1]
-    data.boxplot(column=pseudotime_col, by='sev.level', ax=ax2)
+    data.boxplot(column=pseudotime_col, by=severity_col, ax=ax2)
     ax2.set_xlabel('Severity Level')
     ax2.set_ylabel('Pseudotime')
     ax2.set_title('Pseudotime Distribution by Severity Level')
     plt.sca(ax2)
-    plt.xticks(range(1, int(data['sev.level'].max()) + 1))
+    try:
+        plt.xticks(range(1, int(data[severity_col].max()) + 1))
+    except Exception:
+        # Fallback if severity_col is not integer-like
+        pass
     
     # 3. Violin plot
     ax3 = axes[1, 0]
-    severity_levels = sorted(data['sev.level'].unique())
-    violin_data = [data[data['sev.level'] == level][pseudotime_col].values 
-                  for level in severity_levels]
+    severity_levels = sorted(data[severity_col].unique())
+    violin_data = [
+        data[data[severity_col] == level][pseudotime_col].values
+        for level in severity_levels
+    ]
     positions = range(len(severity_levels))
     parts = ax3.violinplot(violin_data, positions=positions, showmeans=True)
     ax3.set_xticks(positions)
@@ -178,8 +201,17 @@ def create_visualizations(results, output_dir):
     corr_matrix = pd.DataFrame({
         'Spearman': [results['spearman_corr']]
     })
-    sns.heatmap(corr_matrix, annot=True, fmt='.3f', cmap='coolwarm', 
-                center=0, vmin=-1, vmax=1, ax=ax4, cbar_kws={'label': 'Correlation'})
+    sns.heatmap(
+        corr_matrix,
+        annot=True,
+        fmt='.3f',
+        cmap='coolwarm',
+        center=0,
+        vmin=-1,
+        vmax=1,
+        ax=ax4,
+        cbar_kws={'label': 'Correlation'}
+    )
     ax4.set_title('Spearman Correlation')
     ax4.set_yticklabels([''], rotation=0)
     
@@ -218,7 +250,8 @@ def generate_summary_report(results, output_dir):
         f"Total Samples Analyzed: {results['n_samples']}",
         "",
         "CORRELATION RESULTS:",
-        f"  Spearman Correlation: {results['spearman_corr']:.4f} (p-value: {results['spearman_p']:.4e})",
+        f"  Spearman Correlation: {results['spearman_corr']:.4f} "
+        f"(p-value: {results['spearman_p']:.4e})",
         "",
         "-"*40,
         "INTERPRETATION",
@@ -249,18 +282,24 @@ def generate_summary_report(results, output_dir):
     
     report_lines.extend([
         f"The Spearman correlation coefficient of {corr:.4f} indicates a {strength} {direction}",
-        f"relationship between pseudotime and disease severity.",
+        "relationship between pseudotime and disease severity.",
         f"This correlation is {significance}.",
         "",
         "EFFECTIVENESS ASSESSMENT:",
     ])
     
     if abs(corr) > 0.5 and p_val < 0.05:
-        report_lines.append("✓ The trajectory shows GOOD effectiveness in capturing disease progression")
+        report_lines.append(
+            "✓ The trajectory shows GOOD effectiveness in capturing disease progression"
+        )
     elif abs(corr) > 0.3 and p_val < 0.05:
-        report_lines.append("⚠ The trajectory shows MODERATE effectiveness in capturing disease progression")
+        report_lines.append(
+            "⚠ The trajectory shows MODERATE effectiveness in capturing disease progression"
+        )
     else:
-        report_lines.append("✗ The trajectory shows POOR effectiveness in capturing disease progression")
+        report_lines.append(
+            "✗ The trajectory shows POOR effectiveness in capturing disease progression"
+        )
     
     report_lines.extend([
         "",
@@ -297,7 +336,13 @@ def generate_summary_report(results, output_dir):
     print("="*50)
 
 
-def run_trajectory_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path):
+def run_trajectory_analysis(
+    meta_csv_path: str,
+    pseudotime_csv_path: str,
+    output_dir_path: str,
+    severity_col: str = 'sev.level',
+    pseudotime_col: str = 'pseudotime',
+):
     """
     Main wrapper function that runs the complete trajectory analysis pipeline
     
@@ -309,6 +354,10 @@ def run_trajectory_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path)
         Path to pseudotime CSV file
     output_dir_path : str
         Output directory path
+    severity_col : str
+        Name of the severity column in metadata
+    pseudotime_col : str
+        Name of the pseudotime column in pseudotime CSV
     
     Returns:
     --------
@@ -322,6 +371,8 @@ def run_trajectory_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path)
     print("\n" + "="*50)
     print("STARTING TRAJECTORY CORRELATION ANALYSIS")
     print("="*50)
+    print(f"  Using severity column:   {severity_col}")
+    print(f"  Using pseudotime column: {pseudotime_col}")
     
     try:
         # Step 1: Load data
@@ -330,8 +381,12 @@ def run_trajectory_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path)
         # Step 2: Merge data
         merged_df = merge_data(meta_df, pseudotime_df)
         
-        # Step 3: Calculate correlations (using 'Pseudotime' column)
-        results = calculate_spearman_correlation(merged_df, pseudotime_col='pseudotime')
+        # Step 3: Calculate correlations
+        results = calculate_spearman_correlation(
+            merged_df,
+            pseudotime_col=pseudotime_col,
+            severity_col=severity_col,
+        )
         
         # Step 4: Create visualizations
         create_visualizations(results, output_dir_path)
@@ -352,7 +407,9 @@ def run_trajectory_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path)
 if __name__ == "__main__":
     # Run the main analysis pipeline
     run_trajectory_analysis(
-        meta_csv_path= "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        pseudotime_csv_path='/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/CCA/pseudotime_expression.csv',
-        output_dir_path= '/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample'
+        meta_csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
+        pseudotime_csv_path="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample/rna/CCA/pseudotime_expression.csv",
+        output_dir_path="/dcs07/hongkai/data/harry/result/Benchmark/covid_25_sample",
+        severity_col="sev.level",      # 👈 change this to your severity column name if different
+        pseudotime_col="pseudotime",   # 👈 change this if your pseudotime column has a different name
     )

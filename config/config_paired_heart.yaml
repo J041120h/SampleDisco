@@ -26,16 +26,16 @@ rna_sample_meta_path: '/dcs07/hongkai/data/harry/result/multi_omics_heart/data/m
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: true
+rna_preprocessing: false
 rna_cell_type_cluster: true
-rna_dimensionality_reduction: false
+rna_dimensionality_reduction: true
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_cluster_dge: false
-rna_visualize_data: false
+rna_visualize_data: true
 
 # RNA Paths for Skipping Processes
 rna_anndata_cell_path: null
@@ -48,7 +48,7 @@ rna_grouping_columns:
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: 
-- 'batch'
+- 'sample'
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -81,7 +81,7 @@ rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
 rna_preserve_cols_for_sample_embedding:
-  - "sev.level"
+  - "disease_state"
 
 # RNA PCA Parameters
 rna_n_expression_components: 10

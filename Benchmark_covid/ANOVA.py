@@ -78,24 +78,34 @@ def merge_data(meta_df, pseudotime_df):
     
     return merged_df
 
-def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
+
+def perform_twoway_anova(merged_df, pseudotime_col='pseudotime', severity_col='sev.level'):
     """
     Perform Two-way ANOVA to test effects of batch and severity on pseudotime.
     If only one batch is present, fall back to one-way ANOVA on severity_level.
+    
+    Parameters
+    ----------
+    merged_df : pd.DataFrame
+        Merged metadata + pseudotime dataframe
+    pseudotime_col : str
+        Column name for pseudotime values
+    severity_col : str
+        Column name for the severity/label factor (default: 'sev.level')
     """
     print("\nPerforming ANOVA...")
 
     # Check for required columns
-    required_cols = ['batch', 'sev.level', pseudotime_col]
+    required_cols = ['batch', severity_col, pseudotime_col]
     for col in required_cols:
         if col not in merged_df.columns:
             raise ValueError(f"'{col}' column not found in data")
     
     # Prepare data - remove NaN and ensure factors are categorical
-    anova_df = merged_df[['sample', 'batch', 'sev.level', pseudotime_col]].dropna()
+    anova_df = merged_df[['sample', 'batch', severity_col, pseudotime_col]].dropna()
 
-    # Rename 'sev.level' to avoid formula parsing issues with the dot
-    anova_df = anova_df.rename(columns={'sev.level': 'severity_level'})
+    # Rename severity column to avoid formula parsing issues (dots, etc.)
+    anova_df = anova_df.rename(columns={severity_col: 'severity_level'})
     anova_df['batch'] = anova_df['batch'].astype('category')
     anova_df['severity_level'] = anova_df['severity_level'].astype('category')
     
@@ -169,8 +179,8 @@ def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
             )
             posthoc_results['batch'] = tukey_batch
     
-    # Add back the original column name for compatibility with visualization
-    anova_df['sev.level'] = anova_df['severity_level']
+    # Add back the original severity column name for compatibility with visualization
+    anova_df[severity_col] = anova_df['severity_level']
     
     results = {
         'anova_table': anova_table,
@@ -182,10 +192,12 @@ def perform_twoway_anova(merged_df, pseudotime_col='pseudotime'):
         'n_samples': n_samples,
         'n_batches': n_batches,
         'n_severity_levels': n_sev,
-        'model_type': model_type,   # <--- NEW FLAG
+        'model_type': model_type,   # <--- existing flag
+        'severity_col': severity_col,  # <--- NEW: remember which column was used
     }
     
     return results
+
 
 def create_visualizations(results, output_dir):
     """
@@ -197,6 +209,7 @@ def create_visualizations(results, output_dir):
     data = results['data']
     pseudotime_col = results['pseudotime_col']
     model_type = results.get('model_type', 'two_way')
+    severity_col = results.get('severity_col', 'sev.level')
     
     sns.set_style("whitegrid")
     
@@ -204,12 +217,18 @@ def create_visualizations(results, output_dir):
     
     # 1. Interaction plot (will just be a single line if one batch)
     ax1 = plt.subplot(2, 3, 1)
-    interaction_data = data.groupby(['sev.level', 'batch'])[pseudotime_col].mean().reset_index()
+    interaction_data = data.groupby([severity_col, 'batch'])[pseudotime_col].mean().reset_index()
     for batch in interaction_data['batch'].unique():
         batch_data = interaction_data[interaction_data['batch'] == batch]
-        ax1.plot(batch_data['sev.level'], batch_data[pseudotime_col],
-                 marker='o', label=f'Batch {batch}', linewidth=2, markersize=8)
-    ax1.set_xlabel('Severity Level')
+        ax1.plot(
+            batch_data[severity_col],
+            batch_data[pseudotime_col],
+            marker='o',
+            label=f'Batch {batch}',
+            linewidth=2,
+            markersize=8
+        )
+    ax1.set_xlabel(severity_col)
     ax1.set_ylabel('Mean Pseudotime')
     ax1.set_title('Interaction Plot: Batch × Severity Level')
     ax1.legend(title='Batch')
@@ -217,8 +236,8 @@ def create_visualizations(results, output_dir):
     
     # 2. Box plot by severity level
     ax2 = plt.subplot(2, 3, 2)
-    data.boxplot(column=pseudotime_col, by='sev.level', ax=ax2)
-    ax2.set_xlabel('Severity Level')
+    data.boxplot(column=pseudotime_col, by=severity_col, ax=ax2)
+    ax2.set_xlabel(severity_col)
     ax2.set_ylabel('Pseudotime')
     ax2.set_title('Pseudotime by Severity Level')
     plt.sca(ax2)
@@ -235,14 +254,14 @@ def create_visualizations(results, output_dir):
     ax4 = plt.subplot(2, 3, 4)
     sns.violinplot(
         data=data,
-        x='sev.level',
+        x=severity_col,
         y=pseudotime_col,
         hue='batch',
         split=False,
         inner='box',
         ax=ax4
     )
-    ax4.set_xlabel('Severity Level')
+    ax4.set_xlabel(severity_col)
     ax4.set_ylabel('Pseudotime')
     ax4.set_title('Pseudotime Distribution by Severity and Batch')
     ax4.legend(title='Batch', bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -287,13 +306,13 @@ def create_visualizations(results, output_dir):
     ax6 = plt.subplot(2, 3, 6)
     pivot_data = data.pivot_table(
         values=pseudotime_col,
-        index='sev.level',
+        index=severity_col,
         columns='batch',
         aggfunc='mean'
     )
     sns.heatmap(pivot_data, annot=True, fmt='.3f', cmap='YlOrRd', ax=ax6)
     ax6.set_xlabel('Batch')
-    ax6.set_ylabel('Severity Level')
+    ax6.set_ylabel(severity_col)
     ax6.set_title('Mean Pseudotime Heatmap')
     
     plt.tight_layout()
@@ -303,6 +322,7 @@ def create_visualizations(results, output_dir):
     plt.close()
     
     print(f"  Saved plots to: {plot_path}")
+
 
 def generate_summary_report(results, output_dir):
     """
@@ -619,7 +639,12 @@ def generate_summary_report(results, output_dir):
     print("="*50)
 
 
-def run_trajectory_anova_analysis(meta_csv_path, pseudotime_csv_path, output_dir_path):
+def run_trajectory_anova_analysis(
+    meta_csv_path,
+    pseudotime_csv_path,
+    output_dir_path,
+    severity_col='sev.level'
+):
     """
     Main wrapper function that runs the complete Two-way ANOVA trajectory analysis pipeline
     
@@ -631,6 +656,8 @@ def run_trajectory_anova_analysis(meta_csv_path, pseudotime_csv_path, output_dir
         Path to pseudotime CSV file
     output_dir_path : str
         Output directory path
+    severity_col : str
+        Name of the severity/label column in metadata (default: 'sev.level')
     
     Returns:
     --------
@@ -645,6 +672,7 @@ def run_trajectory_anova_analysis(meta_csv_path, pseudotime_csv_path, output_dir
     print("\n" + "="*50)
     print("STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS")
     print("="*50)
+    print(f"Using severity column: {severity_col}")
     
     try:
         # Step 1: Load data
@@ -654,7 +682,11 @@ def run_trajectory_anova_analysis(meta_csv_path, pseudotime_csv_path, output_dir
         merged_df = merge_data(meta_df, pseudotime_df)
         
         # Step 3: Perform Two-way ANOVA
-        results = perform_twoway_anova(merged_df, pseudotime_col='pseudotime')
+        results = perform_twoway_anova(
+            merged_df,
+            pseudotime_col='pseudotime',
+            severity_col=severity_col
+        )
         
         # Step 4: Create visualizations
         create_visualizations(results, output_dir_path)

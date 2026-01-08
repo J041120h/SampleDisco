@@ -37,7 +37,7 @@ def anndata_cluster(
         adata_cluster,
         n_top_genes=num_features,
         flavor="seurat_v3",
-        batch_key=sample_column,
+        batch_key=None,
     )
     adata_cluster = adata_cluster[:, adata_cluster.var["highly_variable"]].copy()
 
@@ -241,16 +241,6 @@ def preprocess_linux(
     mt_genes = adata.var_names[adata.var_names.str.startswith("MT-")]
     genes_to_exclude = set(mt_genes) | set(exclude_genes or [])
     adata = adata[:, ~adata.var_names.isin(genes_to_exclude)].copy()
-
-    # Remove samples with too few cells
-    cell_counts = adata.obs.groupby(sample_column).size()
-    keep = cell_counts[cell_counts >= min_cells].index
-    adata = adata[adata.obs[sample_column].isin(keep)].copy()
-
-    # Final minimum cell filter across all cells
-    min_cells_final = int(0.001 * adata.n_obs)
-    if min_cells_final > 0:
-        sc.pp.filter_genes(adata, min_cells=min_cells_final)
 
     # -----------------------------------
     # 5) Split into cluster / sample views
