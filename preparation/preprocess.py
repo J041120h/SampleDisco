@@ -29,7 +29,7 @@ def anndata_cluster(
         adata_cluster,
         n_top_genes=num_features,
         flavor="seurat_v3",
-        batch_key=sample_column,
+        batch_key=None,
     )
     adata_cluster = adata_cluster[:, adata_cluster.var["highly_variable"]].copy()
     sc.pp.normalize_total(adata_cluster, target_sum=1e4)
