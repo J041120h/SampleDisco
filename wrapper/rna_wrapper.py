@@ -325,74 +325,6 @@ def rna_wrapper(
         
         status_flags["rna"]["cell_type_cluster"] = True
     
-    if cca_optimal_cell_resolution:
-        if linux_system and use_gpu:
-            find_optimal_cell_resolution_linux(
-                AnnData_cell = AnnData_cell,
-                AnnData_sample = AnnData_sample,
-                output_dir = cca_output_dir,
-                column = "X_DR_expression",
-                n_features = n_features,
-                sev_col = sev_col_cca,
-                batch_col = batch_col,
-                sample_col = sample_col,
-                num_PCs = num_PCs,
-                num_DR_components = n_expression_components,
-                n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose,
-                preserve_cols = preserve_cols_for_sample_embedding,
-            )
-
-            find_optimal_cell_resolution_linux(
-                AnnData_cell = AnnData_cell,
-                AnnData_sample = AnnData_sample,
-                output_dir = cca_output_dir,
-                column = "X_DR_proportion",
-                n_features = n_features,
-                sev_col = sev_col_cca,
-                batch_col = batch_col,
-                sample_col = sample_col,
-                num_PCs = num_PCs,
-                num_DR_components = n_proportion_components,
-                n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose,
-                preserve_cols = preserve_cols_for_sample_embedding,
-            )
-        else:
-            find_optimal_cell_resolution(
-                AnnData_cell = AnnData_cell,
-                AnnData_sample = AnnData_sample,
-                output_dir = cca_output_dir,
-                column = "X_DR_expression",
-                n_features = n_features,
-                sev_col = sev_col_cca,
-                batch_col = batch_col,
-                sample_col = sample_col,
-                num_PCs = num_PCs,
-                num_DR_components = n_expression_components,
-                n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose,
-                preserve_cols = preserve_cols_for_sample_embedding,
-            )
-            find_optimal_cell_resolution(
-                AnnData_cell = AnnData_cell,
-                AnnData_sample = AnnData_sample,
-                output_dir = cca_output_dir,
-                column = "X_DR_proportion",
-                n_features = n_features,
-                sev_col = sev_col_cca,
-                batch_col = batch_col,
-                sample_col = sample_col,
-                num_PCs = num_PCs,
-                num_DR_components = n_proportion_components,
-                n_pcs_for_null = n_components_for_cca_rna,
-                verbose = trajectory_verbose,
-                preserve_cols = preserve_cols_for_sample_embedding,
-            )
-
-        from utils.unify_optimal import replace_optimal_dimension_reduction
-        pseudobulk_adata = replace_optimal_dimension_reduction(rna_output_dir)
-    
     # Step 3: Pseudobulk and PCA
     if DimensionalityReduction:
         print("Starting dimensionality reduction...")
@@ -447,6 +379,74 @@ def rna_wrapper(
         status_flags["rna"]["dimensionality_reduction"] = True
         print(f"Reading Pseudobulk from provided or default path: {temp_pseudobulk_path}")
         pseudobulk_adata = sc.read(temp_pseudobulk_path)
+    
+    if cca_optimal_cell_resolution:
+        # if linux_system and use_gpu:
+        #     find_optimal_cell_resolution_linux(
+        #         AnnData_cell = AnnData_cell,
+        #         AnnData_sample = AnnData_sample,
+        #         output_dir = cca_output_dir,
+        #         column = "X_DR_expression",
+        #         n_features = n_features,
+        #         sev_col = sev_col_cca,
+        #         batch_col = batch_col,
+        #         sample_col = sample_col,
+        #         num_PCs = num_PCs,
+        #         num_DR_components = n_expression_components,
+        #         n_pcs_for_null = n_components_for_cca_rna,
+        #         verbose = trajectory_verbose,
+        #         preserve_cols = preserve_cols_for_sample_embedding,
+        #     )
+
+        #     find_optimal_cell_resolution_linux(
+        #         AnnData_cell = AnnData_cell,
+        #         AnnData_sample = AnnData_sample,
+        #         output_dir = cca_output_dir,
+        #         column = "X_DR_proportion",
+        #         n_features = n_features,
+        #         sev_col = sev_col_cca,
+        #         batch_col = batch_col,
+        #         sample_col = sample_col,
+        #         num_PCs = num_PCs,
+        #         num_DR_components = n_proportion_components,
+        #         n_pcs_for_null = n_components_for_cca_rna,
+        #         verbose = trajectory_verbose,
+        #         preserve_cols = preserve_cols_for_sample_embedding,
+        #     )
+        # else:
+        #     find_optimal_cell_resolution(
+        #         AnnData_cell = AnnData_cell,
+        #         AnnData_sample = AnnData_sample,
+        #         output_dir = cca_output_dir,
+        #         column = "X_DR_expression",
+        #         n_features = n_features,
+        #         sev_col = sev_col_cca,
+        #         batch_col = batch_col,
+        #         sample_col = sample_col,
+        #         num_PCs = num_PCs,
+        #         num_DR_components = n_expression_components,
+        #         n_pcs_for_null = n_components_for_cca_rna,
+        #         verbose = trajectory_verbose,
+        #         preserve_cols = preserve_cols_for_sample_embedding,
+        #     )
+        #     find_optimal_cell_resolution(
+        #         AnnData_cell = AnnData_cell,
+        #         AnnData_sample = AnnData_sample,
+        #         output_dir = cca_output_dir,
+        #         column = "X_DR_proportion",
+        #         n_features = n_features,
+        #         sev_col = sev_col_cca,
+        #         batch_col = batch_col,
+        #         sample_col = sample_col,
+        #         num_PCs = num_PCs,
+        #         num_DR_components = n_proportion_components,
+        #         n_pcs_for_null = n_components_for_cca_rna,
+        #         verbose = trajectory_verbose,
+        #         preserve_cols = preserve_cols_for_sample_embedding,
+        #     )
+
+        from utils.unify_optimal import replace_optimal_dimension_reduction
+        pseudobulk_adata = replace_optimal_dimension_reduction(rna_output_dir)
     
     # Step 5: Sample Distance Calculation - UNIFIED NAMING
     if sample_distance_calculation:

@@ -48,9 +48,9 @@ rna_grouping_columns:
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: 
-- 'sample'
+- 'batch'
 rna_markers: null
-rna_cluster_resolution: 0.180
+rna_cluster_resolution: 0.5
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000

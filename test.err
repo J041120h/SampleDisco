@@ -1,28 +1,9 @@
-2026-01-08 10:36:38 | [INFO] init
-Traceback (most recent call last):
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 3812, in get_loc
-    return self._engine.get_loc(casted_key)
-  File "pandas/_libs/index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
-  File "pandas/_libs/index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
-  File "pandas/_libs/hashtable_class_helper.pxi", line 7088, in pandas._libs.hashtable.PyObjectHashTable.get_item
-  File "pandas/_libs/hashtable_class_helper.pxi", line 7096, in pandas._libs.hashtable.PyObjectHashTable.get_item
-KeyError: 'sample'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 636, in wrapper
-    rna_results = rna_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 403, in rna_wrapper
-    pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata_linux(
-  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 601, in compute_pseudobulk_adata_linux
-    expr_df, props, final = compute_pseudobulk_gpu(
-  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 450, in compute_pseudobulk_gpu
-    pb = aggregate_pseudobulk(adata, sample_col, celltype_col, batch_cols, verbose)
-  File "/users/hjiang/GenoDistance/code/linux/pseudo_adata_linux.py", line 240, in aggregate_pseudobulk
-    mapping = adata.obs[[sample_col, bc]].drop_duplicates().set_index(sample_col)[bc].to_dict()
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/frame.py", line 4107, in __getitem__
-    indexer = self.columns.get_loc(key)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 3819, in get_loc
-    raise KeyError(key) from err
-KeyError: 'sample'
+2026-01-08 23:30:25 | [INFO] init
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'age' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
