@@ -1,231 +1,84 @@
-Linux system detected with GPU enabled.
-Resuming process from previous progress:
-{
-    "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": true
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
-    }
-}
+[INFO] Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+[INFO] Shape: 987474 cells × 14881 genes/peaks
+[INFO] Modalities: {'RNA': 898489, 'ATAC': 88985}
 
 ============================================================
-RUNNING RNA PIPELINE
+STEP 1: Cell Type Annotation and Transfer
 ============================================================
-Starting RNA wrapper function with provided parameters...
-Starting cell type clustering at resolution: 0.5
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.5)...
-[cell_types] Found 12 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Generating UMAP visualizations...
-[generate_umap_visualizations] Generating UMAP plots...
-[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (12 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/umap_cell_type.png
-[cell_types] Assigning cell_type labels to anndata_sample...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_cell.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 20 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_cell.h5ad
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 20 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/preprocess/adata_sample.h5ad
-Starting dimensionality reduction...
-[Pseudobulk] Input: 35966 cells, 15235 genes
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] 22 samples, 12 cell types
-[Pseudobulk] Batch correction: ['batch']
-[Pseudobulk] Phase 1: Aggregating...
-  Aggregating 35966 cells -> 22 samples x 12 cell types
-  Created 12 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/12] 1
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [2/12] 10
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [3/12] 11
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [4/12] 12
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [5/12] 2
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [6/12] 3
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [7/12] 4
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [8/12] 5
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [9/12] 6
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [10/12] 7
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [11/12] 8
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-  [12/12] 9
-    Batches: 22, sizes: 1-1
-    Skipping ComBat: batches <2 samples
-    Applied limma (kept=['disease_state'])
-    Selected 2000 HVGs
-[Pseudobulk] Retained 12 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 24000
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 22 samples, 24000 features
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] Batch correction: Using 1 batch column(s): ['batch']
-[process_anndata_with_dimension_reduction] Proportion correction: preserve_cols=['disease_state'] (limma mode)
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(22, 24000), proportion=(22, 12)
-[DimRed] Computing PCA for RNA data with 10 components on (22, 24000) data
-[PCA] Success. Shape: (22, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (22, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (22, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Limma mode requested (preserve_cols=['disease_state'])
-[run_dimension_reduction_proportion] Limma input: exprs=(22, 12) (samples x features), pheno_rows=22
-[run_dimension_reduction_proportion] Batch '_combined_batch_for_proportion_': n_batches=22, sizes=1-1
-[run_dimension_reduction_proportion] Preserving columns: ['disease_state']
-[run_dimension_reduction_proportion] Computing PCA on limma-corrected proportions with 5 components...
-[run_dimension_reduction_proportion] Completed using limma+PCA. Shape: (22, 5)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/embeddings/sample_expression_embedding.csv (shape: (22, 10))
-[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/embeddings/sample_proportion_embedding.csv (shape: (22, 5))
-[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/embeddings
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file path:
-  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (3.0 MB)
-[process_anndata_with_dimension_reduction] ✓ File saved successfully
+[INFO] Total cells: 987474
+[INFO] RNA cells: 898489
+[INFO] ATAC cells: 88985
+[INFO] RNA subset shape: 898489 cells × 14881 genes
+[INFO] pyensembl: fraction of Ensembl-like IDs in var_names: 0.000
+[INFO] pyensembl: var_names do not look predominantly like Ensembl IDs; keeping existing gene names.
+[INFO] Loading custom model from: /dcl01/hongkai/data/data/hjiang/Data/Adult_COVID19_PBMC.pkl
+[INFO] #genes in data    : 14881
+[INFO] #genes in model   : 3141
+[INFO] #overlapping genes: 2843
+[DEBUG] Example overlapping genes: ['RFC3', 'SPINK2', 'ZNF408', 'GABPB2', 'RAB27A', 'G0S2', 'TM9SF2', 'ZNF585B', 'DAPK2', 'PTAFR']
+[INFO] Running CellTypist annotation on RNA cells...
 
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.22 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ATTEMPTED
-  - H5AD: pseudobulk_anndata only
-  - CSV embeddings: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/embeddings/
-Starting visualization...
-[_preprocessing] Verified required columns in pseudobulk AnnData: ['disease_state']
-Found 12 unique cell types.
-Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/visualization/cell_type_dendrogram.png
-Generating cell type proportion PCA plots for grouping columns: ['disease_state']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/visualization/proportion_embedding_disease_state.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/visualization/proportion_embedding_disease_state.png
-Generating cell type expression plots for grouping columns: ['disease_state']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/visualization/expression_embedding_disease_state.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/visualization/expression_embedding_disease_state.png
-[visualization] All requested visualizations saved.
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
+[INFO] Label mapping (original -> CellTypist):
+  1 -> pDC
+  10 -> NK
+  11 -> CD4n T
+  12 -> NK
+  13 -> B
+  14 -> CD4n T
+  15 -> CD8m T
+  16 -> CD8m T
+  17 -> Neutrophil
+  18 -> CD4n T
+  19 -> CD14 Monocyte
+  2 -> IgA PB
+  20 -> CD14 Monocyte
+  21 -> Platelet
+  22 -> CD14 Monocyte
+  23 -> B
+  24 -> B
+  25 -> CD14 Monocyte
+  3 -> CD14 Monocyte
+  4 -> B
+  5 -> CD14 Monocyte
+  6 -> CD8m T
+  7 -> CD14 Monocyte
+  8 -> CD4n T
+  9 -> NK
+[INFO] Backed up original labels to obs['cell_type_original']
+[INFO] Label mapping saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/celltype_mapping.csv
 
 ============================================================
-PIPELINE EXECUTION SUMMARY
+STEP 2: GLUE Embedding Visualization
 ============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✗
-  - trajectory_analysis: ✗
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✓
+[INFO] Computing UMAP from X_glue...
+[INFO] UMAP plot saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/glue_umap_celltype.png
+[INFO] UMAP plot (legend outside) saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/glue_umap_celltype_legend_outside.png
+[INFO] Modality UMAP saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/glue_umap_modality.png
 
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna
-Status file: /dcs07/hongkai/data/harry/result/Benchmark_heart_rna/sys_log/main_process_status.json
-Execution time: 35.1465 seconds
+============================================================
+STEP 3: Modality-Cell Type Distribution Heatmap
+============================================================
+
+[INFO] Cell count distribution (Modality x Cell Type):
+modality        ATAC     RNA
+cell_type                   
+CD4n T         16935  289625
+CD14 Monocyte  37330  257737
+NK             13334  137838
+CD8m T         10974  124331
+B               7846   69299
+IgA PB           817    6483
+Neutrophil       774    5273
+pDC              653    4160
+Platelet         322    3743
+[INFO] Count heatmap saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/modality_celltype_heatmap.png
+[INFO] Normalized heatmap saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/modality_celltype_heatmap_normalized.png
+[INFO] Stacked bar plot saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/modality_celltype_barplot.png
+
+[INFO] Overwriting input AnnData file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+
+============================================================
+PIPELINE COMPLETE
+============================================================
+[INFO] All outputs saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist
+[INFO] H5AD written to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad

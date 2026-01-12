@@ -1086,7 +1086,6 @@ def wrapper(
                 
                 # ===== Optimal Resolution Parameters =====
                 optimization_target=multiomics_optimization_target,
-                dr_type=multiomics_dr_type,
                 resolution_n_features=multiomics_resolution_n_features,
                 sev_col=multiomics_sev_col,
                 resolution_batch_col=multiomics_resolution_batch_col,

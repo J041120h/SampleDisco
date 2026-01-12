@@ -122,7 +122,7 @@ def plot_benchmark_metrics(csv_path, output_dir):
 
 
 if __name__ == "__main__":
-    csv_path = '/dcs07/hongkai/data/harry/result/Benchmark_heart_rna/benchmark_summary_heart_rna.csv'
-    output_dir = '/dcs07/hongkai/data/harry/result/Benchmark_heart_rna'
+    csv_path = '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/benchmark_summary_eye_retina.csv'
+    output_dir = '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina'
     
     plot_benchmark_metrics(csv_path, output_dir)

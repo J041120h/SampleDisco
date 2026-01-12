@@ -164,7 +164,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import CCA
 from scipy.stats import pearsonr
-
 def plot_cca_on_2d_pca(
     pca_coords_full: np.ndarray,
     sev_levels: np.ndarray,
@@ -179,85 +178,87 @@ def plot_cca_on_2d_pca(
     """
     Plot 2D PCA with CCA direction overlay, with PC selection logic integrated.
     Optionally creates a companion plot showing PC contributions to CCA.
-    
-    Parameters:
-    -----------
-    pca_coords_full : np.ndarray
-        Full PCA coordinates (can be >2D)
-    sev_levels : np.ndarray
-        Severity levels for coloring
-    auto_select_best_2pc : bool
-        If True, automatically select best 2-PC combination
-    pc_indices : tuple
-        Specific PC indices to use (if auto_select_best_2pc is False)
-    output_path : str
-        Path to save the plot
-    sample_labels : array-like
-        Labels for each sample
-    title_suffix : str
-        Additional text for the title
-    verbose : bool
-        Whether to print information
-    create_contribution_plot : bool
-        If True, create a companion plot showing PC contributions (default: True)
-        
-    Returns:
-    --------
-    tuple: (cca_score, pc_indices_used, cca_model)
     """
     from utils.random_seed import set_global_seed
-    set_global_seed(seed = 42, verbose = verbose)
+    set_global_seed(seed=42, verbose=verbose)
+
+    # ------------------------------------------------------------------
+    # 1) Make severity levels numeric & 1D float
+    # ------------------------------------------------------------------
+    sev_levels = np.asarray(sev_levels).reshape(-1)
+
+    if not np.issubdtype(sev_levels.dtype, np.number):
+        # Try direct numeric cast; if that fails, fall back to category codes
+        try:
+            sev_levels = sev_levels.astype(float)
+        except (ValueError, TypeError):
+            # Map unique categories to 0,1,2,...
+            _, sev_codes = np.unique(sev_levels, return_inverse=True)
+            sev_levels = sev_codes.astype(float)
+
+    # At this point sev_levels is numeric float array
     n_components = pca_coords_full.shape[1]
-    
-    # PC selection logic
+
+    # ------------------------------------------------------------------
+    # 2) PC selection + CCA
+    # ------------------------------------------------------------------
     if auto_select_best_2pc and n_components > 2:
         if verbose:
             print(f"Auto-selecting best 2-PC combination from {n_components} components...")
-        
+
         pc_indices_used, cca_score, cca_model, pca_coords_2d = find_best_2pc_combination(
             pca_coords_full, sev_levels, verbose
         )
-        
+
     elif pc_indices is not None:
         # Use specified PC indices
         if len(pc_indices) != 2:
             raise ValueError("pc_indices must contain exactly 2 indices")
         if max(pc_indices) >= n_components:
             raise ValueError(f"PC index {max(pc_indices)} exceeds available components ({n_components})")
-        
+
         pc_indices_used = pc_indices
         pca_coords_2d = pca_coords_full[:, list(pc_indices)]
-        
+
         # Run CCA on specified PCs
         sev_levels_2d = sev_levels.reshape(-1, 1)
         cca_model = CCA(n_components=1)
         cca_model.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca_model.transform(pca_coords_2d, sev_levels_2d)
         cca_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-        
+
         if verbose:
             print(f"Using specified PC{pc_indices[0]+1} + PC{pc_indices[1]+1}: CCA score = {cca_score:.4f}")
-            
+
     else:
         # Use first 2 components by default
         pc_indices_used = (0, 1)
         pca_coords_2d = pca_coords_full[:, :2]
-        
+
         # Run CCA on first 2 PCs
         sev_levels_2d = sev_levels.reshape(-1, 1)
         cca_model = CCA(n_components=1)
         cca_model.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca_model.transform(pca_coords_2d, sev_levels_2d)
         cca_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-        
+
         if verbose:
             print(f"Using default PC1 + PC2: CCA score = {cca_score:.4f}")
 
-    # ==================== MAIN PLOT ====================
+    # ------------------------------------------------------------------
+    # 3) MAIN PLOT
+    # ------------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 8))
 
-    # Normalize severity levels for coloring
-    norm_sev = (sev_levels - np.min(sev_levels)) / (np.max(sev_levels) - np.min(sev_levels) + 1e-16)
+    # Normalize severity levels for coloring (handle constant case)
+    sev_min = np.min(sev_levels)
+    sev_max = np.max(sev_levels)
+    sev_range = sev_max - sev_min
+
+    if sev_range < 1e-16:
+        norm_sev = np.zeros_like(sev_levels, dtype=float)
+    else:
+        norm_sev = (sev_levels - sev_min) / (sev_range + 1e-16)
 
     # Create scatter plot
     sc = ax.scatter(
@@ -267,7 +268,7 @@ def plot_cca_on_2d_pca(
         cmap='viridis_r',
         edgecolors='k',
         alpha=0.8,
-        s=60
+        s=60,
     )
     cbar = plt.colorbar(sc, ax=ax, label='Normalized Severity Level')
 
@@ -277,14 +278,26 @@ def plot_cca_on_2d_pca(
     x_start, x_end = -scale * dx, scale * dx
     y_start, y_end = -scale * dy, scale * dy
 
-    ax.plot([x_start, x_end], [y_start, y_end],
-            linestyle="--", color="red", linewidth=3, label="CCA Direction", alpha=0.9)
+    ax.plot(
+        [x_start, x_end],
+        [y_start, y_end],
+        linestyle="--",
+        color="red",
+        linewidth=3,
+        label="CCA Direction",
+        alpha=0.9,
+    )
 
     # Add sample labels if requested
     if sample_labels is not None:
         for i, label in enumerate(sample_labels):
-            ax.text(pca_coords_2d[i, 0], pca_coords_2d[i, 1], 
-                   str(label), fontsize=8, alpha=0.7)
+            ax.text(
+                pca_coords_2d[i, 0],
+                pca_coords_2d[i, 1],
+                str(label),
+                fontsize=8,
+                alpha=0.7,
+            )
 
     # Set labels and title
     ax.set_xlabel(f"PC{pc_indices_used[0]+1}", fontsize=12)
@@ -306,64 +319,89 @@ def plot_cca_on_2d_pca(
             print(f"Saved CCA plot to: {output_path}")
     else:
         plt.show()
-    
+
     plt.close()
-    
-    # ==================== CONTRIBUTION PLOT ====================
+
+    # ------------------------------------------------------------------
+    # 4) CONTRIBUTION PLOT
+    # ------------------------------------------------------------------
     if create_contribution_plot:
-        # Calculate individual PC correlations with severity
-        pc1_corr, _ = pearsonr(pca_coords_2d[:, 0], sev_levels)
-        pc2_corr, _ = pearsonr(pca_coords_2d[:, 1], sev_levels)
-        
-        # Create figure with simple bar chart
+        # Handle constant or near-constant severity gracefully
+        sev_std = np.std(sev_levels)
+        if sev_std < 1e-16:
+            pc1_corr = 0.0
+            pc2_corr = 0.0
+        else:
+            pc1_corr, _ = pearsonr(pca_coords_2d[:, 0], sev_levels)
+            pc2_corr, _ = pearsonr(pca_coords_2d[:, 1], sev_levels)
+
         fig, ax = plt.subplots(figsize=(10, 6))
-        
+
         x_pos = np.arange(3)
         colors = ['#3498db', '#e74c3c', '#2ecc71']
-        
+
         # Show: individual correlations and CCA score
         values = [pc1_corr, pc2_corr, cca_score]
         labels = [
             f'PC{pc_indices_used[0]+1}\n(r={pc1_corr:.3f})',
             f'PC{pc_indices_used[1]+1}\n(r={pc2_corr:.3f})',
-            f'CCA Combined\n(r={cca_score:.3f})'
+            f'CCA Combined\n(r={cca_score:.3f})',
         ]
-        
-        bars = ax.bar(x_pos, values, color=colors, alpha=0.7, 
-                      edgecolor='black', linewidth=2, width=0.6)
-        
+
+        bars = ax.bar(
+            x_pos,
+            values,
+            color=colors,
+            alpha=0.7,
+            edgecolor='black',
+            linewidth=2,
+            width=0.6,
+        )
+
         ax.axhline(y=0, color='gray', linestyle='--', linewidth=1)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(labels, fontsize=11)
         ax.set_ylabel('Correlation with Severity', fontsize=12, fontweight='bold')
         ax.set_ylim([min(values) - 0.1, max(values) + 0.15])
         ax.grid(axis='y', alpha=0.3)
-        
+
         # Add value labels on bars
         for bar, val in zip(bars, values):
             height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 0.02,
-                    f'{val:.3f}', ha='center', va='bottom', 
-                    fontsize=11, fontweight='bold')
-        
+            ax.text(
+                bar.get_x() + bar.get_width() / 2.0,
+                height + 0.02,
+                f'{val:.3f}',
+                ha='center',
+                va='bottom',
+                fontsize=11,
+                fontweight='bold',
+            )
+
         # Add CCA weights as text annotation
         weight_text = (
             f"CCA Weights: PC{pc_indices_used[0]+1}={dx:.3f}, "
             f"PC{pc_indices_used[1]+1}={dy:.3f}\n"
             f"(Direction: {dx:.2f}×PC{pc_indices_used[0]+1} + {dy:.2f}×PC{pc_indices_used[1]+1})"
         )
-        ax.text(0.5, 0.98, weight_text, transform=ax.transAxes, 
-                fontsize=10, ha='center', va='top',
-                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-        
-        # Title
-        title = f"PC Contributions to CCA"
+        ax.text(
+            0.5,
+            0.98,
+            weight_text,
+            transform=ax.transAxes,
+            fontsize=10,
+            ha='center',
+            va='top',
+            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
+        )
+
+        title = "PC Contributions to CCA"
         if title_suffix:
             title += f" - {title_suffix}"
         ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
-        
+
         plt.tight_layout()
-        
+
         # Save or show contribution plot
         if output_path:
             import os
@@ -374,9 +412,9 @@ def plot_cca_on_2d_pca(
                 print(f"Saved CCA contributions plot to: {contribution_path}")
         else:
             plt.show()
-        
+
         plt.close()
-    
+
     return cca_score, pc_indices_used, cca_model
 
 

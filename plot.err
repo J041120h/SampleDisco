@@ -1,5 +1,2 @@
-2026-01-08 23:36:19 | [INFO] init
-... storing 'sample' as categorical
-... storing 'sex' as categorical
-... storing 'disease_state' as categorical
-... storing 'organ_part' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer

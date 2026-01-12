@@ -9,6 +9,7 @@ def replace_optimal_dimension_reduction(
     expression_resolution_dir: Optional[str] = None,
     proportion_resolution_dir: Optional[str] = None,
     pseudobulk_path: Optional[str] = None,
+    optimization_target: str = "rna",
     verbose: bool = True
 ) -> sc.AnnData:
     """
@@ -16,7 +17,7 @@ def replace_optimal_dimension_reduction(
     from resolution optimization for BOTH expression and proportion.
     
     This function:
-    1. Loads the optimal expression and proportion h5ad files from summary/optimal.h5ad
+    1. Loads the optimal expression and proportion h5ad files from Integration_optimization_{target}_{dr_type}/summary/optimal_{target}_{dr_type}.h5ad
     2. Loads the pseudobulk_sample.h5ad file
     3. Replaces X_DR_expression with optimal expression results
     4. Replaces X_DR_proportion with optimal proportion results
@@ -36,6 +37,8 @@ def replace_optimal_dimension_reduction(
     pseudobulk_path : str, optional
         Path to the pseudobulk_sample.h5ad file
         If None, defaults to base_path/pseudobulk/pseudobulk_sample.h5ad
+    optimization_target : str, default "rna"
+        Optimization target ('rna' or 'atac') - used to construct filenames
     verbose : bool, default True
         Whether to print verbose output
         
@@ -48,7 +51,8 @@ def replace_optimal_dimension_reduction(
     --------
     >>> # Using default paths
     >>> adata = replace_optimal_dimension_reduction(
-    ...     base_path='/path/to/multiomics_output'
+    ...     base_path='/path/to/multiomics_output',
+    ...     optimization_target='rna'
     ... )
     
     >>> # Using custom paths
@@ -56,7 +60,8 @@ def replace_optimal_dimension_reduction(
     ...     base_path='/path/to/multiomics_output',
     ...     expression_resolution_dir='/custom/expression/path',
     ...     proportion_resolution_dir='/custom/proportion/path',
-    ...     pseudobulk_path='/custom/pseudobulk/path.h5ad'
+    ...     pseudobulk_path='/custom/pseudobulk/path.h5ad',
+    ...     optimization_target='atac'
     ... )
     """
     
@@ -80,23 +85,28 @@ def replace_optimal_dimension_reduction(
             "pseudobulk_sample.h5ad"
         )
     
-    # Construct paths to optimal.h5ad files
+    # Construct paths to optimal h5ad files with the correct directory structure
+    # The actual structure is: resolution_optimization_{dr_type}/Integration_optimization_{target}_{dr_type}/summary/optimal_{target}_{dr_type}.h5ad
     optimal_expression_path = os.path.join(
-        expression_resolution_dir, 
+        expression_resolution_dir,
+        f"Integration_optimization_{optimization_target}_expression",
         "summary", 
-        "optimal.h5ad"
+        f"optimal_{optimization_target}_expression.h5ad"
     )
     
     optimal_proportion_path = os.path.join(
-        proportion_resolution_dir, 
+        proportion_resolution_dir,
+        f"Integration_optimization_{optimization_target}_proportion",
         "summary", 
-        "optimal.h5ad"
+        f"optimal_{optimization_target}_proportion.h5ad"
     )
     
     if verbose:
         print(f"\n{'='*70}")
         print(f"Replacing Dimension Reduction with Optimal Results")
         print(f"{'='*70}")
+        print(f"\n[Replace DR] Configuration:")
+        print(f"  - Optimization target: {optimization_target.upper()}")
         print(f"\n[Replace DR] File paths:")
         print(f"  - Optimal expression: {optimal_expression_path}")
         print(f"  - Optimal proportion: {optimal_proportion_path}")
@@ -244,7 +254,7 @@ def replace_optimal_dimension_reduction(
                 print(f"  ✓ Created backup: {backup_path}")
         
         # Write updated file
-        sc.write(pseudobulk_path, pseudobulk_sample)
+        pseudobulk_sample.write_h5ad(pseudobulk_path)
         
         if os.path.exists(pseudobulk_path):
             file_size = os.path.getsize(pseudobulk_path)
@@ -253,6 +263,7 @@ def replace_optimal_dimension_reduction(
                 print(f"\n{'-'*70}")
                 print(f"SUMMARY")
                 print(f"{'-'*70}")
+                print(f"  Optimization target: {optimization_target.upper()}")
                 print(f"  Expression DR keys copied: {copied_expression_count}")
                 print(f"  Proportion DR keys copied: {copied_proportion_count}")
                 print(f"  Total keys updated: {copied_expression_count + copied_proportion_count}")

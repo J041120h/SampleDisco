@@ -199,7 +199,6 @@ atac_n_pcs: 30
 atac_leiden_resolution: 0.9
 atac_existing_cell_types: false
 atac_n_target_cell_clusters: null
-atac_preserve_cols_for_sample_embedding: null
 
 # ATAC UMAP parameters
 atac_umap_min_dist: 0.3
@@ -211,6 +210,7 @@ atac_plot_dpi: 300
 atac_pseudobulk_output_dir: null
 atac_pseudobulk_n_features: 40000
 atac_pseudobulk_verbose: true
+atac_preserve_cols_for_sample_embedding: null
 
 # ATAC PCA parameters
 atac_dr_output_dir: null

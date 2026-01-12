@@ -2,14 +2,14 @@ Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
         "sample_distance_calculation": false,
-        "trajectory_analysis": true,
+        "trajectory_analysis": false,
         "trajectory_dge": false,
         "cluster_dge": false,
-        "visualization": true
+        "visualization": false
     },
     "atac": {
         "preprocessing": false,
@@ -22,16 +22,16 @@ Resuming process from previous progress:
         "visualization": false
     },
     "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
+        "glue_integration": true,
+        "glue_preprocessing": true,
+        "glue_training": true,
+        "glue_gene_activity": true,
+        "glue_cell_types": true,
+        "glue_visualization": true,
+        "integration_preprocessing": true,
+        "dimensionality_reduction": true,
+        "embedding_visualization": true,
+        "optimal_resolution": true
     },
     "system_info": {
         "platform": "Linux",
@@ -42,245 +42,100 @@ Resuming process from previous progress:
 }
 
 ============================================================
-RUNNING RNA PIPELINE
+RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting RNA wrapper function with provided parameters...
-Starting preprocessing...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-=== Reading input dataset ===
-Raw shape: 144343 cells × 38606 genes
-=== Merging sample-level metadata into adata.obs ===
-   📄 Reading CSV metadata file: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
-   🔄 Dropping 5 overlapping columns from adata.obs: ['age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5']
-      Will use metadata versions instead
-   ✅ Added 0 new metadata columns
-   🔗 Matched 144343/144343 entries (100.0%)
-All required columns are present in adata.obs.
-=== Processing data for clustering ===
-Running HVG selection on CPU...
-After HVG: 141935 cells × 2000 genes
-Moving to GPU for normalization, PCA, and Harmony...
-=== [GPU] Running Harmony integration ===
-Variables to regress: sample
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-Reach convergence after 5 iteration(s).
-End of harmony for adata_cluster.
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_cell.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 12 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_cell.h5ad
-=== [CPU] Processing data for sample differences ===
-Saving original expression matrix (temporary variable)
-Normalizing and PCA on CPU...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 12 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_sample.h5ad
-Total runtime: 304.42 seconds
-Starting cell type clustering at resolution: 0.18
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] No target clusters specified. Using standard Leiden clustering (resolution=0.18)...
-[cell_types] Found 10 clusters after Leiden clustering.
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Generating UMAP visualizations...
-[generate_umap_visualizations] Generating UMAP plots...
-[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (10 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/umap_cell_type.png
-[cell_types] Assigning cell_type labels to anndata_sample...
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_cell.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 13 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_cell.h5ad
-[safe_h5ad_write] Preparing to save to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_sample.h5ad
-[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...
-[clean_obs_for_saving] Cleaning completed successfully
-[clean_obs_for_saving] 13 categorical columns processed
-[safe_h5ad_write] Writing H5AD file...
-[safe_h5ad_write] Successfully saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/preprocess/adata_sample.h5ad
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/pseudobulk/pseudobulk_sample.h5ad
-[Replace DR] Starting dimension reduction replacement...
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
+Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
+Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
+Loaded dimensionality reduction data from existing files
+Step 5: Finding optimal cell resolution for both expression and proportion...
+GPU Memory: 47.70 GB
+GPU Memory Available: 0.00 GB
+
+  Running optimization for EXPRESSION...
+  ✓ Expression optimization completed
+
+  Running optimization for PROPORTION...
+  ✓ Proportion optimization completed
+
+  Updating pseudobulk with optimal embeddings...
+
+======================================================================
+Replacing Dimension Reduction with Optimal Results
+======================================================================
+
+[Replace DR] Configuration:
+  - Optimization target: RNA
+
 [Replace DR] File paths:
-  - Optimal expression: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/RNA_resolution_optimization_expression/summary/optimal.h5ad
-  - Optimal proportion: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/RNA_resolution_optimization_proportion/summary/optimal.h5ad
-  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/pseudobulk/pseudobulk_sample.h5ad
+  - Optimal expression: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/summary/optimal_rna_expression.h5ad
+  - Optimal proportion: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_proportion/Integration_optimization_rna_proportion/summary/optimal_rna_proportion.h5ad
+  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
 
 [Replace DR] Loading files...
-  ✓ Optimal expression loaded: (12, 185832)
-  ✓ Optimal proportion loaded: (12, 170549)
-  ✓ Pseudobulk sample loaded: (12, 170549)
+  ✓ Optimal expression loaded: (431, 264179)
+  ✓ Optimal proportion loaded: (431, 325083)
+  ✓ Pseudobulk sample loaded: (431, 18000)
 
-[Replace DR] Replacing expression dimension reduction results...
-  ✓ Copied .uns['X_DR_expression'] (shape: (12, 10))
-  ✓ Copied .uns['X_DR_expression_variance'] (shape: (10,))
-  ✓ Copied .uns['X_DR_expression_variance_ratio'] (shape: (10,))
-  ✓ Copied .uns['X_pca_expression_method'] (shape: (12, 10))
-  ✓ Copied .obsm['X_DR_expression'] (shape: (12, 10))
-  ✓ Copied .obsm['X_pca_expression_method'] (shape: (12, 10))
+[Replace DR] Replacing EXPRESSION dimension reduction results...
+  ✓ Copied .uns['X_DR_expression'] (shape: (431, 30))
+  ✓ Copied .uns['X_DR_expression_variance'] (shape: (30,))
+  ✓ Copied .uns['X_DR_expression_variance_ratio'] (shape: (30,))
+  ✓ Copied .uns['X_pca_expression_method'] (shape: (431, 30))
+  ✓ Copied .obsm['X_DR_expression'] (shape: (431, 30))
+  ✓ Copied .obsm['X_pca_expression_method'] (shape: (431, 30))
+  → Total expression keys copied: 6
 
-[Replace DR] Replacing proportion dimension reduction results...
-  ✓ Copied .uns['X_DR_proportion'] (shape: (12, 5))
-  ✓ Copied .uns['X_DR_proportion_variance_ratio'] (shape: (5,))
-  ✓ Copied .uns['pca_proportion_variance_ratio'] (shape: (5,))
-  ✓ Copied .obsm['X_DR_proportion'] (shape: (12, 5))
-  ✓ Copied .obsm['X_pca_proportion'] (shape: (12, 5))
+[Replace DR] Replacing PROPORTION dimension reduction results...
+  ✓ Copied .uns['X_DR_proportion'] (shape: (431, 30))
+  ✓ Copied .uns['X_DR_proportion_variance_ratio'] (shape: (30,))
+  ✓ Copied .uns['pca_proportion_variance_ratio'] (shape: (30,))
+  ✓ Copied .obsm['X_DR_proportion'] (shape: (431, 30))
+  ✓ Copied .obsm['X_pca_proportion'] (shape: (431, 30))
+  → Total proportion keys copied: 5
 
 [Replace DR] Saving updated pseudobulk_sample...
-  Destination: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/pseudobulk/pseudobulk_sample.h5ad
-  ✓ Successfully saved (11.8 MB)
+  Destination: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  ✓ Created backup: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
+  ✓ Successfully saved (31.9 MB)
 
-[Replace DR] === SUMMARY ===
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Optimization target: RNA
   Expression DR keys copied: 6
   Proportion DR keys copied: 5
-  File updated: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/pseudobulk/pseudobulk_sample.h5ad
-Starting trajectory analysis...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
+  Total keys updated: 11
+  File updated: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  Backup saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
+======================================================================
 
-Processing X_DR_proportion...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-Warning: Only 5 components available, using all of them.
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-Auto-selecting best 2-PC combination from 5 components...
-Testing 10 PC combinations...
-PC1 + PC2: CCA score = 0.9870
-PC1 + PC3: CCA score = 0.9898
-PC1 + PC4: CCA score = 0.9850
-PC1 + PC5: CCA score = 0.9873
-PC2 + PC3: CCA score = 0.1161
-PC2 + PC4: CCA score = 0.1389
-PC2 + PC5: CCA score = 0.0885
-PC3 + PC4: CCA score = 0.1369
-PC3 + PC5: CCA score = 0.0927
-PC4 + PC5: CCA score = 0.1107
-Best combination: PC1 + PC3 with score 0.9898
-Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/CCA/pca_10d_cca_proportion.pdf
-Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/CCA/pca_10d_cca_proportion_contributions.pdf
+✓ Optimal resolution finding and embedding update completed successfully
 
-Processing X_DR_expression...
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-Auto-selecting best 2-PC combination from 10 components...
-Testing 45 PC combinations...
-PC1 + PC2: CCA score = 0.6663
-PC1 + PC3: CCA score = 0.1688
-PC1 + PC4: CCA score = 0.2524
-PC1 + PC5: CCA score = 0.3166
-PC1 + PC6: CCA score = 0.3233
-PC1 + PC7: CCA score = 0.2565
-PC1 + PC8: CCA score = 0.1686
-PC1 + PC9: CCA score = 0.6081
-PC1 + PC10: CCA score = 0.1751
-PC2 + PC3: CCA score = 0.6205
-PC2 + PC4: CCA score = 0.6533
-PC2 + PC5: CCA score = 0.6701
-PC2 + PC6: CCA score = 0.6857
-PC2 + PC7: CCA score = 0.6511
-PC2 + PC8: CCA score = 0.6203
-PC2 + PC9: CCA score = 0.8621
-PC2 + PC10: CCA score = 0.6230
-PC3 + PC4: CCA score = 0.2057
-PC3 + PC5: CCA score = 0.2539
-PC3 + PC6: CCA score = 0.2926
-PC3 + PC7: CCA score = 0.1985
-PC3 + PC8: CCA score = 0.0159
-PC3 + PC9: CCA score = 0.5989
-PC3 + PC10: CCA score = 0.0604
-PC4 + PC5: CCA score = 0.3260
-PC4 + PC6: CCA score = 0.3570
-PC4 + PC7: CCA score = 0.2850
-PC4 + PC8: CCA score = 0.2051
-PC4 + PC9: CCA score = 0.6328
-PC4 + PC10: CCA score = 0.2133
-PC5 + PC6: CCA score = 0.3868
-PC5 + PC7: CCA score = 0.3216
-PC5 + PC8: CCA score = 0.2534
-PC5 + PC9: CCA score = 0.6501
-PC5 + PC10: CCA score = 0.2601
-PC6 + PC7: CCA score = 0.3530
-PC6 + PC8: CCA score = 0.2923
-PC6 + PC9: CCA score = 0.6662
-PC6 + PC10: CCA score = 0.2980
-PC7 + PC8: CCA score = 0.1980
-PC7 + PC9: CCA score = 0.6305
-PC7 + PC10: CCA score = 0.2064
-PC8 + PC9: CCA score = 0.5987
-PC8 + PC10: CCA score = 0.0586
-PC9 + PC10: CCA score = 0.6015
-Best combination: PC2 + PC9 with score 0.8621
-Saved CCA plot to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/CCA/pca_10d_cca_expression.pdf
-Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/CCA/pca_10d_cca_expression_contributions.pdf
-Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/CCA/pseudotime_proportion.csv
-Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/CCA/pseudotime_expression.csv
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'status_flags']
+Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
+Completed steps: 10/10
+GLUE sub-steps completed: 5/5
 
-==================================================
-CCA ANALYSIS SUMMARY
-==================================================
-X_DR_proportion: CCA score = 0.9898 (using PC1 + PC3)
-X_DR_expression: CCA score = 0.8621 (using PC2 + PC9)
-
-Total runtime: 1.29 seconds
-==================================================
-P-value for observed correlation 0.9897557964339498: 0.0
-[CCA p-test] Runtime: 1.78 seconds
-P-value for observed correlation 0.8620625385401035: 0.006
-[CCA p-test] Runtime: 1.42 seconds
-Starting visualization...
-[_preprocessing] Verified required columns in pseudobulk AnnData: ['age']
-Found 10 unique cell types.
-Dendrogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/visualization/cell_type_dendrogram.png
-Generating cell type proportion PCA plots for grouping columns: ['age']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/visualization/proportion_embedding_age.png
-Proportion embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/visualization/proportion_embedding_age.png
-Generating cell type expression plots for grouping columns: ['age']
-Figure saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/visualization/expression_embedding_age.png
-Expression embedding plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/rna/visualization/expression_embedding_age.png
-[visualization] All requested visualizations saved.
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
+✓ Multiomics pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
+Multiomics Pipeline: ✓ COMPLETE
+  - glue_integration: ✓
+  - glue_preprocessing: ✓
+  - glue_training: ✓
+  - glue_gene_activity: ✓
+  - glue_cell_types: ✓
+  - glue_visualization: ✓
+  - integration_preprocessing: ✓
   - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✗
-  - trajectory_analysis: ✓
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✓
+  - embedding_visualization: ✓
+  - optimal_resolution: ✓
 
-Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea
-Status file: /dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea/sys_log/main_process_status.json
-Execution time: 452.4088 seconds
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
+Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
+Execution time: 18.0762 seconds

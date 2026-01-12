@@ -1,120 +1,526 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
-def debug_embedding_check(meta_csv_path: str, embedding_csv_path: str, label_col: str = "disease_state"):
+from typing import Optional
+
+import scanpy as sc
+import celltypist
+from celltypist import models
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+
+from pyensembl import EnsemblRelease
+
+
+def set_global_seed(seed=42):
+    """Set random seed for reproducibility."""
+    import random
+    random.seed(seed)
+    np.random.seed(seed)
+
+
+def auto_align_gene_names_with_pyensembl(
+    adata_rna,
+    ensembl_release: int = 98,
+    species: str = "human",
+    min_ensembl_fraction: float = 0.2,
+):
     """
-    Debug version of the benchmark that inspects the metadata and embedding files
-    to check for alignment issues and label problems.
+    Detect if var_names look like Ensembl IDs and, if so, map them to gene symbols
+    using pyensembl (given an Ensembl release).
 
-    Parameters:
-    ----------
-    meta_csv_path : str
-        Path to metadata CSV file
-    embedding_csv_path : str
-        Path to embedding/coordinates CSV file
-    label_col : str
-        Name of the column used for color coding in visualizations
+    - Strips version suffixes like '.1', '.2', ...
+    - Uses EnsemblRelease(ensembl_release, species)
+    - If mapping succeeds for a reasonable fraction of genes, replaces var_names with symbols.
     """
-    
-    print(f"[DEBUG] Loading metadata from: {meta_csv_path}")
-    try:
-        meta_df = pd.read_csv(meta_csv_path)
-        print(f"[DEBUG] Metadata loaded successfully. Shape: {meta_df.shape}, Columns: {meta_df.columns.tolist()}")
-    except Exception as e:
-        print(f"[ERROR] Failed to load metadata CSV: {e}")
-        return
-    
-    print(f"[DEBUG] Checking if '{label_col}' exists in metadata...")
-    if label_col not in meta_df.columns:
-        print(f"[ERROR] '{label_col}' column not found in metadata.")
-        return
-    
-    print(f"[DEBUG] Inspecting unique values in '{label_col}' column...")
-    print(meta_df[label_col].value_counts())
-    
-    print(f"[DEBUG] Loading embeddings from: {embedding_csv_path}")
-    try:
-        embedding_df = pd.read_csv(embedding_csv_path, index_col=0)
-        print(f"[DEBUG] Embedding loaded successfully. Shape: {embedding_df.shape}")
-        print(f"[DEBUG] First 3 embedding indices: {embedding_df.index[:3]}")
-    except Exception as e:
-        print(f"[ERROR] Failed to load embedding CSV: {e}")
-        return
-    
-    # Normalize sample IDs in both metadata and embedding files
-    print(f"[DEBUG] Normalizing sample IDs to lowercase for case-insensitive matching...")
-    meta_df['sample'] = meta_df['sample'].astype(str).str.lower().str.strip()
-    embedding_df.index = embedding_df.index.astype(str).str.lower().str.strip()
+    var_names = pd.Index(adata_rna.var_names.astype(str))
 
-    # Check overlap between metadata and embedding sample IDs
-    common_ids = meta_df['sample'].index.intersection(embedding_df.index)
-    only_meta = meta_df['sample'].index.difference(embedding_df.index)
-    only_emb = embedding_df.index.difference(meta_df['sample'].index)
-    
-    print(f"[DEBUG] Overlap check:")
-    print(f"  Common IDs: {len(common_ids)}")
-    print(f"  Only in metadata: {len(only_meta)}")
-    print(f"  Only in embedding: {len(only_emb)}")
-    print(f"[DEBUG] Example meta-only IDs: {only_meta[:5]}")
-    print(f"[DEBUG] Example embed-only IDs: {only_emb[:5]}")
-    
-    if len(common_ids) == 0:
-        print("[ERROR] No common sample IDs between metadata and embedding!")
-        return
+    # Strip version suffix (safe even if they are already symbols)
+    stripped = var_names.str.replace(r"\.\d+$", "", regex=True)
 
-    # Subset both metadata and embeddings to common IDs
-    print(f"[DEBUG] Subsetting both metadata and embedding to common IDs...")
-    meta_df = meta_df[meta_df['sample'].isin(common_ids)]
-    embedding_df = embedding_df.loc[common_ids]
+    # Heuristic: fraction that look like Ensembl IDs
+    ensembl_like_mask = stripped.str.match(r"^ENS[A-Z0-9]+")
+    frac_ensembl_like = ensembl_like_mask.mean()
+    print(f"[INFO] pyensembl: fraction of Ensembl-like IDs in var_names: {frac_ensembl_like:.3f}")
 
-    print(f"[DEBUG] After alignment - Meta shape: {meta_df.shape}, Embedding shape: {embedding_df.shape}")
-    
-    # Check the label column and its values
-    label_values_raw = meta_df[label_col]
-    print(f"[DEBUG] Checking label column values:")
-    print(f"  Unique values in '{label_col}': {label_values_raw.unique()}")
-    
-    # Check if label column is numeric or categorical
-    label_numeric = pd.to_numeric(label_values_raw, errors='coerce')
-    is_numerical = label_numeric.notna().sum() / len(label_numeric) > 0.5
-    
-    if is_numerical:
-        print(f"[DEBUG] {label_col} is numerical. Min: {label_numeric.min()}, Max: {label_numeric.max()}")
+    if frac_ensembl_like < min_ensembl_fraction:
+        print("[INFO] pyensembl: var_names do not look predominantly like Ensembl IDs; "
+              "keeping existing gene names.")
+        return adata_rna  # no change
+
+    print(f"[INFO] pyensembl: detected Ensembl-style gene IDs; mapping to symbols "
+          f"(Ensembl release {ensembl_release}, species={species})")
+
+    # Initialize / download the Ensembl DB (only first run downloads)
+    ensembl = EnsemblRelease(ensembl_release, species=species)
+    print("[INFO] pyensembl: building / loading index (this may take a bit the first time)...")
+    ensembl.index()
+
+    new_names = []
+    n_mapped = 0
+
+    for g in stripped:
+        symbol = None
+
+        # Try mapping as a gene ID
+        try:
+            symbol = ensembl.gene_name_of_gene_id(g)
+        except Exception:
+            # If that fails, try mapping as a transcript ID → gene ID → gene name
+            try:
+                gene_id = ensembl.gene_id_of_transcript_id(g)
+                symbol = ensembl.gene_name_of_gene_id(gene_id)
+            except Exception:
+                # Still nothing → leave as is
+                symbol = None
+
+        if symbol is not None:
+            new_names.append(symbol)
+            n_mapped += 1
+        else:
+            # Fallback: keep the original name if mapping fails
+            new_names.append(g)
+
+    mapping_frac = n_mapped / len(stripped)
+    print(f"[INFO] pyensembl: successfully mapped {n_mapped}/{len(stripped)} genes "
+          f"({mapping_frac:.3%}) to gene symbols.")
+
+    if n_mapped == 0:
+        print("[WARN] pyensembl: no genes were mapped; leaving var_names unchanged.")
+        return adata_rna
+
+    # Apply new names and make them unique
+    adata_rna.var_names = new_names
+    adata_rna.var_names_make_unique()
+    print(f"[DEBUG] pyensembl: example mapped gene names: {list(adata_rna.var_names[:5])}")
+
+    return adata_rna
+
+
+def annotate_and_transfer_cell_types(
+    adata,
+    output_dir: str,
+    model_name: Optional[str] = None,
+    custom_model_path: Optional[str] = None,
+    majority_voting: bool = True,
+    modality_col: str = "modality",
+    original_celltype_col: str = "cell_type",   # input column name
+    rna_modality_value: str = "RNA",
+    atac_modality_value: str = "ATAC",
+    ensembl_release: int = 98,
+    ensembl_species: str = "human",
+):
+    """
+    Annotate RNA cells using CellTypist and transfer labels to ATAC cells
+    based on shared original cell type labels.
+
+    Changes vs original:
+      - Uses pyensembl (Ensembl release 98 by default) to auto-detect Ensembl IDs
+        and map them to gene symbols before CellTypist.
+      - Overwrites the original cell type column in-place (default: 'cell_type')
+      - Stores the original labels in '{original_celltype_col}_original' before overwriting
+
+    Returns
+    -------
+    (adata, label_mapping)
+    """
+    set_global_seed(42)
+
+    if (model_name is None and custom_model_path is None) or (model_name and custom_model_path):
+        raise ValueError("You must provide exactly one of `model_name` or `custom_model_path`.")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Separate RNA and ATAC cells
+    rna_mask = adata.obs[modality_col] == rna_modality_value
+    atac_mask = adata.obs[modality_col] == atac_modality_value
+
+    print(f"[INFO] Total cells: {adata.n_obs}")
+    print(f"[INFO] RNA cells: {rna_mask.sum()}")
+    print(f"[INFO] ATAC cells: {atac_mask.sum()}")
+
+    # Extract RNA cells for CellTypist annotation
+    adata_rna = adata[rna_mask].copy()
+    print(f"[INFO] RNA subset shape: {adata_rna.n_obs} cells × {adata_rna.n_vars} genes")
+
+    # ======== use pyensembl to align gene names (Ensembl → symbols) =========
+    adata_rna = auto_align_gene_names_with_pyensembl(
+        adata_rna,
+        ensembl_release=ensembl_release,
+        species=ensembl_species,
+    )
+    # ========================================================================
+
+    # Preprocess RNA data for CellTypist (does not touch original adata.X)
+    adata_ct = adata_rna.copy()
+    sc.pp.normalize_total(adata_ct, target_sum=1e4)
+    sc.pp.log1p(adata_ct)
+    if not isinstance(adata_ct.X, np.ndarray):
+        adata_ct.X = adata_ct.X.toarray()
+
+    # Load CellTypist model
+    if model_name:
+        print(f"[INFO] Downloading CellTypist model: {model_name}")
+        models.download_models(force_update=True, model=[model_name])
+        model = models.Model.load(model_name)
     else:
-        print(f"[DEBUG] {label_col} is categorical.")
-    
-    # Perform a PCA on the embeddings to see if they are well-conditioned
-    print(f"[DEBUG] Performing PCA to inspect embedding...")
-    from sklearn.decomposition import PCA
-    
-    pca = PCA(n_components=2)
-    embedding_2d = pca.fit_transform(embedding_df)
-    variance_explained = pca.explained_variance_ratio_
-    
-    print(f"[DEBUG] PCA completed. Explained variance: {variance_explained}")
-    
-    # Visualize the first two components with the label column
-    print(f"[DEBUG] Creating PCA visualization...")
-    plt.figure(figsize=(8, 6))
-    
-    # Plot if numerical or categorical
-    if is_numerical:
-        plt.scatter(embedding_2d[:, 0], embedding_2d[:, 1], c=label_numeric, cmap='viridis', edgecolors='black', alpha=0.8)
-        plt.colorbar(label=label_col)
+        if not os.path.exists(custom_model_path):
+            raise FileNotFoundError(f"Custom model not found: {custom_model_path}")
+        print(f"[INFO] Loading custom model from: {custom_model_path}")
+        model = models.Model.load(custom_model_path)
+
+    # Overlap diagnostic to prevent cryptic "no features overlap" error
+    try:
+        model_genes = set(model.genes) if hasattr(model, "genes") else set(model.features)
+    except Exception:
+        model_genes = set(getattr(model, "features", []))
+
+    adata_genes = set(adata_ct.var_names)
+    overlap = model_genes & adata_genes
+
+    print(f"[INFO] #genes in data    : {len(adata_genes)}")
+    print(f"[INFO] #genes in model   : {len(model_genes)}")
+    print(f"[INFO] #overlapping genes: {len(overlap)}")
+
+    if len(overlap) == 0:
+        raise ValueError(
+            "No overlapping genes between input AnnData (after pyensembl mapping) "
+            "and CellTypist model.\n"
+            "Check that:\n"
+            "  1) pyensembl species and Ensembl release are correct, and\n"
+            "  2) The dataset and model are from the same species.\n"
+        )
     else:
-        label_to_num = {lbl: i for i, lbl in enumerate(label_values_raw.unique())}
-        label_colors = [label_to_num[lbl] for lbl in label_values_raw]
-        plt.scatter(embedding_2d[:, 0], embedding_2d[:, 1], c=label_colors, cmap='tab10', edgecolors='black', alpha=0.8)
-        plt.colorbar(label=label_col)
-    
-    plt.xlabel(f"PC1 ({variance_explained[0]:.2%})")
-    plt.ylabel(f"PC2 ({variance_explained[1]:.2%})")
-    plt.title(f"Embedding PCA colored by {label_col}")
-    plt.show()
+        print(f"[DEBUG] Example overlapping genes: {list(overlap)[:10]}")
+
+    # Run CellTypist annotation on RNA cells
+    print("[INFO] Running CellTypist annotation on RNA cells...")
+    predictions = celltypist.annotate(
+        adata_ct,
+        model=model,
+        majority_voting=majority_voting
+    )
+    pred_adata = predictions.to_adata()
+
+    # Get the annotation column name
+    annot_col = "majority_voting" if majority_voting else "predicted_labels"
+
+    # Create mapping from original cell type to CellTypist annotation
+    rna_original_labels = adata_rna.obs[original_celltype_col].values
+    rna_celltypist_labels = pred_adata.obs.loc[adata_rna.obs.index, annot_col].values
+
+    # Build mapping dictionary (original label -> most common CellTypist label)
+    label_mapping = {}
+    mapping_df = pd.DataFrame({
+        "original": rna_original_labels,
+        "celltypist": rna_celltypist_labels
+    })
+
+    for orig_label in mapping_df["original"].unique():
+        subset = mapping_df[mapping_df["original"] == orig_label]
+        most_common = subset["celltypist"].value_counts().idxmax()
+        label_mapping[orig_label] = most_common
+
+    print("\n[INFO] Label mapping (original -> CellTypist):")
+    for orig, new in sorted(label_mapping.items(), key=lambda x: str(x[0])):
+        print(f"  {orig} -> {new}")
+
+    # Keep original labels for traceability
+    backup_col = f"{original_celltype_col}_original"
+    if backup_col not in adata.obs.columns:
+        adata.obs[backup_col] = adata.obs[original_celltype_col]
+        print(f"[INFO] Backed up original labels to obs['{backup_col}']")
+
+    # Overwrite in-place with mapped labels
+    adata.obs[original_celltype_col] = adata.obs[backup_col].map(label_mapping)
+
+    # Also store confidence scores for RNA cells
+    adata.obs["celltypist_conf_score"] = np.nan
+    adata.obs.loc[rna_mask, "celltypist_conf_score"] = pred_adata.obs.loc[
+        adata_obs_idx := adata.obs[rna_mask].index, "conf_score"
+    ].values
+
+    # Save mapping to file
+    mapping_df_out = pd.DataFrame(list(label_mapping.items()),
+                                  columns=["original_label", "celltypist_label"])
+    mapping_path = os.path.join(output_dir, "celltype_mapping.csv")
+    mapping_df_out.to_csv(mapping_path, index=False)
+    print(f"[INFO] Label mapping saved to: {mapping_path}")
+
+    return adata, label_mapping
 
 
-# Debug using one of the files in the logs
-meta_csv_path = "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv"
-embedding_csv_path = "/dcs07/hongkai/data/harry/result/Benchmark_heart_rna/rna/embeddings/sample_expression_embedding.csv"
+def visualize_glue_embedding(
+    adata,
+    output_dir: str,
+    embedding_key: str = "X_glue",
+    color_by: str = "cell_type",
+    filename: str = "glue_umap_celltype.png",
+    n_neighbors: int = 15,
+    min_dist: float = 0.5,
+):
+    """
+    Compute UMAP from GLUE embedding and visualize colored by cell type.
+    """
+    os.makedirs(output_dir, exist_ok=True)
 
-debug_embedding_check(meta_csv_path, embedding_csv_path, label_col="disease_state")
+    if embedding_key not in adata.obsm:
+        raise KeyError(
+            f"Embedding key '{embedding_key}' not found in adata.obsm. "
+            f"Available keys: {list(adata.obsm.keys())}"
+        )
+
+    print(f"[INFO] Computing UMAP from {embedding_key}...")
+
+    sc.pp.neighbors(adata, use_rep=embedding_key, n_neighbors=n_neighbors)
+    sc.tl.umap(adata, min_dist=min_dist)
+
+    # Plot UMAP colored by cell type
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sc.pl.umap(
+        adata,
+        color=color_by,
+        ax=ax,
+        show=False,
+        title=f"GLUE Embedding UMAP - {color_by}",
+        legend_loc="on data",
+        legend_fontsize=8,
+        frameon=False,
+    )
+    plt.tight_layout()
+
+    output_path = os.path.join(output_dir, filename)
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[INFO] UMAP plot saved to: {output_path}")
+
+    # Also save a version with legend outside
+    fig, ax = plt.subplots(figsize=(12, 8))
+    sc.pl.umap(
+        adata,
+        color=color_by,
+        ax=ax,
+        show=False,
+        title=f"GLUE Embedding UMAP - {color_by}",
+        legend_loc="right margin",
+        frameon=False,
+    )
+    plt.tight_layout()
+
+    output_path_legend = os.path.join(output_dir, filename.replace(".png", "_legend_outside.png"))
+    fig.savefig(output_path_legend, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[INFO] UMAP plot (legend outside) saved to: {output_path_legend}")
+
+    return adata
+
+
+def plot_modality_celltype_heatmap(
+    adata,
+    output_dir: str,
+    modality_col: str = "modality",
+    celltype_col: str = "cell_type",
+    filename: str = "modality_celltype_heatmap.png",
+):
+    """
+    Create a heatmap showing the distribution of RNA/ATAC cells in each cell type.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    crosstab = pd.crosstab(
+        adata.obs[celltype_col],
+        adata.obs[modality_col],
+    )
+
+    crosstab = crosstab.loc[crosstab.sum(axis=1).sort_values(ascending=False).index]
+
+    print("\n[INFO] Cell count distribution (Modality x Cell Type):")
+    print(crosstab)
+
+    crosstab.to_csv(os.path.join(output_dir, "modality_celltype_counts.csv"))
+
+    crosstab_norm = crosstab.div(crosstab.sum(axis=1), axis=0)
+
+    # Plot 1: Raw counts heatmap
+    fig, ax = plt.subplots(figsize=(8, max(6, len(crosstab) * 0.4)))
+    sns.heatmap(
+        crosstab,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        ax=ax,
+        cbar_kws={"label": "Cell Count"},
+    )
+    ax.set_title("Cell Count Distribution: Modality × Cell Type")
+    ax.set_xlabel("Modality")
+    ax.set_ylabel("Cell Type")
+    plt.tight_layout()
+
+    output_path = os.path.join(output_dir, filename)
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[INFO] Count heatmap saved to: {output_path}")
+
+    # Plot 2: Normalized heatmap (proportions)
+    fig, ax = plt.subplots(figsize=(8, max(6, len(crosstab) * 0.4)))
+    sns.heatmap(
+        crosstab_norm,
+        annot=True,
+        fmt=".2f",
+        cmap="RdYlBu_r",
+        ax=ax,
+        vmin=0,
+        vmax=1,
+        cbar_kws={"label": "Proportion"},
+    )
+    ax.set_title("Modality Proportion within Each Cell Type")
+    ax.set_xlabel("Modality")
+    ax.set_ylabel("Cell Type")
+    plt.tight_layout()
+
+    output_path_norm = os.path.join(output_dir, filename.replace(".png", "_normalized.png"))
+    fig.savefig(output_path_norm, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[INFO] Normalized heatmap saved to: {output_path_norm}")
+
+    # Plot 3: Stacked bar plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+    crosstab.plot(kind="bar", stacked=True, ax=ax, colormap="Set2")
+    ax.set_title("Cell Count Distribution by Cell Type and Modality")
+    ax.set_xlabel("Cell Type")
+    ax.set_ylabel("Cell Count")
+    ax.legend(title="Modality")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+
+    output_path_bar = os.path.join(output_dir, "modality_celltype_barplot.png")
+    fig.savefig(output_path_bar, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[INFO] Stacked bar plot saved to: {output_path_bar}")
+
+    return crosstab
+
+
+def run_full_pipeline(
+    h5ad_path: str,
+    output_dir: str,
+    celltypist_model_name: Optional[str] = None,
+    custom_model_path: Optional[str] = None,
+    majority_voting: bool = True,
+    modality_col: str = "modality",
+    original_celltype_col: str = "cell_type",
+    rna_modality_value: str = "RNA",
+    atac_modality_value: str = "ATAC",
+    embedding_key: str = "X_glue",
+    overwrite_input_h5ad: bool = True,   # overwrite input by default
+    ensembl_release: int = 98,
+    ensembl_species: str = "human",
+):
+    """
+    Run the full pipeline:
+    1. Annotate RNA cells with CellTypist and transfer labels to ATAC cells
+    2. Visualize GLUE embedding with UMAP colored by cell type
+    3. Create heatmap of modality distribution across cell types
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    print(f"[INFO] Loading AnnData from: {h5ad_path}")
+    adata = sc.read_h5ad(h5ad_path)
+    print(f"[INFO] Shape: {adata.n_obs} cells × {adata.n_vars} genes/peaks")
+    print(f"[INFO] Modalities: {adata.obs[modality_col].value_counts().to_dict()}")
+
+    # Step 1: Annotate cell types
+    print("\n" + "=" * 60)
+    print("STEP 1: Cell Type Annotation and Transfer")
+    print("=" * 60)
+    adata, label_mapping = annotate_and_transfer_cell_types(
+        adata=adata,
+        output_dir=output_dir,
+        model_name=celltypist_model_name,
+        custom_model_path=custom_model_path,
+        majority_voting=majority_voting,
+        modality_col=modality_col,
+        original_celltype_col=original_celltype_col,  # this column is overwritten in-place
+        rna_modality_value=rna_modality_value,
+        atac_modality_value=atac_modality_value,
+        ensembl_release=ensembl_release,
+        ensembl_species=ensembl_species,
+    )
+
+    # Step 2: Visualize GLUE embedding
+    print("\n" + "=" * 60)
+    print("STEP 2: GLUE Embedding Visualization")
+    print("=" * 60)
+    adata = visualize_glue_embedding(
+        adata=adata,
+        output_dir=output_dir,
+        embedding_key=embedding_key,
+        color_by=original_celltype_col,  # now it's 'cell_type' (overwritten)
+    )
+
+    # Also visualize by modality
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sc.pl.umap(
+        adata,
+        color=modality_col,
+        ax=ax,
+        show=False,
+        title="GLUE Embedding UMAP - Modality",
+        frameon=False,
+    )
+    plt.tight_layout()
+    modality_umap_path = os.path.join(output_dir, "glue_umap_modality.png")
+    fig.savefig(modality_umap_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[INFO] Modality UMAP saved to: {modality_umap_path}")
+
+    # Step 3: Modality-Cell Type heatmap
+    print("\n" + "=" * 60)
+    print("STEP 3: Modality-Cell Type Distribution Heatmap")
+    print("=" * 60)
+    _ = plot_modality_celltype_heatmap(
+        adata=adata,
+        output_dir=output_dir,
+        modality_col=modality_col,
+        celltype_col=original_celltype_col,  # now 'cell_type'
+    )
+
+    # Overwrite or save new h5ad
+    if overwrite_input_h5ad:
+        output_h5ad = h5ad_path
+        print(f"\n[INFO] Overwriting input AnnData file: {output_h5ad}")
+    else:
+        output_h5ad = os.path.join(output_dir, "adata_annotated.h5ad")
+        print(f"\n[INFO] Saving annotated AnnData to: {output_h5ad}")
+
+    adata.write_h5ad(output_h5ad, compression="gzip")
+
+    print("\n" + "=" * 60)
+    print("PIPELINE COMPLETE")
+    print("=" * 60)
+    print(f"[INFO] All outputs saved to: {output_dir}")
+    print(f"[INFO] H5AD written to: {output_h5ad}")
+
+    return adata
+
+
+if __name__ == "__main__":
+    # ====== EDIT THESE PATHS ======
+    H5AD_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad"
+    OUTPUT_DIR = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist"
+
+    adata = run_full_pipeline(
+        h5ad_path=H5AD_PATH,
+        output_dir=OUTPUT_DIR,
+        celltypist_model_name=None,  # Set to None when using custom model
+        custom_model_path="/dcl01/hongkai/data/data/hjiang/Data/Adult_COVID19_PBMC.pkl",
+        majority_voting=True,
+        modality_col="modality",
+        original_celltype_col="cell_type",  # will be overwritten in-place
+        rna_modality_value="RNA",
+        atac_modality_value="ATAC",
+        embedding_key="X_glue",
+        overwrite_input_h5ad=True,  # overwrites H5AD_PATH
+        ensembl_release=98,
+        ensembl_species="human",
+    )
