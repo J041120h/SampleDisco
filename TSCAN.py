@@ -351,6 +351,7 @@ def order_samples_along_paths(
     
     return ordered_samples
 
+
 def TSCAN(
     AnnData_sample: sc.AnnData,
     column: str,
@@ -358,7 +359,7 @@ def TSCAN(
     output_dir: str,
     grouping_columns: Optional[List[str]] = None,
     verbose: bool = False,
-    origin: Optional[int] = None
+    origin: Optional[int] = None,
 ) -> Dict:
     """
     Trajectory analysis using TSCAN algorithm for pseudobulk data.
@@ -384,20 +385,22 @@ def TSCAN(
     --------
     Dict containing trajectory analysis results
     """
-    import os
-    
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     tscan_output_path = os.path.join(output_dir, "TSCAN")
     os.makedirs(tscan_output_path, exist_ok=True)
 
+    # Safe version of column name for filenames
+    safe_column = str(column).replace(os.sep, "_")
+
     if verbose:
         print(f"Starting TSCAN analysis:")
         print(f"  Samples: {AnnData_sample.n_obs}")
         print(f"  Genes: {AnnData_sample.n_vars}")
         print(f"  Clusters: {n_clusters}")
-    
+        print(f"  Embedding key: {column}")
+
     # 1. Cluster samples by PCA
     sample_cluster, pca_df = cluster_samples_by_pca(
         AnnData_sample,
@@ -444,10 +447,10 @@ def TSCAN(
             main_path=path,
             verbose=verbose
         )
-        os = order_samples_along_paths(sp, main_path=path, verbose=verbose)
+        os_ordered = order_samples_along_paths(sp, main_path=path, verbose=verbose)
 
         sample_projections_branching_paths[index] = sp
-        ordered_samples_branching_paths[index] = os
+        ordered_samples_branching_paths[index] = os_ordered
 
     # 6. Compute pseudotime
     # Main path pseudotime (normalized 0-1)
@@ -460,11 +463,11 @@ def TSCAN(
 
     # Branching paths pseudotime
     pseudo_branches = {}
-    for branch_idx, os in ordered_samples_branching_paths.items():
-        if len(os) > 1:
-            pseudo_branches[branch_idx] = {sample_id: i / (len(os) - 1) for i, sample_id in enumerate(os)}
-        elif len(os) == 1:
-            pseudo_branches[branch_idx] = {os[0]: 0.0}
+    for branch_idx, os_ordered in ordered_samples_branching_paths.items():
+        if len(os_ordered) > 1:
+            pseudo_branches[branch_idx] = {sample_id: i / (len(os_ordered) - 1) for i, sample_id in enumerate(os_ordered)}
+        elif len(os_ordered) == 1:
+            pseudo_branches[branch_idx] = {os_ordered[0]: 0.0}
         else:
             pseudo_branches[branch_idx] = {}
 
@@ -477,7 +480,7 @@ def TSCAN(
     
     AnnData_sample.obs['tscan_pseudotime_main'] = main_pseudotime
     
-    # Cluster assignments - IMPORTANT: This needs to be done before plotting
+    # Cluster assignments
     cluster_assignment = np.full(AnnData_sample.n_obs, 'unassigned', dtype=object)
     for cluster_name, sample_list in sample_cluster.items():
         for sample_id in sample_list:
@@ -499,6 +502,7 @@ def TSCAN(
     AnnData_sample.obs['tscan_cluster'] = cluster_assignment
 
     # 8. Visualization
+    # Generate default plots, then rename them to include the embedding key so runs don't overwrite each other
     try:
         plot_clusters_by_cluster(
             adata=AnnData_sample,
@@ -508,8 +512,15 @@ def TSCAN(
             pca_key=column,
             verbose=verbose
         )
-        if verbose:
-            print("Cluster plot created successfully")
+        # Rename cluster plot to include embedding name
+        cluster_plot_default = os.path.join(tscan_output_path, "clusters_by_cluster.png")
+        cluster_plot_named = os.path.join(tscan_output_path, f"clusters_by_cluster_{safe_column}.png")
+        if os.path.exists(cluster_plot_default):
+            os.replace(cluster_plot_default, cluster_plot_named)
+            if verbose:
+                print(f"Cluster plot saved as: {cluster_plot_named}")
+        elif verbose:
+            print("Warning: Expected cluster plot file not found to rename.")
     except Exception as e:
         if verbose:
             print(f"Warning: Cluster plot failed - {e}")
@@ -531,18 +542,25 @@ def TSCAN(
                 grouping_columns=actual_grouping_columns,
                 verbose=verbose
             )
-            if verbose:
-                print("Grouping plot created successfully")
+
+            # Rename grouping plot to include embedding name
+            grouping_plot_default = os.path.join(tscan_output_path, "clusters_by_grouping.png")
+            grouping_plot_named = os.path.join(tscan_output_path, f"clusters_by_grouping_{safe_column}.png")
+            if os.path.exists(grouping_plot_default):
+                os.replace(grouping_plot_default, grouping_plot_named)
+                if verbose:
+                    print(f"Grouping plot saved as: {grouping_plot_named}")
+            elif verbose:
+                print("Warning: Expected grouping plot file not found to rename.")
         except Exception as e:
             if verbose:
                 print(f"Warning: Grouping plot failed - {e}")
 
-    # 9. Save pseudotime data to CSV files
+    # 9. Save pseudotime data to a single CSV file
     try:
-        # Prepare pseudotime expression data (raw pseudotime values)
         pseudotime_data = []
         
-        # Add main path samples
+        # Main path samples
         for sample_id, pseudotime_val in pseudo_main.items():
             pseudotime_data.append({
                 'sample_id': sample_id,
@@ -552,7 +570,7 @@ def TSCAN(
                 'cluster': sample_projections[sample_id]['cluster'] if sample_id in sample_projections else 'unknown'
             })
         
-        # Add branching path samples
+        # Branching path samples
         for branch_idx, branch_pseudo in pseudo_branches.items():
             for sample_id, pseudotime_val in branch_pseudo.items():
                 pseudotime_data.append({
@@ -563,26 +581,21 @@ def TSCAN(
                     'cluster': sample_projections_branching_paths[branch_idx][sample_id]['cluster'] if sample_id in sample_projections_branching_paths[branch_idx] else 'unknown'
                 })
         
-        # Create DataFrame and save
         pseudotime_df = pd.DataFrame(pseudotime_data)
-        
-        # Save pseudotime expression (raw values)
-        pseudotime_expression_path = os.path.join(tscan_output_path, 'pseudotime_expression.csv')
-        pseudotime_df.to_csv(pseudotime_expression_path, index=False)
-        
-        # Save pseudotime proportions (same as expression since already normalized 0-1)
-        pseudotime_proportion_path = os.path.join(tscan_output_path, 'pseudotime_proportions.csv')
-        pseudotime_df.to_csv(pseudotime_proportion_path, index=False)
+
+        pseudotime_path = os.path.join(
+            tscan_output_path,
+            f"{safe_column}_pseudotime.csv"
+        )
+        pseudotime_df.to_csv(pseudotime_path, index=False)
         
         if verbose:
-            print(f"Pseudotime data saved:")
-            print(f"  Expression: {pseudotime_expression_path}")
-            print(f"  Proportions: {pseudotime_proportion_path}")
+            print(f"Pseudotime data saved: {pseudotime_path}")
             print(f"  Total samples in CSV: {len(pseudotime_df)}")
     
     except Exception as e:
         if verbose:
-            print(f"Warning: Failed to save pseudotime CSV files - {e}")
+            print(f"Warning: Failed to save pseudotime CSV file - {e}")
 
     # 10. Prepare final results
     results = {

@@ -1,84 +1,320 @@
-[INFO] Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
-[INFO] Shape: 987474 cells × 14881 genes/peaks
-[INFO] Modalities: {'RNA': 898489, 'ATAC': 88985}
 
-============================================================
-STEP 1: Cell Type Annotation and Transfer
-============================================================
-[INFO] Total cells: 987474
-[INFO] RNA cells: 898489
-[INFO] ATAC cells: 88985
-[INFO] RNA subset shape: 898489 cells × 14881 genes
-[INFO] pyensembl: fraction of Ensembl-like IDs in var_names: 0.000
-[INFO] pyensembl: var_names do not look predominantly like Ensembl IDs; keeping existing gene names.
-[INFO] Loading custom model from: /dcl01/hongkai/data/data/hjiang/Data/Adult_COVID19_PBMC.pkl
-[INFO] #genes in data    : 14881
-[INFO] #genes in model   : 3141
-[INFO] #overlapping genes: 2843
-[DEBUG] Example overlapping genes: ['RFC3', 'SPINK2', 'ZNF408', 'GABPB2', 'RAB27A', 'G0S2', 'TM9SF2', 'ZNF585B', 'DAPK2', 'PTAFR']
-[INFO] Running CellTypist annotation on RNA cells...
+================================================================================
+COMPREHENSIVE BENCHMARK SUITE - Long COVID Dataset
+================================================================================
 
-[INFO] Label mapping (original -> CellTypist):
-  1 -> pDC
-  10 -> NK
-  11 -> CD4n T
-  12 -> NK
-  13 -> B
-  14 -> CD4n T
-  15 -> CD8m T
-  16 -> CD8m T
-  17 -> Neutrophil
-  18 -> CD4n T
-  19 -> CD14 Monocyte
-  2 -> IgA PB
-  20 -> CD14 Monocyte
-  21 -> Platelet
-  22 -> CD14 Monocyte
-  23 -> B
-  24 -> B
-  25 -> CD14 Monocyte
-  3 -> CD14 Monocyte
-  4 -> B
-  5 -> CD14 Monocyte
-  6 -> CD8m T
-  7 -> CD14 Monocyte
-  8 -> CD4n T
-  9 -> NK
-[INFO] Backed up original labels to obs['cell_type_original']
-[INFO] Label mapping saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/celltype_mapping.csv
+[1/10] Running SD_expression...
 
-============================================================
-STEP 2: GLUE Embedding Visualization
-============================================================
-[INFO] Computing UMAP from X_glue...
-[INFO] UMAP plot saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/glue_umap_celltype.png
-[INFO] UMAP plot (legend outside) saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/glue_umap_celltype_legend_outside.png
-[INFO] Modality UMAP saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/glue_umap_modality.png
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
 
-============================================================
-STEP 3: Modality-Cell Type Distribution Heatmap
-============================================================
+Merging data...
+  Merged data: 35 samples retained
 
-[INFO] Cell count distribution (Modality x Cell Type):
-modality        ATAC     RNA
-cell_type                   
-CD4n T         16935  289625
-CD14 Monocyte  37330  257737
-NK             13334  137838
-CD8m T         10974  124331
-B               7846   69299
-IgA PB           817    6483
-Neutrophil       774    5273
-pDC              653    4160
-Platelet         322    3743
-[INFO] Count heatmap saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/modality_celltype_heatmap.png
-[INFO] Normalized heatmap saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/modality_celltype_heatmap_normalized.png
-[INFO] Stacked bar plot saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist/modality_celltype_barplot.png
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
 
-[INFO] Overwriting input AnnData file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
 
-============================================================
-PIPELINE COMPLETE
-============================================================
-[INFO] All outputs saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist
-[INFO] H5AD written to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.7089 (p = 1.8771e-06)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_expression/trajectory_analysis/Spearman_Correlation
+
+[2/10] Running SD_proportion...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_proportion/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_proportion/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.1772 (p = 3.0844e-01)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_proportion/trajectory_analysis/Spearman_Correlation
+
+[3/10] Running GEDI...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.1497 (p = 3.9063e-01)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
+
+[4/10] Running Gloscope...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/benchmark_results_Gloscope/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/benchmark_results_Gloscope/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.2445 (p = 1.5699e-01)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/benchmark_results_Gloscope/trajectory_analysis/Spearman_Correlation
+
+[5/10] Running MFA...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/benchmark_results_MFA/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/benchmark_results_MFA/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.3514 (p = 3.8457e-02)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/benchmark_results_MFA/trajectory_analysis/Spearman_Correlation
+
+[6/10] Running pseudobulk...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/benchmark_results_pseudobulk/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/benchmark_results_pseudobulk/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.3483 (p = 4.0294e-02)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/benchmark_results_pseudobulk/trajectory_analysis/Spearman_Correlation
+
+[7/10] Running pilot...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/benchmark_results_pilot/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/benchmark_results_pilot/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.2750 (p = 1.0984e-01)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/benchmark_results_pilot/trajectory_analysis/Spearman_Correlation
+
+[8/10] Running QOT...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/benchmark_results_QOT/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/benchmark_results_QOT/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.2567 (p = 1.3664e-01)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/benchmark_results_QOT/trajectory_analysis/Spearman_Correlation
+
+[9/10] Running scPoli...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/benchmark_results_scPoli/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/benchmark_results_scPoli/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.2597 (p = 1.3187e-01)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/benchmark_results_scPoli/trajectory_analysis/Spearman_Correlation
+
+[10/10] Running MUSTARD...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   month
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 37 samples
+  Loaded pseudotime: 35 samples
+
+Merging data...
+  Merged data: 35 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 35 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/benchmark_results_MUSTARD/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/benchmark_results_MUSTARD/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.2720 (p = 1.1401e-01)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/benchmark_results_MUSTARD/trajectory_analysis/Spearman_Correlation
+
+================================================================================
+ALL BENCHMARKS COMPLETED!
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
+================================================================================
+

@@ -2,11 +2,11 @@ Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
         "sample_distance_calculation": false,
-        "trajectory_analysis": false,
+        "trajectory_analysis": true,
         "trajectory_dge": false,
         "cluster_dge": false,
         "visualization": false
@@ -42,100 +42,92 @@ Resuming process from previous progress:
 }
 
 ============================================================
-RUNNING MULTIOMICS PIPELINE
+RUNNING RNA PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
-Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
-Loaded dimensionality reduction data from existing files
-Step 5: Finding optimal cell resolution for both expression and proportion...
-GPU Memory: 47.70 GB
-GPU Memory Available: 0.00 GB
+Starting RNA wrapper function with provided parameters...
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+Starting trajectory analysis...
+Starting TSCAN analysis:
+  Samples: 431
+  Genes: 18000
+  Clusters: 8
+  Embedding key: X_DR_expression
+K-means clustering complete: 8 clusters from 431 samples
+Computed pairwise euclidean distances among 8 cluster centroids
+MST construction complete with shape: (8, 8)
+Principal path found: 7 clusters, 375 total samples
+Path: cluster_2 -> cluster_7 -> cluster_3 -> cluster_1 -> cluster_4 -> cluster_5 -> cluster_8
+Using random endpoint as origin: cluster_2
+Found 1 branching paths
+Projection complete for 375 samples
+Sample ordering complete: 375 samples
+Projection complete for 263 samples
+Sample ordering complete: 263 samples
+Cluster plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster.png
+Plotted 431 samples across 8 clusters
+Cluster plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster_X_DR_expression.png
+Grouping plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping.png
+Grouping plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping_X_DR_expression.png
+Pseudotime data saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/X_DR_expression_pseudotime.csv
+  Total samples in CSV: 638
 
-  Running optimization for EXPRESSION...
-  ✓ Expression optimization completed
+TSCAN analysis completed successfully!
+  Main path: 375 samples across 7 clusters
+  Branch 1: 263 samples across 3 clusters
+  Total samples processed: 431
+  Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN
+Starting TSCAN analysis:
+  Samples: 431
+  Genes: 18000
+  Clusters: 8
+  Embedding key: X_DR_proportion
+K-means clustering complete: 8 clusters from 431 samples
+Computed pairwise euclidean distances among 8 cluster centroids
+MST construction complete with shape: (8, 8)
+Principal path found: 5 clusters, 284 total samples
+Path: cluster_3 -> cluster_5 -> cluster_6 -> cluster_1 -> cluster_8
+Using random endpoint as origin: cluster_3
+Found 3 branching paths
+Projection complete for 284 samples
+Sample ordering complete: 284 samples
+Projection complete for 267 samples
+Sample ordering complete: 267 samples
+Projection complete for 250 samples
+Sample ordering complete: 250 samples
+Projection complete for 242 samples
+Sample ordering complete: 242 samples
+Cluster plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster.png
+Plotted 431 samples across 8 clusters
+Cluster plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster_X_DR_proportion.png
+Grouping plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping.png
+Grouping plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping_X_DR_proportion.png
+Pseudotime data saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/X_DR_proportion_pseudotime.csv
+  Total samples in CSV: 1043
 
-  Running optimization for PROPORTION...
-  ✓ Proportion optimization completed
+TSCAN analysis completed successfully!
+  Main path: 284 samples across 5 clusters
+  Branch 1: 267 samples across 3 clusters
+  Branch 2: 250 samples across 3 clusters
+  Branch 3: 242 samples across 4 clusters
+  Total samples processed: 431
+  Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN
+RNA analysis completed successfully!
 
-  Updating pseudobulk with optimal embeddings...
-
-======================================================================
-Replacing Dimension Reduction with Optimal Results
-======================================================================
-
-[Replace DR] Configuration:
-  - Optimization target: RNA
-
-[Replace DR] File paths:
-  - Optimal expression: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/summary/optimal_rna_expression.h5ad
-  - Optimal proportion: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_proportion/Integration_optimization_rna_proportion/summary/optimal_rna_proportion.h5ad
-  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-
-[Replace DR] Loading files...
-  ✓ Optimal expression loaded: (431, 264179)
-  ✓ Optimal proportion loaded: (431, 325083)
-  ✓ Pseudobulk sample loaded: (431, 18000)
-
-[Replace DR] Replacing EXPRESSION dimension reduction results...
-  ✓ Copied .uns['X_DR_expression'] (shape: (431, 30))
-  ✓ Copied .uns['X_DR_expression_variance'] (shape: (30,))
-  ✓ Copied .uns['X_DR_expression_variance_ratio'] (shape: (30,))
-  ✓ Copied .uns['X_pca_expression_method'] (shape: (431, 30))
-  ✓ Copied .obsm['X_DR_expression'] (shape: (431, 30))
-  ✓ Copied .obsm['X_pca_expression_method'] (shape: (431, 30))
-  → Total expression keys copied: 6
-
-[Replace DR] Replacing PROPORTION dimension reduction results...
-  ✓ Copied .uns['X_DR_proportion'] (shape: (431, 30))
-  ✓ Copied .uns['X_DR_proportion_variance_ratio'] (shape: (30,))
-  ✓ Copied .uns['pca_proportion_variance_ratio'] (shape: (30,))
-  ✓ Copied .obsm['X_DR_proportion'] (shape: (431, 30))
-  ✓ Copied .obsm['X_pca_proportion'] (shape: (431, 30))
-  → Total proportion keys copied: 5
-
-[Replace DR] Saving updated pseudobulk_sample...
-  Destination: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-  ✓ Created backup: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
-  ✓ Successfully saved (31.9 MB)
-
-----------------------------------------------------------------------
-SUMMARY
-----------------------------------------------------------------------
-  Optimization target: RNA
-  Expression DR keys copied: 6
-  Proportion DR keys copied: 5
-  Total keys updated: 11
-  File updated: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-  Backup saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
-======================================================================
-
-✓ Optimal resolution finding and embedding update completed successfully
-
-Pipeline completed successfully!
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'status_flags']
-Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
-Completed steps: 10/10
-GLUE sub-steps completed: 5/5
-
-✓ Multiomics pipeline completed successfully!
+✓ RNA pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
-Multiomics Pipeline: ✓ COMPLETE
-  - glue_integration: ✓
-  - glue_preprocessing: ✓
-  - glue_training: ✓
-  - glue_gene_activity: ✓
-  - glue_cell_types: ✓
-  - glue_visualization: ✓
-  - integration_preprocessing: ✓
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
   - dimensionality_reduction: ✓
-  - embedding_visualization: ✓
-  - optimal_resolution: ✓
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✗
+  - cluster_dge: ✗
+  - visualization: ✗
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 18.0762 seconds
+Execution time: 37.1451 seconds

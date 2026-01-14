@@ -230,8 +230,8 @@ def split_h5ad_by_organ_part(
 
 if __name__ == "__main__":
     add_raw_counts_layer_by_obs_names(
-        preprocessed_h5ad_path= '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/rna/preprocess/adata_cell.h5ad',
-        raw_h5ad_path= '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad',
+        preprocessed_h5ad_path= '/dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad',
+        raw_h5ad_path= '/dcl01/hongkai/data/data/hjiang/Data/long_covid/long_covid.h5ad',
         layer_name="raw_counts",
         verbose=True,
     )

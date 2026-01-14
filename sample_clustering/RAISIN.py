@@ -84,15 +84,41 @@ def laguerre_quadrature(n=500, verbose=True):
 # ---------------------------------------------------------------------
 #  Main RAISIN function
 # ---------------------------------------------------------------------
-def raisinfit(adata_path,
-              sample_col,
-              batch_key=None,
-              sample_to_clade=None,
-              verbose=True,
-              intercept=True,
-              n_jobs=None):
+def raisinfit(
+    adata_path,
+    sample_col,
+    batch_key=None,
+    sample_to_clade=None,
+    group_col=None,
+    verbose=True,
+    intercept=True,
+    n_jobs=None,
+):
     """
     Python port of RAISIN differential-expression model.
+
+    Parameters
+    ----------
+    adata_path : str
+        Path to AnnData object. Can be single-cell or pseudobulk.
+    sample_col : str
+        Column in adata.obs that identifies which sample each observation belongs to.
+    batch_key : str, optional
+        Column in adata.obs used as batch when no explicit group is provided.
+    sample_to_clade : dict, optional
+        Mapping {sample_id -> clade/group}. If provided, overrides `group_col`.
+    group_col : str, optional
+        Column in adata.obs containing sample-level grouping/clustering information
+        (e.g. clade, condition). For each sample, the most frequent value of
+        `group_col` across observations belonging to that sample will be used
+        as its group/feature.
+    verbose : bool
+        Print progress.
+    intercept : bool
+        Include intercept in fixed-effect design matrix.
+    n_jobs : int, optional
+        Number of CPU cores for parallel per-gene estimation. If None or -1,
+        use all available cores.
     """
 
     try:
@@ -108,20 +134,39 @@ def raisinfit(adata_path,
             print(f"Using {n_jobs} CPU cores")
 
         # -----------------------------------------------------------------
+        #  Input argument sanity checks
+        # -----------------------------------------------------------------
+        if sample_to_clade is not None and group_col is not None:
+            raise ValueError(
+                "Provide at most one of `sample_to_clade` or `group_col`, not both."
+            )
+
+        # -----------------------------------------------------------------
         #  Load data
         # -----------------------------------------------------------------
         if verbose:
             print(f"Loading AnnData from {adata_path}")
         adata = sc.read(adata_path)
         
-        # Print available columns to help users select the correct sample_col
+        # Print available columns to help users select the correct sample_col / group_col
         if verbose:
             print("Available columns in adata.obs:", list(adata.obs.columns))
             
         # Check if sample_col exists in adata.obs
         if sample_col not in adata.obs.columns:
             available_cols = list(adata.obs.columns)
-            error_msg = f"Error: Column '{sample_col}' not found in adata.obs. Available columns are: {available_cols}"
+            error_msg = (
+                f"Error: Column '{sample_col}' not found in adata.obs. "
+                f"Available columns are: {available_cols}"
+            )
+            raise KeyError(error_msg)
+
+        if group_col is not None and group_col not in adata.obs.columns:
+            available_cols = list(adata.obs.columns)
+            error_msg = (
+                f"Error: group_col '{group_col}' not found in adata.obs. "
+                f"Available columns are: {available_cols}"
+            )
             raise KeyError(error_msg)
 
         # -----------------------------------------------------------------
@@ -138,9 +183,10 @@ def raisinfit(adata_path,
             if verbose:
                 print("Using counts from adata.X")
 
-        # transpose to genes x cells
+        # transpose to genes x cells/observations
         expr = expr.T
 
+        # sample IDs per cell/observation
         sample = adata.obs[sample_col].values
 
         # deduplicate genes
@@ -155,32 +201,102 @@ def raisinfit(adata_path,
         #  Build design
         # -----------------------------------------------------------------
         if sample_to_clade is not None:
+            # -------------------------------------------------------------
+            #  Case 1: User provided explicit mapping sample -> clade
+            # -------------------------------------------------------------
             testtype = "unpaired"
-            valid = np.isin(sample, list(sample_to_clade.keys()))
+
+            # keep only samples actually present in the data
+            samples_in_data = np.unique(sample)
+            mapping_keys = np.array(list(sample_to_clade.keys()))
+            common = np.intersect1d(samples_in_data, mapping_keys)
+
+            if verbose:
+                print(f"Using sample_to_clade mapping for {len(common)} samples")
+                missing = np.setdiff1d(samples_in_data, common)
+                if missing.size > 0:
+                    print(
+                        f"Warning: {missing.size} samples in data not in sample_to_clade; "
+                        f"they will be dropped."
+                    )
+
+            # mask cells/obs belonging to samples we keep
+            valid = np.isin(sample, common)
             expr = expr[:, valid]
             sample = sample[valid]
+
+            # Build design from the mapping but restricted to samples present
+            common_list = common.tolist()
             design = pd.DataFrame({
-                "sample": list(sample_to_clade.keys()),
-                "feature": list(sample_to_clade.values())
+                "sample": common_list,
+                "feature": [sample_to_clade[s] for s in common_list],
             })
+
         else:
+            # -------------------------------------------------------------
+            #  Case 2: Build design from obs metadata
+            # -------------------------------------------------------------
             testtype = "unpaired"
             uniq_samples = np.unique(sample)
-            if batch_key:
-                batch_val = []
+
+            if group_col is not None:
+                # -----------------------------------------
+                # User-provided grouping column (preferred)
+                # -----------------------------------------
+                if verbose:
+                    print(f"Using group_col='{group_col}' in adata.obs for sample groups")
+
+                group_val = []
                 for s in uniq_samples:
                     mask = sample == s
-                    batches = adata.obs[batch_key].values[mask]
-                    batch_val.append(pd.Series(batches).value_counts().idxmax())
+                    vals = adata.obs.loc[mask, group_col].values
+                    if vals.size == 0:
+                        raise ValueError(
+                            f"No rows in adata.obs for sample '{s}' when using group_col='{group_col}'"
+                        )
+                    # For single-cell or pseudobulk, this collapses to the dominant value
+                    most_common = pd.Series(vals).value_counts().idxmax()
+                    group_val.append(most_common)
+
                 design = pd.DataFrame({
                     "sample": uniq_samples,
-                    "feature": batch_val
+                    "feature": group_val,
                 })
+
             else:
-                design = pd.DataFrame({
-                    "sample": uniq_samples,
-                    "feature": ["group1"] * len(uniq_samples)
-                })
+                # -----------------------------------------
+                # Fallback: use batch_key or dummy single group
+                # -----------------------------------------
+                if batch_key:
+                    if batch_key not in adata.obs.columns:
+                        raise KeyError(
+                            f"batch_key '{batch_key}' not found in adata.obs. "
+                            f"Available columns are: {list(adata.obs.columns)}"
+                        )
+                    batch_val = []
+                    for s in uniq_samples:
+                        mask = sample == s
+                        batches = adata.obs[batch_key].values[mask]
+                        if batches.size == 0:
+                            raise ValueError(
+                                f"No rows in adata.obs for sample '{s}' when using batch_key='{batch_key}'"
+                            )
+                        batch_val.append(pd.Series(batches).value_counts().idxmax())
+                    design = pd.DataFrame({
+                        "sample": uniq_samples,
+                        "feature": batch_val
+                    })
+                    if verbose:
+                        print(f"Using batch_key='{batch_key}' as grouping feature")
+                else:
+                    # All samples in one group
+                    design = pd.DataFrame({
+                        "sample": uniq_samples,
+                        "feature": ["group1"] * len(uniq_samples)
+                    })
+                    if verbose:
+                        print("No sample_to_clade, group_col, or batch_key provided; "
+                              "all samples assigned to a single group 'group1'.")
 
         sample_names = design["sample"].values
         X_feature = design["feature"].values
@@ -306,26 +422,24 @@ def raisinfit(adata_path,
             K = K.T  # K shape becomes (p x n)
 
             # Get subset of Zl that matches the dimensions in lid
-            Zl_lid = Z[lid][:, mask_curr]  # This should have shape (n x num_curr_samples)
+            Zl_lid = Z[lid][:, mask_curr]  # (n x num_curr_samples)
 
             pl = np.matmul(K, means[:, lid].T)                   # (p x G)
             
             # Compute qlm in steps to avoid dimension mismatch
-            K_Zl = np.matmul(K, Zl_lid)                         # (p x num_curr_samples)
-            Zl_T_K_T = np.matmul(Zl_lid.T, K.T)                # (num_curr_samples x p)
-            qlm = np.matmul(K_Zl, Zl_T_K_T)                   # (p x p)
+            K_Zl = np.matmul(K, Zl_lid)                          # (p x num_curr_samples)
+            Zl_T_K_T = np.matmul(Zl_lid.T, K.T)                  # (num_curr_samples x p)
+            qlm = np.matmul(K_Zl, Zl_T_K_T)                      # (p x p)
             
             ql = np.diag(qlm)                                    # (p,)
-            rl = np.matmul(w[:, lid], (K ** 2).T)              # (G x p)
+            rl = np.matmul(w[:, lid], (K ** 2).T)                # (G x p)
 
             # already-pooled groups
             for sg in done_groups:
                 mask = group == sg
-                # Get subset of Z that corresponds to lid and mask
                 Z_lid_mask = Z[lid][:, group_names == sg]
                 Z_lid_mask_T = Z_lid_mask.T
                 
-                # Perform matrix multiplications in steps to avoid dimension errors
                 KZ_temp = np.matmul(K, Z_lid_mask)
                 Z_lid_mask_KT = np.matmul(Z_lid_mask_T, K.T)
                 KZ = np.matmul(KZ_temp, Z_lid_mask_KT)
@@ -351,16 +465,12 @@ def raisinfit(adata_path,
                 # ----------------------------------------------------------
                 def process_gene(g):
                     x_mat = np.outer(pl[:, g], pl[:, g])
-                    w_g = w[g, lid]  # Shape (lid.size,) or (n,)
-                    
-                    # Fix the broadcasting issue
-                    # Ensure w_g is correctly shaped for broadcasting with K
-                    # K has shape (p, n) and w_g has shape (n,)
-                    
-                    # Method 2: Reshape w_g for broadcasting
-                    w_g_reshaped = w_g.reshape(1, -1)  # Shape (1, n)
-                    K_weighted = K * w_g_reshaped  # Broadcasting works now: (p, n) * (1, n) -> (p, n)
-                    t2 = np.matmul(K_weighted, K.T)  # Then multiply by K.T
+                    w_g = w[g, lid]  # Shape (lid.size,)
+
+                    # reshape for broadcasting
+                    w_g_reshaped = w_g.reshape(1, -1)  # (1, n)
+                    K_weighted = K * w_g_reshaped      # (p, n)
+                    t2 = np.matmul(K_weighted, K.T)    # (p, p)
                     
                     res = np.zeros_like(node)
                     for i, gn in enumerate(node):

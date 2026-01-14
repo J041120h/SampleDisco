@@ -314,15 +314,15 @@ def compute_trajectory_from_embedding(
 # ============================================================================
 if __name__ == "__main__":
     # ========== CONSTANT PATHS ==========
-    SAMPLE_METADATA_CSV_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv"
-    SEVERITY_COLUMN = "age"
+    SAMPLE_METADATA_CSV_PATH = "/dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv"
+    SEVERITY_COLUMN = "month"
     SAMPLE_COLUMN = "sample"
     # =====================================
 
 
     # Construct the embedding path for this sample size
     EMBEDDING_CSV_PATH = (
-        f'/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina/pilot/wasserstein_distance_mds_10d.csv'
+        f'/dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/sample_embeddings_full.csv'
     )
     
     

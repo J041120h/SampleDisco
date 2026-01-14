@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 # ===== USER EDIT HERE =====
-INPUT_CSV = "/dcs07/hongkai/data/harry/result/Benchmark_heart_rna/pilot/wasserstein_distance.csv"
+INPUT_CSV = "/dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/35_qot_distance_matrix.csv"
 N_DIMS = 10
 # ===========================
 
