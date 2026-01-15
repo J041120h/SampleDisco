@@ -45,12 +45,10 @@ RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
 Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[INFO] Starting proportion tests...
-[INFO] Proportion tests completed.
 [INFO] Running RAISIN analysis...
 
 ===== Starting RAISIN fitting =====
-Using 48 CPU cores
+Using 96 CPU cores
 Available columns in adata.obs: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
 Note: group_col='sev.level' provided; sample_to_clade is ignored (not needed).
 Using counts from adata.X
@@ -82,118 +80,3 @@ Found 197 significant genes (FDR < 0.05)
 
 --- Testing: 1 (Positive) vs 3 (Negative) ---
 Running 100 permutations...
-Estimated distribution: Normal
-Found 2534 significant genes (FDR < 0.05)
-
---- Testing: 1 (Positive) vs 4 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 476 significant genes (FDR < 0.05)
-
---- Testing: 2 (Positive) vs 3 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 1305 significant genes (FDR < 0.05)
-
---- Testing: 2 (Positive) vs 4 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 2303 significant genes (FDR < 0.05)
-
---- Testing: 3 (Positive) vs 4 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 3758 significant genes (FDR < 0.05)
-
-===== Pairwise Comparison Summary =====
-1_vs_2: 197 significant genes
-1_vs_3: 2534 significant genes
-1_vs_4: 476 significant genes
-2_vs_3: 1305 significant genes
-2_vs_4: 2303 significant genes
-3_vs_4: 3758 significant genes
-
-===== Starting RAISIN fitting =====
-Using 48 CPU cores
-Available columns in adata.obs: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
-Note: group_col='sev.level' provided; sample_to_clade is ignored (not needed).
-Using counts from adata.X
-Using group_col='sev.level' for grouping
-Expression matrix: 10175 genes x 987397 cells
-Design matrix X: 431 samples x 5 features
-Random effects Z: 431 samples x 431 effects
-Unique variance groups: ['1' '2' '3' '4']
-
-===== Estimating variance for group: 2 =====
-  alpha=0.0043, gamma=0.0048
-
-===== Estimating variance for group: 4 =====
-  alpha=0.0009, gamma=0.0003
-
-===== Estimating variance for group: 3 =====
-  alpha=0.0013, gamma=0.0023
-
-===== Estimating variance for group: 1 =====
-  alpha=0.0044, gamma=0.0036
-
-===== Model fitting complete =====
-Starting pairwise comparisons. Found 6 pairs to test.
-
---- Testing: 1 (Positive) vs 2 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 197 significant genes (FDR < 0.05)
-
---- Testing: 1 (Positive) vs 3 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 2534 significant genes (FDR < 0.05)
-
---- Testing: 1 (Positive) vs 4 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 476 significant genes (FDR < 0.05)
-
---- Testing: 2 (Positive) vs 3 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 1305 significant genes (FDR < 0.05)
-
---- Testing: 2 (Positive) vs 4 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 2303 significant genes (FDR < 0.05)
-
---- Testing: 3 (Positive) vs 4 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 3758 significant genes (FDR < 0.05)
-
-===== Pairwise Comparison Summary =====
-1_vs_2: 197 significant genes
-1_vs_3: 2534 significant genes
-1_vs_4: 476 significant genes
-2_vs_3: 1305 significant genes
-2_vs_4: 2303 significant genes
-3_vs_4: 3758 significant genes
-[INFO] RAISIN analysis completed.
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
-
-============================================================
-PIPELINE EXECUTION SUMMARY
-============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✗
-  - trajectory_analysis: ✓
-  - trajectory_dge: ✓
-  - cluster_dge: ✓
-  - visualization: ✗
-
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
-Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 826.2801 seconds

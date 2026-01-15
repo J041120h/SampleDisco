@@ -1,320 +1,696 @@
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": true,
+        "trajectory_dge": true,
+        "cluster_dge": true,
+        "visualization": false
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": true,
+        "glue_preprocessing": true,
+        "glue_training": true,
+        "glue_gene_activity": true,
+        "glue_cell_types": true,
+        "glue_visualization": true,
+        "integration_preprocessing": true,
+        "dimensionality_reduction": true,
+        "embedding_visualization": true,
+        "optimal_resolution": true
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": false,
+        "linux_system": false
+    }
+}
 
-================================================================================
-COMPREHENSIVE BENCHMARK SUITE - Long COVID Dataset
-================================================================================
+============================================================
+RUNNING RNA PIPELINE
+============================================================
+Starting RNA wrapper function with provided parameters...
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+Starting trajectory analysis...
+[Seed Control] Scanpy seed set to 42
 
-[1/10] Running SD_expression...
+Processing X_DR_proportion...
+[Seed Control] Scanpy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.1134
+PC1 + PC3: CCA score = 0.3955
+PC1 + PC4: CCA score = 0.1015
+PC1 + PC5: CCA score = 0.0830
+PC1 + PC6: CCA score = 0.1346
+PC1 + PC7: CCA score = 0.0660
+PC1 + PC8: CCA score = 0.1644
+PC1 + PC9: CCA score = 0.2197
+PC1 + PC10: CCA score = 0.2594
+PC2 + PC3: CCA score = 0.4011
+PC2 + PC4: CCA score = 0.1215
+PC2 + PC5: CCA score = 0.1066
+PC2 + PC6: CCA score = 0.1503
+PC2 + PC7: CCA score = 0.0939
+PC2 + PC8: CCA score = 0.1774
+PC2 + PC9: CCA score = 0.2296
+PC2 + PC10: CCA score = 0.2679
+PC3 + PC4: CCA score = 0.3979
+PC3 + PC5: CCA score = 0.3935
+PC3 + PC6: CCA score = 0.4076
+PC3 + PC7: CCA score = 0.3903
+PC3 + PC8: CCA score = 0.4183
+PC3 + PC9: CCA score = 0.4430
+PC3 + PC10: CCA score = 0.4640
+PC4 + PC5: CCA score = 0.0938
+PC4 + PC6: CCA score = 0.1415
+PC4 + PC7: CCA score = 0.0791
+PC4 + PC8: CCA score = 0.1701
+PC4 + PC9: CCA score = 0.2240
+PC4 + PC10: CCA score = 0.2631
+PC5 + PC6: CCA score = 0.1289
+PC5 + PC7: CCA score = 0.0533
+PC5 + PC8: CCA score = 0.1597
+PC5 + PC9: CCA score = 0.2162
+PC5 + PC10: CCA score = 0.2565
+PC6 + PC7: CCA score = 0.1186
+PC6 + PC8: CCA score = 0.1917
+PC6 + PC9: CCA score = 0.2408
+PC6 + PC10: CCA score = 0.2775
+PC7 + PC8: CCA score = 0.1516
+PC7 + PC9: CCA score = 0.2103
+PC7 + PC10: CCA score = 0.2515
+PC8 + PC9: CCA score = 0.2586
+PC8 + PC10: CCA score = 0.2931
+PC9 + PC10: CCA score = 0.3274
+Best combination: PC3 + PC10 with score 0.4640
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_proportion.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_proportion_contributions.pdf
 
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_expression/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = -0.7089 (p = 1.8771e-06)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_expression/trajectory_analysis/Spearman_Correlation
-
-[2/10] Running SD_proportion...
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_proportion/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_proportion/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = 0.1772 (p = 3.0844e-01)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_proportion/trajectory_analysis/Spearman_Correlation
-
-[3/10] Running GEDI...
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = 0.1497 (p = 3.9063e-01)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/benchmark_results_GEDI/trajectory_analysis/Spearman_Correlation
-
-[4/10] Running Gloscope...
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/benchmark_results_Gloscope/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/benchmark_results_Gloscope/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = 0.2445 (p = 1.5699e-01)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/benchmark_results_Gloscope/trajectory_analysis/Spearman_Correlation
-
-[5/10] Running MFA...
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/benchmark_results_MFA/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/benchmark_results_MFA/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = -0.3514 (p = 3.8457e-02)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/benchmark_results_MFA/trajectory_analysis/Spearman_Correlation
-
-[6/10] Running pseudobulk...
+Processing X_DR_expression...
+[Seed Control] Scanpy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.0269
+PC1 + PC3: CCA score = 0.1002
+PC1 + PC4: CCA score = 0.0995
+PC1 + PC5: CCA score = 0.1761
+PC1 + PC6: CCA score = 0.0840
+PC1 + PC7: CCA score = 0.1076
+PC1 + PC8: CCA score = 0.0437
+PC1 + PC9: CCA score = 0.3841
+PC1 + PC10: CCA score = 0.0914
+PC2 + PC3: CCA score = 0.0983
+PC2 + PC4: CCA score = 0.0975
+PC2 + PC5: CCA score = 0.1750
+PC2 + PC6: CCA score = 0.0816
+PC2 + PC7: CCA score = 0.1058
+PC2 + PC8: CCA score = 0.0390
+PC2 + PC9: CCA score = 0.3836
+PC2 + PC10: CCA score = 0.0892
+PC3 + PC4: CCA score = 0.1372
+PC3 + PC5: CCA score = 0.1998
+PC3 + PC6: CCA score = 0.1264
+PC3 + PC7: CCA score = 0.1432
+PC3 + PC8: CCA score = 0.1041
+PC3 + PC9: CCA score = 0.3956
+PC3 + PC10: CCA score = 0.1315
+PC4 + PC5: CCA score = 0.1995
+PC4 + PC6: CCA score = 0.1258
+PC4 + PC7: CCA score = 0.1427
+PC4 + PC8: CCA score = 0.1034
+PC4 + PC9: CCA score = 0.3954
+PC4 + PC10: CCA score = 0.1309
+PC5 + PC6: CCA score = 0.1922
+PC5 + PC7: CCA score = 0.2036
+PC5 + PC8: CCA score = 0.1783
+PC5 + PC9: CCA score = 0.4212
+PC5 + PC10: CCA score = 0.1955
+PC6 + PC7: CCA score = 0.1323
+PC6 + PC8: CCA score = 0.0886
+PC6 + PC9: CCA score = 0.3918
+PC6 + PC10: CCA score = 0.1195
+PC7 + PC8: CCA score = 0.1112
+PC7 + PC9: CCA score = 0.3975
+PC7 + PC10: CCA score = 0.1372
+PC8 + PC9: CCA score = 0.3851
+PC8 + PC10: CCA score = 0.0956
+PC9 + PC10: CCA score = 0.3934
+Best combination: PC5 + PC9 with score 0.4212
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_expression.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_expression_contributions.pdf
+Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pseudotime_proportion.csv
+Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pseudotime_expression.csv
 
 ==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
+CCA ANALYSIS SUMMARY
 ==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
+X_DR_proportion: CCA score = 0.4640 (using PC3 + PC10)
+X_DR_expression: CCA score = 0.4212 (using PC5 + PC9)
 
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/benchmark_results_pseudobulk/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/benchmark_results_pseudobulk/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
+Total runtime: 1.26 seconds
 ==================================================
-KEY RESULTS:
-  Spearman ρ = 0.3483 (p = 4.0294e-02)
-==================================================
+P-value for observed correlation 0.46400109395452194: 0.0
+[CCA p-test] Runtime: 1.08 seconds
+P-value for observed correlation 0.4212248423943234: 0.0
+[CCA p-test] Runtime: 1.09 seconds
+Running single-pseudotime GAM-based differential analysis...
+=== Trajectory GAM differential gene analysis (single pseudotime) ===
+[DEBUG] Output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression
+[DEBUG] Step 1/4: Loading and aligning pseudotime...
+[DEBUG] Starting load_sample_pseudotime...
+[DEBUG] Pseudotime table shape: (431, 2)
+[DEBUG] Pseudotime table columns: ['sample', 'pseudotime']
+[DEBUG] Inferred pseudotime column: pseudotime
+[DEBUG] Inferred sample column: sample
+[DEBUG] Pseudotime table (first 5 rows):
+             sample  pseudotime
+0  CoV-1.1-Wilk_RNA    0.555281
+1  CoV-1.2-Wilk_RNA    0.856025
+2  CoV-100.1-Su_RNA    0.578954
+3  CoV-100.2-Su_RNA    0.483533
+4  CoV-101.1-Su_RNA    0.548738
+[DEBUG] Pseudotime loaded: 431 samples in table
+[DEBUG] Pseudotime aligned: 431 samples found in pseudobulk_adata.obs_names
+[DEBUG] Step 2/4: Preparing GAM input matrices...
+[DEBUG] AnnData: 431 samples x 18000 genes
+[DEBUG] Pseudotime entries: 431
+[DEBUG] First 5 pseudobulk obs_names: ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA']
+[DEBUG] First 5 pseudotime sample IDs: ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA']
+[DEBUG] Common samples count: 431
+[DEBUG] Prepared X matrix: (431, 1), columns=['pseudotime']
+[DEBUG] Prepared Y matrix: (431, 18000) (genes after filtering=18000)
+[DEBUG] Step 3/4: Fitting GAM models for 18000 genes...
+[DEBUG] Using spline_term='pseudotime', n_splines=5, order=3
+[DEBUG] X shape before densification: (431, 1), Y shape: (431, 18000)
+[DEBUG] Processing gene 100/18000
+[DEBUG] Processing gene 200/18000
+[DEBUG] Processing gene 300/18000
+[DEBUG] Processing gene 400/18000
+[DEBUG] Processing gene 500/18000
+[DEBUG] Processing gene 600/18000
+[DEBUG] Processing gene 700/18000
+[DEBUG] Processing gene 800/18000
+[DEBUG] Processing gene 900/18000
+[DEBUG] Processing gene 1000/18000
+[DEBUG] Processing gene 1100/18000
+[DEBUG] Processing gene 1200/18000
+[DEBUG] Processing gene 1300/18000
+[DEBUG] Processing gene 1400/18000
+[DEBUG] Processing gene 1500/18000
+[DEBUG] Processing gene 1600/18000
+[DEBUG] Processing gene 1700/18000
+[DEBUG] Processing gene 1800/18000
+[DEBUG] Processing gene 1900/18000
+[DEBUG] Processing gene 2000/18000
+[DEBUG] Processing gene 2100/18000
+[DEBUG] Processing gene 2200/18000
+[DEBUG] Processing gene 2300/18000
+[DEBUG] Processing gene 2400/18000
+[DEBUG] Processing gene 2500/18000
+[DEBUG] Processing gene 2600/18000
+[DEBUG] Processing gene 2700/18000
+[DEBUG] Processing gene 2800/18000
+[DEBUG] Processing gene 2900/18000
+[DEBUG] Processing gene 3000/18000
+[DEBUG] Processing gene 3100/18000
+[DEBUG] Processing gene 3200/18000
+[DEBUG] Processing gene 3300/18000
+[DEBUG] Processing gene 3400/18000
+[DEBUG] Processing gene 3500/18000
+[DEBUG] Processing gene 3600/18000
+[DEBUG] Processing gene 3700/18000
+[DEBUG] Processing gene 3800/18000
+[DEBUG] Processing gene 3900/18000
+[DEBUG] Processing gene 4000/18000
+[DEBUG] Processing gene 4100/18000
+[DEBUG] Processing gene 4200/18000
+[DEBUG] Processing gene 4300/18000
+[DEBUG] Processing gene 4400/18000
+[DEBUG] Processing gene 4500/18000
+[DEBUG] Processing gene 4600/18000
+[DEBUG] Processing gene 4700/18000
+[DEBUG] Processing gene 4800/18000
+[DEBUG] Processing gene 4900/18000
+[DEBUG] Processing gene 5000/18000
+[DEBUG] Processing gene 5100/18000
+[DEBUG] Processing gene 5200/18000
+[DEBUG] Processing gene 5300/18000
+[DEBUG] Processing gene 5400/18000
+[DEBUG] Processing gene 5500/18000
+[DEBUG] Processing gene 5600/18000
+[DEBUG] Processing gene 5700/18000
+[DEBUG] Processing gene 5800/18000
+[DEBUG] Processing gene 5900/18000
+[DEBUG] Processing gene 6000/18000
+[DEBUG] Processing gene 6100/18000
+[DEBUG] Processing gene 6200/18000
+[DEBUG] Processing gene 6300/18000
+[DEBUG] Processing gene 6400/18000
+[DEBUG] Processing gene 6500/18000
+[DEBUG] Processing gene 6600/18000
+[DEBUG] Processing gene 6700/18000
+[DEBUG] Processing gene 6800/18000
+[DEBUG] Processing gene 6900/18000
+[DEBUG] Processing gene 7000/18000
+[DEBUG] Processing gene 7100/18000
+[DEBUG] Processing gene 7200/18000
+[DEBUG] Processing gene 7300/18000
+[DEBUG] Processing gene 7400/18000
+[DEBUG] Processing gene 7500/18000
+[DEBUG] Processing gene 7600/18000
+[DEBUG] Processing gene 7700/18000
+[DEBUG] Processing gene 7800/18000
+[DEBUG] Processing gene 7900/18000
+[DEBUG] Processing gene 8000/18000
+[DEBUG] Processing gene 8100/18000
+[DEBUG] Processing gene 8200/18000
+[DEBUG] Processing gene 8300/18000
+[DEBUG] Processing gene 8400/18000
+[DEBUG] Processing gene 8500/18000
+[DEBUG] Processing gene 8600/18000
+[DEBUG] Processing gene 8700/18000
+[DEBUG] Processing gene 8800/18000
+[DEBUG] Processing gene 8900/18000
+[DEBUG] Processing gene 9000/18000
+[DEBUG] Processing gene 9100/18000
+[DEBUG] Processing gene 9200/18000
+[DEBUG] Processing gene 9300/18000
+[DEBUG] Processing gene 9400/18000
+[DEBUG] Processing gene 9500/18000
+[DEBUG] Processing gene 9600/18000
+[DEBUG] Processing gene 9700/18000
+[DEBUG] Processing gene 9800/18000
+[DEBUG] Processing gene 9900/18000
+[DEBUG] Processing gene 10000/18000
+[DEBUG] Processing gene 10100/18000
+[DEBUG] Processing gene 10200/18000
+[DEBUG] Processing gene 10300/18000
+[DEBUG] Processing gene 10400/18000
+[DEBUG] Processing gene 10500/18000
+[DEBUG] Processing gene 10600/18000
+[DEBUG] Processing gene 10700/18000
+[DEBUG] Processing gene 10800/18000
+[DEBUG] Processing gene 10900/18000
+[DEBUG] Processing gene 11000/18000
+[DEBUG] Processing gene 11100/18000
+[DEBUG] Processing gene 11200/18000
+[DEBUG] Processing gene 11300/18000
+[DEBUG] Processing gene 11400/18000
+[DEBUG] Processing gene 11500/18000
+[DEBUG] Processing gene 11600/18000
+[DEBUG] Processing gene 11700/18000
+[DEBUG] Processing gene 11800/18000
+[DEBUG] Processing gene 11900/18000
+[DEBUG] Processing gene 12000/18000
+[DEBUG] Processing gene 12100/18000
+[DEBUG] Processing gene 12200/18000
+[DEBUG] Processing gene 12300/18000
+[DEBUG] Processing gene 12400/18000
+[DEBUG] Processing gene 12500/18000
+[DEBUG] Processing gene 12600/18000
+[DEBUG] Processing gene 12700/18000
+[DEBUG] Processing gene 12800/18000
+[DEBUG] Processing gene 12900/18000
+[DEBUG] Processing gene 13000/18000
+[DEBUG] Processing gene 13100/18000
+[DEBUG] Processing gene 13200/18000
+[DEBUG] Processing gene 13300/18000
+[DEBUG] Processing gene 13400/18000
+[DEBUG] Processing gene 13500/18000
+[DEBUG] Processing gene 13600/18000
+[DEBUG] Processing gene 13700/18000
+[DEBUG] Processing gene 13800/18000
+[DEBUG] Processing gene 13900/18000
+[DEBUG] Processing gene 14000/18000
+[DEBUG] Processing gene 14100/18000
+[DEBUG] Processing gene 14200/18000
+[DEBUG] Processing gene 14300/18000
+[DEBUG] Processing gene 14400/18000
+[DEBUG] Processing gene 14500/18000
+[DEBUG] Processing gene 14600/18000
+[DEBUG] Processing gene 14700/18000
+[DEBUG] Processing gene 14800/18000
+[DEBUG] Processing gene 14900/18000
+[DEBUG] Processing gene 15000/18000
+[DEBUG] Processing gene 15100/18000
+[DEBUG] Processing gene 15200/18000
+[DEBUG] Processing gene 15300/18000
+[DEBUG] Processing gene 15400/18000
+[DEBUG] Processing gene 15500/18000
+[DEBUG] Processing gene 15600/18000
+[DEBUG] Processing gene 15700/18000
+[DEBUG] Processing gene 15800/18000
+[DEBUG] Processing gene 15900/18000
+[DEBUG] Processing gene 16000/18000
+[DEBUG] Processing gene 16100/18000
+[DEBUG] Processing gene 16200/18000
+[DEBUG] Processing gene 16300/18000
+[DEBUG] Processing gene 16400/18000
+[DEBUG] Processing gene 16500/18000
+[DEBUG] Processing gene 16600/18000
+[DEBUG] Processing gene 16700/18000
+[DEBUG] Processing gene 16800/18000
+[DEBUG] Processing gene 16900/18000
+[DEBUG] Processing gene 17000/18000
+[DEBUG] Processing gene 17100/18000
+[DEBUG] Processing gene 17200/18000
+[DEBUG] Processing gene 17300/18000
+[DEBUG] Processing gene 17400/18000
+[DEBUG] Processing gene 17500/18000
+[DEBUG] Processing gene 17600/18000
+[DEBUG] Processing gene 17700/18000
+[DEBUG] Processing gene 17800/18000
+[DEBUG] Processing gene 17900/18000
+[DEBUG] Processing gene 18000/18000
+[DEBUG] GAM fitting summary: 18000/18000 genes successfully fitted.
+[DEBUG] Skip reasons:
+    no_column: 0
+    too_few_samples: 0
+    low_variance: 0
+    fit_error: 0
+    nonfinite_rows: 0
+[DEBUG] Number of significant genes (FDR < 0.05): 14550
+[DEBUG] Step 4/4: Calculating effect sizes for significant genes...
+[DEBUG] Calculated effect sizes for 14550 genes (errors on 0 genes).
+[DEBUG] Selected 100 pseudoDEGs (top_n=100)
+[DEBUG] Saved results to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression
+[DEBUG]   all genes: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_all_genes_20260115_103827.tsv
+[DEBUG]   significant: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_significant_20260115_103827.tsv
+[DEBUG]   pseudoDEGs: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_pseudoDEGs_20260115_103827.tsv
+[DEBUG]   summary: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_summary_20260115_103827.txt
+=== DIFFERENTIAL GENE EXPRESSION SUMMARY ===
+Total genes analyzed: 18000
+Significant genes (FDR < 0.05): 14550
+Selected DEGs: 100
 
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/benchmark_results_pseudobulk/trajectory_analysis/Spearman_Correlation
+Top 20 DEGs:
+1. Neutrophil - SLC27A3: FDR=2.3373e-16, Effect=2.400
+2. CD8m T - ATP10D: FDR=2.3373e-16, Effect=2.297
+3. Neutrophil - LGALS1: FDR=2.3373e-16, Effect=2.386
+4. Neutrophil - LSM3: FDR=2.3373e-16, Effect=2.481
+5. CD8m T - IGLC2: FDR=2.3373e-16, Effect=2.495
+6. Neutrophil - PPIB: FDR=2.3373e-16, Effect=2.356
+7. CD8m T - IGHM: FDR=2.3373e-16, Effect=3.210
+8. CD8m T - IGHG1: FDR=2.3373e-16, Effect=2.355
+9. CD8m T - IGHG4: FDR=2.3373e-16, Effect=2.537
+10. CD8m T - IGKC: FDR=2.3373e-16, Effect=2.457
+11. CD4n T - MZB1: FDR=2.3373e-16, Effect=2.209
+12. Platelet - FTL: FDR=2.3373e-16, Effect=2.287
+13. Platelet - GUK1: FDR=2.3373e-16, Effect=2.228
+14. Platelet - GP9: FDR=2.3373e-16, Effect=2.281
+15. CD4n T - PIK3CA: FDR=2.3373e-16, Effect=2.226
+16. Platelet - EIF1: FDR=2.3373e-16, Effect=2.703
+17. Platelet - IFI27: FDR=2.3373e-16, Effect=2.427
+18. Platelet - IGHG4: FDR=2.3373e-16, Effect=2.352
+19. Platelet - IGKC: FDR=2.3373e-16, Effect=3.110
+20. CD4n T - IGHG4: FDR=2.3373e-16, Effect=2.605
+Done. Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression
+=== Trajectory GAM differential gene analysis (single pseudotime) ===
+[DEBUG] Output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/proportion
+[DEBUG] Step 1/4: Loading and aligning pseudotime...
+[DEBUG] Starting load_sample_pseudotime...
+[DEBUG] Pseudotime table shape: (431, 2)
+[DEBUG] Pseudotime table columns: ['sample', 'pseudotime']
+[DEBUG] Inferred pseudotime column: pseudotime
+[DEBUG] Inferred sample column: sample
+[DEBUG] Pseudotime table (first 5 rows):
+             sample  pseudotime
+0  CoV-1.1-Wilk_RNA    0.401861
+1  CoV-1.2-Wilk_RNA    0.396600
+2  CoV-100.1-Su_RNA    0.465623
+3  CoV-100.2-Su_RNA    0.517303
+4  CoV-101.1-Su_RNA    1.000000
+[DEBUG] Pseudotime loaded: 431 samples in table
+[DEBUG] Pseudotime aligned: 431 samples found in pseudobulk_adata.obs_names
+[DEBUG] Step 2/4: Preparing GAM input matrices...
+[DEBUG] AnnData: 431 samples x 18000 genes
+[DEBUG] Pseudotime entries: 431
+[DEBUG] First 5 pseudobulk obs_names: ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA']
+[DEBUG] First 5 pseudotime sample IDs: ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA']
+[DEBUG] Common samples count: 431
+[DEBUG] Prepared X matrix: (431, 1), columns=['pseudotime']
+[DEBUG] Prepared Y matrix: (431, 18000) (genes after filtering=18000)
+[DEBUG] Step 3/4: Fitting GAM models for 18000 genes...
+[DEBUG] Using spline_term='pseudotime', n_splines=5, order=3
+[DEBUG] X shape before densification: (431, 1), Y shape: (431, 18000)
+[DEBUG] Processing gene 100/18000
+[DEBUG] Processing gene 200/18000
+[DEBUG] Processing gene 300/18000
+[DEBUG] Processing gene 400/18000
+[DEBUG] Processing gene 500/18000
+[DEBUG] Processing gene 600/18000
+[DEBUG] Processing gene 700/18000
+[DEBUG] Processing gene 800/18000
+[DEBUG] Processing gene 900/18000
+[DEBUG] Processing gene 1000/18000
+[DEBUG] Processing gene 1100/18000
+[DEBUG] Processing gene 1200/18000
+[DEBUG] Processing gene 1300/18000
+[DEBUG] Processing gene 1400/18000
+[DEBUG] Processing gene 1500/18000
+[DEBUG] Processing gene 1600/18000
+[DEBUG] Processing gene 1700/18000
+[DEBUG] Processing gene 1800/18000
+[DEBUG] Processing gene 1900/18000
+[DEBUG] Processing gene 2000/18000
+[DEBUG] Processing gene 2100/18000
+[DEBUG] Processing gene 2200/18000
+[DEBUG] Processing gene 2300/18000
+[DEBUG] Processing gene 2400/18000
+[DEBUG] Processing gene 2500/18000
+[DEBUG] Processing gene 2600/18000
+[DEBUG] Processing gene 2700/18000
+[DEBUG] Processing gene 2800/18000
+[DEBUG] Processing gene 2900/18000
+[DEBUG] Processing gene 3000/18000
+[DEBUG] Processing gene 3100/18000
+[DEBUG] Processing gene 3200/18000
+[DEBUG] Processing gene 3300/18000
+[DEBUG] Processing gene 3400/18000
+[DEBUG] Processing gene 3500/18000
+[DEBUG] Processing gene 3600/18000
+[DEBUG] Processing gene 3700/18000
+[DEBUG] Processing gene 3800/18000
+[DEBUG] Processing gene 3900/18000
+[DEBUG] Processing gene 4000/18000
+[DEBUG] Processing gene 4100/18000
+[DEBUG] Processing gene 4200/18000
+[DEBUG] Processing gene 4300/18000
+[DEBUG] Processing gene 4400/18000
+[DEBUG] Processing gene 4500/18000
+[DEBUG] Processing gene 4600/18000
+[DEBUG] Processing gene 4700/18000
+[DEBUG] Processing gene 4800/18000
+[DEBUG] Processing gene 4900/18000
+[DEBUG] Processing gene 5000/18000
+[DEBUG] Processing gene 5100/18000
+[DEBUG] Processing gene 5200/18000
+[DEBUG] Processing gene 5300/18000
+[DEBUG] Processing gene 5400/18000
+[DEBUG] Processing gene 5500/18000
+[DEBUG] Processing gene 5600/18000
+[DEBUG] Processing gene 5700/18000
+[DEBUG] Processing gene 5800/18000
+[DEBUG] Processing gene 5900/18000
+[DEBUG] Processing gene 6000/18000
+[DEBUG] Processing gene 6100/18000
+[DEBUG] Processing gene 6200/18000
+[DEBUG] Processing gene 6300/18000
+[DEBUG] Processing gene 6400/18000
+[DEBUG] Processing gene 6500/18000
+[DEBUG] Processing gene 6600/18000
+[DEBUG] Processing gene 6700/18000
+[DEBUG] Processing gene 6800/18000
+[DEBUG] Processing gene 6900/18000
+[DEBUG] Processing gene 7000/18000
+[DEBUG] Processing gene 7100/18000
+[DEBUG] Processing gene 7200/18000
+[DEBUG] Processing gene 7300/18000
+[DEBUG] Processing gene 7400/18000
+[DEBUG] Processing gene 7500/18000
+[DEBUG] Processing gene 7600/18000
+[DEBUG] Processing gene 7700/18000
+[DEBUG] Processing gene 7800/18000
+[DEBUG] Processing gene 7900/18000
+[DEBUG] Processing gene 8000/18000
+[DEBUG] Processing gene 8100/18000
+[DEBUG] Processing gene 8200/18000
+[DEBUG] Processing gene 8300/18000
+[DEBUG] Processing gene 8400/18000
+[DEBUG] Processing gene 8500/18000
+[DEBUG] Processing gene 8600/18000
+[DEBUG] Processing gene 8700/18000
+[DEBUG] Processing gene 8800/18000
+[DEBUG] Processing gene 8900/18000
+[DEBUG] Processing gene 9000/18000
+[DEBUG] Processing gene 9100/18000
+[DEBUG] Processing gene 9200/18000
+[DEBUG] Processing gene 9300/18000
+[DEBUG] Processing gene 9400/18000
+[DEBUG] Processing gene 9500/18000
+[DEBUG] Processing gene 9600/18000
+[DEBUG] Processing gene 9700/18000
+[DEBUG] Processing gene 9800/18000
+[DEBUG] Processing gene 9900/18000
+[DEBUG] Processing gene 10000/18000
+[DEBUG] Processing gene 10100/18000
+[DEBUG] Processing gene 10200/18000
+[DEBUG] Processing gene 10300/18000
+[DEBUG] Processing gene 10400/18000
+[DEBUG] Processing gene 10500/18000
+[DEBUG] Processing gene 10600/18000
+[DEBUG] Processing gene 10700/18000
+[DEBUG] Processing gene 10800/18000
+[DEBUG] Processing gene 10900/18000
+[DEBUG] Processing gene 11000/18000
+[DEBUG] Processing gene 11100/18000
+[DEBUG] Processing gene 11200/18000
+[DEBUG] Processing gene 11300/18000
+[DEBUG] Processing gene 11400/18000
+[DEBUG] Processing gene 11500/18000
+[DEBUG] Processing gene 11600/18000
+[DEBUG] Processing gene 11700/18000
+[DEBUG] Processing gene 11800/18000
+[DEBUG] Processing gene 11900/18000
+[DEBUG] Processing gene 12000/18000
+[DEBUG] Processing gene 12100/18000
+[DEBUG] Processing gene 12200/18000
+[DEBUG] Processing gene 12300/18000
+[DEBUG] Processing gene 12400/18000
+[DEBUG] Processing gene 12500/18000
+[DEBUG] Processing gene 12600/18000
+[DEBUG] Processing gene 12700/18000
+[DEBUG] Processing gene 12800/18000
+[DEBUG] Processing gene 12900/18000
+[DEBUG] Processing gene 13000/18000
+[DEBUG] Processing gene 13100/18000
+[DEBUG] Processing gene 13200/18000
+[DEBUG] Processing gene 13300/18000
+[DEBUG] Processing gene 13400/18000
+[DEBUG] Processing gene 13500/18000
+[DEBUG] Processing gene 13600/18000
+[DEBUG] Processing gene 13700/18000
+[DEBUG] Processing gene 13800/18000
+[DEBUG] Processing gene 13900/18000
+[DEBUG] Processing gene 14000/18000
+[DEBUG] Processing gene 14100/18000
+[DEBUG] Processing gene 14200/18000
+[DEBUG] Processing gene 14300/18000
+[DEBUG] Processing gene 14400/18000
+[DEBUG] Processing gene 14500/18000
+[DEBUG] Processing gene 14600/18000
+[DEBUG] Processing gene 14700/18000
+[DEBUG] Processing gene 14800/18000
+[DEBUG] Processing gene 14900/18000
+[DEBUG] Processing gene 15000/18000
+[DEBUG] Processing gene 15100/18000
+[DEBUG] Processing gene 15200/18000
+[DEBUG] Processing gene 15300/18000
+[DEBUG] Processing gene 15400/18000
+[DEBUG] Processing gene 15500/18000
+[DEBUG] Processing gene 15600/18000
+[DEBUG] Processing gene 15700/18000
+[DEBUG] Processing gene 15800/18000
+[DEBUG] Processing gene 15900/18000
+[DEBUG] Processing gene 16000/18000
+[DEBUG] Processing gene 16100/18000
+[DEBUG] Processing gene 16200/18000
+[DEBUG] Processing gene 16300/18000
+[DEBUG] Processing gene 16400/18000
+[DEBUG] Processing gene 16500/18000
+[DEBUG] Processing gene 16600/18000
+[DEBUG] Processing gene 16700/18000
+[DEBUG] Processing gene 16800/18000
+[DEBUG] Processing gene 16900/18000
+[DEBUG] Processing gene 17000/18000
+[DEBUG] Processing gene 17100/18000
+[DEBUG] Processing gene 17200/18000
+[DEBUG] Processing gene 17300/18000
+[DEBUG] Processing gene 17400/18000
+[DEBUG] Processing gene 17500/18000
+[DEBUG] Processing gene 17600/18000
+[DEBUG] Processing gene 17700/18000
+[DEBUG] Processing gene 17800/18000
+[DEBUG] Processing gene 17900/18000
+[DEBUG] Processing gene 18000/18000
+[DEBUG] GAM fitting summary: 18000/18000 genes successfully fitted.
+[DEBUG] Skip reasons:
+    no_column: 0
+    too_few_samples: 0
+    low_variance: 0
+    fit_error: 0
+    nonfinite_rows: 0
+[DEBUG] Number of significant genes (FDR < 0.05): 14919
+[DEBUG] Step 4/4: Calculating effect sizes for significant genes...
+[DEBUG] Calculated effect sizes for 14919 genes (errors on 0 genes).
+[DEBUG] Selected 100 pseudoDEGs (top_n=100)
+[DEBUG] Saved results to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/proportion
+[DEBUG]   all genes: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/proportion/gam_all_genes_20260115_104015.tsv
+[DEBUG]   significant: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/proportion/gam_significant_20260115_104015.tsv
+[DEBUG]   pseudoDEGs: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/proportion/gam_pseudoDEGs_20260115_104015.tsv
+[DEBUG]   summary: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/proportion/gam_summary_20260115_104015.txt
+=== DIFFERENTIAL GENE EXPRESSION SUMMARY ===
+Total genes analyzed: 18000
+Significant genes (FDR < 0.05): 14919
+Selected DEGs: 100
 
-[7/10] Running pilot...
+Top 20 DEGs:
+1. Platelet - IFITM3: FDR=2.4469e-16, Effect=2.486
+2. CD8m T - IER2: FDR=2.4469e-16, Effect=1.808
+3. Platelet - NUDT4: FDR=2.4469e-16, Effect=1.837
+4. CD8m T - FOS: FDR=2.4469e-16, Effect=1.788
+5. Platelet - BSG: FDR=2.4469e-16, Effect=1.864
+6. CD8m T - JUNB: FDR=2.4469e-16, Effect=1.896
+7. Platelet - CTSW: FDR=2.4469e-16, Effect=2.056
+8. Platelet - SMIM1: FDR=2.4469e-16, Effect=2.345
+9. Platelet - TESC: FDR=2.4469e-16, Effect=2.560
+10. CD8m T - DUSP1: FDR=2.4469e-16, Effect=1.791
+11. CD4n T - NEAT1: FDR=2.4469e-16, Effect=1.760
+12. CD4n T - GADD45B: FDR=2.4469e-16, Effect=1.877
+13. CD4n T - JUN: FDR=2.4469e-16, Effect=1.894
+14. CD4n T - JUNB: FDR=2.4469e-16, Effect=2.127
+15. CD4n T - IFITM1: FDR=2.4469e-16, Effect=1.796
+16. CD4n T - IER2: FDR=2.4469e-16, Effect=1.995
+17. Platelet - TRAPPC3: FDR=2.4469e-16, Effect=1.829
+18. NK - STMN1: FDR=2.4469e-16, Effect=1.886
+19. NK - IFITM3: FDR=2.4469e-16, Effect=1.760
+20. CD8m T - ZFP36: FDR=2.4469e-16, Effect=1.751
+Done. Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/proportion
+Trajectory differential gene analysis completed!
+RNA analysis completed successfully!
 
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
+✓ RNA pipeline completed successfully!
 
-Merging data...
-  Merged data: 35 samples retained
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✓
+  - cluster_dge: ✓
+  - visualization: ✗
 
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/benchmark_results_pilot/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/benchmark_results_pilot/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = -0.2750 (p = 1.0984e-01)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/benchmark_results_pilot/trajectory_analysis/Spearman_Correlation
-
-[8/10] Running QOT...
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/benchmark_results_QOT/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/benchmark_results_QOT/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = -0.2567 (p = 1.3664e-01)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/benchmark_results_QOT/trajectory_analysis/Spearman_Correlation
-
-[9/10] Running scPoli...
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/benchmark_results_scPoli/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/benchmark_results_scPoli/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = 0.2597 (p = 1.3187e-01)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/benchmark_results_scPoli/trajectory_analysis/Spearman_Correlation
-
-[10/10] Running MUSTARD...
-
-==================================================
-STARTING TRAJECTORY CORRELATION ANALYSIS
-==================================================
-  Using severity column:   month
-  Using pseudotime column: pseudotime
-Loading data files...
-  Loaded metadata: 37 samples
-  Loaded pseudotime: 35 samples
-
-Merging data...
-  Merged data: 35 samples retained
-
-Calculating Spearman correlation...
-  Analyzing 35 samples with complete data
-
-Creating visualizations...
-  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/benchmark_results_MUSTARD/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
-
-Generating summary report...
-  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/benchmark_results_MUSTARD/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
-
-==================================================
-KEY RESULTS:
-  Spearman ρ = -0.2720 (p = 1.1401e-01)
-==================================================
-
-✓ Analysis complete! Check the output directory for results.
-  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/benchmark_results_MUSTARD/trajectory_analysis/Spearman_Correlation
-
-================================================================================
-ALL BENCHMARKS COMPLETED!
-Summary CSV saved to: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-================================================================================
-
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
+Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
+Execution time: 263.9252 seconds

@@ -136,7 +136,7 @@ rna_tree_building_method:
   - "HRC_VEC"
   - "NN"
   - "UPGMA"
-rna_proportion_test: true
+rna_proportion_test: false
 rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4

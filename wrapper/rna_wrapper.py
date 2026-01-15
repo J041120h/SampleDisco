@@ -585,7 +585,6 @@ def rna_wrapper(
         os.remove(summary_sample_csv_path)
 
     # Step 6: Clustering and Differential Gene Expression
-    # Step 6: Clustering and Differential Gene Expression
     prop_results, expr_results = {}, {}
     if sample_cluster:
         print("Starting clustering and differential gene expression...")
@@ -617,16 +616,16 @@ def rna_wrapper(
                     verbose=True
                 )
                     
-            if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
-                run_proportion_test(
-                    adata = AnnData_sample,
-                    sample_col=sample_col,
-                    sample_to_clade=prop_results,
-                    group_col=cluster_differential_gene_group_col,
-                    celltype_col=celltype_col,
-                    output_dir=os.path.join(rna_output_dir, "sample_cluster", method, "proportion", "proportion_test"),
-                    verbose=True
-                )
+            # if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
+            #     run_proportion_test(
+            #         adata = AnnData_sample,
+            #         sample_col=sample_col,
+            #         sample_to_clade=prop_results,
+            #         group_col=cluster_differential_gene_group_col,
+            #         celltype_col=celltype_col,
+            #         output_dir=os.path.join(rna_output_dir, "sample_cluster", method, "proportion", "proportion_test"),
+            #         verbose=True
+            #     )
             print("[INFO] Proportion tests completed.")
         except Exception as e:
             print(f"[ERROR] Error in proportion test: {e}")
