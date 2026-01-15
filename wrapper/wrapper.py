@@ -152,6 +152,7 @@ def wrapper(
     rna_cluster_distance_method: str = 'cosine',
     rna_cluster_number: int = 4,
     rna_user_provided_sample_to_clade: Optional[Dict] = None,
+    rna_cluster_differential_gene_group_col: str = None,
     
     # ========================================
     # ATAC PIPELINE PARAMETERS
@@ -265,6 +266,7 @@ def wrapper(
     atac_cluster_distance_method: str = 'cosine',
     atac_cluster_number: int = 4,
     atac_user_provided_sample_to_clade: Optional[Dict] = None,
+    atac_cluster_differential_gene_group_col: str = None,
     
     # ATAC Visualization parameters
     atac_figsize: Tuple[int, int] = (10, 8),
@@ -752,6 +754,7 @@ def wrapper(
                 cluster_distance_method=rna_cluster_distance_method,
                 cluster_number=rna_cluster_number,
                 user_provided_sample_to_clade=rna_user_provided_sample_to_clade,
+                cluster_differential_gene_group_col=rna_cluster_differential_gene_group_col,
                 
                 # ===== System Parameters (passed from main) =====
                 linux_system=linux_system,
@@ -898,6 +901,7 @@ def wrapper(
                 cluster_distance_method=atac_cluster_distance_method,
                 cluster_number=atac_cluster_number,
                 user_provided_sample_to_clade=atac_user_provided_sample_to_clade,
+                cluster_differential_gene_group_col=atac_cluster_differential_gene_group_col,
                 
                 # Visualization parameters
                 atac_figsize=atac_figsize,

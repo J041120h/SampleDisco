@@ -46,74 +46,9 @@ RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
 Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-Starting trajectory analysis...
-Starting TSCAN analysis:
-  Samples: 431
-  Genes: 18000
-  Clusters: 8
-  Embedding key: X_DR_expression
-K-means clustering complete: 8 clusters from 431 samples
-Computed pairwise euclidean distances among 8 cluster centroids
-MST construction complete with shape: (8, 8)
-Principal path found: 7 clusters, 375 total samples
-Path: cluster_2 -> cluster_7 -> cluster_3 -> cluster_1 -> cluster_4 -> cluster_5 -> cluster_8
-Using random endpoint as origin: cluster_2
-Found 1 branching paths
-Projection complete for 375 samples
-Sample ordering complete: 375 samples
-Projection complete for 263 samples
-Sample ordering complete: 263 samples
-Cluster plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster.png
-Plotted 431 samples across 8 clusters
-Cluster plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster_X_DR_expression.png
-Grouping plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping.png
-Grouping plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping_X_DR_expression.png
-Pseudotime data saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/X_DR_expression_pseudotime.csv
-  Total samples in CSV: 638
+Running RAISIN analysis...
 
-TSCAN analysis completed successfully!
-  Main path: 375 samples across 7 clusters
-  Branch 1: 263 samples across 3 clusters
-  Total samples processed: 431
-  Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN
-Starting TSCAN analysis:
-  Samples: 431
-  Genes: 18000
-  Clusters: 8
-  Embedding key: X_DR_proportion
-K-means clustering complete: 8 clusters from 431 samples
-Computed pairwise euclidean distances among 8 cluster centroids
-MST construction complete with shape: (8, 8)
-Principal path found: 5 clusters, 284 total samples
-Path: cluster_3 -> cluster_5 -> cluster_6 -> cluster_1 -> cluster_8
-Using random endpoint as origin: cluster_3
-Found 3 branching paths
-Projection complete for 284 samples
-Sample ordering complete: 284 samples
-Projection complete for 267 samples
-Sample ordering complete: 267 samples
-Projection complete for 250 samples
-Sample ordering complete: 250 samples
-Projection complete for 242 samples
-Sample ordering complete: 242 samples
-Cluster plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster.png
-Plotted 431 samples across 8 clusters
-Cluster plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_cluster_X_DR_proportion.png
-Grouping plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping.png
-Grouping plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/clusters_by_grouping_X_DR_proportion.png
-Pseudotime data saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN/X_DR_proportion_pseudotime.csv
-  Total samples in CSV: 1043
-
-TSCAN analysis completed successfully!
-  Main path: 284 samples across 5 clusters
-  Branch 1: 267 samples across 3 clusters
-  Branch 2: 250 samples across 3 clusters
-  Branch 3: 242 samples across 4 clusters
-  Total samples processed: 431
-  Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/TSCAN
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
+✗ RNA pipeline failed with error: 'NoneType' object has no attribute 'values'
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
@@ -130,4 +65,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 37.1451 seconds
+Execution time: 35.0492 seconds

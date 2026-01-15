@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 638, in wrapper
+    rna_results = rna_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 608, in rna_wrapper
+    unique_expr_clades = len(set(expr_results.values()))
+AttributeError: 'NoneType' object has no attribute 'values'

@@ -31,10 +31,10 @@ rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: true
+rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
-rna_cluster_dge: false
+rna_cluster_dge: true
 rna_visualize_data: false
 
 # RNA Paths for Skipping Processes
@@ -141,6 +141,7 @@ rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
+rna_cluster_differential_gene_group_col: "sev.level"
 
 # ========================================
 # ATAC PIPELINE PARAMETERS
@@ -264,6 +265,7 @@ atac_raisin_analysis: false
 atac_cluster_distance_method: "cosine"
 atac_cluster_number: 4
 atac_user_provided_sample_to_clade: null
+atac_cluster_differential_gene_group_col: "sev.level"
 
 # ATAC Visualization parameters
 atac_figsize: [10, 8]

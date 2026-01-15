@@ -599,23 +599,23 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("\n  Running optimization for EXPRESSION...")
         expression_resolution_dir = f"{resolution_output_dir}_expression"
-        # optimal_res_expression, results_df_expression = find_optimal_cell_resolution_integration(
-        #     AnnData_integrated=integrated_adata_for_resolution,
-        #     output_dir=expression_resolution_dir,
-        #     optimization_target=optimization_target,
-        #     dr_type="expression",
-        #     n_features=resolution_n_features,
-        #     sev_col=sev_col,
-        #     batch_col=resolution_batch_col,
-        #     sample_col=resolution_sample_col,
-        #     modality_col=resolution_modality_col,
-        #     use_rep=resolution_use_rep,
-        #     num_DR_components=num_DR_components,
-        #     num_PCs=num_PCs,
-        #     n_pcs=n_pcs,
-        #     visualize_cell_types=True,
-        #     verbose=multiomics_verbose
-        # )
+        optimal_res_expression, results_df_expression = find_optimal_cell_resolution_integration(
+            AnnData_integrated=integrated_adata_for_resolution,
+            output_dir=expression_resolution_dir,
+            optimization_target=optimization_target,
+            dr_type="expression",
+            n_features=resolution_n_features,
+            sev_col=sev_col,
+            batch_col=resolution_batch_col,
+            sample_col=resolution_sample_col,
+            modality_col=resolution_modality_col,
+            use_rep=resolution_use_rep,
+            num_DR_components=num_DR_components,
+            num_PCs=num_PCs,
+            n_pcs=n_pcs,
+            visualize_cell_types=True,
+            verbose=multiomics_verbose
+        )
         
         if multiomics_verbose:
             print("  ✓ Expression optimization completed")
@@ -624,23 +624,23 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("\n  Running optimization for PROPORTION...")
         proportion_resolution_dir = f"{resolution_output_dir}_proportion"
-        # optimal_res_proportion, results_df_proportion = find_optimal_cell_resolution_integration(
-        #     AnnData_integrated=integrated_adata_for_resolution,
-        #     output_dir=proportion_resolution_dir,
-        #     optimization_target=optimization_target,
-        #     dr_type="proportion",
-        #     n_features=resolution_n_features,
-        #     sev_col=sev_col,
-        #     batch_col=resolution_batch_col,
-        #     sample_col=resolution_sample_col,
-        #     modality_col=resolution_modality_col,
-        #     use_rep=resolution_use_rep,
-        #     num_DR_components=num_DR_components,
-        #     num_PCs=num_PCs,
-        #     n_pcs=n_pcs,
-        #     visualize_cell_types=True,
-        #     verbose=multiomics_verbose
-        # )
+        optimal_res_proportion, results_df_proportion = find_optimal_cell_resolution_integration(
+            AnnData_integrated=integrated_adata_for_resolution,
+            output_dir=proportion_resolution_dir,
+            optimization_target=optimization_target,
+            dr_type="proportion",
+            n_features=resolution_n_features,
+            sev_col=sev_col,
+            batch_col=resolution_batch_col,
+            sample_col=resolution_sample_col,
+            modality_col=resolution_modality_col,
+            use_rep=resolution_use_rep,
+            num_DR_components=num_DR_components,
+            num_PCs=num_PCs,
+            n_pcs=n_pcs,
+            visualize_cell_types=True,
+            verbose=multiomics_verbose
+        )
         
         if multiomics_verbose:
             print("  ✓ Proportion optimization completed")

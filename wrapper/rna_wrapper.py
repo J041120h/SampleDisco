@@ -18,6 +18,7 @@ from trajectory_diff_gene import run_integrated_differential_analysis
 from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
+from sample_clustering.proportion_test import proportion_DGE_test
 
 def rna_wrapper(
     # ===== Required Parameters =====
@@ -138,6 +139,7 @@ def rna_wrapper(
     cluster_distance_method='cosine',
     cluster_number=4,
     user_provided_sample_to_clade=None,
+    cluster_differential_gene_group_col = None,
     
     # ===== System Parameters (passed from main) =====
     linux_system=False,
@@ -381,69 +383,69 @@ def rna_wrapper(
         pseudobulk_adata = sc.read(temp_pseudobulk_path)
     
     if cca_optimal_cell_resolution:
-        # if linux_system and use_gpu:
-        #     find_optimal_cell_resolution_linux(
-        #         AnnData_cell = AnnData_cell,
-        #         AnnData_sample = AnnData_sample,
-        #         output_dir = cca_output_dir,
-        #         column = "X_DR_expression",
-        #         n_features = n_features,
-        #         sev_col = sev_col_cca,
-        #         batch_col = batch_col,
-        #         sample_col = sample_col,
-        #         num_PCs = num_PCs,
-        #         num_DR_components = n_expression_components,
-        #         n_pcs_for_null = n_components_for_cca_rna,
-        #         verbose = trajectory_verbose,
-        #         preserve_cols = preserve_cols_for_sample_embedding,
-        #     )
+        if linux_system and use_gpu:
+            find_optimal_cell_resolution_linux(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_expression",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_expression_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
+            )
 
-        #     find_optimal_cell_resolution_linux(
-        #         AnnData_cell = AnnData_cell,
-        #         AnnData_sample = AnnData_sample,
-        #         output_dir = cca_output_dir,
-        #         column = "X_DR_proportion",
-        #         n_features = n_features,
-        #         sev_col = sev_col_cca,
-        #         batch_col = batch_col,
-        #         sample_col = sample_col,
-        #         num_PCs = num_PCs,
-        #         num_DR_components = n_proportion_components,
-        #         n_pcs_for_null = n_components_for_cca_rna,
-        #         verbose = trajectory_verbose,
-        #         preserve_cols = preserve_cols_for_sample_embedding,
-        #     )
-        # else:
-        #     find_optimal_cell_resolution(
-        #         AnnData_cell = AnnData_cell,
-        #         AnnData_sample = AnnData_sample,
-        #         output_dir = cca_output_dir,
-        #         column = "X_DR_expression",
-        #         n_features = n_features,
-        #         sev_col = sev_col_cca,
-        #         batch_col = batch_col,
-        #         sample_col = sample_col,
-        #         num_PCs = num_PCs,
-        #         num_DR_components = n_expression_components,
-        #         n_pcs_for_null = n_components_for_cca_rna,
-        #         verbose = trajectory_verbose,
-        #         preserve_cols = preserve_cols_for_sample_embedding,
-        #     )
-        #     find_optimal_cell_resolution(
-        #         AnnData_cell = AnnData_cell,
-        #         AnnData_sample = AnnData_sample,
-        #         output_dir = cca_output_dir,
-        #         column = "X_DR_proportion",
-        #         n_features = n_features,
-        #         sev_col = sev_col_cca,
-        #         batch_col = batch_col,
-        #         sample_col = sample_col,
-        #         num_PCs = num_PCs,
-        #         num_DR_components = n_proportion_components,
-        #         n_pcs_for_null = n_components_for_cca_rna,
-        #         verbose = trajectory_verbose,
-        #         preserve_cols = preserve_cols_for_sample_embedding,
-        #     )
+            find_optimal_cell_resolution_linux(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_proportion",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_proportion_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
+            )
+        else:
+            find_optimal_cell_resolution(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_expression",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_expression_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
+            )
+            find_optimal_cell_resolution(
+                AnnData_cell = AnnData_cell,
+                AnnData_sample = AnnData_sample,
+                output_dir = cca_output_dir,
+                column = "X_DR_proportion",
+                n_features = n_features,
+                sev_col = sev_col_cca,
+                batch_col = batch_col,
+                sample_col = sample_col,
+                num_PCs = num_PCs,
+                num_DR_components = n_proportion_components,
+                n_pcs_for_null = n_components_for_cca_rna,
+                verbose = trajectory_verbose,
+                preserve_cols = preserve_cols_for_sample_embedding,
+            )
 
         from utils.unify_optimal import replace_optimal_dimension_reduction
         pseudobulk_adata = replace_optimal_dimension_reduction(rna_output_dir)
@@ -584,6 +586,7 @@ def rna_wrapper(
         os.remove(summary_sample_csv_path)
 
     # Step 6: Clustering and Differential Gene Expression
+    prop_results, expr_results = None, None
     if sample_cluster:
         print("Starting clustering and differential gene expression...")
         if cluster_distance_method not in sample_distance_methods:
@@ -591,69 +594,100 @@ def rna_wrapper(
         
         for method in sample_distance_methods:
             expr_results, prop_results = cluster(
-                generalFolder = rna_output_dir,
+                generalFolder=rna_output_dir,
                 Kmeans=Kmeans_based_cluster_flag,
                 methods=Tree_building_method,
-                prportion_test=proportion_test,
-                distance_method=sample_distance_methods,
+                distance_method=method,  # Changed from sample_distance_methods to method
                 number_of_clusters=cluster_number,
                 sample_to_clade_user=user_provided_sample_to_clade
             )
             
-            if cluster_DGE and RAISIN_analysis:
-                print("Running RAISIN analysis...")
-                if expr_results is not None:
-                    unique_expr_clades = len(set(expr_results.values()))
-                    if unique_expr_clades <= 1:
-                        print("Only one clade found in expression results. Skipping RAISIN analysis.")
-                    else:
-                        fit = raisinfit(
-                            adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
-                            sample_col=sample_col,
-                            batch_key=batch_col,
-                            sample_to_clade=expr_results,
-                            verbose=verbose,
-                            intercept=True,
-                            n_jobs=-1,
-                        )
-                        run_pairwise_raisin_analysis(
-                            fit=fit,
-                            output_dir=os.path.join(rna_output_dir, 'raisin_results_expression', method),
-                            min_samples=2,
-                            fdrmethod='fdr_bh',
-                            n_permutations=10,
-                            fdr_threshold=0.05,
-                            verbose=True
-                        )
+            # Proportion test moved here from cluster function
+    if proportion_test:
+        print("[INFO] Starting proportion tests...")
+        try:    
+            if expr_results is not None:
+                unique_expr_clades = len(set(expr_results.values()))
+                if unique_expr_clades <= 1:
+                    print("[INFO] Only one clade found in expression results. Skipping proportion test.")
                 else:
-                    print("No expression results available. Skipping RAISIN analysis.")
-                
-                if prop_results is not None:
-                    unique_prop_clades = len(set(prop_results.values()))
-                    if unique_prop_clades <= 1:
-                        print("Only one clade found in proportion results. Skipping RAISIN analysis.")
-                    else:
-                        fit = raisinfit(
-                            adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
-                            sample_col=sample_col,
-                            batch_key=batch_col,
-                            sample_to_clade=prop_results,
-                            intercept=True,
-                            n_jobs=-1,
-                        )
-                        run_pairwise_raisin_analysis(
-                            fit=fit,
-                            output_dir=os.path.join(rna_output_dir, 'raisin_results_proportion', method),
-                            min_samples=2,
-                            fdrmethod='fdr_bh',
-                            n_permutations=10,
-                            fdr_threshold=0.05,
-                            verbose=True
-                        )
+                    proportion_DGE_test(
+                        os.path.join(rna_output_dir, "sample_cluster"), 
+                        expr_results, 
+                        sub_folder="expression", 
+                        verbose=False
+                    )
+                    
+            if prop_results is not None:
+                unique_prop_clades = len(set(prop_results.values()))
+                if unique_prop_clades <= 1:
+                    print("[INFO] Only one clade found in proportion results. Skipping proportion test.")
                 else:
-                    print("No proportion results available. Skipping RAISIN analysis.")
-        
-        status_flags["rna"]["cluster_dge"] = True
+                    proportion_DGE_test(
+                        os.path.join(rna_output_dir, "sample_cluster"), 
+                        prop_results, 
+                        sub_folder="proportion", 
+                        verbose=False
+                    )
+            print("[INFO] Proportion tests completed.")
+        except Exception as e:
+            print(f"[ERROR] Error in proportion test: {e}")
+    print("Running RAISIN analysis...")
+            
+    if expr_results is not None or cluster_differential_gene_group_col is not None:
+        unique_expr_clades = len(set(expr_results.values()))
+        if unique_expr_clades <= 1:
+            print("Only one clade found in expression results. Skipping RAISIN analysis.")
+        else:
+            fit = raisinfit(
+                adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
+                sample_col=sample_col,
+                batch_key=batch_col,
+                sample_to_clade=expr_results,
+                group_col = cluster_differential_gene_group_col,
+                verbose=verbose,
+                intercept=True,
+                n_jobs=-1,
+            )
+            run_pairwise_raisin_analysis(
+                fit=fit,
+                output_dir=os.path.join(rna_output_dir, 'raisin_results_expression', method),
+                min_samples=2,
+                fdrmethod='fdr_bh',
+                n_permutations=10,
+                fdr_threshold=0.05,
+                verbose=True
+            )
+    else:
+        print("No expression results available. Skipping RAISIN analysis.")
+    
+    if prop_results is not None or cluster_differential_gene_group_col is not None:
+        unique_prop_clades = len(set(prop_results.values()))
+        if unique_prop_clades <= 1:
+            print("Only one clade found in proportion results. Skipping RAISIN analysis.")
+        else:
+            fit = raisinfit(
+                adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
+                sample_col=sample_col,
+                batch_key=batch_col,
+                sample_to_clade=prop_results,
+                group_col = cluster_differential_gene_group_col,
+                intercept=True,
+                n_jobs=-1,
+            )
+            run_pairwise_raisin_analysis(
+                fit=fit,
+                output_dir=os.path.join(rna_output_dir, 'raisin_results_proportion', method),
+                min_samples=2,
+                fdrmethod='fdr_bh',
+                n_permutations=10,
+                fdr_threshold=0.05,
+                verbose=True
+            )
+    else:
+        print("No proportion results available. Skipping RAISIN analysis.")
+
+    status_flags["rna"]["cluster_dge"] = True
     
     # Step 7: Visualization - UNIFIED NAMING
     if visualize_data:

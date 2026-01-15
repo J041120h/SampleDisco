@@ -5,14 +5,12 @@ from sample_clustering.Kmeans_cluster import *
 from sample_clustering.NN import *
 from sample_clustering.tree_cut import *
 from sample_clustering.UPGMA import *
-from sample_clustering.proportion_test import *
 import os
 
 def cluster(
     generalFolder: str,
     Kmeans: bool = False,
     methods: list = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
-    prportion_test: bool = False,
     distance_method: str = "cosine",
     number_of_clusters: int = 5,
     sample_to_clade_user: dict = None,
@@ -28,16 +26,21 @@ def cluster(
         Whether to use K-means clustering
     methods : list
         List of clustering methods to use
-    prportion_test : bool
-        Whether to perform proportion test
     distance_method : str
         Distance method (used for path construction)
     number_of_clusters : int
         Number of clusters to create
     sample_to_clade_user : dict
         User-provided clustering (optional)
+        
+    Returns:
+    --------
+    expr_results : dict or None
+        Expression-based clustering results
+    prop_results : dict or None
+        Proportion-based clustering results
     """
-    print(f"[INFO] Entering cluster function with parameters:\n  generalFolder={generalFolder},\n  Kmeans={Kmeans},\n  methods={methods},\n  proportion_test={prportion_test},\n  distance_method={distance_method},\n  number_of_clusters={number_of_clusters}")
+    print(f"[INFO] Entering cluster function with parameters:\n  generalFolder={generalFolder},\n  Kmeans={Kmeans},\n  methods={methods},\n  distance_method={distance_method},\n  number_of_clusters={number_of_clusters}")
     
     # Create sample_cluster directory for all clustering results
     sample_cluster_dir = os.path.join(generalFolder, "sample_cluster")
@@ -140,7 +143,7 @@ def cluster(
             if not use_proportion_only:
                 expr_results = cut_tree_by_group_count(expression_tree_path, desired_groups=number_of_clusters, format='nexus', verbose=True, tol=0)
             else:
-                # For proportion-only methods, set expression results to None or copy proportion results
+                # For proportion-only methods, set expression results to None
                 expr_results = None
                 print("[INFO] Expression clustering skipped for proportion-only distance method.")
             
@@ -157,28 +160,6 @@ def cluster(
         else:
             expr_results = expr_results_Kmeans
             prop_results = prop_results_Kmeans
-
-    if prportion_test:
-        print("[INFO] Starting proportion tests...")
-        try:    
-            if expr_results is not None:
-                unique_expr_clades = len(set(expr_results.values()))
-                if unique_expr_clades <= 1:
-                    print("[INFO] Only one clade found in expression results. Skipping proportion test.")
-                else:
-                    proportion_DGE_test(sample_cluster_dir, expr_results, sub_folder="expression", verbose=False)
-            elif use_proportion_only:
-                print("[INFO] Expression proportion test skipped for proportion-only distance method.")
-                
-            if prop_results is not None:
-                unique_prop_clades = len(set(prop_results.values()))
-                if unique_prop_clades <= 1:
-                    print("[INFO] Only one clade found in proportion results. Skipping proportion test.")
-                else:
-                    proportion_DGE_test(sample_cluster_dir, prop_results, sub_folder="proportion", verbose=False)
-            print("[INFO] Proportion tests completed.")
-        except Exception as e:
-            print(f"[ERROR] Error in proportion test: {e}")
     
     print("[INFO] cluster function completed.")
     return expr_results, prop_results
