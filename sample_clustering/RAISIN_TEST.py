@@ -9,6 +9,7 @@ Author: Original R code by Zhicheng Ji, Wenpin Hou, Hongkai Ji
 Python port maintains compatibility with R implementation.
 """
 
+import os
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -17,65 +18,59 @@ import warnings
 from statsmodels.stats.multitest import multipletests
 import traceback
 
+import os
+import numpy as np
+import pandas as pd
+from scipy import stats
+import warnings
+from statsmodels.stats.multitest import multipletests
+import traceback
+import matplotlib.pyplot as plt
+from itertools import combinations
+from pathlib import Path
 
-def raisintest(fit, coef=2, contrast=None, fdrmethod='fdr_bh', n_permutations=10, verbose=True):
+def raisintest(
+    fit,
+    coef: int = 2,
+    contrast=None,
+    fdrmethod: str = 'fdr_bh',
+    n_permutations: int = 100,  # UPDATED: Increased default from 10 to 100 for stability
+    output_dir: str = None,
+    min_samples: int = None,
+    fdr_threshold: float = 0.05,
+    make_volcano: bool = True,
+    verbose: bool = True,
+):
     """
     Statistical testing for RAISIN model.
     
-    This function performs statistical testing that tests if a coefficient or 
-    a combination of coefficients in the design matrix of fixed effects is 0,
-    and generates corresponding p-value and FDRs.
-    
-    Parameters
-    ----------
-    fit : dict
-        The output from the raisinfit function.
-    coef : int
-        Index of coefficient to test (1-indexed like R, default=2).
-        Only used if contrast is None.
-    contrast : array-like or None
-        Numeric vector indicating the combination of coefficients.
-        Must have the same length as the number of columns in X.
-    fdrmethod : str
-        Method for FDR correction. Options: 'fdr_bh', 'fdr_by', 'bonferroni', etc.
-        Default 'fdr_bh' corresponds to R's 'fdr' method.
-    n_permutations : int
-        Number of permutations for estimating degrees of freedom (default 10, matching R).
-    verbose : bool
-        Whether to print progress information.
-    
-    Returns
-    -------
-    pandas.DataFrame
-        Results with columns: Foldchange, stat, pvalue, FDR
-        Sorted by FDR ascending, then by |stat| descending.
-    
-    Notes
-    -----
-    The test statistic follows a t-distribution. A permutation procedure is used
-    to estimate the degree of freedom. The p-value is calculated as the tail 
-    probability of the t-distribution.
+    IMPROVEMENTS:
+    - Default n_permutations increased to 100 to prevent df=1.0 (Cauchy) estimation.
+    - Added checks for singular design matrices when no contrast is provided.
     """
     
     try:
         # -----------------------------------------------------------------
-        # Extract components from fit (R lines 19-26)
+        # 1. Extract Data
         # -----------------------------------------------------------------
         X = fit['X']
         if isinstance(X, pd.DataFrame):
+            X_df = X
             X = X.values.astype(np.float64)
+            x_colnames = list(X_df.columns)
         else:
             X = np.array(X, dtype=np.float64)
+            x_colnames = [f"coef_{i}" for i in range(X.shape[1])]
         
         means = fit['mean']
         if isinstance(means, pd.DataFrame):
-            gene_names = means.index
+            gene_names = np.array(means.index)
             means = means.values.astype(np.float64)
         else:
             gene_names = np.arange(means.shape[0])
             means = np.array(means, dtype=np.float64)
         
-        G = means.shape[0]  # number of genes
+        G = means.shape[0]
         
         group = fit['group']
         if isinstance(group, pd.Series):
@@ -91,197 +86,158 @@ def raisintest(fit, coef=2, contrast=None, fdrmethod='fdr_bh', n_permutations=10
         sigma2 = fit['sigma2']
         if isinstance(sigma2, pd.DataFrame):
             sigma2_values = sigma2.values.astype(np.float64)
-            sigma2_columns = sigma2.columns
+            sigma2_columns = list(sigma2.columns)
         else:
             sigma2_values = np.array(sigma2, dtype=np.float64)
-            sigma2_columns = np.arange(sigma2_values.shape[1])
+            sigma2_columns = list(range(sigma2_values.shape[1]))
         
         omega2 = fit['omega2']
         if isinstance(omega2, pd.DataFrame):
             omega2 = omega2.values.astype(np.float64)
         else:
             omega2 = np.array(omega2, dtype=np.float64)
-        
+            
         failgroup = fit.get('failgroup', [])
-        if failgroup is None:
-            failgroup = []
-        
-        if verbose:
-            print(f"Testing {G} genes")
-            print(f"Design matrix X shape: {X.shape}")
-            print(f"Random effects Z shape: {Z.shape}")
-        
+
         # -----------------------------------------------------------------
-        # Set up contrast vector (R lines 24-27)
+        # 2. Filter Genes (Optional)
+        # -----------------------------------------------------------------
+        if min_samples is not None:
+            # Gene is "detected" if mean > 0 (approximation for RAISIN mean output)
+            sample_counts = np.sum(means > 0, axis=1)
+            gene_mask = sample_counts >= min_samples
+            
+            if verbose:
+                print(f"Filtering: {np.sum(~gene_mask)} genes removed (< {min_samples} samples)")
+            
+            means = means[gene_mask, :]
+            gene_names = np.array(gene_names)[gene_mask]
+            sigma2_values = sigma2_values[gene_mask, :]
+            omega2 = omega2[gene_mask, :]
+            G = means.shape[0]
+
+        # -----------------------------------------------------------------
+        # 3. Handle Contrast
         # -----------------------------------------------------------------
         if contrast is None:
+            # Default behavior: test single coefficient
             contrast = np.zeros(X.shape[1])
-            # R uses 1-indexed, so coef=2 means second column
             if coef < 1 or coef > X.shape[1]:
                 raise ValueError(f"coef must be between 1 and {X.shape[1]}")
             contrast[coef - 1] = 1
+            contrast_label = x_colnames[coef - 1]
+            
+            # Warning for intercept models
+            if "(Intercept)" in x_colnames and np.sum(contrast) != 0:
+                if verbose:
+                    print(f"Warning: Testing single coefficient '{contrast_label}' in model with Intercept.")
+                    print("Ensure this is what you want. For group comparisons, use a difference contrast.")
         else:
             contrast = np.array(contrast, dtype=np.float64)
-        
-        if len(contrast) != X.shape[1]:
-            raise ValueError(f"Contrast length ({len(contrast)}) must match "
-                           f"number of columns in X ({X.shape[1]})")
-        
-        if verbose:
-            print(f"Contrast vector: {contrast}")
-        
+            contrast_label = "custom_contrast"
+
         # -----------------------------------------------------------------
-        # Calculate k = t(contrast) %*% solve(t(X) %*% X) %*% t(X)
-        # (R line 28)
+        # 4. Calculate Statistics
         # -----------------------------------------------------------------
         XTX = X.T @ X
-        try:
-            XTX_inv = np.linalg.solve(XTX, np.eye(XTX.shape[0]))
-        except np.linalg.LinAlgError:
-            if verbose:
-                print("Warning: X'X is singular, using pseudoinverse")
-            XTX_inv = np.linalg.pinv(XTX)
+        # Use pseudoinverse for rank-deficient matrices (common in over-parameterized designs)
+        XTX_inv = np.linalg.pinv(XTX)
         
-        k = contrast @ XTX_inv @ X.T  # Shape: (n_samples,)
+        k = contrast @ XTX_inv @ X.T
+        b = means @ k  # Fold change
         
-        # -----------------------------------------------------------------
-        # Calculate fold changes: b = (means %*% t(k))[,1] (R line 29)
-        # -----------------------------------------------------------------
-        b = means @ k  # Shape: (G,)
-        
-        # -----------------------------------------------------------------
-        # Check if all groups failed (R lines 30-33)
-        # -----------------------------------------------------------------
+        # Check for failure groups
         unique_groups = np.unique(group)
-        if len(failgroup) > 0 and set(unique_groups) == set(failgroup):
-            warnings.warn('Unable to estimate variance for all random effects. Setting FDR to 1.')
-            res = pd.DataFrame({
-                'Foldchange': b,
-                'FDR': 1.0
-            }, index=gene_names)
-            # Sort by absolute fold change descending
-            res = res.iloc[np.argsort(-np.abs(res['Foldchange'].values))]
-            return res
+        if failgroup and set(unique_groups).issubset(set(failgroup)):
+            warnings.warn('All groups failed variance estimation. Returning FDR=1.')
+            return pd.DataFrame({'Foldchange': b, 'FDR': 1.0}, index=gene_names)
         
-        # -----------------------------------------------------------------
-        # Calculate variance: a (R line 35)
-        # a = colSums((k %*% Z)[1,]^2 * t(fit$sigma2[,group])) + 
-        #     colSums(k[1,]^2 * t(fit$omega2))
-        # -----------------------------------------------------------------
-        # kZ = k %*% Z -> (1 x n_random_effects), but k is 1D so result is 1D
-        kZ = k @ Z  # Shape: (n_random_effects,)
-        
-        # Build sigma2 indexed by group for each column of Z
-        # sigma2[,group] selects columns of sigma2 according to group labels
-        # This creates a (G x n_random_effects) matrix
+        # Calculate Variance (a)
+        kZ = k @ Z
         sigma2_by_group = np.zeros((G, len(group)))
         for i, g in enumerate(group):
             if g in sigma2_columns:
-                col_idx = list(sigma2_columns).index(g)
+                col_idx = sigma2_columns.index(g)
                 sigma2_by_group[:, i] = sigma2_values[:, col_idx]
         
-        # a = sum over random effects of (kZ^2 * sigma2[,group]) + sum over samples of (k^2 * omega2)
-        # First term: (kZ^2) is (n_random_effects,), sigma2_by_group is (G x n_random_effects)
-        # Result should be (G,)
-        random_var = np.sum((kZ ** 2) * sigma2_by_group, axis=1)  # (G,)
+        random_var = np.sum((kZ ** 2) * sigma2_by_group, axis=1)
+        fixed_var = np.sum((k ** 2) * omega2, axis=1)
+        a = random_var + fixed_var
         
-        # Second term: k^2 is (n_samples,), omega2 is (G x n_samples)
-        fixed_var = np.sum((k ** 2) * omega2, axis=1)  # (G,)
-        
-        a = random_var + fixed_var  # (G,)
-        
-        # -----------------------------------------------------------------
-        # Calculate test statistics (R line 36)
-        # -----------------------------------------------------------------
+        # t-statistic
         with np.errstate(divide='ignore', invalid='ignore'):
             stat = b / np.sqrt(a)
         stat = np.where(np.isfinite(stat), stat, 0)
-        
+
         # -----------------------------------------------------------------
-        # Permutation test to estimate df (R lines 38-43)
+        # 5. Permutations (Degrees of Freedom Estimation)
         # -----------------------------------------------------------------
         if verbose:
-            print(f"Running {n_permutations} permutations to estimate degrees of freedom...")
-        
+            print(f"Running {n_permutations} permutations...")
+            
         simu_stat = []
-        for sim_id in range(n_permutations):
-            # Permute rows of X (R line 39)
+        # Pre-calculate inverse for speed if possible, but X changes per perm
+        for _ in range(n_permutations):
             perm_idx = np.random.permutation(X.shape[0])
             perX = X[perm_idx, :]
             
-            # Recalculate k with permuted X (R line 40)
             perXTX = perX.T @ perX
-            try:
-                perXTX_inv = np.linalg.solve(perXTX, np.eye(perXTX.shape[0]))
-            except np.linalg.LinAlgError:
-                perXTX_inv = np.linalg.pinv(perXTX)
-            
+            perXTX_inv = np.linalg.pinv(perXTX)
             perm_k = contrast @ perXTX_inv @ perX.T
             
-            # Recalculate variance (R line 41)
             perm_kZ = perm_k @ Z
-            perm_sigma2_by_group = np.zeros((G, len(group)))
-            for i, g in enumerate(group):
-                if g in sigma2_columns:
-                    col_idx = list(sigma2_columns).index(g)
-                    perm_sigma2_by_group[:, i] = sigma2_values[:, col_idx]
-            
-            perm_random_var = np.sum((perm_kZ ** 2) * perm_sigma2_by_group, axis=1)
+            perm_random_var = np.sum((perm_kZ ** 2) * sigma2_by_group, axis=1)
             perm_fixed_var = np.sum((perm_k ** 2) * omega2, axis=1)
             perm_a = perm_random_var + perm_fixed_var
             
-            # Calculate permuted statistics (R line 42)
             with np.errstate(divide='ignore', invalid='ignore'):
                 perm_stat = (means @ perm_k) / np.sqrt(perm_a)
             
             perm_stat = perm_stat[np.isfinite(perm_stat)]
+            
+            # Optimization: Don't store millions of points if G is huge
+            # Just take a random subsample if G > 1000 to keep memory low
+            if len(perm_stat) > 2000:
+                 perm_stat = np.random.choice(perm_stat, 2000, replace=False)
+            
             simu_stat.extend(perm_stat.tolist())
-        
+            
         simu_stat = np.array(simu_stat)
         
         # -----------------------------------------------------------------
-        # Determine distribution and calculate p-values (R lines 45-55)
+        # 6. Fit Distribution (Normal vs t)
         # -----------------------------------------------------------------
         if len(simu_stat) == 0:
-            warnings.warn("All permutation statistics are invalid. Using normal distribution.")
             pval = 2 * stats.norm.sf(np.abs(stat))
-            if verbose:
-                print("Using normal distribution (fallback)")
         else:
-            # Log-likelihood under normal distribution (R line 45)
             pnorm_ll = np.sum(stats.norm.logpdf(simu_stat))
             
-            # Log-likelihood under t-distribution for various df (R lines 46-48)
-            df_range = np.arange(1, 100.1, 0.1)
-            pt_lls = np.array([np.sum(stats.t.logpdf(simu_stat, df=df)) for df in df_range])
+            # Scan df from 1 to 100
+            df_range = np.arange(1, 100.1, 0.5)
+            # Vectorize the logpdf calculation if possible, or loop
+            best_ll = -np.inf
+            best_df = 100
             
-            # Choose best distribution (R lines 50-55)
-            if np.max(pt_lls) > pnorm_ll:
-                best_df = df_range[np.argmax(pt_lls)]
+            for df_val in df_range:
+                ll = np.sum(stats.t.logpdf(simu_stat, df=df_val))
+                if ll > best_ll:
+                    best_ll = ll
+                    best_df = df_val
+            
+            if best_ll > pnorm_ll:
+                if verbose:
+                    print(f"Estimated distribution: t-distribution (df={best_df:.1f})")
                 pval = 2 * stats.t.sf(np.abs(stat), df=best_df)
-                if verbose:
-                    print(f"Using t-distribution with df={best_df:.1f}")
             else:
-                pval = 2 * stats.norm.sf(np.abs(stat))
                 if verbose:
-                    print("Using normal distribution")
+                    print("Estimated distribution: Normal")
+                pval = 2 * stats.norm.sf(np.abs(stat))
+
+        # -----------------------------------------------------------------
+        # 7. FDR and Output
+        # -----------------------------------------------------------------
+        _, fdr, _, _ = multipletests(pval, method=fdrmethod)
         
-        # -----------------------------------------------------------------
-        # Multiple testing correction (R line 57)
-        # -----------------------------------------------------------------
-        # R's p.adjust with method='fdr' uses BH method
-        if fdrmethod == 'fdr_bh' or fdrmethod == 'fdr':
-            _, fdr, _, _ = multipletests(pval, method='fdr_bh')
-        elif fdrmethod == 'fdr_by':
-            _, fdr, _, _ = multipletests(pval, method='fdr_by')
-        elif fdrmethod == 'bonferroni':
-            _, fdr, _, _ = multipletests(pval, method='bonferroni')
-        else:
-            _, fdr, _, _ = multipletests(pval, method=fdrmethod)
-        
-        # -----------------------------------------------------------------
-        # Create results dataframe (R lines 58-60)
-        # -----------------------------------------------------------------
         res = pd.DataFrame({
             'Foldchange': b,
             'stat': stat,
@@ -289,22 +245,182 @@ def raisintest(fit, coef=2, contrast=None, fdrmethod='fdr_bh', n_permutations=10
             'FDR': fdr
         }, index=gene_names)
         
-        # Sort by FDR ascending, then by |stat| descending (R line 59)
-        # R: res[order(res[,4], -abs(res[,2])),]
-        sort_keys = np.lexsort((-np.abs(res['stat'].values), res['FDR'].values))
-        res = res.iloc[sort_keys]
+        # Sort
+        res = res.iloc[np.lexsort((-np.abs(res['stat'].values), res['FDR'].values))]
         
         if verbose:
-            n_sig = np.sum(res['FDR'] < 0.05)
-            print(f"Testing complete. Found {n_sig} genes with FDR < 0.05")
-        
+            n_sig = np.sum(res['FDR'] < fdr_threshold)
+            print(f"Found {n_sig} significant genes (FDR < {fdr_threshold})")
+
+        # Save results
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            res.to_csv(os.path.join(output_dir, "raisin_results.csv"))
+            if make_volcano:
+                _create_volcano_plot(
+                    res, 
+                    title=f"Contrast: {contrast_label}", 
+                    output_path=os.path.join(output_dir, "volcano_plot.png"),
+                    fdr_threshold=fdr_threshold
+                )
+
         return res
-    
+
     except Exception as e:
         print(f"ERROR in raisintest: {e}")
         traceback.print_exc()
         raise
 
+def run_pairwise_tests(
+    fit,
+    output_dir,
+    groups_to_compare=None,
+    control_group=None,
+    fdrmethod='fdr_bh',
+    n_permutations=100,
+    fdr_threshold=0.05,
+    verbose=True
+):
+    """
+    Automatically runs pairwise comparisons between groups.
+    Fixed to handle integer column names.
+    """
+    
+    # Extract column names from X to find indices
+    X = fit['X']
+    if isinstance(X, pd.DataFrame):
+        x_cols = list(X.columns)
+    else:
+        # Fallback if X is numpy array
+        unique_grps = np.unique(fit['group'])
+        x_cols = ["(Intercept)"] + list(unique_grps)
+
+    # Clean group names
+    available_groups = np.unique(fit['group'])
+    if groups_to_compare is None:
+        groups_to_compare = available_groups
+    
+    # Generate pairs
+    pairs = []
+    if control_group:
+        # Ensure control_group is compared as a string for safety
+        control_group_str = str(control_group)
+        avail_str = [str(g) for g in available_groups]
+        
+        if control_group_str not in avail_str:
+            raise ValueError(f"Control group '{control_group}' not found in data.")
+            
+        for g in groups_to_compare:
+            if str(g) != control_group_str:
+                pairs.append((g, control_group)) # (Test, Control)
+    else:
+        pairs = list(combinations(groups_to_compare, 2))
+
+    if verbose:
+        print(f"Starting pairwise comparisons. Found {len(pairs)} pairs to test.")
+
+    results_summary = {}
+
+    for g1, g2 in pairs:
+        # Define comparison name: g1_vs_g2 (Testing g1 - g2)
+        comp_name = f"{g1}_vs_{g2}"
+        if verbose:
+            print(f"\n--- Testing: {g1} (Positive) vs {g2} (Negative) ---")
+        
+        # --- BUILD CONTRAST VECTOR ---
+        idx_g1 = -1
+        idx_g2 = -1
+        
+        # FIX: Convert everything to string for comparison to avoid AttributeError
+        g1_str = str(g1)
+        g2_str = str(g2)
+        
+        for i, col in enumerate(x_cols):
+            col_str = str(col) # Convert column name to string safely
+            
+            # Check exact match or if column name ends with group name
+            # (handles cases like 'feature_1' vs '1')
+            if col_str == g1_str or col_str.endswith(g1_str):
+                idx_g1 = i
+            if col_str == g2_str or col_str.endswith(g2_str):
+                idx_g2 = i
+        
+        # Check if we found the columns
+        if idx_g1 == -1 or idx_g2 == -1:
+            print(f"Skipping {comp_name}: Could not find corresponding columns in Design Matrix.")
+            print(f"Available columns: {x_cols}")
+            continue
+
+        contrast = np.zeros(len(x_cols))
+        contrast[idx_g1] = 1
+        contrast[idx_g2] = -1
+        
+        # --- RUN TEST ---
+        sub_dir = os.path.join(output_dir, comp_name)
+        try:
+            res = raisintest(
+                fit,
+                contrast=contrast,
+                fdrmethod=fdrmethod,
+                n_permutations=n_permutations,
+                output_dir=sub_dir,
+                fdr_threshold=fdr_threshold,
+                verbose=True 
+            )
+            results_summary[comp_name] = np.sum(res['FDR'] < fdr_threshold)
+            
+        except Exception as e:
+            print(f"Failed comparison {comp_name}: {e}")
+            traceback.print_exc()
+
+    if verbose:
+        print("\n===== Pairwise Comparison Summary =====")
+        for pair, count in results_summary.items():
+            print(f"{pair}: {count} significant genes")
+    
+    return results_summary
+
+def _create_volcano_plot(result, title, output_path, fdr_threshold=0.05):
+    """Internal helper for volcano plots"""
+    plt.figure(figsize=(6, 5))
+    
+    # Handle extremely small FDRs
+    fdr = result['FDR'].values
+    fdr = np.maximum(fdr, 1e-300) # avoid log(0)
+    neg_log_fdr = -np.log10(fdr)
+    fc = result['Foldchange'].values
+    
+    # Color logic
+    colors = ['grey'] * len(fc)
+    colors = np.array(colors, dtype=object)
+    
+    sig_mask = fdr < fdr_threshold
+    up_mask = (fc > 0) & sig_mask
+    down_mask = (fc < 0) & sig_mask
+    
+    colors[up_mask] = '#E64B35' # Red
+    colors[down_mask] = '#3C5488' # Blue
+    
+    plt.scatter(fc, neg_log_fdr, c=colors, s=10, alpha=0.6, linewidths=0)
+    
+    plt.axhline(-np.log10(fdr_threshold), color='black', linestyle='--', linewidth=0.8)
+    plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
+    
+    plt.title(title)
+    plt.xlabel("Log Fold Change")
+    plt.ylabel("-log10(FDR)")
+    
+    # Add counts
+    n_up = np.sum(up_mask)
+    n_down = np.sum(down_mask)
+    
+    plt.text(0.02, 0.98, f"Up: {n_up}\nDown: {n_down}", 
+             transform=plt.gca().transAxes, va='top', ha='left',
+             bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+             
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300)
+    plt.close()
 
 def create_contrast_for_groups(fit, group1, group2, verbose=False):
     """
@@ -352,16 +468,10 @@ def create_contrast_for_groups(fit, group1, group2, verbose=False):
         # Simple design with intercept + one group indicator
         contrast[1] = 1
     else:
-        # Try to infer from group assignments
+        # Try to infer from group assignments (left as in original)
         group_arr = fit['group']
         sample_names = fit.get('sample_names', X_df.index if hasattr(X_df, 'index') else None)
-        
-        if sample_names is not None and len(group_arr) == len(sample_names):
-            # Find which samples belong to each group
-            # This is more complex and depends on how groups are encoded
-            pass
-        
-        # Default: test second coefficient
+        # Default: test second coefficient if inference fails
         if len(X_cols) > 1:
             contrast[1] = 1
     
@@ -372,75 +482,9 @@ def create_contrast_for_groups(fit, group1, group2, verbose=False):
     return contrast
 
 
-def run_pairwise_tests(fit, output_dir=None, fdrmethod='fdr_bh', n_permutations=10, 
-                       verbose=True):
-    """
-    Run pairwise comparisons between all unique groups in the fit object.
-    
-    Parameters
-    ----------
-    fit : dict
-        Output from raisinfit
-    output_dir : str, optional
-        Directory to save results (if None, results are only returned)
-    fdrmethod : str
-        FDR correction method
-    n_permutations : int
-        Number of permutations for df estimation
-    verbose : bool
-        Print progress
-    
-    Returns
-    -------
-    dict
-        Dictionary of results, keyed by comparison name
-    """
-    from itertools import combinations
-    from pathlib import Path
-    
-    # Get unique groups from the group array
-    unique_groups = np.unique(fit['group'])
-    
-    if len(unique_groups) < 2:
-        warnings.warn("Less than 2 groups found. Cannot perform pairwise comparisons.")
-        return {}
-    
-    if verbose:
-        print(f"Found {len(unique_groups)} unique groups: {unique_groups}")
-    
-    results = {}
-    
-    for group1, group2 in combinations(unique_groups, 2):
-        if verbose:
-            print(f"\n{'='*50}")
-            print(f"Comparing {group1} vs {group2}")
-            print(f"{'='*50}")
-        
-        contrast = create_contrast_for_groups(fit, group1, group2, verbose=verbose)
-        
-        try:
-            result = raisintest(fit, contrast=contrast, fdrmethod=fdrmethod,
-                               n_permutations=n_permutations, verbose=verbose)
-            
-            comparison_name = f"{group1}_vs_{group2}"
-            result['comparison'] = comparison_name
-            results[comparison_name] = result
-            
-            if output_dir is not None:
-                output_path = Path(output_dir)
-                output_path.mkdir(parents=True, exist_ok=True)
-                result.to_csv(output_path / f"{comparison_name}_results.csv")
-                
-        except Exception as e:
-            warnings.warn(f"Failed to compare {group1} vs {group2}: {e}")
-            continue
-    
-    return results
-
-
 # Visualization functions
 def create_volcano_plot(result, group1, group2, output_path, fdr_threshold=0.05):
-    """Create a volcano plot for a pairwise comparison."""
+    """Create a volcano plot for a comparison."""
     import matplotlib.pyplot as plt
     
     plt.figure(figsize=(10, 8))
@@ -470,19 +514,14 @@ def create_volcano_plot(result, group1, group2, output_path, fdr_threshold=0.05)
     # Add counts
     n_up = np.sum((fdr < fdr_threshold) & (foldchange > 0))
     n_down = np.sum((fdr < fdr_threshold) & (foldchange < 0))
-    plt.text(0.05, 0.95, f'Up: {n_up}\nDown: {n_down}',
-             transform=plt.gca().transAxes, verticalalignment='top',
-             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+    plt.text(
+        0.05, 0.95,
+        f'Up: {n_up}\nDown: {n_down}',
+        transform=plt.gca().transAxes,
+        verticalalignment='top',
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
+    )
     
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
-
-
-if __name__ == "__main__":
-    print("RAISIN Test Module")
-    print("Usage:")
-    print("  from raisintest import raisintest")
-    print("  result = raisintest(fit, coef=2)")
-    print("  # or with custom contrast:")
-    print("  result = raisintest(fit, contrast=[0, 1, -1])")

@@ -210,6 +210,9 @@ def proportion_test(
         Currently unused (kept for API compatibility).
     """
     
+    # Significance level used for visualization and summary
+    significance_level = 0.01
+
     # Validate that at least one source of grouping is provided
     if group_col is None and sample_to_clade is None:
         raise ValueError("Either group_col or sample_to_clade must be provided")
@@ -338,8 +341,38 @@ def proportion_test(
             output_dir=output_dir,
             sample_groups=sample_groups,
             results=all_results,
-            significance_level=0.01
+            significance_level=significance_level
         )
+
+        # -----------------------------------------------------------------
+        # Write summary TXT of significant findings
+        # -----------------------------------------------------------------
+        summary_path = os.path.join(output_dir, "proportion_test_significant_summary.txt")
+        lines = []
+        lines.append(
+            f"Significant cell type proportion differences (FDR < {significance_level})"
+        )
+        lines.append("")
+
+        for comp_name in sorted(all_results.keys()):
+            df = all_results[comp_name]
+            sig_df = df[df["FDR"] < significance_level]
+
+            lines.append(f"Comparison: {comp_name}")
+            if sig_df.empty:
+                lines.append("  No significant cell types.")
+            else:
+                for _, row in sig_df.iterrows():
+                    lines.append(
+                        f"  {row['celltype']}: "
+                        f"logFC={row['logFC']:.4f}, "
+                        f"p_value={row['p_value']:.4e}, "
+                        f"FDR={row['FDR']:.4e}"
+                    )
+            lines.append("")
+
+        with open(summary_path, "w") as f:
+            f.write("\n".join(lines))
     
     return all_results
 

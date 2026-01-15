@@ -14,7 +14,7 @@ from CCA_test import cca_pvalue_test
 from TSCAN import TSCAN
 from sample_distance.sample_distance import sample_distance
 from cluster import cluster
-from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results
+from trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
 from sample_clustering.proportion_test import proportion_test

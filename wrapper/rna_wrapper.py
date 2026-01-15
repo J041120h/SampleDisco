@@ -14,11 +14,11 @@ from CCA import CCA_Call
 from preparation.Cell_type import cell_types
 from CCA_test import find_optimal_cell_resolution, cca_pvalue_test
 from TSCAN import TSCAN
-from trajectory_diff_gene import run_integrated_differential_analysis
+from trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
 from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
-from sample_clustering.proportion_test import proportion_test
+from sample_clustering.proportion_test import proportion_test as run_proportion_test
 
 def rna_wrapper(
     # ===== Required Parameters =====
@@ -271,7 +271,7 @@ def rna_wrapper(
         status_flags["rna"]["cell_type_cluster"] = True
         AnnData_cell_path = temp_cell_path
         AnnData_sample_path = temp_sample_path
-        if cell_type_cluster or DimensionalityReduction or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or proportion_test or cca_optimal_cell_resolution or visualize_data:
+        if cell_type_cluster or DimensionalityReduction or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or proportion_test or cca_optimal_cell_resolution or RAISIN_analysis or  visualize_data:
             AnnData_cell = sc.read(AnnData_cell_path)
             AnnData_sample = sc.read(AnnData_sample_path)
     
@@ -529,57 +529,56 @@ def rna_wrapper(
                 verbose=trajectory_verbose,
                 origin=TSCAN_origin
             )
+            ptime_expression = pd.Series(
+                TSCAN_result_expression["pseudotime"]["main_path"],
+                name="tscan_pseudotime_expression"
+            ).reindex(pseudobulk_adata.obs.index)
+
+            ptime_proportion = pd.Series(
+                TSCAN_result_proportion["pseudotime"]["main_path"],
+                name="tscan_pseudotime_proportion"
+            ).reindex(pseudobulk_adata.obs.index)
             status_flags["rna"]["trajectory_analysis"] = True
 
-       # Trajectory differential gene analysis - UNIFIED NAMING
+        # Trajectory differential gene analysis - UNIFIED NAMING (SINGLE PSEUDOTIME)
         if trajectory_DGE:
-            print("Starting trajectory differential gene analysis...")
-            
-            if trajectory_supervised:
-                # CCA-based trajectory analysis
-                print("Running CCA-based differential analysis...")
-                
-                results = run_integrated_differential_analysis(
-                    trajectory_results= (first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression),
-                    pseudobulk_adata=pseudobulk_adata,
-                    trajectory_type="CCA",
-                    sample_col=sample_col,
-                    fdr_threshold=fdr_threshold,
-                    effect_size_threshold=effect_size_threshold,
-                    top_n_genes=top_n_genes,
-                    covariate_columns=trajectory_diff_gene_covariate,
-                    num_splines=num_splines,
-                    spline_order=spline_order,
-                    base_output_dir=trajectory_diff_gene_output_dir,
-                    visualization_gene_list=visualization_gene_list,
-                    visualize_all_deg=visualize_all_deg,
-                    top_n_heatmap=top_n_heatmap,
-                    verbose=trajectory_diff_gene_verbose
-                )
-            
-            else:
-                # TSCAN-based trajectory analysis
-                print("Running TSCAN-based differential analysis...")
-                all_path_results = run_integrated_differential_analysis(
-                    trajectory_results=TSCAN_result_expression,
-                    pseudobulk_adata=pseudobulk_adata,
-                    trajectory_type="TSCAN",
-                    sample_col=sample_col,
-                    fdr_threshold=fdr_threshold,
-                    effect_size_threshold=effect_size_threshold,
-                    top_n_genes=top_n_genes,
-                    covariate_columns=trajectory_diff_gene_covariate,
-                    num_splines=num_splines,
-                    spline_order=spline_order,
-                    base_output_dir=trajectory_diff_gene_output_dir,
-                    visualization_gene_list=visualization_gene_list,
-                    visualize_all_deg=visualize_all_deg,
-                    top_n_heatmap=top_n_heatmap,
-                    verbose=trajectory_diff_gene_verbose
-                )
-            
+            print("Running single-pseudotime GAM-based differential analysis...")
+
+            results = run_trajectory_gam_differential_gene_analysis(
+                pseudobulk_adata=pseudobulk_adata,
+                pseudotime_source=ptime_expression,  # <-- provide your sample-by-pseudotime table here
+                sample_col=sample_col,
+                pseudotime_col="pseudotime",  # change if your file uses another column name (e.g. "ptime")
+                covariate_columns=trajectory_diff_gene_covariate,
+                fdr_threshold=fdr_threshold,
+                effect_size_threshold=effect_size_threshold,
+                top_n_genes=top_n_genes,
+                num_splines=num_splines,
+                spline_order=spline_order,
+                output_dir=os.path.join(trajectory_diff_gene_output_dir, "expression"),  # renamed from base_output_dir
+                visualization_gene_list=visualization_gene_list,
+                verbose=trajectory_diff_gene_verbose
+            )
+            results = run_trajectory_gam_differential_gene_analysis(
+                pseudobulk_adata=pseudobulk_adata,
+                pseudotime_source=ptime_proportion,  # <-- provide your sample-by-pseudotime table here
+                sample_col=sample_col,
+                pseudotime_col="pseudotime",  # change if your file uses another column name (e.g. "ptime")
+                covariate_columns=trajectory_diff_gene_covariate,
+                fdr_threshold=fdr_threshold,
+                effect_size_threshold=effect_size_threshold,
+                top_n_genes=top_n_genes,
+                num_splines=num_splines,
+                spline_order=spline_order,
+                output_dir=os.path.join(trajectory_diff_gene_output_dir, "proportion"),  # renamed from base_output_dir
+                visualization_gene_list=visualization_gene_list,
+                verbose=trajectory_diff_gene_verbose
+            )
+
+            status_flags["rna"]["trajectory_analysis"] = True
             print("Trajectory differential gene analysis completed!")
             status_flags["rna"]["trajectory_dge"] = True
+
     
     # Clean up summary file if exists
     if os.path.exists(summary_sample_csv_path):
@@ -608,7 +607,6 @@ def rna_wrapper(
         print("[INFO] Starting proportion tests...")
         try:    
             if cluster_differential_gene_group_col is not None or len(expr_results) > 0:
-                from sample_clustering.proportion_test import proportion_test as run_proportion_test
                 run_proportion_test(
                     adata = AnnData_sample,
                     sample_col=sample_col,
@@ -620,7 +618,6 @@ def rna_wrapper(
                 )
                     
             if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
-                from sample_clustering.proportion_test import proportion_test as run_proportion_test
                 run_proportion_test(
                     adata = AnnData_sample,
                     sample_col=sample_col,
@@ -642,51 +639,54 @@ def rna_wrapper(
         try:
             if cluster_differential_gene_group_col is not None or len(expr_results) > 0:
                 fit = raisinfit(
-                    adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
+                    adata=AnnData_sample,
                     sample_col=sample_col,
-                    batch_key=batch_col,
+                    testtype='unpaired',
+                    batch_col=batch_col,
                     sample_to_clade=expr_results,
                     group_col=cluster_differential_gene_group_col,
                     verbose=verbose,
                     intercept=True,
                     n_jobs=-1,
                 )
-                run_pairwise_raisin_analysis(
+                run_pairwise_tests(
                     fit=fit,
-                    output_dir=os.path.join(rna_output_dir, 'raisin_results_expression', method),
-                    min_samples=2,
+                    output_dir=os.path.join(
+                        rna_output_dir, 'raisin_results_expression', method
+                    ),
                     fdrmethod='fdr_bh',
-                    n_permutations=10,
                     fdr_threshold=0.05,
                     verbose=True
                 )
             else:
                 print("[INFO] No expression results available. Skipping RAISIN analysis for expression.")
             
-            if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
-                fit = raisinfit(
-                    adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
-                    sample_col=sample_col,
-                    batch_key=batch_col,
-                    sample_to_clade=prop_results,
-                    group_col=cluster_differential_gene_group_col,
-                    verbose=verbose,
-                    intercept=True,
-                    n_jobs=-1,
-                )
-                run_pairwise_raisin_analysis(
-                    fit=fit,
-                    output_dir=os.path.join(rna_output_dir, 'raisin_results_proportion', method),
-                    min_samples=2,
-                    fdrmethod='fdr_bh',
-                    n_permutations=10,
-                    fdr_threshold=0.05,
-                    verbose=True
-                )
-            else:
-                print("[INFO] No proportion results available. Skipping RAISIN analysis for proportion.")
+            # if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
+            #     fit = raisinfit(
+            #         adata=AnnData_sample,
+            #         sample_col=sample_col,
+            #         testtype='unpaired',
+            #         batch_col=batch_col,
+            #         sample_to_clade=prop_results,  # (if this should be prop_results, change here)
+            #         group_col=cluster_differential_gene_group_col,
+            #         verbose=verbose,
+            #         intercept=True,
+            #         n_jobs=-1,
+            #     )
+            #     run_pairwise_tests(
+            #         fit=fit,
+            #         output_dir=os.path.join(
+            #             rna_output_dir, 'raisin_results_proportion', method
+            #         ),
+            #         fdrmethod='fdr_bh',
+            #         fdr_threshold=0.05,
+            #         verbose=True
+            #     )
+            # else:
+            #     print("[INFO] No proportion results available. Skipping RAISIN analysis for proportion.")
             
             print("[INFO] RAISIN analysis completed.")
+
         except Exception as e:
             print(f"[ERROR] Error in RAISIN analysis: {e}")
             import traceback
