@@ -18,7 +18,7 @@ from trajectory_diff_gene import run_integrated_differential_analysis
 from cluster import cluster
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
-from sample_clustering.proportion_test import proportion_DGE_test
+from sample_clustering.proportion_test import proportion_test
 
 def rna_wrapper(
     # ===== Required Parameters =====
@@ -271,7 +271,7 @@ def rna_wrapper(
         status_flags["rna"]["cell_type_cluster"] = True
         AnnData_cell_path = temp_cell_path
         AnnData_sample_path = temp_sample_path
-        if cell_type_cluster or DimensionalityReduction or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or cca_optimal_cell_resolution or visualize_data:
+        if cell_type_cluster or DimensionalityReduction or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or proportion_test or cca_optimal_cell_resolution or visualize_data:
             AnnData_cell = sc.read(AnnData_cell_path)
             AnnData_sample = sc.read(AnnData_sample_path)
     
@@ -586,7 +586,8 @@ def rna_wrapper(
         os.remove(summary_sample_csv_path)
 
     # Step 6: Clustering and Differential Gene Expression
-    prop_results, expr_results = None, None
+    # Step 6: Clustering and Differential Gene Expression
+    prop_results, expr_results = {}, {}
     if sample_cluster:
         print("Starting clustering and differential gene expression...")
         if cluster_distance_method not in sample_distance_methods:
@@ -597,95 +598,99 @@ def rna_wrapper(
                 generalFolder=rna_output_dir,
                 Kmeans=Kmeans_based_cluster_flag,
                 methods=Tree_building_method,
-                distance_method=method,  # Changed from sample_distance_methods to method
+                distance_method=method,
                 number_of_clusters=cluster_number,
                 sample_to_clade_user=user_provided_sample_to_clade
             )
             
-            # Proportion test moved here from cluster function
+    # Proportion test
     if proportion_test:
         print("[INFO] Starting proportion tests...")
         try:    
-            if expr_results is not None:
-                unique_expr_clades = len(set(expr_results.values()))
-                if unique_expr_clades <= 1:
-                    print("[INFO] Only one clade found in expression results. Skipping proportion test.")
-                else:
-                    proportion_DGE_test(
-                        os.path.join(rna_output_dir, "sample_cluster"), 
-                        expr_results, 
-                        sub_folder="expression", 
-                        verbose=False
-                    )
+            if cluster_differential_gene_group_col is not None or len(expr_results) > 0:
+                from sample_clustering.proportion_test import proportion_test as run_proportion_test
+                run_proportion_test(
+                    adata = AnnData_sample,
+                    sample_col=sample_col,
+                    sample_to_clade=expr_results,
+                    group_col=cluster_differential_gene_group_col,
+                    celltype_col=celltype_col,
+                    output_dir=os.path.join(rna_output_dir, "sample_cluster", method, "expression", "proportion_test"),
+                    verbose=True
+                )
                     
-            if prop_results is not None:
-                unique_prop_clades = len(set(prop_results.values()))
-                if unique_prop_clades <= 1:
-                    print("[INFO] Only one clade found in proportion results. Skipping proportion test.")
-                else:
-                    proportion_DGE_test(
-                        os.path.join(rna_output_dir, "sample_cluster"), 
-                        prop_results, 
-                        sub_folder="proportion", 
-                        verbose=False
-                    )
+            if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
+                from sample_clustering.proportion_test import proportion_test as run_proportion_test
+                run_proportion_test(
+                    adata = AnnData_sample,
+                    sample_col=sample_col,
+                    sample_to_clade=prop_results,
+                    group_col=cluster_differential_gene_group_col,
+                    celltype_col=celltype_col,
+                    output_dir=os.path.join(rna_output_dir, "sample_cluster", method, "proportion", "proportion_test"),
+                    verbose=True
+                )
             print("[INFO] Proportion tests completed.")
         except Exception as e:
             print(f"[ERROR] Error in proportion test: {e}")
-    print("Running RAISIN analysis...")
-            
-    if expr_results is not None or cluster_differential_gene_group_col is not None:
-        unique_expr_clades = len(set(expr_results.values()))
-        if unique_expr_clades <= 1:
-            print("Only one clade found in expression results. Skipping RAISIN analysis.")
-        else:
-            fit = raisinfit(
-                adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
-                sample_col=sample_col,
-                batch_key=batch_col,
-                sample_to_clade=expr_results,
-                group_col = cluster_differential_gene_group_col,
-                verbose=verbose,
-                intercept=True,
-                n_jobs=-1,
-            )
-            run_pairwise_raisin_analysis(
-                fit=fit,
-                output_dir=os.path.join(rna_output_dir, 'raisin_results_expression', method),
-                min_samples=2,
-                fdrmethod='fdr_bh',
-                n_permutations=10,
-                fdr_threshold=0.05,
-                verbose=True
-            )
-    else:
-        print("No expression results available. Skipping RAISIN analysis.")
+            import traceback
+            traceback.print_exc()
     
-    if prop_results is not None or cluster_differential_gene_group_col is not None:
-        unique_prop_clades = len(set(prop_results.values()))
-        if unique_prop_clades <= 1:
-            print("Only one clade found in proportion results. Skipping RAISIN analysis.")
-        else:
-            fit = raisinfit(
-                adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
-                sample_col=sample_col,
-                batch_key=batch_col,
-                sample_to_clade=prop_results,
-                group_col = cluster_differential_gene_group_col,
-                intercept=True,
-                n_jobs=-1,
-            )
-            run_pairwise_raisin_analysis(
-                fit=fit,
-                output_dir=os.path.join(rna_output_dir, 'raisin_results_proportion', method),
-                min_samples=2,
-                fdrmethod='fdr_bh',
-                n_permutations=10,
-                fdr_threshold=0.05,
-                verbose=True
-            )
-    else:
-        print("No proportion results available. Skipping RAISIN analysis.")
+    # RAISIN analysis
+    if RAISIN_analysis:
+        print("[INFO] Running RAISIN analysis...")
+        try:
+            if cluster_differential_gene_group_col is not None or len(expr_results) > 0:
+                fit = raisinfit(
+                    adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
+                    sample_col=sample_col,
+                    batch_key=batch_col,
+                    sample_to_clade=expr_results,
+                    group_col=cluster_differential_gene_group_col,
+                    verbose=verbose,
+                    intercept=True,
+                    n_jobs=-1,
+                )
+                run_pairwise_raisin_analysis(
+                    fit=fit,
+                    output_dir=os.path.join(rna_output_dir, 'raisin_results_expression', method),
+                    min_samples=2,
+                    fdrmethod='fdr_bh',
+                    n_permutations=10,
+                    fdr_threshold=0.05,
+                    verbose=True
+                )
+            else:
+                print("[INFO] No expression results available. Skipping RAISIN analysis for expression.")
+            
+            if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
+                fit = raisinfit(
+                    adata_path=os.path.join(rna_output_dir, 'preprocess', 'adata_sample.h5ad'),
+                    sample_col=sample_col,
+                    batch_key=batch_col,
+                    sample_to_clade=prop_results,
+                    group_col=cluster_differential_gene_group_col,
+                    verbose=verbose,
+                    intercept=True,
+                    n_jobs=-1,
+                )
+                run_pairwise_raisin_analysis(
+                    fit=fit,
+                    output_dir=os.path.join(rna_output_dir, 'raisin_results_proportion', method),
+                    min_samples=2,
+                    fdrmethod='fdr_bh',
+                    n_permutations=10,
+                    fdr_threshold=0.05,
+                    verbose=True
+                )
+            else:
+                print("[INFO] No proportion results available. Skipping RAISIN analysis for proportion.")
+            
+            print("[INFO] RAISIN analysis completed.")
+        except Exception as e:
+            print(f"[ERROR] Error in RAISIN analysis: {e}")
+            import traceback
+            traceback.print_exc()
 
     status_flags["rna"]["cluster_dge"] = True
     

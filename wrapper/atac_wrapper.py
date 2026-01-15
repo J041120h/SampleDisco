@@ -17,7 +17,7 @@ from cluster import cluster
 from trajectory_diff_gene import run_integrated_differential_analysis, summarize_results
 from sample_clustering.RAISIN import *
 from sample_clustering.RAISIN_TEST import *
-from sample_clustering.proportion_test import proportion_DGE_test
+from sample_clustering.proportion_test import proportion_test
 
 def atac_wrapper(
     # ===== Required Parameters =====
@@ -527,9 +527,10 @@ def atac_wrapper(
                 if unique_expr_clades <= 1:
                     print("[INFO] Only one clade found in ATAC expression results. Skipping proportion test.")
                 else:
-                    proportion_DGE_test(
+                    proportion_test(
                         os.path.join(atac_output_dir, "sample_cluster"), 
                         expr_results, 
+                        group_col = cluster_differential_gene_group_col,
                         sub_folder="expression", 
                         verbose=False
                     )
@@ -541,9 +542,10 @@ def atac_wrapper(
                 if unique_prop_clades <= 1:
                     print("[INFO] Only one clade found in ATAC proportion results. Skipping proportion test.")
                 else:
-                    proportion_DGE_test(
+                    proportion_test(
                         os.path.join(atac_output_dir, "sample_cluster"), 
                         prop_results, 
+                        group_col = cluster_differential_gene_group_col,
                         sub_folder="proportion", 
                         verbose=False
                     )

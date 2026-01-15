@@ -34,7 +34,7 @@ rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
-rna_cluster_dge: true
+rna_cluster_dge: false
 rna_visualize_data: false
 
 # RNA Paths for Skipping Processes
@@ -136,8 +136,8 @@ rna_tree_building_method:
   - "HRC_VEC"
   - "NN"
   - "UPGMA"
-rna_proportion_test: false
-rna_raisin_analysis: true
+rna_proportion_test: true
+rna_raisin_analysis: false
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null

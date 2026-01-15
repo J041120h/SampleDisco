@@ -8,7 +8,7 @@ Resuming process from previous progress:
         "sample_distance_calculation": false,
         "trajectory_analysis": true,
         "trajectory_dge": false,
-        "cluster_dge": false,
+        "cluster_dge": true,
         "visualization": false
     },
     "atac": {
@@ -46,9 +46,11 @@ RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
 Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-Running RAISIN analysis...
+[INFO] Starting proportion tests...
+[INFO] Proportion tests completed.
+RNA analysis completed successfully!
 
-✗ RNA pipeline failed with error: 'NoneType' object has no attribute 'values'
+✓ RNA pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
@@ -60,9 +62,9 @@ RNA Pipeline: ⚠ PARTIAL
   - sample_distance_calculation: ✗
   - trajectory_analysis: ✓
   - trajectory_dge: ✗
-  - cluster_dge: ✗
+  - cluster_dge: ✓
   - visualization: ✗
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 35.0492 seconds
+Execution time: 49.2096 seconds
