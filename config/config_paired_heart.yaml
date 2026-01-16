@@ -49,7 +49,7 @@ rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: null
 rna_markers: null
-rna_cluster_resolution: 0.5
+rna_cluster_resolution: 0.8
 rna_num_pcs: 20
 rna_num_harmony: 30
 rna_num_features: 2000
@@ -141,6 +141,7 @@ rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
+rna_cluster_differential_gene_group_col: "sev.level"
 
 # ========================================
 # ATAC PIPELINE PARAMETERS
@@ -264,6 +265,7 @@ atac_raisin_analysis: false
 atac_cluster_distance_method: "cosine"
 atac_cluster_number: 4
 atac_user_provided_sample_to_clade: null
+atac_cluster_differential_gene_group_col: "sev.level"
 
 # ATAC Visualization parameters
 atac_figsize: [10, 8]

@@ -12,7 +12,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
-use_gpu: false
+use_gpu: true
 initialization: false
 verbose: true
 save_intermediate: true
@@ -31,8 +31,8 @@ rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: false
-rna_trajectory_dge: false
+rna_trajectory_analysis: true
+rna_trajectory_dge: true
 rna_sample_cluster: false
 rna_cluster_dge: false
 rna_visualize_data: false
@@ -47,7 +47,7 @@ rna_sample_col: "sample"
 rna_grouping_columns: null
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: null
+rna_batch_col: 'batch'
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -99,7 +99,7 @@ rna_trajectory_verbose: true
 rna_tscan_origin: null
 
 # RNA Trajectory Differential Gene Parameters
-rna_fdr_threshold: 0.05
+rna_fdr_threshold: 0.01
 rna_effect_size_threshold: 1
 rna_top_n_genes: 100
 rna_trajectory_diff_gene_covariate: null
@@ -137,7 +137,7 @@ rna_tree_building_method:
   - "NN"
   - "UPGMA"
 rna_proportion_test: false
-rna_raisin_analysis: true
+rna_raisin_analysis: false
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
@@ -302,9 +302,9 @@ multiomics_output_dir: null
 multiomics_run_glue: false
 multiomics_run_glue_cell_types: false
 multiomics_run_integrate_preprocess: false
-multiomics_run_dimensionality_reduction: false
+multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: false
-multiomics_run_find_optimal_resolution: true
+multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: true
@@ -320,7 +320,7 @@ multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"
 multiomics_sample_col: "sample"
-multiomics_batch_col: null
+multiomics_batch_col: 'batch'
 multiomics_celltype_col: "cell_type"
 multiomics_verbose: true
 multiomics_use_gpu: true
@@ -408,7 +408,7 @@ multiomics_optimization_target: "rna"
 multiomics_dr_type: "expression"
 multiomics_resolution_n_features: 40000
 multiomics_sev_col: "sev.level"
-multiomics_resolution_batch_col: null
+multiomics_resolution_batch_col: 'batch'
 multiomics_resolution_sample_col: "sample"
 multiomics_resolution_modality_col: "modality"
 multiomics_resolution_use_rep: "X_glue"

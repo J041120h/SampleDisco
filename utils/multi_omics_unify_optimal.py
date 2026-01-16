@@ -1,6 +1,7 @@
 import os
 import scanpy as sc
 import numpy as np
+import pandas as pd
 from typing import Optional, Union
 
 
@@ -22,6 +23,9 @@ def replace_optimal_dimension_reduction(
     3. Replaces X_DR_expression with optimal expression results
     4. Replaces X_DR_proportion with optimal proportion results
     5. Saves the updated pseudobulk_sample.h5ad
+    6. Updates the unified embedding CSV files in <base_path>/embeddings:
+         - sample_expression_embedding.csv
+         - sample_proportion_embedding.csv
     
     Parameters:
     -----------
@@ -46,23 +50,6 @@ def replace_optimal_dimension_reduction(
     --------
     sc.AnnData
         Updated pseudobulk AnnData with optimal embeddings
-        
-    Example:
-    --------
-    >>> # Using default paths
-    >>> adata = replace_optimal_dimension_reduction(
-    ...     base_path='/path/to/multiomics_output',
-    ...     optimization_target='rna'
-    ... )
-    
-    >>> # Using custom paths
-    >>> adata = replace_optimal_dimension_reduction(
-    ...     base_path='/path/to/multiomics_output',
-    ...     expression_resolution_dir='/custom/expression/path',
-    ...     proportion_resolution_dir='/custom/proportion/path',
-    ...     pseudobulk_path='/custom/pseudobulk/path.h5ad',
-    ...     optimization_target='atac'
-    ... )
     """
     
     # Construct default file paths if not provided
@@ -276,6 +263,59 @@ def replace_optimal_dimension_reduction(
     except Exception as e:
         raise RuntimeError(f"[ERROR] Failed to save updated pseudobulk file: {str(e)}")
     
+    # -------------------------------------------------
+    # NEW: Update CSV embeddings like the main pipeline
+    # -------------------------------------------------
+    try:
+        if verbose:
+            print(f"[Replace DR] Updating embedding CSV files...")
+        
+        embedding_dir = os.path.join(base_path, "embeddings")
+        os.makedirs(embedding_dir, exist_ok=True)
+        
+        def _save_embedding_csv_from_uns(uns_key: str, filename: str, desc: str) -> bool:
+            if uns_key not in pseudobulk_sample.uns:
+                if verbose:
+                    print(f"  ⚠ {desc} not found in pseudobulk_sample.uns['{uns_key}']; skipping CSV update")
+                return False
+            
+            data = pseudobulk_sample.uns[uns_key]
+            
+            # Convert to DataFrame
+            if isinstance(data, np.ndarray):
+                df = pd.DataFrame(data)
+            elif isinstance(data, pd.DataFrame):
+                df = data
+            else:
+                try:
+                    df = pd.DataFrame(data)
+                except Exception:
+                    if verbose:
+                        print(f"  ⚠ Skipping {desc}: could not convert type {type(data)} to DataFrame")
+                    return False
+            
+            out_path = os.path.join(embedding_dir, filename)
+            df.to_csv(out_path)
+            
+            if verbose:
+                print(f"  ✓ Saved {desc} to {out_path} (shape: {df.shape})")
+            return True
+        
+        _ = _save_embedding_csv_from_uns(
+            "X_DR_expression",
+            "sample_expression_embedding.csv",
+            "expression embedding"
+        )
+        _ = _save_embedding_csv_from_uns(
+            "X_DR_proportion",
+            "sample_proportion_embedding.csv",
+            "proportion embedding"
+        )
+    
+    except Exception as e:
+        if verbose:
+            print(f"  ⚠ Failed to update embedding CSV files: {e}")
+    
     return pseudobulk_sample
 
 
@@ -302,13 +342,6 @@ def verify_optimal_embeddings(
         - 'expression_shape': tuple or None
         - 'proportion_shape': tuple or None
         - 'missing_keys': list
-        
-    Example:
-    --------
-    >>> results = verify_optimal_embeddings(
-    ...     pseudobulk_path='/path/to/pseudobulk_sample.h5ad'
-    ... )
-    >>> print(f"Expression DR present: {results['has_expression_dr']}")
     """
     
     if not os.path.exists(pseudobulk_path):

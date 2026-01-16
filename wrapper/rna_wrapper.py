@@ -559,21 +559,21 @@ def rna_wrapper(
                 visualization_gene_list=visualization_gene_list,
                 verbose=trajectory_diff_gene_verbose
             )
-            results = run_trajectory_gam_differential_gene_analysis(
-                pseudobulk_adata=pseudobulk_adata,
-                pseudotime_source=ptime_proportion,  # <-- provide your sample-by-pseudotime table here
-                sample_col=sample_col,
-                pseudotime_col="pseudotime",  # change if your file uses another column name (e.g. "ptime")
-                covariate_columns=trajectory_diff_gene_covariate,
-                fdr_threshold=fdr_threshold,
-                effect_size_threshold=effect_size_threshold,
-                top_n_genes=top_n_genes,
-                num_splines=num_splines,
-                spline_order=spline_order,
-                output_dir=os.path.join(trajectory_diff_gene_output_dir, "proportion"),  # renamed from base_output_dir
-                visualization_gene_list=visualization_gene_list,
-                verbose=trajectory_diff_gene_verbose
-            )
+            # results = run_trajectory_gam_differential_gene_analysis(
+            #     pseudobulk_adata=pseudobulk_adata,
+            #     pseudotime_source=ptime_proportion,  # <-- provide your sample-by-pseudotime table here
+            #     sample_col=sample_col,
+            #     pseudotime_col="pseudotime",  # change if your file uses another column name (e.g. "ptime")
+            #     covariate_columns=trajectory_diff_gene_covariate,
+            #     fdr_threshold=fdr_threshold,
+            #     effect_size_threshold=effect_size_threshold,
+            #     top_n_genes=top_n_genes,
+            #     num_splines=num_splines,
+            #     spline_order=spline_order,
+            #     output_dir=os.path.join(trajectory_diff_gene_output_dir, "proportion"),  # renamed from base_output_dir
+            #     visualization_gene_list=visualization_gene_list,
+            #     verbose=trajectory_diff_gene_verbose
+            # )
 
             status_flags["rna"]["trajectory_analysis"] = True
             print("Trajectory differential gene analysis completed!")

@@ -8,6 +8,7 @@ SIMPLIFIED:
 - Fits one GAM per gene (smooth over pseudotime + optional covariates).
 - BH-FDR correction + effect-size computation + optional pseudoDEG selection.
 - Saves results + summary for this single pseudotime.
+- Generates comprehensive Lamian-style visualizations.
 
 FIX STRATEGY:
 - Pre-emptively converts sparse gene matrices to dense NumPy arrays.
@@ -407,8 +408,13 @@ def fit_gam_models_for_genes(
     fdr_threshold: float = 0.05,
     verbose: bool = False
 ) -> Tuple[pd.DataFrame, Dict[str, LinearGAM]]:
-    """Fit GAM models for genes with spline parameter adjustment."""
-    
+    """
+    Fit GAM models for genes with spline parameter adjustment.
+
+    IMPORTANT (Option B):
+    For each gene, we only use samples where that gene is present
+    (Y[gene] != 0) for fitting and testing.
+    """
     # helper for ensuring everything is dense numpy array
     def _to_dense_2d(mat) -> np.ndarray:
         if isinstance(mat, pd.DataFrame):
@@ -419,11 +425,11 @@ def fit_gam_models_for_genes(
                 except Exception:
                     pass
             mat = mat.to_numpy()
-        
+
         # Double check for sparse matrix type
         if issparse(mat):
             mat = mat.toarray()
-            
+
         return np.asarray(mat, dtype=np.float64, order="C")
 
     n_samples = X.shape[0]
@@ -441,6 +447,7 @@ def fit_gam_models_for_genes(
     X_dense = _to_dense_2d(X)
     Y_dense = _to_dense_2d(Y)
 
+    # finite rows in X (same for all genes)
     finite_rows = np.isfinite(X_dense).all(axis=1)
 
     try:
@@ -467,6 +474,7 @@ def fit_gam_models_for_genes(
     # DEBUG counters for skip reasons
     skip_counts = {
         "no_column": 0,
+        "no_nonzero_samples": 0,
         "too_few_samples": 0,
         "low_variance": 0,
         "fit_error": 0,
@@ -485,9 +493,20 @@ def fit_gam_models_for_genes(
             continue
 
         y_raw = Y_dense[:, col_idx]
-        mask = finite_rows & np.isfinite(y_raw)
+
+        # Mask: finite in X, finite in y, AND gene present (non-zero)
+        base_mask = finite_rows & np.isfinite(y_raw)
+        nonzero_mask = y_raw != 0.0
+        mask = base_mask & nonzero_mask
 
         if mask.sum() == 0:
+            skip_counts["no_nonzero_samples"] += 1
+            if verbose and skip_counts["no_nonzero_samples"] <= 5:
+                print(f"[DEBUG] Skipping gene '{gene}' because it is zero in all samples.")
+            continue
+
+        # (keep for bookkeeping, though with base_mask this should rarely trigger)
+        if base_mask.sum() == 0:
             skip_counts["nonfinite_rows"] += 1
             if verbose and skip_counts["nonfinite_rows"] <= 5:
                 print(f"[DEBUG] Skipping gene '{gene}' because all rows are non-finite after masking.")
@@ -496,20 +515,22 @@ def fit_gam_models_for_genes(
         X_fit = X_dense[mask]
         y_fit = y_raw[mask]
 
+        # require enough samples relative to spline parameters
         min_needed = adj_order + adj_n_splines + 2
         if y_fit.size < min_needed:
             skip_counts["too_few_samples"] += 1
             if verbose and skip_counts["too_few_samples"] <= 5:
                 print(
-                    f"[DEBUG] Skipping gene '{gene}' due to too few samples: "
+                    f"[DEBUG] Skipping gene '{gene}' due to too few non-zero samples: "
                     f"{y_fit.size} < {min_needed} required."
                 )
             continue
 
+        # variance check on the non-zero subset
         if np.var(y_fit) < 1e-10:
             skip_counts["low_variance"] += 1
             if verbose and skip_counts["low_variance"] <= 5:
-                print(f"[DEBUG] Skipping gene '{gene}' due to extremely low variance.")
+                print(f"[DEBUG] Skipping gene '{gene}' due to extremely low variance (among non-zero samples).")
             continue
 
         try:
@@ -550,10 +571,10 @@ def fit_gam_models_for_genes(
     return res_df.sort_values("fdr").reset_index(drop=True), gam_models
 
 
+
 # =============================================================================
 # EFFECT SIZE + DEG SELECTION
 # =============================================================================
-
 def calculate_effect_size(
     X: pd.DataFrame,
     Y: pd.DataFrame,
@@ -561,21 +582,42 @@ def calculate_effect_size(
     genes: List[str],
     verbose: bool = False
 ) -> pd.DataFrame:
+    """
+    Calculate effect sizes for genes.
+
+    IMPORTANT (Option B):
+    Effect size is computed on the same subset of samples used for fitting:
+    rows where the gene is present (Y[gene] != 0) and all covariates are finite.
+    """
     effect_sizes = []
     error_count = 0
+
+    # precompute dense X and finite mask once
+    X_values = X.values if isinstance(X, pd.DataFrame) else np.asarray(X)
+    finite_X_rows = np.isfinite(X_values).all(axis=1)
 
     for gene in genes:
         if gene not in gam_models or gene not in Y.columns:
             continue
         try:
             gam = gam_models[gene]
-            X_values = X.values if isinstance(X, pd.DataFrame) else X
-            y_pred = gam.predict(X_values)
-            y_true = Y[gene].values
+
+            y_full = Y[gene].values
+            finite_y = np.isfinite(y_full)
+            nonzero = y_full != 0.0
+
+            mask = finite_X_rows & finite_y & nonzero
+            if mask.sum() == 0:
+                continue
+
+            X_used = X_values[mask]
+            y_true = y_full[mask]
+
+            y_pred = gam.predict(X_used)
 
             residuals = y_true - y_pred
             df_e = max(1, len(y_true) - gam.statistics_["edof"])
-            rss = np.sum(residuals**2)
+            rss = np.sum(residuals ** 2)
 
             if rss > 0 and df_e > 0:
                 es = (np.max(y_pred) - np.min(y_pred)) / np.sqrt(rss / df_e)
@@ -591,6 +633,7 @@ def calculate_effect_size(
               f"(errors on {error_count} genes).")
 
     return pd.DataFrame(effect_sizes, columns=["gene", "effect_size"])
+
 
 
 def determine_pseudoDEGs(
@@ -707,12 +750,12 @@ def save_results(
         print(f"[DEBUG]   pseudoDEGs: {deg_path if 'pseudoDEG' in results_df.columns else 'N/A'}")
         print(f"[DEBUG]   summary: {summary_file}")
 
-
 def summarize_results(
     results: pd.DataFrame,
     top_n: int = 20,
     output_file: Optional[str] = None,
-    verbose: bool = True
+    verbose: bool = True,
+    fdr_threshold: float = 0.05,
 ) -> None:
     if len(results) == 0:
         msg = "No genes were successfully analyzed."
@@ -726,14 +769,31 @@ def summarize_results(
 
     lines = ["=== DIFFERENTIAL GENE EXPRESSION SUMMARY ==="]
     lines.append(f"Total genes analyzed: {len(results)}")
+    
     if "fdr" in results.columns:
-        lines.append(f"Significant genes (FDR < 0.05): {int((results['fdr'] < 0.05).sum())}")
+        n_sig = int((results['fdr'] < fdr_threshold).sum())
+        lines.append(f"Significant genes (FDR < {fdr_threshold}): {n_sig}")
+
     if "pseudoDEG" in results.columns:
         n_deg = int(results["pseudoDEG"].sum())
         lines.append(f"Selected DEGs: {n_deg}")
+        
         if n_deg > 0:
             lines.append(f"\nTop {min(top_n, n_deg)} DEGs:")
-            top = results[results["pseudoDEG"]].nsmallest(min(top_n, n_deg), "fdr")
+            
+            # Filter for pseudoDEGs
+            deg_df = results[results["pseudoDEG"]].copy()
+            
+            # FIX: Sort by Effect Size (Descending) if available, otherwise by FDR (Ascending)
+            if "effect_size" in deg_df.columns:
+                top = deg_df.nlargest(min(top_n, n_deg), "effect_size")
+                sort_criteria = "Effect Size"
+            else:
+                top = deg_df.nsmallest(min(top_n, n_deg), "fdr")
+                sort_criteria = "FDR"
+                
+            lines.append(f"(Sorted by {sort_criteria})")
+
             for i, (_, row) in enumerate(top.iterrows(), 1):
                 if "effect_size" in row and pd.notna(row["effect_size"]):
                     lines.append(f"{i}. {row['gene']}: FDR={row['fdr']:.4e}, Effect={row['effect_size']:.3f}")
@@ -747,7 +807,6 @@ def summarize_results(
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "w") as f:
             f.write(out)
-
 
 def generate_gene_visualizations(
     gene_list: List[str],
@@ -792,9 +851,8 @@ def generate_gene_visualizations(
 
 
 # =============================================================================
-# SINGLE-TRAJECTORY RUNNER (DEBUG-AWARE)
+# SINGLE-TRAJECTORY RUNNER (DEBUG-AWARE) WITH INTEGRATED VISUALIZATION
 # =============================================================================
-
 def run_trajectory_gam_differential_gene_analysis(
     pseudobulk_adata: ad.AnnData,
     pseudotime_source: Union[str, pd.DataFrame, Dict],
@@ -802,13 +860,18 @@ def run_trajectory_gam_differential_gene_analysis(
     sample_col: str = "sample",
     pseudotime_col: str = "pseudotime",
     covariate_columns: Optional[List[str]] = None,
-    fdr_threshold: float = 0.05,
+    fdr_threshold: float = 0.01,
     effect_size_threshold: float = 1.0,
     top_n_genes: int = 100,
     num_splines: int = 5,
     spline_order: int = 3,
     output_dir: str = "trajectory_diff_gene_results_single",
     visualization_gene_list: Optional[List[str]] = None,
+    # New visualization parameters
+    generate_visualizations: bool = True,
+    group_col: Optional[str] = None,
+    n_clusters: int = 5,
+    top_n_genes_for_curves: int = 20,
     verbose: bool = True
 ) -> pd.DataFrame:
     """
@@ -819,6 +882,48 @@ def run_trajectory_gam_differential_gene_analysis(
       - DataFrame
       - dict with 'pseudotime_df'/'pseudotime_file'
       - dict mapping {sample_id: pseudotime}
+    
+    Parameters
+    ----------
+    pseudobulk_adata : AnnData
+        Pseudobulk expression data (samples x genes)
+    pseudotime_source : str, DataFrame, or dict
+        Pseudotime information for samples
+    sample_col : str
+        Column name for sample IDs
+    pseudotime_col : str
+        Column name for pseudotime values
+    covariate_columns : list, optional
+        Additional covariates for GAM model
+    fdr_threshold : float
+        FDR threshold for significance
+    effect_size_threshold : float
+        Effect size threshold for pseudoDEG selection
+    top_n_genes : int
+        Number of top genes to select as pseudoDEGs
+    num_splines : int
+        Number of splines for GAM
+    spline_order : int
+        Order of spline basis
+    output_dir : str
+        Output directory
+    visualization_gene_list : list, optional
+        Specific genes to generate individual visualizations for
+    generate_visualizations : bool
+        Whether to generate Lamian-style visualization plots (default: True)
+    group_col : str, optional
+        Column for group comparison in XDE visualizations (e.g., 'condition', 'severity')
+    n_clusters : int
+        Number of clusters for heatmap visualization (default: 5)
+    top_n_genes_for_curves : int
+        Number of genes to show in expression curve plots (default: 20)
+    verbose : bool
+        Print progress messages
+        
+    Returns
+    -------
+    results : pd.DataFrame
+        DataFrame with analysis results for all genes
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -828,7 +933,7 @@ def run_trajectory_gam_differential_gene_analysis(
 
     # 1. Load pseudotime
     if verbose:
-        print("[DEBUG] Step 1/4: Loading and aligning pseudotime...")
+        print("[DEBUG] Step 1/5: Loading and aligning pseudotime...")
     try:
         ptime_dict = load_sample_pseudotime(
             pseudobulk_adata=pseudobulk_adata,
@@ -844,7 +949,7 @@ def run_trajectory_gam_differential_gene_analysis(
 
     # 2. Prepare GAM inputs
     if verbose:
-        print("[DEBUG] Step 2/4: Preparing GAM input matrices...")
+        print("[DEBUG] Step 2/5: Preparing GAM input matrices...")
     try:
         X, Y, gene_names = prepare_gam_input_data_improved(
             pseudobulk_adata=pseudobulk_adata,
@@ -859,7 +964,7 @@ def run_trajectory_gam_differential_gene_analysis(
         raise
 
     if verbose:
-        print(f"[DEBUG] Step 3/4: Fitting GAM models for {len(gene_names)} genes...")
+        print(f"[DEBUG] Step 3/5: Fitting GAM models for {len(gene_names)} genes...")
 
     # 3. Fit GAMs
     try:
@@ -886,7 +991,7 @@ def run_trajectory_gam_differential_gene_analysis(
     sig_genes = stat_results[stat_results["fdr"] < fdr_threshold]["gene"].tolist()
     if verbose:
         print(f"[DEBUG] Number of significant genes (FDR < {fdr_threshold}): {len(sig_genes)}")
-        print("[DEBUG] Step 4/4: Calculating effect sizes for significant genes...")
+        print("[DEBUG] Step 4/5: Calculating effect sizes for significant genes...")
 
     # 4. Effect size & DEG selection
     try:
@@ -929,17 +1034,18 @@ def run_trajectory_gam_differential_gene_analysis(
             results=results,
             top_n=min(20, len(results)),
             output_file=os.path.join(output_dir, "differential_gene_result.txt"),
-            verbose=verbose
+            verbose=verbose,
+            fdr_threshold=fdr_threshold
         )
     except Exception as e:
         if verbose:
             print(f"[DEBUG] ERROR during summary writing: {e}")
         raise
 
-    # Optional gene visualizations
+    # Optional gene visualizations (legacy)
     if visualization_gene_list and len(gam_models) > 0:
         if verbose:
-            print("[DEBUG] Generating gene-level visualizations...")
+            print("[DEBUG] Generating gene-level visualizations (legacy)...")
         try:
             generate_gene_visualizations(
                 gene_list=visualization_gene_list,
@@ -953,6 +1059,36 @@ def run_trajectory_gam_differential_gene_analysis(
         except Exception as e:
             if verbose:
                 print(f"[DEBUG] ERROR during gene visualization: {e}")
+
+    # ==========================================================================
+    # Step 5: Generate Lamian-style visualizations (IMPROVED)
+    # ==========================================================================
+    if generate_visualizations:
+        if verbose:
+            print("[DEBUG] Step 5/5: Generating Lamian-style visualizations...")
+        try:
+            from trajectory_DGE_visualization import generate_all_visualizations
+            generate_all_visualizations(
+                X=X,
+                Y=Y,
+                results=results,
+                gam_models=gam_models,            # <-- KEY: pass GAM models
+                pseudobulk_adata=pseudobulk_adata,
+                output_dir=output_dir,
+                group_col=group_col,
+                n_clusters=n_clusters,
+                top_n_genes_for_curves=top_n_genes_for_curves,
+                fdr_threshold=fdr_threshold,
+                verbose=verbose
+            )
+        except Exception as e:
+            if verbose:
+                print(f"[DEBUG] ERROR during visualization generation: {e}")
+                import traceback
+                traceback.print_exc()
+    else:
+        if verbose:
+            print("[DEBUG] Step 5/5: Skipping visualizations (generate_visualizations=False)")
 
     if verbose:
         print(f"Done. Results saved to: {output_dir}")

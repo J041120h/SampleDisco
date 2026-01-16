@@ -1,550 +1,203 @@
-2026-01-14 09:57:42,937 - INFO - ======================================================================
-2026-01-14 09:57:42,937 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:42,937 - INFO - ======================================================================
-2026-01-14 09:57:42,937 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:42,937 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings/sample_expression_embedding.csv
-2026-01-14 09:57:42,937 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pseudotime_expression.csv
-2026-01-14 09:57:42,937 - INFO -   Method name:       SD_expression
-2026-01-14 09:57:42,937 - INFO -   Label column:      month
-2026-01-14 09:57:42,937 - INFO -   Month column:      month
-2026-01-14 09:57:42,937 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/long_covid/rna
-2026-01-14 09:57:42,937 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_expression
-2026-01-14 09:57:42,937 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:42,937 - INFO - ======================================================================
-2026-01-14 09:57:42,937 - INFO - Running: embedding_visualization
-2026-01-14 09:57:42,937 - INFO - Running Embedding Visualization...
-2026-01-14 09:57:43,272 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:57:43,272 - INFO - Running: trajectory_anova
-2026-01-14 09:57:43,272 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:57:43,287 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.4837
-2026-01-14 09:57:43,287 - INFO - Running: trajectory_analysis
-2026-01-14 09:57:43,287 - INFO - Running Trajectory Analysis...
-2026-01-14 09:57:44,079 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:57:44,079 - INFO - Running: multimodal_integration
-2026-01-14 09:57:44,079 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:57:44,084 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:57:44,084 - INFO - Computing paired sample distances...
-2026-01-14 09:57:44,085 - INFO - Computing modality mixing...
-2026-01-14 09:57:44,102 - INFO - Computing month preservation...
-2026-01-14 09:57:44,103 - INFO - Running permutation tests...
-2026-01-14 09:57:44,264 - INFO - Creating visualizations...
-2026-01-14 09:57:45,521 - INFO - 
-============================================================
-Multimodal Integration: SD_expression
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 1.0737
-   P-value: 8.00e-03
-
-============================================================
-2026-01-14 09:57:45,522 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:57:45,526 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'SD_expression'
-2026-01-14 09:57:45,526 - INFO - ======================================================================
-2026-01-14 09:57:45,527 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:45,527 - INFO - ======================================================================
-2026-01-14 09:57:45,527 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:45,527 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings/sample_proportion_embedding.csv
-2026-01-14 09:57:45,527 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pseudotime_proportion.csv
-2026-01-14 09:57:45,527 - INFO -   Method name:       SD_proportion
-2026-01-14 09:57:45,527 - INFO -   Label column:      month
-2026-01-14 09:57:45,527 - INFO -   Month column:      month
-2026-01-14 09:57:45,527 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/long_covid/rna
-2026-01-14 09:57:45,527 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/long_covid/rna/benchmark_results_SD_proportion
-2026-01-14 09:57:45,527 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:45,527 - INFO - ======================================================================
-2026-01-14 09:57:45,527 - INFO - Running: embedding_visualization
-2026-01-14 09:57:45,527 - INFO - Running Embedding Visualization...
-2026-01-14 09:57:45,830 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:57:45,830 - INFO - Running: trajectory_anova
-2026-01-14 09:57:45,830 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:57:45,842 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.0726
-2026-01-14 09:57:45,842 - INFO - Running: trajectory_analysis
-2026-01-14 09:57:45,842 - INFO - Running Trajectory Analysis...
-2026-01-14 09:57:46,601 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:57:46,601 - INFO - Running: multimodal_integration
-2026-01-14 09:57:46,601 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:57:46,605 - INFO - Aligned data: 35 samples, 5 dimensions
-2026-01-14 09:57:46,605 - INFO - Computing paired sample distances...
-2026-01-14 09:57:46,607 - INFO - Computing modality mixing...
-2026-01-14 09:57:46,620 - INFO - Computing month preservation...
-2026-01-14 09:57:46,620 - INFO - Running permutation tests...
-2026-01-14 09:57:46,781 - INFO - Creating visualizations...
-2026-01-14 09:57:47,623 - INFO - 
-============================================================
-Multimodal Integration: SD_proportion
-============================================================
-
-Total samples: 35
-Embedding dimensions: 5
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9765
-   P-value: 4.36e-01
-
-============================================================
-2026-01-14 09:57:47,624 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:57:47,627 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'SD_proportion'
-2026-01-14 09:57:47,641 - INFO - ======================================================================
-2026-01-14 09:57:47,641 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:47,641 - INFO - ======================================================================
-2026-01-14 09:57:47,641 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:47,641 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/gedi_sample_embedding.csv
-2026-01-14 09:57:47,641 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/trajectory/pseudotime_results.csv
-2026-01-14 09:57:47,641 - INFO -   Method name:       GEDI
-2026-01-14 09:57:47,641 - INFO -   Label column:      month
-2026-01-14 09:57:47,641 - INFO -   Month column:      month
-2026-01-14 09:57:47,641 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI
-2026-01-14 09:57:47,641 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/GEDI/benchmark_results_GEDI
-2026-01-14 09:57:47,641 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:47,641 - INFO - ======================================================================
-2026-01-14 09:57:47,641 - INFO - Running: embedding_visualization
-2026-01-14 09:57:47,641 - INFO - Running Embedding Visualization...
-2026-01-14 09:57:47,973 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:57:47,974 - INFO - Running: trajectory_anova
-2026-01-14 09:57:47,974 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:57:48,002 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.0499
-2026-01-14 09:57:48,002 - INFO - Running: trajectory_analysis
-2026-01-14 09:57:48,002 - INFO - Running Trajectory Analysis...
-2026-01-14 09:57:48,759 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:57:48,759 - INFO - Running: multimodal_integration
-2026-01-14 09:57:48,759 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:57:48,763 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:57:48,763 - INFO - Computing paired sample distances...
-2026-01-14 09:57:48,765 - INFO - Computing modality mixing...
-2026-01-14 09:57:48,778 - INFO - Computing month preservation...
-2026-01-14 09:57:48,778 - INFO - Running permutation tests...
-2026-01-14 09:57:48,935 - INFO - Creating visualizations...
-2026-01-14 09:57:50,135 - INFO - 
-============================================================
-Multimodal Integration: GEDI
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9546
-   P-value: 8.11e-01
-
-============================================================
-2026-01-14 09:57:50,135 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:57:50,138 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'GEDI'
-2026-01-14 09:57:50,139 - INFO - ======================================================================
-2026-01-14 09:57:50,139 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:50,139 - INFO - ======================================================================
-2026-01-14 09:57:50,139 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:50,139 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/knn_divergence_mds_10d.csv
-2026-01-14 09:57:50,139 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/trajectory/pseudotime_results.csv
-2026-01-14 09:57:50,139 - INFO -   Method name:       Gloscope
-2026-01-14 09:57:50,139 - INFO -   Label column:      month
-2026-01-14 09:57:50,139 - INFO -   Month column:      month
-2026-01-14 09:57:50,139 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope
-2026-01-14 09:57:50,139 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/Gloscope/benchmark_results_Gloscope
-2026-01-14 09:57:50,139 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:50,139 - INFO - ======================================================================
-2026-01-14 09:57:50,139 - INFO - Running: embedding_visualization
-2026-01-14 09:57:50,140 - INFO - Running Embedding Visualization...
-2026-01-14 09:57:50,446 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:57:50,446 - INFO - Running: trajectory_anova
-2026-01-14 09:57:50,446 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:57:50,459 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.0837
-2026-01-14 09:57:50,459 - INFO - Running: trajectory_analysis
-2026-01-14 09:57:50,459 - INFO - Running Trajectory Analysis...
-2026-01-14 09:57:51,210 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:57:51,210 - INFO - Running: multimodal_integration
-2026-01-14 09:57:51,210 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:57:51,215 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:57:51,215 - INFO - Computing paired sample distances...
-2026-01-14 09:57:51,216 - INFO - Computing modality mixing...
-2026-01-14 09:57:51,230 - INFO - Computing month preservation...
-2026-01-14 09:57:51,231 - INFO - Running permutation tests...
-2026-01-14 09:57:51,391 - INFO - Creating visualizations...
-2026-01-14 09:57:52,488 - INFO - 
-============================================================
-Multimodal Integration: Gloscope
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9419
-   P-value: 9.10e-01
-
-============================================================
-2026-01-14 09:57:52,489 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:57:52,491 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'Gloscope'
-2026-01-14 09:57:52,493 - INFO - ======================================================================
-2026-01-14 09:57:52,493 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:52,493 - INFO - ======================================================================
-2026-01-14 09:57:52,493 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:52,493 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/sample_embeddings.csv
-2026-01-14 09:57:52,493 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/trajectory/pseudotime_results.csv
-2026-01-14 09:57:52,493 - INFO -   Method name:       MFA
-2026-01-14 09:57:52,493 - INFO -   Label column:      month
-2026-01-14 09:57:52,493 - INFO -   Month column:      month
-2026-01-14 09:57:52,493 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA
-2026-01-14 09:57:52,493 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/MFA/benchmark_results_MFA
-2026-01-14 09:57:52,493 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:52,493 - INFO - ======================================================================
-2026-01-14 09:57:52,493 - INFO - Running: embedding_visualization
-2026-01-14 09:57:52,493 - INFO - Running Embedding Visualization...
-2026-01-14 09:57:52,816 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:57:52,816 - INFO - Running: trajectory_anova
-2026-01-14 09:57:52,816 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:57:52,828 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.0892
-2026-01-14 09:57:52,828 - INFO - Running: trajectory_analysis
-2026-01-14 09:57:52,828 - INFO - Running Trajectory Analysis...
-2026-01-14 09:57:53,563 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:57:53,563 - INFO - Running: multimodal_integration
-2026-01-14 09:57:53,563 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:57:53,568 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:57:53,568 - INFO - Computing paired sample distances...
-2026-01-14 09:57:53,569 - INFO - Computing modality mixing...
-2026-01-14 09:57:53,582 - INFO - Computing month preservation...
-2026-01-14 09:57:53,583 - INFO - Running permutation tests...
-2026-01-14 09:57:53,743 - INFO - Creating visualizations...
-2026-01-14 09:57:54,945 - INFO - 
-============================================================
-Multimodal Integration: MFA
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.8951
-   P-value: 8.56e-01
-
-============================================================
-2026-01-14 09:57:54,945 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:57:54,948 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'MFA'
-2026-01-14 09:57:54,968 - INFO - ======================================================================
-2026-01-14 09:57:54,968 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:54,968 - INFO - ======================================================================
-2026-01-14 09:57:54,968 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:54,968 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/pseudobulk/pca_embeddings.csv
-2026-01-14 09:57:54,968 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/pseudobulk/trajectory/pseudotime_results.csv
-2026-01-14 09:57:54,968 - INFO -   Method name:       pseudobulk
-2026-01-14 09:57:54,968 - INFO -   Label column:      month
-2026-01-14 09:57:54,968 - INFO -   Month column:      month
-2026-01-14 09:57:54,968 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk
-2026-01-14 09:57:54,968 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pseudobulk/benchmark_results_pseudobulk
-2026-01-14 09:57:54,968 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:54,968 - INFO - ======================================================================
-2026-01-14 09:57:54,968 - INFO - Running: embedding_visualization
-2026-01-14 09:57:54,968 - INFO - Running Embedding Visualization...
-2026-01-14 09:57:55,263 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:57:55,264 - INFO - Running: trajectory_anova
-2026-01-14 09:57:55,264 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:57:55,298 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.1547
-2026-01-14 09:57:55,298 - INFO - Running: trajectory_analysis
-2026-01-14 09:57:55,298 - INFO - Running Trajectory Analysis...
-2026-01-14 09:57:56,055 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:57:56,055 - INFO - Running: multimodal_integration
-2026-01-14 09:57:56,055 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:57:56,059 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:57:56,059 - INFO - Computing paired sample distances...
-2026-01-14 09:57:56,061 - INFO - Computing modality mixing...
-2026-01-14 09:57:56,074 - INFO - Computing month preservation...
-2026-01-14 09:57:56,075 - INFO - Running permutation tests...
-2026-01-14 09:57:56,233 - INFO - Creating visualizations...
-2026-01-14 09:57:57,428 - INFO - 
-============================================================
-Multimodal Integration: pseudobulk
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9546
-   P-value: 8.40e-01
-
-============================================================
-2026-01-14 09:57:57,428 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:57:57,431 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'pseudobulk'
-2026-01-14 09:57:57,446 - INFO - ======================================================================
-2026-01-14 09:57:57,446 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:57,446 - INFO - ======================================================================
-2026-01-14 09:57:57,446 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:57,446 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/wasserstein_distance_mds_10d.csv
-2026-01-14 09:57:57,446 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/trajectory/pseudotime_results.csv
-2026-01-14 09:57:57,447 - INFO -   Method name:       pilot
-2026-01-14 09:57:57,447 - INFO -   Label column:      month
-2026-01-14 09:57:57,447 - INFO -   Month column:      month
-2026-01-14 09:57:57,447 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot
-2026-01-14 09:57:57,447 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/pilot/benchmark_results_pilot
-2026-01-14 09:57:57,447 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:57,447 - INFO - ======================================================================
-2026-01-14 09:57:57,447 - INFO - Running: embedding_visualization
-2026-01-14 09:57:57,447 - INFO - Running Embedding Visualization...
-2026-01-14 09:57:57,742 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:57:57,742 - INFO - Running: trajectory_anova
-2026-01-14 09:57:57,742 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:57:57,754 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.1021
-2026-01-14 09:57:57,755 - INFO - Running: trajectory_analysis
-2026-01-14 09:57:57,755 - INFO - Running Trajectory Analysis...
-2026-01-14 09:57:58,559 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:57:58,559 - INFO - Running: multimodal_integration
-2026-01-14 09:57:58,559 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:57:58,563 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:57:58,563 - INFO - Computing paired sample distances...
-2026-01-14 09:57:58,564 - INFO - Computing modality mixing...
-2026-01-14 09:57:58,579 - INFO - Computing month preservation...
-2026-01-14 09:57:58,579 - INFO - Running permutation tests...
-2026-01-14 09:57:58,739 - INFO - Creating visualizations...
-2026-01-14 09:57:59,914 - INFO - 
-============================================================
-Multimodal Integration: pilot
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9614
-   P-value: 7.54e-01
-
-============================================================
-2026-01-14 09:57:59,914 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:57:59,917 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'pilot'
-2026-01-14 09:57:59,918 - INFO - ======================================================================
-2026-01-14 09:57:59,918 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:57:59,918 - INFO - ======================================================================
-2026-01-14 09:57:59,918 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:57:59,918 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/35_qot_distance_matrix_mds_10d.csv
-2026-01-14 09:57:59,918 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/trajectory/pseudotime_results.csv
-2026-01-14 09:57:59,918 - INFO -   Method name:       QOT
-2026-01-14 09:57:59,918 - INFO -   Label column:      month
-2026-01-14 09:57:59,918 - INFO -   Month column:      month
-2026-01-14 09:57:59,918 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT
-2026-01-14 09:57:59,918 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/QOT/benchmark_results_QOT
-2026-01-14 09:57:59,918 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:57:59,918 - INFO - ======================================================================
-2026-01-14 09:57:59,918 - INFO - Running: embedding_visualization
-2026-01-14 09:57:59,918 - INFO - Running Embedding Visualization...
-2026-01-14 09:58:00,200 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:58:00,200 - INFO - Running: trajectory_anova
-2026-01-14 09:58:00,200 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:58:00,212 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.0777
-2026-01-14 09:58:00,212 - INFO - Running: trajectory_analysis
-2026-01-14 09:58:00,212 - INFO - Running Trajectory Analysis...
-2026-01-14 09:58:00,981 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:58:00,981 - INFO - Running: multimodal_integration
-2026-01-14 09:58:00,981 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:58:00,986 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:58:00,986 - INFO - Computing paired sample distances...
-2026-01-14 09:58:00,987 - INFO - Computing modality mixing...
-2026-01-14 09:58:01,001 - INFO - Computing month preservation...
-2026-01-14 09:58:01,001 - INFO - Running permutation tests...
-2026-01-14 09:58:01,160 - INFO - Creating visualizations...
-2026-01-14 09:58:02,371 - INFO - 
-============================================================
-Multimodal Integration: QOT
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9320
-   P-value: 9.85e-01
-
-============================================================
-2026-01-14 09:58:02,371 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:58:02,374 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'QOT'
-2026-01-14 09:58:02,375 - INFO - ======================================================================
-2026-01-14 09:58:02,375 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:58:02,375 - INFO - ======================================================================
-2026-01-14 09:58:02,375 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:58:02,375 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/sample_embeddings_full.csv
-2026-01-14 09:58:02,375 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/trajectory/pseudotime_results.csv
-2026-01-14 09:58:02,375 - INFO -   Method name:       scPoli
-2026-01-14 09:58:02,375 - INFO -   Label column:      month
-2026-01-14 09:58:02,375 - INFO -   Month column:      month
-2026-01-14 09:58:02,375 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli
-2026-01-14 09:58:02,375 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/scPoli/benchmark_results_scPoli
-2026-01-14 09:58:02,375 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:58:02,375 - INFO - ======================================================================
-2026-01-14 09:58:02,375 - INFO - Running: embedding_visualization
-2026-01-14 09:58:02,375 - INFO - Running Embedding Visualization...
-2026-01-14 09:58:02,669 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:58:02,669 - INFO - Running: trajectory_anova
-2026-01-14 09:58:02,669 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:58:02,698 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.0823
-2026-01-14 09:58:02,699 - INFO - Running: trajectory_analysis
-2026-01-14 09:58:02,699 - INFO - Running Trajectory Analysis...
-2026-01-14 09:58:03,526 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:58:03,526 - INFO - Running: multimodal_integration
-2026-01-14 09:58:03,526 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:58:03,531 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:58:03,531 - INFO - Computing paired sample distances...
-2026-01-14 09:58:03,532 - INFO - Computing modality mixing...
-2026-01-14 09:58:03,546 - INFO - Computing month preservation...
-2026-01-14 09:58:03,546 - INFO - Running permutation tests...
-2026-01-14 09:58:03,705 - INFO - Creating visualizations...
-2026-01-14 09:58:04,842 - INFO - 
-============================================================
-Multimodal Integration: scPoli
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9544
-   P-value: 9.75e-01
-
-============================================================
-2026-01-14 09:58:04,843 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:58:04,846 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'scPoli'
-2026-01-14 09:58:04,847 - INFO - ======================================================================
-2026-01-14 09:58:04,847 - INFO - Initialized Comprehensive BenchmarkWrapper
-2026-01-14 09:58:04,847 - INFO - ======================================================================
-2026-01-14 09:58:04,847 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/long_covid/sample_meta.csv
-2026-01-14 09:58:04,847 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/sample_embedding.csv
-2026-01-14 09:58:04,847 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/trajectory/pseudotime_results.csv
-2026-01-14 09:58:04,847 - INFO -   Method name:       MUSTARD
-2026-01-14 09:58:04,847 - INFO -   Label column:      month
-2026-01-14 09:58:04,847 - INFO -   Month column:      month
-2026-01-14 09:58:04,847 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard
-2026-01-14 09:58:04,847 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_long_covid/mustard/benchmark_results_MUSTARD
-2026-01-14 09:58:04,847 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv
-2026-01-14 09:58:04,847 - INFO - ======================================================================
-2026-01-14 09:58:04,847 - INFO - Running: embedding_visualization
-2026-01-14 09:58:04,847 - INFO - Running Embedding Visualization...
-2026-01-14 09:58:05,139 - INFO - ✓ Embedding visualization completed.
-2026-01-14 09:58:05,139 - INFO - Running: trajectory_anova
-2026-01-14 09:58:05,139 - INFO - Running Trajectory ANOVA Analysis...
-2026-01-14 09:58:05,151 - INFO - ✓ Trajectory ANOVA completed. Eta-sq: 0.1119
-2026-01-14 09:58:05,151 - INFO - Running: trajectory_analysis
-2026-01-14 09:58:05,151 - INFO - Running Trajectory Analysis...
-2026-01-14 09:58:05,914 - INFO - ✓ Trajectory analysis completed.
-2026-01-14 09:58:05,914 - INFO - Running: multimodal_integration
-2026-01-14 09:58:05,914 - INFO - Running Multimodal Integration Benchmark...
-2026-01-14 09:58:05,918 - INFO - Aligned data: 35 samples, 10 dimensions
-2026-01-14 09:58:05,918 - INFO - Computing paired sample distances...
-2026-01-14 09:58:05,919 - INFO - Computing modality mixing...
-2026-01-14 09:58:05,933 - INFO - Computing month preservation...
-2026-01-14 09:58:05,933 - INFO - Running permutation tests...
-2026-01-14 09:58:06,092 - INFO - Creating visualizations...
-2026-01-14 09:58:07,066 - INFO - 
-============================================================
-Multimodal Integration: MUSTARD
-============================================================
-
-Total samples: 35
-Embedding dimensions: 10
-
---- KEY METRICS ---
-
-1. Mean Paired Distance (lower = better)
-   Value: nan
-   P-value: nan
-
-2. ASW Modality (higher = better)
-   Value: nan
-   P-value: nan
-
-3. Month Preservation Score (higher = better)
-   Value: 0.9722
-   P-value: 7.42e-01
-
-============================================================
-2026-01-14 09:58:07,066 - INFO - ✓ Multimodal integration benchmark completed.
-2026-01-14 09:58:07,069 - INFO - ✓ Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_long_covid/benchmark_summary_long_covid.csv with column 'MUSTARD'
+2026-01-16 07:07:49 | [INFO] init
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+... storing 'database' as categorical
+... storing 'tissue' as categorical
+... storing 'sex' as categorical
+... storing 'disease_state' as categorical
+... storing 'organ_part' as categorical
+... storing 'total_counts_mt' as categorical
+... storing 'pct_counts_mt' as categorical
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 640, in rna_wrapper
+    fit = raisinfit(
+  File "/users/hjiang/GenoDistance/code/sample_clustering/RAISIN.py", line 549, in raisinfit
+    raise KeyError(
+KeyError: "group_col 'sev.level' not found in adata.obs. Available: ['database', 'dataset', 'batch', 'tissue', 'libsize_rna', 'libsize_atac', 'source_file', 'sample', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'n_genes', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'cell_type']"

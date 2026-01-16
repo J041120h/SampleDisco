@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -21,12 +21,12 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/lutea.h5ad'
+rna_count_data_path: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad'
 rna_sample_meta_path: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
-rna_preprocessing: true
+rna_preprocessing: false
 rna_cell_type_cluster: true
 rna_cca_optimal_cell_resolution: true
 rna_dimensionality_reduction: false
@@ -141,6 +141,7 @@ rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
+rna_cluster_differential_gene_group_col: "sev.level"
 
 # ========================================
 # ATAC PIPELINE PARAMETERS
@@ -264,6 +265,7 @@ atac_raisin_analysis: false
 atac_cluster_distance_method: "cosine"
 atac_cluster_number: 4
 atac_user_provided_sample_to_clade: null
+atac_cluster_differential_gene_group_col: "sev.level"
 
 # ATAC Visualization parameters
 atac_figsize: [10, 8]
@@ -291,9 +293,9 @@ atac_plot_pseudobulk_batch_test_proportion_flag: false
 # MULTIOMICS PIPELINE PARAMETERS
 # ========================================
 # Multiomics Required Parameters
-multiomics_rna_file: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/lutea.h5ad'
-multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/lutea.h5ad"
-multiomics_output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea"
+multiomics_rna_file: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/rna/retina.h5ad'
+multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/atac/retina.h5ad"
+multiomics_output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina"
 
 # Multiomics Main Control Flags
 multiomics_run_glue: false

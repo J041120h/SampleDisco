@@ -531,12 +531,16 @@ def compute_pseudobulk_gpu(
         var=pd.DataFrame(index=unique_genes)
     )
 
-    # Final HVG selection on GPU
+    # Final HVG selection on GPU and SUBSET
     sc.pp.filter_genes(concat, min_cells=1)
     n_final = min(n_features, concat.n_vars)
     to_gpu(concat)
     rsc.pp.highly_variable_genes(concat, n_top_genes=n_final)
     to_cpu(concat)
+    
+    # ============ IMPROVEMENT: Actually subset to HVGs ============
+    concat = concat[:, concat.var["highly_variable"]].copy()
+    # ==============================================================
 
     if verbose:
         print(f"[Pseudobulk] Final features: {concat.n_vars}")

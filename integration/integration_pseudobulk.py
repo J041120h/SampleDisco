@@ -2,7 +2,7 @@
 """
 GPU-accelerated pseudobulk computation using rapids_singlecell.
 
-Modified version: HVG selection uses only RNA cells.
+Modified version: HVG selection uses only RNA cells (both rounds).
 """
 
 import os
@@ -506,7 +506,7 @@ def compute_pseudobulk_gpu(
     """
     GPU-accelerated pseudobulk computation.
     
-    Modified: HVG selection uses only RNA cells.
+    Modified: HVG selection uses only RNA cells (both Round 1 and Round 2).
     
     Parameters
     ----------
@@ -517,7 +517,7 @@ def compute_pseudobulk_gpu(
     """
     if verbose:
         print(f"[Pseudobulk] Using GPU (rapids_singlecell)")
-        print(f"[Pseudobulk] HVG selection will use {hvg_modality} cells only")
+        print(f"[Pseudobulk] HVG selection will use {hvg_modality} cells only (both rounds)")
     clear_gpu_memory()
 
     os.makedirs(os.path.join(output_dir, "pseudobulk"), exist_ok=True)
@@ -596,9 +596,9 @@ def compute_pseudobulk_gpu(
             pb_all.obs[combined_batch] = pb_all.obs[batch_cols].astype(str).agg("|".join, axis=1)
             pb_rna.obs[combined_batch] = pb_rna.obs[batch_cols].astype(str).agg("|".join, axis=1)
 
-    # Phase 2: Process cell types
+    # Phase 2: Process cell types (Round 1 HVG selection)
     if verbose:
-        print("[Pseudobulk] Phase 2: Processing cell types...")
+        print("[Pseudobulk] Phase 2: Processing cell types (Round 1 HVG)...")
         print(f"  Step 2a: Selecting HVGs from {hvg_modality} cells")
         print(f"  Step 2b: Extracting expression from ALL cells")
 
@@ -666,38 +666,98 @@ def compute_pseudobulk_gpu(
     if verbose:
         print(f"[Pseudobulk] Retained {len(cell_types)} cell types")
 
-    # Phase 3: Final concatenation
+    # Phase 3: Build concatenated matrix from ALL cells
     if verbose:
-        print("[Pseudobulk] Phase 3: Building final matrix...")
+        print("[Pseudobulk] Phase 3: Building concatenated matrix from ALL cells...")
 
     unique_genes = sorted(set(all_genes))
     gene_idx = {g: j for j, g in enumerate(unique_genes)}
 
-    concat_matrix = np.zeros((len(samples), len(unique_genes)), dtype=np.float32)
+    concat_matrix_all = np.zeros((len(samples), len(unique_genes)), dtype=np.float32)
     for i, sample in enumerate(samples):
         if sample in hvg_data:
             for g, v in hvg_data[sample].items():
                 if g in gene_idx:
-                    concat_matrix[i, gene_idx[g]] = v
+                    concat_matrix_all[i, gene_idx[g]] = v
 
-    concat = sc.AnnData(
-        X=concat_matrix,
+    concat_all = sc.AnnData(
+        X=concat_matrix_all,
         obs=pd.DataFrame(index=samples),
         var=pd.DataFrame(index=unique_genes)
     )
 
-    # Final HVG selection on GPU
-    sc.pp.filter_genes(concat, min_cells=1)
-    n_final = min(n_features, concat.n_vars)
-    to_gpu(concat)
-    rsc.pp.highly_variable_genes(concat, n_top_genes=n_final)
-    to_cpu(concat)
+    # ============ NEW: Build concatenated matrix from RNA cells for Round 2 HVG ============
+    if verbose:
+        print(f"[Pseudobulk] Phase 3b: Building concatenated matrix from {hvg_modality} cells for Round 2 HVG...")
+
+    # Build RNA-only expression data for Round 2 HVG selection
+    hvg_data_rna: Dict[str, Dict[str, float]] = {}
+    
+    for i, ct in enumerate(cell_types):
+        if ct in rna_cell_types and ct in pb_rna.layers:
+            try:
+                # Get HVGs from Round 1
+                ct_genes = [g for g in unique_genes if g.startswith(f"{ct} - ")]
+                if not ct_genes:
+                    continue
+                
+                # Extract base gene names (without cell type prefix)
+                base_genes = [g.split(' - ', 1)[1] for g in ct_genes]
+                
+                # Process RNA layer with these genes
+                result_rna = process_celltype_layer_with_hvg_list(
+                    pb_rna.layers[ct], pb_rna.obs, pb_rna.var, ct,
+                    base_genes, combined_batch, preserve_list,
+                    normalize, target_sum, atac, combat_timeout, verbose=False
+                )
+                
+                if result_rna is not None:
+                    genes_rna, expr_rna = result_rna
+                    for j, sample in enumerate(pb_rna.obs.index):
+                        hvg_data_rna.setdefault(sample, {}).update(
+                            {g: float(expr_rna[j, k]) for k, g in enumerate(genes_rna)}
+                        )
+            except Exception as e:
+                if verbose:
+                    print(f"    Warning: Could not process {ct} for Round 2 HVG: {e}")
+
+    # Build RNA-only matrix
+    concat_matrix_rna = np.zeros((len(samples), len(unique_genes)), dtype=np.float32)
+    for i, sample in enumerate(samples):
+        if sample in hvg_data_rna:
+            for g, v in hvg_data_rna[sample].items():
+                if g in gene_idx:
+                    concat_matrix_rna[i, gene_idx[g]] = v
+
+    concat_rna = sc.AnnData(
+        X=concat_matrix_rna,
+        obs=pd.DataFrame(index=samples),
+        var=pd.DataFrame(index=unique_genes)
+    )
+    # ========================================================================================
+
+    # Round 2 HVG selection on RNA-only concatenated matrix
+    if verbose:
+        print(f"[Pseudobulk] Phase 4: Round 2 HVG selection from {hvg_modality} cells...")
+    
+    sc.pp.filter_genes(concat_rna, min_cells=1)
+    n_final = min(n_features, concat_rna.n_vars)
+    to_gpu(concat_rna)
+    rsc.pp.highly_variable_genes(concat_rna, n_top_genes=n_final)
+    to_cpu(concat_rna)
+
+    # Get HVG mask from RNA and apply to ALL cells matrix
+    hvg_mask = concat_rna.var["highly_variable"].values
+    hvg_genes_round2 = concat_rna.var.index[hvg_mask].tolist()
+    
+    # Subset the ALL cells matrix to these HVGs
+    concat_final = concat_all[:, hvg_genes_round2].copy()
 
     if verbose:
-        print(f"[Pseudobulk] Final features: {concat.n_vars}")
+        print(f"[Pseudobulk] Final features: {concat_final.n_vars} (selected from {hvg_modality} cells, applied to ALL cells)")
 
-    # Build expression DataFrame
-    final_genes = set(concat.var.index)
+    # Build expression DataFrame using final HVGs
+    final_genes = set(concat_final.var.index)
     ct_groups = {}
     for g in final_genes:
         ct = g.split(' - ')[0]
@@ -716,18 +776,18 @@ def compute_pseudobulk_gpu(
                     names.append(g)
             expr_df.at[ct, sample] = pd.Series(vals, index=names) if vals else pd.Series(dtype=float)
 
-    # Phase 4: Proportions
+    # Phase 5: Proportions
     if verbose:
-        print("[Pseudobulk] Phase 4: Computing proportions...")
+        print("[Pseudobulk] Phase 5: Computing proportions...")
     props = compute_proportions(adata, samples, cell_types, sample_col, celltype_col)
-    concat.uns["cell_proportions"] = props
+    concat_final.uns["cell_proportions"] = props
 
     clear_gpu_memory()
 
     if verbose:
         print("[Pseudobulk] Complete")
 
-    return expr_df, props, concat
+    return expr_df, props, concat_final
 
 
 def compute_pseudobulk_adata_linux(
@@ -759,7 +819,7 @@ def compute_pseudobulk_adata_linux(
     """
     if verbose:
         print(f"[Pseudobulk] Input: {adata.n_obs} cells, {adata.n_vars} genes")
-        print(f"[Pseudobulk] HVG selection modality: {hvg_modality}")
+        print(f"[Pseudobulk] HVG selection modality: {hvg_modality} (both rounds)")
 
     set_global_seed(seed=42, verbose=verbose)
 

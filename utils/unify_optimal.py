@@ -1,5 +1,7 @@
 import os
 import scanpy as sc
+import pandas as pd
+import numpy as np
 
 
 def replace_optimal_dimension_reduction(
@@ -16,6 +18,8 @@ def replace_optimal_dimension_reduction(
     3. Replaces X_DR_expression with optimal expression results
     4. Replaces X_DR_proportion with optimal proportion results
     5. Saves the updated pseudobulk_sample.h5ad
+    6. Updates the unified embedding CSV files in <base_path>/embeddings
+       (sample_expression_embedding.csv, sample_proportion_embedding.csv)
     
     Parameters:
     -----------
@@ -189,5 +193,58 @@ def replace_optimal_dimension_reduction(
     
     except Exception as e:
         raise RuntimeError(f"Failed to save updated pseudobulk file: {str(e)}")
+    
+    # -------------------------------------------------
+    # NEW: Update CSV embeddings like the main pipeline
+    # -------------------------------------------------
+    try:
+        if verbose:
+            print(f"\n[Replace DR] Updating embedding CSV files...")
+        
+        embedding_dir = os.path.join(base_path, "embeddings")
+        os.makedirs(embedding_dir, exist_ok=True)
+        
+        def _save_embedding_csv_from_uns(uns_key: str, filename: str, desc: str) -> bool:
+            if uns_key not in pseudobulk_sample.uns:
+                if verbose:
+                    print(f"  ⚠ {desc} not found in pseudobulk_sample.uns['{uns_key}']; skipping CSV update")
+                return False
+            
+            data = pseudobulk_sample.uns[uns_key]
+            
+            # Convert to DataFrame
+            if isinstance(data, np.ndarray):
+                df = pd.DataFrame(data)
+            elif isinstance(data, pd.DataFrame):
+                df = data
+            else:
+                try:
+                    df = pd.DataFrame(data)
+                except Exception:
+                    if verbose:
+                        print(f"  ⚠ Skipping {desc}: could not convert type {type(data)} to DataFrame")
+                    return False
+            
+            out_path = os.path.join(embedding_dir, filename)
+            df.to_csv(out_path)
+            
+            if verbose:
+                print(f"  ✓ Saved {desc} to {out_path} (shape: {df.shape})")
+            return True
+        
+        _save_embedding_csv_from_uns(
+            "X_DR_expression",
+            "sample_expression_embedding.csv",
+            "expression embedding"
+        )
+        _save_embedding_csv_from_uns(
+            "X_DR_proportion",
+            "sample_proportion_embedding.csv",
+            "proportion embedding"
+        )
+    
+    except Exception as e:
+        if verbose:
+            print(f"  ⚠ Failed to update embedding CSV files: {e}")
     
     return pseudobulk_sample

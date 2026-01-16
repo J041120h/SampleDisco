@@ -156,6 +156,7 @@ rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
+rna_cluster_differential_gene_group_col: "sev.level"
 
 
 # ========================================
@@ -280,6 +281,7 @@ atac_raisin_analysis: false
 atac_cluster_distance_method: "cosine"
 atac_cluster_number: 4
 atac_user_provided_sample_to_clade: null
+atac_cluster_differential_gene_group_col: "sev.level"
 
 # ATAC Visualization parameters
 atac_figsize: [10, 8]

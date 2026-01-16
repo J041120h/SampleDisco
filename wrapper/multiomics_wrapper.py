@@ -457,16 +457,21 @@ def multiomics_wrapper(
         # Sub-step 3a: Compute pseudobulk
         if multiomics_verbose:
             print("  Sub-step 3a: Computing pseudobulk...")
-        
-        if batch_col is not None and not isinstance(batch_col, list):
-            batch_col.append(resolution_modality_col)
+            
+        # Normalize batch_col into a list and ensure modality is included
+        if batch_col is None:
+            batch_cols = [resolution_modality_col]
+        elif isinstance(batch_col, str):
+            batch_cols = [batch_col]
         else:
-            batch_col = [resolution_modality_col]
+            batch_cols = list(batch_col)
 
+        if resolution_modality_col not in batch_cols:
+            batch_cols.append(resolution_modality_col)
 
         atac_pseudobulk_df, pseudobulk_adata = compute_pseudobulk_adata_linux(
             adata=adata_for_dr,
-            batch_col=batch_col,
+            batch_col=batch_cols,
             sample_col=sample_col,
             celltype_col=celltype_col,
             output_dir=pseudobulk_output_dir,
@@ -476,8 +481,9 @@ def multiomics_wrapper(
             target_sum=target_sum,
             atac=atac,
             verbose=multiomics_verbose,
-            preserve_cols = preserve_cols_for_sample_embedding,
+            preserve_cols=preserve_cols_for_sample_embedding,
         )
+
         
         # Sub-step 3b: Process with PCA
         if multiomics_verbose:
@@ -490,13 +496,13 @@ def multiomics_wrapper(
             sample_col=pca_sample_col,
             n_expression_components=n_expression_pcs,
             n_proportion_components=n_proportion_pcs,
-            batch_col=batch_col,
+            batch_col=batch_cols,
             harmony_for_proportion=multiomics_harmony_for_proportion,
             output_dir=pca_output_dir,
             verbose=multiomics_verbose,
-            preserve_cols = preserve_cols_for_sample_embedding,
+            preserve_cols=preserve_cols_for_sample_embedding,
         )
-        
+
         # Store results
         results['atac_pseudobulk_df'] = atac_pseudobulk_df
         results['pseudobulk_adata'] = pseudobulk_adata
@@ -606,7 +612,7 @@ def multiomics_wrapper(
             dr_type="expression",
             n_features=resolution_n_features,
             sev_col=sev_col,
-            batch_col=resolution_batch_col,
+            batch_col=batch_col,
             sample_col=resolution_sample_col,
             modality_col=resolution_modality_col,
             use_rep=resolution_use_rep,
@@ -631,7 +637,7 @@ def multiomics_wrapper(
             dr_type="proportion",
             n_features=resolution_n_features,
             sev_col=sev_col,
-            batch_col=resolution_batch_col,
+            batch_col=batch_col,
             sample_col=resolution_sample_col,
             modality_col=resolution_modality_col,
             use_rep=resolution_use_rep,

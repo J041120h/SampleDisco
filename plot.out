@@ -1,3 +1,4 @@
+Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
@@ -35,8 +36,8 @@ Resuming process from previous progress:
     "system_info": {
         "platform": "Linux",
         "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": false,
-        "linux_system": false
+        "use_gpu": true,
+        "linux_system": true
     }
 }
 
@@ -45,38 +46,261 @@ RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
 Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[INFO] Running RAISIN analysis...
+Starting trajectory analysis...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
 
-===== Starting RAISIN fitting =====
-Using 96 CPU cores
-Available columns in adata.obs: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
-Note: group_col='sev.level' provided; sample_to_clade is ignored (not needed).
-Using counts from adata.X
-Using group_col='sev.level' for grouping
-Expression matrix: 10175 genes x 987397 cells
-Design matrix X: 431 samples x 5 features
-Random effects Z: 431 samples x 431 effects
-Unique variance groups: ['1' '2' '3' '4']
+Processing X_DR_proportion...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Warning: Only 9 components available, using all of them.
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 9 components...
+Testing 36 PC combinations...
+PC1 + PC2: CCA score = 0.3699
+PC1 + PC3: CCA score = 0.3548
+PC1 + PC4: CCA score = 0.3696
+PC1 + PC5: CCA score = 0.4041
+PC1 + PC6: CCA score = 0.3524
+PC1 + PC7: CCA score = 0.3521
+PC1 + PC8: CCA score = 0.3452
+PC1 + PC9: CCA score = 0.3635
+PC2 + PC3: CCA score = 0.1564
+PC2 + PC4: CCA score = 0.1876
+PC2 + PC5: CCA score = 0.2487
+PC2 + PC6: CCA score = 0.1510
+PC2 + PC7: CCA score = 0.1502
+PC2 + PC8: CCA score = 0.1332
+PC2 + PC9: CCA score = 0.2232
+PC3 + PC4: CCA score = 0.1558
+PC3 + PC5: CCA score = 0.2257
+PC3 + PC6: CCA score = 0.1089
+PC3 + PC7: CCA score = 0.1078
+PC3 + PC8: CCA score = 0.0825
+PC3 + PC9: CCA score = 0.2144
+PC4 + PC5: CCA score = 0.2484
+PC4 + PC6: CCA score = 0.1504
+PC4 + PC7: CCA score = 0.1496
+PC4 + PC8: CCA score = 0.1325
+PC4 + PC9: CCA score = 0.1956
+PC5 + PC6: CCA score = 0.2220
+PC5 + PC7: CCA score = 0.2215
+PC5 + PC8: CCA score = 0.2103
+PC5 + PC9: CCA score = 0.2509
+PC6 + PC7: CCA score = 0.0999
+PC6 + PC8: CCA score = 0.0718
+PC6 + PC9: CCA score = 0.2627
+PC7 + PC8: CCA score = 0.0701
+PC7 + PC9: CCA score = 0.1996
+PC8 + PC9: CCA score = 0.2372
+Best combination: PC1 + PC5 with score 0.4041
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_proportion.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_proportion_contributions.pdf
 
-===== Estimating variance for group: 2 =====
-  alpha=0.0043, gamma=0.0048
+Processing X_DR_expression...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.3152
+PC1 + PC3: CCA score = 0.2358
+PC1 + PC4: CCA score = 0.3611
+PC1 + PC5: CCA score = 0.2518
+PC1 + PC6: CCA score = 0.2371
+PC1 + PC7: CCA score = 0.2597
+PC1 + PC8: CCA score = 0.2359
+PC1 + PC9: CCA score = 0.2372
+PC1 + PC10: CCA score = 0.2471
+PC2 + PC3: CCA score = 0.2092
+PC2 + PC4: CCA score = 0.3444
+PC2 + PC5: CCA score = 0.2272
+PC2 + PC6: CCA score = 0.2107
+PC2 + PC7: CCA score = 0.2359
+PC2 + PC8: CCA score = 0.2093
+PC2 + PC9: CCA score = 0.2109
+PC2 + PC10: CCA score = 0.2219
+PC3 + PC4: CCA score = 0.2736
+PC3 + PC5: CCA score = 0.0886
+PC3 + PC6: CCA score = 0.0253
+PC3 + PC7: CCA score = 0.1090
+PC3 + PC8: CCA score = 0.0087
+PC3 + PC9: CCA score = 0.0267
+PC3 + PC10: CCA score = 0.0740
+PC4 + PC5: CCA score = 0.2876
+PC4 + PC6: CCA score = 0.2747
+PC4 + PC7: CCA score = 0.2945
+PC4 + PC8: CCA score = 0.2737
+PC4 + PC9: CCA score = 0.2749
+PC4 + PC10: CCA score = 0.2834
+PC5 + PC6: CCA score = 0.0920
+PC5 + PC7: CCA score = 0.1404
+PC5 + PC8: CCA score = 0.0889
+PC5 + PC9: CCA score = 0.0924
+PC5 + PC10: CCA score = 0.1153
+PC6 + PC7: CCA score = 0.1118
+PC6 + PC8: CCA score = 0.0262
+PC6 + PC9: CCA score = 0.0364
+PC6 + PC10: CCA score = 0.0780
+PC7 + PC8: CCA score = 0.1092
+PC7 + PC9: CCA score = 0.1121
+PC7 + PC10: CCA score = 0.1317
+PC8 + PC9: CCA score = 0.0275
+PC8 + PC10: CCA score = 0.0743
+PC9 + PC10: CCA score = 0.0785
+Best combination: PC1 + PC4 with score 0.3611
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_expression.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pca_10d_cca_expression_contributions.pdf
+Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pseudotime_proportion.csv
+Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/CCA/pseudotime_expression.csv
 
-===== Estimating variance for group: 4 =====
-  alpha=0.0009, gamma=0.0003
+==================================================
+CCA ANALYSIS SUMMARY
+==================================================
+X_DR_proportion: CCA score = 0.4041 (using PC1 + PC5)
+X_DR_expression: CCA score = 0.3611 (using PC1 + PC4)
 
-===== Estimating variance for group: 3 =====
-  alpha=0.0013, gamma=0.0023
+Total runtime: 0.77 seconds
+==================================================
+P-value for observed correlation 0.404059923243927: 0.0
+[CCA p-test] Runtime: 0.87 seconds
+P-value for observed correlation 0.3611462515757356: 0.0
+[CCA p-test] Runtime: 0.87 seconds
+Running single-pseudotime GAM-based differential analysis...
+=== Trajectory GAM differential gene analysis (single pseudotime) ===
+[DEBUG] Output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression
+[DEBUG] Step 1/5: Loading and aligning pseudotime...
+[DEBUG] Starting load_sample_pseudotime...
+[DEBUG] Pseudotime table shape: (431, 2)
+[DEBUG] Pseudotime table columns: ['sample', 'pseudotime']
+[DEBUG] Inferred pseudotime column: pseudotime
+[DEBUG] Inferred sample column: sample
+[DEBUG] Pseudotime table (first 5 rows):
+             sample  pseudotime
+0  CoV-1.1-Wilk_RNA    0.790580
+1  CoV-1.2-Wilk_RNA    0.672872
+2  CoV-100.1-Su_RNA    0.133883
+3  CoV-100.2-Su_RNA    0.215910
+4  CoV-101.1-Su_RNA    0.049809
+[DEBUG] Pseudotime loaded: 431 samples in table
+[DEBUG] Pseudotime aligned: 431 samples found in pseudobulk_adata.obs_names
+[DEBUG] Step 2/5: Preparing GAM input matrices...
+[DEBUG] AnnData: 431 samples x 2000 genes
+[DEBUG] Pseudotime entries: 431
+[DEBUG] First 5 pseudobulk obs_names: ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA']
+[DEBUG] First 5 pseudotime sample IDs: ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA']
+[DEBUG] Common samples count: 431
+[DEBUG] Prepared X matrix: (431, 1), columns=['pseudotime']
+[DEBUG] Prepared Y matrix: (431, 2000) (genes after filtering=2000)
+[DEBUG] Step 3/5: Fitting GAM models for 2000 genes...
+[DEBUG] Using spline_term='pseudotime', n_splines=5, order=3
+[DEBUG] X shape before densification: (431, 1), Y shape: (431, 2000)
+[DEBUG] Processing gene 100/2000
+[DEBUG] Processing gene 200/2000
+[DEBUG] Processing gene 300/2000
+[DEBUG] Processing gene 400/2000
+[DEBUG] Processing gene 500/2000
+[DEBUG] Processing gene 600/2000
+[DEBUG] Processing gene 700/2000
+[DEBUG] Processing gene 800/2000
+[DEBUG] Processing gene 900/2000
+[DEBUG] Processing gene 1000/2000
+[DEBUG] Processing gene 1100/2000
+[DEBUG] Processing gene 1200/2000
+[DEBUG] Processing gene 1300/2000
+[DEBUG] Processing gene 1400/2000
+[DEBUG] Processing gene 1500/2000
+[DEBUG] Processing gene 1600/2000
+[DEBUG] Processing gene 1700/2000
+[DEBUG] Processing gene 1800/2000
+[DEBUG] Processing gene 1900/2000
+[DEBUG] Processing gene 2000/2000
+[DEBUG] GAM fitting summary: 2000/2000 genes successfully fitted.
+[DEBUG] Skip reasons:
+    no_column: 0
+    no_nonzero_samples: 0
+    too_few_samples: 0
+    low_variance: 0
+    fit_error: 0
+    nonfinite_rows: 0
+[DEBUG] Number of significant genes (FDR < 0.01): 1508
+[DEBUG] Step 4/5: Calculating effect sizes for significant genes...
+[DEBUG] Calculated effect sizes for 1508 genes (errors on 0 genes).
+[DEBUG] Selected 100 pseudoDEGs (top_n=100)
+[DEBUG] Saved results to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression
+[DEBUG]   all genes: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_all_genes_20260116_085911.tsv
+[DEBUG]   significant: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_significant_20260116_085911.tsv
+[DEBUG]   pseudoDEGs: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_pseudoDEGs_20260116_085911.tsv
+[DEBUG]   summary: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/gam_summary_20260116_085911.txt
+=== DIFFERENTIAL GENE EXPRESSION SUMMARY ===
+Total genes analyzed: 2000
+Significant genes (FDR < 0.01): 1508
+Selected DEGs: 100
 
-===== Estimating variance for group: 1 =====
-  alpha=0.0044, gamma=0.0036
+Top 20 DEGs:
+1. Neutrophil - ARHGEF40: FDR=3.1675e-16, Effect=4.283
+2. Neutrophil - AOAH: FDR=3.1675e-16, Effect=4.397
+3. Neutrophil - ANXA5: FDR=3.1675e-16, Effect=4.190
+4. Neutrophil - TRIM22: FDR=3.1675e-16, Effect=6.604
+5. Neutrophil - ALOX5: FDR=3.1675e-16, Effect=5.765
+6. Neutrophil - ADM: FDR=3.1675e-16, Effect=5.210
+7. Neutrophil - TOM1: FDR=3.1675e-16, Effect=4.343
+8. Neutrophil - KLF4: FDR=3.1675e-16, Effect=6.034
+9. Neutrophil - JUND: FDR=3.1675e-16, Effect=8.606
+10. Neutrophil - BCL6: FDR=3.1675e-16, Effect=5.621
+11. Neutrophil - NAIP: FDR=3.1675e-16, Effect=4.193
+12. Neutrophil - NABP1: FDR=3.1675e-16, Effect=5.354
+13. Neutrophil - MYO9B: FDR=3.1675e-16, Effect=5.183
+14. Neutrophil - MYADM: FDR=3.1675e-16, Effect=6.603
+15. Neutrophil - MX1: FDR=3.1675e-16, Effect=5.886
+16. Neutrophil - ZNF394: FDR=3.1675e-16, Effect=4.404
+17. Neutrophil - NCF1: FDR=3.1675e-16, Effect=4.845
+18. Neutrophil - MT2A: FDR=3.1675e-16, Effect=5.189
+19. Neutrophil - OAS1: FDR=3.1675e-16, Effect=4.946
+20. Neutrophil - LYZ: FDR=3.1675e-16, Effect=5.439
+[DEBUG] Step 5/5: Generating Lamian-style visualizations...
+[DEBUG] Step 5/5: Generating Lamian-style visualizations...
+[VIZ] Creating results summary...
+[VIZ] Creating TDE heatmap...
+[VIZ] Creating volcano plot...
+[VIZ] Creating gene expression curves with GAM fits...
+[VIZ] Plotting 20 genes (selected by effect size, FDR < 0.01)
+[VIZ] GAM models available: 2000
+[VIZ] GAM models provided: 2000 models
+[VIZ] Inferred GAM feature count: 2
+[VIZ] Saved gene expression curves to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/visualizations/05_gene_curves.png
+[VIZ] Creating sample density plot...
+[VIZ] Creating cluster pattern summary...
+[VIZ] Creating sample-level expression curves...
+[VIZ] Top gene by effect size: Neutrophil - FOS
+[VIZ] Saved sample-level curves to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/visualizations/08_sample_level_curves.png
+[VIZ] Visualizations saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression/visualizations
+Done. Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/trajectoryDEG/expression
+Trajectory differential gene analysis completed!
+RNA analysis completed successfully!
 
-===== Model fitting complete =====
-Starting pairwise comparisons. Found 6 pairs to test.
+✓ RNA pipeline completed successfully!
 
---- Testing: 1 (Positive) vs 2 (Negative) ---
-Running 100 permutations...
-Estimated distribution: Normal
-Found 197 significant genes (FDR < 0.05)
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✗
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✓
+  - cluster_dge: ✓
+  - visualization: ✗
 
---- Testing: 1 (Positive) vs 3 (Negative) ---
-Running 100 permutations...
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
+Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
+Execution time: 54.4493 seconds
