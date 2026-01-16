@@ -870,7 +870,7 @@ def run_trajectory_gam_differential_gene_analysis(
     # New visualization parameters
     generate_visualizations: bool = True,
     group_col: Optional[str] = None,
-    n_clusters: int = 5,
+    n_clusters: int = 3,
     top_n_genes_for_curves: int = 20,
     verbose: bool = True
 ) -> pd.DataFrame:

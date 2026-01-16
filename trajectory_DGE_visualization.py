@@ -81,12 +81,12 @@ def get_cluster_colors(n_clusters: int) -> List[str]:
 # =============================================================================
 # HEATMAP VISUALIZATIONS (Lamian Fig 3a-d style)
 # =============================================================================
-
 def plot_tde_heatmap(
     Y: pd.DataFrame,
     results: pd.DataFrame,
     pseudotime: np.ndarray,
-    n_clusters: int = 5,
+    gam_models: Optional[Dict] = None,
+    n_clusters: int = 3,  # Default to 3 as discussed
     cluster_method: str = 'kmeans',
     figsize: Tuple[int, int] = (14, 10),
     show_gene_labels: bool = False,
@@ -96,164 +96,129 @@ def plot_tde_heatmap(
     verbose: bool = False
 ) -> Tuple[plt.Figure, Dict]:
     """
-    Plot TDE (Trajectory Differential Expression) heatmap following Lamian Fig 3a-c style.
-    
-    Shows original and model-fitted expression values for genes along pseudotime,
-    with genes clustered by their expression patterns.
-    
-    Parameters
-    ----------
-    Y : pd.DataFrame
-        Expression matrix (samples x genes)
-    results : pd.DataFrame
-        GAM results with 'gene', 'fdr', 'pseudoDEG' columns
-    pseudotime : np.ndarray
-        Pseudotime values for each sample
-    n_clusters : int
-        Number of gene clusters
-    cluster_method : str
-        'kmeans', 'hierarchical', or 'louvain'
-    figsize : tuple
-        Figure size
-    show_gene_labels : bool
-        Whether to show gene names on y-axis
-    top_n_genes : int, optional
-        Limit to top N genes by significance
-    title : str
-        Plot title
-    output_path : str, optional
-        Path to save figure
-    verbose : bool
-        Print progress messages
-        
-    Returns
-    -------
-    fig : matplotlib.Figure
-    info : dict
-        Contains cluster assignments and other metadata
+    Plot TDE Heatmap with WATERFALL ordering (Cluster -> Peak Time).
     """
     if verbose:
-        print("[VIZ] Creating TDE heatmap...")
+        print("[VIZ] Creating TDE heatmap (using GAM fitted values + Waterfall sort)...")
     
-    # Filter to significant genes
-    sig_genes = results[results['fdr'] < 0.05]['gene'].tolist()
+    # --- 1. Select Genes ---
+    if 'fdr' in results.columns:
+        sig_genes = results[results['fdr'] < 0.05]['gene'].tolist()
+    else:
+        sig_genes = results['gene'].tolist()
+
     if top_n_genes and len(sig_genes) > top_n_genes:
-        sig_genes = results[results['fdr'] < 0.05].nsmallest(top_n_genes, 'fdr')['gene'].tolist()
+        if 'effect_size' in results.columns:
+            sig_genes = results[results['fdr'] < 0.05].nlargest(top_n_genes, 'effect_size')['gene'].tolist()
+        else:
+            sig_genes = results[results['fdr'] < 0.05].nsmallest(top_n_genes, 'fdr')['gene'].tolist()
     
     available_genes = [g for g in sig_genes if g in Y.columns]
+    if gam_models:
+        available_genes = [g for g in available_genes if g in gam_models]
+
     if len(available_genes) == 0:
-        if verbose:
-            print("[VIZ] No significant genes found for heatmap")
+        if verbose: print("[VIZ] No significant genes found for heatmap")
         return None, {}
     
-    if verbose:
-        print(f"[VIZ] Plotting {len(available_genes)} significant genes")
+    if verbose: print(f"[VIZ] Plotting {len(available_genes)} genes")
     
-    # Extract expression data and sort by pseudotime
-    expr_data = Y[available_genes].copy()
+    # --- 2. Prepare Data (Fitted) ---
     sort_idx = np.argsort(pseudotime)
-    expr_sorted = expr_data.iloc[sort_idx]
     ptime_sorted = pseudotime[sort_idx]
+    X_pred = ptime_sorted.reshape(-1, 1)
     
-    # Z-score normalize genes (row-wise)
-    expr_zscore = (expr_sorted - expr_sorted.mean()) / (expr_sorted.std() + 1e-10)
+    fitted_data = []
+    for gene in available_genes:
+        try:
+            model = gam_models[gene]
+            y_pred = model.predict(X_pred)
+            fitted_data.append(y_pred)
+        except Exception:
+            raw_vals = Y[gene].iloc[sort_idx].values
+            fitted_data.append(raw_vals)
+
+    expr_matrix = np.array(fitted_data) # (n_genes, n_samples)
     
-    # Cluster genes
-    gene_expr_for_clustering = expr_zscore.T.values  # genes x samples
+    # Z-score normalize
+    means = expr_matrix.mean(axis=1, keepdims=True)
+    stds = expr_matrix.std(axis=1, keepdims=True) + 1e-10
+    expr_zscore = (expr_matrix - means) / stds
     
+    # --- 3. Cluster Genes ---
     if cluster_method == 'kmeans':
         n_clusters = min(n_clusters, len(available_genes))
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-        cluster_labels = kmeans.fit_predict(gene_expr_for_clustering)
+        cluster_labels = kmeans.fit_predict(expr_zscore)
     elif cluster_method == 'hierarchical':
         if len(available_genes) > 1:
-            linkage_matrix = linkage(gene_expr_for_clustering, method='ward')
+            linkage_matrix = linkage(expr_zscore, method='ward')
             cluster_labels = fcluster(linkage_matrix, n_clusters, criterion='maxclust') - 1
         else:
             cluster_labels = np.array([0])
     else:
         cluster_labels = np.zeros(len(available_genes), dtype=int)
     
-    # Sort genes by cluster
-    gene_order = np.argsort(cluster_labels)
-    cluster_labels_sorted = cluster_labels[gene_order]
-    genes_sorted = [available_genes[i] for i in gene_order]
-    expr_for_plot = expr_zscore[genes_sorted].T.values
+    # --- 4. WATERFALL SORTING (Cluster -> Peak Time) ---
+    # Calculate the index of peak expression for every gene
+    peak_indices = np.argmax(expr_zscore, axis=1)
     
-    # Create figure with two panels (original and model-fitted approximation)
+    # lexsort sorts by the last key passed first.
+    # We want: Primary = Cluster, Secondary = Peak Time
+    sort_keys = np.lexsort((peak_indices, cluster_labels))
+    
+    genes_sorted = [available_genes[i] for i in sort_keys]
+    cluster_labels_sorted = cluster_labels[sort_keys]
+    expr_for_plot = expr_zscore[sort_keys]
+    
+    # --- 5. Plotting ---
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(1, 3, width_ratios=[0.03, 1, 0.05], wspace=0.02)
     
-    # Cluster color bar
+    # Cluster Bar
     ax_cluster = fig.add_subplot(gs[0])
     cluster_colors = get_cluster_colors(n_clusters)
-    cluster_cmap = LinearSegmentedColormap.from_list(
-        'clusters', [cluster_colors[i] for i in range(n_clusters)]
-    )
-    cluster_img = ax_cluster.imshow(
-        cluster_labels_sorted.reshape(-1, 1),
-        aspect='auto',
-        cmap=cluster_cmap,
-        interpolation='nearest'
-    )
+    cluster_cmap = LinearSegmentedColormap.from_list('clusters', cluster_colors)
+    
+    ax_cluster.imshow(cluster_labels_sorted.reshape(-1, 1), aspect='auto', cmap=cluster_cmap, interpolation='nearest')
     ax_cluster.set_xticks([])
     ax_cluster.set_yticks([])
-    ax_cluster.set_ylabel('Genes', fontsize=10)
+    ax_cluster.set_ylabel('Genes (Clustered & Peak-Sorted)', fontsize=10)
     
-    # Main heatmap
+    # Heatmap
     ax_heat = fig.add_subplot(gs[1])
     cmap = get_lamian_colormap('expression')
-    vmax = np.percentile(np.abs(expr_for_plot), 95)
     
-    im = ax_heat.imshow(
-        expr_for_plot,
-        aspect='auto',
-        cmap=cmap,
-        vmin=-vmax,
-        vmax=vmax,
-        interpolation='nearest'
-    )
-    
-    ax_heat.set_xlabel('Cells ordered by pseudotime', fontsize=11)
+    im = ax_heat.imshow(expr_for_plot, aspect='auto', cmap=cmap, vmin=-2.5, vmax=2.5, interpolation='nearest')
+    ax_heat.set_xlabel('Pseudotime', fontsize=11)
     ax_heat.set_yticks([])
     
-    # Add pseudotime colorbar at top
+    # Pseudotime Bar
     divider_top = ax_heat.inset_axes([0, 1.01, 1, 0.03])
     ptime_norm = (ptime_sorted - ptime_sorted.min()) / (ptime_sorted.max() - ptime_sorted.min() + 1e-10)
-    divider_top.imshow(
-        ptime_norm.reshape(1, -1),
-        aspect='auto',
-        cmap=get_lamian_colormap('pseudotime')
-    )
+    divider_top.imshow(ptime_norm.reshape(1, -1), aspect='auto', cmap=get_lamian_colormap('pseudotime'))
     divider_top.set_xticks([])
     divider_top.set_yticks([])
-    divider_top.set_title('pseudotime', fontsize=9, pad=2)
     
-    # Expression colorbar
+    # Colorbar
     ax_cbar = fig.add_subplot(gs[2])
-    plt.colorbar(im, cax=ax_cbar, label='Z-score')
+    plt.colorbar(im, cax=ax_cbar, label='Z-score (Fitted)')
     
-    # Add cluster labels
+    # Add Cluster Labels
     unique_clusters = np.unique(cluster_labels_sorted)
     for c in unique_clusters:
         mask = cluster_labels_sorted == c
         indices = np.where(mask)[0]
         if len(indices) > 0:
             mid_idx = indices[len(indices) // 2]
-            ax_cluster.text(
-                -0.5, mid_idx, str(c + 1),
-                ha='right', va='center', fontsize=8,
-                color=cluster_colors[c]
-            )
-    
+            ax_cluster.text(-0.5, mid_idx, str(c + 1), ha='right', va='center', fontsize=9, fontweight='bold', color=cluster_colors[c])
+
     fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
-    
     plt.tight_layout()
     
     if output_path:
         fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-        if verbose:
-            print(f"[VIZ] Saved TDE heatmap to {output_path}")
+        if verbose: print(f"[VIZ] Saved TDE heatmap to {output_path}")
     
     info = {
         'genes': genes_sorted,
@@ -261,267 +226,184 @@ def plot_tde_heatmap(
         'n_clusters': n_clusters,
         'n_genes': len(genes_sorted)
     }
-    
     return fig, info
 
-
-def plot_xde_heatmap(
+def plot_tde_heatmap(
     Y: pd.DataFrame,
-    X: pd.DataFrame,
     results: pd.DataFrame,
-    group_col: str = 'group',
-    n_clusters: int = 10,
-    figsize: Tuple[int, int] = (18, 12),
-    title: str = "XDE Genes: Differential Expression by Group",
+    pseudotime: np.ndarray,
+    gam_models: Optional[Dict] = None,
+    n_clusters: int = 3,
+    cluster_method: str = 'kmeans',
+    figsize: Tuple[int, int] = (14, 10),
+    show_gene_labels: bool = False,
+    top_n_genes: Optional[int] = None,
+    title: str = "TDE Genes Along Pseudotime",
     output_path: Optional[str] = None,
     verbose: bool = False
 ) -> Tuple[plt.Figure, Dict]:
     """
-    Plot XDE (Covariate Differential Expression) heatmap following Lamian Fig 3d style.
-    
-    Creates a 6-panel heatmap showing:
-    - Original expression for each group (2 panels)
-    - Model-fitted expression for each group (2 panels)  
-    - Trend difference between groups
-    - Mean shift between groups
-    
-    Parameters
-    ----------
-    Y : pd.DataFrame
-        Expression matrix (samples x genes)
-    X : pd.DataFrame
-        Design matrix with pseudotime and group columns
-    results : pd.DataFrame
-        GAM results with XDE significance information
-    group_col : str
-        Column name for group assignment
-    n_clusters : int
-        Number of gene clusters
-    figsize : tuple
-        Figure size
-    title : str
-        Plot title
-    output_path : str, optional
-        Path to save figure
-    verbose : bool
-        Print progress messages
-        
-    Returns
-    -------
-    fig : matplotlib.Figure
-    info : dict
-        Contains cluster assignments and other metadata
+    Plot TDE Heatmap with:
+    1. Fitted Values (Smooth trends)
+    2. Temporal Cluster Ordering (Cluster 1=Early -> Cluster N=Late)
+    3. Waterfall Gene Sorting (Sorted by peak time within cluster)
     """
     if verbose:
-        print("[VIZ] Creating XDE heatmap...")
+        print("[VIZ] Creating TDE heatmap (Fitted + Temporal Cluster Sort + Waterfall)...")
     
-    # Check for XDE-related columns
-    xde_col = None
-    for col in ['pseudoDEG', 'significant', 'xde']:
-        if col in results.columns:
-            xde_col = col
-            break
-    
-    if xde_col is None:
-        if verbose:
-            print("[VIZ] No XDE column found, using FDR < 0.05")
+    # --- 1. Select Genes ---
+    if 'fdr' in results.columns:
         sig_genes = results[results['fdr'] < 0.05]['gene'].tolist()
     else:
-        sig_genes = results[results[xde_col] == True]['gene'].tolist()
+        sig_genes = results['gene'].tolist()
+
+    if top_n_genes and len(sig_genes) > top_n_genes:
+        # Prioritize by Effect Size
+        if 'effect_size' in results.columns:
+            sig_genes = results[results['fdr'] < 0.05].nlargest(top_n_genes, 'effect_size')['gene'].tolist()
+        else:
+            sig_genes = results[results['fdr'] < 0.05].nsmallest(top_n_genes, 'fdr')['gene'].tolist()
     
     available_genes = [g for g in sig_genes if g in Y.columns]
+    if gam_models:
+        available_genes = [g for g in available_genes if g in gam_models]
+
     if len(available_genes) == 0:
-        if verbose:
-            print("[VIZ] No XDE genes found")
+        if verbose: print("[VIZ] No significant genes found for heatmap")
         return None, {}
     
-    if verbose:
-        print(f"[VIZ] Plotting {len(available_genes)} XDE genes")
+    # --- 2. Prepare Data (Fitted) ---
+    sort_idx = np.argsort(pseudotime)
+    ptime_sorted = pseudotime[sort_idx]
+    X_pred = ptime_sorted.reshape(-1, 1)
     
-    # Get group assignments
-    if group_col not in X.columns:
-        if verbose:
-            print(f"[VIZ] Group column '{group_col}' not found in X")
-        return None, {}
+    fitted_data = []
+    for gene in available_genes:
+        try:
+            model = gam_models[gene]
+            y_pred = model.predict(X_pred)
+            fitted_data.append(y_pred)
+        except Exception:
+            raw_vals = Y[gene].iloc[sort_idx].values
+            fitted_data.append(raw_vals)
+
+    expr_matrix = np.array(fitted_data) # (n_genes, n_samples)
     
-    groups = X[group_col].unique()
-    if len(groups) != 2:
-        if verbose:
-            print(f"[VIZ] Expected 2 groups, found {len(groups)}")
-        groups = sorted(groups)[:2]
+    # Z-score normalize
+    means = expr_matrix.mean(axis=1, keepdims=True)
+    stds = expr_matrix.std(axis=1, keepdims=True) + 1e-10
+    expr_zscore = (expr_matrix - means) / stds
     
-    group0, group1 = groups[0], groups[1]
-    mask0 = X[group_col] == group0
-    mask1 = X[group_col] == group1
-    
-    # Sort each group by pseudotime
-    ptime = X['pseudotime'].values
-    
-    idx0 = X.index[mask0]
-    idx1 = X.index[mask1]
-    sort_idx0 = idx0[np.argsort(ptime[mask0])]
-    sort_idx1 = idx1[np.argsort(ptime[mask1])]
-    
-    # Extract and normalize expression
-    expr0 = Y.loc[sort_idx0, available_genes]
-    expr1 = Y.loc[sort_idx1, available_genes]
-    
-    # Z-score normalize across all samples
-    all_expr = Y[available_genes]
-    mean_expr = all_expr.mean()
-    std_expr = all_expr.std() + 1e-10
-    
-    expr0_z = (expr0 - mean_expr) / std_expr
-    expr1_z = (expr1 - mean_expr) / std_expr
-    
-    # Calculate trend difference and mean shift
-    # Bin samples into pseudotime intervals
-    n_bins = 50
-    
-    def bin_expression(expr_df, ptime_vals, n_bins):
-        """Bin expression by pseudotime intervals."""
-        bins = np.linspace(ptime_vals.min(), ptime_vals.max(), n_bins + 1)
-        binned = np.zeros((expr_df.shape[1], n_bins))
-        for i in range(n_bins):
-            mask = (ptime_vals >= bins[i]) & (ptime_vals < bins[i + 1])
-            if mask.sum() > 0:
-                binned[:, i] = expr_df.iloc[mask].mean().values
-            else:
-                binned[:, i] = np.nan
-        return binned
-    
-    ptime0 = ptime[mask0][np.argsort(ptime[mask0])]
-    ptime1 = ptime[mask1][np.argsort(ptime[mask1])]
-    
-    binned0 = bin_expression(expr0_z, ptime0, n_bins)
-    binned1 = bin_expression(expr1_z, ptime1, n_bins)
-    
-    # Trend difference
-    trend_diff = binned1 - binned0
-    # Handle NaN by interpolation
-    trend_diff = pd.DataFrame(trend_diff).interpolate(axis=1, limit_direction='both').values
-    
-    # Mean shift
-    mean_shift = expr1_z.mean().values - expr0_z.mean().values
-    
-    # Cluster genes based on trend difference pattern
-    valid_genes_mask = ~np.isnan(trend_diff).any(axis=1)
-    trend_for_cluster = trend_diff[valid_genes_mask]
-    
-    n_clusters = min(n_clusters, len(available_genes))
-    if len(trend_for_cluster) > 1 and n_clusters > 1:
+    # --- 3. Initial Clustering ---
+    if cluster_method == 'kmeans':
+        n_clusters = min(n_clusters, len(available_genes))
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-        full_cluster_labels = np.zeros(len(available_genes), dtype=int)
-        full_cluster_labels[valid_genes_mask] = kmeans.fit_predict(trend_for_cluster)
+        initial_labels = kmeans.fit_predict(expr_zscore)
+    elif cluster_method == 'hierarchical':
+        if len(available_genes) > 1:
+            linkage_matrix = linkage(expr_zscore, method='ward')
+            initial_labels = fcluster(linkage_matrix, n_clusters, criterion='maxclust') - 1
+        else:
+            initial_labels = np.array([0])
     else:
-        full_cluster_labels = np.zeros(len(available_genes), dtype=int)
+        initial_labels = np.zeros(len(available_genes), dtype=int)
     
-    # Sort genes by cluster
-    gene_order = np.argsort(full_cluster_labels)
-    genes_sorted = [available_genes[i] for i in gene_order]
-    cluster_labels_sorted = full_cluster_labels[gene_order]
+    # --- 4. REORDER CLUSTERS BY TIME (The Fix) ---
+    # We want Cluster 0 to be the "Earliest Peaking" and Cluster N to be "Latest Peaking"
+    cluster_peak_times = []
+    unique_labels = np.unique(initial_labels)
     
-    # Create figure
+    for label in unique_labels:
+        # Get all genes in this cluster
+        mask = initial_labels == label
+        if mask.sum() == 0:
+            cluster_peak_times.append(99999) # Should not happen
+            continue
+            
+        # Calculate the average expression profile for this cluster
+        avg_profile = expr_zscore[mask].mean(axis=0)
+        # Find index of max expression
+        peak_idx = np.argmax(avg_profile)
+        cluster_peak_times.append(peak_idx)
+        
+    # Determine new mapping: sorted by peak time
+    # e.g. if peaks are at [100, 10, 50], argsort gives [1, 2, 0]
+    # So old label 1 becomes new label 0, old 2 becomes 1, old 0 becomes 2.
+    sorted_order = np.argsort(cluster_peak_times)
+    map_old_to_new = {old: new for new, old in enumerate(sorted_order)}
+    
+    # Apply mapping
+    cluster_labels = np.array([map_old_to_new[l] for l in initial_labels])
+    
+    # --- 5. WATERFALL SORT (Within Cluster) ---
+    # Determine peak for every single gene
+    gene_peak_indices = np.argmax(expr_zscore, axis=1)
+    
+    # Sort primarily by Cluster Label (0->1->2), secondarily by Peak Time
+    sort_keys = np.lexsort((gene_peak_indices, cluster_labels))
+    
+    genes_sorted = [available_genes[i] for i in sort_keys]
+    cluster_labels_sorted = cluster_labels[sort_keys]
+    expr_for_plot = expr_zscore[sort_keys]
+    
+    # --- 6. Plotting ---
     fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(1, 3, width_ratios=[0.03, 1, 0.05], wspace=0.02)
     
-    # Layout: cluster bar, group0 orig, group1 orig, group0 fit, group1 fit, trend diff, mean shift
-    gs = gridspec.GridSpec(1, 8, width_ratios=[0.02, 1, 1, 1, 1, 0.8, 0.3, 0.05], wspace=0.05)
-    
-    cmap_expr = get_lamian_colormap('expression')
-    cmap_diff = get_lamian_colormap('difference')
-    cmap_mean = get_lamian_colormap('mean_shift')
-    
-    vmax_expr = np.percentile(np.abs(expr0_z.values), 95)
-    vmax_diff = np.percentile(np.abs(trend_diff[~np.isnan(trend_diff)]), 95) if not np.all(np.isnan(trend_diff)) else 1
-    vmax_mean = np.percentile(np.abs(mean_shift), 95) if len(mean_shift) > 0 else 1
-    
-    # Cluster color bar
+    # Cluster Bar
     ax_cluster = fig.add_subplot(gs[0])
     cluster_colors = get_cluster_colors(n_clusters)
-    cluster_img = ax_cluster.imshow(
-        cluster_labels_sorted.reshape(-1, 1),
-        aspect='auto',
-        cmap=LinearSegmentedColormap.from_list('cl', [cluster_colors[i] for i in range(n_clusters)]),
-        interpolation='nearest'
-    )
+    cluster_cmap = LinearSegmentedColormap.from_list('clusters', cluster_colors)
+    
+    ax_cluster.imshow(cluster_labels_sorted.reshape(-1, 1), aspect='auto', cmap=cluster_cmap, interpolation='nearest')
     ax_cluster.set_xticks([])
     ax_cluster.set_yticks([])
-    ax_cluster.set_ylabel('Genes', fontsize=10)
+    ax_cluster.set_ylabel('Genes (Sorted by Pseudotime)', fontsize=10)
     
-    # Original expression - Group 0
-    ax1 = fig.add_subplot(gs[1])
-    data1 = expr0_z[genes_sorted].T.values
-    ax1.imshow(data1, aspect='auto', cmap=cmap_expr, vmin=-vmax_expr, vmax=vmax_expr, interpolation='nearest')
-    ax1.set_title(f'Original\n{group0}', fontsize=10)
-    ax1.set_xticks([])
-    ax1.set_yticks([])
+    # Heatmap
+    ax_heat = fig.add_subplot(gs[1])
+    cmap = get_lamian_colormap('expression')
     
-    # Original expression - Group 1
-    ax2 = fig.add_subplot(gs[2])
-    data2 = expr1_z[genes_sorted].T.values
-    ax2.imshow(data2, aspect='auto', cmap=cmap_expr, vmin=-vmax_expr, vmax=vmax_expr, interpolation='nearest')
-    ax2.set_title(f'Original\n{group1}', fontsize=10)
-    ax2.set_xticks([])
-    ax2.set_yticks([])
+    im = ax_heat.imshow(expr_for_plot, aspect='auto', cmap=cmap, vmin=-2.5, vmax=2.5, interpolation='nearest')
+    ax_heat.set_xlabel('Pseudotime (Early $\\to$ Late)', fontsize=11)
+    ax_heat.set_yticks([])
     
-    # Model-fitted (binned) - Group 0
-    ax3 = fig.add_subplot(gs[3])
-    fitted0 = binned0[gene_order]
-    ax3.imshow(fitted0, aspect='auto', cmap=cmap_expr, vmin=-vmax_expr, vmax=vmax_expr, interpolation='nearest')
-    ax3.set_title(f'Fitted\n{group0}', fontsize=10)
-    ax3.set_xticks([])
-    ax3.set_yticks([])
+    # Pseudotime Bar
+    divider_top = ax_heat.inset_axes([0, 1.01, 1, 0.03])
+    ptime_norm = (ptime_sorted - ptime_sorted.min()) / (ptime_sorted.max() - ptime_sorted.min() + 1e-10)
+    divider_top.imshow(ptime_norm.reshape(1, -1), aspect='auto', cmap=get_lamian_colormap('pseudotime'))
+    divider_top.set_xticks([])
+    divider_top.set_yticks([])
     
-    # Model-fitted (binned) - Group 1
-    ax4 = fig.add_subplot(gs[4])
-    fitted1 = binned1[gene_order]
-    im_expr = ax4.imshow(fitted1, aspect='auto', cmap=cmap_expr, vmin=-vmax_expr, vmax=vmax_expr, interpolation='nearest')
-    ax4.set_title(f'Fitted\n{group1}', fontsize=10)
-    ax4.set_xticks([])
-    ax4.set_yticks([])
+    # Colorbar
+    ax_cbar = fig.add_subplot(gs[2])
+    plt.colorbar(im, cax=ax_cbar, label='Z-score (Fitted)')
     
-    # Trend difference
-    ax5 = fig.add_subplot(gs[5])
-    trend_sorted = trend_diff[gene_order]
-    im_diff = ax5.imshow(trend_sorted, aspect='auto', cmap=cmap_diff, vmin=-vmax_diff, vmax=vmax_diff, interpolation='nearest')
-    ax5.set_title('Trend\nDifference', fontsize=10)
-    ax5.set_xticks([])
-    ax5.set_yticks([])
-    
-    # Mean shift
-    ax6 = fig.add_subplot(gs[6])
-    mean_sorted = mean_shift[gene_order].reshape(-1, 1)
-    im_mean = ax6.imshow(mean_sorted, aspect='auto', cmap=cmap_mean, vmin=-vmax_mean, vmax=vmax_mean, interpolation='nearest')
-    ax6.set_title('Mean\nShift', fontsize=10)
-    ax6.set_xticks([])
-    ax6.set_yticks([])
-    
-    # Colorbars
-    ax_cbar = fig.add_subplot(gs[7])
-    plt.colorbar(im_expr, cax=ax_cbar, label='Expression')
-    
+    # Add Cluster Labels
+    # Since we reordered, Cluster 0 is now definitely the "Top" (Earliest) block
+    for c in range(n_clusters):
+        mask = cluster_labels_sorted == c
+        indices = np.where(mask)[0]
+        if len(indices) > 0:
+            mid_idx = indices[len(indices) // 2]
+            ax_cluster.text(-0.5, mid_idx, str(c + 1), ha='right', va='center', fontsize=9, fontweight='bold', color=cluster_colors[c])
+
     fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
     plt.tight_layout()
     
     if output_path:
         fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-        if verbose:
-            print(f"[VIZ] Saved XDE heatmap to {output_path}")
+        if verbose: print(f"[VIZ] Saved TDE heatmap to {output_path}")
     
     info = {
         'genes': genes_sorted,
         'cluster_labels': cluster_labels_sorted,
         'n_clusters': n_clusters,
-        'groups': [group0, group1]
+        'n_genes': len(genes_sorted)
     }
-    
     return fig, info
 
 
-# =============================================================================
-# GENE EXPRESSION CURVE PLOTS (Lamian Fig 3e, 5c style)
-# =============================================================================
-#!/usr/bin/env python3
 """
 Improved Gene Expression Curve Visualization with GAM Smoothing
 ================================================================
@@ -540,7 +422,6 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-#!/usr/bin/env python3
 """
 Fixed plot_gene_expression_curves function
 
@@ -1707,6 +1588,7 @@ def generate_all_visualizations(
         fig, cluster_info = plot_tde_heatmap(
             Y, results, pseudotime,
             n_clusters=n_clusters,
+            gam_models=gam_models,
             title="Differential Genes Along Pseudotime",
             output_path=os.path.join(viz_dir, "02_tde_heatmap.png"),
             verbose=False
