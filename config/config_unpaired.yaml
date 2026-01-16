@@ -7,9 +7,9 @@ output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: true
+run_rna_pipeline: false
 run_atac_pipeline: false
-run_multiomics_pipeline: false
+run_multiomics_pipeline: true
 
 # System configuration
 use_gpu: true
@@ -21,8 +21,8 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad"
-rna_sample_meta_path: '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv'
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv"
+rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
@@ -301,7 +301,7 @@ multiomics_output_dir: null
 # Multiomics Main Control Flags
 multiomics_run_glue: false
 multiomics_run_glue_cell_types: false
-multiomics_run_integrate_preprocess: false
+multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: true
 multiomics_run_visualize_embedding: false
 multiomics_run_find_optimal_resolution: false
@@ -313,8 +313,8 @@ multiomics_run_glue_gene_activity: true
 multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
-multiomics_rna_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
-multiomics_atac_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/ATAC_Metadata.csv'
+multiomics_rna_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv'
+multiomics_atac_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv'
 multiomics_additional_hvg_file : null
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"

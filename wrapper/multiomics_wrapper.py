@@ -402,6 +402,7 @@ def multiomics_wrapper(
             print("✓ Cell type assignment completed successfully")
     
     # Step 2: Integration preprocessing
+        # Step 2: Integration preprocessing
     if run_integrate_preprocess:
         if multiomics_verbose:
             print("Step 2: Running integration preprocessing...")
@@ -416,14 +417,17 @@ def multiomics_wrapper(
             output_dir=integrate_output_dir,
             h5ad_path=h5ad_path,
             sample_column=sample_column,
-            modality_col = modality_col,
+            modality_col=modality_col,
             min_cells_sample=min_cells_sample,
             min_cell_gene=min_cell_gene,
             min_features=min_features,
             pct_mito_cutoff=pct_mito_cutoff,
             exclude_genes=exclude_genes,
             doublet=doublet,
-            verbose=multiomics_verbose
+            verbose=multiomics_verbose,
+            # NEW: re-merge sample metadata for RNA & ATAC
+            rna_sample_meta_file=rna_sample_meta_file,
+            atac_sample_meta_file=atac_sample_meta_file,
         )
 
         results['adata'] = adata
@@ -441,6 +445,7 @@ def multiomics_wrapper(
         else:
             raise ValueError("Integration preprocessing is required for subsequent steps. "
                             "Either set run_integrate_preprocess=True or ensure preprocessed data exists.")
+
     
     # Step 3: Combined Dimensionality Reduction (Pseudobulk + PCA)
     if run_dimensionality_reduction:

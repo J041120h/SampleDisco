@@ -1,0 +1,83 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+... storing 'sample' as categorical
+... storing 'sev.level' as categorical
+... storing 'modality' as categorical
+... storing 'cell_type' as categorical
+... storing 'cell_type_original' as categorical
+... storing 'original_sample' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'age_cluster' as categorical
+... storing 'disease severity' as categorical
+... storing 'current_severity' as categorical
+... storing 'Donor' as categorical
+... storing 'record_id' as categorical
+... storing 'Age' as categorical
+... storing 'PRIMARY_RACE' as categorical
+... storing 'ETHNICITY' as categorical
+... storing 'CANONICAL_ETHNICITY' as categorical
+... storing 'CANONICAL_RACE' as categorical
+... storing 'BMI' as categorical
+... storing 'BMI_GROUP' as categorical
+... storing 'ABO' as categorical
+... storing 'T_SEROLOGY' as categorical
+... storing 'T_POS_SEROL' as categorical
+... storing 'RISK_FACTOR' as categorical
+... storing 'MED_PRESSORS' as categorical
+... storing 'DIALYSIS' as categorical
+... storing 'O2_SUPPORT' as categorical
+... storing 'MAX_SEVERITY_SCORE' as categorical
+... storing 'days_post_pos_test' as categorical
+... storing 'acuity' as categorical
+... storing 'current_severity.1' as categorical
+... storing 'days_to_death' as categorical
+... storing 'vacutainer_type' as categorical
+... storing 'ibuprofen_prior' as categorical
+... storing 'abx_prior' as categorical
+... storing 'remdesivir_prior' as categorical
+... storing 'systemic_steroids_prior__excludes_inhaled' as categorical
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 972, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 416, in multiomics_wrapper
+    adata = integrate_preprocess(
+  File "/users/hjiang/GenoDistance/code/integration/integration_preprocess.py", line 499, in integrate_preprocess
+    adata.write_h5ad(output_h5ad_path)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_core/anndata.py", line 1863, in write_h5ad
+    write_h5ad(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/h5ad.py", line 101, in write_h5ad
+    write_elem(f, "obs", adata.obs, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 378, in write_elem
+    Writer(_REGISTRY).write_elem(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/utils.py", line 247, in func_wrapper
+    return func(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 328, in write_elem
+    return write_func(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 71, in wrapper
+    result = func(g, k, *args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/methods.py", line 830, in write_dataframe
+    _writer.write_elem(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/utils.py", line 247, in func_wrapper
+    return func(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 328, in write_elem
+    return write_func(store, k, elem, dataset_kwargs=dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/registry.py", line 71, in wrapper
+    result = func(g, k, *args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/specs/methods.py", line 487, in write_vlen_string_array
+    f.create_dataset(k, data=elem.astype(str_dtype), dtype=str_dtype, **dataset_kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/group.py", line 186, in create_dataset
+    dsid = dataset.make_new_dset(group, shape, dtype, data, name, **kwds)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/dataset.py", line 178, in make_new_dset
+    dset_id.write(h5s.ALL, h5s.ALL, data)
+  File "h5py/_objects.pyx", line 56, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 57, in h5py._objects.with_phil.wrapper
+  File "h5py/h5d.pyx", line 307, in h5py.h5d.DatasetID.write
+  File "h5py/_proxy.pyx", line 155, in h5py._proxy.dset_rw
+  File "h5py/_conv.pyx", line 442, in h5py._conv.str2vlen
+  File "h5py/_conv.pyx", line 96, in h5py._conv.generic_converter
+  File "h5py/_conv.pyx", line 247, in h5py._conv.conv_str2vlen
+TypeError: Can't implicitly convert non-string objects to strings
+Error raised while writing key 'celltypist_conf_score' of <class 'h5py._hl.group.Group'> to /obs

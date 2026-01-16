@@ -588,17 +588,16 @@ def rna_wrapper(
     prop_results, expr_results = {}, {}
     if sample_cluster:
         print("Starting clustering and differential gene expression...")
-        if cluster_distance_method not in sample_distance_methods:
-            raise ValueError(f"Distance method '{cluster_distance_method}' not found in sample distance methods.")
-        
-        for method in sample_distance_methods:
-            expr_results, prop_results = cluster(
-                pseudobulk_adata=pseudobulk_adata,
-                number_of_clusters=cluster_number,
-                use_expression=True,
-                use_proportion=True,
-                random_state=0,
-            )
+
+        expr_results, prop_results = cluster(
+            pseudobulk_adata=pseudobulk_adata,      
+            output_dir=rna_output_dir,            
+            number_of_clusters=cluster_number,
+            use_expression=True,
+            use_proportion=True,
+            random_state=0,
+        )
+
             
     # Proportion test
     if proportion_test:

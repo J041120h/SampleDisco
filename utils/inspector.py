@@ -299,5 +299,5 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10, n_col_examples: int = 5
 
 if __name__ == "__main__":
     summarize_h5ad(
-        h5ad_path= "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad"
+        h5ad_path= "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad"
     )
