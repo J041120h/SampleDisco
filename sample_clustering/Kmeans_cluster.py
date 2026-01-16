@@ -101,12 +101,3 @@ def cluster_samples_from_folder(folder_path: str, n_clusters: int):
                          f"less than 2 valid clusters remain ({valid_prop_clusters}). Cannot proceed.")
     
     return expr_sample_to_clade, prop_sample_to_clade
-
-if __name__ == "__main__":
-    folder_path = "/Users/harry/Desktop/GenoDistance/result/pseudobulk/"
-    try:
-        expr_results, prop_results = cluster_samples_from_folder(folder_path=folder_path, n_clusters=3)
-        print(f"Expression clustering results: {expr_results}")
-        print(f"Proportion clustering results: {prop_results}")
-    except ValueError as e:
-        print(f"Error: {e}")

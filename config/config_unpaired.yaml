@@ -31,9 +31,9 @@ rna_cell_type_cluster: false
 rna_dimensionality_reduction: false
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: true
-rna_trajectory_dge: true
-rna_sample_cluster: false
+rna_trajectory_analysis: false
+rna_trajectory_dge: false
+rna_sample_cluster: true
 rna_cluster_dge: false
 rna_visualize_data: false
 

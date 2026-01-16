@@ -593,12 +593,11 @@ def rna_wrapper(
         
         for method in sample_distance_methods:
             expr_results, prop_results = cluster(
-                generalFolder=rna_output_dir,
-                Kmeans=Kmeans_based_cluster_flag,
-                methods=Tree_building_method,
-                distance_method=method,
+                pseudobulk_adata=pseudobulk_adata,
                 number_of_clusters=cluster_number,
-                sample_to_clade_user=user_provided_sample_to_clade
+                use_expression=True,
+                use_proportion=True,
+                random_state=0,
             )
             
     # Proportion test
