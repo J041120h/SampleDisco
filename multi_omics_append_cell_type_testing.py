@@ -44,12 +44,16 @@ def auto_align_gene_names_with_pyensembl(
     print(f"[INFO] pyensembl: fraction of Ensembl-like IDs in var_names: {frac_ensembl_like:.3f}")
 
     if frac_ensembl_like < min_ensembl_fraction:
-        print("[INFO] pyensembl: var_names do not look predominantly like Ensembl IDs; "
-              "keeping existing gene names.")
+        print(
+            "[INFO] pyensembl: var_names do not look predominantly like Ensembl IDs; "
+            "keeping existing gene names."
+        )
         return adata_rna  # no change
 
-    print(f"[INFO] pyensembl: detected Ensembl-style gene IDs; mapping to symbols "
-          f"(Ensembl release {ensembl_release}, species={species})")
+    print(
+        f"[INFO] pyensembl: detected Ensembl-style gene IDs; mapping to symbols "
+        f"(Ensembl release {ensembl_release}, species={species})"
+    )
 
     # Initialize / download the Ensembl DB (only first run downloads)
     ensembl = EnsemblRelease(ensembl_release, species=species)
@@ -82,8 +86,10 @@ def auto_align_gene_names_with_pyensembl(
             new_names.append(g)
 
     mapping_frac = n_mapped / len(stripped)
-    print(f"[INFO] pyensembl: successfully mapped {n_mapped}/{len(stripped)} genes "
-          f"({mapping_frac:.3%}) to gene symbols.")
+    print(
+        f"[INFO] pyensembl: successfully mapped {n_mapped}/{len(stripped)} genes "
+        f"({mapping_frac:.3%}) to gene symbols."
+    )
 
     if n_mapped == 0:
         print("[WARN] pyensembl: no genes were mapped; leaving var_names unchanged.")
@@ -114,11 +120,11 @@ def annotate_and_transfer_cell_types(
     Annotate RNA cells using CellTypist and transfer labels to ATAC cells
     based on shared original cell type labels.
 
-    Changes vs original:
-      - Uses pyensembl (Ensembl release 98 by default) to auto-detect Ensembl IDs
-        and map them to gene symbols before CellTypist.
+    Key constraints (per user requirement):
       - Overwrites the original cell type column in-place (default: 'cell_type')
-      - Does NOT create backup or confidence-score columns in adata.obs
+      - DOES NOT add any new columns to adata.obs
+        (no original_barcode, label_transfer_confidence, cell_type_original,
+         celltypist_conf_score, etc.)
 
     Returns
     -------
@@ -198,7 +204,7 @@ def annotate_and_transfer_cell_types(
     predictions = celltypist.annotate(
         adata_ct,
         model=model,
-        majority_voting=majority_voting
+        majority_voting=majority_voting,
     )
     pred_adata = predictions.to_adata()
 
@@ -211,10 +217,12 @@ def annotate_and_transfer_cell_types(
 
     # Build mapping dictionary (original label -> most common CellTypist label)
     label_mapping = {}
-    mapping_df = pd.DataFrame({
-        "original": rna_original_labels,
-        "celltypist": rna_celltypist_labels
-    })
+    mapping_df = pd.DataFrame(
+        {
+            "original": rna_original_labels,
+            "celltypist": rna_celltypist_labels,
+        }
+    )
 
     for orig_label in mapping_df["original"].unique():
         subset = mapping_df[mapping_df["original"] == orig_label]
@@ -225,20 +233,25 @@ def annotate_and_transfer_cell_types(
     for orig, new in sorted(label_mapping.items(), key=lambda x: str(x[0])):
         print(f"  {orig} -> {new}")
 
-    # Overwrite in-place with mapped labels
-    # Preserve any labels that are not in the mapping dictionary
+    # Overwrite original_celltype_col in-place (NO new obs columns)
     orig_series = adata.obs[original_celltype_col].copy()
     new_series = orig_series.map(label_mapping)
+
+    # Preserve any labels that are not in the mapping dictionary
     unmapped_mask = new_series.isna()
     if unmapped_mask.any():
-        print(f"[WARN] {unmapped_mask.sum()} cells have cell type labels not in mapping; "
-              "keeping their original labels.")
+        print(
+            f"[WARN] {unmapped_mask.sum()} cells have cell type labels not in mapping; "
+            "keeping their original labels."
+        )
         new_series[unmapped_mask] = orig_series[unmapped_mask]
+
     adata.obs[original_celltype_col] = new_series
 
-    # Save mapping to file
-    mapping_df_out = pd.DataFrame(list(label_mapping.items()),
-                                  columns=["original_label", "celltypist_label"])
+    # Save mapping to file (disk only, no obs additions)
+    mapping_df_out = pd.DataFrame(
+        list(label_mapping.items()), columns=["original_label", "celltypist_label"]
+    )
     mapping_path = os.path.join(output_dir, "celltype_mapping.csv")
     mapping_df_out.to_csv(mapping_path, index=False)
     print(f"[INFO] Label mapping saved to: {mapping_path}")
@@ -257,6 +270,9 @@ def visualize_glue_embedding(
 ):
     """
     Compute UMAP from GLUE embedding and visualize colored by cell type.
+
+    Note: This function does NOT modify adata.obs; it only writes to
+    adata.uns, adata.obsm, and adata.obsp.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -303,7 +319,9 @@ def visualize_glue_embedding(
     )
     plt.tight_layout()
 
-    output_path_legend = os.path.join(output_dir, filename.replace(".png", "_legend_outside.png"))
+    output_path_legend = os.path.join(
+        output_dir, filename.replace(".png", "_legend_outside.png")
+    )
     fig.savefig(output_path_legend, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"[INFO] UMAP plot (legend outside) saved to: {output_path_legend}")
@@ -320,6 +338,8 @@ def plot_modality_celltype_heatmap(
 ):
     """
     Create a heatmap showing the distribution of RNA/ATAC cells in each cell type.
+
+    Note: This function does NOT modify adata.obs; it only reads from it.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -374,7 +394,9 @@ def plot_modality_celltype_heatmap(
     ax.set_ylabel("Cell Type")
     plt.tight_layout()
 
-    output_path_norm = os.path.join(output_dir, filename.replace(".png", "_normalized.png"))
+    output_path_norm = os.path.join(
+        output_dir, filename.replace(".png", "_normalized.png")
+    )
     fig.savefig(output_path_norm, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"[INFO] Normalized heatmap saved to: {output_path_norm}")
@@ -415,6 +437,7 @@ def run_full_pipeline(
     """
     Run the full pipeline:
     1. Annotate RNA cells with CellTypist and transfer labels to ATAC cells
+       (overwrite cell_type in-place, no new obs columns)
     2. Visualize GLUE embedding with UMAP colored by cell type
     3. Create heatmap of modality distribution across cell types
     """
@@ -502,8 +525,14 @@ def run_full_pipeline(
 
 if __name__ == "__main__":
     # ====== EDIT THESE PATHS ======
-    H5AD_PATH = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad"
-    OUTPUT_DIR = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/annotation_celltypist"
+    H5AD_PATH = (
+        "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/"
+        "multiomics/preprocess/adata_sample.h5ad"
+    )
+    OUTPUT_DIR = (
+        "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/"
+        "multiomics/preprocess/annotation_celltypist"
+    )
 
     adata = run_full_pipeline(
         h5ad_path=H5AD_PATH,

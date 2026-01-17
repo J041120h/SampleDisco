@@ -7,9 +7,9 @@ output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: true
+run_rna_pipeline: false
 run_atac_pipeline: false
-run_multiomics_pipeline: false
+run_multiomics_pipeline: true
 
 # System configuration
 use_gpu: true
@@ -136,8 +136,8 @@ rna_tree_building_method:
   - "HRC_VEC"
   - "NN"
   - "UPGMA"
-rna_proportion_test: true
-rna_raisin_analysis: true
+rna_proportion_test: false
+rna_raisin_analysis: false
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
@@ -302,9 +302,9 @@ multiomics_output_dir: null
 multiomics_run_glue: false
 multiomics_run_glue_cell_types: false
 multiomics_run_integrate_preprocess: true
-multiomics_run_dimensionality_reduction: true
-multiomics_run_visualize_embedding: true
-multiomics_run_find_optimal_resolution: true
+multiomics_run_dimensionality_reduction: false
+multiomics_run_visualize_embedding: false
+multiomics_run_find_optimal_resolution: false
 
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: true

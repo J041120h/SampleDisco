@@ -557,15 +557,18 @@ def multiomics_wrapper(
             print(f"GPU Memory Available: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
         
         # Get integrated data for resolution optimization
+        # Get integrated data for resolution optimization
         integrated_adata_for_resolution = results.get('adata')
+
         if integrated_adata_for_resolution is None and integrated_h5ad_path:
             integrated_adata_for_resolution = sc.read_h5ad(integrated_h5ad_path)
-        elif integrated_adata_for_resolution is None:
-            # Try to load from default location
-            temp_integrated_path = f"{integrate_output_dir}/adata_preprocessed.h5ad"
-            if os.path.exists(temp_integrated_path):
-                integrated_adata_for_resolution = sc.read(temp_integrated_path)
-            
+
+        if integrated_adata_for_resolution is None:
+            # Try to load from canonical preprocess path
+            temp_preprocessed_path = f"{integrate_output_dir}/preprocess/adata_sample.h5ad"
+            if os.path.exists(temp_preprocessed_path):
+                integrated_adata_for_resolution = sc.read_h5ad(temp_preprocessed_path)
+
         if integrated_adata_for_resolution is None:
             raise ValueError("Integrated AnnData must be available when run_find_optimal_resolution=True")
         
