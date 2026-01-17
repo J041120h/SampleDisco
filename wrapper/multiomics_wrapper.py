@@ -546,41 +546,7 @@ def multiomics_wrapper(
                     "Missing file(s):\n" + "\n".join(f" - {path}" for path in missing_files) +
                     "\nEither set run_dimensionality_reduction=True or ensure required data exists."
                 )
-    
-    # Step 4: Visualize multimodal embedding
-    if run_visualize_embedding:
-        if multiomics_verbose:
-            print("Step 4: Visualizing multimodal embedding...")
-        
-        if not status_flags["multiomics"]["dimensionality_reduction"]:
-            raise ValueError("Dimensionality reduction is required before embedding visualization.")
-        
-        adata_for_viz = results.get('pseudobulk_adata')
-        
-        fig, axes = visualize_multimodal_embedding(
-            adata=adata_for_viz,
-            modality_col=modality_col,
-            color_col=color_col,
-            visualization_grouping_column = visualization_grouping_column,
-            target_modality=target_modality,
-            expression_key=expression_key,
-            proportion_key=proportion_key,
-            figsize=figsize,
-            point_size=point_size,
-            alpha=alpha,
-            colormap=colormap,
-            output_dir=viz_output_dir,
-            show_sample_names=show_sample_names,
-            force_data_type=force_data_type,
-            verbose=multiomics_verbose,
-        )
-        
-        results['visualization'] = {'fig': fig, 'axes': axes}
-        status_flags["multiomics"]["embedding_visualization"] = True
-        
-        if multiomics_verbose:
-            print("✓ Embedding visualization completed successfully")
-    
+                
     # Step 5: Find optimal resolution (optional) - runs both expression and proportion
     if run_find_optimal_resolution:
         if multiomics_verbose:
@@ -615,7 +581,7 @@ def multiomics_wrapper(
             output_dir=expression_resolution_dir,
             optimization_target=optimization_target,
             dr_type="expression",
-            n_features=resolution_n_features,
+            n_features=n_features,
             sev_col=sev_col,
             batch_col=batch_col,
             sample_col=resolution_sample_col,
@@ -640,7 +606,7 @@ def multiomics_wrapper(
             output_dir=proportion_resolution_dir,
             optimization_target=optimization_target,
             dr_type="proportion",
-            n_features=resolution_n_features,
+            n_features=n_features,
             sev_col=sev_col,
             batch_col=batch_col,
             sample_col=resolution_sample_col,
@@ -672,6 +638,40 @@ def multiomics_wrapper(
         
         if multiomics_verbose:
             print("✓ Optimal resolution finding and embedding update completed successfully")
+            
+    # Step 4: Visualize multimodal embedding
+    if run_visualize_embedding:
+        if multiomics_verbose:
+            print("Step 4: Visualizing multimodal embedding...")
+        
+        if not status_flags["multiomics"]["dimensionality_reduction"]:
+            raise ValueError("Dimensionality reduction is required before embedding visualization.")
+        
+        adata_for_viz = results.get('pseudobulk_adata')
+        
+        fig, axes = visualize_multimodal_embedding(
+            adata=adata_for_viz,
+            modality_col=modality_col,
+            color_col=color_col,
+            visualization_grouping_column = visualization_grouping_column,
+            target_modality=target_modality,
+            expression_key=expression_key,
+            proportion_key=proportion_key,
+            figsize=figsize,
+            point_size=point_size,
+            alpha=alpha,
+            colormap=colormap,
+            output_dir=viz_output_dir,
+            show_sample_names=show_sample_names,
+            force_data_type=force_data_type,
+            verbose=multiomics_verbose,
+        )
+        
+        results['visualization'] = {'fig': fig, 'axes': axes}
+        status_flags["multiomics"]["embedding_visualization"] = True
+        
+        if multiomics_verbose:
+            print("✓ Embedding visualization completed successfully")
     
     # Add status_flags to results
     results['status_flags'] = status_flags

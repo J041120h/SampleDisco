@@ -16,22 +16,25 @@ def replace_optimal_dimension_reduction(
     """
     Replaces dimension reduction results AND pseudobulk expression in pseudobulk_sample.h5ad
     with optimal results from resolution optimization for BOTH expression and proportion.
-    
-    This function:
-    1. Loads the optimal expression and proportion h5ad files from
-       Integration_optimization_{target}_{dr_type}/summary/optimal_{target}_{dr_type}.h5ad
-    2. Loads the pseudobulk_sample.h5ad file
-    3. Replaces the pseudobulk expression matrix (X and layers) with the one from
-       the optimal expression AnnData (after checking sample and gene alignment)
-    4. Replaces X_DR_expression with optimal expression DR results
-    5. Replaces X_DR_proportion with optimal proportion DR results
-    6. Saves the updated pseudobulk_sample.h5ad
-    7. Updates the unified embedding CSV files in <base_path>/embeddings:
-         - sample_expression_embedding.csv
-         - sample_proportion_embedding.csv
-    
-    Parameters:
-    -----------
+
+    New strategy:
+    -------------
+    - Use `optimal_expression` AnnData as the TEMPLATE for the updated pseudobulk.
+    - Ensure sample indices match between `optimal_expression` and the original `pseudobulk_sample`.
+    - Copy all sample metadata (obs columns) from `pseudobulk_sample` into the new object.
+    - Merge .uns and .obsm from `pseudobulk_sample`, then overwrite DR-related keys with
+      values from `optimal_expression` and `optimal_proportion`.
+    - Save this updated AnnData back to pseudobulk_path (with a .backup created first).
+    - Update unified embedding CSVs.
+
+    File structure:
+    ---------------
+    resolution_optimization_{dr_type}/
+        Integration_optimization_{target}_{dr_type}/
+            summary/optimal_{target}_{dr_type}.h5ad
+
+    Parameters
+    ----------
     base_path : str
         Base path to the output directory
         Example: '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/multiomics'
@@ -48,62 +51,63 @@ def replace_optimal_dimension_reduction(
         Optimization target ('rna' or 'atac') - used to construct filenames
     verbose : bool, default True
         Whether to print verbose output
-        
-    Returns:
-    --------
+
+    Returns
+    -------
     sc.AnnData
         Updated pseudobulk AnnData with optimal expression and embeddings
     """
-    
+
+    # ------------------------------------------------------------------
     # Construct default file paths if not provided
+    # ------------------------------------------------------------------
     if expression_resolution_dir is None:
         expression_resolution_dir = os.path.join(
-            base_path, 
+            base_path,
             "resolution_optimization_expression"
         )
-    
+
     if proportion_resolution_dir is None:
         proportion_resolution_dir = os.path.join(
-            base_path, 
+            base_path,
             "resolution_optimization_proportion"
         )
-    
+
     if pseudobulk_path is None:
         pseudobulk_path = os.path.join(
-            base_path, 
-            "pseudobulk", 
+            base_path,
+            "pseudobulk",
             "pseudobulk_sample.h5ad"
         )
-    
-    # Construct paths to optimal h5ad files with the correct directory structure
-    # The actual structure is:
-    # resolution_optimization_{dr_type}/Integration_optimization_{target}_{dr_type}/summary/optimal_{target}_{dr_type}.h5ad
+
     optimal_expression_path = os.path.join(
         expression_resolution_dir,
         f"Integration_optimization_{optimization_target}_expression",
-        "summary", 
+        "summary",
         f"optimal_{optimization_target}_expression.h5ad"
     )
-    
+
     optimal_proportion_path = os.path.join(
         proportion_resolution_dir,
         f"Integration_optimization_{optimization_target}_proportion",
-        "summary", 
+        "summary",
         f"optimal_{optimization_target}_proportion.h5ad"
     )
-    
+
     if verbose:
-        print(f"\n{'='*70}")
-        print(f"Replacing Dimension Reduction and Expression with Optimal Results")
-        print(f"{'='*70}")
-        print(f"\n[Replace DR] Configuration:")
+        print("\n" + "=" * 70)
+        print("Replacing Dimension Reduction and Expression with Optimal Results")
+        print("=" * 70)
+        print("\n[Replace DR] Configuration:")
         print(f"  - Optimization target: {optimization_target.upper()}")
-        print(f"\n[Replace DR] File paths:")
+        print("\n[Replace DR] File paths:")
         print(f"  - Optimal expression: {optimal_expression_path}")
         print(f"  - Optimal proportion: {optimal_proportion_path}")
         print(f"  - Pseudobulk sample: {pseudobulk_path}")
-    
-    # Check if files exist
+
+    # ------------------------------------------------------------------
+    # Check if required files exist
+    # ------------------------------------------------------------------
     missing_files = []
     if not os.path.exists(optimal_expression_path):
         missing_files.append(f"Optimal expression: {optimal_expression_path}")
@@ -111,86 +115,111 @@ def replace_optimal_dimension_reduction(
         missing_files.append(f"Optimal proportion: {optimal_proportion_path}")
     if not os.path.exists(pseudobulk_path):
         missing_files.append(f"Pseudobulk: {pseudobulk_path}")
-    
+
     if missing_files:
         error_msg = "\n[ERROR] The following required files were not found:\n"
         error_msg += "\n".join([f"  ✗ {f}" for f in missing_files])
         raise FileNotFoundError(error_msg)
-    
-    # Load all three files
+
+    # ------------------------------------------------------------------
+    # Load all three AnnData files
+    # ------------------------------------------------------------------
     try:
         if verbose:
-            print(f"\n[Replace DR] Loading files...")
-        
+            print("\n[Replace DR] Loading files...")
+
         optimal_expression = sc.read_h5ad(optimal_expression_path)
         optimal_proportion = sc.read_h5ad(optimal_proportion_path)
-        pseudobulk_sample = sc.read_h5ad(pseudobulk_path)
-        
+        pseudobulk_sample_original = sc.read_h5ad(pseudobulk_path)
+
         if verbose:
             print(f"  ✓ Optimal expression loaded: {optimal_expression.shape}")
             print(f"  ✓ Optimal proportion loaded: {optimal_proportion.shape}")
-            print(f"  ✓ Pseudobulk sample loaded: {pseudobulk_sample.shape}")
+            print(f"  ✓ Original pseudobulk loaded: {pseudobulk_sample_original.shape}")
     except Exception as e:
         raise RuntimeError(f"[ERROR] Failed to load h5ad files: {str(e)}")
-    
-    # Verify sample alignment
-    if not np.array_equal(optimal_expression.obs.index, pseudobulk_sample.obs.index):
-        raise ValueError("[ERROR] Sample indices in optimal_expression do not match pseudobulk_sample")
-    if not np.array_equal(optimal_proportion.obs.index, pseudobulk_sample.obs.index):
-        raise ValueError("[ERROR] Sample indices in optimal_proportion do not match pseudobulk_sample")
-    
+
     # ------------------------------------------------------------------
-    # NEW: Replace pseudobulk expression matrix with optimal expression
+    # Verify sample alignment (obs indices), but DO NOT require gene match
     # ------------------------------------------------------------------
-    if verbose:
-        print(f"\n[Replace DR] Replacing pseudobulk EXPRESSION matrix with optimal expression...")
-    
-    # We require gene (var) identity and order to match for a safe replacement
-    if not np.array_equal(optimal_expression.var.index, pseudobulk_sample.var.index):
-        msg = (
-            "[ERROR] Gene (var) indices in optimal_expression do not match pseudobulk_sample.\n"
-            "        Cannot safely replace expression matrix.\n"
-            f"        optimal_expression genes: {optimal_expression.var.shape[0]}\n"
-            f"        pseudobulk_sample genes:  {pseudobulk_sample.var.shape[0]}"
+    if not np.array_equal(optimal_expression.obs.index,
+                          pseudobulk_sample_original.obs.index):
+        raise ValueError(
+            "[ERROR] Sample indices in optimal_expression do not match original pseudobulk_sample.\n"
+            "        These must match to safely merge sample metadata."
         )
-        raise ValueError(msg)
-    
-    # Replace the main expression matrix
-    pseudobulk_sample.X = optimal_expression.X.copy()
-    
-    if verbose:
-        print(f"  ✓ Replaced pseudobulk_sample.X with optimal_expression.X "
-              f"(shape: {pseudobulk_sample.X.shape})")
-    
-    # Copy layers from optimal_expression (if any)
-    if len(optimal_expression.layers) > 0:
-        for layer_name, layer_data in optimal_expression.layers.items():
-            pseudobulk_sample.layers[layer_name] = layer_data.copy()
-            if verbose:
-                print(f"  ✓ Copied layer '{layer_name}' "
-                      f"(shape: {layer_data.shape}) from optimal_expression")
-    else:
-        if verbose:
-            print("  • No layers found in optimal_expression; skipping layer copy")
-    
-    # Copy var annotations from optimal_expression
-    if optimal_expression.var.shape[1] > 0:
-        for col in optimal_expression.var.columns:
-            pseudobulk_sample.var[col] = optimal_expression.var[col].copy()
-        if verbose:
-            print(f"  ✓ Copied var annotations from optimal_expression "
-                  f"(columns: {list(optimal_expression.var.columns)})")
-    else:
-        if verbose:
-            print("  • No additional var annotations in optimal_expression; skipping var copy")
-    
+
+    if not np.array_equal(optimal_proportion.obs.index,
+                          pseudobulk_sample_original.obs.index):
+        raise ValueError(
+            "[ERROR] Sample indices in optimal_proportion do not match original pseudobulk_sample."
+        )
+
     # ------------------------------------------------------------------
-    # Replace EXPRESSION DR with optimal_expression DR
+    # NEW STRATEGY: Use optimal_expression as TEMPLATE for updated pseudobulk
     # ------------------------------------------------------------------
     if verbose:
-        print(f"\n[Replace DR] Replacing EXPRESSION dimension reduction results...")
-    
-    # Keys to copy for expression DR
+        print("\n[Replace DR] Building updated pseudobulk using optimal EXPRESSION as template...")
+
+    # Start from optimal_expression: X, var, layers, obsm, uns, etc.
+    updated_pseudobulk = optimal_expression.copy()
+
+    if verbose:
+        print(f"  • Template (optimal_expression) shape: {updated_pseudobulk.shape}")
+        print(f"  • Template genes: {updated_pseudobulk.var.shape[0]}")
+
+    # ------------------------------------------------------------------
+    # Copy / merge obs: ensure we preserve all sample metadata from original pseudobulk
+    # ------------------------------------------------------------------
+    if verbose:
+        print("  • Merging sample metadata (obs) from original pseudobulk...")
+
+    # Start with the template obs, then add/overwrite columns from original
+    original_obs = pseudobulk_sample_original.obs
+    template_obs = updated_pseudobulk.obs
+
+    # Align original obs to template index (they should match already)
+    original_obs_aligned = original_obs.reindex(template_obs.index)
+
+    # Add any missing columns from original to template
+    for col in original_obs_aligned.columns:
+        if col not in template_obs.columns:
+            template_obs[col] = original_obs_aligned[col]
+        else:
+            # Overwrite existing column with original, to keep original metadata
+            template_obs[col] = original_obs_aligned[col]
+
+    updated_pseudobulk.obs = template_obs
+
+    if verbose:
+        print(f"  ✓ Updated obs columns: {list(updated_pseudobulk.obs.columns)}")
+
+    # ------------------------------------------------------------------
+    # Merge .uns and .obsm with original pseudobulk for non-DR metadata
+    # ------------------------------------------------------------------
+    if verbose:
+        print("  • Merging .uns and .obsm from original pseudobulk (non-DR metadata)...")
+
+    # For .uns: original keys, then overlay optimized expression .uns
+    merged_uns = dict(pseudobulk_sample_original.uns)  # base: original
+    merged_uns.update(optimal_expression.uns)          # overwrite with optimized expression info
+    updated_pseudobulk.uns = merged_uns
+
+    # For .obsm: original keys, then overlay optimized expression .obsm
+    merged_obsm = dict(pseudobulk_sample_original.obsm)
+    merged_obsm.update(optimal_expression.obsm)
+    updated_pseudobulk.obsm = merged_obsm
+
+    if verbose:
+        print(f"  ✓ .uns keys after merge: {list(updated_pseudobulk.uns.keys())}")
+        print(f"  ✓ .obsm keys after merge: {list(updated_pseudobulk.obsm.keys())}")
+
+    # ------------------------------------------------------------------
+    # Replace / ensure EXPRESSION DR keys from optimal_expression
+    # ------------------------------------------------------------------
+    if verbose:
+        print("\n[Replace DR] Ensuring EXPRESSION dimension reduction results are from optimal_expression...")
+
     expression_uns_keys = [
         'X_DR_expression',
         'X_DR_expression_variance',
@@ -199,18 +228,18 @@ def replace_optimal_dimension_reduction(
         'X_lsi_expression_method',
         'X_spectral_expression_method'
     ]
-    
+
     expression_obsm_keys = [
         'X_DR_expression',
         'X_pca_expression_method',
         'X_lsi_expression_method',
         'X_spectral_expression_method'
     ]
-    
+
     copied_expression_count = 0
     for key in expression_uns_keys:
         if key in optimal_expression.uns:
-            pseudobulk_sample.uns[key] = optimal_expression.uns[key].copy()
+            updated_pseudobulk.uns[key] = optimal_expression.uns[key]
             copied_expression_count += 1
             if verbose:
                 shape_info = ""
@@ -218,43 +247,43 @@ def replace_optimal_dimension_reduction(
                     shape_info = f" (shape: {optimal_expression.uns[key].shape})"
                 elif hasattr(optimal_expression.uns[key], '__len__'):
                     shape_info = f" (length: {len(optimal_expression.uns[key])})"
-                print(f"  ✓ Copied .uns['{key}']{shape_info}")
-    
+                print(f"  ✓ Ensured .uns['{key}'] from optimal_expression{shape_info}")
+
     for key in expression_obsm_keys:
         if key in optimal_expression.obsm:
-            pseudobulk_sample.obsm[key] = optimal_expression.obsm[key].copy()
+            updated_pseudobulk.obsm[key] = optimal_expression.obsm[key]
             copied_expression_count += 1
             if verbose:
-                print(f"  ✓ Copied .obsm['{key}'] (shape: {optimal_expression.obsm[key].shape})")
-    
+                print(f"  ✓ Ensured .obsm['{key}'] from optimal_expression "
+                      f"(shape: {optimal_expression.obsm[key].shape})")
+
     if copied_expression_count == 0:
-        print(f"  ⚠ Warning: No expression DR keys found in optimal_expression file")
+        print("  ⚠ Warning: No expression DR keys found in optimal_expression file")
     elif verbose:
-        print(f"  → Total expression keys copied: {copied_expression_count}")
-    
+        print(f"  → Total expression DR-related keys ensured: {copied_expression_count}")
+
     # ------------------------------------------------------------------
     # Replace PROPORTION DR with optimal_proportion DR
     # ------------------------------------------------------------------
     if verbose:
-        print(f"\n[Replace DR] Replacing PROPORTION dimension reduction results...")
-    
-    # Keys to copy for proportion DR
+        print("\n[Replace DR] Replacing PROPORTION dimension reduction results with optimal_proportion...")
+
     proportion_uns_keys = [
         'X_DR_proportion',
         'X_DR_proportion_variance',
         'X_DR_proportion_variance_ratio',
         'pca_proportion_variance_ratio'
     ]
-    
+
     proportion_obsm_keys = [
         'X_DR_proportion',
         'X_pca_proportion'
     ]
-    
+
     copied_proportion_count = 0
     for key in proportion_uns_keys:
         if key in optimal_proportion.uns:
-            pseudobulk_sample.uns[key] = optimal_proportion.uns[key].copy()
+            updated_pseudobulk.uns[key] = optimal_proportion.uns[key]
             copied_proportion_count += 1
             if verbose:
                 shape_info = ""
@@ -262,29 +291,29 @@ def replace_optimal_dimension_reduction(
                     shape_info = f" (shape: {optimal_proportion.uns[key].shape})"
                 elif hasattr(optimal_proportion.uns[key], '__len__'):
                     shape_info = f" (length: {len(optimal_proportion.uns[key])})"
-                print(f"  ✓ Copied .uns['{key}']{shape_info}")
-    
+                print(f"  ✓ Copied .uns['{key}'] from optimal_proportion{shape_info}")
+
     for key in proportion_obsm_keys:
         if key in optimal_proportion.obsm:
-            pseudobulk_sample.obsm[key] = optimal_proportion.obsm[key].copy()
+            updated_pseudobulk.obsm[key] = optimal_proportion.obsm[key]
             copied_proportion_count += 1
             if verbose:
-                print(f"  ✓ Copied .obsm['{key}'] (shape: {optimal_proportion.obsm[key].shape})")
-    
+                print(f"  ✓ Copied .obsm['{key}'] from optimal_proportion "
+                      f"(shape: {optimal_proportion.obsm[key].shape})")
+
     if copied_proportion_count == 0:
-        print(f"  ⚠ Warning: No proportion DR keys found in optimal_proportion file")
+        print("  ⚠ Warning: No proportion DR keys found in optimal_proportion file")
     elif verbose:
-        print(f"  → Total proportion keys copied: {copied_proportion_count}")
-    
+        print(f"  → Total proportion DR-related keys copied: {copied_proportion_count}")
+
     # ------------------------------------------------------------------
-    # Save the updated pseudobulk_sample (with backup)
+    # Save the updated pseudobulk (with backup)
     # ------------------------------------------------------------------
     try:
         if verbose:
-            print(f"\n[Replace DR] Saving updated pseudobulk_sample...")
+            print("\n[Replace DR] Saving updated pseudobulk_sample...")
             print(f"  Destination: {pseudobulk_path}")
-        
-        # Create backup of original file
+
         backup_path = pseudobulk_path + ".backup"
         if os.path.exists(backup_path):
             if verbose:
@@ -294,50 +323,49 @@ def replace_optimal_dimension_reduction(
             shutil.copy2(pseudobulk_path, backup_path)
             if verbose:
                 print(f"  ✓ Created backup: {backup_path}")
-        
-        # Write updated file
-        pseudobulk_sample.write_h5ad(pseudobulk_path)
-        
+
+        updated_pseudobulk.write_h5ad(pseudobulk_path)
+
         if os.path.exists(pseudobulk_path):
             file_size = os.path.getsize(pseudobulk_path)
             if verbose:
-                print(f"  ✓ Successfully saved ({file_size / (1024*1024):.1f} MB)")
-                print(f"\n{'-'*70}")
-                print(f"SUMMARY")
-                print(f"{'-'*70}")
+                print(f"  ✓ Successfully saved updated pseudobulk "
+                      f"({file_size / (1024*1024):.1f} MB)")
+                print("\n" + "-" * 70)
+                print("SUMMARY")
+                print("-" * 70)
                 print(f"  Optimization target: {optimization_target.upper()}")
-                print(f"  Expression DR keys copied: {copied_expression_count}")
+                print(f"  Expression DR keys ensured: {copied_expression_count}")
                 print(f"  Proportion DR keys copied: {copied_proportion_count}")
                 print(f"  Total DR keys updated: {copied_expression_count + copied_proportion_count}")
-                print(f"  Expression matrix replaced: True")
+                print(f"  Expression matrix source: optimal_expression (template)")
                 print(f"  File updated: {pseudobulk_path}")
                 print(f"  Backup saved: {backup_path}")
-                print(f"{'='*70}\n")
+                print("=" * 70 + "\n")
         else:
             raise RuntimeError("File was not created after save operation")
-    
+
     except Exception as e:
         raise RuntimeError(f"[ERROR] Failed to save updated pseudobulk file: {str(e)}")
-    
-    # -------------------------------------------------
+
+    # ------------------------------------------------------------------
     # Update CSV embeddings like the main pipeline
-    # -------------------------------------------------
+    # ------------------------------------------------------------------
     try:
         if verbose:
-            print(f"[Replace DR] Updating embedding CSV files...")
-        
+            print("[Replace DR] Updating embedding CSV files...")
+
         embedding_dir = os.path.join(base_path, "embeddings")
         os.makedirs(embedding_dir, exist_ok=True)
-        
+
         def _save_embedding_csv_from_uns(uns_key: str, filename: str, desc: str) -> bool:
-            if uns_key not in pseudobulk_sample.uns:
+            if uns_key not in updated_pseudobulk.uns:
                 if verbose:
-                    print(f"  ⚠ {desc} not found in pseudobulk_sample.uns['{uns_key}']; skipping CSV update")
+                    print(f"  ⚠ {desc} not found in updated_pseudobulk.uns['{uns_key}']; skipping CSV update")
                 return False
-            
-            data = pseudobulk_sample.uns[uns_key]
-            
-            # Convert to DataFrame
+
+            data = updated_pseudobulk.uns[uns_key]
+
             if isinstance(data, np.ndarray):
                 df = pd.DataFrame(data)
             elif isinstance(data, pd.DataFrame):
@@ -349,14 +377,14 @@ def replace_optimal_dimension_reduction(
                     if verbose:
                         print(f"  ⚠ Skipping {desc}: could not convert type {type(data)} to DataFrame")
                     return False
-            
+
             out_path = os.path.join(embedding_dir, filename)
-            df.to_csv(out_path)
-            
+            df.to_csv(out_path, index=False)
+
             if verbose:
                 print(f"  ✓ Saved {desc} to {out_path} (shape: {df.shape})")
             return True
-        
+
         _ = _save_embedding_csv_from_uns(
             "X_DR_expression",
             "sample_expression_embedding.csv",
@@ -367,9 +395,9 @@ def replace_optimal_dimension_reduction(
             "sample_proportion_embedding.csv",
             "proportion embedding"
         )
-    
+
     except Exception as e:
         if verbose:
             print(f"  ⚠ Failed to update embedding CSV files: {e}")
-    
-    return pseudobulk_sample
+
+    return updated_pseudobulk

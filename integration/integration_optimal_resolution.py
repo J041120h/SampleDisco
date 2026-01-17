@@ -616,7 +616,7 @@ def find_optimal_cell_resolution_integration(
     output_dir: str,
     optimization_target: str = "rna",
     dr_type: str = "expression",
-    n_features: int = 40000,
+    n_features: int = 2000,
     sev_col: str = "sev.level",
     batch_col: Optional[Union[str, List[str]]] = None,
     sample_col: str = "sample",

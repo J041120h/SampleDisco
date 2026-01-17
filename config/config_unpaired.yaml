@@ -303,8 +303,8 @@ multiomics_run_glue: false
 multiomics_run_glue_cell_types: false
 multiomics_run_integrate_preprocess: true
 multiomics_run_dimensionality_reduction: true
-multiomics_run_visualize_embedding: false
-multiomics_run_find_optimal_resolution: false
+multiomics_run_visualize_embedding: true
+multiomics_run_find_optimal_resolution: true
 
 # Multiomics GLUE Sub-Step Control Flags
 multiomics_run_glue_preprocessing: true
@@ -313,8 +313,8 @@ multiomics_run_glue_gene_activity: true
 multiomics_run_glue_visualization: true
 
 # Multiomics Basic Parameters
-multiomics_rna_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv'
-multiomics_atac_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv'
+multiomics_rna_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv'
+multiomics_atac_sample_meta_file: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv'
 multiomics_additional_hvg_file : null
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
@@ -406,7 +406,7 @@ multiomics_force_data_type: null
 # Multiomics Optimal Resolution Parameters
 multiomics_optimization_target: "rna"
 multiomics_dr_type: "expression"
-multiomics_resolution_n_features: 40000
+multiomics_resolution_n_features: 2000
 multiomics_sev_col: "sev.level"
 multiomics_resolution_batch_col: 'batch'
 multiomics_resolution_sample_col: "sample"

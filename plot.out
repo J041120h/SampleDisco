@@ -51,24 +51,13 @@ Step 2: Running integration preprocessing...
 Dimension of raw data (cells x genes): 987474 x 14881
 Stored original sample IDs in adata.obs['original_sample'].
 Re-merging sample metadata into integrated AnnData (per modality)...
-[RNA] Merging sample metadata for 898489 cells using file: /dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv
-[RNA] Reading metadata CSV...
+[RNA] Merging sample metadata for 898489 cells using file: /dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv
 [RNA] Using direct sample IDs from 'original_sample' to merge with metadata key 'sample'. Overlap: 405 samples.
-[RNA] Attempting to map metadata for 898489 cells; 898489 cells have matching sample IDs in metadata.
-[RNA] Added metadata columns: ['study', 'age', 'sex', 'severity', 'batch', 'age_cluster', 'disease severity', 'current_severity', 'Donor', 'record_id', 'Age', 'PRIMARY_RACE', 'ETHNICITY', 'CANONICAL_ETHNICITY', 'CANONICAL_RACE', 'BMI', 'BMI_GROUP', 'ABO', 'T_SEROLOGY', 'T_POS_SEROL', 'RISK_FACTOR', 'MED_PRESSORS', 'DIALYSIS', 'O2_SUPPORT', 'MAX_SEVERITY_SCORE', 'days_post_pos_test', 'acuity', 'current_severity.1', 'days_to_death', 'vacutainer_type', 'ibuprofen_prior', 'abx_prior', 'remdesivir_prior', 'systemic_steroids_prior__excludes_inhaled']
-[ATAC] Merging sample metadata for 88985 cells using file: /dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv
-[ATAC] Reading metadata CSV...
+[RNA] Added metadata columns: ['age_cluster', 'batch', 'sex']
+[ATAC] Merging sample metadata for 88985 cells using file: /dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv
 [ATAC] Using direct sample IDs from 'original_sample' to merge with metadata key 'sample'. Overlap: 27 samples.
 [ATAC] All metadata columns already exist in adata.obs; no new columns added.
-Multi-omics sample metadata merge finished.
-
 Sample metadata re-merge complete.
-
-[NA-SWEEP] Checking obs (rows): shape=(987474, 44)
-  - Filled 12116641 NA in obs
-[NA-SWEEP] Checking var (columns): shape=(14881, 0)
-  - Filled 0.0 NA in var
-[NA-SWEEP] Completed metadata placeholder filling.
 
 Detected non-unique 'sample' values (432 duplicated sample IDs across 987474 rows). Appended modality from 'modality' only for those rows.
 After cell filtering -- Cells remaining: 987474, Genes remaining: 14881
@@ -106,9 +95,278 @@ SRR14466471_ATAC         355
 re_SRR14466469_ATAC      344
 Name: count, Length: 431, dtype: int64
 Final filtering -- Cells remaining: 987397, Genes remaining: 10175
-Preprocessing complete!
+[NA-SWEEP] obs: 381520 NA before filling
+  - obs['celltypist_conf_score']: filled 88962 NA (dtype: float64)
+  - obs['age_cluster']: filled 106238 NA (dtype: object)
+  - obs['batch']: filled 88962 NA (dtype: object)
+  - obs['sex']: filled 97358 NA (dtype: object)
+[NA-SWEEP] obs: 381520 NA filled total
 
-✗ Multiomics pipeline failed with error: Can't implicitly convert non-string objects to strings
+[NA-SWEEP] var: 0 NA before filling
+[NA-SWEEP] var: 0 NA filled total
+
+[NA-SWEEP] Completed dtype-aware placeholder filling.
+
+Preprocessing complete!
+Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
+Original sample IDs stored in: adata.obs['original_sample']
+Function execution time: 110.85 seconds
+✓ Integration preprocessing completed successfully
+Step 3: Running dimensionality reduction (pseudobulk + PCA)...
+  Sub-step 3a: Computing pseudobulk...
+[Pseudobulk] Input: 987397 cells, 10175 genes
+[Pseudobulk] HVG selection modality: RNA (both rounds)
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[Pseudobulk] Using GPU (rapids_singlecell)
+[Pseudobulk] HVG selection will use RNA cells only (both rounds)
+[Pseudobulk] 431 samples, 9 cell types
+[Pseudobulk] Batch correction: ['batch', 'modality']
+[Pseudobulk] Modality distribution: {'RNA': np.int64(898435), 'ATAC': np.int64(88962)}
+[Pseudobulk] Phase 1a: Aggregating ALL cells...
+  Aggregating 987397 cells -> 431 samples x 9 cell types
+  Created 9 cell type layers
+[Pseudobulk] Phase 1b: Aggregating RNA cells for HVG selection...
+  Filtered to RNA cells: 898435 / 987397
+  Aggregating 898435 cells -> 405 samples x 9 cell types
+  Created 9 cell type layers
+[Pseudobulk] Phase 2: Processing cell types (Round 1 HVG)...
+  Step 2a: Selecting HVGs from RNA cells
+  Step 2b: Extracting expression from ALL cells
+  [1/9] B
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+  [2/9] CD14 Monocyte
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+  [3/9] CD4n T
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+  [4/9] CD8m T
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+  [5/9] IgA PB
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+  [6/9] NK
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+  [7/9] Neutrophil
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Removing 10142 NaN genes post-correction
+    Error: ValueError: Cannot cut empty array
+  [8/9] Platelet
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+  [9/9] pDC
+    Selecting HVGs from RNA cells...
+    Batches: 12, sizes: 2-249
+    Applied ComBat
+    Selected 2000 HVGs from RNA cells
+    Extracting expression from ALL cells...
+    Batches: 13, sizes: 2-249
+    Applied ComBat
+    Using 2000 HVGs
+[Pseudobulk] Retained 8 cell types
+[Pseudobulk] Phase 3: Building concatenated matrix from ALL cells...
+[Pseudobulk] Phase 3b: Building concatenated matrix from RNA cells for Round 2 HVG...
+[Pseudobulk] Phase 4: Round 2 HVG selection from RNA cells...
+[Pseudobulk] Final features: 2000 (selected from RNA cells, applied to ALL cells)
+[Pseudobulk] Phase 5: Computing proportions...
+[Pseudobulk] Complete
+[Pseudobulk] Extracting sample metadata...
+[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Pseudobulk] Output: 431 samples, 2000 features
+  Sub-step 3b: Processing with PCA...
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] Batch correction: Using 2 batch column(s): ['batch', 'modality']
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=8
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(431, 2000), proportion=(431, 8)
+[DimRed] Computing PCA for RNA data with 10 components on (431, 2000) data
+[PCA] Success. Shape: (431, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (431, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (431, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 8 components...
+[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['batch', 'modality']
+[run_dimension_reduction_proportion] Harmony completed with 2 batch factor(s). Shape: (431, 8)
+[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (431, 8)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_expression_embedding.csv (shape: (431, 10))
+[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_proportion_embedding.csv (shape: (431, 8))
+[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file path:
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (2.5 MB)
+[process_anndata_with_dimension_reduction] ✓ File saved successfully
+
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 0.46 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ATTEMPTED
+  - H5AD: pseudobulk_anndata only
+  - CSV embeddings: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/
+✓ Dimensionality reduction completed successfully
+Step 5: Finding optimal cell resolution for both expression and proportion...
+GPU Memory: 47.70 GB
+GPU Memory Available: 0.00 GB
+
+  Running optimization for EXPRESSION...
+  ✓ Expression optimization completed
+
+  Running optimization for PROPORTION...
+  ✓ Proportion optimization completed
+
+  Updating pseudobulk with optimal embeddings...
+
+======================================================================
+Replacing Dimension Reduction and Expression with Optimal Results
+======================================================================
+
+[Replace DR] Configuration:
+  - Optimization target: RNA
+
+[Replace DR] File paths:
+  - Optimal expression: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/summary/optimal_rna_expression.h5ad
+  - Optimal proportion: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_proportion/Integration_optimization_rna_proportion/summary/optimal_rna_proportion.h5ad
+  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+
+[Replace DR] Loading files...
+  ✓ Optimal expression loaded: (431, 2000)
+  ✓ Optimal proportion loaded: (431, 2000)
+  ✓ Original pseudobulk loaded: (431, 2000)
+
+[Replace DR] Building updated pseudobulk using optimal EXPRESSION as template...
+  • Template (optimal_expression) shape: (431, 2000)
+  • Template genes: 2000
+  • Merging sample metadata (obs) from original pseudobulk...
+  ✓ Updated obs columns: ['sev.level', 'modality', 'original_sample', 'age_cluster', 'batch', 'sex']
+  • Merging .uns and .obsm from original pseudobulk (non-DR metadata)...
+  ✓ .uns keys after merge: ['X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'pca_proportion_variance_ratio']
+  ✓ .obsm keys after merge: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
+
+[Replace DR] Ensuring EXPRESSION dimension reduction results are from optimal_expression...
+  ✓ Ensured .uns['X_DR_expression'] from optimal_expression (shape: (431, 30))
+  ✓ Ensured .uns['X_DR_expression_variance'] from optimal_expression (shape: (30,))
+  ✓ Ensured .uns['X_DR_expression_variance_ratio'] from optimal_expression (shape: (30,))
+  ✓ Ensured .uns['X_pca_expression_method'] from optimal_expression (shape: (431, 30))
+  ✓ Ensured .obsm['X_DR_expression'] from optimal_expression (shape: (431, 30))
+  ✓ Ensured .obsm['X_pca_expression_method'] from optimal_expression (shape: (431, 30))
+  → Total expression DR-related keys ensured: 6
+
+[Replace DR] Replacing PROPORTION dimension reduction results with optimal_proportion...
+  ✓ Copied .uns['X_DR_proportion'] from optimal_proportion (shape: (431, 10))
+  ✓ Copied .uns['X_DR_proportion_variance_ratio'] from optimal_proportion (shape: (10,))
+  ✓ Copied .uns['pca_proportion_variance_ratio'] from optimal_proportion (shape: (10,))
+  ✓ Copied .obsm['X_DR_proportion'] from optimal_proportion (shape: (431, 10))
+  ✓ Copied .obsm['X_pca_proportion'] from optimal_proportion (shape: (431, 10))
+  → Total proportion DR-related keys copied: 5
+
+[Replace DR] Saving updated pseudobulk_sample...
+  Destination: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  Note: Backup file already exists: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
+  ✓ Successfully saved updated pseudobulk (4.1 MB)
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Optimization target: RNA
+  Expression DR keys ensured: 6
+  Proportion DR keys copied: 5
+  Total DR keys updated: 11
+  Expression matrix source: optimal_expression (template)
+  File updated: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  Backup saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
+======================================================================
+
+[Replace DR] Updating embedding CSV files...
+  ✓ Saved expression embedding to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_expression_embedding.csv (shape: (431, 30))
+  ✓ Saved proportion embedding to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_proportion_embedding.csv (shape: (431, 10))
+✓ Optimal resolution finding and embedding update completed successfully
+Step 4: Visualizing multimodal embedding...
+Creating default embedding visualization (all samples)
+Expression key: X_DR_expression
+Proportion key: X_DR_proportion
+Additional color columns: ['sev.level']
+Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization
+
+Creating colored visualizations for 1 column(s)...
+
+--- Processing color column: sev.level ---
+  Column 'sev.level': numerical with 4 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_expression_by_sev.level.png
+  Column 'sev.level': numerical with 4 unique values
+  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_proportion_by_sev.level.png
+  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_combined_by_sev.level.png
+✓ Embedding visualization completed successfully
+
+Pipeline completed successfully!
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
+Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
+Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
+Completed steps: 10/10
+GLUE sub-steps completed: 5/5
+
+✓ Multiomics pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
@@ -127,4 +385,4 @@ Multiomics Pipeline: ✓ COMPLETE
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 120.8486 seconds
+Execution time: 153.1958 seconds
