@@ -7,9 +7,9 @@ output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired"
 # PIPELINE CONTROL FLAGS
 # ========================================
 # Overall pipeline control
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # System configuration
 use_gpu: true
@@ -21,8 +21,8 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv"
-rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata_filled.csv'
+rna_count_data_path: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad"
+rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv'
 rna_output_dir: null
 
 # RNA Process Control Flags
@@ -33,7 +33,7 @@ rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
-rna_sample_cluster: true
+rna_sample_cluster: false
 rna_cluster_dge: false
 rna_visualize_data: false
 
@@ -136,8 +136,8 @@ rna_tree_building_method:
   - "HRC_VEC"
   - "NN"
   - "UPGMA"
-rna_proportion_test: false
-rna_raisin_analysis: false
+rna_proportion_test: true
+rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null

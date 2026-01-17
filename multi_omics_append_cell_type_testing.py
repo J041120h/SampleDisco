@@ -104,7 +104,7 @@ def annotate_and_transfer_cell_types(
     custom_model_path: Optional[str] = None,
     majority_voting: bool = True,
     modality_col: str = "modality",
-    original_celltype_col: str = "cell_type",   # input column name
+    original_celltype_col: str = "cell_type",   # input column name (overwritten in-place)
     rna_modality_value: str = "RNA",
     atac_modality_value: str = "ATAC",
     ensembl_release: int = 98,
@@ -118,7 +118,7 @@ def annotate_and_transfer_cell_types(
       - Uses pyensembl (Ensembl release 98 by default) to auto-detect Ensembl IDs
         and map them to gene symbols before CellTypist.
       - Overwrites the original cell type column in-place (default: 'cell_type')
-      - Stores the original labels in '{original_celltype_col}_original' before overwriting
+      - Does NOT create backup or confidence-score columns in adata.obs
 
     Returns
     -------
@@ -225,20 +225,16 @@ def annotate_and_transfer_cell_types(
     for orig, new in sorted(label_mapping.items(), key=lambda x: str(x[0])):
         print(f"  {orig} -> {new}")
 
-    # Keep original labels for traceability
-    backup_col = f"{original_celltype_col}_original"
-    if backup_col not in adata.obs.columns:
-        adata.obs[backup_col] = adata.obs[original_celltype_col]
-        print(f"[INFO] Backed up original labels to obs['{backup_col}']")
-
     # Overwrite in-place with mapped labels
-    adata.obs[original_celltype_col] = adata.obs[backup_col].map(label_mapping)
-
-    # Also store confidence scores for RNA cells
-    adata.obs["celltypist_conf_score"] = np.nan
-    adata.obs.loc[rna_mask, "celltypist_conf_score"] = pred_adata.obs.loc[
-        adata_obs_idx := adata.obs[rna_mask].index, "conf_score"
-    ].values
+    # Preserve any labels that are not in the mapping dictionary
+    orig_series = adata.obs[original_celltype_col].copy()
+    new_series = orig_series.map(label_mapping)
+    unmapped_mask = new_series.isna()
+    if unmapped_mask.any():
+        print(f"[WARN] {unmapped_mask.sum()} cells have cell type labels not in mapping; "
+              "keeping their original labels.")
+        new_series[unmapped_mask] = orig_series[unmapped_mask]
+    adata.obs[original_celltype_col] = new_series
 
     # Save mapping to file
     mapping_df_out = pd.DataFrame(list(label_mapping.items()),

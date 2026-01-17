@@ -42,347 +42,83 @@ Resuming process from previous progress:
 }
 
 ============================================================
-RUNNING MULTIOMICS PIPELINE
+RUNNING RNA PIPELINE
 ============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-Initial status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
-Step 2: Running integration preprocessing...
-=== Read input dataset ===
-Dimension of raw data (cells x genes): 987474 x 14881
-Stored original sample IDs in adata.obs['original_sample'].
-Re-merging sample metadata into integrated AnnData (per modality)...
-[RNA] Merging sample metadata for 898489 cells using file: /dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv
-[RNA] Using direct sample IDs from 'original_sample' to merge with metadata key 'sample'. Overlap: 405 samples.
-[RNA] Added metadata columns: ['age_cluster', 'batch', 'sex']
-[ATAC] Merging sample metadata for 88985 cells using file: /dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv
-[ATAC] Using direct sample IDs from 'original_sample' to merge with metadata key 'sample'. Overlap: 27 samples.
-[ATAC] All metadata columns already exist in adata.obs; no new columns added.
-Sample metadata re-merge complete.
+Starting RNA wrapper function with provided parameters...
+Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[INFO] Starting proportion tests...
+[INFO] Proportion tests completed.
+[INFO] Running RAISIN analysis...
 
-Detected non-unique 'sample' values (432 duplicated sample IDs across 987474 rows). Appended modality from 'modality' only for those rows.
-After cell filtering -- Cells remaining: 987474, Genes remaining: 14881
-After gene filtering -- Cells remaining: 987474, Genes remaining: 14777
-After remove MT_gene and user input gene -- Cells remaining: 987414, Genes remaining: 14764
-Sample counts BEFORE filtering:
-sample
-HD-16-Yu_RNA           12304
-HD-7-Wen_RNA           11411
-HD-9-Wen_RNA           11357
-CoV-29-Yu_RNA          11301
-CoV-85.1-Su_RNA        11066
-                       ...  
-CoV-73.1-SS2_RNA         515
-CoV-153.2-Su_RNA         515
-SRR14466471_ATAC         355
-re_SRR14466469_ATAC      344
-SRR14466469_ATAC          17
-Length: 432, dtype: int64
+===== Starting RAISIN fitting =====
+Using 48 CPU cores
+Available columns in adata.obs: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'age_cluster', 'batch', 'sex', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
+Note: group_col='sev.level' provided; sample_to_clade is ignored (not needed).
 
-Samples retained (>= 100 cells): ['CoV-1.1-Wilk_RNA', 'CoV-1.2-Wilk_RNA', 'CoV-100.1-Su_RNA', 'CoV-100.2-Su_RNA', 'CoV-101.1-Su_RNA', 'CoV-101.2-Su_RNA', 'CoV-102.1-Su_RNA', 'CoV-102.2-Su_RNA', 'CoV-103.1-Su_RNA', 'CoV-103.2-Su_RNA', 'CoV-104.1-Su_RNA', 'CoV-104.2-Su_RNA', 'CoV-105.1-Su_RNA', 'CoV-105.2-Su_RNA', 'CoV-106.1-Su_RNA', 'CoV-106.2-Su_RNA', 'CoV-107.1-Su_RNA', 'CoV-107.2-Su_RNA', 'CoV-108.1-Su_RNA', 'CoV-108.2-Su_RNA', 'CoV-109.1-Su_RNA', 'CoV-109.2-Su_RNA', 'CoV-110.1-Su_RNA', 'CoV-110.2-Su_RNA', 'CoV-111.1-Su_RNA', 'CoV-111.2-Su_RNA', 'CoV-112.1-Su_RNA', 'CoV-112.2-Su_RNA', 'CoV-113.1-Su_RNA', 'CoV-113.2-Su_RNA', 'CoV-114.1-Su_RNA', 'CoV-114.2-Su_RNA', 'CoV-115.1-Su_RNA', 'CoV-115.2-Su_RNA', 'CoV-116.1-Su_RNA', 'CoV-116.2-Su_RNA', 'CoV-117.1-Su_RNA', 'CoV-117.2-Su_RNA', 'CoV-118.2-Su_RNA', 'CoV-119.1-Su_RNA', 'CoV-119.2-Su_RNA', 'CoV-120.1-Su_RNA', 'CoV-120.2-Su_RNA', 'CoV-121.2-Su_RNA', 'CoV-122.2-Su_RNA', 'CoV-123.1-Su_RNA', 'CoV-123.2-Su_RNA', 'CoV-124.2-Su_RNA', 'CoV-125-Su_RNA', 'CoV-126.1-Su_RNA', 'CoV-126.2-Su_RNA', 'CoV-127.1-Su_RNA', 'CoV-127.2-Su_RNA', 'CoV-128.1-Su_RNA', 'CoV-128.2-Su_RNA', 'CoV-129.1-Su_RNA', 'CoV-129.2-Su_RNA', 'CoV-130.1-Su_RNA', 'CoV-130.2-Su_RNA', 'CoV-132.1-Su_RNA', 'CoV-132.2-Su_RNA', 'CoV-133.1-Su_RNA', 'CoV-133.2-Su_RNA', 'CoV-134.1-Su_RNA', 'CoV-134.2-Su_RNA', 'CoV-135.1-Su_RNA', 'CoV-135.2-Su_RNA', 'CoV-136.1-Su_RNA', 'CoV-136.2-Su_RNA', 'CoV-137.1-Su_RNA', 'CoV-137.2-Su_RNA', 'CoV-138.1-Su_RNA', 'CoV-138.2-Su_RNA', 'CoV-139.1-Su_RNA', 'CoV-139.2-Su_RNA', 'CoV-140.1-Su_RNA', 'CoV-140.2-Su_RNA', 'CoV-141.1-Su_RNA', 'CoV-141.2-Su_RNA', 'CoV-142.1-Su_RNA', 'CoV-142.2-Su_RNA', 'CoV-143.1-Su_RNA', 'CoV-143.2-Su_RNA', 'CoV-144.1-Su_RNA', 'CoV-144.2-Su_RNA', 'CoV-145.1-Su_RNA', 'CoV-145.2-Su_RNA', 'CoV-146.1-Su_RNA', 'CoV-146.2-Su_RNA', 'CoV-147.1-Su_RNA', 'CoV-148.1-Su_RNA', 'CoV-149.1-Su_RNA', 'CoV-149.2-Su_RNA', 'CoV-150.1-Su_RNA', 'CoV-150.2-Su_RNA', 'CoV-151.1-Su_RNA', 'CoV-151.2-Su_RNA', 'CoV-152.1-Su_RNA', 'CoV-152.2-Su_RNA', 'CoV-153.1-Su_RNA', 'CoV-153.2-Su_RNA', 'CoV-154.2-Su_RNA', 'CoV-155.1-Su_RNA', 'CoV-155.2-Su_RNA', 'CoV-156.1-Su_RNA', 'CoV-156.2-Su_RNA', 'CoV-157.1-Su_RNA', 'CoV-157.2-Su_RNA', 'CoV-158.1-Su_RNA', 'CoV-158.2-Su_RNA', 'CoV-159.1-Su_RNA', 'CoV-159.2-Su_RNA', 'CoV-160.1-Su_RNA', 'CoV-160.2-Su_RNA', 'CoV-161.1-Su_RNA', 'CoV-161.2-Su_RNA', 'CoV-162.1-Su_RNA', 'CoV-162.2-Su_RNA', 'CoV-163.1-Su_RNA', 'CoV-163.2-Su_RNA', 'CoV-164.1-Su_RNA', 'CoV-164.2-Su_RNA', 'CoV-165.1-Su_RNA', 'CoV-165.2-Su_RNA', 'CoV-166.2-Su_RNA', 'CoV-167.2-Su_RNA', 'CoV-168.1-Su_RNA', 'CoV-169.1-Su_RNA', 'CoV-169.2-Su_RNA', 'CoV-170.1-Su_RNA', 'CoV-171.1-Su_RNA', 'CoV-171.2-Su_RNA', 'CoV-172.1-Su_RNA', 'CoV-172.2-Su_RNA', 'CoV-173.1-Su_RNA', 'CoV-173.2-Su_RNA', 'CoV-174.2-Su_RNA', 'CoV-175.1-Su_RNA', 'CoV-175.2-Su_RNA', 'CoV-176.1-Su_RNA', 'CoV-176.2-Su_RNA', 'CoV-177.2-Su_RNA', 'CoV-179.1-Su_RNA', 'CoV-179.2-Su_RNA', 'CoV-18-Lee_RNA', 'CoV-180.1-Su_RNA', 'CoV-180.2-Su_RNA', 'CoV-181.1-Su_RNA', 'CoV-181.2-Su_RNA', 'CoV-182.1-Su_RNA', 'CoV-182.2-Su_RNA', 'CoV-183.1-Su_RNA', 'CoV-183.2-Su_RNA', 'CoV-184.1-Su_RNA', 'CoV-184.2-Su_RNA', 'CoV-185.1-Su_RNA', 'CoV-185.2-Su_RNA', 'CoV-186.1-Su_RNA', 'CoV-186.2-Su_RNA', 'CoV-187.1-Su_RNA', 'CoV-187.2-Su_RNA', 'CoV-188.1-Su_RNA', 'CoV-188.2-Su_RNA', 'CoV-189.1-Su_RNA', 'CoV-189.2-Su_RNA', 'CoV-19-Lee_RNA', 'CoV-190.1-Su_RNA', 'CoV-190.2-Su_RNA', 'CoV-191.1-Su_RNA', 'CoV-191.2-Su_RNA', 'CoV-192.1-Su_RNA', 'CoV-192.2-Su_RNA', 'CoV-193.1-Su_RNA', 'CoV-193.2-Su_RNA', 'CoV-194.1-Su_RNA', 'CoV-194.2-Su_RNA', 'CoV-195.1-Su_RNA', 'CoV-195.2-Su_RNA', 'CoV-196.1-Su_RNA', 'CoV-196.2-Su_RNA', 'CoV-197.1-Su_RNA', 'CoV-197.2-Su_RNA', 'CoV-198.1-Su_RNA', 'CoV-198.2-Su_RNA', 'CoV-199.1-Su_RNA', 'CoV-199.2-Su_RNA', 'CoV-2-Wilk_RNA', 'CoV-20.2-Lee_RNA', 'CoV-200.2-Su_RNA', 'CoV-201.2-Su_RNA', 'CoV-202.2-Su_RNA', 'CoV-203.1-Su_RNA', 'CoV-203.2-Su_RNA', 'CoV-204.1-Su_RNA', 'CoV-204.2-Su_RNA', 'CoV-205.1-Su_RNA', 'CoV-205.2-Su_RNA', 'CoV-206.1-Su_RNA', 'CoV-206.2-Su_RNA', 'CoV-207.1-Su_RNA', 'CoV-207.2-Su_RNA', 'CoV-208.1-Su_RNA', 'CoV-208.2-Su_RNA', 'CoV-209.1-Su_RNA', 'CoV-21-Lee_RNA', 'CoV-210.1-Su_RNA', 'CoV-210.2-Su_RNA', 'CoV-211.1-Zhu_RNA', 'CoV-211.2-Zhu_RNA', 'CoV-212.2-Zhu_RNA', 'CoV-212.3-Zhu_RNA', 'CoV-212.5-Zhu_RNA', 'CoV-213.1-Zhu_RNA', 'CoV-213.2-Zhu_RNA', 'CoV-214.1-Zhu_RNA', 'CoV-214.2-Zhu_RNA', 'CoV-215.1-Zhu_RNA', 'CoV-215.3-Zhu_RNA', 'CoV-216-Mudd_RNA', 'CoV-217-Mudd_RNA', 'CoV-218-Mudd_RNA', 'CoV-22-Lee_RNA', 'CoV-23.1-Lee_RNA', 'CoV-23.2-Lee_RNA', 'CoV-24.1-Lee_RNA', 'CoV-24.2-Lee_RNA', 'CoV-25-Lee_RNA', 'CoV-26.1-Guo_RNA', 'CoV-27.1-Guo_RNA', 'CoV-28-Yu_RNA', 'CoV-29-Yu_RNA', 'CoV-3-Wilk_RNA', 'CoV-30-Yu_RNA', 'CoV-31-Yu_RNA', 'CoV-32-Yu_RNA', 'CoV-33-Yu_RNA', 'CoV-34-Aruna_RNA', 'CoV-35-Aruna_RNA', 'CoV-36-Aruna_RNA', 'CoV-37-Aruna_RNA', 'CoV-38-Aruna_RNA', 'CoV-39-Aruna_RNA', 'CoV-4-Wilk_RNA', 'CoV-40-Aruna_RNA', 'CoV-41.1-SS1_RNA', 'CoV-41.2-SS1_RNA', 'CoV-42.1-SS1_RNA', 'CoV-42.2-SS1_RNA', 'CoV-43.1-SS1_RNA', 'CoV-43.2-SS1_RNA', 'CoV-44.2-SS1_RNA', 'CoV-45-SS1_RNA', 'CoV-46-SS1_RNA', 'CoV-47-SS1_RNA', 'CoV-48-SS1_RNA', 'CoV-49.1-SS1_RNA', 'CoV-49.2-SS1_RNA', 'CoV-5-Wilk_RNA', 'CoV-50.1-SS1_RNA', 'CoV-50.2-SS1_RNA', 'CoV-51-SS1_RNA', 'CoV-52.1-SS1_RNA', 'CoV-52.2-SS1_RNA', 'CoV-53.1-SS1_RNA', 'CoV-53.2-SS1_RNA', 'CoV-54-SS1_RNA', 'CoV-55-SS1_RNA', 'CoV-56-SS1_RNA', 'CoV-57-SS1_RNA', 'CoV-58-SS1_RNA', 'CoV-59.1-SS2_RNA', 'CoV-59.2-SS2_RNA', 'CoV-59.3-SS2_RNA', 'CoV-60-SS2_RNA', 'CoV-61-SS2_RNA', 'CoV-62.1-SS2_RNA', 'CoV-62.2-SS2_RNA', 'CoV-62.3-SS2_RNA', 'CoV-62.4-SS2_RNA', 'CoV-63.1-SS2_RNA', 'CoV-63.2-SS2_RNA', 'CoV-63.3-SS2_RNA', 'CoV-63.4-SS2_RNA', 'CoV-63.5-SS2_RNA', 'CoV-63.6-SS2_RNA', 'CoV-63.7-SS2_RNA', 'CoV-64.1-SS2_RNA', 'CoV-64.2-SS2_RNA', 'CoV-64.3-SS2_RNA', 'CoV-65.1-SS2_RNA', 'CoV-65.2-SS2_RNA', 'CoV-67.1-SS2_RNA', 'CoV-67.2-SS2_RNA', 'CoV-68.1-SS2_RNA', 'CoV-68.2-SS2_RNA', 'CoV-68.3-SS2_RNA', 'CoV-68.4-SS2_RNA', 'CoV-69.1-SS2_RNA', 'CoV-69.4-SS2_RNA', 'CoV-69.6-SS2_RNA', 'CoV-7-Wilk_RNA', 'CoV-70.1-SS2_RNA', 'CoV-70.3-SS2_RNA', 'CoV-71.1-SS2_RNA', 'CoV-71.2-SS2_RNA', 'CoV-71.3-SS2_RNA', 'CoV-71.4-SS2_RNA', 'CoV-72.1-SS2_RNA', 'CoV-72.2-SS2_RNA', 'CoV-72.3-SS2_RNA', 'CoV-73.1-SS2_RNA', 'CoV-73.2-SS2_RNA', 'CoV-73.3-SS2_RNA', 'CoV-74.1-SS2_RNA', 'CoV-74.2-SS2_RNA', 'CoV-76.5-SS2_RNA', 'CoV-77.2-Silvin_RNA', 'CoV-79.1-Silvin_RNA', 'CoV-82.1-Su_RNA', 'CoV-82.2-Su_RNA', 'CoV-83.1-Su_RNA', 'CoV-83.2-Su_RNA', 'CoV-84.1-Su_RNA', 'CoV-84.2-Su_RNA', 'CoV-85.1-Su_RNA', 'CoV-85.2-Su_RNA', 'CoV-86.1-Su_RNA', 'CoV-86.2-Su_RNA', 'CoV-87.1-Su_RNA', 'CoV-87.2-Su_RNA', 'CoV-88.1-Su_RNA', 'CoV-88.2-Su_RNA', 'CoV-89.1-Su_RNA', 'CoV-90.1-Su_RNA', 'CoV-90.2-Su_RNA', 'CoV-91.1-Su_RNA', 'CoV-91.2-Su_RNA', 'CoV-92.1-Su_RNA', 'CoV-92.2-Su_RNA', 'CoV-93.1-Su_RNA', 'CoV-93.2-Su_RNA', 'CoV-94.1-Su_RNA', 'CoV-94.2-Su_RNA', 'CoV-95-Su_RNA', 'CoV-96.1-Su_RNA', 'CoV-96.2-Su_RNA', 'CoV-97.1-Su_RNA', 'CoV-97.2-Su_RNA', 'CoV-98.1-Su_RNA', 'CoV-98.2-Su_RNA', 'CoV-99.2-Su_RNA', 'HD-1-Wilk_RNA', 'HD-10-Wen_RNA', 'HD-11-Wen_RNA', 'HD-12-Lee_RNA', 'HD-13-Lee_RNA', 'HD-14-Lee_RNA', 'HD-15-Lee_RNA', 'HD-16-Yu_RNA', 'HD-17-Yu_RNA', 'HD-18-Yu_RNA', 'HD-19-Aruna_RNA', 'HD-2-Wilk_RNA', 'HD-20-Aruna_RNA', 'HD-21-Aruna_RNA', 'HD-22-Aruna_RNA', 'HD-23-Aruna_RNA', 'HD-24-SS2_RNA', 'HD-28-SS2_RNA', 'HD-29-SS2_RNA', 'HD-3-Wilk_RNA', 'HD-30-SS2_RNA', 'HD-31-SS2_RNA', 'HD-32-SS2_RNA', 'HD-33-SS2_RNA', 'HD-35-SS2_RNA', 'HD-36-SS2_RNA', 'HD-37-SS2_RNA', 'HD-39-SS2_RNA', 'HD-4-Wilk_RNA', 'HD-43-Su_RNA', 'HD-44-Su_RNA', 'HD-45-Su_RNA', 'HD-46-Su_RNA', 'HD-47-Su_RNA', 'HD-48-Su_RNA', 'HD-49-Su_RNA', 'HD-5-Wilk_RNA', 'HD-50-Su_RNA', 'HD-51-Su_RNA', 'HD-52-Su_RNA', 'HD-53-Su_RNA', 'HD-54-Su_RNA', 'HD-55-Su_RNA', 'HD-56-Su_RNA', 'HD-57-Su_RNA', 'HD-58-Su_RNA', 'HD-58-Zhu_RNA', 'HD-59-Zhu_RNA', 'HD-6-Wilk_RNA', 'HD-60-Zhu_RNA', 'HD-61-Mudd_RNA', 'HD-7-Wen_RNA', 'HD-8-Wen_RNA', 'HD-9-Wen_RNA', 'SRR14466459_ATAC', 'SRR14466460_ATAC', 'SRR14466461_ATAC', 'SRR14466462_ATAC', 'SRR14466463_ATAC', 'SRR14466464_ATAC', 'SRR14466465_ATAC', 'SRR14466466_ATAC', 'SRR14466467_ATAC', 'SRR14466468_ATAC', 'SRR14466470_ATAC', 'SRR14466471_ATAC', 'SRR14466472_ATAC', 'SRR14466473_ATAC', 'SRR14466474_ATAC', 'SRR14466475_ATAC', 'SRR14466476_ATAC', 'SRR14466477_ATAC', 'SRR14466478_ATAC', 'SRR14466479_ATAC', 'SRR14466480_ATAC', 'SRR14466481_ATAC', 'SRR14466482_ATAC', 'SRR14466483_ATAC', 're_SRR14466469_ATAC', 're_SRR14466471_ATAC']
+Batch correction requested using column: batch
+Preserving biological effects from group_col: sev.level
 
-Sample counts AFTER filtering:
-sample
-HD-16-Yu_RNA           12304
-HD-7-Wen_RNA           11411
-HD-9-Wen_RNA           11357
-CoV-29-Yu_RNA          11301
-CoV-85.1-Su_RNA        11066
-                       ...  
-CoV-102.1-Su_RNA         520
-CoV-73.1-SS2_RNA         515
-CoV-153.2-Su_RNA         515
-SRR14466471_ATAC         355
-re_SRR14466469_ATAC      344
-Name: count, Length: 431, dtype: int64
-Final filtering -- Cells remaining: 987397, Genes remaining: 10175
-[NA-SWEEP] obs: 381520 NA before filling
-  - obs['celltypist_conf_score']: filled 88962 NA (dtype: float64)
-  - obs['age_cluster']: filled 106238 NA (dtype: object)
-  - obs['batch']: filled 88962 NA (dtype: object)
-  - obs['sex']: filled 97358 NA (dtype: object)
-[NA-SWEEP] obs: 381520 NA filled total
+===== Applying ComBat batch correction =====
+Batch variable: batch
+Preserving biological effects from: sev.level
+Running ComBat correction...
+Found 13 batches.
+Adjusting for 3 covariate(s) or covariate level(s).
+Standardizing Data across genes.
+Fitting L/S model and finding priors.
+Finding parametric adjustments.
+Adjusting the Data
+ComBat correction complete
+Original expression stored in layer: 'original' or 'original_raw'
+Using counts from adata.X
+Using group_col='sev.level' for grouping
+Expression matrix: 10175 genes x 987397 cells
+Design matrix X: 431 samples x 5 features
+Random effects Z: 431 samples x 431 effects
+Unique variance groups: ['1' '2' '3' '4']
 
-[NA-SWEEP] var: 0 NA before filling
-[NA-SWEEP] var: 0 NA filled total
+===== Estimating variance for group: 2 =====
+  alpha=0.0010, gamma=0.0016
 
-[NA-SWEEP] Completed dtype-aware placeholder filling.
+===== Estimating variance for group: 4 =====
+  alpha=0.0005, gamma=0.0003
 
-Preprocessing complete!
-Preprocessed data saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
-Original sample IDs stored in: adata.obs['original_sample']
-Function execution time: 110.85 seconds
-✓ Integration preprocessing completed successfully
-Step 3: Running dimensionality reduction (pseudobulk + PCA)...
-  Sub-step 3a: Computing pseudobulk...
-[Pseudobulk] Input: 987397 cells, 10175 genes
-[Pseudobulk] HVG selection modality: RNA (both rounds)
-[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
-[Seed Control] CuPy seed set to 42
-[Seed Control] Scanpy seed set to 42
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] HVG selection will use RNA cells only (both rounds)
-[Pseudobulk] 431 samples, 9 cell types
-[Pseudobulk] Batch correction: ['batch', 'modality']
-[Pseudobulk] Modality distribution: {'RNA': np.int64(898435), 'ATAC': np.int64(88962)}
-[Pseudobulk] Phase 1a: Aggregating ALL cells...
-  Aggregating 987397 cells -> 431 samples x 9 cell types
-  Created 9 cell type layers
-[Pseudobulk] Phase 1b: Aggregating RNA cells for HVG selection...
-  Filtered to RNA cells: 898435 / 987397
-  Aggregating 898435 cells -> 405 samples x 9 cell types
-  Created 9 cell type layers
-[Pseudobulk] Phase 2: Processing cell types (Round 1 HVG)...
-  Step 2a: Selecting HVGs from RNA cells
-  Step 2b: Extracting expression from ALL cells
-  [1/9] B
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-  [2/9] CD14 Monocyte
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-  [3/9] CD4n T
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-  [4/9] CD8m T
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-  [5/9] IgA PB
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-  [6/9] NK
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-  [7/9] Neutrophil
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Removing 10142 NaN genes post-correction
-    Error: ValueError: Cannot cut empty array
-  [8/9] Platelet
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-  [9/9] pDC
-    Selecting HVGs from RNA cells...
-    Batches: 12, sizes: 2-249
-    Applied ComBat
-    Selected 2000 HVGs from RNA cells
-    Extracting expression from ALL cells...
-    Batches: 13, sizes: 2-249
-    Applied ComBat
-    Using 2000 HVGs
-[Pseudobulk] Retained 8 cell types
-[Pseudobulk] Phase 3: Building concatenated matrix from ALL cells...
-[Pseudobulk] Phase 3b: Building concatenated matrix from RNA cells for Round 2 HVG...
-[Pseudobulk] Phase 4: Round 2 HVG selection from RNA cells...
-[Pseudobulk] Final features: 2000 (selected from RNA cells, applied to ALL cells)
-[Pseudobulk] Phase 5: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 431 samples, 2000 features
-  Sub-step 3b: Processing with PCA...
-[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
-[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
-  - X_DR_expression: for expression data
-  - X_DR_proportion: for proportion data
-[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
-[process_anndata_with_dimension_reduction] Batch correction: Using 2 batch column(s): ['batch', 'modality']
-[process_anndata_with_dimension_reduction] ✓ Created output directories:
-  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk
-[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=8
-[process_anndata_with_dimension_reduction] Data dimensions: expression=(431, 2000), proportion=(431, 8)
-[DimRed] Computing PCA for RNA data with 10 components on (431, 2000) data
-[PCA] Success. Shape: (431, 10)
-[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (431, 10))
-[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (431, 10))
-[PCA] Stored variance information in both objects
-[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
-[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
-[run_dimension_reduction_proportion] Computing PCA with 8 components...
-[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['batch', 'modality']
-[run_dimension_reduction_proportion] Harmony completed with 2 batch factor(s). Shape: (431, 8)
-[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (431, 8)
-[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
-[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_expression_embedding.csv (shape: (431, 10))
-[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_proportion_embedding.csv (shape: (431, 8))
-[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings
-[process_anndata_with_dimension_reduction] Preparing to save results...
-[process_anndata_with_dimension_reduction] Target file path:
-  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] ✓ Successfully saved pseudobulk_anndata (2.5 MB)
-[process_anndata_with_dimension_reduction] ✓ File saved successfully
+===== Estimating variance for group: 3 =====
+  alpha=0.0007, gamma=0.0010
 
-[process_anndata_with_dimension_reduction] === SUMMARY ===
-Total runtime: 0.46 seconds
-Expression dimension reduction: ✓ SUCCESS
-Proportion dimension reduction: ✓ SUCCESS
-Results available under unified keys:
-  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
-  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
-File saving: ATTEMPTED
-  - H5AD: pseudobulk_anndata only
-  - CSV embeddings: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/
-✓ Dimensionality reduction completed successfully
-Step 5: Finding optimal cell resolution for both expression and proportion...
-GPU Memory: 47.70 GB
-GPU Memory Available: 0.00 GB
+===== Estimating variance for group: 1 =====
+  alpha=0.0003, gamma=0.0002
 
-  Running optimization for EXPRESSION...
-  ✓ Expression optimization completed
+===== Model fitting complete =====
+Note: ComBat batch correction was applied
+Starting pairwise comparisons. Found 6 pairs.
+Testing: 1_vs_2
+Testing: 1_vs_3
+Testing: 1_vs_4
+Testing: 2_vs_3
+Testing: 2_vs_4
+Testing: 3_vs_4
 
-  Running optimization for PROPORTION...
-  ✓ Proportion optimization completed
+Generating Visualizations...
+Saved Pseudobulk Heatmap: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/raisin_results_expression/average/summary_plots/pseudobulk_heatmap.png
+[INFO] RAISIN analysis completed.
+RNA analysis completed successfully!
 
-  Updating pseudobulk with optimal embeddings...
-
-======================================================================
-Replacing Dimension Reduction and Expression with Optimal Results
-======================================================================
-
-[Replace DR] Configuration:
-  - Optimization target: RNA
-
-[Replace DR] File paths:
-  - Optimal expression: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/summary/optimal_rna_expression.h5ad
-  - Optimal proportion: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/resolution_optimization_proportion/Integration_optimization_rna_proportion/summary/optimal_rna_proportion.h5ad
-  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-
-[Replace DR] Loading files...
-  ✓ Optimal expression loaded: (431, 2000)
-  ✓ Optimal proportion loaded: (431, 2000)
-  ✓ Original pseudobulk loaded: (431, 2000)
-
-[Replace DR] Building updated pseudobulk using optimal EXPRESSION as template...
-  • Template (optimal_expression) shape: (431, 2000)
-  • Template genes: 2000
-  • Merging sample metadata (obs) from original pseudobulk...
-  ✓ Updated obs columns: ['sev.level', 'modality', 'original_sample', 'age_cluster', 'batch', 'sex']
-  • Merging .uns and .obsm from original pseudobulk (non-DR metadata)...
-  ✓ .uns keys after merge: ['X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'pca_proportion_variance_ratio']
-  ✓ .obsm keys after merge: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
-
-[Replace DR] Ensuring EXPRESSION dimension reduction results are from optimal_expression...
-  ✓ Ensured .uns['X_DR_expression'] from optimal_expression (shape: (431, 30))
-  ✓ Ensured .uns['X_DR_expression_variance'] from optimal_expression (shape: (30,))
-  ✓ Ensured .uns['X_DR_expression_variance_ratio'] from optimal_expression (shape: (30,))
-  ✓ Ensured .uns['X_pca_expression_method'] from optimal_expression (shape: (431, 30))
-  ✓ Ensured .obsm['X_DR_expression'] from optimal_expression (shape: (431, 30))
-  ✓ Ensured .obsm['X_pca_expression_method'] from optimal_expression (shape: (431, 30))
-  → Total expression DR-related keys ensured: 6
-
-[Replace DR] Replacing PROPORTION dimension reduction results with optimal_proportion...
-  ✓ Copied .uns['X_DR_proportion'] from optimal_proportion (shape: (431, 10))
-  ✓ Copied .uns['X_DR_proportion_variance_ratio'] from optimal_proportion (shape: (10,))
-  ✓ Copied .uns['pca_proportion_variance_ratio'] from optimal_proportion (shape: (10,))
-  ✓ Copied .obsm['X_DR_proportion'] from optimal_proportion (shape: (431, 10))
-  ✓ Copied .obsm['X_pca_proportion'] from optimal_proportion (shape: (431, 10))
-  → Total proportion DR-related keys copied: 5
-
-[Replace DR] Saving updated pseudobulk_sample...
-  Destination: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-  Note: Backup file already exists: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
-  ✓ Successfully saved updated pseudobulk (4.1 MB)
-
-----------------------------------------------------------------------
-SUMMARY
-----------------------------------------------------------------------
-  Optimization target: RNA
-  Expression DR keys ensured: 6
-  Proportion DR keys copied: 5
-  Total DR keys updated: 11
-  Expression matrix source: optimal_expression (template)
-  File updated: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
-  Backup saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
-======================================================================
-
-[Replace DR] Updating embedding CSV files...
-  ✓ Saved expression embedding to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_expression_embedding.csv (shape: (431, 30))
-  ✓ Saved proportion embedding to /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/embeddings/sample_proportion_embedding.csv (shape: (431, 10))
-✓ Optimal resolution finding and embedding update completed successfully
-Step 4: Visualizing multimodal embedding...
-Creating default embedding visualization (all samples)
-Expression key: X_DR_expression
-Proportion key: X_DR_proportion
-Additional color columns: ['sev.level']
-Created/using visualization directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization
-
-Creating colored visualizations for 1 column(s)...
-
---- Processing color column: sev.level ---
-  Column 'sev.level': numerical with 4 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_expression_by_sev.level.png
-  Column 'sev.level': numerical with 4 unique values
-  Saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_proportion_by_sev.level.png
-  Combined saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/visualization/all_samples_combined_by_sev.level.png
-✓ Embedding visualization completed successfully
-
-Pipeline completed successfully!
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-Available results: ['adata', 'atac_pseudobulk_df', 'pseudobulk_adata', 'pseudobulk_anndata_processed', 'visualization', 'status_flags']
-Final status flags: {'glue_integration': True, 'glue_preprocessing': True, 'glue_training': True, 'glue_gene_activity': True, 'glue_cell_types': True, 'glue_visualization': True, 'integration_preprocessing': True, 'dimensionality_reduction': True, 'embedding_visualization': True, 'optimal_resolution': True}
-Completed steps: 10/10
-GLUE sub-steps completed: 5/5
-
-✓ Multiomics pipeline completed successfully!
+✓ RNA pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
-Multiomics Pipeline: ✓ COMPLETE
-  - glue_integration: ✓
-  - glue_preprocessing: ✓
-  - glue_training: ✓
-  - glue_gene_activity: ✓
-  - glue_cell_types: ✓
-  - glue_visualization: ✓
-  - integration_preprocessing: ✓
+RNA Pipeline: ⚠ PARTIAL
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
   - dimensionality_reduction: ✓
-  - embedding_visualization: ✓
-  - optimal_resolution: ✓
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✓
+  - cluster_dge: ✓
+  - visualization: ✗
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 153.1958 seconds
+Execution time: 1133.9190 seconds

@@ -205,14 +205,15 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
     # Get batch information
     batch = adata.obs[batch_col].values
 
-    # Create covariate matrix to preserve biological effects
-    mod = None
+    # NOTE: pyComBat expects `mod` to be a *list* (or list of lists), not a NumPy array
+    mod = []
     if group_col is not None and group_col in adata.obs.columns:
         if verbose:
             print(f"Preserving biological effects from: {group_col}")
-        # Create design matrix for biological variable
-        bio_dummies = pd.get_dummies(adata.obs[group_col], drop_first=False)
-        mod = bio_dummies.values
+        # Single covariate: pass one list of values (length = n_samples)
+        covariate_values = list(adata.obs[group_col].astype(str))
+        mod = covariate_values
+
 
     # Apply ComBat
     if verbose:
