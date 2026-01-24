@@ -14,7 +14,6 @@ from integration.integration_glue import *
 from integration.integration_preprocess import *
 from integration.integration_CCA_test import *
 from integration.integration_optimal_resolution import *
-from integration.integration_validation import *
 from integration.integration_visualization import *
 from integration.integration_cell_type import cell_types_multiomics
 from utils.multi_omics_unify_optimal import replace_optimal_dimension_reduction
@@ -579,6 +578,7 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("\n  Running optimization for EXPRESSION...")
         expression_resolution_dir = f"{resolution_output_dir}_expression"
+    
         optimal_res_expression, results_df_expression = find_optimal_cell_resolution_integration(
             AnnData_integrated=integrated_adata_for_resolution,
             output_dir=expression_resolution_dir,

@@ -1,199 +1,108 @@
-🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad
+================================================================================
+DEBUG: Cell Type Loading Investigation
+================================================================================
 
-📦 Basic Info
-  - Shape (cells × genes): 431 × 2000
-  - Layers: []
-  - obs columns: ['sev.level', 'modality', 'original_sample', 'age_cluster', 'batch', 'sex']
-  - var columns: []
-  - obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
-  - varm keys: []
+[1] Loading h5ad file...
+    Path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/preprocess/adata_sample.h5ad
+    Shape: 987397 cells × 10175 features
 
-🔎 Inspecting .X matrix:
-  - storage type: dense (ndarray)
-  - dtype: float32
-  - .X nonzeros: 862000 / 862000 (100.0000% nonzero, 0.0000% zero)
-  - value type: float — fractional values detected
-  - contains NaN: False
-  - contains Inf: False
-  - min value: -3.53641
-  - max value: 10.316
+[2] Checking adata.obs columns:
+    Available columns: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'age_cluster', 'batch', 'sex', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
 
-🧮 Example .X values (first 10 cells × 10 genes):
-[[ 1.09788962e-02  4.14753854e-02  1.69929159e+00 -2.08802998e-01
-   8.38631034e-01  4.83240306e-01  9.26335156e-02  7.31494904e-01
-   1.84112445e-01 -3.24977707e-04]
- [-6.21877350e-02 -5.51626347e-02  8.52595210e-01  2.64560103e-01
-   2.31657580e-01  3.36944968e-01 -5.72957806e-02  1.69037849e-01
-  -7.81274810e-02 -1.91910177e-01]
- [ 3.71575393e-02  1.13837207e-02  2.08574951e-01  4.85228598e-02
-   5.51740006e-02  8.98034051e-02  5.12452647e-02  8.37314725e-02
-   1.06494956e-01  5.50422445e-02]
- [ 3.71575393e-02  1.13837207e-02  2.08574951e-01  4.85228598e-02
-   5.51740006e-02  5.58405638e+00  5.12452647e-02  8.37314725e-02
-   1.06494956e-01  1.14212751e+00]
- [ 3.71575393e-02  1.13837207e-02  2.08574951e-01  4.85228598e-02
-   5.51740006e-02  8.98034051e-02  5.12452647e-02  8.37314725e-02
-   1.06494956e-01  5.50422445e-02]
- [ 3.71575393e-02  1.13837207e-02  2.08574951e-01  4.85228598e-02
-   5.51740006e-02  8.98034051e-02  5.12452647e-02  8.37314725e-02
-   1.06494956e-01  5.50422445e-02]
- [ 3.71575393e-02  1.13837207e-02  3.77838850e+00  4.85228598e-02
-   5.51740006e-02  8.98034051e-02  5.12452647e-02  3.23568368e+00
-   7.71672666e-01  5.50422445e-02]
- [ 3.71575393e-02  1.13837207e-02  8.40750158e-01  4.85228598e-02
-   5.51740006e-02  8.98034051e-02  5.12452647e-02  8.37314725e-02
-   1.06494956e-01  5.50422445e-02]
- [ 3.71575393e-02  1.13837207e-02  2.08574951e-01  2.26605105e+00
-   7.10335493e+00  8.98034051e-02  5.12452647e-02  8.37314725e-02
-   1.06494956e-01  5.50422445e-02]
- [ 3.71575393e-02  1.13837207e-02  2.08574951e-01  4.85228598e-02
-   5.51740006e-02  8.98034051e-02  5.12452647e-02  8.37314725e-02
-   8.96756232e-01  5.50422445e-02]]
+[3] Cell types BEFORE loading CSV:
+    Column: 'cell_type'
+    Data type: category
+    Unique values (5):
+cell_type
+CD4n T           456153
+CD14 Monocyte    313522
+CD8m T           136483
+B                 77178
+Platelet           4061
+Name: count, dtype: int64
 
-🧫 Example cell names:
-  - CoV-1.1-Wilk_RNA
-  - CoV-1.2-Wilk_RNA
-  - CoV-100.1-Su_RNA
-  - CoV-100.2-Su_RNA
-  - CoV-101.1-Su_RNA
-  - CoV-101.2-Su_RNA
-  - CoV-102.1-Su_RNA
-  - CoV-102.2-Su_RNA
-  - CoV-103.1-Su_RNA
-  - CoV-103.2-Su_RNA
+    First 20 values:
+['CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte']
 
-============================================================
-📋 Detailed obs columns inspection:
-============================================================
+    Do they look like integers? False
 
-    [sev.level]
-      dtype: category
-      non-NA: 431/431 (100.0%)
-      unique: 4
-      top values:
-        '2': 161 (37.4%)
-        '4': 127 (29.5%)
-        '3': 82 (19.0%)
-        '1': 61 (14.2%)
+[4] Loading CSV file...
+    Path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/resolutions/resolution_0.050_expression/preprocess/cell_type.csv
+    Shape: (987397, 3)
+    Columns: ['cell_id', 'cell_type', 'modality']
 
-    [modality]
-      dtype: category
-      non-NA: 431/431 (100.0%)
-      unique: 2
-      top values:
-        'RNA': 405 (94.0%)
-        'ATAC': 26 (6.0%)
+[5] Cell types IN CSV:
+    Data type: object
+    Unique values (5):
+cell_type
+CD4n T           456153
+CD14 Monocyte    313522
+CD8m T           136483
+B                 77178
+Platelet           4061
+Name: count, dtype: int64
 
-    [original_sample]
-      dtype: object
-      non-NA: 431/431 (100.0%)
-      unique: 431
-      top values:
-        're_SRR14466471': 1 (0.2%)
-        'CoV-1.1-Wilk': 1 (0.2%)
-        'CoV-1.2-Wilk': 1 (0.2%)
-        'CoV-100.1-Su': 1 (0.2%)
-        'CoV-100.2-Su': 1 (0.2%)
+    First 20 values:
+['CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte']
 
-    [age_cluster]
-      dtype: category
-      non-NA: 431/431 (100.0%)
-      unique: 9
-      top values:
-        '60-69': 91 (21.1%)
-        '50-59': 67 (15.5%)
-        '80+': 57 (13.2%)
-        '30-39': 52 (12.1%)
-        '70-79': 49 (11.4%)
+    Do they look like integers? False
 
-    [batch]
-      dtype: category
-      non-NA: 431/431 (100.0%)
-      unique: 13
-      top values:
-        'Su': 249 (57.8%)
-        'SS2': 56 (13.0%)
-        'NA': 26 (6.0%)
-        'SS1': 25 (5.8%)
-        'Lee': 14 (3.2%)
+[6] Checking cell ID overlap:
+    Cells in h5ad: 987397
+    Cells in CSV: 987397
+    Common cells: 987397
+    Overlap percentage: 100.00%
 
-    [sex]
-      dtype: category
-      non-NA: 431/431 (100.0%)
-      unique: 3
-      top values:
-        'F': 217 (50.3%)
-        'M': 185 (42.9%)
-        'NA': 29 (6.7%)
+    Example common cell IDs:
+    ['CoV-1.1-Wilk:TAAGCAGTGGTA_RNA', 'CoV-1.1-Wilk:AAGCAGTGGTAT_RNA', 'CoV-1.1-Wilk:TGACGGCGCTTT_RNA', 'CoV-1.1-Wilk:CTAAGCAGTGGT_RNA', 'CoV-1.1-Wilk:ACCGGCGGCCAC_RNA']
 
-📋 Example obs rows (head 10):
-                 sev.level modality original_sample age_cluster batch sex
-CoV-1.1-Wilk_RNA         4      RNA    CoV-1.1-Wilk       60-69  Wilk   M
-CoV-1.2-Wilk_RNA         4      RNA    CoV-1.2-Wilk       60-69  Wilk   M
-CoV-100.1-Su_RNA         3      RNA    CoV-100.1-Su         80+    Su   M
-CoV-100.2-Su_RNA         3      RNA    CoV-100.2-Su         80+    Su   M
-CoV-101.1-Su_RNA         4      RNA    CoV-101.1-Su       50-59    Su   M
-CoV-101.2-Su_RNA         4      RNA    CoV-101.2-Su       50-59    Su   M
-CoV-102.1-Su_RNA         4      RNA    CoV-102.1-Su       50-59    Su   F
-CoV-102.2-Su_RNA         4      RNA    CoV-102.2-Su       50-59    Su   F
-CoV-103.1-Su_RNA         3      RNA    CoV-103.1-Su       70-79    Su   F
-CoV-103.2-Su_RNA         3      RNA    CoV-103.2-Su       70-79    Su   F
+[7] Simulating CSV loading (as code does):
+    Converting categorical to string...
 
-============================================================
-🧬 Detailed var columns inspection:
-============================================================
+    Cell type values for first 10 common cells:
+    Cell ID                                  Before               After (from CSV)    
+    ---------------------------------------- -------------------- --------------------
+    CoV-1.1-Wilk:TAAGCAGTGGTA_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:AAGCAGTGGTAT_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:TGACGGCGCTTT_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:CTAAGCAGTGGT_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:ACCGGCGGCCAC_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:TTCGGATGCCCC_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:CCAACCTTAAAC_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:TCCCTCCCTAGA_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:ACCGCTTGTGTT_RNA            CD14 Monocyte        CD14 Monocyte       
+    CoV-1.1-Wilk:CGCCTCCCTACT_RNA            CD14 Monocyte        CD14 Monocyte       
 
-🧬 Example var rows (head 10):
-Empty DataFrame
-Columns: []
-Index: [1 - CD302, 1 - CDKN1C, 1 - IFI27, 1 - IGHD, 1 - IGLV7-43, 1 - MTRNR2L8, 1 - PPBP, 1 - S100A12, 1 - SERPINB1, 1 - SOX4]
+[8] Cell types AFTER loading CSV:
+    Unique values (5):
+cell_type
+CD4n T           456153
+CD14 Monocyte    313522
+CD8m T           136483
+B                 77178
+Platelet           4061
+Name: count, dtype: int64
 
-📌 Example obsm entries:
-  ▶ 'X_DR_expression': shape=(431, 30), dtype=float32
-    first 10 rows × 5 cols:
-[[ -5.543111    -2.7724404    3.730674    -1.4435561   -3.6341777 ]
- [  2.1510952   -4.0936947    2.8214993    2.548727    -6.6861014 ]
- [ -5.074448    -1.3841634   -2.1541338    0.53061074  -1.1416123 ]
- [ -3.6203792    1.7175106    5.2361917   -3.6078608    2.9195528 ]
- [  6.9049745  -12.745759     6.948945     1.8880789    2.2608914 ]
- [ 16.689497    -0.50984675   6.7905293    1.0839487   -7.8438478 ]
- [ -6.2376237  -11.145537     2.6814153   -0.19110756   2.0964286 ]
- [ -4.095995     4.1954737   -2.2067997    0.16336398  -1.8415279 ]
- [ 11.243123     2.8329525    5.766637    -0.9819204    6.42718   ]
- [ -3.647116     2.8680387    5.0891037   -2.3217473    5.009428  ]]
-  ▶ 'X_DR_proportion': shape=(431, 10), dtype=float64
-    first 10 rows × 5 cols:
-[[-0.08896084  0.0664089  -0.088349    0.00494326 -0.02079568]
- [-0.09550212  0.0715806  -0.07652632  0.01014383 -0.02134903]
- [ 0.17284628 -0.03246851  0.03821229  0.01680883  0.00171108]
- [ 0.20662693 -0.0433142   0.0561709   0.01587595  0.00697182]
- [ 0.5783721  -0.15054022  0.24215965  0.01082754  0.06227239]
- [ 0.51544234 -0.13338065  0.21069922  0.01104021  0.0530054 ]
- [ 0.22002621 -0.04663527  0.06276526  0.01532459  0.00881081]
- [ 0.31020217 -0.07218946  0.10678869  0.0149458   0.02209119]
- [ 0.04371649  0.0108729  -0.03144731  0.00310203 -0.020141  ]
- [ 0.03322493  0.01243681 -0.03543696  0.00161929 -0.02058872]]
-  ▶ 'X_pca_expression_method': shape=(431, 30), dtype=float32
-    first 10 rows × 5 cols:
-[[ -5.543111    -2.7724404    3.730674    -1.4435561   -3.6341777 ]
- [  2.1510952   -4.0936947    2.8214993    2.548727    -6.6861014 ]
- [ -5.074448    -1.3841634   -2.1541338    0.53061074  -1.1416123 ]
- [ -3.6203792    1.7175106    5.2361917   -3.6078608    2.9195528 ]
- [  6.9049745  -12.745759     6.948945     1.8880789    2.2608914 ]
- [ 16.689497    -0.50984675   6.7905293    1.0839487   -7.8438478 ]
- [ -6.2376237  -11.145537     2.6814153   -0.19110756   2.0964286 ]
- [ -4.095995     4.1954737   -2.2067997    0.16336398  -1.8415279 ]
- [ 11.243123     2.8329525    5.766637    -0.9819204    6.42718   ]
- [ -3.647116     2.8680387    5.0891037   -2.3217473    5.009428  ]]
-  ▶ 'X_pca_proportion': shape=(431, 10), dtype=float64
-    first 10 rows × 5 cols:
-[[-0.10062547  0.06026718 -0.10670188  0.00482003 -0.04531468]
- [-0.10716684  0.06543883 -0.09487935  0.0100206  -0.04586822]
- [ 0.20198421 -0.02583049  0.03357145 -0.00572378 -0.00085136]
- [ 0.2358534  -0.03666849  0.05153068 -0.00671677  0.00440457]
- [ 0.60767244 -0.14388809  0.23751995 -0.01181532  0.05970112]
- [ 0.54474084 -0.12672868  0.20605951 -0.01160141  0.05043424]
- [ 0.24926809 -0.03998822  0.05812516 -0.00727859  0.00624272]
- [ 0.33948182 -0.06553913  0.10214885 -0.00768301  0.01952105]
- [ 0.04888387  0.01739817 -0.03881826 -0.00285095 -0.02277974]
- [ 0.03798833  0.02105899 -0.04558471 -0.00372806 -0.02469975]]
+[9] Checking RNA cells (what will be annotated):
+    Total RNA cells: 898435
+    Unique cell types in RNA cells: 5
+    RNA cell type distribution:
+cell_type
+CD4n T           428812
+CD14 Monocyte    273776
+CD8m T           122879
+B                 69252
+Platelet           3716
+Name: count, dtype: int64
+
+[10] Summary:
+    ✓ CSV was loaded successfully
+    ✓ 987397 cells updated from CSV
+
+    ⚠ ISSUE IDENTIFIED:
+      CSV already contains annotated cell type names (not integers)
+      This CSV was likely overwritten by a previous annotation run
+
+================================================================================
+DEBUG COMPLETE
+================================================================================

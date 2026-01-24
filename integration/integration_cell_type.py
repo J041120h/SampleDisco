@@ -311,10 +311,6 @@ def cell_types_multiomics(
     # Assign ATAC cell types (transferred)
     adata.obs.loc[atac_mask, cell_type_column] = atac_cell_types.values
     
-    # Add transfer confidence for ATAC cells
-    adata.obs['label_transfer_confidence'] = np.nan
-    adata.obs.loc[atac_mask, 'label_transfer_confidence'] = atac_confidence.values
-    
     # Convert to category
     adata.obs[cell_type_column] = adata.obs[cell_type_column].astype("category")
     
@@ -365,11 +361,36 @@ def cell_types_multiomics(
     adata = ensure_cpu_arrays(adata)
     
     # =========================================
-    # Step 6: Generate visualizations
+    # Step 6: Save cell type information CSV (always)
+    # =========================================
+    if output_dir:
+        if verbose:
+            print(f"\n--- Step 6: Saving cell type information ---")
+        
+        # Create output directory if needed
+        output_dir = os.path.join(output_dir, "preprocess")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Prepare cell type information dataframe
+        cell_info_df = pd.DataFrame({
+            'cell_id': adata.obs.index,
+            'modality': adata.obs[modality_column],
+            'cell_type': adata.obs[cell_type_column]
+        })
+        
+        # Save to CSV
+        csv_path = os.path.join(output_dir, "cell_type.csv")
+        cell_info_df.to_csv(csv_path, index=False)
+        
+        if verbose:
+            print(f"  Saved cell type assignments to: {csv_path}")
+    
+    # =========================================
+    # Step 7: Generate visualizations
     # =========================================
     if generate_plots and output_dir:
         if verbose:
-            print(f"\n--- Step 6: Generating visualizations ---")
+            print(f"\n--- Step 7: Generating visualizations ---")
         
         vis_dir = os.path.join(output_dir, "visualization")
         os.makedirs(vis_dir, exist_ok=True)
@@ -385,7 +406,7 @@ def cell_types_multiomics(
         )
     
     # =========================================
-    # Step 7: Save results
+    # Step 8: Save results
     # =========================================
     if save and output_dir and not defined_output_path:
         out_pre = os.path.join(output_dir, "preprocess")

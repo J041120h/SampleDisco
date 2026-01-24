@@ -1,354 +1,219 @@
-🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
+🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/pseudobulk/pseudobulk_sample.h5ad
 
 📦 Basic Info
-  - Shape (cells × genes): 987397 × 10175
+  - Shape (cells × genes): 431 × 2000
   - Layers: []
-  - obs columns: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'age_cluster', 'batch', 'sex', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
-  - var columns: ['mt', 'MT', 'n_cells_by_counts', 'mean_counts', 'pct_dropout_by_counts', 'total_counts', 'n_cells']
-  - obsm keys: ['X_glue', 'X_umap']
+  - obs columns: ['sev.level', 'modality', 'original_sample', 'age_cluster', 'batch', 'sex']
+  - var columns: []
+  - obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
   - varm keys: []
 
 🔎 Inspecting .X matrix:
-  - storage type: sparse (csr_matrix)
-  - dtype: float64
-  - .X nonzeros: 1167448859 / 10046764475 (11.6201% nonzero, 88.3799% zero)
-  - value type: float — values appear integer-like (no fractional parts)
+  - storage type: dense (ndarray)
+  - dtype: float32
+  - .X nonzeros: 862000 / 862000 (100.0000% nonzero, 0.0000% zero)
+  - value type: float — fractional values detected
   - contains NaN: False
   - contains Inf: False
-  - min value: 1
-  - max value: 49066
+  - min value: -3.9218
+  - max value: 9.51005
 
 🧮 Example .X values (first 10 cells × 10 genes):
-[[0. 0. 0. 1. 1. 0. 0. 0. 0. 1.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 1. 0. 0. 1. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 1. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
- [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+[[ 1.5697506e-01 -4.0899089e-04  5.9301347e-02  9.7847670e-02
+   3.6435121e-01 -4.5118332e-02  7.9150468e-02 -2.3215511e-01
+   4.2411017e-01 -8.7418973e-02]
+ [-5.8995664e-02  2.5763220e-01  1.3459150e-02  2.0561607e-01
+   3.3266222e-01  6.7310169e-02  1.4233261e-01  1.4745868e-02
+   6.3625224e-02  1.4961760e-01]
+ [ 7.2367350e-03  2.5153458e-02  4.5431890e-03  2.7752651e-02
+   8.3597547e-01  1.8913304e-02  2.0456543e-02  6.2435463e-02
+   1.5128694e-01  4.4364028e-02]
+ [ 7.2367350e-03  2.5153458e-02  2.9305434e-01  2.7752651e-02
+   8.0242932e-01  1.8913304e-02  2.0456543e-02  6.2435463e-02
+   1.5128694e-01  4.4364028e-02]
+ [ 7.2367350e-03  2.5169763e-01  2.1955302e-01  2.5518212e-01
+   2.2062153e-01  1.8913304e-02  2.4483825e-01  2.8875515e-01
+   1.5128694e-01  4.4364028e-02]
+ [ 7.2367350e-03  2.5153458e-02  4.5431890e-03  1.6920592e-01
+   4.3980452e-01  1.8913304e-02  2.0456543e-02  6.2435463e-02
+   3.1242847e-01  1.9543074e-01]
+ [ 7.2367350e-03  2.5153458e-02  4.5431890e-03  2.7752651e-02
+   8.9554936e-03  1.8913304e-02  2.0456543e-02  6.2435463e-02
+   1.5128694e-01  3.5784975e-01]
+ [ 2.2134224e-01  2.4640292e-01  4.5431890e-03  2.7752651e-02
+   2.1567453e-01  1.8913304e-02  2.0456543e-02  2.8346565e-01
+   4.0431610e-01  4.4364028e-02]
+ [ 7.2367350e-03  2.5153458e-02  4.5431890e-03  2.7752651e-02
+   8.5562611e-01  1.8913304e-02  2.0456543e-02  6.2435463e-02
+   1.5128694e-01  4.4364028e-02]
+ [ 7.2367350e-03  3.1102446e-01  4.5431890e-03  2.7752651e-02
+   8.9554936e-03  1.8913304e-02  3.0359876e-01  3.4802318e-01
+   1.5128694e-01  4.4364028e-02]]
 
 🧫 Example cell names:
-  - CoV-1.1-Wilk:TAAGCAGTGGTA_RNA
-  - CoV-1.1-Wilk:AAGCAGTGGTAT_RNA
-  - CoV-1.1-Wilk:TGACGGCGCTTT_RNA
-  - CoV-1.1-Wilk:CTAAGCAGTGGT_RNA
-  - CoV-1.1-Wilk:ACCGGCGGCCAC_RNA
-  - CoV-1.1-Wilk:TTCGGATGCCCC_RNA
-  - CoV-1.1-Wilk:CCAACCTTAAAC_RNA
-  - CoV-1.1-Wilk:TCCCTCCCTAGA_RNA
-  - CoV-1.1-Wilk:ACCGCTTGTGTT_RNA
-  - CoV-1.1-Wilk:CGCCTCCCTACT_RNA
+  - CoV-1.1-Wilk_RNA
+  - CoV-1.2-Wilk_RNA
+  - CoV-100.1-Su_RNA
+  - CoV-100.2-Su_RNA
+  - CoV-101.1-Su_RNA
+  - CoV-101.2-Su_RNA
+  - CoV-102.1-Su_RNA
+  - CoV-102.2-Su_RNA
+  - CoV-103.1-Su_RNA
+  - CoV-103.2-Su_RNA
 
 ============================================================
 📋 Detailed obs columns inspection:
 ============================================================
 
-    [sample]
-      dtype: category
-      non-NA: 987397/987397 (100.0%)
-      unique: 431
-      top values:
-        'HD-16-Yu_RNA': 12304 (1.2%)
-        'HD-7-Wen_RNA': 11411 (1.2%)
-        'HD-9-Wen_RNA': 11357 (1.2%)
-        'CoV-29-Yu_RNA': 11301 (1.1%)
-        'CoV-85.1-Su_RNA': 11066 (1.1%)
-
     [sev.level]
       dtype: category
-      non-NA: 987397/987397 (100.0%)
+      non-NA: 431/431 (100.0%)
       unique: 4
       top values:
-        '2': 305268 (30.9%)
-        '4': 258766 (26.2%)
-        '1': 243387 (24.6%)
-        '3': 179976 (18.2%)
-
-    [balancing_weight]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 67
-      min: 0, max: 229.274, mean: 0.999973
-      example values: [np.float64(3.7873244633084044), np.float64(0.5488094853863306), np.float64(1.176002504881109), np.float64(0.8617808238394002), np.float64(5.78018936187887)]
+        '2': 161 (37.4%)
+        '4': 127 (29.5%)
+        '3': 82 (19.0%)
+        '1': 61 (14.2%)
 
     [modality]
       dtype: category
-      non-NA: 987397/987397 (100.0%)
+      non-NA: 431/431 (100.0%)
       unique: 2
       top values:
-        'RNA': 898435 (91.0%)
-        'ATAC': 88962 (9.0%)
-
-    [original_barcode]
-      dtype: category
-      non-NA: 987397/987397 (100.0%)
-      unique: 987397
-      top values:
-        're_SRR14466471_TTTGTGTTCTCGACAA-1': 1 (0.0%)
-        'CoV-1.1-Wilk:AAAAAAAGCAAC': 1 (0.0%)
-        'CoV-1.1-Wilk:AAAAAGGTACGC': 1 (0.0%)
-        'CoV-1.1-Wilk:AAAAATACAAAG': 1 (0.0%)
-        'CoV-1.1-Wilk:AAAAATGACGCC': 1 (0.0%)
-
-    [cell_type]
-      dtype: category
-      non-NA: 987397/987397 (100.0%)
-      unique: 9
-      top values:
-        'CD4n T': 306527 (31.0%)
-        'CD14 Monocyte': 295046 (29.9%)
-        'NK': 151168 (15.3%)
-        'CD8m T': 135304 (13.7%)
-        'B': 77131 (7.8%)
-
-    [label_transfer_confidence]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 44520
-      min: -1, max: 1, mean: -0.828512
-      example values: [np.float64(-1.0), np.float64(0.8898372631520033), np.float64(0.9870915971696377), np.float64(1.0000002458691597), np.float64(0.917017936706543)]
-
-    [cell_type_original]
-      dtype: category
-      non-NA: 987397/987397 (100.0%)
-      unique: 25
-      top values:
-        '11': 164599 (16.7%)
-        '3': 144792 (14.7%)
-        '6': 81524 (8.3%)
-        '12': 57048 (5.8%)
-        '8': 55899 (5.7%)
-
-    [celltypist_conf_score]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 760474
-      min: -1, max: 1, mean: 0.60036
-      example values: [np.float64(1.2560298864012909e-05), np.float64(5.6505200897811545e-05), np.float64(0.9999328439738252), np.float64(7.570504744238244e-05), np.float64(1.818590456514372e-05)]
+        'RNA': 405 (94.0%)
+        'ATAC': 26 (6.0%)
 
     [original_sample]
-      dtype: category
-      non-NA: 987397/987397 (100.0%)
+      dtype: object
+      non-NA: 431/431 (100.0%)
       unique: 431
       top values:
-        'HD-16-Yu': 12304 (1.2%)
-        'HD-7-Wen': 11411 (1.2%)
-        'HD-9-Wen': 11357 (1.2%)
-        'CoV-29-Yu': 11301 (1.1%)
-        'CoV-85.1-Su': 11066 (1.1%)
+        're_SRR14466471': 1 (0.2%)
+        'CoV-1.1-Wilk': 1 (0.2%)
+        'CoV-1.2-Wilk': 1 (0.2%)
+        'CoV-100.1-Su': 1 (0.2%)
+        'CoV-100.2-Su': 1 (0.2%)
 
     [age_cluster]
       dtype: category
-      non-NA: 987397/987397 (100.0%)
+      non-NA: 431/431 (100.0%)
       unique: 9
       top values:
-        '50-59': 179415 (18.2%)
-        '60-69': 166337 (16.8%)
-        '30-39': 119236 (12.1%)
-        '80+': 114439 (11.6%)
-        '70-79': 109647 (11.1%)
+        '60-69': 91 (21.1%)
+        '50-59': 67 (15.5%)
+        '80+': 57 (13.2%)
+        '30-39': 52 (12.1%)
+        '70-79': 49 (11.4%)
 
     [batch]
       dtype: category
-      non-NA: 987397/987397 (100.0%)
+      non-NA: 431/431 (100.0%)
       unique: 13
       top values:
-        'Su': 456201 (46.2%)
-        'SS2': 101769 (10.3%)
-        'NA': 88962 (9.0%)
-        'Yu': 73816 (7.5%)
-        'Wen': 48865 (4.9%)
+        'Su': 249 (57.8%)
+        'SS2': 56 (13.0%)
+        'NA': 26 (6.0%)
+        'SS1': 25 (5.8%)
+        'Lee': 14 (3.2%)
 
     [sex]
       dtype: category
-      non-NA: 987397/987397 (100.0%)
+      non-NA: 431/431 (100.0%)
       unique: 3
       top values:
-        'F': 453375 (45.9%)
-        'M': 436664 (44.2%)
-        'NA': 97358 (9.9%)
-
-    [n_genes_by_counts]
-      dtype: int32
-      non-NA: 987397/987397 (100.0%)
-      unique: 4712
-      min: 500, max: 7480, mean: 1206.7
-      example values: [np.int32(1087), np.int32(877), np.int32(668), np.int32(620), np.int32(733)]
-
-    [total_counts]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 20433
-      min: 504, max: 80179, mean: 3432.95
-      example values: [np.float64(1091.0), np.float64(879.0), np.float64(779.0), np.float64(621.0), np.float64(908.0)]
-
-    [pct_counts_in_top_50_genes]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 594121
-      min: 3.58285, max: 89.8014, mean: 37.0316
-      example values: [np.float64(4.949587534372136), np.float64(5.915813424345847), np.float64(17.715019255455715), np.float64(8.212560386473431), np.float64(18.83259911894273)]
-
-    [pct_counts_in_top_100_genes]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 618109
-      min: 6.78183, max: 91.5421, mean: 49.8748
-      example values: [np.float64(9.532538955087077), np.float64(11.604095563139932), np.float64(27.086007702182286), np.float64(16.264090177133657), np.float64(29.845814977973568)]
-
-    [pct_counts_in_top_200_genes]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 603788
-      min: 13.1798, max: 94.0085, mean: 61.8737
-      example values: [np.float64(18.698441796516956), np.float64(22.980659840728098), np.float64(39.92297817715019), np.float64(32.367149758454104), np.float64(41.29955947136564)]
-
-    [pct_counts_in_top_500_genes]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 597179
-      min: 32.3736, max: 100, mean: 79.7874
-      example values: [np.float64(46.1961503208066), np.float64(57.110352673492606), np.float64(78.43388960205392), np.float64(80.67632850241546), np.float64(74.33920704845815)]
-
-    [total_counts_mt]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 2891
-      min: 0, max: 9830, mean: 189.197
-      example values: [np.float64(9.0), np.float64(8.0), np.float64(7.0), np.float64(5.0), np.float64(10.0)]
-
-    [pct_counts_mt]
-      dtype: float64
-      non-NA: 987397/987397 (100.0%)
-      unique: 458786
-      min: 0, max: 19.9984, mean: 5.2147
-      example values: [np.float64(0.8249312557286892), np.float64(0.9101251422070534), np.float64(0.8985879332477535), np.float64(0.8051529790660225), np.float64(0.9911894273127754)]
-
-    [n_genes]
-      dtype: int64
-      non-NA: 987397/987397 (100.0%)
-      unique: 4712
-      min: 500, max: 7480, mean: 1206.7
-      example values: [np.int64(1087), np.int64(877), np.int64(668), np.int64(620), np.int64(733)]
+        'F': 217 (50.3%)
+        'M': 185 (42.9%)
+        'NA': 29 (6.7%)
 
 📋 Example obs rows (head 10):
-                                         sample  ... n_genes
-CoV-1.1-Wilk:TAAGCAGTGGTA_RNA  CoV-1.1-Wilk_RNA  ...    1087
-CoV-1.1-Wilk:AAGCAGTGGTAT_RNA  CoV-1.1-Wilk_RNA  ...     877
-CoV-1.1-Wilk:TGACGGCGCTTT_RNA  CoV-1.1-Wilk_RNA  ...     668
-CoV-1.1-Wilk:CTAAGCAGTGGT_RNA  CoV-1.1-Wilk_RNA  ...     620
-CoV-1.1-Wilk:ACCGGCGGCCAC_RNA  CoV-1.1-Wilk_RNA  ...     733
-CoV-1.1-Wilk:TTCGGATGCCCC_RNA  CoV-1.1-Wilk_RNA  ...     607
-CoV-1.1-Wilk:CCAACCTTAAAC_RNA  CoV-1.1-Wilk_RNA  ...     879
-CoV-1.1-Wilk:TCCCTCCCTAGA_RNA  CoV-1.1-Wilk_RNA  ...     556
-CoV-1.1-Wilk:ACCGCTTGTGTT_RNA  CoV-1.1-Wilk_RNA  ...     528
-CoV-1.1-Wilk:CGCCTCCCTACT_RNA  CoV-1.1-Wilk_RNA  ...     517
-
-[10 rows x 22 columns]
+                 sev.level modality original_sample age_cluster batch sex
+CoV-1.1-Wilk_RNA         4      RNA    CoV-1.1-Wilk       60-69  Wilk   M
+CoV-1.2-Wilk_RNA         4      RNA    CoV-1.2-Wilk       60-69  Wilk   M
+CoV-100.1-Su_RNA         3      RNA    CoV-100.1-Su         80+    Su   M
+CoV-100.2-Su_RNA         3      RNA    CoV-100.2-Su         80+    Su   M
+CoV-101.1-Su_RNA         4      RNA    CoV-101.1-Su       50-59    Su   M
+CoV-101.2-Su_RNA         4      RNA    CoV-101.2-Su       50-59    Su   M
+CoV-102.1-Su_RNA         4      RNA    CoV-102.1-Su       50-59    Su   F
+CoV-102.2-Su_RNA         4      RNA    CoV-102.2-Su       50-59    Su   F
+CoV-103.1-Su_RNA         3      RNA    CoV-103.1-Su       70-79    Su   F
+CoV-103.2-Su_RNA         3      RNA    CoV-103.2-Su       70-79    Su   F
 
 ============================================================
 🧬 Detailed var columns inspection:
 ============================================================
 
-    [mt]
-      dtype: bool
-      non-NA: 10175/10175 (100.0%)
-      unique: 1
-      min: 0, max: 0, mean: 0
-      example values: [np.False_]
-
-    [MT]
-      dtype: bool
-      non-NA: 10175/10175 (100.0%)
-      unique: 1
-      min: 0, max: 0, mean: 0
-      example values: [np.False_]
-
-    [n_cells_by_counts]
-      dtype: int64
-      non-NA: 10175/10175 (100.0%)
-      unique: 9877
-      min: 9882, max: 986410, mean: 114744
-      example values: [np.int64(104359), np.int64(13191), np.int64(17191), np.int64(51720), np.int64(16361)]
-
-    [mean_counts]
-      dtype: float64
-      non-NA: 10175/10175 (100.0%)
-      unique: 9926
-      min: 0.0103203, max: 45.8107, mean: 0.31698
-      example values: [np.float64(0.12815932368852243), np.float64(0.013995305192845585), np.float64(0.020375220005792557), np.float64(0.05618578311935302), np.float64(0.017646034224698574)]
-
-    [pct_dropout_by_counts]
-      dtype: float64
-      non-NA: 10175/10175 (100.0%)
-      unique: 9877
-      min: 0.10775, max: 98.9993, mean: 88.38
-      example values: [np.float64(89.43172174659789), np.float64(98.66416736035582), np.float64(98.25909340397823), np.float64(94.76239374403782), np.float64(98.34314624992658)]
-
-    [total_counts]
-      dtype: float64
-      non-NA: 10175/10175 (100.0%)
-      unique: 9926
-      min: 10191, max: 4.52368e+07, mean: 313009
-      example values: [np.float64(126554.0), np.float64(13820.0), np.float64(20120.0), np.float64(55482.0), np.float64(17425.0)]
-
-    [n_cells]
-      dtype: int64
-      non-NA: 10175/10175 (100.0%)
-      unique: 9893
-      min: 9880, max: 986333, mean: 114737
-      example values: [np.int64(104356), np.int64(13191), np.int64(17191), np.int64(51718), np.int64(16361)]
-
 🧬 Example var rows (head 10):
-             mt     MT  ...  total_counts  n_cells
-A1BG      False  False  ...      126554.0   104356
-A1BG-AS1  False  False  ...       13820.0    13191
-A2M-AS1   False  False  ...       20120.0    17191
-AAAS      False  False  ...       55482.0    51718
-AACS      False  False  ...       17425.0    16361
-AAED1     False  False  ...       94752.0    80750
-AAGAB     False  False  ...       80951.0    72989
-AAK1      False  False  ...      384795.0   258796
-AAMDC     False  False  ...       40738.0    37884
-AAMP      False  False  ...      169745.0   143142
-
-[10 rows x 7 columns]
+Empty DataFrame
+Columns: []
+Index: [CD14 Monocyte - ABCA2, CD14 Monocyte - ACAD10, CD14 Monocyte - ACTR3C, CD14 Monocyte - ARL15, CD14 Monocyte - ATP8B4, CD14 Monocyte - AZU1, CD14 Monocyte - BLK, CD14 Monocyte - C12orf49, CD14 Monocyte - CCL3, CD14 Monocyte - CENPF]
 
 📌 Example obsm entries:
-  ▶ 'X_glue': shape=(987397, 50), dtype=float32
+  ▶ 'X_DR_expression': shape=(431, 30), dtype=float32
     first 10 rows × 5 cols:
-[[ 9.5796305e-01  9.9819815e-03 -3.5392825e-02  5.7502210e-01
-   7.1473923e-03]
- [ 3.5712734e-01 -8.8450545e-04 -8.0177926e-02  4.8632893e-01
-  -6.0567195e-03]
- [-5.1995432e-01  6.1061522e-03 -4.9560286e-02  6.4484203e-01
-  -1.1160695e-02]
- [-1.3557577e-01  1.1058279e-02 -9.2470288e-02  5.6361890e-01
-  -8.1497114e-03]
- [-5.6345201e-01  9.1890441e-03 -4.5431182e-02  3.8081735e-01
-  -5.2167559e-03]
- [-2.2729030e-01  2.4868377e-02 -2.0512227e-02  2.3832142e-02
-  -1.1763540e-02]
- [-3.0682322e-01  9.7177355e-03 -2.3567900e-02  9.1411704e-01
-  -9.7489022e-03]
- [ 1.6206811e-01  3.3106569e-02 -5.2500755e-02 -5.2959126e-01
-   1.2310427e-02]
- [-2.7212948e-01  9.5254676e-03 -5.3923734e-02  8.9119768e-01
-   3.7310245e-03]
- [-1.5559107e-01 -6.4521935e-04 -6.1234578e-02  7.2400612e-01
-   4.1352157e-02]]
-  ▶ 'X_umap': shape=(987397, 2), dtype=float32
-    first 10 rows × 2 cols:
-[[7.928175  7.5417013]
- [8.21974   7.6242237]
- [8.726951  8.319928 ]
- [7.858563  7.4064054]
- [8.734874  8.239196 ]
- [8.893245  8.087235 ]
- [8.850809  8.266663 ]
- [8.687606  8.415268 ]
- [8.720048  8.364732 ]
- [9.519033  8.925785 ]]
+[[ 2.5455346  -1.6421275  -1.5592295  -0.78415906  0.85637516]
+ [ 0.8372345  -2.5348513   2.518138    3.388776    0.48284668]
+ [ 1.413315   -7.8715134  -0.11939202  9.691525   -1.5090731 ]
+ [ 2.7065475  -0.25362775  1.6188033   3.2035105   3.1707082 ]
+ [ 5.772147   -0.33952352 -2.7566912  -2.6510034   0.6419179 ]
+ [ 6.3960586  -0.8765341  -0.070333   -0.11053512 -0.937108  ]
+ [-0.58796626  0.6275465   5.1374793   1.3376609  -2.195433  ]
+ [-0.39210987 -0.5588616   2.3153691   4.521712   -0.16612282]
+ [ 3.2797227  -8.047924   -1.1305125  -2.901897    0.18178193]
+ [ 2.316942   -4.213842   -1.4084677   1.5345619   1.1554786 ]]
+  ▶ 'X_DR_proportion': shape=(431, 10), dtype=float64
+    first 10 rows × 5 cols:
+[[-9.47819420e-02  5.51491025e-02 -9.24384169e-02 -3.12989501e-02
+  -8.03824517e-04]
+ [-1.00745204e-01  5.96107874e-02 -8.25108000e-02 -3.20070529e-02
+   4.99036618e-03]
+ [ 1.81848980e-01 -2.68218406e-02  3.95053886e-02  3.49710848e-03
+   1.80671256e-02]
+ [ 2.24640313e-01 -3.77030610e-02  6.13888284e-02  1.20623391e-02
+   1.80556298e-02]
+ [ 5.83195387e-01 -1.16990002e-01  2.32592414e-01  7.91154511e-02
+   2.41159749e-02]
+ [ 5.37115013e-01 -1.07551008e-01  2.10343926e-01  7.08148596e-02
+   2.27889071e-02]
+ [ 2.19372385e-01 -3.59256132e-02  5.88511685e-02  1.03234027e-02
+   1.75196258e-02]
+ [ 3.10573974e-01 -5.54590285e-02  1.00109948e-01  3.31680142e-02
+   2.05756005e-02]
+ [ 4.55679374e-02  8.37119928e-03 -3.01196192e-02 -2.30148893e-02
+   3.70040884e-04]
+ [ 3.50891813e-02  9.47263167e-03 -3.39288654e-02 -2.31464874e-02
+  -1.35373538e-03]]
+  ▶ 'X_pca_expression_method': shape=(431, 30), dtype=float32
+    first 10 rows × 5 cols:
+[[ 2.5455346  -1.6421275  -1.5592295  -0.78415906  0.85637516]
+ [ 0.8372345  -2.5348513   2.518138    3.388776    0.48284668]
+ [ 1.413315   -7.8715134  -0.11939202  9.691525   -1.5090731 ]
+ [ 2.7065475  -0.25362775  1.6188033   3.2035105   3.1707082 ]
+ [ 5.772147   -0.33952352 -2.7566912  -2.6510034   0.6419179 ]
+ [ 6.3960586  -0.8765341  -0.070333   -0.11053512 -0.937108  ]
+ [-0.58796626  0.6275465   5.1374793   1.3376609  -2.195433  ]
+ [-0.39210987 -0.5588616   2.3153691   4.521712   -0.16612282]
+ [ 3.2797227  -8.047924   -1.1305125  -2.901897    0.18178193]
+ [ 2.316942   -4.213842   -1.4084677   1.5345619   1.1554786 ]]
+  ▶ 'X_pca_proportion': shape=(431, 10), dtype=float64
+    first 10 rows × 5 cols:
+[[-1.08554449e-01  5.03411243e-02 -1.04820027e-01 -5.71913185e-02
+  -3.48957624e-03]
+ [-1.14517789e-01  5.48027802e-02 -9.48924825e-02 -5.78995687e-02
+   2.30459927e-03]
+ [ 2.09614902e-01 -2.04536837e-02  3.47384810e-02  2.86316366e-03
+  -4.90028530e-03]
+ [ 2.52565804e-01 -3.13264874e-02  5.66337746e-02  1.14359026e-02
+  -5.00748673e-03]
+ [ 6.11230166e-01 -1.10607664e-01  2.27845479e-01  7.84941571e-02
+   9.87309766e-04]
+ [ 5.65147446e-01 -1.01168793e-01  2.05596817e-01  7.01934551e-02
+  -3.38350181e-04]
+ [ 2.47292515e-01 -2.95493224e-02  5.40957165e-02  9.69671399e-03
+  -5.54027584e-03]
+ [ 3.38570726e-01 -4.90786961e-02  9.53601875e-02  3.25449308e-02
+  -2.53025683e-03]
+ [ 4.77722311e-02  1.42554342e-02 -3.79821305e-02 -2.57432170e-02
+  -6.85596572e-03]
+ [ 3.79845723e-02  1.74790261e-02 -4.46277137e-02 -2.79937464e-02
+  -8.00446820e-03]]

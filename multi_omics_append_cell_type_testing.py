@@ -115,16 +115,26 @@ def annotate_and_transfer_cell_types(
     atac_modality_value: str = "ATAC",
     ensembl_release: int = 98,
     ensembl_species: str = "human",
+    celltype_csv_path: Optional[str] = None,
 ):
     """
     Annotate RNA cells using CellTypist and transfer labels to ATAC cells
     based on shared original cell type labels.
 
-    Key constraints (per user requirement):
+    Key constraints:
       - Overwrites the original cell type column in-place (default: 'cell_type')
       - DOES NOT add any new columns to adata.obs
         (no original_barcode, label_transfer_confidence, cell_type_original,
          celltypist_conf_score, etc.)
+      - Stores the mapping (original Leiden label -> CellTypist label) in:
+          adata.uns["celltypist_label_mapping"]
+
+    Parameters
+    ----------
+    celltype_csv_path : str, optional
+        Path to CSV file containing cell type information. If provided, cell type
+        info will be loaded from this CSV (must have 'cell_id' and 'cell_type' columns).
+        After annotation, both the AnnData and this CSV will be updated.
 
     Returns
     -------
@@ -132,10 +142,49 @@ def annotate_and_transfer_cell_types(
     """
     set_global_seed(42)
 
+    # Ensure original_celltype_col exists and is not categorical
+    if original_celltype_col not in adata.obs.columns:
+        # Create an empty object column if it doesn't exist
+        adata.obs[original_celltype_col] = pd.Series(
+            index=adata.obs.index, dtype="object"
+        )
+    else:
+        # If it's categorical, convert to plain strings (avoids "new category" errors)
+        if pd.api.types.is_categorical_dtype(adata.obs[original_celltype_col]):
+            adata.obs[original_celltype_col] = adata.obs[original_celltype_col].astype(str)
+
     if (model_name is None and custom_model_path is None) or (model_name and custom_model_path):
         raise ValueError("You must provide exactly one of `model_name` or `custom_model_path`.")
 
     os.makedirs(output_dir, exist_ok=True)
+
+    # Load cell type info from CSV if provided
+    celltype_df = None
+    if celltype_csv_path is not None and os.path.exists(celltype_csv_path):
+        print(f"[INFO] Loading cell type information from CSV: {celltype_csv_path}")
+        celltype_df = pd.read_csv(celltype_csv_path)
+
+        if 'cell_id' not in celltype_df.columns or 'cell_type' not in celltype_df.columns:
+            raise ValueError("CSV must contain 'cell_id' and 'cell_type' columns")
+
+        # Ensure cell_type is string to avoid dtype mismatch
+        celltype_df['cell_type'] = celltype_df['cell_type'].astype(str)
+
+        # Set cell_id as index for mapping
+        celltype_df = celltype_df.set_index('cell_id')
+
+        # Update adata.obs with cell type from CSV
+        common_cells = adata.obs.index.intersection(celltype_df.index)
+        if len(common_cells) > 0:
+            adata.obs.loc[common_cells, original_celltype_col] = celltype_df.loc[
+                common_cells, 'cell_type'
+            ].values
+            print(f"[INFO] Loaded cell type info for {len(common_cells)} cells from CSV")
+        else:
+            print("[WARN] No matching cell IDs found between CSV and AnnData")
+    elif celltype_csv_path is not None:
+        print(f"[INFO] CSV path provided but file not found: {celltype_csv_path}")
+        print("[INFO] Will use cell type info from AnnData")
 
     # Separate RNA and ATAC cells
     rna_mask = adata.obs[modality_col] == rna_modality_value
@@ -247,7 +296,6 @@ def annotate_and_transfer_cell_types(
         new_series[unmapped_mask] = orig_series[unmapped_mask]
 
     adata.obs[original_celltype_col] = new_series
-
     # Save mapping to file (disk only, no obs additions)
     mapping_df_out = pd.DataFrame(
         list(label_mapping.items()), columns=["original_label", "celltypist_label"]
@@ -255,6 +303,12 @@ def annotate_and_transfer_cell_types(
     mapping_path = os.path.join(output_dir, "celltype_mapping.csv")
     mapping_df_out.to_csv(mapping_path, index=False)
     print(f"[INFO] Label mapping saved to: {mapping_path}")
+
+    # NEW: store mapping inside the h5ad (AnnData.uns)
+    adata.uns["celltypist_label_mapping"] = {
+        str(orig): str(new) for orig, new in label_mapping.items()
+    }
+    print(f"[INFO] Label mapping stored in adata.uns['celltypist_label_mapping']")
 
     return adata, label_mapping
 
@@ -433,6 +487,7 @@ def run_full_pipeline(
     overwrite_input_h5ad: bool = True,   # overwrite input by default
     ensembl_release: int = 98,
     ensembl_species: str = "human",
+    celltype_csv_path: Optional[str] = None,
 ):
     """
     Run the full pipeline:
@@ -440,6 +495,13 @@ def run_full_pipeline(
        (overwrite cell_type in-place, no new obs columns)
     2. Visualize GLUE embedding with UMAP colored by cell type
     3. Create heatmap of modality distribution across cell types
+
+    Parameters
+    ----------
+    celltype_csv_path : str, optional
+        Path to CSV file containing cell type information. If provided, cell type
+        info will be loaded from this CSV first (prioritized over AnnData).
+        After annotation, both the AnnData and this CSV will be updated.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -464,6 +526,7 @@ def run_full_pipeline(
         atac_modality_value=atac_modality_value,
         ensembl_release=ensembl_release,
         ensembl_species=ensembl_species,
+        celltype_csv_path=celltype_csv_path,
     )
 
     # Step 2: Visualize GLUE embedding
@@ -524,28 +587,19 @@ def run_full_pipeline(
 
 
 if __name__ == "__main__":
-    # ====== EDIT THESE PATHS ======
-    H5AD_PATH = (
-        "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/"
-        "multiomics/preprocess/adata_sample.h5ad"
-    )
-    OUTPUT_DIR = (
-        "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/"
-        "multiomics/preprocess/annotation_celltypist"
-    )
-
-    adata = run_full_pipeline(
-        h5ad_path=H5AD_PATH,
-        output_dir=OUTPUT_DIR,
-        celltypist_model_name=None,  # Set to None when using custom model
-        custom_model_path="/dcl01/hongkai/data/data/hjiang/Data/Adult_COVID19_PBMC.pkl",
+    run_full_pipeline(
+        h5ad_path='/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/preprocess/adata_sample.h5ad',
+        output_dir='/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/preprocess',
+        celltypist_model_name=None,
+        custom_model_path='/dcl01/hongkai/data/data/hjiang/Data/Adult_COVID19_PBMC.pkl',
         majority_voting=True,
         modality_col="modality",
-        original_celltype_col="cell_type",  # will be overwritten in-place
+        original_celltype_col="cell_type",
         rna_modality_value="RNA",
         atac_modality_value="ATAC",
         embedding_key="X_glue",
-        overwrite_input_h5ad=True,  # overwrites H5AD_PATH
+        overwrite_input_h5ad=True,
         ensembl_release=98,
         ensembl_species="human",
+        celltype_csv_path='/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/resolutions/resolution_0.050_expression/preprocess/cell_type.csv',
     )

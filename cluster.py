@@ -5,6 +5,7 @@ import anndata as ad
 import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def cluster(
@@ -70,7 +71,7 @@ def cluster(
         save_path: str,
     ):
         """
-        Simple 2D scatter of the first two dimensions of X, colored by cluster.
+        Enhanced 2D scatter of the first two dimensions of X, colored by cluster.
         """
         if X.shape[1] < 2:
             raise ValueError(
@@ -78,22 +79,55 @@ def cluster(
                 "need at least 2 dimensions to plot."
             )
 
-        plt.figure(figsize=(6, 5))
-        plt.scatter(
-            X[:, 0],
-            X[:, 1],
-            c=labels,
-            s=40,
-            alpha=0.8,
+        # Set style
+        sns.set_style("whitegrid")
+        
+        # Create figure with better aesthetics
+        fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+        
+        # Create a nice color palette
+        n_clusters = len(np.unique(labels))
+        colors = sns.color_palette("husl", n_clusters)
+        
+        # Plot each cluster separately for better control
+        for cluster_id in np.unique(labels):
+            mask = labels == cluster_id
+            ax.scatter(
+                X[mask, 0],
+                X[mask, 1],
+                c=[colors[cluster_id]],
+                s=80,
+                alpha=0.7,
+                edgecolors='white',
+                linewidth=1.5,
+                label=f'Cluster {cluster_id}',
+            )
+        
+        # Styling
+        ax.set_xlabel("Dimension 1", fontsize=12, fontweight='bold')
+        ax.set_ylabel("Dimension 2", fontsize=12, fontweight='bold')
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+        
+        # Legend
+        ax.legend(
+            loc='center left',
+            bbox_to_anchor=(1, 0.5),
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            fontsize=10
         )
-        plt.xlabel("Dim 1")
-        plt.ylabel("Dim 2")
-        plt.title(title)
-        # Optionally annotate points lightly (comment out if cluttered)
-        # for sid, x, y in zip(sample_ids, X[:, 0], X[:, 1]):
-        #     plt.text(x, y, str(sid), fontsize=6, alpha=0.7)
+        
+        # Grid styling
+        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+        ax.set_axisbelow(True)
+        
+        # Remove top and right spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
         plt.tight_layout()
-        plt.savefig(save_path, dpi=300)
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
         print(f"[INFO] Saved plot: {save_path}")
 
@@ -144,7 +178,7 @@ def cluster(
             X=X_expr,
             labels=labels_expr,
             sample_ids=sample_ids,
-            title=f"K-means (expression) - k={number_of_clusters}",
+            title=f"K-means Clustering on Expression Embedding (k={number_of_clusters})",
             save_path=expr_plot_path,
         )
 
@@ -193,7 +227,7 @@ def cluster(
             X=X_prop,
             labels=labels_prop,
             sample_ids=sample_ids,
-            title=f"K-means (proportion) - k={number_of_clusters}",
+            title=f"K-means Clustering on Proportion Embedding (k={number_of_clusters})",
             save_path=prop_plot_path,
         )
 

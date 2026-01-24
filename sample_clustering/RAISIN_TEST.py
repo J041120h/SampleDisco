@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 RAISIN Testing - Python port of R RAISIN package
 
@@ -23,6 +24,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from itertools import combinations
 import matplotlib.patches as mpatches
+from adjustText import adjust_text
 
 # ============================================================================
 # PLOTTING AESTHETICS
@@ -30,55 +32,171 @@ import matplotlib.patches as mpatches
 plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 plt.rcParams['svg.fonttype'] = 'none'
+
+# White background and no grid globally
+plt.rcParams['axes.facecolor'] = 'white'
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['axes.grid'] = False
+
 sns.set_context("paper")
+sns.set_style("white")  # clean, no grid
+
 
 # ============================================================================
 # NEW VISUALIZATION FUNCTIONS
 # ============================================================================
 
-def plot_journal_volcano(result, title, output_path, fdr_threshold=0.05):
+def plot_journal_volcano(
+    result,
+    title,
+    output_path,
+    fdr_threshold=0.05,
+    label_genes=False,
+    top_n_genes=5
+):
     """
     Creates a minimalist, publication-ready volcano plot.
+
+    If label_genes is True, the top_n_genes (by smallest FDR among significant)
+    will be labeled with numbers 1..N on the plot, and a legend on the right 
+    will map number -> gene name.
+    
+    Parameters
+    ----------
+    result : pd.DataFrame
+        DE results with 'Foldchange' and 'FDR' columns
+    title : str
+        Plot title
+    output_path : str
+        Path to save the figure
+    fdr_threshold : float
+        FDR threshold for significance
+    label_genes : bool
+        Whether to label top differential genes
+    top_n_genes : int
+        Total number of genes to label with numbers
     """
     df = result.copy()
     df['nlog10'] = -np.log10(df['FDR'] + 1e-300)
     
-    plt.figure(figsize=(4, 4))
-    
+    fig, ax = plt.subplots(figsize=(4, 4))
+    fig.patch.set_facecolor('white')
+    ax.set_facecolor('white')
+    ax.grid(False)
+
     # significance masks
     is_sig = df['FDR'] < fdr_threshold
     is_up = df['Foldchange'] > 0
     
     # non-significant
-    plt.scatter(df.loc[~is_sig, 'Foldchange'],
-                df.loc[~is_sig, 'nlog10'],
-                c='#dddddd', s=5, alpha=0.5,
-                linewidth=0, rasterized=True)
+    ax.scatter(
+        df.loc[~is_sig, 'Foldchange'],
+        df.loc[~is_sig, 'nlog10'],
+        c='#dddddd',
+        s=5,
+        alpha=0.5,
+        linewidth=0,
+        rasterized=True,
+    )
     
     # significant up
-    plt.scatter(df.loc[is_sig & is_up, 'Foldchange'],
-                df.loc[is_sig & is_up, 'nlog10'],
-                c='#B31B1B', s=15, alpha=0.8,
-                linewidth=0, rasterized=True)
+    ax.scatter(
+        df.loc[is_sig & is_up, 'Foldchange'],
+        df.loc[is_sig & is_up, 'nlog10'],
+        c='#B31B1B',
+        s=15,
+        alpha=0.8,
+        linewidth=0,
+        rasterized=True,
+    )
     
     # significant down
-    plt.scatter(df.loc[is_sig & ~is_up, 'Foldchange'],
-                df.loc[is_sig & ~is_up, 'nlog10'],
-                c='#0047AB', s=15, alpha=0.8,
-                linewidth=0, rasterized=True)
-            
+    ax.scatter(
+        df.loc[is_sig & ~is_up, 'Foldchange'],
+        df.loc[is_sig & ~is_up, 'nlog10'],
+        c='#0047AB',
+        s=15,
+        alpha=0.8,
+        linewidth=0,
+        rasterized=True,
+    )
+    
     # Guidelines
-    plt.axhline(-np.log10(fdr_threshold),
-                linestyle='--', color='black',
-                linewidth=0.8, alpha=0.5)
-    plt.axvline(0, linestyle='-', color='black',
-                linewidth=0.5, alpha=0.5)
+    ax.axhline(
+        -np.log10(fdr_threshold),
+        linestyle='--',
+        color='black',
+        linewidth=0.8,
+        alpha=0.5,
+    )
+    ax.axvline(
+        0,
+        linestyle='-',
+        color='black',
+        linewidth=0.5,
+        alpha=0.5,
+    )
     
-    plt.title(title, fontsize=10, weight='bold')
-    plt.xlabel("Log Fold Change", fontsize=9)
-    plt.ylabel("-log10(FDR)", fontsize=9)
+    # Label top genes with NUMBERS + legend if requested
+    if label_genes and top_n_genes > 0:
+        # pick top genes among significant ones by smallest FDR
+        sig_df = df[is_sig].sort_values('FDR')
+        sig_df = sig_df.head(top_n_genes)
+        
+        texts = []
+        labeled_genes = []
+        
+        for idx, (gene, row) in enumerate(sig_df.iterrows(), start=1):
+            # numeric label on the plot
+            t = ax.text(
+                row['Foldchange'],
+                row['nlog10'],
+                str(idx),
+                fontsize=7,
+                fontweight='bold',
+                ha='center',
+                va='bottom'
+            )
+            texts.append(t)
+            labeled_genes.append((idx, gene))
+        
+        # avoid overlaps between numeric labels
+        if texts:
+            adjust_text(
+                texts,
+                ax=ax,
+                arrowprops=dict(arrowstyle='-', color='gray', lw=0.5)
+            )
+        
+        # legend on the right: number -> gene name
+        if labeled_genes:
+            legend_handles = [
+                mpatches.Patch(color='none', label=f"{i}: {g}")
+                for i, g in labeled_genes
+            ]
+            ax.legend(
+                handles=legend_handles,
+                title="Labeled genes",
+                loc='upper left',
+                bbox_to_anchor=(1.02, 1.0),
+                frameon=False,
+                fontsize=7,
+                title_fontsize=8,
+                borderaxespad=0.0
+            )
     
-    sns.despine()
+    ax.set_title(title, fontsize=10, weight='bold')
+    ax.set_xlabel("Log Fold Change", fontsize=9)
+    ax.set_ylabel("-log10(FDR)", fontsize=9)
+    
+    # Style axes - black spines, smaller tick labels, no grid
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_color('black')
+    ax.spines['bottom'].set_color('black')
+    ax.tick_params(axis='both', which='major', labelsize=7, colors='black')
+    ax.tick_params(axis='both', which='minor', labelsize=6, colors='black')
+    
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 
@@ -201,6 +319,9 @@ def plot_pseudobulk_heatmap(
 
     # --- 4. Plotting ---
     fig, ax = plt.subplots(figsize=figsize)
+    fig.patch.set_facecolor('white')
+    ax.set_facecolor('white')
+    ax.grid(False)
     
     sns.heatmap(
         z_matrix,
@@ -218,6 +339,13 @@ def plot_pseudobulk_heatmap(
         if cluster != current_cluster:
             ax.hlines(i, *ax.get_xlim(), colors='white', linewidth=1)
             current_cluster = cluster
+    
+    # Style axes - black spines, smaller tick labels
+    ax.spines['top'].set_color('black')
+    ax.spines['right'].set_color('black')
+    ax.spines['left'].set_color('black')
+    ax.spines['bottom'].set_color('black')
+    ax.tick_params(axis='both', which='major', labelsize=7, colors='black')
             
     ax.set_xlabel("Clusters", fontsize=12, weight='bold')
     ax.set_ylabel(f"Marker Genes (n={len(final_gene_list)})", fontsize=12)
@@ -279,6 +407,9 @@ def plot_journal_dotplot(
         )
         
     fig, ax = plt.subplots(figsize=figsize)
+    fig.patch.set_facecolor('white')
+    ax.set_facecolor('white')
+    ax.grid(False)
     
     # Mapping
     comparisons = sorted(final_df['Comparison'].unique())
@@ -298,14 +429,20 @@ def plot_journal_dotplot(
     )
     
     ax.set_xticks(range(len(comparisons)))
-    ax.set_xticklabels(comparisons, rotation=45, ha='right', fontsize=9)
+    ax.set_xticklabels(comparisons, rotation=45, ha='right', fontsize=7)
     ax.set_yticks(range(len(genes)))
-    ax.set_yticklabels(genes, fontsize=8)
-    ax.grid(True, linestyle='--', alpha=0.3)
-    ax.set_axisbelow(True)
+    ax.set_yticklabels(genes, fontsize=6)
+    
+    # Style axes - black spines, no grid
+    ax.spines['top'].set_color('black')
+    ax.spines['right'].set_color('black')
+    ax.spines['left'].set_color('black')
+    ax.spines['bottom'].set_color('black')
+    ax.tick_params(axis='both', which='major', labelsize=7, colors='black')
     
     cbar = plt.colorbar(sc, ax=ax, shrink=0.5)
     cbar.set_label("Log Fold Change", fontsize=9)
+    cbar.ax.tick_params(labelsize=6)
     
     sizes = [10, 30, 50]
     legend_elements = [
@@ -316,12 +453,15 @@ def plot_journal_dotplot(
         handles=legend_elements,
         title="-log10(FDR)",
         bbox_to_anchor=(1.2, 1),
-        loc='upper left'
+        loc='upper left',
+        fontsize=7,
+        title_fontsize=8
     )
     
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
+
 
 # ============================================================================
 # CORE TESTING FUNCTIONS
@@ -466,11 +606,22 @@ def raisintest(
             os.makedirs(output_dir, exist_ok=True)
             res.to_csv(os.path.join(output_dir, "raisin_results.csv"))
             if make_volcano:
+                # Version 1: Without gene labels
                 plot_journal_volcano(
                     res, 
                     title=f"Contrast: {contrast_label}", 
                     output_path=os.path.join(output_dir, "volcano.png"),
-                    fdr_threshold=fdr_threshold
+                    fdr_threshold=fdr_threshold,
+                    label_genes=False
+                )
+                # Version 2: With numeric gene labels + legend (5 genes)
+                plot_journal_volcano(
+                    res, 
+                    title=f"Contrast: {contrast_label}", 
+                    output_path=os.path.join(output_dir, "volcano_labeled.png"),
+                    fdr_threshold=fdr_threshold,
+                    label_genes=True,
+                    top_n_genes=5
                 )
 
         return res

@@ -214,7 +214,6 @@ def atac_wrapper(
             sample_column=atac_sample_col,
             batch_key=atac_batch_col,
             verbose=atac_pipeline_verbose,
-            use_snapatac2_dimred=use_snapatac2_dimred,
             
             # QC and filtering parameters
             min_cells=atac_min_cells,
@@ -321,7 +320,6 @@ def atac_wrapper(
             harmony_for_proportion = atac_harmony_for_proportion,
             output_dir=atac_dr_output_dir,
             atac=True,
-            use_snapatac2_dimred=use_snapatac2_dimred,
             verbose=atac_dr_verbose,
             preserve_cols = preserve_cols_for_sample_embedding,
         )
