@@ -215,6 +215,20 @@ def cell_types(
                 anndata_sample.obs["cell_type"] = series.reindex(
                     anndata_sample.obs_names
                 ).values
+        
+        if output_dir:
+            preprocess_csv = os.path.join(output_dir, "preprocess")
+            os.makedirs(preprocess_csv, exist_ok=True)
+
+            celltype_df = pd.DataFrame({
+            "cell_id": adata.obs.index,
+            "cell_type": adata.obs["cell_type"].astype(str),
+            })
+            csv_path = os.path.join(preprocess_csv, "cell_type.csv")
+            celltype_df.to_csv(csv_path, index=False)
+
+            if verbose:
+                print(f"[cell_types] Saved cell type CSV to {csv_path}")
 
         if save and output_dir:
             preprocess = os.path.join(output_dir, "preprocess")

@@ -285,6 +285,20 @@ def cell_types_linux(
                     )
 
             anndata_sample = ensure_cpu_arrays(anndata_sample)
+        
+        if output_dir:
+            preprocess_csv = os.path.join(output_dir, "preprocess")
+            os.makedirs(preprocess_csv, exist_ok=True)
+
+            celltype_df = pd.DataFrame({
+            "cell_id": adata.obs.index,
+            "cell_type": adata.obs["cell_type"].astype(str),
+            })
+            csv_path = os.path.join(preprocess_csv, "cell_type.csv")
+            celltype_df.to_csv(csv_path, index=False)
+
+            if verbose:
+               print(f"[cell_types] Saved cell type CSV to {csv_path}")
 
         if save and output_dir and not defined_output_path:
             out_pre = os.path.join(output_dir, "preprocess")
