@@ -562,18 +562,15 @@ def permutation_test_trajectory(
         "null_distribution": null_ccas.tolist(),
     }
 
-
 # =============================================================================
 # Enhanced Visualization Functions
 # =============================================================================
-
 def reduce_to_2d(emb: np.ndarray) -> np.ndarray:
     """Reduce embedding to 2D using PCA if necessary."""
     if emb.shape[1] <= 2:
         if emb.shape[1] == 1:
             return np.column_stack([emb, np.zeros(emb.shape[0])])
         return emb[:, :2]
-    
     pca = PCA(n_components=2)
     return pca.fit_transform(emb)
 
@@ -586,11 +583,9 @@ def plot_embedding_by_modality(
     modality_col: str = "modality",
     method_name: str = "",
 ) -> None:
-    """Plot 2D embedding colored by modality with enhanced styling."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    """Plot 2D embedding colored by modality with minimal styling."""
+    fig = plt.figure(figsize=(6.0, 6.0))
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     modalities = md[modality_col].values
     unique_mods = sorted(np.unique(modalities))
@@ -598,41 +593,53 @@ def plot_embedding_by_modality(
     for mod in unique_mods:
         mask = modalities == mod
         color = config.modality_colors.get(mod, '#333333')
-        
         ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=color,
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=mod,
-            edgecolors='white',
-            linewidths=0.8,
-            zorder=3,
+            edgecolors='none',
         )
     
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Embedding by Modality', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xlabel('PC1')
+    ax.set_ylabel('PC2')
+    ax.set_title('Embedding by Modality', pad=12)
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
+    ax.set_aspect(1.0, adjustable='box')
+    
+    # Equal aspect ratio with padding
+    x_min, x_max = emb_2d[:, 0].min(), emb_2d[:, 0].max()
+    y_min, y_max = emb_2d[:, 1].min(), emb_2d[:, 1].max()
+    cx = 0.5 * (x_min + x_max)
+    cy = 0.5 * (y_min + y_max)
+    dx = x_max - x_min
+    dy = y_max - y_min
+    half_range = 0.5 * max(dx, dy)
+    pad = 0.10
+    half_range *= (1.0 + pad)
+    if half_range == 0:
+        half_range = 1.0
+    ax.set_xlim(cx - half_range, cx + half_range)
+    ax.set_ylim(cy - half_range, cy + half_range)
     
     legend = ax.legend(
-        title='Modality', 
-        loc='upper right',
+        title='Modality',
         frameon=True,
-        fancybox=True,
-        fontsize=13,
-        title_fontsize=14,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc='upper left',
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor='black',
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    legend.get_frame().set_linewidth(0.8)
     
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path.replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -646,14 +653,11 @@ def plot_paired_connections(
     method_name: str = "",
 ) -> None:
     """Plot 2D embedding with connections between paired samples."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    fig = plt.figure(figsize=(6.0, 6.0))
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     # Build sample_id -> {modality: row_idx} mapping
     sample_id_to_idx: Dict[str, Dict[str, int]] = {}
-    
     for i, (idx, row) in enumerate(md.iterrows()):
         sid = str(row[sample_id_col])
         mod = str(row[modality_col])
@@ -667,7 +671,6 @@ def plot_paired_connections(
         if len(modalities) == 2:
             idx1 = mod_dict[modalities[0]]
             idx2 = mod_dict[modalities[1]]
-            
             ax.plot(
                 [emb_2d[idx1, 0], emb_2d[idx2, 0]],
                 [emb_2d[idx1, 1], emb_2d[idx2, 1]],
@@ -688,51 +691,64 @@ def plot_paired_connections(
         marker = markers.get(mod, 'o')
         ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=color,
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=mod,
             marker=marker,
-            edgecolors='white',
-            linewidths=1.0,
-            zorder=3,
+            edgecolors='none',
         )
     
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Paired Sample Connections', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xlabel('PC1')
+    ax.set_ylabel('PC2')
+    ax.set_title('Paired Sample Connections', pad=12)
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
+    ax.set_aspect(1.0, adjustable='box')
+    
+    # Equal aspect ratio with padding
+    x_min, x_max = emb_2d[:, 0].min(), emb_2d[:, 0].max()
+    y_min, y_max = emb_2d[:, 1].min(), emb_2d[:, 1].max()
+    cx = 0.5 * (x_min + x_max)
+    cy = 0.5 * (y_min + y_max)
+    dx = x_max - x_min
+    dy = y_max - y_min
+    half_range = 0.5 * max(dx, dy)
+    pad = 0.10
+    half_range *= (1.0 + pad)
+    if half_range == 0:
+        half_range = 1.0
+    ax.set_xlim(cx - half_range, cx + half_range)
+    ax.set_ylim(cy - half_range, cy + half_range)
     
     legend_elements = [
         Line2D([0], [0], marker='o', color='w', 
                markerfacecolor=config.modality_colors.get('RNA', '#3498db'),
-               markersize=12, label='RNA', markeredgecolor='white', markeredgewidth=1.5),
+               markersize=10, label='RNA', markeredgecolor='none'),
         Line2D([0], [0], marker='s', color='w', 
                markerfacecolor=config.modality_colors.get('ATAC', '#e74c3c'),
-               markersize=12, label='ATAC', markeredgecolor='white', markeredgewidth=1.5),
-        Line2D([0], [0], color=config.connection_color, linewidth=3, alpha=0.7, label='Paired connection'),
+               markersize=10, label='ATAC', markeredgecolor='none'),
+        Line2D([0], [0], color=config.connection_color, linewidth=2.5, 
+               alpha=0.7, label='Paired connection'),
     ]
     
     legend = ax.legend(
-        handles=legend_elements, 
-        loc='upper right',
+        handles=legend_elements,
         frameon=True,
-        fancybox=True,
-        fontsize=13,
-        title_fontsize=14,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc='upper left',
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor='black',
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    legend.get_frame().set_linewidth(0.8)
     
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path.replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
     plt.close(fig)
-
 
 def plot_trajectory_analysis(
     emb_2d: np.ndarray,
@@ -742,14 +758,24 @@ def plot_trajectory_analysis(
     method_name: str = "",
 ) -> None:
     """
-    Plot trajectory analysis with age and pseudotime visualizations.
+    Plot trajectory analysis with embedding colored by trajectory variable and Spearman correlation.
     Creates two separate figure files.
+    Uses absolute value of correlation to ensure trajectory is in increasing direction.
     """
+    from scipy import stats
+    
     age_values = trajectory_results['age_values']
     pseudotime = trajectory_results['pseudotime']
     cca_score = trajectory_results['cca_score']
     pseudotime_age_corr = trajectory_results['pseudotime_age_correlation']
     age_col = trajectory_results['age_col']
+    
+    # Calculate Spearman correlation
+    spearman_corr, spearman_p = stats.spearmanr(age_values, pseudotime)
+    
+    # Use absolute value for display (trajectory should always increase)
+    spearman_corr_abs = abs(spearman_corr)
+    pseudotime_age_corr_abs = abs(pseudotime_age_corr)
     
     # Determine output paths for two separate figures
     output_path_obj = Path(output_path)
@@ -757,84 +783,146 @@ def plot_trajectory_analysis(
     scatter_path = output_path_obj.parent / f"{output_path_obj.stem}_scatter.png"
     
     # =========================================================================
-    # Figure 1: Embedding colored by age with proper colorbar height
+    # Figure 1: Embedding colored by trajectory variable (month/age)
     # =========================================================================
-    fig1, ax1 = plt.subplots(figsize=(12, 10))
-    ax1.set_facecolor('#fafafa')
-    fig1.patch.set_facecolor('white')
+    fig1 = plt.figure(figsize=(6.0, 6.0))
+    ax1 = fig1.add_axes([0.12, 0.12, 0.62, 0.62])
     
-    # Normalize age for colormap
-    age_norm = (age_values - age_values.min()) / (age_values.max() - age_values.min() + 1e-16)
-    
+    # Use raw age values for color mapping
     sc1 = ax1.scatter(
         emb_2d[:, 0], emb_2d[:, 1],
-        c=age_norm,
+        c=age_values,
         cmap=config.age_cmap,
-        s=config.point_size,
-        alpha=config.point_alpha,
-        edgecolors='white',
-        linewidths=0.8,
-        zorder=3,
+        s=50,
+        alpha=0.7,
+        edgecolors='none',
     )
     
-    # Create colorbar with same height as plot
-    divider = make_axes_locatable(ax1)
-    cax = divider.append_axes("right", size="5%", pad=0.1)
-    cbar1 = plt.colorbar(sc1, cax=cax)
-    cbar1.set_label(f'{age_col.capitalize()} (normalized)', fontsize=12, fontweight='bold')
-    cbar1.ax.tick_params(labelsize=10)
+    ax1.set_xlabel('PC1')
+    ax1.set_ylabel('PC2')
+    ax1.set_title(f'Embedding (CCA: {cca_score:.3f})', pad=12)
+    ax1.grid(False)
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    for spine in ax1.spines.values():
+        spine.set_linewidth(0.8)
+    ax1.set_aspect(1.0, adjustable='box')
     
-    ax1.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax1.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax1.set_title(f'Embedding (CCA score: {cca_score:.3f})', 
-                 fontsize=14, fontweight='bold', pad=15)
-    ax1.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax1.set_axisbelow(True)
-    ax1.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
+    # Equal aspect ratio with padding
+    x_min, x_max = emb_2d[:, 0].min(), emb_2d[:, 0].max()
+    y_min, y_max = emb_2d[:, 1].min(), emb_2d[:, 1].max()
+    cx = 0.5 * (x_min + x_max)
+    cy = 0.5 * (y_min + y_max)
+    dx = x_max - x_min
+    dy = y_max - y_min
+    half_range = 0.5 * max(dx, dy)
+    pad = 0.10
+    half_range *= (1.0 + pad)
+    if half_range == 0:
+        half_range = 1.0
+    ax1.set_xlim(cx - half_range, cx + half_range)
+    ax1.set_ylim(cy - half_range, cy + half_range)
     
-    plt.tight_layout()
-    fig1.savefig(embedding_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    # Colorbar
+    cbar1 = plt.colorbar(sc1, ax=ax1, fraction=0.046, pad=0.04)
+    cbar1.set_label(f'{age_col.capitalize()}')
+    cbar1.outline.set_linewidth(0.8)
+    
+    fig1.savefig(embedding_path, dpi=300, bbox_inches='tight')
+    fig1.savefig(str(embedding_path).replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
     plt.close(fig1)
     
     # =========================================================================
-    # Figure 2: Pseudotime vs Age scatter
+    # Figure 2: Combined Spearman correlation analysis (2x2 layout)
     # =========================================================================
-    fig2, ax2 = plt.subplots(figsize=(12, 10))
-    ax2.set_facecolor('#fafafa')
-    fig2.patch.set_facecolor('white')
+    fig2 = plt.figure(figsize=(12, 10))
     
-    ax2.scatter(
-        age_values, pseudotime,
-        c='steelblue',
-        s=80,
-        alpha=0.7,
-        edgecolors='black',
-        linewidths=0.5,
-        zorder=3,
-    )
-    
-    # Add regression line
+    # 1. Scatter plot with regression line
+    ax1 = plt.subplot(2, 2, 1)
+    ax1.scatter(age_values, pseudotime, alpha=0.6, s=50, c='steelblue', edgecolors='none')
     z = np.polyfit(age_values, pseudotime, 1)
     p = np.poly1d(z)
     age_sorted = np.sort(age_values)
-    ax2.plot(age_sorted, p(age_sorted), 'r--', linewidth=2.5, 
-            label=f'r = {pseudotime_age_corr:.3f}', zorder=2)
+    ax1.plot(age_sorted, p(age_sorted), 'r--', alpha=0.8, linewidth=2.5, label='Linear fit')
+    ax1.set_xlabel(f'{age_col.capitalize()}')
+    ax1.set_ylabel('Pseudotime')
+    ax1.set_title(
+        f'Pseudotime vs {age_col.capitalize()}\n'
+        f'(Spearman |ρ| = {spearman_corr_abs:.3f}, p = {spearman_p:.3e})',
+        pad=12
+    )
+    ax1.legend(frameon=True, edgecolor='black', framealpha=1.0)
+    ax1.grid(True, alpha=0.3)
+    for spine in ax1.spines.values():
+        spine.set_linewidth(0.8)
     
-    ax2.set_xlabel(f'{age_col.capitalize()}', fontsize=14, fontweight='bold', labelpad=10)
-    ax2.set_ylabel('Pseudotime', fontsize=14, fontweight='bold', labelpad=10)
-    ax2.set_title(f'Pseudotime vs {age_col.capitalize()}', fontsize=14, fontweight='bold', pad=15)
-    ax2.legend(loc='best', fontsize=12, frameon=True, fancybox=True, 
-              edgecolor='#cccccc', facecolor='white', framealpha=0.95)
-    ax2.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax2.set_axisbelow(True)
-    ax2.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
+    # 2. Box plot by trajectory variable
+    ax2 = plt.subplot(2, 2, 2)
+    # Create boxplot data
+    unique_ages = sorted(np.unique(age_values))
+    box_data = [pseudotime[age_values == age] for age in unique_ages]
+    bp = ax2.boxplot(box_data, positions=range(len(unique_ages)), patch_artist=True)
+    for patch in bp['boxes']:
+        patch.set_facecolor('lightblue')
+        patch.set_edgecolor('black')
+        patch.set_linewidth(0.8)
+    ax2.set_xlabel(f'{age_col.capitalize()}')
+    ax2.set_ylabel('Pseudotime')
+    ax2.set_title(f'Pseudotime Distribution by {age_col.capitalize()}', pad=12)
+    ax2.set_xticks(range(len(unique_ages)))
+    ax2.set_xticklabels([str(int(age)) if age.is_integer() else f'{age:.1f}' for age in unique_ages])
+    ax2.grid(True, alpha=0.3, axis='y')
+    for spine in ax2.spines.values():
+        spine.set_linewidth(0.8)
+    
+    # 3. Violin plot
+    ax3 = plt.subplot(2, 2, 3)
+    violin_data = [pseudotime[age_values == age] for age in unique_ages]
+    positions = range(len(unique_ages))
+    parts = ax3.violinplot(violin_data, positions=positions, showmeans=True, showmedians=True)
+    for pc in parts['bodies']:
+        pc.set_facecolor('lightcoral')
+        pc.set_alpha(0.7)
+        pc.set_edgecolor('black')
+        pc.set_linewidth(0.8)
+    ax3.set_xticks(positions)
+    ax3.set_xticklabels([str(int(age)) if age.is_integer() else f'{age:.1f}' for age in unique_ages])
+    ax3.set_xlabel(f'{age_col.capitalize()}')
+    ax3.set_ylabel('Pseudotime')
+    ax3.set_title('Pseudotime Distribution (Violin Plot)', pad=12)
+    ax3.grid(True, alpha=0.3, axis='y')
+    for spine in ax3.spines.values():
+        spine.set_linewidth(0.8)
+    
+    # 4. Correlation heatmap (using absolute values)
+    ax4 = plt.subplot(2, 2, 4)
+    corr_data = np.array([[spearman_corr_abs, pseudotime_age_corr_abs]])
+    im = ax4.imshow(corr_data, cmap='YlOrRd', vmin=0, vmax=1, aspect='auto')
+    ax4.set_xticks([0, 1])
+    ax4.set_xticklabels(['Spearman |ρ|', 'Pearson |r|'])
+    ax4.set_yticks([0])
+    ax4.set_yticklabels(['|Correlation|'])
+    ax4.set_title('Correlation Coefficients (Absolute Values)', pad=12)
+    
+    # Add text annotations
+    for i in range(2):
+        text_val = corr_data[0, i]
+        text_color = 'white' if text_val > 0.5 else 'black'
+        ax4.text(i, 0, f'{text_val:.3f}', 
+                ha='center', va='center', color=text_color, fontsize=12, fontweight='bold')
+    
+    # Colorbar
+    cbar = plt.colorbar(im, ax=ax4, fraction=0.046, pad=0.04)
+    cbar.set_label('|Correlation|')
+    cbar.outline.set_linewidth(0.8)
+    
+    for spine in ax4.spines.values():
+        spine.set_linewidth(0.8)
     
     plt.tight_layout()
-    fig2.savefig(scatter_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    fig2.savefig(scatter_path, dpi=300, bbox_inches='tight')
+    fig2.savefig(str(scatter_path).replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
     plt.close(fig2)
-
 
 
 def create_all_visualizations(
@@ -849,7 +937,6 @@ def create_all_visualizations(
 ) -> Dict[str, str]:
     """Create all visualization plots for a method."""
     emb_2d = reduce_to_2d(emb)
-    
     viz_dir = method_outdir / "visualizations"
     viz_dir.mkdir(parents=True, exist_ok=True)
     
@@ -1235,114 +1322,145 @@ def save_to_summary_csv(
 
 # =============================================================================
 # Main execution
-# =============================================================================
+# =============================================================================import os
+
 if __name__ == '__main__':
-    # Define paths
-    meta_csv = "/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv"
-    general_outdir = "/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea"
-    summary_csv_path = f"{general_outdir}/Benchmark_result/summary.csv"
-    
+    # =========================
+    # Easy-to-change variables
+    # =========================
+    DATASET = "lutea"  # <-- change this next time (e.g., "retina", "lutea", ...)
+    BASE_DIR = "/dcs07/hongkai/data/harry/result/multi_omics_eye"
+    META_CSV = os.path.join(BASE_DIR, "data", "scMultiomics_database.csv")
+
+    # Output dir + summary
+    general_outdir = os.path.join(BASE_DIR, f"benchmark_{DATASET}")
+    summary_csv_path = os.path.join(general_outdir, "Benchmark_result", "summary.csv")
+
+    # Helper to build embedding paths under general_outdir
+    def emb(*parts):
+        return os.path.join(general_outdir, *parts)
+
+    # -------------------------
     # SD_expression
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_expression_embedding.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb(DATASET, "embeddings", "sample_expression_embedding.csv"),
         method_name="SD_expression",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # SD_proportion
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_proportion_embedding.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb(DATASET, "embeddings", "sample_proportion_embedding.csv"),
         method_name="SD_proportion",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # pilot
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pilot/wasserstein_distance_mds_10d.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("pilot", "wasserstein_distance_mds_10d.csv"),
         method_name="pilot",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # pseudobulk
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pseudobulk/pseudobulk/pca_embeddings.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("pseudobulk", "pseudobulk", "pca_embeddings.csv"),
         method_name="pseudobulk",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # QOT
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/QOT/24_qot_distance_matrix_mds_10d.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("QOT", "24_qot_distance_matrix_mds_10d.csv"),
         method_name="QOT",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # GEDI
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/GEDI/gedi_sample_embedding.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("GEDI", "gedi_sample_embedding.csv"),
         method_name="GEDI",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # Gloscope
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Gloscope/knn_divergence_mds_10d.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("Gloscope", "knn_divergence_mds_10d.csv"),
         method_name="Gloscope",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # MFA
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/MFA/sample_embeddings.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("MFA", "sample_embeddings.csv"),
         method_name="MFA",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # mustard
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/mustard/sample_embedding.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("mustard", "sample_embedding.csv"),
         method_name="mustard",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
+
+    # -------------------------
     # scPoli
+    # -------------------------
     results = evaluate_multimodal_integration(
-        meta_csv=meta_csv,
-        embedding_csv="/dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/scPoli/sample_embeddings_full.csv",
+        meta_csv=META_CSV,
+        embedding_csv=emb("scPoli", "sample_embeddings_full.csv"),
         method_name="scPoli",
         general_outdir=general_outdir,
         k_neighbors=3,
     )
     save_to_summary_csv(results, summary_csv_path)
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("Benchmark suite completed!")
     print(f"Summary saved to: {summary_csv_path}")
-    print("="*60)
+    print("=" * 60)

@@ -2,7 +2,3 @@
   est_val = np.sum(num) / np.sum(den)
 /users/hjiang/GenoDistance/code/sample_clustering/RAISIN.py:933: RuntimeWarning: invalid value encountered in scalar divide
   est_val = np.sum(num) / np.sum(den)
-/users/hjiang/GenoDistance/code/sample_clustering/RAISIN.py:933: RuntimeWarning: invalid value encountered in scalar divide
-  est_val = np.sum(num) / np.sum(den)
-/users/hjiang/GenoDistance/code/sample_clustering/RAISIN.py:933: RuntimeWarning: invalid value encountered in scalar divide
-  est_val = np.sum(num) / np.sum(den)

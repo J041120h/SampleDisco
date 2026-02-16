@@ -33,7 +33,7 @@ rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
-rna_sample_cluster: false
+rna_sample_cluster: true
 rna_cluster_dge: false
 rna_visualize_data: false
 
@@ -84,7 +84,7 @@ rna_preserve_cols_for_sample_embedding:
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
-rna_n_proportion_components: 5
+rna_n_proportion_components: 10
 rna_harmony_for_proportion: true
 rna_dr_output_dir: null
 rna_dr_verbose: true
@@ -141,7 +141,7 @@ rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
-rna_cluster_differential_gene_group_col: "sev.level"
+rna_cluster_differential_gene_group_col: null
 
 # ========================================
 # ATAC PIPELINE PARAMETERS
@@ -409,7 +409,7 @@ multiomics_resolution_batch_col: 'batch'
 multiomics_resolution_sample_col: "sample"
 multiomics_resolution_modality_col: "modality"
 multiomics_resolution_use_rep: "X_glue"
-multiomics_num_dr_components: 30
+multiomics_num_dr_components: 10
 multiomics_num_pcs: 20
 multiomics_num_pvalue_simulations: 1000
 multiomics_n_pcs: 10

@@ -1,7 +1,7 @@
 # ========================================
 # MAIN PIPELINE PARAMETERS
 # ========================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample"
+output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample"
 
 # ========================================
 # PIPELINE CONTROL FLAGS
@@ -12,7 +12,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
-use_gpu: false
+use_gpu: true
 initialization: false
 verbose: true
 save_intermediate: true
@@ -21,7 +21,7 @@ save_intermediate: true
 # RNA PIPELINE PARAMETERS
 # ========================================
 # Required RNA parameters
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_200samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_400samples.h5ad"
 rna_sample_meta_path: '/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv'
 rna_output_dir: null
 
@@ -139,10 +139,11 @@ rna_tree_building_method:
   - "NN"
   - "UPGMA"
 rna_proportion_test: false
-rna_raisin_analysis: true
+rna_raisin_analysis: false
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
+rna_cluster_differential_gene_group_col: "sev.level"
 
 # ========================================
 # ATAC PIPELINE PARAMETERS
@@ -265,6 +266,7 @@ atac_raisin_analysis: false
 atac_cluster_distance_method: "cosine"
 atac_cluster_number: 4
 atac_user_provided_sample_to_clade: null
+atac_cluster_differential_gene_group_col: "sev.level"
 
 # ATAC Visualization parameters
 atac_figsize: [10, 8]

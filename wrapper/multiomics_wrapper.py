@@ -590,9 +590,7 @@ def multiomics_wrapper(
             sample_col=resolution_sample_col,
             modality_col=resolution_modality_col,
             use_rep=resolution_use_rep,
-            num_DR_components=num_DR_components,
             num_PCs=num_PCs,
-            n_pcs=n_pcs,
             visualize_cell_types=True,
             verbose=multiomics_verbose
         )
@@ -615,9 +613,7 @@ def multiomics_wrapper(
             sample_col=resolution_sample_col,
             modality_col=resolution_modality_col,
             use_rep=resolution_use_rep,
-            num_DR_components=num_DR_components,
             num_PCs=num_PCs,
-            n_pcs=n_pcs,
             visualize_cell_types=True,
             verbose=multiomics_verbose
         )

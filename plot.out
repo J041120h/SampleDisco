@@ -45,19 +45,27 @@ RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
 Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/pseudobulk/pseudobulk_sample.h5ad
+Starting clustering and differential gene expression...
+[INFO] K-means output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/rna/sample_cluster
+[INFO] Running K-means on expression embedding 'X_DR_expression', shape=(431, 30)
+[INFO] Saved expression clustering CSV: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/rna/sample_cluster/kmeans_clusters_expression.csv
+[INFO] Saved plot: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/rna/sample_cluster/kmeans_expression_embedding.png
+[INFO] Running K-means on proportion embedding 'X_DR_proportion', shape=(431, 10)
+[INFO] Saved proportion clustering CSV: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/rna/sample_cluster/kmeans_clusters_proportion.csv
+[INFO] Saved plot: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/rna/sample_cluster/kmeans_proportion_embedding.png
+[INFO] K-means clustering completed.
 [INFO] Running RAISIN analysis...
 
 ===== Starting RAISIN fitting =====
-Using 96 CPU cores
+Using 48 CPU cores
 Available columns in adata.obs: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'age_cluster', 'batch', 'sex', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
-Note: group_col='sev.level' provided; sample_to_clade is ignored (not needed).
 
 Batch correction requested using column: batch
-Preserving biological effects from group_col: sev.level
+Preserving biological effects from sample_to_clade mapping
 
 ===== Applying ComBat batch correction =====
 Batch variable: batch
-Preserving biological effects from: sev.level
+Preserving biological effects from: _combat_preserve_group
 Running ComBat correction...
 Found 13 batches.
 Adjusting for 3 covariate(s) or covariate level(s).
@@ -68,33 +76,33 @@ Adjusting the Data
 ComBat correction complete
 Original expression stored in layer: 'original' or 'original_raw'
 Using counts from adata.X
-Using group_col='sev.level' for grouping
+Using sample_to_clade mapping for 431 samples
 Expression matrix: 10175 genes x 987397 cells
 Design matrix X: 431 samples x 5 features
 Random effects Z: 431 samples x 431 effects
-Unique variance groups: ['1' '2' '3' '4']
+Unique variance groups: ['0' '1' '2' '3']
 
 ===== Estimating variance for group: 2 =====
-  alpha=0.0010, gamma=0.0016
-
-===== Estimating variance for group: 4 =====
-  alpha=0.0005, gamma=0.0003
+  alpha=0.0011, gamma=0.0017
 
 ===== Estimating variance for group: 3 =====
-  alpha=0.0007, gamma=0.0010
+  alpha=0.0014, gamma=0.0024
 
 ===== Estimating variance for group: 1 =====
-  alpha=0.0003, gamma=0.0002
+  alpha=0.0005, gamma=0.0004
+
+===== Estimating variance for group: 0 =====
+  alpha=0.0010, gamma=0.0002
 
 ===== Model fitting complete =====
 Note: ComBat batch correction was applied
 Starting pairwise comparisons. Found 6 pairs.
+Testing: 0_vs_1
+Testing: 0_vs_2
+Testing: 0_vs_3
 Testing: 1_vs_2
 Testing: 1_vs_3
-Testing: 1_vs_4
 Testing: 2_vs_3
-Testing: 2_vs_4
-Testing: 3_vs_4
 
 Generating Visualizations...
 Saved Pseudobulk Heatmap: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/rna/raisin_results_expression/average/summary_plots/pseudobulk_heatmap.png
@@ -118,4 +126,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test
 Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/sys_log/main_process_status.json
-Execution time: 1467.1014 seconds
+Execution time: 8822.2092 seconds

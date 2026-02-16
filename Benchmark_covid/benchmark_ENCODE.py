@@ -292,9 +292,31 @@ class BenchmarkWrapper:
             # -------------------- VISUALIZATION --------------------
             print("[DEBUG] Creating figure...")
             n_panels = 2 if has_batch else 1
-            fig, axes = plt.subplots(1, n_panels, figsize=(figsize[0] if has_batch else figsize[0]/2, figsize[1]), dpi=dpi)
+            
+            # Create square panels with style matching single-modality code
             if n_panels == 1:
-                axes = [axes]  # Make it iterable for consistent indexing
+                fig = plt.figure(figsize=(6.0, 6.0), dpi=dpi)
+                ax1 = fig.add_axes([0.12, 0.12, 0.62, 0.62])
+                axes = [ax1]
+            else:
+                # Two square panels side by side
+                fig = plt.figure(figsize=(13.0, 6.0), dpi=dpi)
+                ax1 = fig.add_axes([0.06, 0.12, 0.35, 0.62])
+                ax2 = fig.add_axes([0.56, 0.12, 0.35, 0.62])
+                axes = [ax1, ax2]
+
+            # Helper function for axis styling (matching sample code)
+            def style_embedding_axes(ax, xlabel="PC1", ylabel="PC2", title=None):
+                ax.set_xlabel(xlabel)
+                ax.set_ylabel(ylabel)
+                if title is not None:
+                    ax.set_title(title, pad=12)
+                ax.grid(False)
+                ax.set_xticks([])
+                ax.set_yticks([])
+                for spine in ax.spines.values():
+                    spine.set_linewidth(0.8)
+                ax.set_aspect(1.0, adjustable="box")
 
             # Left panel (or only panel): label_col
             print(f"[DEBUG] Plotting {self.label_col} panel...")
@@ -302,7 +324,9 @@ class BenchmarkWrapper:
             # Detect if label_col is numerical or categorical
             label_values_raw = meta_df[self.label_col]
             label_numeric = pd.to_numeric(label_values_raw, errors='coerce')
-            is_numerical = label_numeric.notna().sum() / len(label_numeric) > 0.5  # >50% convertible to numeric
+            is_numerical = label_numeric.notna().sum() / len(label_numeric) > 0.5
+            
+            ax1 = axes[0]
             
             if is_numerical:
                 # Numerical: use continuous colormap (viridis)
@@ -311,24 +335,21 @@ class BenchmarkWrapper:
                 label_range = (label_max - label_min) if pd.notnull(label_max) and pd.notnull(label_min) else 0.0
                 if label_range == 0.0:
                     print(f"[DEBUG][WARN] {self.label_col} has zero/invalid range; coloring will be constant.")
-                label_norm = (label_numeric - (label_min if pd.notnull(label_min) else 0.0)) / (label_range + 1e-16)
+                    label_norm = pd.Series(0.5, index=label_numeric.index)
+                else:
+                    label_norm = (label_numeric - label_min) / label_range
                 print(f"[DEBUG] {self.label_col} raw range: min={label_min}, max={label_max}")
                 print(f"[DEBUG] {self.label_col} normalized range: {label_norm.min():.3f}–{label_norm.max():.3f}")
                 
-                ax1 = axes[0]
                 scatter1 = ax1.scatter(
                     embedding_2d[:, 0],
                     embedding_2d[:, 1],
                     c=label_norm,
                     cmap='viridis',
-                    edgecolors='black',
-                    alpha=0.8,
-                    s=100,
-                    linewidths=0.5
+                    s=50,
+                    alpha=0.7,
+                    edgecolors='none'
                 )
-                cbar1 = plt.colorbar(scatter1, ax=ax1)
-                cbar1.set_label(f'{self.label_col}', fontsize=10)
-                cbar1.ax.tick_params(labelsize=10)
             else:
                 # Categorical: use discrete colormap (tab10/tab20)
                 print(f"[DEBUG] {self.label_col} detected as CATEGORICAL - using discrete colormap")
@@ -342,28 +363,48 @@ class BenchmarkWrapper:
                 # Choose colormap based on number of categories
                 cmap = 'tab20' if n_unique > 10 else 'tab10'
                 
-                ax1 = axes[0]
                 scatter1 = ax1.scatter(
                     embedding_2d[:, 0],
                     embedding_2d[:, 1],
                     c=label_colors,
                     cmap=cmap,
-                    edgecolors='black',
-                    alpha=0.8,
-                    s=100,
-                    linewidths=0.5
+                    s=50,
+                    alpha=0.7,
+                    edgecolors='none'
                 )
-                cbar1 = plt.colorbar(scatter1, ax=ax1, ticks=range(n_unique))
-                cbar1.set_label(f'{self.label_col}', fontsize=10)
-                # Set categorical labels on colorbar
-                if n_unique <= 20:  # Only show labels if not too many
-                    cbar1.ax.set_yticklabels(unique_labels, fontsize=8)
-                cbar1.ax.tick_params(labelsize=8)
 
-            ax1.set_xlabel(f'PC1 ({variance_explained[0]:.1%})', fontsize=12, fontweight='bold')
-            ax1.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold' if n_components >= 2 else None)
-            ax1.set_title(f'Embeddings colored by {self.label_col}', fontsize=14, fontweight='bold')
-            ax1.grid(True, alpha=0.3, linestyle='--')
+            # Style axes matching sample code
+            style_embedding_axes(
+                ax1,
+                xlabel="PC1",
+                ylabel="PC2",
+                title=f"Embeddings colored by {self.label_col}"
+            )
+            
+            # Make equal aspect ratio with padding
+            x_min, x_max = embedding_2d[:, 0].min(), embedding_2d[:, 0].max()
+            y_min, y_max = embedding_2d[:, 1].min(), embedding_2d[:, 1].max()
+            cx = 0.5 * (x_min + x_max)
+            cy = 0.5 * (y_min + y_max)
+            dx = x_max - x_min
+            dy = y_max - y_min
+            half_range = 0.5 * max(dx, dy)
+            pad = 0.10
+            half_range *= (1.0 + pad)
+            if half_range == 0:
+                half_range = 1.0
+            ax1.set_xlim(cx - half_range, cx + half_range)
+            ax1.set_ylim(cy - half_range, cy + half_range)
+            
+            # Colorbar matching sample code style
+            cbar1 = plt.colorbar(scatter1, ax=ax1, fraction=0.046, pad=0.04)
+            if is_numerical:
+                cbar1.set_label(f'{self.label_col} (normalized)')
+            else:
+                cbar1.set_label(f'{self.label_col}')
+                if n_unique <= 20:
+                    cbar1.ax.set_yticklabels(unique_labels, fontsize=8)
+            cbar1.outline.set_linewidth(0.8)
 
             # Right panel: batch (categorical) - only if batch column exists
             unique_batches = []
@@ -380,28 +421,37 @@ class BenchmarkWrapper:
                     embedding_2d[:, 1],
                     c=batch_colors,
                     cmap='tab10',
-                    edgecolors='black',
-                    alpha=0.8,
-                    s=100,
-                    linewidths=0.5
+                    s=50,
+                    alpha=0.7,
+                    edgecolors='none'
                 )
-                ax2.set_xlabel(f'PC1 ({variance_explained[0]:.1%})', fontsize=12, fontweight='bold')
-                ax2.set_ylabel(f'PC2 ({variance_explained[1]:.1%})', fontsize=12, fontweight='bold' if n_components >= 2 else None)
-                ax2.set_title('Embeddings colored by batch', fontsize=14, fontweight='bold')
-                ax2.grid(True, alpha=0.3, linestyle='--')
+                
+                # Style axes matching sample code
+                style_embedding_axes(
+                    ax2,
+                    xlabel="PC1",
+                    ylabel="PC2",
+                    title="Embeddings colored by batch"
+                )
+                
+                # Same equal aspect ratio
+                ax2.set_xlim(cx - half_range, cx + half_range)
+                ax2.set_ylim(cy - half_range, cy + half_range)
 
                 # Colorbar with batch labels
-                cbar2 = plt.colorbar(scatter2, ax=ax2, ticks=range(len(unique_batches)))
-                cbar2.set_label('batch', fontsize=10)
-                cbar2.ax.set_yticklabels(unique_batches, fontsize=9)
-                cbar2.ax.tick_params(labelsize=9)
-
-            plt.tight_layout()
+                cbar2 = plt.colorbar(scatter2, ax=ax2, fraction=0.046, pad=0.04)
+                cbar2.set_label('batch')
+                if len(unique_batches) <= 20:
+                    cbar2.ax.set_yticklabels(unique_batches, fontsize=8)
+                cbar2.outline.set_linewidth(0.8)
 
             # -------------------- SAVE OUTPUTS --------------------
             output_path = output_dir / 'embedding_overview.png'
             print(f"[DEBUG] Saving figure to: {output_path}")
-            plt.savefig(output_path, bbox_inches='tight', dpi=dpi)
+            plt.savefig(output_path, dpi=300, bbox_inches='tight')
+            
+            output_path_pdf = output_dir / 'embedding_overview.pdf'
+            plt.savefig(output_path_pdf, dpi=300, bbox_inches='tight')
             plt.close()
 
             pca_results = pd.DataFrame(
@@ -417,13 +467,20 @@ class BenchmarkWrapper:
                 "variance_explained": variance_explained.tolist(),
                 "n_samples": int(embedding_df.shape[0]),
                 "n_features": int(embedding_df.shape[1]),
-                f"{self.label_col}_range": [float(label_min) if pd.notnull(label_min) else None,
-                                            float(label_max) if pd.notnull(label_max) else None],
-                "unique_batches": len(unique_batches),
-                "batch_labels": unique_batches,
                 "output_plot": str(output_path),
+                "output_plot_pdf": str(output_path_pdf),
                 "output_pca": str(pca_path)
             }
+            
+            if is_numerical:
+                result[f"{self.label_col}_range"] = [
+                    float(label_min) if pd.notnull(label_min) else None,
+                    float(label_max) if pd.notnull(label_max) else None
+                ]
+            
+            if has_batch:
+                result["unique_batches"] = len(unique_batches)
+                result["batch_labels"] = unique_batches
 
             print("[DEBUG] Visualization completed successfully.")
             logger.info(f"Embedding visualization completed. Results saved to: {output_dir}")

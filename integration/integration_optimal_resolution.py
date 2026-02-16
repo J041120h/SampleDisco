@@ -102,7 +102,7 @@ def cca_analysis(
     column: str,
     sev_col: str,
     n_components: int = 2,
-    n_pcs: Optional[int] = None
+    num_PCs: Optional[int] = None
 ) -> dict:
     """
     Perform CCA analysis between DR embeddings and severity levels for a specific modality.
@@ -122,7 +122,7 @@ def cca_analysis(
         Column name in .obs for severity levels
     n_components : int, default 2
         Number of CCA components to compute
-    n_pcs : int, optional
+    num_PCs : int, optional
         Number of PCs to use for CCA. If None, uses all available.
         
     Returns:
@@ -132,7 +132,7 @@ def cca_analysis(
         - cca_score: absolute correlation value
         - n_samples: number of samples used
         - n_features: number of PC dimensions used
-        - n_pcs_used: actual number of PCs used
+        - num_PCs_used: actual number of PCs used
         - valid: whether analysis succeeded
         - error_message: error description if failed
         - X_weights, Y_weights: CCA weight vectors
@@ -151,7 +151,7 @@ def cca_analysis(
         'Y_weights': None,
         'X_loadings': None,
         'Y_loadings': None,
-        'n_pcs_used': 0
+        'num_PCs_used': 0
     }
     
     try:
@@ -187,13 +187,13 @@ def cca_analysis(
         
         # ---- Determine number of PCs to use ----
         max_pcs = dr_coords_full.shape[1]
-        if n_pcs is None:
-            n_pcs_to_use = max_pcs  # Use all available
+        if num_PCs is None:
+            num_PCs_to_use = max_pcs  # Use all available
         else:
-            n_pcs_to_use = min(n_pcs, max_pcs)  # Don't exceed available
+            num_PCs_to_use = min(num_PCs, max_pcs)  # Don't exceed available
         
         # Subset to specified number of PCs
-        dr_coords = dr_coords_full.iloc[:, :n_pcs_to_use]
+        dr_coords = dr_coords_full.iloc[:, :num_PCs_to_use]
         
         # ---- Basic validation ----
         if len(dr_coords) < 3:
@@ -204,12 +204,12 @@ def cca_analysis(
             return result
         
         # ---- Prepare data for CCA ----
-        X = dr_coords.values  # PC embeddings [n_samples, n_pcs]
+        X = dr_coords.values  # PC embeddings [n_samples, num_PCs]
         y = sev_levels.reshape(-1, 1)  # Severity [n_samples, 1]
         
         result['n_samples'] = len(X)
         result['n_features'] = X.shape[1]
-        result['n_pcs_used'] = n_pcs_to_use
+        result['num_PCs_used'] = num_PCs_to_use
         
         # ---- Limit components based on data dimensions ----
         # CCA requires n_components <= min(n_features_X, n_features_y, n_samples - 1)
@@ -261,7 +261,7 @@ def batch_cca_analysis(
     dr_type: str,
     modalities: Optional[List[str]] = None,
     n_components: int = 2,
-    n_pcs: Optional[int] = None,
+    num_PCs: Optional[int] = None,
     output_dir: Optional[str] = None
 ) -> pd.DataFrame:
     """
@@ -281,7 +281,7 @@ def batch_cca_analysis(
         Modalities to analyze. If None, uses all unique modalities.
     n_components : int, default 2
         Number of CCA components
-    n_pcs : int, optional
+    num_PCs : int, optional
         Number of PCs to use
     output_dir : str, optional
         Directory to save results
@@ -313,7 +313,7 @@ def batch_cca_analysis(
                 column=dr_column,
                 sev_col=sev_col,
                 n_components=n_components,
-                n_pcs=n_pcs
+                num_PCs=num_PCs
             )
             results.append(result)
         else:
@@ -330,7 +330,7 @@ def batch_cca_analysis(
                 'Y_weights': None,
                 'X_loadings': None,
                 'Y_loadings': None,
-                'n_pcs_used': 0
+                'num_PCs_used': 0
             })
     
     # Create results DataFrame
@@ -340,7 +340,7 @@ def batch_cca_analysis(
     if output_dir:
         # Save summary (human-readable CSV) - include dr_type in filename
         summary_df = results_df[['modality', 'column', 'cca_score', 'n_samples', 
-                                'n_features', 'n_pcs_used', 'valid', 'error_message']]
+                                'n_features', 'num_PCs_used', 'valid', 'error_message']]
         summary_path = os.path.join(output_dir, f'cca_results_{dr_type}_summary.csv')
         summary_df.to_csv(summary_path, index=False)
         
@@ -622,9 +622,7 @@ def find_optimal_cell_resolution_integration(
     sample_col: str = "sample",
     modality_col: str = "modality",
     use_rep: str = 'X_glue',
-    num_DR_components: int = 30,
     num_PCs: int = 20,
-    n_pcs: int = 10,
     visualize_cell_types: bool = True,
     analyze_modality_alignment: bool = True,
     preserve_cols: Optional[Union[str, List[str]]] = None,
@@ -654,7 +652,7 @@ def find_optimal_cell_resolution_integration(
         Which modality to optimize: "rna" or "atac"
     dr_type : str, default "expression"
         Which DR type to optimize: "expression" or "proportion"
-    n_features : int, default 40000
+    n_features : int, default 2000
         Number of HVG features for pseudobulk
     sev_col : str, default "sev.level"
         Severity column name
@@ -666,12 +664,11 @@ def find_optimal_cell_resolution_integration(
         Modality label column
     use_rep : str, default 'X_glue'
         Representation for clustering
-    num_DR_components : int, default 30
-        Number of DR components
     num_PCs : int, default 20
-        Number of PCs for clustering
-    n_pcs : int, default 10
-        Number of PCs for CCA analysis
+        Number of principal components to use for:
+        - Dimension reduction (expression and proportion components)
+        - CCA analysis
+        - CCA visualization
     visualize_cell_types : bool, default True
         Whether to create cell type UMAP visualizations at each resolution
         (uses cell_types_multiomics built-in visualization)
@@ -716,9 +713,8 @@ def find_optimal_cell_resolution_integration(
     # ========== PRINT CONFIGURATION ==========
     print(f"\nConfiguration:")
     print(f"  Optimization target: {optimization_target.upper()} {dr_type.upper()}")
-    print(f"  Representation: {use_rep} ({num_PCs} components)")
-    print(f"  DR components: {num_DR_components}")
-    print(f"  CCA PCs: {n_pcs}")
+    print(f"  Representation: {use_rep}")
+    print(f"  Number of PCs: {num_PCs} (DR, CCA analysis, and visualization)")
     print(f"  Cell type method: cell_types_multiomics (RNA clustering + ATAC label transfer)")
     print(f"  Cell type visualization: {visualize_cell_types}")
     if batch_col:
@@ -803,10 +799,11 @@ def find_optimal_cell_resolution_integration(
             )
             
             # Step 4: Dimension reduction (using dimension_reduction from DR.py)
+            # Use unified num_PCs for both expression and proportion components
             dr_result = dimension_reduction(
                 adata=AnnData_integrated, pseudobulk=pseudobulk_dict,
                 pseudobulk_anndata=pseudobulk_adata, sample_col=sample_col,
-                n_expression_components=num_DR_components, n_proportion_components=num_DR_components,
+                n_expression_components=num_PCs, n_proportion_components=num_PCs,
                 batch_col=batch_col if batch_col else None, harmony_for_proportion=True, atac=False,
                 output_dir=resolution_dir, not_save=True, verbose=False, preserve_cols=preserve_cols
             )
@@ -822,7 +819,7 @@ def find_optimal_cell_resolution_integration(
                 dr_type=dr_type,
                 modalities=['RNA', 'ATAC'], 
                 n_components=1, 
-                n_pcs=n_pcs, 
+                num_PCs=num_PCs, 
                 output_dir=resolution_dir
             )
             
@@ -847,8 +844,8 @@ def find_optimal_cell_resolution_integration(
                     if not modality_mask_std.any():
                         continue
                     
-                    # Get modality-specific coordinates (use n_pcs dimensions)
-                    pca_coords_modality = uns_data_standardized.loc[modality_mask_std].values[:, :n_pcs]
+                    # Get modality-specific coordinates (use num_PCs dimensions)
+                    pca_coords_modality = uns_data_standardized.loc[modality_mask_std].values[:, :num_PCs]
                     sev_levels_modality = obs_standardized.loc[modality_mask_std, sev_col].values
                     samples_modality = obs_standardized.loc[modality_mask_std].index.values
                     
@@ -1016,9 +1013,7 @@ def find_optimal_cell_resolution_integration(
         f.write("CONFIGURATION:\n")
         f.write(f"  Optimization target: {optimization_target.upper()} {dr_type.upper()}\n")
         f.write(f"  Representation: {use_rep}\n")
-        f.write(f"  Clustering PCs: {num_PCs}\n")
-        f.write(f"  DR components: {num_DR_components}\n")
-        f.write(f"  CCA PCs: {n_pcs}\n")
+        f.write(f"  Number of PCs: {num_PCs}\n")
         f.write(f"  Features: {n_features}\n")
         f.write(f"  Cell type method: cell_types_multiomics\n")
         if batch_col:

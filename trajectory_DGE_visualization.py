@@ -472,13 +472,13 @@ def plot_gene_expression_curves(
     n_curve_points: int = 100,
     title: str = "Gene Expression Along Pseudotime",
     output_path: Optional[str] = None,
-    verbose: bool = False
+    verbose: bool = False,
+    color_scheme: str = 'blue'  # NEW: 'blue' for genes, 'red' for peaks
 ) -> plt.Figure:
     """
     Plot gene expression curves along pseudotime using GAM fitted models.
     
-    FIXED: Now correctly determines the number of features the GAM was trained with
-    and only uses pseudotime for prediction (since GAMs were fit with pseudotime only).
+    UPDATED: Added color_scheme parameter to differentiate genes (blue) from peaks (red).
     
     Parameters
     ----------
@@ -510,6 +510,8 @@ def plot_gene_expression_curves(
         Path to save figure
     verbose : bool
         Print progress messages
+    color_scheme : str
+        'blue' for genes (default), 'red' for peaks
         
     Returns
     -------
@@ -536,24 +538,20 @@ def plot_gene_expression_curves(
     ptime_full = X["pseudotime"].values
     
     # Determine how many features the GAM was trained with
-    # by checking the first available GAM model
     gam_n_features = None
     if gam_models:
         for gene in available_genes:
             if gene in gam_models:
                 try:
-                    # Get the number of features from the GAM model
                     gam = gam_models[gene]
-                    # Try to infer from model structure
                     if hasattr(gam, 'terms'):
-                        # Count unique feature indices in terms
                         feature_indices = set()
                         for term in gam.terms:
                             if hasattr(term, 'feature'):
                                 feature_indices.add(term.feature)
                         gam_n_features = len(feature_indices) if feature_indices else 1
                     else:
-                        gam_n_features = 1  # Default assumption
+                        gam_n_features = 1
                     break
                 except:
                     gam_n_features = 1
@@ -562,17 +560,33 @@ def plot_gene_expression_curves(
         print(f"[VIZ] GAM models provided: {len(gam_models)} models")
         print(f"[VIZ] Inferred GAM feature count: {gam_n_features}")
     
+    # Color scheme setup - UPDATED
+    if color_scheme == 'red':
+        # For peaks
+        base_color = "#B2182B"  # Red
+        scatter_color = "#D6604D"  # Light red
+        line_color = "#67001F"  # Dark red
+        group1_color = "#FDB863"  # Orange-red
+        group2_color = "#B2182B"  # Red
+    else:  # 'blue' for genes (default)
+        # For genes
+        base_color = "#2166AC"  # Blue
+        scatter_color = "#4393C3"  # Light blue
+        line_color = "#053061"  # Dark blue
+        group1_color = "#92C5DE"  # Light blue
+        group2_color = "#2166AC"  # Blue
+    
     # Group color setup
     if group_col and group_col in X.columns:
         groups = sorted(X[group_col].unique())
         if len(groups) >= 2:
-            group_colors = {groups[0]: "#E66101", groups[1]: "#5E3C99"}
+            group_colors = {groups[0]: group1_color, groups[1]: group2_color}
             if len(groups) > 2:
                 extra_colors = plt.cm.tab10.colors
                 for i, g in enumerate(groups[2:]):
                     group_colors[g] = extra_colors[i % len(extra_colors)]
         else:
-            group_colors = {groups[0]: "#E66101"}
+            group_colors = {groups[0]: group1_color}
     else:
         groups = None
         group_colors = {}
@@ -583,7 +597,7 @@ def plot_gene_expression_curves(
         
         expr_full = Y[gene].values
         
-        # Mask for samples where gene is present (matching GAM fitting logic)
+        # Mask for samples where gene is present
         nonzero_mask = (expr_full != 0.0) & np.isfinite(expr_full) & np.isfinite(ptime_full)
         n_nonzero = nonzero_mask.sum()
         
@@ -634,18 +648,12 @@ def plot_gene_expression_curves(
                     try:
                         gam = gam_models[gene]
                         
-                        # Create prediction points along pseudotime range for this group
                         ptime_min, ptime_max = xg.min(), xg.max()
                         ptime_pred = np.linspace(ptime_min, ptime_max, n_curve_points)
                         
-                        # KEY FIX: Only use pseudotime for prediction
-                        # The GAM was fitted with pseudotime only (1 feature)
                         X_pred_array = ptime_pred.reshape(-1, 1)
-                        
-                        # Generate predictions
                         y_pred = gam.predict(X_pred_array)
                         
-                        # Plot smooth curve
                         ax.plot(
                             ptime_pred, y_pred,
                             c=color, linewidth=2.5, alpha=0.95,
@@ -655,7 +663,6 @@ def plot_gene_expression_curves(
                     except Exception as e:
                         if verbose and idx < 5:
                             print(f"[VIZ] Could not plot GAM fit for {gene}, group {g}: {e}")
-                        # Fallback to simple smooth if GAM fails
                         _plot_fallback_smooth(ax, xg, yg, color)
                 
                 elif show_gam_fit and not has_gam and mask_g.sum() > 10:
@@ -667,11 +674,11 @@ def plot_gene_expression_curves(
                 ax.legend(loc="best", fontsize=7, framealpha=0.8)
         
         else:
-            # Single-group case (no group column)
+            # Single-group case
             if show_samples:
                 ax.scatter(
                     ptime, expr,
-                    c="steelblue", alpha=0.4, s=15,
+                    c=scatter_color, alpha=0.4, s=15,
                     edgecolors='none'
                 )
             
@@ -680,30 +687,25 @@ def plot_gene_expression_curves(
                 try:
                     gam = gam_models[gene]
                     
-                    # Create prediction points
                     ptime_min, ptime_max = ptime.min(), ptime.max()
                     ptime_pred = np.linspace(ptime_min, ptime_max, n_curve_points)
                     
-                    # KEY FIX: Only use pseudotime for prediction
                     X_pred_array = ptime_pred.reshape(-1, 1)
-                    
-                    # Generate predictions
                     y_pred = gam.predict(X_pred_array)
                     
-                    # Plot smooth curve
                     ax.plot(
                         ptime_pred, y_pred,
-                        c="darkblue", linewidth=2.5, alpha=0.95,
+                        c=line_color, linewidth=2.5, alpha=0.95,
                         zorder=10
                     )
                         
                 except Exception as e:
                     if verbose and idx < 5:
                         print(f"[VIZ] Could not plot GAM fit for {gene}: {e}")
-                    _plot_fallback_smooth(ax, ptime, expr, "darkblue")
+                    _plot_fallback_smooth(ax, ptime, expr, line_color)
             
             elif show_gam_fit and not has_gam and len(expr) > 10:
-                _plot_fallback_smooth(ax, ptime, expr, "darkblue")
+                _plot_fallback_smooth(ax, ptime, expr, line_color)
         
         # Add statistics annotation
         if results is not None and "gene" in results.columns and gene in results["gene"].values:
@@ -761,12 +763,13 @@ def plot_sample_level_curves(
     figsize: Tuple[int, int] = (12, 5),
     title: Optional[str] = None,
     output_path: Optional[str] = None,
-    verbose: bool = False
+    verbose: bool = False,
+    color_scheme: str = 'blue'  # NEW: 'blue' for genes, 'red' for peaks
 ) -> plt.Figure:
     """
     Plot sample-level expression curves with GAM fits.
     
-    FIXED: Only uses pseudotime for GAM prediction to match fitting.
+    UPDATED: Added color_scheme parameter to differentiate genes (blue) from peaks (red).
     """
     if gene not in Y.columns:
         if verbose:
@@ -782,9 +785,25 @@ def plot_sample_level_curves(
     expr = Y[gene].values
     samples = X[sample_col].unique() if sample_col in X.columns else ['all']
     
+    # Color scheme setup - UPDATED
+    if color_scheme == 'red':
+        # For peaks
+        base_color = "#B2182B"
+        scatter_color = "#D6604D"
+        line_color = "#67001F"
+        group1_color = "#FDB863"
+        group2_color = "#B2182B"
+    else:  # 'blue' for genes (default)
+        # For genes
+        base_color = "#2166AC"
+        scatter_color = "#4393C3"
+        line_color = "#053061"
+        group1_color = "#92C5DE"
+        group2_color = "#2166AC"
+    
     if group_col and group_col in X.columns:
         groups = sorted(X[group_col].unique())
-        group_colors = {groups[0]: '#E66101', groups[1]: '#5E3C99'} if len(groups) >= 2 else {}
+        group_colors = {groups[0]: group1_color, groups[1]: group2_color} if len(groups) >= 2 else {}
         if len(groups) > 2:
             extra_colors = plt.cm.tab10.colors
             for i, g in enumerate(groups[2:]):
@@ -793,7 +812,7 @@ def plot_sample_level_curves(
         groups = None
         group_colors = {}
     
-    # Left panel: Sample-level patterns (binned/smoothed)
+    # Left panel: Sample-level patterns
     ax1 = axes[0]
     for sample in samples:
         if sample_col in X.columns:
@@ -835,7 +854,7 @@ def plot_sample_level_curves(
             sample_group = X.loc[X[sample_col] == sample, group_col].iloc[0] if sample_col in X.columns else None
             color = group_colors.get(sample_group, 'gray')
         else:
-            color = 'steelblue'
+            color = base_color
         
         ax1.plot(plot_x, plot_y, color=color, alpha=0.5, linewidth=1.5)
     
@@ -853,11 +872,9 @@ def plot_sample_level_curves(
     # Right panel: Group-level GAM fits
     ax2 = axes[1]
     
-    # Mask for non-zero expression (matching GAM fitting)
     nonzero_mask = (expr != 0.0) & np.isfinite(expr) & np.isfinite(ptime)
     
     if groups and gam_model is not None:
-        # Use GAM model for smooth predictions by group
         for g in groups:
             g_mask_full = X[group_col] == g
             g_mask = g_mask_full & nonzero_mask
@@ -868,27 +885,19 @@ def plot_sample_level_curves(
             g_ptime = ptime[g_mask]
             g_expr = expr[g_mask]
             
-            # Show scatter points
             ax2.scatter(g_ptime, g_expr, c=group_colors.get(g, 'gray'), 
                        alpha=0.3, s=15, edgecolors='none')
             
             try:
-                # Create prediction grid
                 ptime_min, ptime_max = g_ptime.min(), g_ptime.max()
                 ptime_pred = np.linspace(ptime_min, ptime_max, n_curve_points)
                 
-                # KEY FIX: Only use pseudotime for prediction (1D array reshaped to 2D)
                 X_pred_array = ptime_pred.reshape(-1, 1)
-                
-                # Generate predictions
                 y_pred = gam_model.predict(X_pred_array)
                 
-                # Plot GAM curve
                 ax2.plot(ptime_pred, y_pred, color=group_colors.get(g, 'gray'), 
                         linewidth=3, label=str(g), alpha=0.95, zorder=10)
                 
-                # Add confidence band (approximate using residual std)
-                # Predict on the actual data points for this group
                 X_actual = g_ptime.reshape(-1, 1)
                 y_fitted = gam_model.predict(X_actual)
                 residuals = g_expr - y_fitted
@@ -905,36 +914,32 @@ def plot_sample_level_curves(
         ax2.legend(loc='best', fontsize=10)
         
     elif gam_model is not None:
-        # Single group with GAM
         ptime_nz = ptime[nonzero_mask]
         expr_nz = expr[nonzero_mask]
         
-        ax2.scatter(ptime_nz, expr_nz, c='steelblue', alpha=0.3, s=15, edgecolors='none')
+        ax2.scatter(ptime_nz, expr_nz, c=scatter_color, alpha=0.3, s=15, edgecolors='none')
         
         try:
             ptime_pred = np.linspace(ptime_nz.min(), ptime_nz.max(), n_curve_points)
             
-            # KEY FIX: Only use pseudotime for prediction
             X_pred_array = ptime_pred.reshape(-1, 1)
             
             y_pred = gam_model.predict(X_pred_array)
-            ax2.plot(ptime_pred, y_pred, c='darkblue', linewidth=3, alpha=0.95)
+            ax2.plot(ptime_pred, y_pred, c=line_color, linewidth=3, alpha=0.95)
             
-            # Confidence band
             X_actual = ptime_nz.reshape(-1, 1)
             y_fitted = gam_model.predict(X_actual)
             residuals = expr_nz - y_fitted
             std_approx = np.std(residuals)
             ax2.fill_between(ptime_pred, y_pred - std_approx, y_pred + std_approx,
-                           color='darkblue', alpha=0.15)
+                           color=line_color, alpha=0.15)
             
         except Exception as e:
             if verbose:
                 print(f"[VIZ] Could not plot GAM fit: {e}")
-            _plot_fallback_smooth(ax2, ptime_nz, expr_nz, 'darkblue', linewidth=3)
+            _plot_fallback_smooth(ax2, ptime_nz, expr_nz, line_color, linewidth=3)
     
     else:
-        # No GAM model - use simple binning
         if groups:
             for g in groups:
                 g_mask = (X[group_col] == g) & nonzero_mask
@@ -954,8 +959,8 @@ def plot_sample_level_curves(
         else:
             ptime_nz = ptime[nonzero_mask]
             expr_nz = expr[nonzero_mask]
-            ax2.scatter(ptime_nz, expr_nz, c='steelblue', alpha=0.3, s=15, edgecolors='none')
-            _plot_fallback_smooth(ax2, ptime_nz, expr_nz, 'darkblue', linewidth=3)
+            ax2.scatter(ptime_nz, expr_nz, c=scatter_color, alpha=0.3, s=15, edgecolors='none')
+            _plot_fallback_smooth(ax2, ptime_nz, expr_nz, line_color, linewidth=3)
     
     ax2.set_xlabel('Pseudotime', fontsize=11)
     ax2.set_ylabel('Expression', fontsize=11)
@@ -967,7 +972,7 @@ def plot_sample_level_curves(
     plt.tight_layout()
     
     if output_path:
-        fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+        fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
         if verbose:
             print(f"[VIZ] Saved sample-level curves to {output_path}")
     

@@ -816,11 +816,6 @@ def permutation_test_disease_state_preservation(
         "null_distribution": null_scores.tolist(),
     }
 
-
-# =============================================================================
-# Enhanced Visualization Functions
-# =============================================================================
-
 def reduce_to_2d(emb: np.ndarray) -> np.ndarray:
     """Reduce embedding to 2D using PCA if necessary."""
     if emb.shape[1] <= 2:
@@ -832,15 +827,40 @@ def reduce_to_2d(emb: np.ndarray) -> np.ndarray:
     return pca.fit_transform(emb)
 
 
-def add_text_with_outline(ax, x, y, text, fontsize=10, color='black', outline_color='white', outline_width=2):
-    """Add text with outline for better visibility."""
-    txt = ax.text(x, y, text, fontsize=fontsize, fontweight='bold', color=color,
-                  ha='center', va='center', transform=ax.transAxes)
-    txt.set_path_effects([
-        path_effects.Stroke(linewidth=outline_width, foreground=outline_color),
-        path_effects.Normal()
-    ])
-    return txt
+def style_embedding_axes(ax, xlabel="PC1", ylabel="PC2", title=None):
+    """Shared axis styling: no grid, no numeric tick labels, thin spines, square aspect."""
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title is not None:
+        ax.set_title(title, pad=12)
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
+    ax.set_aspect(1.0, adjustable="box")
+
+
+def set_equal_aspect_with_padding(ax, emb_2d, pad=0.10):
+    """Set equal aspect ratio with padding around data."""
+    x_min, x_max = emb_2d[:, 0].min(), emb_2d[:, 0].max()
+    y_min, y_max = emb_2d[:, 1].min(), emb_2d[:, 1].max()
+    
+    cx = 0.5 * (x_min + x_max)
+    cy = 0.5 * (y_min + y_max)
+    
+    dx = x_max - x_min
+    dy = y_max - y_min
+    half_range = 0.5 * max(dx, dy)
+    
+    half_range *= (1.0 + pad)
+    
+    if half_range == 0:
+        half_range = 1.0
+    
+    ax.set_xlim(cx - half_range, cx + half_range)
+    ax.set_ylim(cy - half_range, cy + half_range)
+    ax.set_aspect(1.0, adjustable="box")
 
 
 def plot_embedding_by_modality(
@@ -851,12 +871,10 @@ def plot_embedding_by_modality(
     method_name: str = "",
     mixing_results: Optional[Dict] = None,
 ) -> plt.Figure:
-    """Plot 2D embedding colored by modality with enhanced styling."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    # Set background
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    """Plot 2D embedding colored by modality with clean styling."""
+    # Square figure
+    fig = plt.figure(figsize=(6.0, 6.0), dpi=config.dpi)
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     modalities = sample_info['modality'].values
     unique_mods = sorted(np.unique(modalities))
@@ -866,49 +884,35 @@ def plot_embedding_by_modality(
         mask = modalities == mod
         color = config.modality_colors.get(mod, '#333333')
         
-        scatter = ax.scatter(
+        ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=color,
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=mod,
-            edgecolors='white',
-            linewidths=0.8,
-            zorder=3,
+            edgecolors='none',
         )
     
-    # Styling
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Embedding by Modality', fontsize=16, fontweight='bold', pad=20)
+    # Apply clean styling
+    style_embedding_axes(ax, xlabel="PC1", ylabel="PC2", title="Embedding by Modality")
+    set_equal_aspect_with_padding(ax, emb_2d, pad=0.10)
     
-    # Legend
-    legend = ax.legend(
-        title='Modality', 
-        loc='upper right',
+    # Legend outside plot area
+    leg = ax.legend(
+        title='Modality',
         frameon=True,
-        fancybox=True,
-        shadow=False,
-        fontsize=13,
-        title_fontsize=14,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc="upper left",
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor="black",
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    leg.get_frame().set_linewidth(0.8)
     
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    
-    # Tick styling
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    # Equal aspect ratio
-    ax.set_aspect('equal', adjustable='box')
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    # Save both PDF and PNG
+    output_path_pdf = output_path.replace('.png', '.pdf')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path_pdf, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -921,12 +925,10 @@ def plot_embedding_by_disease_state(
     method_name: str = "",
     disease_state_results: Optional[Dict] = None,
 ) -> plt.Figure:
-    """Plot 2D embedding colored by disease state with enhanced styling."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    # Set background
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    """Plot 2D embedding colored by disease state with clean styling."""
+    # Square figure
+    fig = plt.figure(figsize=(6.0, 6.0), dpi=config.dpi)
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     disease_states = md[disease_state_col].values
     unique_disease_states = sorted(np.unique(disease_states))
@@ -941,48 +943,35 @@ def plot_embedding_by_disease_state(
         mask = disease_states == disease_state
         ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=[color_map[disease_state]],
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=f'{disease_state}',
-            edgecolors='white',
-            linewidths=0.8,
-            zorder=3,
+            edgecolors='none',
         )
     
-    # Styling
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Embedding by Disease State', fontsize=16, fontweight='bold', pad=20)
+    # Apply clean styling
+    style_embedding_axes(ax, xlabel="PC1", ylabel="PC2", title="Embedding by Disease State")
+    set_equal_aspect_with_padding(ax, emb_2d, pad=0.10)
     
-    # Legend - always inside the plot
-    ncol = 1 if n_disease_states <= 10 else 2
-    legend = ax.legend(
-        title='Disease State', 
-        loc='best',
+    # Legend outside plot area
+    ncol = 1 if n_disease_states <= 6 else 2
+    leg = ax.legend(
+        title='Disease State',
         frameon=True,
-        fancybox=True,
-        fontsize=10,
-        title_fontsize=11,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc="upper left",
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor="black",
         ncol=ncol,
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    leg.get_frame().set_linewidth(0.8)
     
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    
-    # Tick styling
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    # Equal aspect ratio
-    ax.set_aspect('equal', adjustable='box')
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    # Save both PDF and PNG
+    output_path_pdf = output_path.replace('.png', '.pdf')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path_pdf, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -994,12 +983,10 @@ def plot_paired_connections(
     method_name: str = "",
     paired_results: Optional[Dict] = None,
 ) -> plt.Figure:
-    """Plot 2D embedding with connections between paired samples - enhanced styling."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    # Set background
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    """Plot 2D embedding with connections between paired samples - clean styling."""
+    # Square figure
+    fig = plt.figure(figsize=(6.0, 6.0), dpi=config.dpi)
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     # Build sample_id_norm -> {modality: row_idx} mapping
     sample_id_to_idx: Dict[str, Dict[str, int]] = {}
@@ -1011,7 +998,7 @@ def plot_paired_connections(
             sample_id_to_idx[sid] = {}
         sample_id_to_idx[sid][mod] = i
     
-    # Draw connections with single color
+    # Draw connections first (lower z-order)
     for sid, mod_dict in sample_id_to_idx.items():
         modalities = list(mod_dict.keys())
         if len(modalities) == 2:
@@ -1022,8 +1009,8 @@ def plot_paired_connections(
                 [emb_2d[idx1, 0], emb_2d[idx2, 0]],
                 [emb_2d[idx1, 1], emb_2d[idx2, 1]],
                 color=config.connection_color,
-                alpha=config.line_alpha + 0.2,
-                linewidth=config.line_width,
+                alpha=0.4,
+                linewidth=1.5,
                 zorder=1,
             )
     
@@ -1038,57 +1025,46 @@ def plot_paired_connections(
         marker = markers.get(mod, 'o')
         ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=color,
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=mod,
             marker=marker,
-            edgecolors='white',
-            linewidths=1.0,
+            edgecolors='none',
             zorder=3,
         )
     
-    # Styling
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Paired Sample Connections', fontsize=16, fontweight='bold', pad=20)
+    # Apply clean styling
+    style_embedding_axes(ax, xlabel="PC1", ylabel="PC2", title="Paired Sample Connections")
+    set_equal_aspect_with_padding(ax, emb_2d, pad=0.10)
     
-    # Custom legend
+    # Custom legend outside plot area
     legend_elements = [
         Line2D([0], [0], marker='o', color='w', 
                markerfacecolor=config.modality_colors.get('RNA', '#3498db'),
-               markersize=12, label='RNA', markeredgecolor='white', markeredgewidth=1.5),
+               markersize=10, label='RNA', markeredgecolor='none'),
         Line2D([0], [0], marker='s', color='w', 
                markerfacecolor=config.modality_colors.get('ATAC', '#e74c3c'),
-               markersize=12, label='ATAC', markeredgecolor='white', markeredgewidth=1.5),
-        Line2D([0], [0], color=config.connection_color, linewidth=3, alpha=0.7, label='Paired connection'),
+               markersize=10, label='ATAC', markeredgecolor='none'),
+        Line2D([0], [0], color=config.connection_color, linewidth=2, 
+               alpha=0.6, label='Paired connection'),
     ]
     
-    legend = ax.legend(
-        handles=legend_elements, 
-        loc='upper right',
+    leg = ax.legend(
+        handles=legend_elements,
         frameon=True,
-        fancybox=True,
-        fontsize=13,
-        title_fontsize=14,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc="upper left",
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor="black",
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    leg.get_frame().set_linewidth(0.8)
     
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    
-    # Tick styling
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    # Equal aspect ratio
-    ax.set_aspect('equal', adjustable='box')
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    # Save both PDF and PNG
+    output_path_pdf = output_path.replace('.png', '.pdf')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path_pdf, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -1140,7 +1116,6 @@ def create_all_visualizations(
         "disease_state_plot": str(disease_state_path),
         "paired_plot": str(paired_path),
     }
-
 
 # =============================================================================
 # Main Evaluation Function

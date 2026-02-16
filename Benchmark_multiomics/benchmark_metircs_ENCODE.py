@@ -725,7 +725,6 @@ def add_text_with_outline(ax, x, y, text, fontsize=10, color='black', outline_co
     ])
     return txt
 
-
 def plot_embedding_by_modality(
     emb_2d: np.ndarray,
     sample_info: pd.DataFrame,
@@ -734,12 +733,9 @@ def plot_embedding_by_modality(
     method_name: str = "",
     mixing_results: Optional[Dict] = None,
 ) -> plt.Figure:
-    """Plot 2D embedding colored by modality with enhanced styling."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    # Set background
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    """Plot 2D embedding colored by modality with minimal styling."""
+    fig = plt.figure(figsize=(6.0, 6.0))
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     modalities = sample_info['modality'].values
     unique_mods = sorted(np.unique(modalities))
@@ -749,49 +745,55 @@ def plot_embedding_by_modality(
         mask = modalities == mod
         color = config.modality_colors.get(mod, '#333333')
         
-        scatter = ax.scatter(
+        ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=color,
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=mod,
-            edgecolors='white',
-            linewidths=0.8,
-            zorder=3,
+            edgecolors='none',
         )
     
     # Styling
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Embedding by Modality', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xlabel('PC1')
+    ax.set_ylabel('PC2')
+    ax.set_title('Embedding by Modality', pad=12)
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
+    ax.set_aspect(1.0, adjustable='box')
+    
+    # Equal aspect ratio with padding
+    x_min, x_max = emb_2d[:, 0].min(), emb_2d[:, 0].max()
+    y_min, y_max = emb_2d[:, 1].min(), emb_2d[:, 1].max()
+    cx = 0.5 * (x_min + x_max)
+    cy = 0.5 * (y_min + y_max)
+    dx = x_max - x_min
+    dy = y_max - y_min
+    half_range = 0.5 * max(dx, dy)
+    pad = 0.10
+    half_range *= (1.0 + pad)
+    if half_range == 0:
+        half_range = 1.0
+    ax.set_xlim(cx - half_range, cx + half_range)
+    ax.set_ylim(cy - half_range, cy + half_range)
     
     # Legend
     legend = ax.legend(
-        title='Modality', 
-        loc='upper right',
+        title='Modality',
         frameon=True,
-        fancybox=True,
-        shadow=False,
-        fontsize=13,
-        title_fontsize=14,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc='upper left',
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor='black',
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    legend.get_frame().set_linewidth(0.8)
     
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    
-    # Tick styling
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    # Equal aspect ratio
-    ax.set_aspect('equal', adjustable='box')
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path.replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -804,12 +806,9 @@ def plot_embedding_by_tissue(
     method_name: str = "",
     tissue_results: Optional[Dict] = None,
 ) -> plt.Figure:
-    """Plot 2D embedding colored by tissue with enhanced styling."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    # Set background
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    """Plot 2D embedding colored by tissue with minimal styling."""
+    fig = plt.figure(figsize=(6.0, 6.0))
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     tissues = md[tissue_col].values
     unique_tissues = sorted(np.unique(tissues))
@@ -824,48 +823,56 @@ def plot_embedding_by_tissue(
         mask = tissues == tissue
         ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=[color_map[tissue]],
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=f'{tissue}',
-            edgecolors='white',
-            linewidths=0.8,
-            zorder=3,
+            edgecolors='none',
         )
     
     # Styling
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Embedding by Tissue', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xlabel('PC1')
+    ax.set_ylabel('PC2')
+    ax.set_title('Embedding by Tissue', pad=12)
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
+    ax.set_aspect(1.0, adjustable='box')
     
-    # Legend - always inside the plot
+    # Equal aspect ratio with padding
+    x_min, x_max = emb_2d[:, 0].min(), emb_2d[:, 0].max()
+    y_min, y_max = emb_2d[:, 1].min(), emb_2d[:, 1].max()
+    cx = 0.5 * (x_min + x_max)
+    cy = 0.5 * (y_min + y_max)
+    dx = x_max - x_min
+    dy = y_max - y_min
+    half_range = 0.5 * max(dx, dy)
+    pad = 0.10
+    half_range *= (1.0 + pad)
+    if half_range == 0:
+        half_range = 1.0
+    ax.set_xlim(cx - half_range, cx + half_range)
+    ax.set_ylim(cy - half_range, cy + half_range)
+    
+    # Legend - outside plot
     ncol = 1 if n_tissues <= 10 else 2
     legend = ax.legend(
-        title='Tissue', 
-        loc='best',
+        title='Tissue',
         frameon=True,
-        fancybox=True,
-        fontsize=10,
-        title_fontsize=11,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc='upper left',
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor='black',
         ncol=ncol,
+        fontsize=9,
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    legend.get_frame().set_linewidth(0.8)
     
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    
-    # Tick styling
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    # Equal aspect ratio
-    ax.set_aspect('equal', adjustable='box')
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path.replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -877,12 +884,9 @@ def plot_paired_connections(
     method_name: str = "",
     paired_results: Optional[Dict] = None,
 ) -> plt.Figure:
-    """Plot 2D embedding with connections between paired samples - enhanced styling."""
-    fig, ax = plt.subplots(figsize=config.figsize)
-    
-    # Set background
-    ax.set_facecolor('#fafafa')
-    fig.patch.set_facecolor('white')
+    """Plot 2D embedding with connections between paired samples - minimal styling."""
+    fig = plt.figure(figsize=(6.0, 6.0))
+    ax = fig.add_axes([0.12, 0.12, 0.62, 0.62])
     
     # Build sample_id -> {modality: row_idx} mapping
     sample_id_to_idx: Dict[str, Dict[str, int]] = {}
@@ -921,57 +925,65 @@ def plot_paired_connections(
         marker = markers.get(mod, 'o')
         ax.scatter(
             emb_2d[mask, 0], emb_2d[mask, 1],
-            s=config.point_size,
+            s=50,
             c=color,
-            alpha=config.point_alpha,
+            alpha=0.7,
             label=mod,
             marker=marker,
-            edgecolors='white',
-            linewidths=1.0,
-            zorder=3,
+            edgecolors='none',
         )
     
     # Styling
-    ax.set_xlabel('PC1', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_ylabel('PC2', fontsize=14, fontweight='bold', labelpad=10)
-    ax.set_title('Paired Sample Connections', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xlabel('PC1')
+    ax.set_ylabel('PC2')
+    ax.set_title('Paired Sample Connections', pad=12)
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
+    ax.set_aspect(1.0, adjustable='box')
+    
+    # Equal aspect ratio with padding
+    x_min, x_max = emb_2d[:, 0].min(), emb_2d[:, 0].max()
+    y_min, y_max = emb_2d[:, 1].min(), emb_2d[:, 1].max()
+    cx = 0.5 * (x_min + x_max)
+    cy = 0.5 * (y_min + y_max)
+    dx = x_max - x_min
+    dy = y_max - y_min
+    half_range = 0.5 * max(dx, dy)
+    pad = 0.10
+    half_range *= (1.0 + pad)
+    if half_range == 0:
+        half_range = 1.0
+    ax.set_xlim(cx - half_range, cx + half_range)
+    ax.set_ylim(cy - half_range, cy + half_range)
     
     # Custom legend
     legend_elements = [
         Line2D([0], [0], marker='o', color='w', 
                markerfacecolor=config.modality_colors.get('RNA', '#3498db'),
-               markersize=12, label='RNA', markeredgecolor='white', markeredgewidth=1.5),
+               markersize=10, label='RNA', markeredgecolor='none'),
         Line2D([0], [0], marker='s', color='w', 
                markerfacecolor=config.modality_colors.get('ATAC', '#e74c3c'),
-               markersize=12, label='ATAC', markeredgecolor='white', markeredgewidth=1.5),
-        Line2D([0], [0], color=config.connection_color, linewidth=3, alpha=0.7, label='Paired connection'),
+               markersize=10, label='ATAC', markeredgecolor='none'),
+        Line2D([0], [0], color=config.connection_color, linewidth=2.5, 
+               alpha=0.7, label='Paired connection'),
     ]
     
     legend = ax.legend(
-        handles=legend_elements, 
-        loc='upper right',
+        handles=legend_elements,
         frameon=True,
-        fancybox=True,
-        fontsize=13,
-        title_fontsize=14,
-        edgecolor='#cccccc',
+        bbox_to_anchor=(1.25, 1.0),
+        loc='upper left',
+        borderpad=0.5,
+        framealpha=1.0,
+        edgecolor='black',
     )
-    legend.get_frame().set_facecolor('white')
-    legend.get_frame().set_alpha(0.95)
+    legend.get_frame().set_linewidth(0.8)
     
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#cccccc')
-    ax.set_axisbelow(True)
-    
-    # Tick styling
-    ax.tick_params(axis='both', which='major', labelsize=11, length=5, width=1.2)
-    
-    # Equal aspect ratio
-    ax.set_aspect('equal', adjustable='box')
-    
-    plt.tight_layout()
-    fig.savefig(output_path, dpi=config.dpi, bbox_inches='tight', 
-                facecolor='white', edgecolor='none')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    fig.savefig(output_path.replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 

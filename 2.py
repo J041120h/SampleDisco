@@ -1,11 +1,28 @@
-import pandas as pd
+#!/usr/bin/env python3
+
+import scanpy as sc
 import sys
 
-def print_unique_cell_types(csv_path):
-    df = pd.read_csv(csv_path)
-    unique_values = df['cell_type'].unique()
-    for v in unique_values:
-        print(v)
+
+def print_unique_samples(anndata_path: str) -> None:
+    """
+    Print all unique values in adata.obs['sample'].
+    """
+    adata = sc.read_h5ad(anndata_path)
+
+    if "sample" not in adata.obs.columns:
+        raise ValueError("Column 'sample' not found in adata.obs")
+
+    unique_samples = adata.obs["sample"].unique()
+
+    print(f"Number of unique samples: {len(unique_samples)}")
+    print("Unique sample values:")
+    for s in sorted(unique_samples):
+        print(s)
+
 
 if __name__ == "__main__":
-    print_unique_cell_types('/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/resolutions/resolution_0.050_expression/preprocess/cell_type.csv')
+    if len(sys.argv) != 2:
+        raise SystemExit("Usage: python print_unique_samples.py <anndata_path.h5ad>")
+
+    print_unique_samples(sys.argv[1])
