@@ -15,6 +15,8 @@ from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 def wrapper(
     # ========================================
     # REQUIRED PARAMETERS
@@ -67,11 +69,11 @@ def wrapper(
     rna_batch_col: List[str] = None,
     rna_markers: Optional[List] = None,
     rna_cluster_resolution: float = 0.8,
-    rna_num_pcs: int = 20,
-    rna_num_harmony: int = 30,
-    rna_num_features: int = 2000,
+    rna_cell_embedding_num_pcs: int = 20,
+    rna_num_harmony_iterations: int = 30,
+    rna_num_cell_hvgs: int = 2000,
     rna_min_cells: int = 500,
-    rna_min_features: int = 500,
+    rna_min_genes: int = 500,
     rna_pct_mito_cutoff: int = 20,
     rna_exclude_genes: Optional[List] = None,
     rna_doublet: bool = True,
@@ -101,7 +103,7 @@ def wrapper(
     # RNA PCA Parameters
     rna_n_expression_components: int = 10,
     rna_n_proportion_components: int = 10,
-    rna_harmony_for_proportion: bool = True,  # ADDED: Missing parameter
+    rna_harmony_for_proportion: bool = True,
     rna_dr_output_dir: Optional[str] = None,
     rna_dr_verbose: bool = True,
     
@@ -173,10 +175,10 @@ def wrapper(
     atac_cluster_dge: bool = True,
     atac_trajectory_dge: bool = True,
     
-    # ATAC Paths for Skipping Processes - ADDED: Missing parameters
+    # ATAC Paths for Skipping Processes
     atac_cell_path: Optional[str] = None,
     atac_sample_path: Optional[str] = None,
-    atac_pseudobulk_adata_path: Optional[str] = None, 
+    atac_pseudobulk_adata_path: Optional[str] = None,
     
     # ATAC Column specifications
     atac_sample_col: str = "sample",
@@ -225,7 +227,7 @@ def wrapper(
     atac_dr_output_dir: Optional[str] = None,
     atac_dr_n_expression_components: int = 30,
     atac_dr_n_proportion_components: int = 30,
-    atac_harmony_for_proportion: bool = True,  # ADDED: Missing parameter
+    atac_harmony_for_proportion: bool = True,
     atac_dr_verbose: bool = True,
     
     # ATAC Trajectory analysis parameters
@@ -313,7 +315,7 @@ def wrapper(
     # Basic Parameters
     multiomics_rna_sample_meta_file: Optional[str] = None,
     multiomics_atac_sample_meta_file: Optional[str] = None,
-    multiomics_additional_hvg_file : Optional[str] = None,
+    multiomics_additional_hvg_file: Optional[str] = None,
     multiomics_rna_sample_column: str = "sample",
     multiomics_atac_sample_column: str = "sample",
     multiomics_sample_column: str = 'sample',
@@ -467,7 +469,7 @@ def wrapper(
     if run_multiomics_pipeline and use_gpu:
         from .multiomics_wrapper import multiomics_wrapper
     
-    #memory management for large datasets, enable managed memory if needed
+    # Memory management for large datasets, enable managed memory if needed
     if use_gpu:
         if large_data_need_extra_memory:
             # Enable `managed_memory`
@@ -665,11 +667,11 @@ def wrapper(
                 batch_col=rna_batch_col,
                 markers=rna_markers,
                 cluster_resolution=rna_cluster_resolution,
-                num_PCs=rna_num_pcs,
-                num_harmony=rna_num_harmony,
-                num_features=rna_num_features,
+                cell_embedding_num_PCs=rna_cell_embedding_num_pcs,
+                num_harmony_iterations=rna_num_harmony_iterations,
+                num_cell_hvgs=rna_num_cell_hvgs,
                 min_cells=rna_min_cells,
-                min_features=rna_min_features,
+                min_genes=rna_min_genes,
                 pct_mito_cutoff=rna_pct_mito_cutoff,
                 exclude_genes=rna_exclude_genes,
                 doublet=rna_doublet,
@@ -697,12 +699,12 @@ def wrapper(
                 pseudobulk_output_dir=rna_pseudobulk_output_dir,
                 n_features=rna_pseudobulk_n_features,
                 pseudobulk_verbose=rna_pseudobulk_verbose,
-                preserve_cols_for_sample_embedding = rna_preserve_cols_for_sample_embedding,
+                preserve_cols_for_sample_embedding=rna_preserve_cols_for_sample_embedding,
                 
                 # ===== PCA Parameters =====
                 n_expression_components=rna_n_expression_components,
                 n_proportion_components=rna_n_proportion_components,
-                rna_harmony_for_proportion=rna_harmony_for_proportion,  # UPDATED: Added missing parameter
+                rna_harmony_for_proportion=rna_harmony_for_proportion,
                 dr_output_dir=rna_dr_output_dir,
                 dr_verbose=rna_dr_verbose,
                 
@@ -812,10 +814,10 @@ def wrapper(
                 cluster_DGE=atac_cluster_dge,
                 atac_visualization_processing=atac_visualization_processing,
                 
-                # UPDATED: Paths for skipping processes
+                # Paths for skipping processes
                 atac_cell_path=atac_cell_path,
                 atac_sample_path=atac_sample_path,
-                atac_pseudobulk_adata_path=atac_pseudobulk_adata_path, 
+                atac_pseudobulk_adata_path=atac_pseudobulk_adata_path,
                 
                 # Basic parameters
                 atac_batch_col=atac_batch_col,
@@ -849,7 +851,7 @@ def wrapper(
                 atac_leiden_resolution=atac_leiden_resolution,
                 atac_existing_cell_types=atac_existing_cell_types,
                 atac_n_target_cell_clusters=atac_n_target_cell_clusters,
-                preserve_cols_for_sample_embedding = atac_preserve_cols_for_sample_embedding,
+                preserve_cols_for_sample_embedding=atac_preserve_cols_for_sample_embedding,
                 
                 # Pseudobulk parameters
                 atac_pseudobulk_output_dir=atac_pseudobulk_output_dir,
@@ -860,7 +862,7 @@ def wrapper(
                 atac_dr_output_dir=atac_dr_output_dir,
                 atac_dr_n_expression_components=atac_dr_n_expression_components,
                 atac_dr_n_proportion_components=atac_dr_n_proportion_components,
-                atac_harmony_for_proportion=atac_harmony_for_proportion,  # UPDATED: Added missing parameter
+                atac_harmony_for_proportion=atac_harmony_for_proportion,
                 atac_dr_verbose=atac_dr_verbose,
                 
                 # Trajectory analysis parameters
@@ -992,7 +994,7 @@ def wrapper(
                 # ===== Basic Parameters =====
                 rna_sample_meta_file=multiomics_rna_sample_meta_file,
                 atac_sample_meta_file=multiomics_atac_sample_meta_file,
-                additional_hvg_file = multiomics_additional_hvg_file,
+                additional_hvg_file=multiomics_additional_hvg_file,
                 rna_sample_column=multiomics_rna_sample_column,
                 atac_sample_column=multiomics_atac_sample_column,
                 sample_column=multiomics_sample_column,
@@ -1021,7 +1023,7 @@ def wrapper(
                 
                 # ===== GLUE training parameters =====
                 consistency_threshold=multiomics_consistency_threshold,
-                treat_sample_as_batch = treat_sample_as_batch,
+                treat_sample_as_batch=treat_sample_as_batch,
                 save_prefix=multiomics_save_prefix,
                 
                 # ===== GLUE gene activity parameters =====
@@ -1060,13 +1062,13 @@ def wrapper(
                 normalize=multiomics_normalize,
                 target_sum=multiomics_target_sum,
                 atac=multiomics_atac,
-                preserve_cols_for_sample_embedding = multiomics_preserve_cols_for_sample_embedding,
+                preserve_cols_for_sample_embedding=multiomics_preserve_cols_for_sample_embedding,
                 
                 # PCA Parameters
                 pca_sample_col=multiomics_pca_sample_col,
                 n_expression_pcs=multiomics_n_expression_pcs,
                 n_proportion_pcs=multiomics_n_proportion_pcs,
-                multiomics_harmony_for_proportion=multiomics_harmony_for_proportion,  # UPDATED: Added missing parameter
+                multiomics_harmony_for_proportion=multiomics_harmony_for_proportion,
                 pca_output_dir=multiomics_pca_output_dir,
                 integrated_data=multiomics_integrated_data,
                 not_save=multiomics_not_save,
@@ -1076,7 +1078,7 @@ def wrapper(
                 # ===== Visualization Parameters =====
                 modality_col=multiomics_modality_col,
                 color_col=multiomics_color_col,
-                visualization_grouping_column = multiomics_visualization_grouping_column,
+                visualization_grouping_column=multiomics_visualization_grouping_column,
                 target_modality=multiomics_target_modality,
                 expression_key=multiomics_expression_key,
                 proportion_key=multiomics_proportion_key,
@@ -1164,7 +1166,7 @@ def wrapper(
     with open(status_file_path, 'w') as f:
         json.dump(status_flags, f, indent=4)
 
-    end_time = time.time()     # record end
+    end_time = time.time()
     print(f"Execution time: {end_time - start_time:.4f} seconds")
     
     return results

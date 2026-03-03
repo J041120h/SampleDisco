@@ -1,4 +1,3 @@
-Linux system detected with GPU enabled.
 Resuming process from previous progress:
 {
     "rna": {
@@ -36,8 +35,8 @@ Resuming process from previous progress:
     "system_info": {
         "platform": "Linux",
         "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": true,
-        "linux_system": true
+        "use_gpu": false,
+        "linux_system": false
     }
 }
 
@@ -53,13 +52,21 @@ Raw shape: 44678 cells × 14881 genes
    ✅ Added 6 new metadata columns
    🔗 Matched 44678/44678 entries (100.0%)
 All required columns are present in adata.obs.
-=== Processing data for clustering ===
-Running HVG selection on CPU...
-After HVG: 44416 cells × 2000 genes
-Moving to GPU for normalization, PCA, and Harmony...
-=== [GPU] Running Harmony integration ===
+Type of adata.X: <class 'scipy.sparse._csc.csc_matrix'>
+adata.X dtype: float64
+adata.X is sparse: True
+Converting adata.X from float64 to float32
+After initial filtering: 44492 cells × 10045 genes
+After mitochondrial filtering: 44416 cells × 10045 genes
+After gene exclusion filtering: 44416 cells × 10032 genes
+After sample filtering: 44416 cells × 10032 genes
+Number of samples remaining: 25
+After final gene filtering: 44416 cells × 10032 genes
+Processed shape: 44416 cells × 10032 genes
+Preprocessing complete!
+=== [CPU] Processing data for clustering ===
+=== [CPU] Running Harmony integration ===
 Variables to regress: sample
-Use GPU mode.
 	Initialization is completed.
 	Completed 1 / 30 iteration(s).
 	Completed 2 / 30 iteration(s).
@@ -73,9 +80,7 @@ Use GPU mode.
 Reach convergence after 9 iteration(s).
 End of harmony for adata_cluster.
 === [CPU] Processing data for sample differences ===
-Saving original expression matrix (temporary variable)
-Normalizing and PCA on CPU...
-Total runtime: 66.47 seconds
+Total runtime: 204.73 seconds
 Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
 
 ✗ RNA pipeline failed with error: [Errno 2] Unable to synchronously open file (unable to open file: name = '/dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
@@ -95,4 +100,4 @@ RNA Pipeline: ⚠ PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/test
 Status file: /dcs07/hongkai/data/harry/result/test/sys_log/main_process_status.json
-Execution time: 68.8468 seconds
+Execution time: 204.8013 seconds

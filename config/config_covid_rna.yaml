@@ -12,7 +12,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # System configuration
-use_gpu: true
+use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true
@@ -45,18 +45,18 @@ rna_pseudobulk_adata_path: null
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-- "sev.level"
+  - "sev.level"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: 
-- "batch"
+  - "batch"
 rna_markers: null
 rna_cluster_resolution: 0.990
-rna_num_pcs: 20
-rna_num_harmony: 30
-rna_num_features: 2000
+rna_cell_embedding_num_pcs: 20
+rna_num_harmony_iterations: 30
+rna_num_cell_hvgs: 2000
 rna_min_cells: 500
-rna_min_features: 500
+rna_min_genes: 500
 rna_pct_mito_cutoff: 20
 rna_exclude_genes: null
 rna_doublet: true
@@ -315,7 +315,7 @@ multiomics_run_glue_visualization: false
 # Multiomics Basic Parameters
 multiomics_rna_sample_meta_file: null
 multiomics_atac_sample_meta_file: null
-multiomics_additional_hvg_file : '/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt'
+multiomics_additional_hvg_file: '/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt'
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_column: "sample"
@@ -341,7 +341,7 @@ multiomics_generate_umap: false
 multiomics_compression: "gzip"
 multiomics_metadata_sep: ","
 multiomics_consistency_threshold: 0.05
-treat_sample_as_batch: False
+treat_sample_as_batch: false
 multiomics_save_prefix: "glue"
 multiomics_k_neighbors: 200
 multiomics_use_rep: "X_glue"
