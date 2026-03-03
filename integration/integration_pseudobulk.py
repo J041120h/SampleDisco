@@ -821,8 +821,7 @@ def compute_pseudobulk_adata_linux(
         print(f"[Pseudobulk] Input: {adata.n_obs} cells, {adata.n_vars} genes")
         print(f"[Pseudobulk] HVG selection modality: {hvg_modality} (both rounds)")
 
-    set_global_seed(seed=42, verbose=verbose)
-
+    set_global_seed(seed=42)
     expr_df, props, final = compute_pseudobulk_gpu(
         adata=adata,
         batch_col=batch_col,

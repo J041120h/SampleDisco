@@ -45,7 +45,7 @@ def cell_types_linux(
     if _recursion_depth == 0:
         from utils.random_seed import set_global_seed
 
-        set_global_seed(seed=42, verbose=verbose)
+        set_global_seed(seed=42)
         rsc.get.anndata_to_GPU(adata)
 
     indent = "  " * _recursion_depth

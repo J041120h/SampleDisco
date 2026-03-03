@@ -10,7 +10,6 @@ from scipy import sparse
 from scipy.sparse import issparse
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from utils.safe_save import safe_h5ad_write
 from utils.random_seed import set_global_seed
 from utils.merge_sample_meta import merge_sample_metadata
@@ -69,7 +68,7 @@ def anndata_cluster(
     rsc.get.anndata_to_CPU(adata_cluster)
 
     save_path = os.path.join(output_dir, "adata_cell.h5ad")
-    safe_h5ad_write(adata_cluster, save_path, verbose=verbose)
+    safe_h5ad_write(adata_cluster, save_path)
 
     return adata_cluster
 
@@ -104,7 +103,7 @@ def anndata_sample(
     del X_orig  # explicitly free memory
 
     save_path = os.path.join(output_dir, "adata_sample.h5ad")
-    safe_h5ad_write(adata_sample_diff, save_path, verbose=verbose)
+    safe_h5ad_write(adata_sample_diff, save_path)
 
     return adata_sample_diff
 
@@ -138,7 +137,7 @@ def preprocess_linux(
 
     All intermediate and final results are saved safely to disk.
     """
-    set_global_seed(seed=42, verbose=verbose)
+    set_global_seed(seed=42)
     start_time = time.time()
 
     os.makedirs(output_dir, exist_ok=True)

@@ -43,7 +43,7 @@ def cell_types(
 
     if _recursion_depth == 0:
         from utils.random_seed import set_global_seed
-        set_global_seed(seed=42, verbose=verbose)
+        set_global_seed(seed=42)
 
     if cell_type_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:

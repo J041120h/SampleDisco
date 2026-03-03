@@ -89,7 +89,7 @@ def cell_types_multiomics(
     
     # Set random seed
     from utils.random_seed import set_global_seed
-    set_global_seed(seed=42, verbose=verbose)
+    set_global_seed(seed=42)
     
     # Validate inputs
     if modality_column not in adata.obs.columns:

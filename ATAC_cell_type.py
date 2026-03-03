@@ -302,7 +302,7 @@ def cell_types_atac(
     """
     start_time = time.time() if verbose else None
     from utils.random_seed import set_global_seed
-    set_global_seed(seed = 42, verbose = verbose)
+    set_global_seed(seed = 42)
     
     # Track recursion depth for debugging and preventing infinite loops
     if _recursion_depth > 10:

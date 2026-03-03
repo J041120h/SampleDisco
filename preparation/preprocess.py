@@ -54,7 +54,7 @@ def anndata_cluster(
         print("End of harmony for adata_cluster.")
 
     save_path = os.path.join(output_dir, "adata_cell.h5ad")
-    safe_h5ad_write(adata_cluster, save_path, verbose=verbose)
+    safe_h5ad_write(adata_cluster, save_path)
 
     return adata_cluster
 
@@ -83,11 +83,9 @@ def anndata_sample(
     del X_orig  # explicitly free memory
 
     save_path = os.path.join(output_dir, "adata_sample.h5ad")
-    safe_h5ad_write(adata_sample_diff, save_path, verbose=verbose)
+    safe_h5ad_write(adata_sample_diff, save_path)
 
     return adata_sample_diff
-
-
 
 def preprocess(
     h5ad_path,
@@ -114,7 +112,7 @@ def preprocess(
     Both outputs are safely written to disk in output_dir/preprocess.
     """
     start_time = time.time()
-    set_global_seed(seed=42, verbose=verbose)
+    set_global_seed(seed=42)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

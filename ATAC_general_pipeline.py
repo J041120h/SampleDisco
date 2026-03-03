@@ -64,7 +64,7 @@ def run_scatac_pipeline(
 ):
     t0 = time.time()
     from utils.random_seed import set_global_seed
-    set_global_seed(seed=42, verbose=verbose)
+    set_global_seed(seed=42)
     log("="*60 + "\nStarting scATAC-seq pipeline\n" + "="*60, verbose)
 
     # Create sub-folder
