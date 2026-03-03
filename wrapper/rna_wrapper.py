@@ -48,8 +48,8 @@ def rna_wrapper(
     cell_type_column='cell_type',
     cell_meta_path=None,
     batch_col=None,
-    markers=None,
-    cluster_resolution=0.8,
+    leiden_cluster_resolution=0.8,
+    cell_embedding_column="X_pca_harmony",
     cell_embedding_num_PCs=20,
     num_harmony_iterations=30,
     num_cell_hvgs=2000,
@@ -80,20 +80,20 @@ def rna_wrapper(
     # ===== Pseudobulk Parameters =====
     celltype_col='cell_type',
     pseudobulk_output_dir=None,
-    n_features=2000,
+    num_sample_hvgs=2000,
     pseudobulk_verbose=True,
     preserve_cols_for_sample_embedding=None,
     
     # ===== PCA Parameters =====
-    n_expression_components=10,
-    n_proportion_components=10,
+    expression_embedding_num_PCs=10,
+    proportion_embedding_num_PCs=10,
     rna_harmony_for_proportion=True,
     dr_output_dir=None,
     dr_verbose=True,
     
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised=False,
-    n_components_for_cca_rna=2,
+    cca_num_components=2,
     cca_output_dir=None,
     sev_col_cca="sev.level",
     cca_optimal_cell_resolution=False,
@@ -280,10 +280,9 @@ def rna_wrapper(
     
     # Step 2: Cell Type Clustering
     if cell_type_cluster:
-        print("Starting cell type clustering at resolution:", cluster_resolution)
+        print("Starting cell type clustering at resolution:", leiden_cluster_resolution)
 
         if linux_system and use_gpu:
-            # Always save AnnData_cell (cluster result); optionally save AnnData_sample (assigned labels)
             AnnData_cell, AnnData_sample = cell_types_linux(
                 anndata_cell=AnnData_cell,
                 anndata_sample=AnnData_sample,
@@ -292,12 +291,12 @@ def rna_wrapper(
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,
                 output_dir=rna_output_dir,
-                cluster_resolution=cluster_resolution,
-                markers=markers,
-                num_PCs=num_PCs,
+                leiden_cluster_resolution=leiden_cluster_resolution,
+                cell_embedding_column=cell_embedding_column,
+                cell_embedding_num_PCs=cell_embedding_num_PCs,
                 verbose=verbose,
-                generate_plots=True,
-                save=True, 
+                umap_plots=True,
+                save=True,
             )
 
         else:
@@ -309,22 +308,13 @@ def rna_wrapper(
                 n_target_clusters=n_target_cell_clusters,
                 umap=umap,
                 output_dir=rna_output_dir,
-                cluster_resolution=cluster_resolution,
-                markers=markers,
-                num_PCs=num_PCs,
+                leiden_cluster_resolution=leiden_cluster_resolution,
+                cell_embedding_column=cell_embedding_column,
+                cell_embedding_num_PCs=cell_embedding_num_PCs,
                 verbose=verbose,
-                generate_plots=True,
+                umap_plots=True,
                 save=True,
             )
-
-        if cell_type_annotation:
-            annotate_cell_types_with_celltypist(
-                adata = AnnData_sample,
-                output_dir = rna_output_dir,
-                model_name= rna_cell_type_annotation_model_name,
-                custom_model_path= rna_cell_type_annotation_custom_model_path
-            )
-        
         status_flags["rna"]["cell_type_cluster"] = True
     
     # Step 3: Pseudobulk and PCA

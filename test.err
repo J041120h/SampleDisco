@@ -1,7 +1,7 @@
 Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 638, in wrapper
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 639, in wrapper
     rna_results = rna_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 383, in rna_wrapper
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 373, in rna_wrapper
     pseudobulk_adata = sc.read(temp_pseudobulk_path)
   File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py", line 82, in fn_compatible
     return fn(*args_all, **kw)

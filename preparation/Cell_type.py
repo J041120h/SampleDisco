@@ -20,12 +20,11 @@ def cell_types(
     output_dir=None,
     defined_output_path=None,
     defined_sample_output_path=None,
-    cluster_resolution=0.8,
-    use_rep="X_pca_harmony",
-    markers=None,
-    num_PCs=20,
+    leiden_cluster_resolution=0.8,
+    cell_embedding_column="X_pca_harmony",
+    cell_embedding_num_PCs=20,
     verbose=True,
-    generate_plots=True,
+    umap_plots=True,
     _recursion_depth=0
 ):
     MAX_RESOLUTION = 5.0
@@ -50,15 +49,15 @@ def cell_types(
             print("[cell_types] Found existing cell type annotation.")
 
         adata.obs["cell_type"] = adata.obs[cell_type_column].astype(str)
-        current_n = adata.obs["cell_type"].nunique()
+        current_n_types = adata.obs["cell_type"].nunique()
 
         if verbose:
-            print(f"{indent}[cell_types] Current number of cell types: {current_n}")
+            print(f"{indent}[cell_types] Current number of cell types: {current_n_types}")
 
-        if n_target_clusters is not None and current_n > n_target_clusters:
+        if n_target_clusters is not None and current_n_types > n_target_clusters:
             if verbose:
                 print(
-                    f"{indent}[cell_types] Aggregating {current_n} → "
+                    f"{indent}[cell_types] Aggregating {current_n_types} → "
                     f"{n_target_clusters} using dendrogram"
                 )
 
@@ -66,15 +65,15 @@ def cell_types(
                 adata=adata,
                 n_clusters=n_target_clusters,
                 groupby="cell_type",
-                use_rep=use_rep,
-                num_PCs=num_PCs,
+                cell_embedding_column=cell_embedding_column,
+                cell_embedding_num_PCs=cell_embedding_num_PCs,
             )
 
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
             sc.pp.neighbors(
-                adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42
+                adata, use_rep=cell_embedding_column, n_pcs=cell_embedding_num_PCs, random_state=42
             )
 
     else:
@@ -85,19 +84,19 @@ def cell_types(
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
             sc.pp.neighbors(
-                adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42
+                adata, use_rep=cell_embedding_column, n_pcs=cell_embedding_num_PCs, random_state=42
             )
 
         if n_target_clusters is not None:
             if verbose:
                 print(
                     f"{indent}[cell_types] Target={n_target_clusters}, "
-                    f"resolution={cluster_resolution:.2f}"
+                    f"resolution={leiden_cluster_resolution:.2f}"
                 )
 
             sc.tl.leiden(
                 adata,
-                resolution=cluster_resolution,
+                resolution=leiden_cluster_resolution,
                 flavor="igraph",
                 directed=False,
                 key_added="cell_type",
@@ -108,12 +107,12 @@ def cell_types(
                 adata.obs["cell_type"].astype(int) + 1
             ).astype(str).astype("category")
 
-            n_found = adata.obs["cell_type"].nunique()
+            num_clusters_found = adata.obs["cell_type"].nunique()
             if verbose:
-                print(f"{indent}[cell_types] Found {n_found} clusters")
+                print(f"{indent}[cell_types] Found {num_clusters_found} clusters")
 
-            if n_found >= n_target_clusters:
-                if n_found > n_target_clusters and verbose:
+            if num_clusters_found >= n_target_clusters:
+                if num_clusters_found > n_target_clusters and verbose:
                     print(
                         f"{indent}[cell_types] Over-shot target; "
                         f"recursing with dendrogram aggregation"
@@ -127,15 +126,15 @@ def cell_types(
                     n_target_clusters=n_target_clusters,
                     umap=False,
                     save=False,
-                    use_rep=use_rep,
-                    num_PCs=num_PCs,
+                    cell_embedding_column=cell_embedding_column,
+                    cell_embedding_num_PCs=cell_embedding_num_PCs,
                     verbose=verbose,
-                    generate_plots=False,
+                    umap_plots=False,
                     _recursion_depth=_recursion_depth + 1,
                 )
 
-            new_res = cluster_resolution + RESOLUTION_STEP
-            if new_res <= MAX_RESOLUTION:
+            new_resolution = leiden_cluster_resolution + RESOLUTION_STEP
+            if new_resolution <= MAX_RESOLUTION:
                 return cell_types(
                     anndata_cell=adata,
                     anndata_sample=anndata_sample,
@@ -144,12 +143,11 @@ def cell_types(
                     n_target_clusters=n_target_clusters,
                     umap=False,
                     save=False,
-                    cluster_resolution=new_res,
-                    use_rep=use_rep,
-                    markers=markers,
-                    num_PCs=num_PCs,
+                    leiden_cluster_resolution=new_resolution,
+                    cell_embedding_column=cell_embedding_column,
+                    cell_embedding_num_PCs=cell_embedding_num_PCs,
                     verbose=verbose,
-                    generate_plots=False,
+                    umap_plots=False,
                     _recursion_depth=_recursion_depth + 1,
                 )
 
@@ -157,12 +155,12 @@ def cell_types(
             if verbose:
                 print(
                     f"{indent}[cell_types] Standard Leiden "
-                    f"(resolution={cluster_resolution})"
+                    f"(resolution={leiden_cluster_resolution})"
                 )
 
             sc.tl.leiden(
                 adata,
-                resolution=cluster_resolution,
+                resolution=leiden_cluster_resolution,
                 flavor="igraph",
                 directed=False,
                 key_added="cell_type",
@@ -174,19 +172,15 @@ def cell_types(
             ).astype(str).astype("category")
 
     if _recursion_depth == 0:
-        n_final = adata.obs["cell_type"].nunique()
-        if markers is not None and len(markers) == n_final:
-            if verbose:
-                print("[cell_types] Applying marker names")
-            mapping = {str(i): markers[i - 1] for i in range(1, n_final + 1)}
-            adata.obs["cell_type"] = adata.obs["cell_type"].map(mapping)
+        if verbose:
+            print("[cell_types] Finished assigning cell types.")
 
         if umap:
             if verbose:
                 print("[cell_types] Computing UMAP...")
             sc.tl.umap(adata, min_dist=0.5)
 
-        if generate_plots and umap and output_dir:
+        if umap_plots and umap and output_dir:
             if verbose:
                 print("[cell_types] Generating UMAP plots...")
             generate_umap_visualizations(
@@ -207,48 +201,48 @@ def cell_types(
             if anndata_sample.obs_names.equals(adata.obs_names):
                 anndata_sample.obs["cell_type"] = adata.obs["cell_type"].values
             else:
-                series = pd.Series(
+                cell_type_series = pd.Series(
                     adata.obs["cell_type"].values,
                     index=adata.obs_names,
                     name="cell_type",
                 )
-                anndata_sample.obs["cell_type"] = series.reindex(
+                anndata_sample.obs["cell_type"] = cell_type_series.reindex(
                     anndata_sample.obs_names
                 ).values
-        
+
         if output_dir:
-            preprocess_csv = os.path.join(output_dir, "preprocess")
-            os.makedirs(preprocess_csv, exist_ok=True)
+            preprocess_output_dir = os.path.join(output_dir, "preprocess")
+            os.makedirs(preprocess_output_dir, exist_ok=True)
 
             celltype_df = pd.DataFrame({
-            "cell_id": adata.obs.index,
-            "cell_type": adata.obs["cell_type"].astype(str),
+                "cell_id": adata.obs.index,
+                "cell_type": adata.obs["cell_type"].astype(str),
             })
-            csv_path = os.path.join(preprocess_csv, "cell_type.csv")
+            csv_path = os.path.join(preprocess_output_dir, "cell_type.csv")
             celltype_df.to_csv(csv_path, index=False)
 
             if verbose:
                 print(f"[cell_types] Saved cell type CSV to {csv_path}")
 
         if save and output_dir:
-            preprocess = os.path.join(output_dir, "preprocess")
-            os.makedirs(preprocess, exist_ok=True)
+            preprocess_output_dir = os.path.join(output_dir, "preprocess")
+            os.makedirs(preprocess_output_dir, exist_ok=True)
 
-            cell_path = (
+            cell_save_path = (
                 defined_output_path
-                or os.path.join(preprocess, "adata_cell.h5ad")
+                or os.path.join(preprocess_output_dir, "adata_cell.h5ad")
             )
-            adata.write(cell_path)
+            adata.write(cell_save_path)
 
             if anndata_sample is not None:
-                sample_path = (
+                sample_save_path = (
                     defined_sample_output_path
-                    or os.path.join(preprocess, "adata_sample.h5ad")
+                    or os.path.join(preprocess_output_dir, "adata_sample.h5ad")
                 )
-                anndata_sample.write(sample_path)
+                anndata_sample.write(sample_save_path)
 
             if verbose:
-                print("[cell_types] Saved outputs to preprocess/")
+                print("[cell_types] Saved output anndatas to preprocess/")
 
     if anndata_sample is None:
         return adata
@@ -259,39 +253,47 @@ def cell_type_dendrogram(
     adata,
     n_clusters,
     groupby="cell_type",
-    use_rep="X_pca_harmony",
-    num_PCs=20,
+    cell_embedding_column="X_pca_harmony",
+    cell_embedding_num_PCs=20,
+    verbose=True,
 ):
-    METHOD = "average"
-    METRIC = "euclidean"
+    LINKAGE_METHOD = "average"
+    DISTANCE_METRIC = "euclidean"
 
     if n_clusters < 1:
         raise ValueError("n_clusters must be >= 1")
     if groupby not in adata.obs:
         raise ValueError(f"{groupby} not found in adata.obs")
-    if use_rep not in adata.obsm:
-        raise ValueError(f"{use_rep} not found in adata.obsm")
+    if cell_embedding_column not in adata.obsm:
+        raise ValueError(f"{cell_embedding_column} not found in adata.obsm")
 
-    if num_PCs is not None and use_rep.startswith("X_pca"):
-        X = adata.obsm[use_rep][:, :num_PCs]
+    if cell_embedding_num_PCs is not None and cell_embedding_column.startswith("X_pca"):
+        embedding_data = adata.obsm[cell_embedding_column][:, :cell_embedding_num_PCs]
     else:
-        X = adata.obsm[use_rep]
+        embedding_data = adata.obsm[cell_embedding_column]
 
-    df = pd.DataFrame(X, index=adata.obs_names)
-    df[groupby] = adata.obs[groupby].values
+    embedding_df = pd.DataFrame(embedding_data, index=adata.obs_names)
+    embedding_df[groupby] = adata.obs[groupby].values
 
-    centroids = df.groupby(groupby).mean()
-    dist = pdist(centroids.values, metric=METRIC)
-    Z = sch.linkage(dist, method=METHOD)
+    cell_type_centroids = embedding_df.groupby(groupby).mean()
+    centroid_distance_matrix = pdist(cell_type_centroids.values, metric=DISTANCE_METRIC)
+    linkage_matrix = sch.linkage(centroid_distance_matrix, method=LINKAGE_METHOD)
 
-    labels = fcluster(Z, t=min(n_clusters, centroids.shape[0]), criterion="maxclust")
-    mapping = dict(zip(centroids.index, map(str, labels)))
+    n_clusters_capped = min(n_clusters, cell_type_centroids.shape[0])
+    hierarchical_cluster_labels = fcluster(linkage_matrix, t=n_clusters_capped, criterion="maxclust")
+    celltype_to_cluster_mapping = dict(zip(cell_type_centroids.index, map(str, hierarchical_cluster_labels)))
 
     adata.obs[f"{groupby}_original"] = adata.obs[groupby].copy()
-    adata.obs[groupby] = adata.obs[groupby].map(mapping).astype("category")
-    adata.uns["cluster_mapping"] = {
-        k: list(v)
-        for k, v in pd.Series(mapping).groupby(mapping.values()).groups.items()
-    }
+    adata.obs[groupby] = adata.obs[groupby].map(celltype_to_cluster_mapping).astype("category")
+
+    cluster_composition_mapping = {}
+    for original_type, new_cluster in celltype_to_cluster_mapping.items():
+        cluster_composition_mapping.setdefault(new_cluster, []).append(original_type)
+
+    adata.uns["cluster_mapping"] = cluster_composition_mapping
+
+    if verbose:
+        print(f"[cell_type_dendrogram] Aggregated {len(celltype_to_cluster_mapping)} cell types "
+              f"into {len(set(hierarchical_cluster_labels))} clusters")
 
     return adata
