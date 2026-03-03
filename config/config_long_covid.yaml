@@ -32,20 +32,19 @@ rna_dimensionality_reduction: true
 rna_cca_optimal_cell_resolution: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: true
-rna_trajectory_dge: false
+rna_trajectory_dge: true
 rna_sample_cluster: false
 rna_cluster_dge: false
 rna_visualize_data: false
 
 # RNA Paths for Skipping Processes
-rna_anndata_cell_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_cell.h5ad
-rna_anndata_sample_path: /dcs07/hongkai/data/harry/result/long_covid/rna/preprocess/adata_sample.h5ad
-rna_pseudobulk_adata_path: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample_all.h5ad
+rna_anndata_cell_path: /dcs07/hongkai/data/harry/result/long_covid/analysis/preprocess/adata_cell.h5ad
+rna_anndata_sample_path: /dcs07/hongkai/data/harry/result/long_covid/analysis/preprocess/adata_sample.h5ad
+rna_pseudobulk_adata_path: null
 
 # RNA Basic Parameters
 rna_sample_col: "sample"
 rna_grouping_columns: 
-  - "LC/Recovered"
   - "month"
   - "Sex"
   - "BMI category"
@@ -53,11 +52,10 @@ rna_grouping_columns:
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
 rna_batch_col: 
-- 'filename_sample_id'
-- "LC/Recovered"
 - "Sex"
 - "BMI category"
-- "Age_cluster"
+- "month"
+- "LC/Recovered"
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -89,8 +87,7 @@ rna_celltype_col: "cell_type"
 rna_pseudobulk_output_dir: null
 rna_pseudobulk_n_features: 2000
 rna_pseudobulk_verbose: true
-rna_preserve_cols_for_sample_embedding:
-  - "month"
+rna_preserve_cols_for_sample_embedding: null
 
 # RNA PCA Parameters
 rna_n_expression_components: 10
@@ -103,7 +100,7 @@ rna_dr_verbose: true
 rna_trajectory_supervised: true
 rna_n_components_for_cca: 10
 rna_cca_output_dir: null
-rna_sev_col_cca: "month"
+rna_sev_col_cca: "Age at enrollment"
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null
@@ -152,7 +149,7 @@ rna_tree_building_method:
   - "NN"
   - "UPGMA"
 rna_proportion_test: false
-rna_raisin_analysis: true
+rna_raisin_analysis: false
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null

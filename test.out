@@ -1,236 +1,349 @@
-🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/long_covid/sample_pseudobulk_differential_gene/different_time_point/1_month/cDC1/pseudobulk.h5ad
-
-📦 Basic Info
-  - Shape (cells × genes): 15 × 14664
-  - Layers: []
-  - obs columns: ['source_file', 'filename_sample_id', 'month', 'OutSMART short number', 'OutSMART ID', 'Sex', 'LC/Recovered', 'BMI category', 'Age at enrollment', 'age_cluster', 'n_cells']
-  - var columns: ['n_cells', 'mt', 'n_cells_by_counts', 'mean_counts', 'pct_dropout_by_counts', 'total_counts']
-  - obsm keys: []
-  - varm keys: []
-
-🔎 Inspecting .X matrix:
-  - storage type: dense (ndarray)
-  - dtype: float32
-  - .X nonzeros: 105546 / 219960 (47.9842% nonzero, 52.0158% zero)
-  - value type: float — fractional values detected
-  - contains NaN: False
-  - contains Inf: False
-  - min value: 0
-  - max value: 10.7069
-
-🧮 Example .X values (first 10 cells × 10 genes):
-[[0.        2.8577635 3.5217924 0.        3.9173598 2.8577635 3.5217924
-  0.        0.        3.9173598]
- [2.5414586 3.5191255 1.736823  2.3378115 4.3593717 1.2058617 3.2860107
-  1.736823  2.710568  3.4472938]
- [0.        0.        0.        0.        0.        0.        0.
-  0.        0.        3.6696455]
- [2.700505  0.        0.        2.0723696 3.5756583 0.        3.3594894
-  2.0723696 0.        4.254708 ]
- [0.        0.        0.        0.        4.035351  0.        3.3597286
-  0.        0.        2.3282976]
- [0.        0.        0.        0.        0.        0.        4.2531486
-  3.5741208 4.939161  4.2531486]
- [2.55702   1.9385493 1.9385493 1.9385493 3.8834035 0.        2.55702
-  0.        1.9385493 3.4256725]
- [0.        0.        0.        0.        5.179027  0.        3.5918732
-  0.        0.        0.       ]
- [0.        0.        2.5182605 1.9026295 2.5182605 0.        3.1702733
-  1.9026295 1.9026295 3.5616422]
- [0.        0.        0.        0.        0.        0.        0.
-  0.        0.        0.       ]]
-
-🧫 Example cell names:
-  - 101-M1
-  - 104-M1
-  - 107-M1
-  - 110-M1
-  - 123-M1
-  - 127-M1
-  - 129-M1
-  - 141-M1
-  - 144-M1
-  - 147-M1
+Linux system detected with GPU enabled.
+Resuming process from previous progress:
+{
+    "rna": {
+        "preprocessing": true,
+        "cell_type_cluster": true,
+        "dimensionality_reduction": true,
+        "sample_distance_calculation": true,
+        "trajectory_analysis": true,
+        "trajectory_dge": true,
+        "cluster_dge": true,
+        "visualization": true
+    },
+    "atac": {
+        "preprocessing": false,
+        "cell_type_cluster": false,
+        "dimensionality_reduction": false,
+        "sample_distance_calculation": false,
+        "trajectory_analysis": false,
+        "trajectory_dge": false,
+        "cluster_dge": false,
+        "visualization": false
+    },
+    "multiomics": {
+        "glue_integration": false,
+        "glue_preprocessing": false,
+        "glue_training": false,
+        "glue_gene_activity": false,
+        "glue_cell_types": false,
+        "glue_visualization": false,
+        "integration_preprocessing": false,
+        "dimensionality_reduction": false,
+        "embedding_visualization": false,
+        "optimal_resolution": false
+    },
+    "system_info": {
+        "platform": "Linux",
+        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+        "use_gpu": true,
+        "linux_system": true
+    }
+}
 
 ============================================================
-📋 Detailed obs columns inspection:
+RUNNING RNA PIPELINE
 ============================================================
+Starting RNA wrapper function with provided parameters...
+Starting dimensionality reduction...
+[Pseudobulk] Input: 260269 cells, 15725 genes
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[Pseudobulk] Using GPU (rapids_singlecell)
+[Pseudobulk] 35 samples, 8 cell types
+[Pseudobulk] Batch correction: ['Sex', 'BMI category', 'month', 'LC/Recovered']
+[Pseudobulk] Phase 1: Aggregating...
+  Aggregating 260269 cells -> 35 samples x 8 cell types
+  Created 8 cell type layers
+[Pseudobulk] Phase 2: Processing cell types...
+  [1/8] B naive
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+  [2/8] Monocyte CD14
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+  [3/8] Monocyte CD14 IL6
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+  [4/8] Monocyte CD16
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+  [5/8] NK
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+  [6/8] Platelets
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+  [7/8] T CD4 helper
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+  [8/8] T CD8 naive
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2000 HVGs
+[Pseudobulk] Retained 8 cell types
+[Pseudobulk] Phase 3: Building final matrix...
+[Pseudobulk] Final features: 2000
+[Pseudobulk] Phase 4: Computing proportions...
+[Pseudobulk] Complete
+[Pseudobulk] Extracting sample metadata...
+[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+[Pseudobulk] Output: 35 samples, 2000 features
+[process_anndata_with_dimension_reduction] Starting dimension reduction computation...
+[process_anndata_with_dimension_reduction] Results will be stored under unified keys:
+  - X_DR_expression: for expression data
+  - X_DR_proportion: for proportion data
+[process_anndata_with_dimension_reduction] RNA mode: Will use PCA for expression data
+[process_anndata_with_dimension_reduction] Batch correction: Using 4 batch column(s): ['Sex', 'BMI category', 'month', 'LC/Recovered']
+[process_anndata_with_dimension_reduction] ✓ Created output directories:
+  - pseudobulk_output_dir: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk
+[process_anndata_with_dimension_reduction] Using n_expression_components=10, n_proportion_components=5
+[process_anndata_with_dimension_reduction] Data dimensions: expression=(35, 2000), proportion=(35, 8)
+[DimRed] Computing PCA for RNA data with 10 components on (35, 2000) data
+[PCA] Success. Shape: (35, 10)
+[Storage] Stored X_DR_expression in both adata and pseudobulk_anndata (shape: (35, 10))
+[Storage] Stored X_pca_expression_method in both adata and pseudobulk_anndata (shape: (35, 10))
+[PCA] Stored variance information in both objects
+[DimRed] Completed - results stored as X_DR_expression in both adata and pseudobulk_anndata
+[process_anndata_with_dimension_reduction] ✓ Expression dimension reduction completed successfully
+[run_dimension_reduction_proportion] Computing PCA with 5 components...
+[run_dimension_reduction_proportion] Applying Harmony with batch column(s): ['Sex', 'BMI category', 'month', 'LC/Recovered']
+[run_dimension_reduction_proportion] Harmony completed with 4 batch factor(s). Shape: (35, 5)
+[run_dimension_reduction_proportion] Completed using Harmony-integrated PCA. Shape: (35, 5)
+[process_anndata_with_dimension_reduction] ✓ Proportion dimension reduction completed successfully
+[SaveCSV] ✓ Saved sample expression embedding: /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings/sample_expression_embedding.csv (shape: (35, 10))
+[SaveCSV] ✓ Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings/sample_proportion_embedding.csv (shape: (35, 5))
+[SaveEmbeddings] ✓ Saved 2 canonical embedding file(s) to: /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings
+[process_anndata_with_dimension_reduction] Preparing to save results...
+[process_anndata_with_dimension_reduction] Target file path:
+  - pseudobulk_anndata: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] ✓ Successfully saved pseudobulk_anndata (0.6 MB)
+[process_anndata_with_dimension_reduction] ✓ File saved successfully
 
-    [source_file]
-      dtype: object
-      non-NA: 15/15 (100.0%)
-      unique: 15
-      top values:
-        '22--101-M1_sample_filtered_feature_bc_matrix.h5': 1 (6.7%)
-        '1--104-M1_sample_filtered_feature_bc_matrix.h5': 1 (6.7%)
-        '4--107-M1_sample_filtered_feature_bc_matrix.h5': 1 (6.7%)
-        '6--110-M1_sample_filtered_feature_bc_matrix.h5': 1 (6.7%)
-        '25--123-M1_sample_filtered_feature_bc_matrix.h5': 1 (6.7%)
+[process_anndata_with_dimension_reduction] === SUMMARY ===
+Total runtime: 0.27 seconds
+Expression dimension reduction: ✓ SUCCESS
+Proportion dimension reduction: ✓ SUCCESS
+Results available under unified keys:
+  - X_DR_expression in both adata.uns and pseudobulk_anndata.uns
+  - X_DR_proportion in both adata.uns and pseudobulk_anndata.uns
+File saving: ATTEMPTED
+  - H5AD: pseudobulk_anndata only
+  - CSV embeddings: /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings/
+Starting trajectory analysis...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
 
-    [filename_sample_id]
-      dtype: object
-      non-NA: 15/15 (100.0%)
-      unique: 15
-      top values:
-        '101': 1 (6.7%)
-        '104': 1 (6.7%)
-        '107': 1 (6.7%)
-        '110': 1 (6.7%)
-        '123': 1 (6.7%)
+Processing X_DR_proportion...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Warning: Only 5 components available, using all of them.
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 5 components...
+Testing 10 PC combinations...
+PC1 + PC2: CCA score = 0.3363
+PC1 + PC3: CCA score = 0.4667
+PC1 + PC4: CCA score = 0.6547
+PC1 + PC5: CCA score = 0.3171
+PC2 + PC3: CCA score = 0.4471
+PC2 + PC4: CCA score = 0.5728
+PC2 + PC5: CCA score = 0.3746
+PC3 + PC4: CCA score = 0.6150
+PC3 + PC5: CCA score = 0.4085
+PC4 + PC5: CCA score = 0.5141
+Best combination: PC1 + PC4 with score 0.6547
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pca_10d_cca_proportion.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pca_10d_cca_proportion_contributions.pdf
 
-    [month]
-      dtype: category
-      non-NA: 15/15 (100.0%)
-      unique: 1
-      top values:
-        '1': 15 (100.0%)
+Processing X_DR_expression...
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+[Seed Control] PyTorch GPU deterministic mode enabled with seed=42
+[Seed Control] CuPy seed set to 42
+[Seed Control] Scanpy seed set to 42
+Auto-selecting best 2-PC combination from 10 components...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.1884
+PC1 + PC3: CCA score = 0.1683
+PC1 + PC4: CCA score = 0.2788
+PC1 + PC5: CCA score = 0.3570
+PC1 + PC6: CCA score = 0.1259
+PC1 + PC7: CCA score = 0.0407
+PC1 + PC8: CCA score = 0.0373
+PC1 + PC9: CCA score = 0.0742
+PC1 + PC10: CCA score = 0.0314
+PC2 + PC3: CCA score = 0.2492
+PC2 + PC4: CCA score = 0.3339
+PC2 + PC5: CCA score = 0.4016
+PC2 + PC6: CCA score = 0.2228
+PC2 + PC7: CCA score = 0.1882
+PC2 + PC8: CCA score = 0.1875
+PC2 + PC9: CCA score = 0.1982
+PC2 + PC10: CCA score = 0.1864
+PC3 + PC4: CCA score = 0.3230
+PC3 + PC5: CCA score = 0.3925
+PC3 + PC6: CCA score = 0.2060
+PC3 + PC7: CCA score = 0.1680
+PC3 + PC8: CCA score = 0.1672
+PC3 + PC9: CCA score = 0.1791
+PC3 + PC10: CCA score = 0.1660
+PC4 + PC5: CCA score = 0.4511
+PC4 + PC6: CCA score = 0.3031
+PC4 + PC7: CCA score = 0.2786
+PC4 + PC8: CCA score = 0.2782
+PC4 + PC9: CCA score = 0.2855
+PC4 + PC10: CCA score = 0.2774
+PC5 + PC6: CCA score = 0.3763
+PC5 + PC7: CCA score = 0.3569
+PC5 + PC8: CCA score = 0.3566
+PC5 + PC9: CCA score = 0.3623
+PC5 + PC10: CCA score = 0.3560
+PC6 + PC7: CCA score = 0.1256
+PC6 + PC8: CCA score = 0.1245
+PC6 + PC9: CCA score = 0.1401
+PC6 + PC10: CCA score = 0.1229
+PC7 + PC8: CCA score = 0.0361
+PC7 + PC9: CCA score = 0.0736
+PC7 + PC10: CCA score = 0.0300
+PC8 + PC9: CCA score = 0.0718
+PC8 + PC10: CCA score = 0.0252
+PC9 + PC10: CCA score = 0.0689
+Best combination: PC4 + PC5 with score 0.4511
+Saved CCA plot to: /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pca_10d_cca_expression.pdf
+Saved CCA contributions plot to: /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pca_10d_cca_expression_contributions.pdf
+Saved proportion pseudotime data to: /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pseudotime_proportion.csv
+Saved expression pseudotime data to: /dcs07/hongkai/data/harry/result/long_covid/rna/CCA/pseudotime_expression.csv
 
-    [OutSMART short number]
-      dtype: object
-      non-NA: 15/15 (100.0%)
-      unique: 15
-      top values:
-        '101': 1 (6.7%)
-        '104': 1 (6.7%)
-        '107': 1 (6.7%)
-        '110': 1 (6.7%)
-        '123': 1 (6.7%)
+==================================================
+CCA ANALYSIS SUMMARY
+==================================================
+X_DR_proportion: CCA score = 0.6547 (using PC1 + PC4)
+X_DR_expression: CCA score = 0.4511 (using PC4 + PC5)
 
-    [OutSMART ID]
-      dtype: object
-      non-NA: 15/15 (100.0%)
-      unique: 15
-      top values:
-        'OS-AB-1-101-01': 1 (6.7%)
-        'OS-AB-1-104-01': 1 (6.7%)
-        'OS-AB-1-107-01': 1 (6.7%)
-        'OS-AB-1-110-01': 1 (6.7%)
-        'OS-AB-1-123-01': 1 (6.7%)
+Total runtime: 1.17 seconds
+==================================================
+P-value for observed correlation 0.6547337442709456: 0.001
+[CCA p-test] Runtime: 1.39 seconds
+P-value for observed correlation 0.4510699487132374: 0.03
+[CCA p-test] Runtime: 1.36 seconds
+Running single-pseudotime GAM-based differential analysis...
+======================================================================
+TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS
+======================================================================
 
-    [Sex]
-      dtype: category
-      non-NA: 15/15 (100.0%)
-      unique: 2
-      top values:
-        'Female': 8 (53.3%)
-        'Male': 7 (46.7%)
+[1/5] Loading pseudotime...
+  → Loaded 35 pseudotime values; aligned 35 to pseudobulk samples
 
-    [LC/Recovered]
-      dtype: category
-      non-NA: 15/15 (100.0%)
-      unique: 2
-      top values:
-        'Recovered': 8 (53.3%)
-        'LC': 7 (46.7%)
+[2/5] Preparing GAM input matrices...
+  → Prepared design matrix: 35 samples × 1 features
+  → Expression matrix: 35 samples × 2000 genes
 
-    [BMI category]
-      dtype: category
-      non-NA: 15/15 (100.0%)
-      unique: 2
-      top values:
-        'Elevated': 8 (53.3%)
-        'Normal': 7 (46.7%)
+[3/5] Fitting GAM models for 2000 genes...
+  → Spline parameters: n_splines=5, order=3
+  → Processing gene 500/2000...
+  → Processing gene 1000/2000...
+  → Processing gene 1500/2000...
+  → Processing gene 2000/2000...
+  → Successfully fitted 2000/2000 genes
+  → Found 51 significant genes (FDR < 0.05)
 
-    [Age at enrollment]
-      dtype: category
-      non-NA: 15/15 (100.0%)
-      unique: 12
-      top values:
-        '33': 2 (13.3%)
-        '51': 2 (13.3%)
-        '54': 2 (13.3%)
-        '27': 1 (6.7%)
-        '41': 1 (6.7%)
+[4/5] Calculating effect sizes and regulation directions...
+  → Calculated effect sizes for 51 genes
+  → Selected 51 pseudoDEGs (top_n=100)
+  → Saved results to: /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression
 
-    [age_cluster]
-      dtype: category
-      non-NA: 15/15 (100.0%)
-      unique: 3
-      top values:
-        'Young': 6 (40.0%)
-        'Middle': 5 (33.3%)
-        'Old': 4 (26.7%)
+======================================================================
+=== DIFFERENTIAL GENE EXPRESSION SUMMARY ===
+Total genes analyzed: 2000
+Significant genes (FDR < 0.05): 51
+Selected DEGs: 51
+  - Upregulated: 26
+  - Downregulated: 25
 
-    [n_cells]
-      dtype: float32
-      non-NA: 15/15 (100.0%)
-      unique: 8
-      min: 0, max: 21, mean: 5.73333
-      example values: [np.float32(4.0), np.float32(21.0), np.float32(1.0), np.float32(6.0), np.float32(9.0)]
+Top 20 DEGs:
+(Sorted by Effect Size)
+1. Platelets - PTK2: FDR=1.0303e-03, Effect=6.320, Direction=DOWN
+2. Platelets - LENG8-AS1: FDR=3.4777e-03, Effect=5.773, Direction=UP
+3. Monocyte CD14 IL6 - IGHV3-20: FDR=7.1961e-03, Effect=5.614, Direction=DOWN
+4. Platelets - NDUFB7: FDR=4.2171e-03, Effect=5.006, Direction=DOWN
+5. Platelets - ZRANB3: FDR=1.5411e-02, Effect=4.959, Direction=DOWN
+6. Platelets - VPS13C: FDR=7.1961e-03, Effect=4.906, Direction=UP
+7. Platelets - CD40: FDR=9.8249e-03, Effect=4.860, Direction=UP
+8. Platelets - PAN2: FDR=3.5843e-03, Effect=4.806, Direction=UP
+9. Platelets - UBE2E2: FDR=3.5843e-03, Effect=4.677, Direction=UP
+10. Platelets - LINC01350: FDR=3.4777e-03, Effect=4.622, Direction=UP
+11. Monocyte CD14 IL6 - RRM2: FDR=1.9519e-02, Effect=4.578, Direction=DOWN
+12. Monocyte CD14 IL6 - IGHV1-46: FDR=2.5652e-02, Effect=4.539, Direction=DOWN
+13. Platelets - PABPC1L: FDR=3.5843e-03, Effect=4.497, Direction=UP
+14. Platelets - HERC2P3: FDR=3.6504e-02, Effect=4.465, Direction=DOWN
+15. Platelets - CD164: FDR=2.5479e-02, Effect=4.385, Direction=DOWN
+16. Platelets - BRD2: FDR=3.0466e-02, Effect=4.381, Direction=DOWN
+17. Monocyte CD14 IL6 - IGLV3-1: FDR=2.9686e-02, Effect=4.353, Direction=DOWN
+18. Monocyte CD14 IL6 - IGLV3-10: FDR=3.5843e-03, Effect=4.331, Direction=DOWN
+19. Platelets - PLCH1: FDR=1.2919e-02, Effect=4.330, Direction=UP
+20. Monocyte CD14 IL6 - IGLV1-40: FDR=3.5843e-03, Effect=4.250, Direction=DOWN
 
-📋 Example obs rows (head 10):
-                                            source_file  ... n_cells
-sample                                                   ...        
-101-M1  22--101-M1_sample_filtered_feature_bc_matrix.h5  ...     4.0
-104-M1   1--104-M1_sample_filtered_feature_bc_matrix.h5  ...    21.0
-107-M1   4--107-M1_sample_filtered_feature_bc_matrix.h5  ...     1.0
-110-M1   6--110-M1_sample_filtered_feature_bc_matrix.h5  ...     6.0
-123-M1  25--123-M1_sample_filtered_feature_bc_matrix.h5  ...     6.0
-127-M1   8--127-M1_sample_filtered_feature_bc_matrix.h5  ...     1.0
-129-M1  10--129-M1_sample_filtered_feature_bc_matrix.h5  ...     9.0
-141-M1  12--141-M1_sample_filtered_feature_bc_matrix.h5  ...     1.0
-144-M1  14--144-M1_sample_filtered_feature_bc_matrix.h5  ...    11.0
-147-M1  27--147-M1_sample_filtered_feature_bc_matrix.h5  ...     1.0
+[5/5] Generating Lamian-style visualizations...
+[DEBUG] Step 5/5: Generating Lamian-style visualizations...
+[VIZ] Creating results summary...
+[VIZ] Creating TDE heatmap...
+[VIZ] Creating volcano plot...
+[VIZ] Creating gene expression curves with GAM fits...
+[VIZ] Plotting 20 genes (selected by effect size, FDR < 0.05)
+[VIZ] GAM models available: 2000
+[VIZ] GAM models provided: 2000 models
+[VIZ] Inferred GAM feature count: 2
+[VIZ] Saved gene expression curves to /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression/visualizations/05_gene_curves.png
+[VIZ] Creating sample density plot...
+[VIZ] Creating cluster pattern summary...
+[VIZ] Creating sample-level expression curves...
+[VIZ] Top gene by effect size: Platelets - PTK2
+[VIZ] Saved sample-level curves to /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression/visualizations/08_sample_level_curves.png
+[VIZ] Visualizations saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression/visualizations
 
-[10 rows x 11 columns]
+======================================================================
+✓ Analysis complete. Results saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression
+======================================================================
+Trajectory differential gene analysis completed!
+RNA analysis completed successfully!
+
+✓ RNA pipeline completed successfully!
 
 ============================================================
-🧬 Detailed var columns inspection:
+PIPELINE EXECUTION SUMMARY
 ============================================================
+RNA Pipeline: ✓ COMPLETE
+  - preprocessing: ✓
+  - cell_type_cluster: ✓
+  - dimensionality_reduction: ✓
+  - sample_distance_calculation: ✓
+  - trajectory_analysis: ✓
+  - trajectory_dge: ✓
+  - cluster_dge: ✓
+  - visualization: ✓
 
-    [n_cells]
-      dtype: int64
-      non-NA: 14664/14664 (100.0%)
-      unique: 14
-      min: 1, max: 14, mean: 7.19763
-      example values: [np.int64(7), np.int64(6), np.int64(5), np.int64(11), np.int64(2)]
-
-    [mt]
-      dtype: bool
-      non-NA: 14664/14664 (100.0%)
-      unique: 1
-      min: 0, max: 0, mean: 0
-      example values: [np.False_]
-
-    [n_cells_by_counts]
-      dtype: int64
-      non-NA: 14664/14664 (100.0%)
-      unique: 12735
-      min: 373, max: 261053, mean: 35719.9
-      example values: [np.int64(21380), np.int64(7078), np.int64(7416), np.int64(7350), np.int64(19565)]
-
-    [mean_counts]
-      dtype: float64
-      non-NA: 14664/14664 (100.0%)
-      unique: 12973
-      min: 0.0018804, max: 129.491, mean: 0.381285
-      example values: [np.float64(0.08945640500368818), np.float64(0.03003665243629776), np.float64(0.029264619888628572), np.float64(0.02914996158946978), np.float64(0.08366998283947456)]
-
-    [pct_dropout_by_counts]
-      dtype: float64
-      non-NA: 14664/14664 (100.0%)
-      unique: 12735
-      min: 0.227023, max: 99.8574, mean: 86.3481
-      example values: [np.float64(91.82868521328355), np.float64(97.2948285285136), np.float64(97.16564684479471), np.float64(97.19087167060964), np.float64(92.52236792319422)]
-
-    [total_counts]
-      dtype: float32
-      non-NA: 14664/14664 (100.0%)
-      unique: 12973
-      min: 492, max: 3.38803e+07, mean: 99762.1
-      example values: [np.float32(23406.0), np.float32(7859.0), np.float32(7657.0), np.float32(7627.0), np.float32(21892.0)]
-
-🧬 Example var rows (head 10):
-                 n_cells     mt  ...  pct_dropout_by_counts  total_counts
-ENSG00000291215        7  False  ...              91.828685       23406.0
-LINC01409              6  False  ...              97.294829        7859.0
-ENSG00000290784        7  False  ...              97.165647        7657.0
-LINC00115              5  False  ...              97.190872        7627.0
-LINC01128             11  False  ...              92.522368       21892.0
-ENSG00000288531        2  False  ...              99.723673         817.0
-NOC2L                 12  False  ...              84.763059       45218.0
-KLHL17                 5  False  ...              97.472931        6761.0
-HES4                   4  False  ...              95.869244       29654.0
-ISG15                 12  False  ...              75.679064      103647.0
-
-[10 rows x 6 columns]
+Results saved to: /dcs07/hongkai/data/harry/result/long_covid
+Status file: /dcs07/hongkai/data/harry/result/long_covid/sys_log/main_process_status.json
+Execution time: 43.2949 seconds

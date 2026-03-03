@@ -371,6 +371,115 @@ def proportion_test(
     return all_results
 
 
+def _compute_celltype_uniform_significance_order(results, celltypes, significance_level=0.05):
+    """
+    Compute cell type ordering based on uniform significance across comparisons.
+    
+    Cell types are ranked by how consistently significant they are across all
+    pairwise comparisons. The ranking considers:
+    1. Number of comparisons where the cell type is significant (primary)
+    2. Mean -log10(FDR) across all comparisons (secondary, for tie-breaking)
+    
+    Parameters
+    ----------
+    results : dict
+        Dictionary of comparison results {comparison_name: DataFrame}
+    celltypes : array-like
+        List of all cell types to order
+    significance_level : float
+        FDR threshold for significance
+        
+    Returns
+    -------
+    list
+        Cell types ordered from most uniformly significant to least
+    """
+    celltypes = list(celltypes)
+    comp_names = list(results.keys())
+    n_comparisons = len(comp_names)
+    
+    if n_comparisons == 0:
+        return celltypes
+    
+    # Build a matrix: cell types × comparisons with -log10(FDR) values
+    fdr_matrix = pd.DataFrame(index=celltypes, columns=comp_names, dtype=float)
+    sig_matrix = pd.DataFrame(index=celltypes, columns=comp_names, dtype=float)
+    
+    for comp in comp_names:
+        df = results[comp]
+        df_indexed = df.set_index("celltype")
+        for ct in celltypes:
+            if ct in df_indexed.index:
+                fdr_val = df_indexed.loc[ct, "FDR"]
+                fdr_matrix.loc[ct, comp] = fdr_val
+                sig_matrix.loc[ct, comp] = 1.0 if fdr_val < significance_level else 0.0
+            else:
+                fdr_matrix.loc[ct, comp] = 1.0  # Not tested = not significant
+                sig_matrix.loc[ct, comp] = 0.0
+    
+    # Compute uniformity scores
+    # Primary: fraction of comparisons where significant
+    sig_count = sig_matrix.sum(axis=1)
+    sig_fraction = sig_count / n_comparisons
+    
+    # Secondary: mean -log10(FDR) for tie-breaking (higher = more significant overall)
+    # Clip FDR to avoid log(0)
+    fdr_clipped = fdr_matrix.clip(lower=1e-300)
+    mean_neg_log_fdr = (-np.log10(fdr_clipped)).mean(axis=1)
+    
+    # Tertiary: variance of significance across comparisons (lower = more uniform)
+    # We want cell types that are significant in ALL or NONE comparisons to rank
+    # higher than those significant in only some (for uniformity)
+    sig_variance = sig_matrix.var(axis=1, ddof=0)
+    # Invert so lower variance = higher score
+    uniformity_score = 1.0 - sig_variance
+    
+    # Create ranking DataFrame
+    ranking_df = pd.DataFrame({
+        "sig_fraction": sig_fraction,
+        "mean_neg_log_fdr": mean_neg_log_fdr,
+        "uniformity_score": uniformity_score,
+    }, index=celltypes)
+    
+    # Sort by: sig_fraction (desc), uniformity_score (desc), mean_neg_log_fdr (desc)
+    ranking_df = ranking_df.sort_values(
+        by=["sig_fraction", "uniformity_score", "mean_neg_log_fdr"],
+        ascending=[False, False, False]
+    )
+    
+    return ranking_df.index.tolist()
+
+
+def _normalize_per_column(df):
+    """
+    Normalize each column (cell type) to 0-1 range independently.
+    
+    This allows visualization of relative differences within each cell type
+    across groups, regardless of the absolute scale.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Matrix with groups as rows and cell types as columns
+        
+    Returns
+    -------
+    pd.DataFrame
+        Column-wise normalized matrix (each column scaled to 0-1)
+    """
+    result = df.copy().astype(float)
+    for col in result.columns:
+        col_data = result[col]
+        col_min = col_data.min()
+        col_max = col_data.max()
+        if col_max > col_min:
+            result[col] = (col_data - col_min) / (col_max - col_min)
+        else:
+            # Constant column - set to 0.5 (middle of scale)
+            result[col] = 0.5
+    return result
+
+
 def _proportion_test_visualization(
     prop_df, output_dir, sample_groups, results, significance_level=0.05, verbose=False
 ):
@@ -387,9 +496,13 @@ def _proportion_test_visualization(
        - logit(mean proportion): matches the testing scale more closely
        - per-celltype z-score across groups: highlights relative shifts per cell type
     3) Add an optional significance overlay heatmap (FDR<alpha) for quick interpretation.
+    4) For logit and z-score heatmaps, order cell types by uniform significance across groups.
+    5) Use per-column (per cell type) normalization so nuances within each cell type are visible.
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
+    from matplotlib.colors import Normalize
+    from matplotlib.cm import ScalarMappable
 
     # Set a clean, journal-like style
     sns.set(style="whitegrid", context="talk")
@@ -411,8 +524,16 @@ def _proportion_test_visualization(
     group_prop = group_prop.dropna(axis=1, how="all")
 
     # -------------------------------------------------------------
+    # Compute cell type ordering based on uniform significance
+    # -------------------------------------------------------------
+    celltype_order = _compute_celltype_uniform_significance_order(
+        results, prop_df.index, significance_level
+    )
+
+    # -------------------------------------------------------------
     # (A) Original heatmap (same filename), but with robust scaling
     #     so near-zero differences become visible.
+    #     NOTE: This heatmap keeps original ordering (not reordered by significance)
     # -------------------------------------------------------------
     plot_mat = group_prop.T  # Groups × Cell Types
 
@@ -452,36 +573,32 @@ def _proportion_test_visualization(
     # -------------------------------------------------------------
     # (B) Logit-scale heatmap of group-averaged proportions
     #     (closer to the testing scale).
+    #     Cell types ordered by uniform significance across groups.
+    #     Per-column normalization to show nuances within each cell type.
     # -------------------------------------------------------------
+    # Reorder columns (cell types) by uniform significance
+    plot_mat_ordered = plot_mat[[ct for ct in celltype_order if ct in plot_mat.columns]]
+    
     eps = 1e-6
-    logit_mat = np.log(np.clip(plot_mat, eps, 1 - eps) / (1 - np.clip(plot_mat, eps, 1 - eps)))
+    logit_mat = np.log(np.clip(plot_mat_ordered, eps, 1 - eps) / (1 - np.clip(plot_mat_ordered, eps, 1 - eps)))
 
-    finite_vals = logit_mat.to_numpy().ravel()
-    finite_vals = finite_vals[np.isfinite(finite_vals)]
-    if finite_vals.size == 0:
-        lvmin, lvmax = -5.0, 5.0
-    else:
-        lo = float(np.quantile(finite_vals, 0.02))
-        hi = float(np.quantile(finite_vals, 0.98))
-        if not np.isfinite(lo) or not np.isfinite(hi) or lo == hi:
-            lo, hi = float(np.nanmin(finite_vals)), float(np.nanmax(finite_vals))
-        pad = 0.05 * (hi - lo) if hi > lo else 1.0
-        lvmin, lvmax = lo - pad, hi + pad
+    # Normalize per column (per cell type) to 0-1 range
+    logit_mat_normalized = _normalize_per_column(logit_mat)
 
     plt.figure(figsize=(12, 8))
     ax = sns.heatmap(
-        logit_mat,
+        logit_mat_normalized,
         cmap="viridis",
         annot=False,
         cbar=True,
         linewidths=0.5,
         linecolor="white",
-        vmin=lvmin,
-        vmax=lvmax,
-        cbar_kws={"label": "logit(Mean proportion)"},
+        vmin=0.0,
+        vmax=1.0,
+        cbar_kws={"label": "Relative logit (per cell type, 0=min, 1=max)"},
     )
-    ax.set_title("Cell Type Proportions (Group-averaged, logit scale)", pad=16)
-    ax.set_xlabel("Cell Types")
+    ax.set_title("Cell Type Proportions (logit scale, per-celltype normalized)\nOrdered by uniform significance", pad=16)
+    ax.set_xlabel("Cell Types (ordered by uniform significance)")
     ax.set_ylabel("Groups")
     plt.xticks(rotation=45, ha="right")
     plt.yticks(rotation=0)
@@ -492,38 +609,34 @@ def _proportion_test_visualization(
     # -------------------------------------------------------------
     # (C) Per-celltype z-score across groups (row-wise on Groups × Cell Types)
     #     Highlights relative changes within each cell type.
+    #     Cell types ordered by uniform significance across groups.
+    #     This is already per-column normalized by definition of z-score.
     # -------------------------------------------------------------
-    z = plot_mat.copy().astype(float)
+    z = plot_mat_ordered.copy().astype(float)
     # z-score per column (cell type) across groups
     col_mean = z.mean(axis=0)
     col_std = z.std(axis=0, ddof=0).replace(0, np.nan)
     z = (z - col_mean) / col_std
     z = z.replace([np.inf, -np.inf], np.nan)
 
-    finite_vals = z.to_numpy().ravel()
-    finite_vals = finite_vals[np.isfinite(finite_vals)]
-    if finite_vals.size == 0:
-        zvmin, zvmax = -2.0, 2.0
-    else:
-        zvmin = float(np.quantile(finite_vals, 0.02))
-        zvmax = float(np.quantile(finite_vals, 0.98))
-        if not np.isfinite(zvmin) or not np.isfinite(zvmax) or zvmin == zvmax:
-            zvmin, zvmax = float(np.nanmin(finite_vals)), float(np.nanmax(finite_vals))
+    # For z-scores, we use a symmetric color scale centered at 0
+    # But normalize to show the range within each column
+    z_normalized = _normalize_per_column(z)
 
     plt.figure(figsize=(12, 8))
     ax = sns.heatmap(
-        z,
+        z_normalized,
         cmap="viridis",
         annot=False,
         cbar=True,
         linewidths=0.5,
         linecolor="white",
-        vmin=zvmin,
-        vmax=zvmax,
-        cbar_kws={"label": "Z-score within cell type"},
+        vmin=0.0,
+        vmax=1.0,
+        cbar_kws={"label": "Relative z-score (per cell type, 0=min, 1=max)"},
     )
-    ax.set_title("Cell Type Proportions (Relative shifts per cell type)", pad=16)
-    ax.set_xlabel("Cell Types")
+    ax.set_title("Cell Type Proportions (z-score, per-celltype normalized)\nOrdered by uniform significance", pad=16)
+    ax.set_xlabel("Cell Types (ordered by uniform significance)")
     ax.set_ylabel("Groups")
     plt.xticks(rotation=45, ha="right")
     plt.yticks(rotation=0)
@@ -534,11 +647,14 @@ def _proportion_test_visualization(
     # -------------------------------------------------------------
     # (D) Optional: significance presence matrix across all pairwise tests
     #     (cell type × comparison), 1 if significant else 0.
+    #     Cell types ordered by uniform significance.
     # -------------------------------------------------------------
     try:
         comp_names = sorted(results.keys())
         if len(comp_names) > 0:
-            sig_mat = pd.DataFrame(index=plot_mat.columns, columns=comp_names, dtype=float)
+            # Use the ordered cell types
+            ordered_celltypes = [ct for ct in celltype_order if ct in plot_mat.columns]
+            sig_mat = pd.DataFrame(index=ordered_celltypes, columns=comp_names, dtype=float)
             for comp in comp_names:
                 df = results[comp]
                 sig = df.set_index("celltype")["FDR"] < significance_level
@@ -557,9 +673,9 @@ def _proportion_test_visualization(
                 vmax=1.0,
                 cbar_kws={"label": f"Significant (FDR < {significance_level})"},
             )
-            ax.set_title("Differential Proportion Significance (across comparisons)", pad=16)
+            ax.set_title("Differential Proportion Significance (across comparisons)\nOrdered by uniform significance", pad=16)
             ax.set_xlabel("Comparisons")
-            ax.set_ylabel("Cell Types")
+            ax.set_ylabel("Cell Types (ordered by uniform significance)")
             plt.xticks(rotation=45, ha="right")
             plt.yticks(rotation=0)
             plt.tight_layout()

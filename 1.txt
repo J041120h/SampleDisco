@@ -1,108 +1,11 @@
-================================================================================
-DEBUG: Cell Type Loading Investigation
-================================================================================
+Dataset shape: (333202, 38606)
+Number of cells: 333202
+Number of genes: 38606
 
-[1] Loading h5ad file...
-    Path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/preprocess/adata_sample.h5ad
-    Shape: 987397 cells × 10175 features
+✓ Gene 'CD4' is found in the dataset!
 
-[2] Checking adata.obs columns:
-    Available columns: ['sample', 'sev.level', 'balancing_weight', 'modality', 'original_barcode', 'cell_type', 'label_transfer_confidence', 'cell_type_original', 'celltypist_conf_score', 'original_sample', 'age_cluster', 'batch', 'sex', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'n_genes']
+Gene information:
+Series([], Name: CD4, dtype: float64)
 
-[3] Cell types BEFORE loading CSV:
-    Column: 'cell_type'
-    Data type: category
-    Unique values (5):
-cell_type
-CD4n T           456153
-CD14 Monocyte    313522
-CD8m T           136483
-B                 77178
-Platelet           4061
-Name: count, dtype: int64
-
-    First 20 values:
-['CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte']
-
-    Do they look like integers? False
-
-[4] Loading CSV file...
-    Path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/resolutions/resolution_0.050_expression/preprocess/cell_type.csv
-    Shape: (987397, 3)
-    Columns: ['cell_id', 'cell_type', 'modality']
-
-[5] Cell types IN CSV:
-    Data type: object
-    Unique values (5):
-cell_type
-CD4n T           456153
-CD14 Monocyte    313522
-CD8m T           136483
-B                 77178
-Platelet           4061
-Name: count, dtype: int64
-
-    First 20 values:
-['CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD8m T', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte', 'CD14 Monocyte']
-
-    Do they look like integers? False
-
-[6] Checking cell ID overlap:
-    Cells in h5ad: 987397
-    Cells in CSV: 987397
-    Common cells: 987397
-    Overlap percentage: 100.00%
-
-    Example common cell IDs:
-    ['CoV-1.1-Wilk:TAAGCAGTGGTA_RNA', 'CoV-1.1-Wilk:AAGCAGTGGTAT_RNA', 'CoV-1.1-Wilk:TGACGGCGCTTT_RNA', 'CoV-1.1-Wilk:CTAAGCAGTGGT_RNA', 'CoV-1.1-Wilk:ACCGGCGGCCAC_RNA']
-
-[7] Simulating CSV loading (as code does):
-    Converting categorical to string...
-
-    Cell type values for first 10 common cells:
-    Cell ID                                  Before               After (from CSV)    
-    ---------------------------------------- -------------------- --------------------
-    CoV-1.1-Wilk:TAAGCAGTGGTA_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:AAGCAGTGGTAT_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:TGACGGCGCTTT_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:CTAAGCAGTGGT_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:ACCGGCGGCCAC_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:TTCGGATGCCCC_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:CCAACCTTAAAC_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:TCCCTCCCTAGA_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:ACCGCTTGTGTT_RNA            CD14 Monocyte        CD14 Monocyte       
-    CoV-1.1-Wilk:CGCCTCCCTACT_RNA            CD14 Monocyte        CD14 Monocyte       
-
-[8] Cell types AFTER loading CSV:
-    Unique values (5):
-cell_type
-CD4n T           456153
-CD14 Monocyte    313522
-CD8m T           136483
-B                 77178
-Platelet           4061
-Name: count, dtype: int64
-
-[9] Checking RNA cells (what will be annotated):
-    Total RNA cells: 898435
-    Unique cell types in RNA cells: 5
-    RNA cell type distribution:
-cell_type
-CD4n T           428812
-CD14 Monocyte    273776
-CD8m T           122879
-B                 69252
-Platelet           3716
-Name: count, dtype: int64
-
-[10] Summary:
-    ✓ CSV was loaded successfully
-    ✓ 987397 cells updated from CSV
-
-    ⚠ ISSUE IDENTIFIED:
-      CSV already contains annotated cell type names (not integers)
-      This CSV was likely overwritten by a previous annotation run
-
-================================================================================
-DEBUG COMPLETE
-================================================================================
+Sample of gene names (first 10):
+['DDX11L2', 'MIR1302-2HG', 'FAM138A', 'ENSG00000290826', 'OR4F5', 'ENSG00000238009', 'ENSG00000239945', 'ENSG00000239906', 'ENSG00000241860', 'ENSG00000241599']
