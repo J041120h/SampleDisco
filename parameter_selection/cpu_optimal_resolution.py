@@ -171,7 +171,7 @@ def find_optimal_cell_resolution(
                 n_expression_components=sample_embedding_dimension,
                 n_proportion_components=sample_embedding_dimension,
                 harmony_for_proportion=True,
-                preserve_cols=preserve_cols_in_sample_embedding,
+                preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
                 atac=False,
                 save=False,
                 verbose=False,

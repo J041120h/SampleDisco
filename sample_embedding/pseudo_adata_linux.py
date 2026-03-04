@@ -580,7 +580,7 @@ def compute_pseudobulk_adata_linux(
     sample_hvg_number: int = 2000,
     atac: bool = False,
     verbose: bool = False,
-    preserve_covarient_in_sample_embedding: Optional[Union[str, List[str]]] = None,
+    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
 ) -> Tuple[Dict, sc.AnnData]:
     """Wrapper returning backward-compatible dict plus final AnnData."""
     if verbose:
@@ -608,7 +608,7 @@ def compute_pseudobulk_adata_linux(
         atac=atac,
         verbose=verbose,
         combat_timeout=20.0,
-        preserve_cols_in_sample_embedding=preserve_covarient_in_sample_embedding,
+        preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
     )
 
     if verbose:

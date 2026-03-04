@@ -8,7 +8,6 @@ import sys
 
 # Add parent directory to path for absolute imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from typing import Dict, List, Optional, Tuple, Union
 import scanpy as sc
 from sample_embedding.DR import dimension_reduction
@@ -93,7 +92,7 @@ def calculate_sample_embedding(
             sample_hvg_number=sample_hvg_number,
             atac=atac,
             verbose=verbose,
-            preserve_covarient_in_sample_embedding=preserve_cols,
+            preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
         )
     else:
         from sample_embedding.pseudo_adata import compute_pseudobulk_adata
