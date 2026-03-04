@@ -8,9 +8,9 @@ import os
 import matplotlib.pyplot as plt
 from anndata import AnnData
 import time
-from code.sample_embedding.DR import dimension_reduction
+from sample_embedding.DR import dimension_reduction
 from preparation.Cell_type import cell_types
-from code.sample_embedding.pseudo_adata import compute_pseudobulk_adata 
+from sample_embedding.pseudo_adata import compute_pseudobulk_adata 
 from sklearn.preprocessing import StandardScaler
 from CCA import *
 from typing import Optional, Union, List

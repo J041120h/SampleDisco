@@ -235,7 +235,6 @@ def rna_wrapper(
         print("Starting cell type clustering at resolution:", leiden_cluster_resolution)
 
         cell_types_func = cell_types_linux if (linux_system and use_gpu) else cell_types
-        
         AnnData_cell, AnnData_sample = cell_types_func(
             anndata_cell=AnnData_cell,
             anndata_sample=AnnData_sample,

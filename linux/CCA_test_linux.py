@@ -7,7 +7,7 @@ from typing import List
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from code.sample_embedding.DR import dimension_reduction
+from sample_embedding.DR import dimension_reduction
 from CCA_test import * 
 from preparation.Cell_type_linux import cell_types_linux
 from code.sample_embedding.pseudo_adata_linux import compute_pseudobulk_adata_linux

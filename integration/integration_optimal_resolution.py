@@ -34,7 +34,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from integration.integration_cell_type import cell_types_multiomics
 from integration.integration_visualization import *
-from code.sample_embedding.DR import dimension_reduction
+from csample_embedding.DR import dimension_reduction
 from CCA import *
 from CCA_test import *
 

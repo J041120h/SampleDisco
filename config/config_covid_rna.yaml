@@ -16,6 +16,7 @@ use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true
+large_data_need_extra_memory: false
 
 # ========================================
 # RNA PIPELINE PARAMETERS
@@ -27,9 +28,8 @@ rna_output_dir: null
 
 # RNA Process Control Flags
 rna_preprocessing: false
-rna_cell_type_cluster: true
-rna_dimensionality_reduction: false
-rna_cca_optimal_cell_resolution: false
+rna_cell_type_cluster: false
+rna_dimensionality_reduction: true
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
@@ -78,23 +78,21 @@ rna_cell_type_annotation_custom_model_path: null
 
 # RNA Pseudobulk Parameters
 rna_celltype_col: "cell_type"
-rna_pseudobulk_output_dir: null
-rna_num_sample_hvgs: 2000
+rna_sample_hvg_number: 2000
 rna_pseudobulk_verbose: true
 rna_preserve_cols_for_sample_embedding: null
 
 # RNA PCA Parameters
-rna_expression_embedding_num_pcs: 10
-rna_proportion_embedding_num_pcs: 5
+rna_n_expression_components: 10
+rna_n_proportion_components: 10
 rna_harmony_for_proportion: true
-rna_dr_output_dir: null
 rna_dr_verbose: true
 
 # RNA Trajectory Analysis Parameters
 rna_trajectory_supervised: true
-rna_cca_num_components: 10
-rna_cca_output_dir: null
+rna_n_components_for_cca: 10
 rna_sev_col_cca: "sev.level"
+rna_cca_optimal_cell_resolution: false
 rna_cca_pvalue: true
 rna_trajectory_verbose: true
 rna_tscan_origin: null
@@ -106,12 +104,10 @@ rna_top_n_genes: 100
 rna_trajectory_diff_gene_covariate: null
 rna_num_splines: 5
 rna_spline_order: 3
-rna_trajectory_diff_gene_output_dir: null
 rna_visualization_gene_list: null
 rna_visualize_all_deg: true
 rna_top_n_heatmap: 50
 rna_trajectory_diff_gene_verbose: true
-rna_n_pcs_for_null: 10
 
 # RNA Distance Methods
 rna_summary_sample_csv_path: null
@@ -171,7 +167,8 @@ atac_pseudobulk_adata_path: null
 
 # ATAC Column specifications
 atac_sample_col: "sample"
-atac_batch_col: 'tissue'
+atac_batch_col:
+  - "tissue"
 atac_cell_type_column: "cell_type"
 atac_grouping_columns:
   - "sev.level"
@@ -201,6 +198,7 @@ atac_n_pcs: 30
 atac_leiden_resolution: 0.9
 atac_existing_cell_types: false
 atac_n_target_cell_clusters: null
+atac_preserve_cols_for_sample_embedding: null
 
 # ATAC UMAP parameters
 atac_umap_min_dist: 0.3
@@ -212,7 +210,6 @@ atac_plot_dpi: 300
 atac_pseudobulk_output_dir: null
 atac_pseudobulk_n_features: 40000
 atac_pseudobulk_verbose: true
-atac_preserve_cols_for_sample_embedding: null
 
 # ATAC PCA parameters
 atac_dr_output_dir: null
@@ -318,46 +315,48 @@ multiomics_atac_sample_meta_file: null
 multiomics_additional_hvg_file: '/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt'
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
-multiomics_sample_column: "sample"
 multiomics_sample_col: "sample"
 multiomics_batch_col: null
 multiomics_celltype_col: "cell_type"
+multiomics_modality_col: "modality"
 multiomics_verbose: true
 multiomics_use_gpu: true
-large_data_need_extra_memory: true
 multiomics_random_state: 42
 
-# Multiomics GLUE Integration Parameters
+# Multiomics GLUE Preprocessing Parameters
 multiomics_ensembl_release: 98
 multiomics_species: "homo_sapiens"
 multiomics_use_highly_variable: true
 multiomics_n_top_genes: 1500
 multiomics_n_pca_comps: 50
 multiomics_n_lsi_comps: 50
-multiomics_lsi_n_iter: 15
 multiomics_gtf_by: "gene_name"
 multiomics_flavor: "seurat_v3"
 multiomics_generate_umap: false
 multiomics_compression: "gzip"
-multiomics_metadata_sep: ","
+
+# Multiomics GLUE Training Parameters
 multiomics_consistency_threshold: 0.05
-treat_sample_as_batch: false
+multiomics_treat_sample_as_batch: false
 multiomics_save_prefix: "glue"
+
+# Multiomics GLUE Gene Activity Parameters
 multiomics_k_neighbors: 200
 multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
+
+# Multiomics GLUE Cell Type Parameters
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: null
 multiomics_cluster_resolution: 1.00
 multiomics_use_rep_celltype: "X_glue"
-multiomics_method: "average"
-multiomics_metric_celltype: "euclidean"
-multiomics_distance_mode: "centroid"
+multiomics_markers: null
 multiomics_generate_umap_celltype: true
+
+# Multiomics GLUE Visualization Parameters
 multiomics_plot_columns: null
 
 # Multiomics Integration Preprocessing Parameters
-multiomics_integrate_output_dir: null
 multiomics_min_cells_sample: 1
 multiomics_min_cell_gene: 10
 multiomics_min_features: 500
@@ -365,29 +364,14 @@ multiomics_pct_mito_cutoff: 20
 multiomics_exclude_genes: null
 multiomics_doublet: true
 
-# Multiomics Combined Dimensionality Reduction Parameters
-# Pseudobulk Parameters
-multiomics_pseudobulk_output_dir: null
-multiomics_save: true
-multiomics_n_features: 2000
-multiomics_normalize: true
-multiomics_target_sum: 10000.0
-multiomics_atac: false
+# Multiomics Dimensionality Reduction Parameters
+multiomics_sample_hvg_number: 2000
 multiomics_preserve_cols_for_sample_embedding: null
-
-# PCA Parameters
-multiomics_pca_sample_col: "sample"
-multiomics_n_expression_pcs: 10
-multiomics_n_proportion_pcs: 10
+multiomics_n_expression_components: 10
+multiomics_n_proportion_components: 10
 multiomics_harmony_for_proportion: true
-multiomics_pca_output_dir: null
-multiomics_integrated_data: false
-multiomics_not_save: false
-multiomics_pca_atac: false
-multiomics_use_snapatac2_dimred: false
 
 # Multiomics Visualization Parameters
-multiomics_modality_col: "modality"
 multiomics_color_col: "modality"
 multiomics_visualization_grouping_column:
   - "age"
@@ -398,26 +382,15 @@ multiomics_figsize: [20, 8]
 multiomics_point_size: 60
 multiomics_alpha: 0.8
 multiomics_colormap: "viridis"
-multiomics_viz_output_dir: null
 multiomics_show_sample_names: false
 multiomics_force_data_type: null
 
 # Multiomics Optimal Resolution Parameters
 multiomics_optimization_target: "rna"
-multiomics_dr_type: "expression"
-multiomics_resolution_n_features: 40000
 multiomics_sev_col: "sev.level"
-multiomics_resolution_batch_col: null
-multiomics_resolution_sample_col: "sample"
-multiomics_resolution_modality_col: "modality"
 multiomics_resolution_use_rep: "X_glue"
-multiomics_num_dr_components: 30
 multiomics_num_pcs: 20
-multiomics_num_pvalue_simulations: 1000
-multiomics_n_pcs: 2
-multiomics_compute_pvalues: true
-multiomics_visualize_embeddings: true
-multiomics_resolution_output_dir: null
+multiomics_visualize_cell_types: true
 
 # Multiomics Paths for Skipping Steps
 multiomics_integrated_h5ad_path: null

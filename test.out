@@ -44,36 +44,123 @@ Resuming process from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function with provided parameters...
-Starting cell type clustering at resolution: 0.99
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] Standard Leiden (resolution=0.99)
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Generating UMAP plots...
-[generate_umap_visualizations] Generating UMAP plots...
-[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (14 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/test/rna/preprocess/umap_cell_type.png
-[cell_types] Assigning cell_type to anndata_sample
-[cell_types] Saved cell type CSV to /dcs07/hongkai/data/harry/result/test/rna/preprocess/cell_type.csv
-[cell_types] Saved output anndatas to preprocess/
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
+Starting dimensionality reduction...
+[Pseudobulk] Input: 44416 cells, 10032 genes
+[Pseudobulk] Data appears to be raw counts, will normalize after pseudobulk aggregation
+[Pseudobulk] Using CPU
+[Pseudobulk] 25 samples, 14 cell types
+[Pseudobulk] Batch correction: ['batch']
+[Pseudobulk] Phase 1: Aggregating...
+  Aggregating 44416 cells -> 25 samples x 14 cell types
+  Created 14 cell type layers
+[Pseudobulk] Phase 2: Processing cell types...
+  [1/14] 1
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [2/14] 10
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [3/14] 11
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [4/14] 12
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [5/14] 13
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [6/14] 14
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [7/14] 2
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [8/14] 3
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [9/14] 4
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [10/14] 5
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [11/14] 6
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [12/14] 7
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [13/14] 8
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+  [14/14] 9
+    Batches: 6, sizes: 3-10
+    Applied ComBat
+    Selected 2000 HVGs
+[Pseudobulk] Retained 14 cell types
+[Pseudobulk] Phase 3: Building final matrix...
+[Pseudobulk] Final features: 2000
+[Pseudobulk] Phase 4: Computing proportions...
+[Pseudobulk] Complete (6.1s)
+[Pseudobulk] Extracting sample metadata...
+[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
+[Pseudobulk] Output: 25 samples, 2000 features
+[DimRed] Starting dimension reduction computation...
+[DimRed] Mode: RNA (PCA)
+[DimRed] Batch column(s): ['batch']
+[DimRed] Output directory: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk
+[DimRed] Components: expression=10, proportion=10
+[DimRed] Computing PCA for RNA data with 10 components on (25, 2000) data
+[PCA] Success. Shape: (25, 10)
+[Storage] Stored X_DR_expression in both objects (shape: (25, 10))
+[DimRed] Completed - results stored as X_DR_expression
+[DimRed] Expression dimension reduction completed
+[Proportion] Computing PCA with 10 components...
+[Harmony] Applying with batch column(s): ['batch']
+[Harmony] Completed with 1 batch factor(s)
+[Storage] Stored X_DR_proportion in both objects (shape: (25, 10))
+[Proportion] Completed using Harmony-integrated PCA. Shape: (25, 10)
+[DimRed] Proportion dimension reduction completed
+[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/test/rna/embeddings/sample_expression_embedding.csv (shape: (25, 10))
+[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/test/rna/embeddings/sample_proportion_embedding.csv (shape: (25, 10))
+[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/test/rna/embeddings
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] Successfully saved pseudobulk_anndata (0.5 MB)
 
-✗ RNA pipeline failed with error: [Errno 2] Unable to synchronously open file (unable to open file: name = '/dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
+[DimRed] === SUMMARY ===
+Runtime: 0.32s
+Expression: Success
+Proportion: Success
+RNA analysis completed successfully!
+
+RNA pipeline completed successfully!
 
 ============================================================
 PIPELINE EXECUTION SUMMARY
 ============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✗
-  - trajectory_analysis: ✗
-  - trajectory_dge: ✗
-  - cluster_dge: ✗
-  - visualization: ✗
+RNA Pipeline: PARTIAL
+  - preprocessing: Done
+  - cell_type_cluster: Done
+  - dimensionality_reduction: Done
+  - sample_distance_calculation: Pending
+  - trajectory_analysis: Pending
+  - trajectory_dge: Pending
+  - cluster_dge: Done
+  - visualization: Pending
 
 Results saved to: /dcs07/hongkai/data/harry/result/test
 Status file: /dcs07/hongkai/data/harry/result/test/sys_log/main_process_status.json
-Execution time: 73.1769 seconds
+Execution time: 7.4152 seconds

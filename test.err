@@ -1,21 +1,8 @@
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 639, in wrapper
-    rna_results = rna_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 373, in rna_wrapper
-    pseudobulk_adata = sc.read(temp_pseudobulk_path)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py", line 82, in fn_compatible
-    return fn(*args_all, **kw)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scanpy/readwrite.py", line 145, in read
-    return _read(
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scanpy/readwrite.py", line 773, in _read
-    return read_h5ad(filename, backed=backed)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/anndata/_io/h5ad.py", line 234, in read_h5ad
-    with h5py.File(filename, "r") as f:
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/files.py", line 564, in __init__
-    fid = make_fid(name, mode, userblock_size, fapl, fcpl, swmr=swmr)
-  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/h5py/_hl/files.py", line 238, in make_fid
-    fid = h5f.open(name, flags, fapl=fapl)
-  File "h5py/_objects.pyx", line 56, in h5py._objects.with_phil.wrapper
-  File "h5py/_objects.pyx", line 57, in h5py._objects.with_phil.wrapper
-  File "h5py/h5f.pyx", line 102, in h5py.h5f.open
-FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = '/dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
+2026-03-04 10:42:09,617 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-03-04 10:42:09,677 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-03-04 10:42:09,677 - harmonypy - INFO - Iteration 1 of 30
+2026-03-04 10:42:09,723 - harmonypy - INFO - Iteration 2 of 30
+2026-03-04 10:42:09,739 - harmonypy - INFO - Iteration 3 of 30
+2026-03-04 10:42:09,755 - harmonypy - INFO - Iteration 4 of 30
+2026-03-04 10:42:09,769 - harmonypy - INFO - Iteration 5 of 30
+2026-03-04 10:42:09,801 - harmonypy - INFO - Converged after 5 iterations

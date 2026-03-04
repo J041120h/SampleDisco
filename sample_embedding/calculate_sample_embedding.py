@@ -4,11 +4,14 @@ Sample embedding calculation wrapper.
 """
 
 import os
+import sys
+
+# Add parent directory to path for absolute imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from typing import Dict, List, Optional, Tuple, Union
-
 import scanpy as sc
-
-from dimension_reduction import dimension_reduction
+from sample_embedding.DR import dimension_reduction
 from utils.random_seed import set_global_seed
 
 
@@ -78,7 +81,7 @@ def calculate_sample_embedding(
     os.makedirs(os.path.join(output_dir, "pseudobulk"), exist_ok=True)
 
     if use_gpu:
-        from pseudo_adata_linux import compute_pseudobulk_adata_linux
+        from sample_embedding.pseudo_adata_linux import compute_pseudobulk_adata_linux
         
         pseudobulk_result_dict, pseudobulk_adata = compute_pseudobulk_adata_linux(
             adata=adata,
@@ -93,7 +96,7 @@ def calculate_sample_embedding(
             preserve_covarient_in_sample_embedding=preserve_cols,
         )
     else:
-        from pseudo_adata import compute_pseudobulk_adata
+        from sample_embedding.pseudo_adata import compute_pseudobulk_adata
         
         pseudobulk_result_dict, pseudobulk_adata = compute_pseudobulk_adata(
             adata=adata,

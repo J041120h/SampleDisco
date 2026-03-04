@@ -9,7 +9,7 @@ from pathlib import Path
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from code.sample_embedding.calculate_sample_embedding import calculate_sample_embedding
+from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
 from integration.integration_glue import *
 from integration.integration_preprocess import *
 from integration.integration_CCA_test import *
