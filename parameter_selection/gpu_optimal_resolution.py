@@ -3,122 +3,19 @@ from anndata import AnnData
 import scanpy as sc
 import pandas as pd
 from sklearn.cross_decomposition import CCA
-from typing import List
+from typing import List, Optional, Union
 import numpy as np
 import os
+import time
 import matplotlib.pyplot as plt
-from sample_embedding.DR import dimension_reduction
-from CCA_test import * 
-from preparation.Cell_type_linux import cell_types_linux
-from code.sample_embedding.pseudo_adata_linux import compute_pseudobulk_adata_linux
+import sys
 
-def cca_pvalue_test_linux(
-    pseudo_adata,
-    column: str,
-    input_correlation: float,
-    output_directory: str,
-    num_simulations: int = 1000,
-    sev_col: str = "sev.level",
-    verbose: bool = True
-):
-    """
-    Perform CCA p-value test using pseudo anndata (sample by gene) - Linux GPU version.
-    
-    Parameters:
-    -----------
-    pseudo_adata : AnnData
-        Pseudo anndata object
-    column : str
-        Key in pseudo_adata.uns containing coordinates
-    input_correlation : float
-        Observed correlation to test against
-    output_directory : str
-        Directory to save results
-    num_simulations : int
-        Number of permutation simulations (default: 1000)
-    sev_col : str
-        Column name for severity levels (default: "sev.level")
-    verbose : bool
-        Whether to print timing information (default: True)
-    """
-    import os
-    import time
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from sklearn.cross_decomposition import CCA
-    
-    start_time = time.time() if verbose else None
-    output_directory = os.path.join(output_directory, "CCA_test")
-    os.makedirs(output_directory, exist_ok=True)
-    
-    try:
-        # Extract coordinates from pseudo_adata.uns
-        pca_coords = pseudo_adata.uns[column]
-        if pca_coords.shape[1] < 2:
-            raise ValueError("Coordinates must have at least 2 components for 2D analysis.")
-        
-        # Get first 2 components
-        pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, "iloc") else pca_coords[:, :2]
-        
-        # Check if severity column exists
-        if sev_col not in pseudo_adata.obs.columns:
-            raise KeyError(f"pseudo_adata.obs must have a '{sev_col}' column.")
-        
-        # Get severity levels directly from pseudo_adata.obs
-        sev_levels = pseudo_adata.obs[sev_col].values
-        
-        if len(sev_levels) != pca_coords_2d.shape[0]:
-            raise ValueError("Mismatch between number of coordinate rows and number of samples.")
-        
-        # Reshape for CCA (needs 2D array)
-        sev_levels_1d = sev_levels.flatten()
-        
-        # Perform permutation test
-        simulated_scores = []
-        for i in range(num_simulations):
-            if verbose and i % 100 == 0:
-                print(f"Permutation {i}/{num_simulations}")
-                
-            permuted = np.random.permutation(sev_levels_1d).reshape(-1, 1)
-            cca = CCA(n_components=1)
-            cca.fit(pca_coords_2d, permuted)
-            U, V = cca.transform(pca_coords_2d, permuted)
-            corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-            simulated_scores.append(corr)
-        
-        simulated_scores = np.array(simulated_scores)
-        p_value = np.mean(simulated_scores >= input_correlation)
-        
-        # Plot the permutation distribution
-        plt.figure(figsize=(8, 5))
-        plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
-        plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
-                   label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
-        plt.xlabel('Simulated Correlation Scores')
-        plt.ylabel('Frequency')
-        plt.title('Permutation Test: CCA Correlations')
-        plt.legend()
-        plot_path = os.path.join(output_directory, f"cca_pvalue_distribution_{column}.png")
-        plt.savefig(plot_path, dpi=300)
-        plt.close()
-        
-        # Save results to file
-        with open(os.path.join(output_directory, f"cca_pvalue_result_{column}.txt"), "w") as f:
-            f.write(f"Observed correlation: {input_correlation}\n")
-            f.write(f"P-value: {p_value}\n")
-            f.write(f"Simulations completed: {num_simulations}\n")
-            f.write(f"Runtime: {time.time() - start_time:.2f} seconds\n")
-        
-        print(f"P-value for observed correlation {input_correlation}: {p_value}")
-        
-        if verbose:
-            print(f"[CCA p-test] Runtime: {time.time() - start_time:.2f} seconds")
-        
-        return p_value
-    
-    except Exception as e:
-        print(f"Error in CCA p-value test: {str(e)}")
-        return np.nan
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from sample_embedding.DR import dimension_reduction
+from sample_trajectory.CCA_test import * 
+from preparation.Cell_type_linux import cell_types_linux
+from sample_embedding.pseudo_adata_linux import compute_pseudobulk_adata_linux
+
 
 def find_optimal_cell_resolution_linux(
     AnnData_cell: AnnData,

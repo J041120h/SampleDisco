@@ -46,7 +46,7 @@ def wrapper(
     # RNA Process Control Flags
     rna_preprocessing: bool = True,
     rna_cell_type_cluster: bool = True,
-    rna_dimensionality_reduction: bool = True,
+    rna_derive_sample_embedding: bool = True,
     rna_sample_distance_calculation: bool = True,
     rna_trajectory_analysis: bool = True,
     rna_trajectory_dge: bool = True,
@@ -55,14 +55,14 @@ def wrapper(
     rna_visualize_data: bool = True,
     
     # RNA Paths for Skipping Processes
-    rna_anndata_cell_path: Optional[str] = None,
-    rna_anndata_sample_path: Optional[str] = None,
-    rna_pseudobulk_adata_path: Optional[str] = None,
+    rna_adata_cell_path: Optional[str] = None,
+    rna_adata_sample_path: Optional[str] = None,
+    rna_pseudo_adata_path: Optional[str] = None,
     
     # RNA Basic Parameters
     rna_sample_col: str = 'sample',
     rna_grouping_columns: List[str] = None,
-    rna_cell_type_column: str = 'cell_type',
+    rna_celltype_col: str = 'cell_type',
     rna_cell_meta_path: Optional[str] = None,
     rna_batch_col: List[str] = None,
     rna_leiden_cluster_resolution: float = 0.8,
@@ -75,7 +75,6 @@ def wrapper(
     rna_pct_mito_cutoff: int = 20,
     rna_exclude_genes: Optional[List] = None,
     rna_doublet: bool = True,
-    rna_method: str = 'average',
     rna_metric: str = 'euclidean',
     rna_distance_mode: str = 'centroid',
     rna_vars_to_regress: Optional[List] = None,
@@ -92,16 +91,13 @@ def wrapper(
     rna_cell_type_annotation_custom_model_path: Optional[str] = None,
     
     # RNA Pseudobulk Parameters
-    rna_celltype_col: str = 'cell_type',
     rna_sample_hvg_number: int = 2000,
-    rna_pseudobulk_verbose: bool = True,
     rna_preserve_cols_for_sample_embedding: Optional[List[str]] = None,
     
     # RNA PCA Parameters
     rna_n_expression_components: int = 10,
     rna_n_proportion_components: int = 10,
     rna_harmony_for_proportion: bool = True,
-    rna_dr_verbose: bool = True,
     
     # RNA Trajectory Analysis Parameters
     rna_trajectory_supervised: bool = False,
@@ -109,7 +105,6 @@ def wrapper(
     rna_trajectory_col_cca: str = "sev.level",
     rna_cca_optimal_cell_resolution: bool = False,
     rna_cca_pvalue: bool = False,
-    rna_trajectory_verbose: bool = True,
     rna_tscan_origin: Optional[int] = None,
     
     # RNA Trajectory Differential Gene Parameters
@@ -122,14 +117,12 @@ def wrapper(
     rna_visualization_gene_list: Optional[List] = None,
     rna_visualize_all_deg: bool = True,
     rna_top_n_heatmap: int = 50,
-    rna_trajectory_diff_gene_verbose: bool = True,
     
     # RNA Distance Methods
     rna_summary_sample_csv_path: Optional[str] = None,
     rna_sample_distance_methods: Optional[List[str]] = None,
     
     # RNA Visualization Parameters
-    rna_verbose_visualization: bool = True,
     rna_trajectory_visualization_label: List[str] = None,
     rna_age_bin_size: Optional[int] = None,
     rna_age_column: str = 'age',
@@ -141,7 +134,7 @@ def wrapper(
     
     # RNA Cluster Based DEG
     rna_kmeans_based_cluster_flag: bool = False,
-    rna_tree_building_method: List[str] = None,
+    rna_tree_building_methods: List[str] = None,
     rna_proportion_test: bool = False,
     rna_raisin_analysis: bool = False,
     rna_cluster_distance_method: str = 'cosine',
@@ -449,7 +442,7 @@ def wrapper(
     default_pipeline_status = {
         "preprocessing": False,
         "cell_type_cluster": False,
-        "dimensionality_reduction": False,
+        "derive_sample_embedding": False,
         "sample_distance_calculation": False,
         "trajectory_analysis": False,
         "trajectory_dge": False,
@@ -468,7 +461,7 @@ def wrapper(
             "glue_cell_types": False,
             "glue_visualization": False,
             "integration_preprocessing": False,
-            "dimensionality_reduction": False,
+            "derive_sample_embedding": False,
             "embedding_visualization": False,
             "optimal_resolution": False
         },
@@ -514,8 +507,8 @@ def wrapper(
         rna_grouping_columns = ['sev.level']
     if rna_trajectory_visualization_label is None:
         rna_trajectory_visualization_label = ['sev.level']
-    if rna_tree_building_method is None:
-        rna_tree_building_method = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
+    if rna_tree_building_methods is None:
+        rna_tree_building_methods = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
     if rna_sample_distance_methods is None:
         rna_sample_distance_methods = ['cosine', 'correlation']
     if atac_grouping_columns is None:
@@ -548,7 +541,7 @@ def wrapper(
                 
                 preprocessing=rna_preprocessing,
                 cell_type_cluster=rna_cell_type_cluster,
-                DimensionalityReduction=rna_dimensionality_reduction,
+                derive_sample_embedding=rna_derive_sample_embedding,
                 sample_distance_calculation=rna_sample_distance_calculation,
                 trajectory_analysis=rna_trajectory_analysis,
                 trajectory_DGE=rna_trajectory_dge,
@@ -556,18 +549,18 @@ def wrapper(
                 cluster_DGE=rna_cluster_dge,
                 visualize_data=rna_visualize_data,
                 
-                AnnData_cell_path=rna_anndata_cell_path,
-                AnnData_sample_path=rna_anndata_sample_path,
-                pseudobulk_adata_path=rna_pseudobulk_adata_path,
+                adata_cell_path=rna_adata_cell_path,
+                adata_sample_path=rna_adata_sample_path,
+                pseudo_adata_path=rna_pseudo_adata_path,
                 
                 rna_sample_meta_path=rna_sample_meta_path,
                 grouping_columns=rna_grouping_columns,
-                cell_type_column=rna_cell_type_column,
+                celltype_col=rna_celltype_col,
                 cell_meta_path=rna_cell_meta_path,
                 batch_col=rna_batch_col,
                 leiden_cluster_resolution=rna_leiden_cluster_resolution,
                 cell_embedding_column=rna_cell_embedding_column,
-                cell_embedding_num_PCs=rna_cell_embedding_num_pcs,
+                cell_embedding_num_pcs=rna_cell_embedding_num_pcs,
                 num_harmony_iterations=rna_num_harmony_iterations,
                 num_cell_hvgs=rna_num_cell_hvgs,
                 min_cells=rna_min_cells,
@@ -575,7 +568,6 @@ def wrapper(
                 pct_mito_cutoff=rna_pct_mito_cutoff,
                 exclude_genes=rna_exclude_genes,
                 doublet=rna_doublet,
-                method=rna_method,
                 metric=rna_metric,
                 distance_mode=rna_distance_mode,
                 vars_to_regress=rna_vars_to_regress,
@@ -590,23 +582,19 @@ def wrapper(
                 rna_cell_type_annotation_model_name=rna_cell_type_annotation_model_name,
                 rna_cell_type_annotation_custom_model_path=rna_cell_type_annotation_custom_model_path,
                 
-                celltype_col=rna_celltype_col,
                 sample_hvg_number=rna_sample_hvg_number,
-                pseudobulk_verbose=rna_pseudobulk_verbose,
                 preserve_cols_for_sample_embedding=rna_preserve_cols_for_sample_embedding,
                 
                 n_expression_components=rna_n_expression_components,
                 n_proportion_components=rna_n_proportion_components,
                 rna_harmony_for_proportion=rna_harmony_for_proportion,
-                dr_verbose=rna_dr_verbose,
                 
                 trajectory_supervised=rna_trajectory_supervised,
                 n_components_for_cca=rna_n_components_for_cca,
                 trajectory_col_cca=rna_trajectory_col_cca,
                 cca_optimal_cell_resolution=rna_cca_optimal_cell_resolution,
                 cca_pvalue=rna_cca_pvalue,
-                trajectory_verbose=rna_trajectory_verbose,
-                TSCAN_origin=rna_tscan_origin,
+                tscan_origin=rna_tscan_origin,
                 
                 fdr_threshold=rna_fdr_threshold,
                 effect_size_threshold=rna_effect_size_threshold,
@@ -617,12 +605,10 @@ def wrapper(
                 visualization_gene_list=rna_visualization_gene_list,
                 visualize_all_deg=rna_visualize_all_deg,
                 top_n_heatmap=rna_top_n_heatmap,
-                trajectory_diff_gene_verbose=rna_trajectory_diff_gene_verbose,
                 
                 sample_distance_methods=rna_sample_distance_methods,
                 summary_sample_csv_path=rna_summary_sample_csv_path,
                 
-                verbose_Visualization=rna_verbose_visualization,
                 trajectory_visualization_label=rna_trajectory_visualization_label,
                 age_bin_size=rna_age_bin_size,
                 age_column=rna_age_column,
@@ -632,8 +618,8 @@ def wrapper(
                 plot_cell_type_proportions_pca_flag=rna_plot_cell_type_proportions_pca_flag,
                 plot_cell_type_expression_umap_flag=rna_plot_cell_type_expression_umap_flag,
                 
-                Kmeans_based_cluster_flag=rna_kmeans_based_cluster_flag,
-                Tree_building_method=rna_tree_building_method,
+                kmeans_based_cluster_flag=rna_kmeans_based_cluster_flag,
+                tree_building_methods=rna_tree_building_methods,
                 proportion_test=rna_proportion_test,
                 RAISIN_analysis=rna_raisin_analysis,
                 cluster_distance_method=rna_cluster_distance_method,

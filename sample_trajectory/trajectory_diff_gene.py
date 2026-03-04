@@ -27,10 +27,6 @@ from scipy.sparse import issparse
 from statsmodels.stats.multitest import multipletests
 from pygam import LinearGAM, s, f
 
-# =============================================================================
-# PSEUDOTIME LOADING (SINGLE PATH)
-# =============================================================================
-
 def _read_pseudotime_table(obj: Union[str, pd.DataFrame, Dict]) -> pd.DataFrame:
     """
     Coerce `obj` into a pandas DataFrame.
@@ -184,11 +180,6 @@ def load_sample_pseudotime(
 
     return aligned
 
-
-# =============================================================================
-# SPLINE PARAMETER UTILS
-# =============================================================================
-
 def calculate_optimal_spline_parameters(
     n_samples: int,
     default_num_splines: int = 5,
@@ -266,9 +257,6 @@ def prepare_gam_input_data_improved(
     filtered_sample_names = sample_names[sample_mask]
     filtered_meta = sample_meta.loc[filtered_sample_names].copy()
 
-    # -------------------------------------------------------------------------
-    # CRITICAL FIX: FORCE DENSE NUMPY ARRAY
-    # -------------------------------------------------------------------------
     if issparse(filtered_adata.X):
         if verbose:
             print(f"  → Converting sparse expression matrix to dense")
@@ -338,9 +326,6 @@ def prepare_gam_input_data_improved(
     return X, Y, gene_names
 
 
-# =============================================================================
-# GAM FITTING
-# =============================================================================
 def fit_gam_models_for_genes(
     X: pd.DataFrame,
     Y: pd.DataFrame,
@@ -500,10 +485,6 @@ def fit_gam_models_for_genes(
 
     return res_df.sort_values("fdr").reset_index(drop=True), gam_models
 
-
-# =============================================================================
-# EFFECT SIZE + REGULATION DIRECTION
-# =============================================================================
 def calculate_effect_size_and_direction(
     X: pd.DataFrame,
     Y: pd.DataFrame,
@@ -575,10 +556,6 @@ def calculate_effect_size_and_direction(
 
     return pd.DataFrame(effect_sizes, columns=["gene", "effect_size", "regulation"])
 
-
-# =============================================================================
-# DEG SELECTION
-# =============================================================================
 def determine_pseudoDEGs(
     results: pd.DataFrame,
     fdr_threshold: float,
@@ -621,10 +598,6 @@ def determine_pseudoDEGs(
 
     return results
 
-
-# =============================================================================
-# OUTPUT
-# =============================================================================
 
 def save_results(
     results_df: pd.DataFrame,
@@ -782,10 +755,6 @@ def generate_gene_visualizations(
     if verbose and error_count > 0:
         print(f"  → Visualization failed for {error_count} genes")
 
-
-# =============================================================================
-# SINGLE-TRAJECTORY RUNNER WITH INTEGRATED VISUALIZATION
-# =============================================================================
 def run_trajectory_gam_differential_gene_analysis(
     pseudobulk_adata: ad.AnnData,
     pseudotime_source: Union[str, pd.DataFrame, Dict],
@@ -962,9 +931,6 @@ def run_trajectory_gam_differential_gene_analysis(
             verbose=verbose
         )
 
-    # ==========================================================================
-    # Step 5: Generate Lamian-style visualizations
-    # ==========================================================================
     if generate_visualizations:
         if verbose:
             print("\n[5/5] Generating Lamian-style visualizations...")
