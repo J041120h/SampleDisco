@@ -3,8 +3,8 @@ import time
 import pandas as pd
 import scanpy as sc
 
-from pseudo_adata import *
-from DR import *
+from code.sample_embedding.pseudo_adata import *
+from code.sample_embedding.DR import *
 from preparation.Cell_type import *
 
 

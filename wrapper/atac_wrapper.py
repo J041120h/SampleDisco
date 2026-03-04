@@ -7,8 +7,8 @@ from ATAC_general_pipeline import run_scatac_pipeline
 from ATAC_cell_type import *
 from visualization.ATAC_visualization import DR_visualization_all
 from ATAC_CCA_test import find_optimal_cell_resolution_atac
-from pseudo_adata import compute_pseudobulk_adata
-from DR import dimension_reduction
+from code.sample_embedding.pseudo_adata import compute_pseudobulk_adata
+from code.sample_embedding.DR import dimension_reduction
 from CCA import CCA_Call
 from CCA_test import cca_pvalue_test
 from TSCAN import TSCAN

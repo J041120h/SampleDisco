@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 from anndata import AnnData
 import time
 from typing import List
-from DR import dimension_reduction
+from code.sample_embedding.DR import dimension_reduction
 from ATAC_cell_type import cell_types_atac
-from pseudo_adata import compute_pseudobulk_adata
+from code.sample_embedding.pseudo_adata import compute_pseudobulk_adata
 from CCA import *
 from CCA_test import *
 import warnings
