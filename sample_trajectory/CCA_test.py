@@ -12,8 +12,11 @@ from sample_embedding.DR import dimension_reduction
 from preparation.Cell_type import cell_types
 from sample_embedding.pseudo_adata import compute_pseudobulk_adata 
 from sklearn.preprocessing import StandardScaler
-from CCA import *
 from typing import Optional, Union, List
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from sample_trajectory.CCA import *
 
 
 def generate_null_distribution(pseudobulk_adata, column, trajectory_col,

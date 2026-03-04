@@ -7,14 +7,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from ATAC_general_pipeline import run_scatac_pipeline
 from ATAC_cell_type import cell_types_atac
 from visualization.ATAC_visualization import DR_visualization_all
-from ATAC_CCA_test import find_optimal_cell_resolution_atac
+from sample_trajectory.ATAC_CCA_test import find_optimal_cell_resolution_atac
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
-from CCA import CCA_Call
-from CCA_test import cca_pvalue_test
-from TSCAN import TSCAN
+from sample_trajectory.CCA import CCA_Call
+from sample_trajectory.CCA_test import cca_pvalue_test
+from sample_trajectory.TSCAN import TSCAN
 from sample_distance.sample_distance import sample_distance
 from cluster import cluster
-from trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
+from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
 from sample_clustering.RAISIN import raisinfit
 from sample_clustering.RAISIN_TEST import run_pairwise_tests
 from sample_clustering.proportion_test import proportion_test as run_proportion_test

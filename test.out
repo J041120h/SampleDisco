@@ -50,10 +50,10 @@ Starting trajectory analysis...
 CCA Analysis Summary:
   Proportion: score=0.4474 (PC2 + PC7)
   Expression: score=0.6209 (PC4 + PC9)
-P-value for observed correlation 0.4474130418938426: 0.089
+P-value for observed correlation 0.4474130418938426: 0.076
 [CCA p-test] Runtime: 1.44 seconds
-P-value for observed correlation 0.6208873572775876: 0.001
-[CCA p-test] Runtime: 1.40 seconds
+P-value for observed correlation 0.6208873572775876: 0.002
+[CCA p-test] Runtime: 1.42 seconds
 RNA analysis completed successfully!
 
 RNA pipeline completed successfully!
@@ -73,4 +73,4 @@ RNA Pipeline: PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/test
 Status file: /dcs07/hongkai/data/harry/result/test/sys_log/main_process_status.json
-Execution time: 7.3327 seconds
+Execution time: 7.1520 seconds

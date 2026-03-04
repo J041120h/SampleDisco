@@ -10,12 +10,12 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
-from integration.integration_glue import *
-from integration.integration_preprocess import *
-from integration.integration_CCA_test import *
-from integration.integration_optimal_resolution import *
-from integration.integration_visualization import *
-from integration.integration_cell_type import cell_types_multiomics
+from multi_omics.integration_glue import *
+from multi_omics.integration_preprocess import *
+from multi_omics.integration_CCA_test import *
+from multi_omics.integration_optimal_resolution import *
+from multi_omics.integration_visualization import *
+from multi_omics.integration_cell_type import cell_types_multiomics
 from utils.multi_omics_unify_optimal import replace_optimal_dimension_reduction
 
 def multiomics_wrapper(
