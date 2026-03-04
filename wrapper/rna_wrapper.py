@@ -1,10 +1,15 @@
-# Import required modules based on system
+#!/usr/bin/env python3
+"""
+RNA-seq analysis wrapper for single-cell data processing pipeline.
+"""
+
 import os
-import json
-import scanpy as sc
 import sys
+import scanpy as sc
+import pandas as pd
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
 from preparation.preprocess import preprocess
 from sample_distance.sample_distance import sample_distance
@@ -16,148 +21,187 @@ from parameter_selection.cpu_optimal_resolution import find_optimal_cell_resolut
 from sample_trajectory.TSCAN import TSCAN
 from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
 from cluster import cluster
-from sample_clustering.RAISIN import *
-from sample_clustering.RAISIN_TEST import *
+from sample_clustering.RAISIN import raisinfit
+from sample_clustering.RAISIN_TEST import run_pairwise_tests
 from sample_clustering.proportion_test import proportion_test as run_proportion_test
+
 
 def rna_wrapper(
     # ===== Required Parameters =====
-    rna_count_data_path=None,
-    rna_output_dir=None,
-    sample_col='sample',
+    rna_count_data_path: str = None,
+    rna_output_dir: str = None,
+    sample_col: str = 'sample',
     
     # ===== Process Control Flags =====
-    preprocessing=True,
-    cell_type_cluster=True,
-    derive_sample_embedding=True,
-    sample_distance_calculation=True,
-    trajectory_analysis=True,
-    trajectory_DGE=True,
-    sample_cluster=True,
-    cluster_DGE=True,
-    visualize_data=True,
+    preprocessing: bool = True,
+    cell_type_cluster: bool = True,
+    derive_sample_embedding: bool = True,
+    sample_distance_calculation: bool = True,
+    trajectory_analysis: bool = True,
+    trajectory_DGE: bool = True,
+    sample_cluster: bool = True,
+    cluster_DGE: bool = True,
+    visualize_data: bool = True,
     
     # ===== Paths for Skipping Processes =====
-    adata_cell_path=None,
-    adata_sample_path=None,
-    pseudo_adata_path=None,
+    adata_cell_path: str = None,
+    adata_sample_path: str = None,
+    pseudo_adata_path: str = None,
     
     # ===== Basic Parameters =====
-    rna_sample_meta_path=None,
-    grouping_columns=['sev.level'],
-    celltype_col='cell_type',
-    cell_meta_path=None,
-    batch_col=None,
-    leiden_cluster_resolution=0.8,
-    cell_embedding_column="X_pca_harmony",
-    cell_embedding_num_pcs=20,
-    num_harmony_iterations=30,
-    num_cell_hvgs=2000,
-    min_cells=500,
-    min_genes=500,
-    pct_mito_cutoff=20,
-    exclude_genes=None,
-    doublet=True,
-    metric='euclidean',
-    distance_mode='centroid',
-    vars_to_regress=None,
-    verbose=True,
+    rna_sample_meta_path: str = None,
+    grouping_columns: list = None,
+    celltype_col: str = 'cell_type',
+    cell_meta_path: str = None,
+    batch_col: str = None,
+    leiden_cluster_resolution: float = 0.8,
+    cell_embedding_column: str = "X_pca_harmony",
+    cell_embedding_num_pcs: int = 20,
+    num_harmony_iterations: int = 30,
+    num_cell_hvgs: int = 2000,
+    min_cells: int = 500,
+    min_genes: int = 500,
+    pct_mito_cutoff: float = 20,
+    exclude_genes: list = None,
+    doublet: bool = True,
+    metric: str = 'euclidean',
+    distance_mode: str = 'centroid',
+    vars_to_regress: list = None,
+    verbose: bool = True,
     
     # ===== Cell Type Clustering Parameters =====
-    existing_cell_types=False,
-    n_target_cell_clusters=None,
-    umap=False,
+    existing_cell_types: bool = False,
+    n_target_cell_clusters: int = None,
+    umap: bool = False,
     
     # ===== Cell Type Assignment Parameters =====
-    assign_save=True,
+    assign_save: bool = True,
     
     # ===== Cell Type Annotation Parameters =====
-    cell_type_annotation=False,
-    rna_cell_type_annotation_model_name=None,
-    rna_cell_type_annotation_custom_model_path=None,
+    cell_type_annotation: bool = False,
+    rna_cell_type_annotation_model_name: str = None,
+    rna_cell_type_annotation_custom_model_path: str = None,
     
-    # ===== Pseudobulk Parameters =====
-    sample_hvg_number=2000,
-    preserve_cols_for_sample_embedding=None,
-    
-    # ===== PCA Parameters =====
-    n_expression_components=10,
-    n_proportion_components=10,
-    rna_harmony_for_proportion=True,
+    # ===== Sample Embedding Parameters =====
+    sample_hvg_number: int = 2000,
+    preserve_cols_in_sample_embedding: list = None,
+    sample_embedding_dimension: int = 10,
+    harmony_for_proportion: bool = True,
     
     # ===== Trajectory Analysis Parameters =====
-    trajectory_supervised=False,
-    n_components_for_cca=2,
-    trajectory_col_cca="sev.level",
-    cca_optimal_cell_resolution=False,
-    cca_pvalue=False,
-    tscan_origin=None,
+    trajectory_supervised: bool = False,
+    n_cca_pcs: int = 2,
+    trajectory_col: str = "sev.level",
+    cca_optimal_cell_resolution: bool = False,
+    cca_pvalue: bool = False,
+    tscan_origin: str = None,
     
     # ===== Trajectory Differential Gene Parameters =====
-    fdr_threshold=0.05,
-    effect_size_threshold=1,
-    top_n_genes=100,
-    trajectory_diff_gene_covariate=None,
-    num_splines=5,
-    spline_order=3,
-    visualization_gene_list=None,
-    visualize_all_deg=True,
-    top_n_heatmap=50,
+    fdr_threshold: float = 0.05,
+    effect_size_threshold: float = 1,
+    top_n_genes: int = 100,
+    trajectory_diff_gene_covariate: list = None,
+    num_splines: int = 5,
+    spline_order: int = 3,
+    visualization_gene_list: list = None,
+    visualize_all_deg: bool = True,
+    top_n_heatmap: int = 50,
     
     # ===== Distance Methods =====
-    sample_distance_methods=None,
-    summary_sample_csv_path=None,
+    sample_distance_methods: list = None,
+    summary_sample_csv_path: str = None,
     
-    # ===== Updated Visualization Parameters =====
-    trajectory_visualization_label=['sev.level'],
-    age_bin_size=None,
-    age_column='age',
-    dot_size=3,
+    # ===== Visualization Parameters =====
+    trajectory_visualization_label: list = None,
+    age_bin_size: int = None,
+    age_column: str = 'age',
+    dot_size: int = 3,
+    plot_dendrogram_flag: bool = True,
+    plot_umap_by_cell_type_flag: bool = True,
+    plot_cell_type_proportions_pca_flag: bool = False,
+    plot_cell_type_expression_umap_flag: bool = False,
     
-    # Updated visualization flags to match new function
-    plot_dendrogram_flag=True,
-    plot_umap_by_cell_type_flag=True,
-    plot_cell_type_proportions_pca_flag=False,
-    plot_cell_type_expression_umap_flag=False,
+    # ===== Cluster Based Analysis =====
+    kmeans_based_cluster_flag: bool = False,
+    tree_building_methods: list = None,
+    proportion_test: bool = False,
+    RAISIN_analysis: bool = False,
+    cluster_distance_method: str = 'cosine',
+    cluster_number: int = 4,
+    user_provided_sample_to_clade: dict = None,
+    cluster_differential_gene_group_col: str = None,
     
-    # ===== Cluster Based DEG =====
-    kmeans_based_cluster_flag=False,
-    tree_building_methods=['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA'],
-    proportion_test=False,
-    RAISIN_analysis=False,
-    cluster_distance_method='cosine',
-    cluster_number=4,
-    user_provided_sample_to_clade=None,
-    cluster_differential_gene_group_col=None,
+    # ===== System Parameters =====
+    use_gpu: bool = False,
+    status_flags: dict = None
+) -> dict:
+    """
+    RNA-seq analysis wrapper for single-cell data processing pipeline.
     
-    # ===== System Parameters (passed from main) =====
-    linux_system=False,
-    use_gpu=False,
-    status_flags=None
-):
-    print("Starting RNA wrapper function with provided parameters...")
+    Parameters
+    ----------
+    rna_count_data_path : str
+        Path to RNA count data (h5ad format)
+    rna_output_dir : str
+        Output directory for results
+    sample_col : str
+        Column name for sample identifiers
+    preprocessing : bool
+        Whether to run preprocessing
+    cell_type_cluster : bool
+        Whether to run cell type clustering
+    derive_sample_embedding : bool
+        Whether to derive sample embeddings
+    sample_distance_calculation : bool
+        Whether to calculate sample distances
+    trajectory_analysis : bool
+        Whether to run trajectory analysis
+    trajectory_DGE : bool
+        Whether to run trajectory differential gene expression
+    sample_cluster : bool
+        Whether to run sample clustering
+    cluster_DGE : bool
+        Whether to run cluster differential gene expression
+    visualize_data : bool
+        Whether to generate visualizations
+    use_gpu : bool
+        Whether to use GPU acceleration (Linux only)
     
-    if linux_system and use_gpu:
+    Returns
+    -------
+    dict
+        Dictionary containing adata_cell, adata_sample, pseudobulk_df, 
+        pseudo_adata, and status_flags
+    """
+    print("Starting RNA wrapper function...")
+    
+    # === SETUP AND VALIDATION ===
+    if rna_count_data_path is None or rna_output_dir is None:
+        raise ValueError("Required parameters rna_count_data_path and rna_output_dir must be provided.")
+    
+    # Import GPU versions if needed
+    if use_gpu:
         from preparation.preprocess_linux import preprocess_linux
         from preparation.Cell_type_linux import cell_types_linux
         from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
-
-    # Set default values for parameters
+    
+    # Set default values
+    if grouping_columns is None:
+        grouping_columns = ['sev.level']
     if vars_to_regress is None:
         vars_to_regress = []
-    
     if sample_distance_methods is None:
         sample_distance_methods = ['cosine', 'correlation']
-    
+    if trajectory_visualization_label is None:
+        trajectory_visualization_label = ['sev.level']
+    if tree_building_methods is None:
+        tree_building_methods = ['HRA_VEC', 'HRC_VEC', 'NN', 'UPGMA']
     if summary_sample_csv_path is None:
         summary_sample_csv_path = os.path.join(rna_output_dir, 'summary_sample.csv')
     
     trajectory_diff_gene_output_dir = os.path.join(rna_output_dir, 'trajectoryDEG')
     
-    if any(x is None for x in (rna_count_data_path, rna_output_dir)):
-        raise ValueError("Required parameters rna_count_data_path, and output_dir must be provided.")
-    
-    # Initialize status flags if not provided
+    # Initialize status flags
     default_status = {
         "preprocessing": False,
         "cell_type_cluster": False,
@@ -174,16 +218,16 @@ def rna_wrapper(
     elif "rna" not in status_flags:
         status_flags["rna"] = default_status.copy()
 
-    # Initialize variables
+    # Initialize data objects
     adata_cell = None
     adata_sample = None
     pseudobulk_df = None
-    pseudo_adata = None 
+    pseudo_adata = None
 
-    # Step 1: Harmony Preprocessing
+    # === STEP 1: PREPROCESSING ===
     if preprocessing:
         print("Starting preprocessing...")
-        preprocess_func = preprocess_linux if (linux_system and use_gpu) else preprocess
+        preprocess_func = preprocess_linux if use_gpu else preprocess
         
         adata_cell, adata_sample = preprocess_func(
             h5ad_path=rna_count_data_path,
@@ -202,32 +246,37 @@ def rna_wrapper(
             vars_to_regress=vars_to_regress,
             verbose=verbose
         )
-
         status_flags["rna"]["preprocessing"] = True
-
     else:
-        # We offer the option to skip preprocessing and use preprocessed data
+        # Load preprocessed data
         cell_path = adata_cell_path or os.path.join(rna_output_dir, "preprocess", "adata_cell.h5ad")
         sample_path = adata_sample_path or os.path.join(rna_output_dir, "preprocess", "adata_sample.h5ad")
         
         if not os.path.exists(cell_path) or not os.path.exists(sample_path):
-            raise ValueError("Preprocessed data paths are not provided and default files path do not exist.")
-
+            raise ValueError("Preprocessed data paths not provided and default files do not exist.")
+        
         status_flags["rna"]["preprocessing"] = True
         status_flags["rna"]["cell_type_cluster"] = True
         
-        if cell_type_cluster or derive_sample_embedding or trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or proportion_test or cca_optimal_cell_resolution or RAISIN_analysis or visualize_data:
+        needs_data = any([
+            cell_type_cluster, derive_sample_embedding, trajectory_analysis,
+            trajectory_DGE, sample_cluster, cluster_DGE, proportion_test,
+            cca_optimal_cell_resolution, RAISIN_analysis, visualize_data
+        ])
+        
+        if needs_data:
             adata_cell = sc.read(cell_path)
             adata_sample = sc.read(sample_path)
     
     if not status_flags["rna"]["preprocessing"]:
-        raise ValueError("RNA preprocessing is skipped, but no preprocessed data found.")
-    
-    # Step 2: Cell Type Clustering
-    if cell_type_cluster:
-        print("Starting cell type clustering at resolution:", leiden_cluster_resolution)
+        raise ValueError("RNA preprocessing skipped but no preprocessed data found.")
 
-        cell_types_func = cell_types_linux if (linux_system and use_gpu) else cell_types
+    # === STEP 2: CELL TYPE CLUSTERING ===
+    if cell_type_cluster:
+        print(f"Starting cell type clustering at resolution: {leiden_cluster_resolution}")
+        
+        cell_types_func = cell_types_linux if use_gpu else cell_types
+        
         adata_cell, adata_sample = cell_types_func(
             anndata_cell=adata_cell,
             anndata_sample=adata_sample,
@@ -235,21 +284,22 @@ def rna_wrapper(
             existing_cell_types=existing_cell_types,
             n_target_clusters=n_target_cell_clusters,
             umap=umap,
+            save=True,
             output_dir=rna_output_dir,
             leiden_cluster_resolution=leiden_cluster_resolution,
             cell_embedding_column=cell_embedding_column,
             cell_embedding_num_PCs=cell_embedding_num_pcs,
             verbose=verbose,
             umap_plots=True,
-            save=True,
         )
         status_flags["rna"]["cell_type_cluster"] = True
-    
-    # Step 3: Pseudobulk and PCA (derive_sample_embedding)
+
+    # === STEP 3: SAMPLE EMBEDDING ===
     if derive_sample_embedding:
-        print("Starting sample embedding derivation (dimensionality reduction)...")
+        print("Starting sample embedding derivation...")
+        
         if not status_flags["rna"]["cell_type_cluster"]:
-            raise ValueError("Cell type clustering is required before sample embedding derivation.")
+            raise ValueError("Cell type clustering required before sample embedding derivation.")
         
         pseudobulk_df, pseudo_adata = calculate_sample_embedding(
             adata=adata_sample,
@@ -258,55 +308,63 @@ def rna_wrapper(
             batch_col=batch_col,
             output_dir=rna_output_dir,
             sample_hvg_number=sample_hvg_number,
-            n_expression_components=n_expression_components,
-            n_proportion_components=n_proportion_components,
-            harmony_for_proportion=rna_harmony_for_proportion,
-            preserve_cols=preserve_cols_for_sample_embedding,
-            use_gpu=linux_system and use_gpu,
+            n_expression_components=sample_embedding_dimension,
+            n_proportion_components=sample_embedding_dimension,
+            harmony_for_proportion=harmony_for_proportion,
+            preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
+            use_gpu=use_gpu,
             atac=False,
             save=True,
             verbose=verbose,
         )
-        
         status_flags["rna"]["derive_sample_embedding"] = True
     else:
         pseudobulk_path = pseudo_adata_path or os.path.join(rna_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         
-        if not os.path.exists(pseudobulk_path):
-            if trajectory_analysis or trajectory_DGE or sample_cluster or cluster_DGE or visualize_data:
-                raise ValueError("Sample embedding derivation is skipped, but no sample embedding data found.")
+        needs_pseudobulk = any([trajectory_analysis, trajectory_DGE, sample_cluster, cluster_DGE, visualize_data])
+        
+        if needs_pseudobulk and not os.path.exists(pseudobulk_path):
+            raise ValueError("Sample embedding skipped but no sample embedding data found.")
+        
+        if os.path.exists(pseudobulk_path):
+            print(f"Loading pseudobulk from: {pseudobulk_path}")
+            pseudo_adata = sc.read(pseudobulk_path)
         
         status_flags["rna"]["derive_sample_embedding"] = True
-        print(f"Reading Pseudobulk from provided or default path: {pseudobulk_path}")
-        pseudo_adata = sc.read(pseudobulk_path)
-    
+
+    # === STEP 4: OPTIMAL RESOLUTION (OPTIONAL) ===
     if cca_optimal_cell_resolution:
-        find_resolution_func = find_optimal_cell_resolution_linux if (linux_system and use_gpu) else find_optimal_cell_resolution
+        print("Finding optimal cell resolution...")
         
-        for column, num_dr_components in [("X_DR_expression", n_expression_components), ("X_DR_proportion", n_proportion_components)]:
+        find_resolution_func = find_optimal_cell_resolution_linux if use_gpu else find_optimal_cell_resolution
+        
+        for column in ["X_DR_expression", "X_DR_proportion"]:
             find_resolution_func(
-                AnnData_cell=adata_cell,
-                AnnData_sample=adata_sample,
+                adata_cell=adata_cell,
+                adata_sample=adata_sample,
                 output_dir=rna_output_dir,
                 column=column,
-                n_features=sample_hvg_number,
-                trajectory_col=trajectory_col_cca,
+                trajectory_col=trajectory_col,
                 batch_col=batch_col,
                 sample_col=sample_col,
-                num_PCs=cell_embedding_num_pcs,
-                num_DR_components=num_dr_components,
-                n_pcs_for_null=n_components_for_cca,
+                cell_embedding_column=cell_embedding_column,
+                cell_embedding_num_pcs=cell_embedding_num_pcs,
+                n_hvg_features=sample_hvg_number,
+                sample_embedding_dimension=sample_embedding_dimension,
+                n_cca_pcs=n_cca_pcs,
+                preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
                 verbose=verbose,
-                preserve_cols=preserve_cols_for_sample_embedding,
             )
-
+        
         from utils.unify_optimal import replace_optimal_dimension_reduction
         pseudo_adata = replace_optimal_dimension_reduction(rna_output_dir)
-    
-    # Step 5: Sample Distance Calculation
+
+    # === STEP 5: SAMPLE DISTANCE CALCULATION ===
     if sample_distance_calculation:
+        print("Starting sample distance calculation...")
+        
         for distance_method in sample_distance_methods:
-            print(f"\nRunning sample distance: {distance_method}\n")
+            print(f"Running sample distance: {distance_method}")
             sample_distance(
                 adata=pseudo_adata,
                 output_dir=os.path.join(rna_output_dir, 'Sample_distance'),
@@ -314,29 +372,35 @@ def rna_wrapper(
                 grouping_columns=grouping_columns,
                 summary_csv_path=summary_sample_csv_path,
                 cell_adata=adata_cell,
-                cell_type_column='cell_type',
+                cell_type_column=celltype_col,
                 sample_column=sample_col,
                 pseudobulk_adata=pseudo_adata
             )
+        
         status_flags["rna"]["sample_distance_calculation"] = True
         if verbose:
-            print(f"Sample distance calculation completed. Results saved in {os.path.join(rna_output_dir, 'Sample_distance')}")
+            print(f"Sample distance calculation completed: {os.path.join(rna_output_dir, 'Sample_distance')}")
 
-    # Step 4: Trajectory Analysis
+    # === STEP 6: TRAJECTORY ANALYSIS ===
+    ptime_expression = None
+    ptime_proportion = None
+    
     if trajectory_analysis:
         print("Starting trajectory analysis...")
+        
         if not status_flags["rna"]["derive_sample_embedding"]:
-            raise ValueError("Sample embedding derivation is required before trajectory analysis.")
+            raise ValueError("Sample embedding derivation required before trajectory analysis.")
         
         if trajectory_supervised:
-            if trajectory_col_cca not in pseudo_adata.obs.columns:
-                raise ValueError(f"Trajectory column '{trajectory_col_cca}' not found in adata_sample.")
+            # Supervised trajectory (CCA)
+            if trajectory_col not in pseudo_adata.obs.columns:
+                raise ValueError(f"Trajectory column '{trajectory_col}' not found in pseudo_adata.obs.")
             
-            first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression = CCA_Call(
+            cca_score_proportion, cca_score_expression, ptime_proportion, ptime_expression = CCA_Call(
                 adata=pseudo_adata,
-                n_components=n_components_for_cca,
+                n_components=n_cca_pcs,
                 output_dir=rna_output_dir,
-                trajectory_col=trajectory_col_cca,
+                trajectory_col=trajectory_col,
                 verbose=verbose
             )
             
@@ -344,22 +408,21 @@ def rna_wrapper(
                 cca_pvalue_test(
                     pseudo_adata=pseudo_adata,
                     column="X_DR_proportion",
-                    input_correlation=first_component_score_proportion,
+                    input_correlation=cca_score_proportion,
                     output_directory=rna_output_dir,
-                    trajectory_col=trajectory_col_cca,
+                    trajectory_col=trajectory_col,
                     verbose=verbose
                 )
                 cca_pvalue_test(
                     pseudo_adata=pseudo_adata,
                     column="X_DR_expression",
-                    input_correlation=first_component_score_expression,
+                    input_correlation=cca_score_expression,
                     output_directory=rna_output_dir,
-                    trajectory_col=trajectory_col_cca,
+                    trajectory_col=trajectory_col,
                     verbose=verbose
                 )
-            status_flags["rna"]["trajectory_analysis"] = True
         else:
-            # Unsupervised trajectory analysis
+            # Unsupervised trajectory (TSCAN)
             tscan_result_expression = TSCAN(
                 AnnData_sample=pseudo_adata,
                 column="X_DR_expression",
@@ -368,7 +431,7 @@ def rna_wrapper(
                 verbose=verbose,
                 origin=tscan_origin
             )
-
+            
             tscan_result_proportion = TSCAN(
                 AnnData_sample=pseudo_adata,
                 column="X_DR_proportion",
@@ -377,21 +440,23 @@ def rna_wrapper(
                 verbose=verbose,
                 origin=tscan_origin
             )
+            
             ptime_expression = pd.Series(
                 tscan_result_expression["pseudotime"]["main_path"],
                 name="tscan_pseudotime_expression"
             ).reindex(pseudo_adata.obs.index)
-
+            
             ptime_proportion = pd.Series(
                 tscan_result_proportion["pseudotime"]["main_path"],
                 name="tscan_pseudotime_proportion"
             ).reindex(pseudo_adata.obs.index)
-            status_flags["rna"]["trajectory_analysis"] = True
+        
+        status_flags["rna"]["trajectory_analysis"] = True
 
-        # Trajectory differential gene analysis
+        # Trajectory Differential Gene Expression
         if trajectory_DGE:
-            print("Running single-pseudotime GAM-based differential analysis...")
-
+            print("Running trajectory differential gene analysis...")
+            
             run_trajectory_gam_differential_gene_analysis(
                 pseudobulk_adata=pseudo_adata,
                 pseudotime_source=ptime_expression,
@@ -407,36 +472,35 @@ def rna_wrapper(
                 visualization_gene_list=visualization_gene_list,
                 verbose=verbose
             )
-
-            status_flags["rna"]["trajectory_analysis"] = True
-            print("Trajectory differential gene analysis completed!")
+            
             status_flags["rna"]["trajectory_dge"] = True
+            print("Trajectory differential gene analysis completed!")
 
-    
     # Clean up summary file if exists
     if os.path.exists(summary_sample_csv_path):
         os.remove(summary_sample_csv_path)
 
-    # Step 6: Clustering and Differential Gene Expression
+    # === STEP 7: SAMPLE CLUSTERING ===
     expr_results, prop_results = {}, {}
+    
     if sample_cluster:
-        print("Starting clustering and differential gene expression...")
-
+        print("Starting sample clustering...")
+        
         expr_results, prop_results = cluster(
-            pseudobulk_adata=pseudo_adata,      
-            output_dir=rna_output_dir,            
+            pseudobulk_adata=pseudo_adata,
+            output_dir=rna_output_dir,
             number_of_clusters=cluster_number,
             use_expression=True,
             use_proportion=True,
             random_state=0,
         )
 
-            
-    # Proportion test
+    # === STEP 8: PROPORTION TEST ===
     if proportion_test:
-        print("[INFO] Starting proportion tests...")
-        try:    
-            if cluster_differential_gene_group_col is not None or len(expr_results) > 0:
+        print("Starting proportion tests...")
+        
+        try:
+            if cluster_differential_gene_group_col is not None or expr_results:
                 run_proportion_test(
                     adata=adata_sample,
                     sample_col=sample_col,
@@ -446,8 +510,8 @@ def rna_wrapper(
                     output_dir=os.path.join(rna_output_dir, "sample_cluster", "expression", "proportion_test"),
                     verbose=True
                 )
-                    
-            if cluster_differential_gene_group_col is not None or len(prop_results) > 0:
+            
+            if cluster_differential_gene_group_col is not None or prop_results:
                 run_proportion_test(
                     adata=adata_sample,
                     sample_col=sample_col,
@@ -457,17 +521,19 @@ def rna_wrapper(
                     output_dir=os.path.join(rna_output_dir, "sample_cluster", "proportion", "proportion_test"),
                     verbose=True
                 )
-            print("[INFO] Proportion tests completed.")
+            
+            print("Proportion tests completed.")
         except Exception as e:
-            print(f"[ERROR] Error in proportion test: {e}")
+            print(f"Error in proportion test: {e}")
             import traceback
             traceback.print_exc()
-    
-    # RAISIN analysis
+
+    # === STEP 9: RAISIN ANALYSIS ===
     if RAISIN_analysis:
-        print("[INFO] Running RAISIN analysis...")
+        print("Running RAISIN analysis...")
+        
         try:
-            if cluster_differential_gene_group_col is not None or len(expr_results) > 0:
+            if cluster_differential_gene_group_col is not None or expr_results:
                 fit = raisinfit(
                     adata=adata_sample,
                     sample_col=sample_col,
@@ -487,31 +553,29 @@ def rna_wrapper(
                     verbose=True
                 )
             else:
-                print("[INFO] No expression results available. Skipping RAISIN analysis for expression.")
+                print("No expression results available. Skipping RAISIN analysis.")
             
-            print("[INFO] RAISIN analysis completed.")
-
+            print("RAISIN analysis completed.")
         except Exception as e:
-            print(f"[ERROR] Error in RAISIN analysis: {e}")
+            print(f"Error in RAISIN analysis: {e}")
             import traceback
             traceback.print_exc()
 
     status_flags["rna"]["cluster_dge"] = True
-    
-    # Step 7: Visualization
+
+    # === STEP 10: VISUALIZATION ===
     if visualize_data:
         print("Starting visualization...")
-        if not status_flags["rna"]["cell_type_cluster"]:
-            if plot_dendrogram_flag:
-                raise ValueError("Cell type clustering is required before dendrogram visualization.")
         
-        if not status_flags["rna"]["derive_sample_embedding"]:
-            if plot_cell_type_proportions_pca_flag or plot_cell_type_expression_umap_flag:
-                raise ValueError("Sample embedding derivation is required before the requested visualization.")
+        if plot_dendrogram_flag and not status_flags["rna"]["cell_type_cluster"]:
+            raise ValueError("Cell type clustering required for dendrogram visualization.")
+        
+        if (plot_cell_type_proportions_pca_flag or plot_cell_type_expression_umap_flag) and not status_flags["rna"]["derive_sample_embedding"]:
+            raise ValueError("Sample embedding derivation required for requested visualization.")
         
         visualization(
             AnnData_cell=adata_cell,
-            pseudobulk_anndata=pseudo_adata, 
+            pseudobulk_anndata=pseudo_adata,
             output_dir=rna_output_dir,
             grouping_columns=grouping_columns,
             age_bin_size=age_bin_size,
@@ -522,7 +586,7 @@ def rna_wrapper(
             plot_cell_type_expression_umap_flag=plot_cell_type_expression_umap_flag
         )
         status_flags["rna"]["visualization"] = True
-    
+
     print("RNA analysis completed successfully!")
     
     return {

@@ -26,7 +26,7 @@ def calculate_sample_embedding(
     n_expression_components: int = 10,
     n_proportion_components: int = 10,
     harmony_for_proportion: bool = True,
-    preserve_cols: Optional[Union[str, List[str]]] = None,
+    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
     use_gpu: bool = False,
     atac: bool = False,
     save: bool = True,
@@ -109,7 +109,7 @@ def calculate_sample_embedding(
             atac=atac,
             verbose=verbose,
             combat_timeout=combat_timeout if combat_timeout is not None else 1800.0,
-            preserve_cols=preserve_cols,
+            preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
         )
 
     return pseudobulk_result_dict, dimension_reduction(
@@ -121,7 +121,7 @@ def calculate_sample_embedding(
         n_proportion_components=n_proportion_components,
         batch_col=batch_col,
         harmony_for_proportion=harmony_for_proportion,
-        preserve_cols=preserve_cols,
+        preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
         output_dir=output_dir,
         not_save=not save,
         atac=atac,

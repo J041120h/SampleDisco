@@ -386,7 +386,7 @@ def compute_pseudobulk_cpu(
     atac: bool = False,
     verbose: bool = False,
     combat_timeout: float = 1800.0,
-    preserve_cols: Optional[Union[str, List[str]]] = None,
+    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, sc.AnnData]:
     """
     CPU-based pseudobulk computation.
@@ -415,7 +415,7 @@ def compute_pseudobulk_cpu(
         Print progress
     combat_timeout : float
         Timeout for ComBat in seconds
-    preserve_cols : str or list, optional
+    preserve_cols_in_sample_embedding : str or list, optional
         Columns to preserve during batch correction
     
     Returns
@@ -440,7 +440,7 @@ def compute_pseudobulk_cpu(
         if col and col in adata.obs.columns and not adata.obs[col].isnull().all()
     ]
     
-    columns_to_preserve = [col for col in _convert_to_list(preserve_cols) if col in adata.obs.columns]
+    columns_to_preserve = [col for col in _convert_to_list(preserve_cols_in_sample_embedding) if col in adata.obs.columns]
     
     for column_name in valid_batch_columns + columns_to_preserve:
         if adata.obs[column_name].isnull().any():
@@ -578,7 +578,7 @@ def compute_pseudobulk_adata(
     atac: bool = False,
     verbose: bool = False,
     combat_timeout: float = 1800.0,
-    preserve_cols: Optional[Union[str, List[str]]] = None,
+    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
 ) -> Tuple[Dict, sc.AnnData]:
     """Wrapper returning backward-compatible dict plus final AnnData."""
     if verbose:
@@ -606,7 +606,7 @@ def compute_pseudobulk_adata(
         atac=atac,
         verbose=verbose,
         combat_timeout=combat_timeout,
-        preserve_cols=preserve_cols,
+        preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
     )
     
     if verbose:

@@ -304,14 +304,14 @@ def run_dimension_reduction_proportion(
     sample_col: str = "sample",
     batch_col: Union[str, List[str], None] = None,
     harmony_for_proportion: bool = False,
-    preserve_cols: Optional[Union[str, List[str]]] = None,
+    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
     n_components: int = 10,
     verbose: bool = False,
 ) -> None:
     """
     Performs dimension reduction on cell proportion data.
     
-    If preserve_cols is provided: uses limma-style correction then PCA.
+    If preserve_cols_in_sample_embedding is provided: uses limma-style correction then PCA.
     Otherwise: uses PCA with optional Harmony batch correction.
     """
     if "cell_proportion" not in pseudobulk:
@@ -327,20 +327,20 @@ def run_dimension_reduction_proportion(
         raise ValueError(f"Insufficient data dimensions (samples={n_samples}, features={n_features})")
 
     preserve_list = None
-    if preserve_cols is not None:
-        preserve_list = [preserve_cols] if isinstance(preserve_cols, str) else list(preserve_cols)
+    if preserve_cols_in_sample_embedding is not None:
+        preserve_list = [preserve_cols_in_sample_embedding] if isinstance(preserve_cols_in_sample_embedding, str) else list(preserve_cols_in_sample_embedding)
         preserve_list = [str(c) for c in preserve_list]
 
     if preserve_list is not None and pseudobulk_anndata is not None and batch_col is not None:
         if verbose:
-            print(f"[Proportion] Limma mode (preserve_cols={preserve_list})")
+            print(f"[Proportion] Limma mode (preserve_cols_in_sample_embedding={preserve_list})")
 
         try:
             batch_col_to_use = _prepare_batch_column(pseudobulk_anndata, batch_col)
 
             preserve_list = [c for c in preserve_list if c in pseudobulk_anndata.obs.columns]
             if not preserve_list:
-                raise ValueError("None of preserve_cols exist in pseudobulk_anndata.obs")
+                raise ValueError("None of preserve_cols_in_sample_embedding exist in pseudobulk_anndata.obs")
 
             P, pheno = _align_samples(proportion_df, pseudobulk_anndata)
             
@@ -477,7 +477,7 @@ def dimension_reduction(
     n_proportion_components: int = 10,
     batch_col: Union[str, List[str], None] = None,
     harmony_for_proportion: bool = True,
-    preserve_cols: Optional[Union[str, List[str]]] = None,
+    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
     output_dir: str = "./",
     not_save: bool = False,
     atac: bool = False,
@@ -502,8 +502,8 @@ def dimension_reduction(
         print(f"[DimRed] Mode: {'ATAC (LSI)' if atac else 'RNA (PCA)'}")
         if batch_col:
             print(f"[DimRed] Batch column(s): {batch_col}")
-        if preserve_cols:
-            print(f"[DimRed] Preserve columns (limma mode): {preserve_cols}")
+        if preserve_cols_in_sample_embedding:
+            print(f"[DimRed] Preserve columns (limma mode): {preserve_cols_in_sample_embedding}")
 
     output_dir = os.path.abspath(output_dir)
     pseudobulk_output_dir = os.path.join(output_dir, "pseudobulk")
@@ -535,7 +535,7 @@ def dimension_reduction(
     try:
         run_dimension_reduction_proportion(
             adata, pseudobulk, pseudobulk_anndata, sample_col,
-            batch_col, harmony_for_proportion, preserve_cols, n_proportion_components, verbose
+            batch_col, harmony_for_proportion, preserve_cols_in_sample_embedding, n_proportion_components, verbose
         )
         results["proportion"] = True
         if verbose:

@@ -1,50 +1,53 @@
-Resuming process from previous progress:
+Resuming from previous progress:
 {
-    "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": true,
-        "trajectory_dge": false,
-        "cluster_dge": true,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": false,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": false,
-        "glue_preprocessing": false,
-        "glue_training": false,
-        "glue_gene_activity": false,
-        "glue_cell_types": false,
-        "glue_visualization": false,
-        "integration_preprocessing": false,
-        "dimensionality_reduction": false,
-        "embedding_visualization": false,
-        "optimal_resolution": false
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": false,
-        "linux_system": false
-    }
+  "rna": {
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "derive_sample_embedding": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": true,
+    "trajectory_dge": false,
+    "cluster_dge": true,
+    "visualization": false,
+    "dimensionality_reduction": true
+  },
+  "atac": {
+    "preprocessing": false,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "cluster_dge": false,
+    "visualization": false,
+    "dimensionality_reduction": false
+  },
+  "multiomics": {
+    "glue_integration": false,
+    "glue_preprocessing": false,
+    "glue_training": false,
+    "glue_gene_activity": false,
+    "glue_cell_types": false,
+    "glue_visualization": false,
+    "integration_preprocessing": false,
+    "derive_sample_embedding": false,
+    "embedding_visualization": false,
+    "optimal_resolution": false,
+    "dimensionality_reduction": false
+  },
+  "system_info": {
+    "platform": "Linux",
+    "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+    "use_gpu": false,
+    "gpu_available": false
+  }
 }
 
 ============================================================
 RUNNING RNA PIPELINE
 ============================================================
-Starting RNA wrapper function with provided parameters...
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
+Starting RNA wrapper function...
+Loading pseudobulk from: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
 Starting trajectory analysis...
 Starting TSCAN analysis:
   Samples: 25
@@ -77,53 +80,53 @@ Computed pairwise euclidean distances among 18 cluster centroids
 MST construction complete with shape: (18, 18)
 Principal path found: 6 clusters, 12 total samples
 Path: cluster_2 -> cluster_10 -> cluster_15 -> cluster_11 -> cluster_4 -> cluster_9
-Using random endpoint as origin: cluster_9
+Using random endpoint as origin: cluster_2
 Found 11 branching paths
 Projection complete for 9 samples
 Sample ordering complete: 9 samples
-Projection complete for 4 samples
-Sample ordering complete: 4 samples
-Projection complete for 7 samples
-Sample ordering complete: 7 samples
-Projection complete for 4 samples
-Sample ordering complete: 4 samples
-Projection complete for 9 samples
-Sample ordering complete: 9 samples
-Projection complete for 7 samples
-Sample ordering complete: 7 samples
 Projection complete for 7 samples
 Sample ordering complete: 7 samples
 Projection complete for 4 samples
 Sample ordering complete: 4 samples
 Projection complete for 7 samples
 Sample ordering complete: 7 samples
+Projection complete for 6 samples
+Sample ordering complete: 6 samples
+Projection complete for 4 samples
+Sample ordering complete: 4 samples
+Projection complete for 4 samples
+Sample ordering complete: 4 samples
 Projection complete for 7 samples
 Sample ordering complete: 7 samples
-Projection complete for 9 samples
-Sample ordering complete: 9 samples
-Projection complete for 7 samples
-Sample ordering complete: 7 samples
+Projection complete for 4 samples
+Sample ordering complete: 4 samples
+Projection complete for 10 samples
+Sample ordering complete: 10 samples
+Projection complete for 2 samples
+Sample ordering complete: 2 samples
+Projection complete for 4 samples
+Sample ordering complete: 4 samples
 Cluster plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster.png
 Plotted 25 samples across 18 clusters
 Cluster plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster_X_DR_expression.png
 Grouping plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping.png
 Grouping plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping_X_DR_expression.png
 Pseudotime data saved: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/X_DR_expression_pseudotime.csv
-  Total samples in CSV: 81
+  Total samples in CSV: 68
 
 TSCAN analysis completed successfully!
   Main path: 9 samples across 6 clusters
-  Branch 1: 4 samples across 3 clusters
-  Branch 2: 7 samples across 5 clusters
-  Branch 3: 4 samples across 3 clusters
-  Branch 4: 9 samples across 6 clusters
-  Branch 5: 7 samples across 5 clusters
-  Branch 6: 7 samples across 5 clusters
-  Branch 7: 4 samples across 3 clusters
-  Branch 8: 7 samples across 5 clusters
-  Branch 9: 7 samples across 3 clusters
-  Branch 10: 9 samples across 6 clusters
-  Branch 11: 7 samples across 5 clusters
+  Branch 1: 7 samples across 6 clusters
+  Branch 2: 4 samples across 4 clusters
+  Branch 3: 7 samples across 6 clusters
+  Branch 4: 6 samples across 5 clusters
+  Branch 5: 4 samples across 4 clusters
+  Branch 6: 4 samples across 4 clusters
+  Branch 7: 7 samples across 6 clusters
+  Branch 8: 4 samples across 4 clusters
+  Branch 9: 10 samples across 6 clusters
+  Branch 10: 2 samples across 3 clusters
+  Branch 11: 4 samples across 4 clusters
   Total samples processed: 25
   Results saved to: /dcs07/hongkai/data/harry/result/test/rna/TSCAN
 Starting TSCAN analysis:
@@ -167,15 +170,16 @@ RNA pipeline completed successfully!
 PIPELINE EXECUTION SUMMARY
 ============================================================
 RNA Pipeline: PARTIAL
-  - preprocessing: Done
-  - cell_type_cluster: Done
-  - dimensionality_reduction: Done
-  - sample_distance_calculation: Pending
-  - trajectory_analysis: Done
-  - trajectory_dge: Pending
-  - cluster_dge: Done
-  - visualization: Pending
+  ✓ preprocessing
+  ✓ cell_type_cluster
+  ✓ derive_sample_embedding
+  ○ sample_distance_calculation
+  ✓ trajectory_analysis
+  ○ trajectory_dge
+  ✓ cluster_dge
+  ○ visualization
+  ✓ dimensionality_reduction
 
 Results saved to: /dcs07/hongkai/data/harry/result/test
 Status file: /dcs07/hongkai/data/harry/result/test/sys_log/main_process_status.json
-Execution time: 6.5118 seconds
+Total execution time: 15.37 seconds (0.26 minutes)
