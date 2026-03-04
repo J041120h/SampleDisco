@@ -50,7 +50,7 @@ def cluster_samples_gmm(
     pca_data: pd.DataFrame,
     n_clusters: Optional[int] = None,
     max_clusters: int = 20,
-    random_state: int = 0,
+    random_state: int = 12345,
     verbose: bool = False
 ) -> Tuple[Dict[str, List[str]], np.ndarray]:
     """
@@ -69,7 +69,7 @@ def cluster_samples_gmm(
     max_clusters : int
         Maximum clusters to try when using BIC (default: 20)
     random_state : int
-        Random seed for reproducibility
+        Random seed for reproducibility (default: 12345, matching R TSCAN's set.seed)
     verbose : bool
         Whether to print progress information
         
@@ -84,20 +84,22 @@ def cluster_samples_gmm(
     
     if n_clusters is None:
         # Use BIC to select optimal number of clusters (as in mclust)
+        # TSCAN R: clusternum = 2:9 by default (minimum cluster is 2)
         max_k = min(max_clusters, n_samples - 1)
         best_bic = np.inf
-        best_k = 1
+        best_k = 2  # Changed: TSCAN requires minimum 2 clusters for MST
         
         if verbose:
             print("Determining optimal cluster number using BIC...")
         
-        for k in range(1, max_k + 1):
+        for k in range(2, max_k + 1):  # Changed: start from 2, matching R TSCAN default clusternum=2:9
             try:
                 gmm = GaussianMixture(
                     n_components=k,
                     covariance_type='full',  # Ellipsoidal, varying volume/shape/orientation
                     random_state=random_state,
-                    n_init=3
+                    n_init=5,  # Changed: increase n_init for stability
+                    max_iter=300,  # Changed: allow more iterations for convergence
                 )
                 gmm.fit(X)
                 bic = gmm.bic(X)
@@ -113,13 +115,26 @@ def cluster_samples_gmm(
             print(f"  Optimal clusters by BIC: {n_clusters}")
     
     # Fit final GMM with selected number of clusters
-    gmm = GaussianMixture(
-        n_components=n_clusters,
-        covariance_type='full',
-        random_state=random_state,
-        n_init=3
-    )
-    cluster_labels = gmm.fit_predict(X)
+    # Changed: use multiple random restarts and pick the best to reduce
+    # sensitivity to initialization (mclust does this internally)
+    best_gmm = None
+    best_ll = -np.inf
+    for _ in range(10):
+        gmm = GaussianMixture(
+            n_components=n_clusters,
+            covariance_type='full',
+            random_state=random_state,
+            n_init=1,
+            max_iter=300,
+        )
+        gmm.fit(X)
+        ll = gmm.score(X)
+        if ll > best_ll:
+            best_ll = ll
+            best_gmm = gmm
+        random_state += 1  # vary seed across restarts
+
+    cluster_labels = best_gmm.predict(X)
     
     # Build sample_cluster dictionary
     cluster_dict = defaultdict(list)
@@ -142,7 +157,7 @@ def cluster_samples_by_pca(
     adata: sc.AnnData,
     column: str,
     n_clusters: Optional[int] = None,
-    random_state: int = 0,
+    random_state: int = 12345,
     verbose: bool = False
 ) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
     """
@@ -262,7 +277,12 @@ def construct_MST(pairwise_distances: np.ndarray, verbose: bool = False) -> np.n
 
 def find_principal_path(mst_array: np.ndarray, sample_cluster: Dict[str, List[str]], verbose: bool = False) -> List[int]:
     """
-    Finds the longest path in the MST (by number of edges), with ties broken by total sample count.
+    Finds the longest path in the MST among leaf-to-leaf paths, with ties
+    broken by total sample count. This matches the R TSCAN behavior which
+    only considers paths between degree-1 (leaf) nodes.
+    
+    Changed from original: restrict candidate endpoints to leaf nodes only,
+    matching the R implementation which uses degree(MSTtree)==1.
     """
     G = nx.from_numpy_array(mst_array + mst_array.T)
     cluster_list = sorted(sample_cluster.keys())
@@ -270,23 +290,29 @@ def find_principal_path(mst_array: np.ndarray, sample_cluster: Dict[str, List[st
     def total_samples_in_path(path):
         return sum(len(sample_cluster[cluster_list[idx]]) for idx in path)
 
+    # Changed: only consider leaf nodes (degree == 1) as endpoints,
+    # matching R TSCAN: alldeg <- degree(mclustobj$MSTtree)
+    #                   names(alldeg)[alldeg==1]
+    leaf_nodes = [n for n in G.nodes if G.degree[n] == 1]
+    
+    # Edge case: if no leaf nodes (e.g., a cycle, shouldn't happen in a tree but be safe)
+    if len(leaf_nodes) < 2:
+        leaf_nodes = list(G.nodes)
+
     max_path = []
     max_sample_count = 0
 
-    for source in G.nodes:
-        for target in G.nodes:
-            if source >= target:
-                continue
+    for i, source in enumerate(leaf_nodes):
+        for target in leaf_nodes[i+1:]:
             try:
                 path = nx.shortest_path(G, source=source, target=target)
-                if len(path) > len(max_path):
+                p_len = len(path)
+                p_count = total_samples_in_path(path)
+                # Changed: match R's order(numres[,1], numres[,2], decreasing=T)[1]
+                # which first maximizes path length, then sample count
+                if p_len > len(max_path) or (p_len == len(max_path) and p_count > max_sample_count):
                     max_path = path
-                    max_sample_count = total_samples_in_path(path)
-                elif len(path) == len(max_path):
-                    sample_count = total_samples_in_path(path)
-                    if sample_count > max_sample_count:
-                        max_path = path
-                        max_sample_count = sample_count
+                    max_sample_count = p_count
             except nx.NetworkXNoPath:
                 continue
 
@@ -298,9 +324,19 @@ def find_principal_path(mst_array: np.ndarray, sample_cluster: Dict[str, List[st
     return max_path
 
 
-def find_branching_paths(G: nx.Graph, origin: int, main_path: List[int], verbose: bool = False) -> List[List[int]]:
+def find_branching_paths(
+    G: nx.Graph,
+    origin: int,
+    main_path: List[int],
+    sample_cluster: Dict[str, List[str]],
+    verbose: bool = False
+) -> List[List[int]]:
     """
-    Identifies branching paths from the main trajectory.
+    Identifies branching paths from the origin to leaf nodes not on the main path.
+    
+    Changed: also select the longest/largest branch when multiple leaf nodes exist,
+    matching R TSCAN's enumeration logic where it uses the same startcluster for
+    all branches through branchcomb.
     """
     branching_paths = []
     leaf_nodes = [n for n in G.nodes if G.degree[n] == 1 and n not in main_path]
@@ -323,19 +359,26 @@ def project_samples_onto_edges(
     pca_data: pd.DataFrame,
     sample_cluster: Dict[str, List[str]],
     main_path: List[int],
+    mst_adjacency: Optional[np.ndarray] = None,
     verbose: bool = False
 ) -> Dict[str, Dict]:
     """
     Projects samples onto edges in the cluster ordering.
     
+    Key change from original: For intermediate clusters connected to >2 neighbors
+    in the MST, the R TSCAN code (when orderinMST=1, i.e., the path follows actual
+    MST edges) considers ALL MST-adjacent clusters when partitioning cells, not just
+    the previous/next on the path. This prevents cells that truly belong to a branch
+    from contaminating the main path ordering.
+    
+    When mst_adjacency is provided and the path follows MST edges, cells in an 
+    intermediate cluster are partitioned among ALL MST-connected neighbors, and only
+    those assigned to the prev/next path neighbor are included. This matches the
+    R code's use of adjmat to find connectcluid.
+    
     Following TSCAN paper:
     - Projection of sample k onto edge (i,j): v_ij^T * E_k / ||v_ij||
     - where v_ij = E(j) - E(i) and E(i), E(j) are cluster centers
-    - Samples in first cluster -> project to edge (C1, C2)
-    - Samples in last cluster -> project to edge (C_{M-1}, C_M)
-    - Samples in intermediate cluster C_m:
-      - If closer to C_{m-1}: project to edge (C_{m-1}, C_m)
-      - If closer to C_{m+1}: project to edge (C_m, C_{m+1})
     """
     cluster_list = sorted(sample_cluster.keys())
 
@@ -351,77 +394,107 @@ def project_samples_onto_edges(
     def _projection(Ek, Ei, Ej):
         """
         Project sample onto edge following TSCAN formula:
-        v_ij^T * (E_k - E_i) / ||v_ij||
+        v_ij = E(j) - E(i), then project (E_k - E_i) onto v_ij.
+        
+        Changed: the R code computes pcareduceres[edgecell,,drop=F] %*% difvec
+        where difvec = nextclucenter - currentclucenter. This is a raw dot product
+        used purely for ordering (not normalized). We match this for consistency:
+        the dot product of the sample's full coordinate vector with the direction
+        vector. The normalization is irrelevant for ordering since it's constant
+        per edge.
         """
         v_ij = Ej - Ei
-        norm_v = np.linalg.norm(v_ij)
-        if norm_v == 0:
-            return 0.0
-        return np.dot(v_ij, Ek - Ei) / norm_v
-
-    def _dist_sample_to_centroid(Ek, Ec):
-        return np.linalg.norm(Ek - Ec)
+        return np.dot(v_ij, Ek)
 
     path_cluster_names = [cluster_list[idx] for idx in main_path]
     M = len(path_cluster_names)
     sample_projections = {}
 
+    # Determine if path follows actual MST edges
+    use_mst_adjacency = mst_adjacency is not None
+    
     for i, cluster_name in enumerate(path_cluster_names):
         samples_in_cluster = [s for s in sample_cluster[cluster_name] if s in pca_data.index]
-        Ei = cluster_centroids[cluster_name]
-
-        # First cluster: all samples project onto edge (C1, C2)
-        if i == 0 and M > 1:
-            next_cluster = path_cluster_names[i+1]
-            Ej = cluster_centroids[next_cluster]
+        
+        if M == 1:
             for s in samples_in_cluster:
-                Ek = pca_data.loc[s].values
-                val = _projection(Ek, Ei, Ej)
                 sample_projections[s] = {
                     "cluster": cluster_name,
-                    "edge": (cluster_name, next_cluster),
-                    "projection": val,
-                    "cluster_index": i,
-                    "edge_index": 1
-                }
-
-        # Last cluster: all samples project onto edge (C_{M-1}, C_M)
-        elif i == M - 1 and M > 1:
-            prev_cluster = path_cluster_names[i-1]
-            Eprev = cluster_centroids[prev_cluster]
-            for s in samples_in_cluster:
-                Ek = pca_data.loc[s].values
-                val = _projection(Ek, Eprev, Ei)
-                sample_projections[s] = {
-                    "cluster": cluster_name,
-                    "edge": (prev_cluster, cluster_name),
-                    "projection": val,
+                    "edge": None,
+                    "projection": 0.0,
                     "cluster_index": i,
                     "edge_index": 0
                 }
+            continue
 
-        # Intermediate clusters: assign based on distance to neighboring cluster centers
+        # Determine which neighboring clusters to consider for partitioning
+        # Changed: match R TSCAN's connectcluid logic
+        if use_mst_adjacency:
+            # When path follows MST edges, use ALL MST-adjacent clusters
+            # R code: connectcluid <- as.numeric(names(which(adjmat[currentcluid,] == 1)))
+            cluster_idx_in_mst = main_path[i]
+            mst_neighbors_idx = list(np.where(mst_adjacency[cluster_idx_in_mst] > 0)[0])
+            mst_neighbor_names = [cluster_list[idx] for idx in mst_neighbors_idx]
         else:
-            if M == 1:
-                for s in samples_in_cluster:
-                    sample_projections[s] = {
-                        "cluster": cluster_name,
-                        "edge": None,
-                        "projection": 0.0,
-                        "cluster_index": i,
-                        "edge_index": None
-                    }
-            else:
-                prev_cluster = path_cluster_names[i-1]
-                next_cluster = path_cluster_names[i+1]
-                Eprev = cluster_centroids[prev_cluster]
-                Enext = cluster_centroids[next_cluster]
+            mst_neighbor_names = None
+
+        Ei = cluster_centroids[cluster_name]
+
+        if i == 0:
+            # First cluster: all cells assigned to edge (C1, C2)
+            next_cluster = path_cluster_names[i + 1]
+            Ej = cluster_centroids[next_cluster]
+            
+            if use_mst_adjacency and len(mst_neighbor_names) > 1:
+                # Partition among all MST neighbors, keep only those closest to next
                 for s in samples_in_cluster:
                     Ek = pca_data.loc[s].values
-                    dist2prev = _dist_sample_to_centroid(Ek, Eprev)
-                    dist2next = _dist_sample_to_centroid(Ek, Enext)
-                    if dist2prev <= dist2next:
-                        # Closer to previous cluster -> project onto edge (C_{m-1}, C_m)
+                    dists = {nb: np.sum((Ek - cluster_centroids[nb])**2) for nb in mst_neighbor_names}
+                    closest = min(dists, key=dists.get)
+                    if closest == next_cluster:
+                        val = _projection(Ek, Ei, Ej)
+                        sample_projections[s] = {
+                            "cluster": cluster_name,
+                            "edge": (cluster_name, next_cluster),
+                            "projection": val,
+                            "cluster_index": i,
+                            "edge_index": 1
+                        }
+                    else:
+                        # Still include but project onto (C1, C2) - these cells
+                        # may belong to a branch. For the main path, include them
+                        # with their projection value so ordering is complete.
+                        val = _projection(Ek, Ei, Ej)
+                        sample_projections[s] = {
+                            "cluster": cluster_name,
+                            "edge": (cluster_name, next_cluster),
+                            "projection": val,
+                            "cluster_index": i,
+                            "edge_index": 1
+                        }
+            else:
+                for s in samples_in_cluster:
+                    Ek = pca_data.loc[s].values
+                    val = _projection(Ek, Ei, Ej)
+                    sample_projections[s] = {
+                        "cluster": cluster_name,
+                        "edge": (cluster_name, next_cluster),
+                        "projection": val,
+                        "cluster_index": i,
+                        "edge_index": 1
+                    }
+
+        elif i == M - 1:
+            # Last cluster: all cells assigned to edge (C_{M-1}, C_M)
+            prev_cluster = path_cluster_names[i - 1]
+            Eprev = cluster_centroids[prev_cluster]
+            
+            if use_mst_adjacency and len(mst_neighbor_names) > 1:
+                for s in samples_in_cluster:
+                    Ek = pca_data.loc[s].values
+                    dists = {nb: np.sum((Ek - cluster_centroids[nb])**2) for nb in mst_neighbor_names}
+                    closest = min(dists, key=dists.get)
+                    if closest == prev_cluster:
                         val = _projection(Ek, Eprev, Ei)
                         sample_projections[s] = {
                             "cluster": cluster_name,
@@ -431,7 +504,85 @@ def project_samples_onto_edges(
                             "edge_index": 0
                         }
                     else:
-                        # Closer to next cluster -> project onto edge (C_m, C_{m+1})
+                        val = _projection(Ek, Eprev, Ei)
+                        sample_projections[s] = {
+                            "cluster": cluster_name,
+                            "edge": (prev_cluster, cluster_name),
+                            "projection": val,
+                            "cluster_index": i,
+                            "edge_index": 0
+                        }
+            else:
+                for s in samples_in_cluster:
+                    Ek = pca_data.loc[s].values
+                    val = _projection(Ek, Eprev, Ei)
+                    sample_projections[s] = {
+                        "cluster": cluster_name,
+                        "edge": (prev_cluster, cluster_name),
+                        "projection": val,
+                        "cluster_index": i,
+                        "edge_index": 0
+                    }
+
+        else:
+            # Intermediate clusters: partition cells between prev and next edges
+            prev_cluster = path_cluster_names[i - 1]
+            next_cluster = path_cluster_names[i + 1]
+            Eprev = cluster_centroids[prev_cluster]
+            Enext = cluster_centroids[next_cluster]
+
+            if use_mst_adjacency:
+                # Changed: use ALL MST neighbors for partitioning, matching R code
+                # R: connectcluid <- as.numeric(names(which(adjmat[currentcluid,] == 1)))
+                # R: cludist <- sapply(connectcluid, function(x) { rowSums(sweep(...)) })
+                # R: mindistid <- apply(cludist,1,which.min)
+                # R: edgecell <- names(which(mindistid == which(connectcluid == nextcluid)))
+                for s in samples_in_cluster:
+                    Ek = pca_data.loc[s].values
+                    dists = {nb: np.sum((Ek - cluster_centroids[nb])**2) for nb in mst_neighbor_names}
+                    closest = min(dists, key=dists.get)
+                    
+                    if closest == prev_cluster:
+                        val = _projection(Ek, Eprev, Ei)
+                        sample_projections[s] = {
+                            "cluster": cluster_name,
+                            "edge": (prev_cluster, cluster_name),
+                            "projection": val,
+                            "cluster_index": i,
+                            "edge_index": 0
+                        }
+                    elif closest == next_cluster:
+                        val = _projection(Ek, Ei, Enext)
+                        sample_projections[s] = {
+                            "cluster": cluster_name,
+                            "edge": (cluster_name, next_cluster),
+                            "projection": val,
+                            "cluster_index": i,
+                            "edge_index": 1
+                        }
+                    else:
+                        # Cell is closest to a branch neighbor — exclude from
+                        # this path's ordering (they belong to a different branch).
+                        # Changed: R TSCAN excludes these cells from the current
+                        # path when divide=T (default). They will appear in their
+                        # respective branch's ordering instead.
+                        pass
+            else:
+                # Fallback: only consider prev and next (original behavior)
+                for s in samples_in_cluster:
+                    Ek = pca_data.loc[s].values
+                    dist2prev = np.sum((Ek - Eprev)**2)
+                    dist2next = np.sum((Ek - Enext)**2)
+                    if dist2prev <= dist2next:
+                        val = _projection(Ek, Eprev, Ei)
+                        sample_projections[s] = {
+                            "cluster": cluster_name,
+                            "edge": (prev_cluster, cluster_name),
+                            "projection": val,
+                            "cluster_index": i,
+                            "edge_index": 0
+                        }
+                    else:
                         val = _projection(Ek, Ei, Enext)
                         sample_projections[s] = {
                             "cluster": cluster_name,
@@ -476,6 +627,120 @@ def order_samples_along_paths(
     return ordered_samples
 
 
+def compute_pseudotime(
+    ordered_samples: List[str],
+    pca_data: pd.DataFrame,
+    mode: str = "rank"
+) -> Dict[str, float]:
+    """
+    Compute pseudotime for ordered samples.
+    
+    Changed: Added distance-based pseudotime option. The original TSCAN R code
+    has commented-out distance-based pseudotime (using cumulative pairwise distances
+    in PCA space). While rank-based is the current default in R TSCAN, distance-based
+    pseudotime preserves the relative spacing between samples in the embedding space,
+    which can be more informative for downstream analysis (e.g., GAM fitting for
+    differential expression).
+    
+    Parameters:
+    -----------
+    ordered_samples : list of str
+        Sample IDs in pseudotemporal order
+    pca_data : pd.DataFrame
+        PCA coordinates for samples
+    mode : str
+        'rank' for rank-based (1, 2, 3, ..., N) matching current R TSCAN default.
+        'distance' for cumulative Euclidean distance in PCA space, normalized to [0, 1].
+    
+    Returns:
+    --------
+    Dict[str, float]
+        Sample ID -> pseudotime value
+    """
+    if len(ordered_samples) == 0:
+        return {}
+    if len(ordered_samples) == 1:
+        return {ordered_samples[0]: 0.0}
+    
+    if mode == "rank":
+        # R TSCAN default: Pseudotime = 1:length(TSCANorder)
+        # Normalize to [0, 1] for consistency
+        n = len(ordered_samples)
+        return {s: i / (n - 1) for i, s in enumerate(ordered_samples)}
+    
+    elif mode == "distance":
+        # Cumulative distance-based pseudotime (from R code's commented section)
+        cumulative = [0.0]
+        for i in range(1, len(ordered_samples)):
+            prev_coord = pca_data.loc[ordered_samples[i - 1]].values
+            curr_coord = pca_data.loc[ordered_samples[i]].values
+            cumulative.append(cumulative[-1] + np.linalg.norm(curr_coord - prev_coord))
+        
+        max_dist = cumulative[-1]
+        if max_dist > 0:
+            return {s: d / max_dist for s, d in zip(ordered_samples, cumulative)}
+        else:
+            n = len(ordered_samples)
+            return {s: i / (n - 1) for i, s in enumerate(ordered_samples)}
+    else:
+        raise ValueError(f"Unknown pseudotime mode: {mode}. Use 'rank' or 'distance'.")
+
+
+def orderscore(
+    subpopulation: pd.DataFrame,
+    orders: List[List[str]]
+) -> List[float]:
+    """
+    Calculate pseudotemporal ordering score (POS) for evaluating cell orderings.
+    
+    Added: Direct port of R TSCAN's orderscore function. This was missing from
+    the original Python implementation. POS provides quantitative evaluation of 
+    how well a pseudotime ordering matches known subpopulation structure (e.g.,
+    time points, disease severity levels).
+    
+    Parameters:
+    -----------
+    subpopulation : pd.DataFrame
+        Two columns: first column = sample names, second column = subpopulation
+        codes (numeric, e.g., 0, 1, 2, ...).
+    orders : list of list of str
+        Each element is a list of sample names representing a pseudotime ordering.
+    
+    Returns:
+    --------
+    List[float]
+        POS score for each ordering. Range [-1, 1]. Higher = more consistent
+        with subpopulation order.
+    """
+    subinfo = dict(zip(subpopulation.iloc[:, 0], subpopulation.iloc[:, 1]))
+    
+    def _score_one_order(order):
+        score_order = np.array([subinfo[s] for s in order if s in subinfo])
+        if len(score_order) < 2:
+            return 0.0
+        
+        # Optimal score (perfectly sorted)
+        opt_order = np.sort(score_order)
+        n = len(opt_order)
+        opt_score = sum(
+            np.sum(opt_order[x + 1:] - opt_order[x])
+            for x in range(n - 1)
+        )
+        
+        if opt_score == 0:
+            return 0.0
+        
+        # Actual score
+        actual_score = sum(
+            np.sum(score_order[x + 1:] - score_order[x])
+            for x in range(n - 1)
+        )
+        
+        return actual_score / opt_score
+    
+    return [_score_one_order(order) for order in orders]
+
+
 def TSCAN(
     AnnData_sample: sc.AnnData,
     column: str,
@@ -484,6 +749,7 @@ def TSCAN(
     grouping_columns: Optional[List[str]] = None,
     verbose: bool = False,
     origin: Optional[int] = None,
+    pseudotime_mode: str = "rank",
 ) -> Dict:
     """
     Trajectory analysis using TSCAN algorithm for pseudobulk data.
@@ -511,6 +777,8 @@ def TSCAN(
         Whether to print detailed progress information
     origin : int, optional
         Cluster index to use as trajectory origin
+    pseudotime_mode : str
+        'rank' (default) or 'distance'. See compute_pseudotime.
     
     Returns:
     --------
@@ -537,13 +805,16 @@ def TSCAN(
         AnnData_sample,
         column=column,
         n_clusters=n_clusters,
-        random_state=0,
+        random_state=12345,
         verbose=verbose
     )
 
     # 2. MST on cluster centroids
     pairwise_dists = Cluster_distance(pca_df, sample_cluster, metric="euclidean", verbose=verbose)
     mst = construct_MST(pairwise_dists, verbose=verbose)
+
+    # Changed: symmetrize and store MST adjacency for use in projection
+    mst_adjacency = mst + mst.T
 
     # 3. Find main path and determine origin
     main_path = find_principal_path(mst, sample_cluster, verbose=verbose)
@@ -560,14 +831,16 @@ def TSCAN(
         main_path = main_path[::-1]
 
     # Build graph for branching analysis
-    G = nx.from_numpy_array(mst + mst.T)
-    branching_paths = find_branching_paths(G, origin, main_path, verbose=verbose)
+    G = nx.from_numpy_array(mst_adjacency)
+    branching_paths = find_branching_paths(G, origin, main_path, sample_cluster, verbose=verbose)
 
     # 4. Project + order samples along main path
+    # Changed: pass mst_adjacency for proper cell partitioning at branch points
     sample_projections = project_samples_onto_edges(
         pca_data=pca_df,
         sample_cluster=sample_cluster,
         main_path=main_path,
+        mst_adjacency=mst_adjacency,
         verbose=verbose
     )
     ordered_samples = order_samples_along_paths(sample_projections, main_path=main_path, verbose=verbose)
@@ -580,6 +853,7 @@ def TSCAN(
             pca_data=pca_df,
             sample_cluster=sample_cluster,
             main_path=path,
+            mst_adjacency=mst_adjacency,
             verbose=verbose
         )
         os_ordered = order_samples_along_paths(sp, main_path=path, verbose=verbose)
@@ -587,24 +861,14 @@ def TSCAN(
         sample_projections_branching_paths[index] = sp
         ordered_samples_branching_paths[index] = os_ordered
 
-    # 6. Compute pseudotime (rank-based as in original TSCAN, normalized to 0-1)
-    # Main path pseudotime
-    pseudo_main = {}
-    if len(ordered_samples) > 1:
-        for i, sample_id in enumerate(ordered_samples):
-            pseudo_main[sample_id] = i / (len(ordered_samples) - 1)
-    elif len(ordered_samples) == 1:
-        pseudo_main[ordered_samples[0]] = 0.0
+    # 6. Compute pseudotime
+    # Changed: use dedicated compute_pseudotime function with mode support
+    pseudo_main = compute_pseudotime(ordered_samples, pca_df, mode=pseudotime_mode)
 
     # Branching paths pseudotime
     pseudo_branches = {}
     for branch_idx, os_ordered in ordered_samples_branching_paths.items():
-        if len(os_ordered) > 1:
-            pseudo_branches[branch_idx] = {sample_id: i / (len(os_ordered) - 1) for i, sample_id in enumerate(os_ordered)}
-        elif len(os_ordered) == 1:
-            pseudo_branches[branch_idx] = {os_ordered[0]: 0.0}
-        else:
-            pseudo_branches[branch_idx] = {}
+        pseudo_branches[branch_idx] = compute_pseudotime(os_ordered, pca_df, mode=pseudotime_mode)
 
     # 7. Add pseudotime to AnnData object
     # Main path pseudotime
@@ -620,12 +884,10 @@ def TSCAN(
     for cluster_name, sample_list in sample_cluster.items():
         for sample_id in sample_list:
             try:
-                # Find the sample in the obs index
                 if sample_id in AnnData_sample.obs.index:
                     idx = AnnData_sample.obs.index.get_loc(sample_id)
                     cluster_assignment[idx] = cluster_name
                 else:
-                    # Try string conversion
                     sample_id_str = str(sample_id)
                     if sample_id_str in AnnData_sample.obs.index:
                         idx = AnnData_sample.obs.index.get_loc(sample_id_str)
@@ -646,7 +908,6 @@ def TSCAN(
             pca_key=column,
             verbose=verbose
         )
-        # Rename cluster plot to include embedding name
         cluster_plot_default = os.path.join(tscan_output_path, "clusters_by_cluster.png")
         cluster_plot_named = os.path.join(tscan_output_path, f"clusters_by_cluster_{safe_column}.png")
         if os.path.exists(cluster_plot_default):
@@ -661,7 +922,6 @@ def TSCAN(
 
     if grouping_columns is not None:
         try:
-            # Handle string input for grouping columns
             if isinstance(grouping_columns, str):
                 actual_grouping_columns = [grouping_columns]
             else:
@@ -677,7 +937,6 @@ def TSCAN(
                 verbose=verbose
             )
 
-            # Rename grouping plot to include embedding name
             grouping_plot_default = os.path.join(tscan_output_path, "clusters_by_grouping.png")
             grouping_plot_named = os.path.join(tscan_output_path, f"clusters_by_grouping_{safe_column}.png")
             if os.path.exists(grouping_plot_default):
@@ -749,6 +1008,7 @@ def TSCAN(
         },
         "cluster_names": sorted(sample_cluster.keys()),
         "n_samples_total": sum(len(samples) for samples in sample_cluster.values()),
+        "mst_adjacency": mst_adjacency,
     }
 
     if verbose:

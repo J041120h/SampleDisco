@@ -46,14 +46,119 @@ RUNNING RNA PIPELINE
 Starting RNA wrapper function with provided parameters...
 Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
 Starting trajectory analysis...
+Starting TSCAN analysis:
+  Samples: 25
+  Genes: 2000
+  N clusters: auto (BIC)
+  Embedding key: X_DR_expression
+Determining optimal cluster number using BIC...
+  Optimal clusters by BIC: 18
+GMM clustering complete:
+  Clusters: 18
+    cluster_1: 1 samples
+    cluster_10: 1 samples
+    cluster_11: 1 samples
+    cluster_12: 3 samples
+    cluster_13: 1 samples
+    cluster_14: 1 samples
+    cluster_15: 1 samples
+    cluster_16: 1 samples
+    cluster_17: 2 samples
+    cluster_18: 1 samples
+    cluster_2: 3 samples
+    cluster_3: 1 samples
+    cluster_4: 1 samples
+    cluster_5: 1 samples
+    cluster_6: 2 samples
+    cluster_7: 2 samples
+    cluster_8: 1 samples
+    cluster_9: 1 samples
+Computed pairwise euclidean distances among 18 cluster centroids
+MST construction complete with shape: (18, 18)
+Principal path found: 6 clusters, 12 total samples
+Path: cluster_2 -> cluster_10 -> cluster_15 -> cluster_11 -> cluster_4 -> cluster_9
+Using random endpoint as origin: cluster_9
+Found 11 branching paths
+Projection complete for 9 samples
+Sample ordering complete: 9 samples
+Projection complete for 4 samples
+Sample ordering complete: 4 samples
+Projection complete for 7 samples
+Sample ordering complete: 7 samples
+Projection complete for 4 samples
+Sample ordering complete: 4 samples
+Projection complete for 9 samples
+Sample ordering complete: 9 samples
+Projection complete for 7 samples
+Sample ordering complete: 7 samples
+Projection complete for 7 samples
+Sample ordering complete: 7 samples
+Projection complete for 4 samples
+Sample ordering complete: 4 samples
+Projection complete for 7 samples
+Sample ordering complete: 7 samples
+Projection complete for 7 samples
+Sample ordering complete: 7 samples
+Projection complete for 9 samples
+Sample ordering complete: 9 samples
+Projection complete for 7 samples
+Sample ordering complete: 7 samples
+Cluster plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster.png
+Plotted 25 samples across 18 clusters
+Cluster plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster_X_DR_expression.png
+Grouping plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping.png
+Grouping plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping_X_DR_expression.png
+Pseudotime data saved: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/X_DR_expression_pseudotime.csv
+  Total samples in CSV: 81
 
-CCA Analysis Summary:
-  Proportion: score=0.4474 (PC2 + PC7)
-  Expression: score=0.6209 (PC4 + PC9)
-P-value for observed correlation 0.4474130418938426: 0.076
-[CCA p-test] Runtime: 1.44 seconds
-P-value for observed correlation 0.6208873572775876: 0.002
-[CCA p-test] Runtime: 1.42 seconds
+TSCAN analysis completed successfully!
+  Main path: 9 samples across 6 clusters
+  Branch 1: 4 samples across 3 clusters
+  Branch 2: 7 samples across 5 clusters
+  Branch 3: 4 samples across 3 clusters
+  Branch 4: 9 samples across 6 clusters
+  Branch 5: 7 samples across 5 clusters
+  Branch 6: 7 samples across 5 clusters
+  Branch 7: 4 samples across 3 clusters
+  Branch 8: 7 samples across 5 clusters
+  Branch 9: 7 samples across 3 clusters
+  Branch 10: 9 samples across 6 clusters
+  Branch 11: 7 samples across 5 clusters
+  Total samples processed: 25
+  Results saved to: /dcs07/hongkai/data/harry/result/test/rna/TSCAN
+Starting TSCAN analysis:
+  Samples: 25
+  Genes: 2000
+  N clusters: auto (BIC)
+  Embedding key: X_DR_proportion
+Determining optimal cluster number using BIC...
+  Optimal clusters by BIC: 4
+GMM clustering complete:
+  Clusters: 4
+    cluster_1: 7 samples
+    cluster_2: 6 samples
+    cluster_3: 5 samples
+    cluster_4: 7 samples
+Computed pairwise euclidean distances among 4 cluster centroids
+MST construction complete with shape: (4, 4)
+Principal path found: 4 clusters, 25 total samples
+Path: cluster_1 -> cluster_4 -> cluster_3 -> cluster_2
+Using random endpoint as origin: cluster_1
+Found 0 branching paths
+Projection complete for 25 samples
+Sample ordering complete: 25 samples
+Cluster plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster.png
+Plotted 25 samples across 4 clusters
+Cluster plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster_X_DR_proportion.png
+Grouping plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping.png
+Grouping plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping_X_DR_proportion.png
+Pseudotime data saved: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/X_DR_proportion_pseudotime.csv
+  Total samples in CSV: 25
+
+TSCAN analysis completed successfully!
+  Main path: 25 samples across 4 clusters
+  Total samples processed: 25
+  Results saved to: /dcs07/hongkai/data/harry/result/test/rna/TSCAN
 RNA analysis completed successfully!
 
 RNA pipeline completed successfully!
@@ -73,4 +178,4 @@ RNA Pipeline: PARTIAL
 
 Results saved to: /dcs07/hongkai/data/harry/result/test
 Status file: /dcs07/hongkai/data/harry/result/test/sys_log/main_process_status.json
-Execution time: 7.1520 seconds
+Execution time: 6.5118 seconds
