@@ -91,7 +91,7 @@ def rna_wrapper(
     # ===== Trajectory Analysis Parameters =====
     trajectory_supervised=False,
     n_components_for_cca=2,
-    sev_col_cca="sev.level",
+    trajectory_col_cca="sev.level",
     cca_optimal_cell_resolution=False,
     cca_pvalue=False,
     trajectory_verbose=True,
@@ -297,7 +297,7 @@ def rna_wrapper(
                 output_dir=rna_output_dir,
                 column=column,
                 n_features=sample_hvg_number,
-                sev_col=sev_col_cca,
+                trajectory_col=trajectory_col_cca,
                 batch_col=batch_col,
                 sample_col=sample_col,
                 num_PCs=cell_embedding_num_PCs,
@@ -336,15 +336,14 @@ def rna_wrapper(
             raise ValueError("Dimensionality reduction is required before trajectory analysis.")
         
         if trajectory_supervised:
-            if sev_col_cca not in pseudobulk_adata.obs.columns:
-                raise ValueError(f"Severity column '{sev_col_cca}' not found in AnnData_sample.")
+            if trajectory_col_cca not in pseudobulk_adata.obs.columns:
+                raise ValueError(f"Trajectory column '{trajectory_col_cca}' not found in AnnData_sample.")
             
             first_component_score_proportion, first_component_score_expression, ptime_proportion, ptime_expression = CCA_Call(
                 adata=pseudobulk_adata,
                 n_components=n_components_for_cca,
                 output_dir=rna_output_dir,
-                sev_col=sev_col_cca,
-                ptime=True,
+                trajectory_col=trajectory_col_cca,
                 verbose=trajectory_verbose
             )
             
@@ -354,8 +353,7 @@ def rna_wrapper(
                     column="X_DR_proportion",
                     input_correlation=first_component_score_proportion,
                     output_directory=rna_output_dir,
-                    num_simulations=1000,
-                    sev_col=sev_col_cca,
+                    trajectory_col=trajectory_col_cca,
                     verbose=trajectory_verbose
                 )
                 cca_pvalue_test(
@@ -363,27 +361,24 @@ def rna_wrapper(
                     column="X_DR_expression",
                     input_correlation=first_component_score_expression,
                     output_directory=rna_output_dir,
-                    num_simulations=1000,
-                    sev_col=sev_col_cca,
+                    trajectory_col=trajectory_col_cca,
                     verbose=trajectory_verbose
                 )
-            
             status_flags["rna"]["trajectory_analysis"] = True
         else:
             # Unsupervised trajectory analysis
             TSCAN_result_expression = TSCAN(
                 AnnData_sample=pseudobulk_adata,
                 column="X_DR_expression",
-                n_clusters=8,
                 output_dir=rna_output_dir,
                 grouping_columns=trajectory_visualization_label,
                 verbose=trajectory_verbose,
                 origin=TSCAN_origin
             )
+
             TSCAN_result_proportion = TSCAN(
                 AnnData_sample=pseudobulk_adata,
                 column="X_DR_proportion",
-                n_clusters=8,
                 output_dir=rna_output_dir,
                 grouping_columns=trajectory_visualization_label,
                 verbose=trajectory_verbose,

@@ -7,11 +7,11 @@ import seaborn as sns
 from anndata import AnnData
 import warnings
 from anndata._core.aligned_df import ImplicitModificationWarning
-from distance_test import distanceCheck
 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from visualization.visualization_helper import visualizeDistanceMatrix
+from sample_distance.distance_test import distanceCheck
 
 warnings.filterwarnings("ignore", category=ImplicitModificationWarning)
 

@@ -6,7 +6,7 @@ import networkx as nx
 import scanpy as sc
 import matplotlib.pyplot as plt
 
-from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
 from collections import defaultdict
 from scipy.spatial.distance import pdist, squareform
 from scipy.sparse.csgraph import minimum_spanning_tree
@@ -43,15 +43,126 @@ def find_sample_grouping(adata: sc.AnnData, samples: List[str], grouping_columns
     return grouping_dict
 
 
+def cluster_samples_gmm(
+    pca_data: pd.DataFrame,
+    n_clusters: Optional[int] = None,
+    max_clusters: int = 20,
+    random_state: int = 0,
+    verbose: bool = False
+) -> Tuple[Dict[str, List[str]], np.ndarray]:
+    """
+    Cluster samples using Gaussian Mixture Model (GMM), following TSCAN's mclust approach.
+    
+    Uses BIC to select optimal number of clusters if not specified.
+    GMM uses covariance_type='full' for ellipsoidal clusters with varying 
+    volume, shape, and orientation (matching mclust's 'VVV' model).
+    
+    Parameters:
+    -----------
+    pca_data : pd.DataFrame
+        PCA coordinates (samples x PCs)
+    n_clusters : int, optional
+        Number of clusters. If None, determined by BIC.
+    max_clusters : int
+        Maximum clusters to try when using BIC (default: 20)
+    random_state : int
+        Random seed for reproducibility
+    verbose : bool
+        Whether to print progress information
+        
+    Returns:
+    --------
+    Tuple[Dict[str, List[str]], np.ndarray]
+        - Dictionary mapping cluster names to sample lists
+        - Cluster labels for each sample
+    """
+    X = pca_data.values
+    n_samples = X.shape[0]
+    
+    if n_clusters is None:
+        # Use BIC to select optimal number of clusters (as in mclust)
+        max_k = min(max_clusters, n_samples - 1)
+        best_bic = np.inf
+        best_k = 1
+        
+        if verbose:
+            print("Determining optimal cluster number using BIC...")
+        
+        for k in range(1, max_k + 1):
+            try:
+                gmm = GaussianMixture(
+                    n_components=k,
+                    covariance_type='full',  # Ellipsoidal, varying volume/shape/orientation
+                    random_state=random_state,
+                    n_init=3
+                )
+                gmm.fit(X)
+                bic = gmm.bic(X)
+                
+                if bic < best_bic:
+                    best_bic = bic
+                    best_k = k
+            except Exception:
+                continue
+        
+        n_clusters = best_k
+        if verbose:
+            print(f"  Optimal clusters by BIC: {n_clusters}")
+    
+    # Fit final GMM with selected number of clusters
+    gmm = GaussianMixture(
+        n_components=n_clusters,
+        covariance_type='full',
+        random_state=random_state,
+        n_init=3
+    )
+    cluster_labels = gmm.fit_predict(X)
+    
+    # Build sample_cluster dictionary
+    cluster_dict = defaultdict(list)
+    for sample, cluster_idx in zip(pca_data.index, cluster_labels):
+        cluster_name = f"cluster_{cluster_idx + 1}"
+        cluster_dict[cluster_name].append(str(sample))
+    
+    sample_cluster = dict(cluster_dict)
+    
+    if verbose:
+        print(f"GMM clustering complete:")
+        print(f"  Clusters: {len(sample_cluster)}")
+        for name, samples in sorted(sample_cluster.items()):
+            print(f"    {name}: {len(samples)} samples")
+    
+    return sample_cluster, cluster_labels
+
+
 def cluster_samples_by_pca(
     adata: sc.AnnData,
     column: str,
-    k: int = 0,
+    n_clusters: Optional[int] = None,
     random_state: int = 0,
     verbose: bool = False
 ) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
     """
-    Cluster samples based on PCA coordinates using K-means.
+    Cluster samples based on PCA coordinates using GMM with BIC.
+    
+    Parameters:
+    -----------
+    adata : sc.AnnData
+        AnnData object containing PCA data
+    column : str
+        Key for PCA data in adata.uns
+    n_clusters : int, optional
+        Number of clusters. If None, determined automatically by BIC.
+    random_state : int
+        Random seed
+    verbose : bool
+        Whether to print progress information
+        
+    Returns:
+    --------
+    Tuple[Dict[str, List[str]], pd.DataFrame]
+        - Dictionary mapping cluster names to sample lists
+        - PCA DataFrame
     """
     # 1. Retrieve PCA DataFrame
     if column not in adata.uns:
@@ -89,29 +200,18 @@ def cluster_samples_by_pca(
         else:
             pca_data = pca_data.loc[common_samples]
 
-    sample_ids = pca_data.index
     n_samples = pca_data.shape[0]
 
-    if k > n_samples:
-        raise ValueError(f"k={k} cannot exceed n_samples={n_samples}.")
-    if k == 0:
-        k = max(1, int(n_samples * 0.05))  # default 5% of samples
+    if n_clusters is not None and n_clusters > n_samples:
+        raise ValueError(f"n_clusters={n_clusters} cannot exceed n_samples={n_samples}.")
 
-    # 2. K-means clustering
-    kmeans = KMeans(n_clusters=k, random_state=random_state)
-    cluster_labels = kmeans.fit_predict(pca_data.values)
-
-    # Build sample_cluster dictionary
-    cluster_label_map = {i: f"cluster_{i + 1}" for i in range(k)}
-    cluster_dict = defaultdict(list)
-    for sample, cluster_idx in zip(sample_ids, cluster_labels):
-        cluster_name = cluster_label_map[cluster_idx]
-        cluster_dict[cluster_name].append(str(sample))
-
-    sample_cluster = dict(cluster_dict)
-
-    if verbose:
-        print(f"K-means clustering complete: {len(sample_cluster)} clusters from {n_samples} samples")
+    # 2. GMM clustering with BIC
+    sample_cluster, _ = cluster_samples_gmm(
+        pca_data,
+        n_clusters=n_clusters,
+        random_state=random_state,
+        verbose=verbose
+    )
 
     return sample_cluster, pca_data
 
@@ -224,6 +324,15 @@ def project_samples_onto_edges(
 ) -> Dict[str, Dict]:
     """
     Projects samples onto edges in the cluster ordering.
+    
+    Following TSCAN paper:
+    - Projection of sample k onto edge (i,j): v_ij^T * E_k / ||v_ij||
+    - where v_ij = E(j) - E(i) and E(i), E(j) are cluster centers
+    - Samples in first cluster -> project to edge (C1, C2)
+    - Samples in last cluster -> project to edge (C_{M-1}, C_M)
+    - Samples in intermediate cluster C_m:
+      - If closer to C_{m-1}: project to edge (C_{m-1}, C_m)
+      - If closer to C_{m+1}: project to edge (C_m, C_{m+1})
     """
     cluster_list = sorted(sample_cluster.keys())
 
@@ -237,10 +346,15 @@ def project_samples_onto_edges(
         cluster_centroids[clust] = coords.mean(axis=0).values
 
     def _projection(Ek, Ei, Ej):
+        """
+        Project sample onto edge following TSCAN formula:
+        v_ij^T * (E_k - E_i) / ||v_ij||
+        """
         v_ij = Ej - Ei
-        numerator = np.dot(Ek - Ei, v_ij)
-        denom = np.linalg.norm(v_ij)
-        return numerator / denom if denom != 0 else 0.0
+        norm_v = np.linalg.norm(v_ij)
+        if norm_v == 0:
+            return 0.0
+        return np.dot(v_ij, Ek - Ei) / norm_v
 
     def _dist_sample_to_centroid(Ek, Ec):
         return np.linalg.norm(Ek - Ec)
@@ -253,7 +367,7 @@ def project_samples_onto_edges(
         samples_in_cluster = [s for s in sample_cluster[cluster_name] if s in pca_data.index]
         Ei = cluster_centroids[cluster_name]
 
-        # First cluster
+        # First cluster: all samples project onto edge (C1, C2)
         if i == 0 and M > 1:
             next_cluster = path_cluster_names[i+1]
             Ej = cluster_centroids[next_cluster]
@@ -268,7 +382,7 @@ def project_samples_onto_edges(
                     "edge_index": 1
                 }
 
-        # Last cluster
+        # Last cluster: all samples project onto edge (C_{M-1}, C_M)
         elif i == M - 1 and M > 1:
             prev_cluster = path_cluster_names[i-1]
             Eprev = cluster_centroids[prev_cluster]
@@ -283,7 +397,7 @@ def project_samples_onto_edges(
                     "edge_index": 0
                 }
 
-        # Intermediate clusters
+        # Intermediate clusters: assign based on distance to neighboring cluster centers
         else:
             if M == 1:
                 for s in samples_in_cluster:
@@ -304,6 +418,7 @@ def project_samples_onto_edges(
                     dist2prev = _dist_sample_to_centroid(Ek, Eprev)
                     dist2next = _dist_sample_to_centroid(Ek, Enext)
                     if dist2prev <= dist2next:
+                        # Closer to previous cluster -> project onto edge (C_{m-1}, C_m)
                         val = _projection(Ek, Eprev, Ei)
                         sample_projections[s] = {
                             "cluster": cluster_name,
@@ -313,6 +428,7 @@ def project_samples_onto_edges(
                             "edge_index": 0
                         }
                     else:
+                        # Closer to next cluster -> project onto edge (C_m, C_{m+1})
                         val = _projection(Ek, Ei, Enext)
                         sample_projections[s] = {
                             "cluster": cluster_name,
@@ -335,6 +451,11 @@ def order_samples_along_paths(
 ) -> List[str]:
     """
     Orders samples along the trajectory path.
+    
+    Following TSCAN paper, ordering is determined in three steps:
+    1. Within same cluster and same edge: order by projection value
+    2. Within same cluster but different edges: order by edge order
+    3. Between different clusters: order by cluster order
     """
     sortable = []
     for sample_id, info in sample_projections.items():
@@ -355,8 +476,8 @@ def order_samples_along_paths(
 def TSCAN(
     AnnData_sample: sc.AnnData,
     column: str,
-    n_clusters: int,
-    output_dir: str,
+    n_clusters: Optional[int] = None,
+    output_dir: str = "./",
     grouping_columns: Optional[List[str]] = None,
     verbose: bool = False,
     origin: Optional[int] = None,
@@ -364,14 +485,21 @@ def TSCAN(
     """
     Trajectory analysis using TSCAN algorithm for pseudobulk data.
     
+    This implementation follows the original TSCAN paper (Ji & Ji, NAR 2016):
+    1. Sample clustering using GMM (mclust-like) with BIC for automatic cluster selection
+    2. MST construction on cluster centroids
+    3. Sample projection onto MST edges
+    4. Pseudotime ordering based on sample rank
+    
     Parameters:
     -----------
     AnnData_sample : sc.AnnData
-        AnnData object containing sample-level data
+        AnnData object containing sample-level data with pre-computed PCA
     column : str
         Key for PCA data in adata.uns
-    n_clusters : int
-        Number of clusters for K-means
+    n_clusters : int, optional
+        Number of clusters for sample clustering.
+        If None, determined automatically using BIC (TSCAN default)
     output_dir : str
         Directory to save results
     grouping_columns : List[str], optional
@@ -398,14 +526,14 @@ def TSCAN(
         print(f"Starting TSCAN analysis:")
         print(f"  Samples: {AnnData_sample.n_obs}")
         print(f"  Genes: {AnnData_sample.n_vars}")
-        print(f"  Clusters: {n_clusters}")
+        print(f"  N clusters: {'auto (BIC)' if n_clusters is None else n_clusters}")
         print(f"  Embedding key: {column}")
 
-    # 1. Cluster samples by PCA
+    # 1. Cluster samples by PCA using GMM with BIC
     sample_cluster, pca_df = cluster_samples_by_pca(
         AnnData_sample,
         column=column,
-        k=n_clusters,
+        n_clusters=n_clusters,
         random_state=0,
         verbose=verbose
     )
@@ -423,6 +551,10 @@ def TSCAN(
             print(f"Using random endpoint as origin: cluster_{origin + 1}")
     elif origin not in ends:
         raise ValueError(f"Provided origin {origin} is not an endpoint. Available endpoints: {ends}")
+
+    # Ensure main_path starts from origin
+    if main_path[0] != origin:
+        main_path = main_path[::-1]
 
     # Build graph for branching analysis
     G = nx.from_numpy_array(mst + mst.T)
@@ -452,8 +584,8 @@ def TSCAN(
         sample_projections_branching_paths[index] = sp
         ordered_samples_branching_paths[index] = os_ordered
 
-    # 6. Compute pseudotime
-    # Main path pseudotime (normalized 0-1)
+    # 6. Compute pseudotime (rank-based as in original TSCAN, normalized to 0-1)
+    # Main path pseudotime
     pseudo_main = {}
     if len(ordered_samples) > 1:
         for i, sample_id in enumerate(ordered_samples):
@@ -502,7 +634,6 @@ def TSCAN(
     AnnData_sample.obs['tscan_cluster'] = cluster_assignment
 
     # 8. Visualization
-    # Generate default plots, then rename them to include the embedding key so runs don't overwrite each other
     try:
         plot_clusters_by_cluster(
             adata=AnnData_sample,
@@ -614,7 +745,7 @@ def TSCAN(
             "branching_paths": pseudo_branches
         },
         "cluster_names": sorted(sample_cluster.keys()),
-        "n_samples_total": sum(len(samples) for samples in sample_cluster.values())
+        "n_samples_total": sum(len(samples) for samples in sample_cluster.values()),
     }
 
     if verbose:

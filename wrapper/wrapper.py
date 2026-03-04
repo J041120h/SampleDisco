@@ -106,7 +106,7 @@ def wrapper(
     # RNA Trajectory Analysis Parameters
     rna_trajectory_supervised: bool = False,
     rna_n_components_for_cca: int = 2,
-    rna_sev_col_cca: str = "sev.level",
+    rna_trajectory_col_cca: str = "sev.level",
     rna_cca_optimal_cell_resolution: bool = False,
     rna_cca_pvalue: bool = False,
     rna_trajectory_verbose: bool = True,
@@ -602,7 +602,7 @@ def wrapper(
                 
                 trajectory_supervised=rna_trajectory_supervised,
                 n_components_for_cca=rna_n_components_for_cca,
-                sev_col_cca=rna_sev_col_cca,
+                trajectory_col_cca=rna_trajectory_col_cca,
                 cca_optimal_cell_resolution=rna_cca_optimal_cell_resolution,
                 cca_pvalue=rna_cca_pvalue,
                 trajectory_verbose=rna_trajectory_verbose,

@@ -16,7 +16,7 @@ from CCA import *
 from typing import Optional, Union, List
 
 
-def generate_null_distribution(pseudobulk_adata, column, sev_col,
+def generate_null_distribution(pseudobulk_adata, column, trajectory_col,
                                    n_permutations=1000, n_pcs=None,
                                    save_path=None, verbose=True):
     """
@@ -28,8 +28,8 @@ def generate_null_distribution(pseudobulk_adata, column, sev_col,
         Pseudobulk AnnData object
     column : str
         Column name for dimension reduction coordinates
-    sev_col : str
-        Column name for severity levels
+    trajectory_col : str
+        Column name for trajectory levels
     n_permutations : int
         Number of permutations
     n_pcs : int, optional
@@ -50,7 +50,7 @@ def generate_null_distribution(pseudobulk_adata, column, sev_col,
     
     # Get DR coordinates and severity levels
     dr_coords_full = pseudobulk_adata.uns[column].copy()
-    sev_levels = pseudobulk_adata.obs[sev_col].values
+    sev_levels = pseudobulk_adata.obs[trajectory_col].values
     
     # Use specified number of DR components
     if n_pcs is None:
@@ -607,7 +607,7 @@ def cca_pvalue_test(
     input_correlation: float,
     output_directory: str,
     num_simulations: int = 1000,
-    sev_col: str = "sev.level",
+    trajectory_col: str = "sev.level",
     verbose: bool = True
 ):
     """
@@ -617,7 +617,7 @@ def cca_pvalue_test(
     -----------
     pseudo_adata : AnnData
         Pseudo anndata object where observations are samples and variables are genes.
-        Must contain severity levels in pseudo_adata.obs[sev_col].
+        Must contain trajectory levels in pseudo_adata.obs[trajectory_col].
     column : str
         Key in pseudo_adata.uns containing the coordinates (e.g., PCA coordinates)
     input_correlation : float
@@ -626,8 +626,8 @@ def cca_pvalue_test(
         Directory to save results
     num_simulations : int
         Number of permutation simulations (default: 1000)
-    sev_col : str
-        Column name for severity levels in pseudo_adata.obs (default: "sev.level")
+    trajectory_col : str
+        Column name for trajectory levels in pseudo_adata.obs (default: "sev.level")
     verbose : bool
         Whether to print timing information (default: True)
     
@@ -657,11 +657,11 @@ def cca_pvalue_test(
     pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, "iloc") else pca_coords[:, :2]
     
     # Check if severity column exists
-    if sev_col not in pseudo_adata.obs.columns:
-        raise KeyError(f"pseudo_adata.obs must have a '{sev_col}' column.")
+    if trajectory_col not in pseudo_adata.obs.columns:
+        raise KeyError(f"pseudo_adata.obs must have a '{trajectory_col}' column.")
     
     # Get severity levels and convert to numerical values
-    sev_levels = pseudo_adata.obs[sev_col]
+    sev_levels = pseudo_adata.obs[trajectory_col]
     
     # Convert categorical or string data to numerical
     if is_categorical_dtype(sev_levels):
@@ -724,7 +724,7 @@ def find_optimal_cell_resolution(
     output_dir: str,
     column: str,
     n_features: int = 2000,
-    sev_col: str = "sev.level",
+    trajectory_col: str = "sev.level",
     batch_col: List[str] = ["batch"],
     sample_col: str = "sample",
     use_rep: str = 'X_pca',
@@ -752,8 +752,8 @@ def find_optimal_cell_resolution(
         Column name in adata.uns for dimension reduction results
     n_features : int
         Number of features for pseudobulk
-    sev_col : str
-        Column name for severity levels
+    trajectory_col : str
+        Column name for trajectory levels
     batch_col : str
         Column name for batch information
     sample_col : str
@@ -900,7 +900,7 @@ def find_optimal_cell_resolution(
                 pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
                     adata=pseudobulk_adata,
                     column=column,
-                    sev_col=sev_col,
+                    trajectory_col=trajectory_col,
                     n_components=n_pcs_for_null,  # Use specified number of PCs
                     verbose=False
                 )
@@ -951,7 +951,7 @@ def find_optimal_cell_resolution(
                         null_distribution = generate_null_distribution(
                             pseudobulk_adata=pseudobulk_adata,
                             column=column,
-                            sev_col=sev_col,
+                            trajectory_col=trajectory_col,
                             n_pcs=n_pcs_for_null,
                             n_permutations=num_pvalue_simulations,
                             save_path=os.path.join(resolution_dir, f'null_dist_{resolution:.3f}.npy'),
