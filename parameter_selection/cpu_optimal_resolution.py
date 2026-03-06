@@ -18,7 +18,7 @@ from sklearn.cross_decomposition import CCA
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from preparation.Cell_type import cell_types
+from preparation.cell_type_cpu import cell_types
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
 from sample_trajectory.CCA import run_cca_on_pca_from_adata, plot_cca_on_2d_pca
 from sample_trajectory.CCA_test import (

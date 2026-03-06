@@ -1,14 +1,9 @@
 import os
 import scanpy as sc
 import pandas as pd
-import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from preparation.atac_preprocess_gpu import preprocess_linux
 from preparation.atac_preprocess_cpu import preprocess
-from preparation.ATAC_cell_type import cell_types_atac
-from visualization.ATAC_visualization import DR_visualization_all
-from sample_trajectory.ATAC_CCA_test import find_optimal_cell_resolution_atac
+from preparation.cell_type_cpu import cell_types
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
 from sample_trajectory.CCA import CCA_Call
 from sample_trajectory.CCA_test import cca_pvalue_test
@@ -19,14 +14,13 @@ from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differenti
 from sample_clustering.RAISIN import raisinfit
 from sample_clustering.RAISIN_TEST import run_pairwise_tests
 from sample_clustering.proportion_test import proportion_test as run_proportion_test
+from visualization.ATAC_visualization import DR_visualization_all
 
 
 def atac_wrapper(
-    # Required paths
     atac_count_data_path: str = None,
     atac_output_dir: str = None,
     
-    # Pipeline step flags (aligned with RNA wrapper naming)
     preprocessing: bool = True,
     cell_type_cluster: bool = True,
     derive_sample_embedding: bool = True,
@@ -39,25 +33,21 @@ def atac_wrapper(
     cluster_DGE: bool = False,
     visualize_data: bool = True,
     
-    # Runtime options
     use_gpu: bool = False,
     verbose: bool = True,
     status_flags: dict = None,
     
-    # Data paths (aligned with RNA wrapper)
     adata_cell_path: str = None,
     adata_sample_path: str = None,
     atac_sample_meta_path: str = None,
     cell_meta_path: str = None,
     pseudo_adata_path: str = None,
     
-    # Common parameters (aligned with RNA wrapper naming)
     sample_col: str = 'sample',
     batch_col: str = None,
     celltype_col: str = 'cell_type',
-    cell_embedding_column: str = "X_lsi_harmony",
+    cell_embedding_column: str = None,
     
-    # Preprocessing parameters (ATAC-specific)
     min_cells: int = 1,
     min_features: int = 2000,
     max_features: int = 15000,
@@ -72,19 +62,16 @@ def atac_wrapper(
     log_transform: bool = True,
     drop_first_lsi: bool = True,
     
-    # Cell type clustering parameters
     leiden_cluster_resolution: float = 0.8,
     existing_cell_types: bool = False,
     n_target_cell_clusters: int = None,
     umap: bool = False,
     
-    # Sample embedding parameters
     sample_hvg_number: int = 50000,
     sample_embedding_dimension: int = 30,
     harmony_for_proportion: bool = True,
     preserve_cols_in_sample_embedding: list = None,
     
-    # Trajectory parameters
     n_cca_pcs: int = 2,
     trajectory_col: str = "sev.level",
     trajectory_supervised: bool = True,
@@ -92,7 +79,6 @@ def atac_wrapper(
     cca_pvalue: bool = False,
     tscan_origin: str = None,
     
-    # Trajectory DGE parameters
     fdr_threshold: float = 0.05,
     effect_size_threshold: float = 1.0,
     top_n_genes: int = 100,
@@ -101,16 +87,13 @@ def atac_wrapper(
     spline_order: int = 3,
     visualization_gene_list: list = None,
     
-    # Sample distance parameters
     sample_distance_methods: list = None,
     grouping_columns: list = None,
     summary_sample_csv_path: str = None,
     
-    # Clustering parameters
     cluster_number: int = 4,
     cluster_differential_gene_group_col: str = None,
     
-    # Visualization parameters
     age_bin_size: int = None,
     age_column: str = 'age',
     plot_dendrogram_flag: bool = True,
@@ -122,62 +105,15 @@ def atac_wrapper(
     atac_show_sample_names: bool = True,
     
 ) -> dict:
-    """
-    ATAC-seq analysis wrapper function.
-    
-    This function orchestrates the complete ATAC-seq analysis pipeline including:
-    preprocessing, cell type clustering, sample embedding, trajectory analysis,
-    differential gene expression, sample clustering, and visualization.
-    
-    Parameters
-    ----------
-    atac_count_data_path : str
-        Path to the input h5ad file containing ATAC count data.
-    atac_output_dir : str
-        Directory to save all output files.
-    preprocessing : bool, default=True
-        Whether to run preprocessing step.
-    cell_type_cluster : bool, default=True
-        Whether to run cell type clustering.
-    derive_sample_embedding : bool, default=True
-        Whether to derive sample embeddings.
-    cca_based_cell_resolution_selection : bool, default=False
-        Whether to find optimal cell resolution using CCA.
-    sample_distance_calculation : bool, default=True
-        Whether to calculate sample distances.
-    trajectory_analysis : bool, default=True
-        Whether to run trajectory analysis.
-    trajectory_DGE : bool, default=True
-        Whether to run trajectory differential gene expression.
-    sample_cluster : bool, default=True
-        Whether to run sample clustering.
-    proportion_test : bool, default=False
-        Whether to run proportion tests.
-    cluster_DGE : bool, default=False
-        Whether to run cluster differential gene expression (RAISIN).
-    visualize_data : bool, default=True
-        Whether to generate visualizations.
-    use_gpu : bool, default=False
-        Whether to use GPU acceleration.
-    verbose : bool, default=True
-        Whether to print progress messages.
-        
-    Returns
-    -------
-    dict
-        Dictionary containing:
-        - 'adata_cell': Cell-level AnnData object
-        - 'adata_sample': Sample-level AnnData object
-        - 'pseudobulk_df': Pseudobulk DataFrame
-        - 'pseudo_adata': Pseudobulk AnnData object
-        - 'status_flags': Status flags for each pipeline step
-    """
     print("Starting ATAC wrapper function...")
     
     if atac_count_data_path is None or atac_output_dir is None:
         raise ValueError("Required parameters atac_count_data_path and atac_output_dir must be provided.")
     
-    # Set default values for list parameters
+    if use_gpu:
+        from preparation.atac_preprocess_gpu import preprocess_linux
+        from preparation.cell_type_gpu import cell_types_linux
+    
     if grouping_columns is None:
         grouping_columns = ['sev.level']
     if vars_to_regress is None:
@@ -193,7 +129,6 @@ def atac_wrapper(
     
     trajectory_diff_gene_output_dir = os.path.join(atac_output_dir, 'trajectoryDEG')
     
-    # Initialize status flags
     default_status = {
         "preprocessing": False,
         "cell_type_cluster": False,
@@ -215,9 +150,6 @@ def atac_wrapper(
     pseudobulk_df = None
     pseudo_adata = None
 
-    # =========================================================================
-    # STEP 1: PREPROCESSING
-    # =========================================================================
     if preprocessing:
         print("Starting preprocessing...")
         preprocess_func = preprocess_linux if use_gpu else preprocess
@@ -268,32 +200,28 @@ def atac_wrapper(
     if not status_flags["atac"]["preprocessing"]:
         raise ValueError("ATAC preprocessing skipped but no preprocessed data found.")
 
-    # =========================================================================
-    # STEP 2: CELL TYPE CLUSTERING
-    # =========================================================================
     if cell_type_cluster:
         print(f"Starting cell type clustering at resolution: {leiden_cluster_resolution}")
         
-        adata_sample = cell_types_atac(
-            adata=adata_sample,
-            cell_column=celltype_col,
-            Save=True,
+        cell_types_func = cell_types_linux if use_gpu else cell_types
+        
+        adata_cell, adata_sample = cell_types_func(
+            anndata_cell=adata_cell,
+            anndata_sample=adata_sample,
+            cell_type_column=celltype_col,
             existing_cell_types=existing_cell_types,
             n_target_clusters=n_target_cell_clusters,
-            cluster_resolution=leiden_cluster_resolution,
-            use_rep=cell_embedding_column,
-            method='average',
-            metric='euclidean',
-            distance_mode='centroid',
-            num_DMs=cell_embedding_num_pcs,
+            umap=umap,
+            save=True,
             output_dir=atac_output_dir,
-            verbose=verbose
+            leiden_cluster_resolution=leiden_cluster_resolution,
+            cell_embedding_column=cell_embedding_column,
+            cell_embedding_num_PCs=cell_embedding_num_pcs,
+            verbose=verbose,
+            umap_plots=True,
         )
         status_flags["atac"]["cell_type_cluster"] = True
 
-    # =========================================================================
-    # STEP 3: SAMPLE EMBEDDING DERIVATION
-    # =========================================================================
     if derive_sample_embedding:
         print("Starting sample embedding derivation...")
         
@@ -331,11 +259,10 @@ def atac_wrapper(
         
         status_flags["atac"]["derive_sample_embedding"] = True
 
-    # =========================================================================
-    # STEP 4: CCA-BASED CELL RESOLUTION SELECTION (OPTIONAL)
-    # =========================================================================
     if cca_based_cell_resolution_selection:
         print("Finding optimal cell resolution...")
+        
+        from sample_trajectory.ATAC_CCA_test import find_optimal_cell_resolution_atac
         
         for column in ["X_DR_expression", "X_DR_proportion"]:
             find_optimal_cell_resolution_atac(
@@ -355,9 +282,6 @@ def atac_wrapper(
         from utils.unify_optimal import replace_optimal_dimension_reduction
         pseudo_adata = replace_optimal_dimension_reduction(atac_output_dir)
 
-    # =========================================================================
-    # STEP 5: SAMPLE DISTANCE CALCULATION
-    # =========================================================================
     if sample_distance_calculation:
         print("Starting sample distance calculation...")
         
@@ -379,9 +303,6 @@ def atac_wrapper(
         if verbose:
             print(f"Sample distance calculation completed: {os.path.join(atac_output_dir, 'Sample_distance')}")
 
-    # =========================================================================
-    # STEP 6: TRAJECTORY ANALYSIS
-    # =========================================================================
     ptime_expression = None
     ptime_proportion = None
     
@@ -451,7 +372,6 @@ def atac_wrapper(
         
         status_flags["atac"]["trajectory_analysis"] = True
 
-        # Trajectory DGE (nested under trajectory_analysis like RNA wrapper)
         if trajectory_DGE:
             print("Running trajectory differential gene analysis...")
             
@@ -474,13 +394,9 @@ def atac_wrapper(
             status_flags["atac"]["trajectory_dge"] = True
             print("Trajectory differential gene analysis completed!")
 
-    # Clean up summary CSV
     if os.path.exists(summary_sample_csv_path):
         os.remove(summary_sample_csv_path)
 
-    # =========================================================================
-    # STEP 7: SAMPLE CLUSTERING
-    # =========================================================================
     expr_results, prop_results = {}, {}
     
     if sample_cluster:
@@ -495,9 +411,6 @@ def atac_wrapper(
             random_state=0,
         )
 
-    # =========================================================================
-    # STEP 8: PROPORTION TEST
-    # =========================================================================
     if proportion_test:
         print("Starting proportion tests...")
         
@@ -530,9 +443,6 @@ def atac_wrapper(
             import traceback
             traceback.print_exc()
 
-    # =========================================================================
-    # STEP 9: CLUSTER DGE (RAISIN)
-    # =========================================================================
     if cluster_DGE:
         print("Running RAISIN analysis...")
         
@@ -567,9 +477,6 @@ def atac_wrapper(
 
     status_flags["atac"]["cluster_dge"] = True
 
-    # =========================================================================
-    # STEP 10: VISUALIZATION
-    # =========================================================================
     if visualize_data:
         print("Starting visualization...")
         

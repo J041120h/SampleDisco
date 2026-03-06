@@ -5,7 +5,7 @@ import scanpy as sc
 
 from code.sample_embedding.pseudo_adata import *
 from code.sample_embedding.DR import *
-from preparation.Cell_type import *
+from code.preparation.cell_type_cpu import *
 
 
 def _store_original_sample_ids(

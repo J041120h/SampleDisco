@@ -12,7 +12,7 @@ from preparation.rna_preprocess_cpu import preprocess
 from sample_distance.sample_distance import sample_distance
 from visualization.visualization_other import visualization
 from sample_trajectory.CCA import CCA_Call
-from preparation.Cell_type import cell_types
+from preparation.cell_type_cpu import cell_types
 from sample_trajectory.CCA_test import cca_pvalue_test
 from parameter_selection.cpu_optimal_resolution import find_optimal_cell_resolution
 from sample_trajectory.TSCAN import TSCAN
@@ -108,8 +108,8 @@ def rna_wrapper(
         raise ValueError("Required parameters rna_count_data_path and rna_output_dir must be provided.")
     
     if use_gpu:
-        from code.preparation.rna_preprocess_linux import preprocess_linux
-        from preparation.Cell_type_linux import cell_types_linux
+        from preparation.rna_preprocess_gpu import preprocess_linux
+        from preparation.cell_type_gpu import cell_types_linux
         from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
     
     if grouping_columns is None:
