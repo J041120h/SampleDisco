@@ -131,10 +131,10 @@ atac_derive_sample_embedding: false
 atac_cca_based_cell_resolution_selection: false
 atac_sample_distance_calculation: false
 atac_trajectory_analysis: true
-atac_trajectory_dge: false
-atac_sample_cluster: false
-atac_proportion_test: false
-atac_cluster_dge: false
+atac_trajectory_dge: true
+atac_sample_cluster: true
+atac_proportion_test: true
+atac_cluster_dge: true
 atac_visualize_data: false
 
 # --- Resume Paths (for skipping preprocessing) ---

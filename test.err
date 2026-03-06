@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/sample_trajectory/trajectory_diff_gene.py", line 938, in run_trajectory_gam_differential_gene_analysis
+    from trajectory_DGE_visualization import generate_all_visualizations
+ModuleNotFoundError: No module named 'trajectory_DGE_visualization'
+/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:220: UserWarning: Both sample_to_clade and group_col provided. Using group_col and ignoring sample_to_clade.
+  warnings.warn(
+2026-03-06 15:25:12 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-03-06 15:25:12 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:220: UserWarning: Both sample_to_clade and group_col provided. Using group_col and ignoring sample_to_clade.
+  warnings.warn(
+2026-03-06 15:25:16 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-03-06 15:25:16 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
