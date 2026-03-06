@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sample_trajectory.CCA import *
 from sample_trajectory.CCA_test import *
 from sample_embedding.DR import dimension_reduction
-from ATAC_cell_type import cell_types_atac
+from preparation.ATAC_cell_type import cell_types_atac
 from sample_embedding.pseudo_adata import compute_pseudobulk_adata
 
 def generate_null_distribution_atac(pseudobulk_adata, column, sev_col,

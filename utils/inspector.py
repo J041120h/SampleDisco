@@ -10,11 +10,11 @@ def inspect_column(series: pd.Series, n_examples: int = 5) -> None:
     n_total = len(series)
     n_na = series.isna().sum()
     n_unique = series.nunique(dropna=True)
-    
+
     print(f"      dtype: {dtype}")
     print(f"      non-NA: {n_total - n_na}/{n_total} ({100*(n_total-n_na)/n_total:.1f}%)")
     print(f"      unique: {n_unique}")
-    
+
     if pd.api.types.is_categorical_dtype(series) or pd.api.types.is_object_dtype(series):
         # Categorical/string: show value counts
         vc = series.value_counts(dropna=False).head(n_examples)
@@ -63,13 +63,99 @@ def _print_sparsity_info(mat, label: str = ".X") -> None:
         print(f"  - ⚠️ Could not compute sparsity for {label}: {e}")
 
 
-def summarize_h5ad(h5ad_path: str, n_examples: int = 10, n_col_examples: int = 5):
+def _maybe_print_unique_values(
+    adata: sc.AnnData,
+    column: str,
+    where: str = "auto",
+    max_unique: int | None = 200,
+) -> None:
+    """
+    Optionally print *all* unique values for a requested column (in obs or var).
+
+    Parameters
+    ----------
+    adata : AnnData
+    column : str
+        Column name to print unique values for.
+    where : {"auto","obs","var"}
+        Where to look for the column. "auto" checks obs then var.
+    max_unique : int or None
+        If not None, refuse to print if too many unique values (to avoid flooding logs).
+        Set to None to always print all unique values.
+    """
+    if column is None:
+        return
+
+    if where not in {"auto", "obs", "var"}:
+        print(f"\n⚠️ where='{where}' is invalid; use 'auto', 'obs', or 'var'. Skipping unique-values print.")
+        return
+
+    series = None
+    found_in = None
+
+    if where in {"auto", "obs"} and column in adata.obs.columns:
+        series = adata.obs[column]
+        found_in = "obs"
+    elif where in {"auto", "var"} and column in adata.var.columns:
+        series = adata.var[column]
+        found_in = "var"
+
+    if series is None:
+        search_space = []
+        if where in {"auto", "obs"}:
+            search_space.append("obs")
+        if where in {"auto", "var"}:
+            search_space.append("var")
+        print(f"\n⚠️ Column '{column}' not found in {', '.join(search_space)}.")
+        return
+
+    # Collect uniques (preserve NaN as a token in the output)
+    uniques = pd.unique(series)
+    # Make output stable-ish: sort when possible
+    try:
+        # keep NaN at the end if present
+        uniques_no_na = [u for u in uniques if not pd.isna(u)]
+        uniques_na = [u for u in uniques if pd.isna(u)]
+        uniques_sorted = sorted(uniques_no_na)
+        uniques = np.array(uniques_sorted + uniques_na, dtype=object)
+    except Exception:
+        pass
+
+    n_unique = len(uniques)
+    print("\n" + "="*60)
+    print(f"🔎 Unique values for column '{column}' (found in adata.{found_in}):")
+    print("="*60)
+    print(f"  - n_unique: {n_unique}")
+
+    if max_unique is not None and n_unique > max_unique:
+        print(f"  - ⚠️ Too many unique values to print ({n_unique} > {max_unique}). "
+              f"Increase max_unique or set max_unique=None to print all.")
+        return
+
+    for i, v in enumerate(uniques, start=1):
+        # repr() keeps strings quoted and makes None/NaN obvious
+        print(f"  {i:>4}. {repr(v)}")
+
+
+def summarize_h5ad(
+    h5ad_path: str,
+    n_examples: int = 10,
+    n_col_examples: int = 5,
+    print_unique_column: str | None = None,
+    unique_column_where: str = "auto",   # "auto" | "obs" | "var"
+    unique_max_values: int | None = 200  # set None to print all
+):
     """
     Summarize an AnnData .h5ad file by printing examples of cell names, obs, var,
     and inspecting .X (dtype, NaN/Inf, integer-like vs fractional, min/max, example values,
     and sparsity).
     Also prints sample values from any additional layers if present, and previews obsm/varm.
-    
+
+    NEW:
+    ----
+    User can optionally specify `print_unique_column` and all unique values of that column
+    (from obs or var) will be printed.
+
     Parameters
     ----------
     h5ad_path : str
@@ -78,11 +164,18 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10, n_col_examples: int = 5
         Number of example rows to show for matrices and dataframes.
     n_col_examples : int
         Number of example values to show per metadata column.
+    print_unique_column : str or None
+        If provided, print all unique values for this column (in obs/var).
+    unique_column_where : {"auto","obs","var"}
+        Where to look for `print_unique_column`.
+    unique_max_values : int or None
+        Guardrail to prevent printing an enormous number of uniques.
+        Set to None to print all unique values regardless of count.
     """
     try:
         print(f"🔍 Loading AnnData from: {h5ad_path}")
         adata = sc.read_h5ad(h5ad_path, backed=None)
-        
+
         print("\n📦 Basic Info")
         print(f"  - Shape (cells × genes): {adata.n_obs} × {adata.n_vars}")
         print(f"  - Layers: {list(adata.layers.keys()) if hasattr(adata, 'layers') else 'None'}")
@@ -90,6 +183,14 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10, n_col_examples: int = 5
         print(f"  - var columns: {list(adata.var.columns)}")
         print(f"  - obsm keys: {list(adata.obsm.keys()) if hasattr(adata, 'obsm') else 'None'}")
         print(f"  - varm keys: {list(adata.varm.keys()) if hasattr(adata, 'varm') else 'None'}")
+
+        # NEW: print unique values for a requested column (obs/var)
+        _maybe_print_unique_values(
+            adata=adata,
+            column=print_unique_column,
+            where=unique_column_where,
+            max_unique=unique_max_values,
+        )
 
         # 🔎 Inspect .X
         print("\n🔎 Inspecting .X matrix:")
@@ -299,5 +400,9 @@ def summarize_h5ad(h5ad_path: str, n_examples: int = 10, n_col_examples: int = 5
 
 if __name__ == "__main__":
     summarize_h5ad(
-        h5ad_path= "/dcl01/hongkai/data/data/hjiang/Data/test_rna.h5ad"
+        h5ad_path="/dcl01/hongkai/data/data/hjiang/Data/long_covid/long_covid_test.h5ad",
+        # Optional: print unique values of a column in obs/var
+        print_unique_column='sample',         # e.g., "cell_type" or "highly_variable"
+        unique_column_where="auto",       # "auto" | "obs" | "var"
+        unique_max_values=200             # set None to print all unique values
     )

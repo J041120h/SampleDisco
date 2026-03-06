@@ -8,7 +8,7 @@ import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
-from preparation.preprocess import preprocess
+from preparation.rna_preprocess_cpu import preprocess
 from sample_distance.sample_distance import sample_distance
 from visualization.visualization_other import visualization
 from sample_trajectory.CCA import CCA_Call
@@ -108,7 +108,7 @@ def rna_wrapper(
         raise ValueError("Required parameters rna_count_data_path and rna_output_dir must be provided.")
     
     if use_gpu:
-        from preparation.preprocess_linux import preprocess_linux
+        from code.preparation.rna_preprocess_linux import preprocess_linux
         from preparation.Cell_type_linux import cell_types_linux
         from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
     
