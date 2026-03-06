@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 Optimal cell resolution finder using CCA correlation optimization.
+Supports both RNA-seq and ATAC-seq data.
 """
 
 import os
 import sys
 import time
 import shutil
-from typing import Optional, Union, List, Tuple, Dict, Any
+from typing import Optional, Union, List, Tuple, Dict, Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,6 @@ from anndata import AnnData
 from sklearn.cross_decomposition import CCA
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from preparation.cell_type_cpu import cell_types
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
 from sample_trajectory.CCA import run_cca_on_pca_from_adata, plot_cca_on_2d_pca
@@ -34,21 +34,39 @@ def find_optimal_cell_resolution(
     adata_sample: AnnData,
     output_dir: str,
     column: str,
+    # Modality specification
+    modality: Literal["rna", "atac"] = "rna",
+    # Trajectory parameters
     trajectory_col: str = "sev.level",
-    batch_col: Optional[Union[str, List[str]]] = "batch",
+    # Column names
+    batch_col: Optional[Union[str, List[str]]] = None,
     sample_col: str = "sample",
+    celltype_col: str = "cell_type",
+    # Cell embedding parameters
     cell_embedding_column: str = "X_pca",
     cell_embedding_num_pcs: int = 20,
+    # Sample embedding parameters
     n_hvg_features: int = 2000,
-    sample_embedding_dimension: int = 30,
+    sample_embedding_dimension: int = 10,
+    harmony_for_proportion: bool = True,
+    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
+    # CCA parameters
     n_cca_pcs: int = 10,
     compute_corrected_pvalues: bool = True,
-    preserve_cols_in_sample_embedding: Optional[Union[str, List[str]]] = None,
+    # Search parameters
+    coarse_start: float = 0.1,
+    coarse_end: float = 1.0,
+    coarse_step: float = 0.1,
+    fine_range: float = 0.02,
+    fine_step: float = 0.01,
+    # Output control
     verbose: bool = True,
 ) -> Tuple[float, pd.DataFrame]:
     """
     Find optimal clustering resolution by maximizing CCA correlation between
-    dimension reduction and trajectory levels for RNA-seq data.
+    dimension reduction and trajectory levels.
+    
+    Supports both RNA-seq and ATAC-seq data.
 
     Parameters
     ----------
@@ -60,26 +78,44 @@ def find_optimal_cell_resolution(
         Output directory for results
     column : str
         Column name in adata.uns for dimension reduction results
+        (e.g., "X_DR_expression" or "X_DR_proportion")
+    modality : str
+        Data modality: "rna" or "atac"
     trajectory_col : str
         Column name for trajectory/severity levels
     batch_col : str or list, optional
         Column name(s) for batch information
     sample_col : str
         Column name for sample identifiers
+    celltype_col : str
+        Column name for cell type assignments
     cell_embedding_column : str
-        Representation to use for clustering
+        Representation to use for clustering (e.g., "X_pca", "X_pca_harmony", 
+        "X_lsi", "X_lsi_harmony")
     cell_embedding_num_pcs : int
-        Number of PCs for clustering
+        Number of PCs/LSI components for clustering
     n_hvg_features : int
-        Number of highly variable genes for pseudobulk
+        Number of highly variable genes/features for pseudobulk
     sample_embedding_dimension : int
         Number of dimension reduction components for sample embedding
+    harmony_for_proportion : bool
+        Whether to apply Harmony correction to proportion embedding
+    preserve_cols_in_sample_embedding : str or list, optional
+        Columns to preserve during batch correction in sample embedding
     n_cca_pcs : int
         Number of PCs for CCA analysis and null distribution
     compute_corrected_pvalues : bool
         Whether to compute corrected p-values
-    preserve_cols_in_sample_embedding : str or list, optional
-        Columns to preserve during batch correction in sample embedding
+    coarse_start : float
+        Starting resolution for coarse search
+    coarse_end : float
+        Ending resolution for coarse search
+    coarse_step : float
+        Step size for coarse search
+    fine_range : float
+        Range around best coarse resolution for fine search
+    fine_step : float
+        Step size for fine search
     verbose : bool
         Whether to print verbose output
 
@@ -88,9 +124,18 @@ def find_optimal_cell_resolution(
     Tuple[float, pd.DataFrame]
         Optimal resolution and results dataframe
     """
+    # Validate modality
+    modality = modality.lower()
+    if modality not in ["rna", "atac"]:
+        raise ValueError(f"Invalid modality: {modality}. Must be 'rna' or 'atac'.")
+    
+    is_atac = modality == "atac"
+    modality_upper = modality.upper()
+    feature_type = "HVFs" if is_atac else "HVGs"
+
     # Setup directories
     dr_type = column.replace("X_DR_", "") if column.startswith("X_DR_") else column
-    main_output_dir = os.path.join(output_dir, f"RNA_resolution_optimization_{dr_type}")
+    main_output_dir = os.path.join(output_dir, f"{modality_upper}_resolution_optimization_{dr_type}")
     resolutions_dir = os.path.join(main_output_dir, "resolutions")
     summary_dir = os.path.join(main_output_dir, "summary")
 
@@ -98,9 +143,11 @@ def find_optimal_cell_resolution(
         os.makedirs(dir_path, exist_ok=True)
 
     if verbose:
-        print(f"Starting RNA-seq resolution optimization for {column}...")
+        print(f"Starting {modality_upper} resolution optimization for {column}...")
         print(f"Using representation: {cell_embedding_column} with {cell_embedding_num_pcs} components")
         print(f"Using {n_cca_pcs} PCs for CCA analysis")
+        print(f"Number of {feature_type}: {n_hvg_features}")
+        print(f"Sample embedding dimension: {sample_embedding_dimension}")
         if compute_corrected_pvalues:
             print("Will compute corrected p-values with default simulations")
 
@@ -132,14 +179,14 @@ def find_optimal_cell_resolution(
         try:
             # Clean up previous cell type assignments
             for adata in [adata_cell, adata_sample]:
-                if "cell_type" in adata.obs.columns:
-                    adata.obs.drop(columns=["cell_type"], inplace=True, errors="ignore")
+                if celltype_col in adata.obs.columns:
+                    adata.obs.drop(columns=[celltype_col], inplace=True, errors="ignore")
 
             # Perform clustering
             updated_cell, updated_sample = cell_types(
                 anndata_cell=adata_cell,
                 anndata_sample=adata_sample,
-                cell_type_column="cell_type",
+                cell_type_column=celltype_col,
                 existing_cell_types=False,
                 umap=False,
                 save=False,
@@ -155,24 +202,24 @@ def find_optimal_cell_resolution(
             adata_cell.obs = updated_cell.obs
             adata_sample.obs = updated_sample.obs
 
-            n_clusters = adata_sample.obs["cell_type"].nunique()
+            n_clusters = adata_sample.obs[celltype_col].nunique()
             result["n_clusters"] = n_clusters
             if verbose:
                 print(f"Number of clusters: {n_clusters}")
 
-            # Calculate sample embedding using the wrapper
+            # Calculate sample embedding
             pseudobulk_dict, pseudobulk_adata = calculate_sample_embedding(
                 adata=adata_sample,
                 sample_col=sample_col,
-                celltype_col="cell_type",
+                celltype_col=celltype_col,
                 batch_col=batch_col,
                 output_dir=resolution_dir,
                 sample_hvg_number=n_hvg_features,
                 n_expression_components=sample_embedding_dimension,
                 n_proportion_components=sample_embedding_dimension,
-                harmony_for_proportion=True,
+                harmony_for_proportion=harmony_for_proportion,
                 preserve_cols_in_sample_embedding=preserve_cols_in_sample_embedding,
-                atac=False,
+                atac=is_atac,
                 save=False,
                 verbose=False,
             )
@@ -242,16 +289,19 @@ def find_optimal_cell_resolution(
 
         except Exception as e:
             print(f"Error at resolution {resolution:.3f}: {e}")
+            import traceback
+            traceback.print_exc()
 
         return result, null_result
 
     # === COARSE SEARCH ===
     if verbose:
         print("\n" + "=" * 60)
-        print("FIRST PASS: Coarse Search (0.1 to 1.0)")
+        print(f"FIRST PASS: Coarse Search ({coarse_start} to {coarse_end})")
         print("=" * 60)
 
-    for resolution in np.arange(0.1, 1.01, 0.1):
+    for resolution in np.arange(coarse_start, coarse_end + coarse_step / 2, coarse_step):
+        resolution = round(resolution, 3)
         result, null_result = process_resolution(resolution, "coarse")
         all_results.append(result)
         all_null_results.append(null_result)
@@ -271,11 +321,11 @@ def find_optimal_cell_resolution(
         print("SECOND PASS: Fine-tuned Search")
         print("=" * 60)
 
-    fine_start = max(0.01, best_coarse["resolution"] - 0.02)
-    fine_end = min(1.00, best_coarse["resolution"] + 0.02)
+    fine_start = max(coarse_start, best_coarse["resolution"] - fine_range)
+    fine_end = min(coarse_end, best_coarse["resolution"] + fine_range)
     tested_resolutions = {r["resolution"] for r in all_results}
 
-    for resolution in np.arange(fine_start, fine_end + 0.001, 0.01):
+    for resolution in np.arange(fine_start, fine_end + fine_step / 2, fine_step):
         resolution = round(resolution, 3)
         if any(abs(resolution - tested) < 0.001 for tested in tested_resolutions):
             continue
@@ -314,7 +364,12 @@ def find_optimal_cell_resolution(
             )
 
             # Plot corrected null distribution
-            _plot_corrected_null_distribution(corrected_null, column, corrected_null_dir)
+            _plot_corrected_null_distribution(
+                corrected_null=corrected_null,
+                column=column,
+                output_dir=corrected_null_dir,
+                modality=modality_upper,
+            )
         else:
             print("Warning: No valid null distributions, skipping corrected p-values")
             compute_corrected_pvalues = False
@@ -334,6 +389,7 @@ def find_optimal_cell_resolution(
         print("\n" + "=" * 60)
         print("FINAL RESULTS")
         print("=" * 60)
+        print(f"Modality: {modality_upper}")
         print(f"Optimal resolution: {optimal_resolution:.3f}")
         print(f"Best CCA score: {optimal_score:.4f}")
         print(f"Number of clusters: {best_row['n_clusters']}")
@@ -363,21 +419,40 @@ def find_optimal_cell_resolution(
 
     # Write final summary
     _write_final_summary(
-        main_output_dir, summary_dir, column, cell_embedding_column, cell_embedding_num_pcs,
-        sample_embedding_dimension, n_cca_pcs, n_hvg_features,
-        best_row, valid_results, compute_corrected_pvalues
+        main_output_dir=main_output_dir,
+        summary_dir=summary_dir,
+        column=column,
+        modality=modality_upper,
+        feature_type=feature_type,
+        cell_embedding_column=cell_embedding_column,
+        cell_embedding_num_pcs=cell_embedding_num_pcs,
+        sample_embedding_dimension=sample_embedding_dimension,
+        n_cca_pcs=n_cca_pcs,
+        n_hvg_features=n_hvg_features,
+        best_row=best_row,
+        valid_results=valid_results,
+        compute_corrected_pvalues=compute_corrected_pvalues,
     )
 
     return optimal_resolution, df_results
 
 
-def _plot_corrected_null_distribution(corrected_null: np.ndarray, column: str, output_dir: str) -> None:
+def _plot_corrected_null_distribution(
+    corrected_null: np.ndarray,
+    column: str,
+    output_dir: str,
+    modality: str = "RNA",
+) -> None:
     """Plot and save corrected null distribution."""
     plt.figure(figsize=(10, 6))
     plt.hist(corrected_null, bins=50, alpha=0.7, color="lightblue", density=True, edgecolor="black")
     plt.xlabel("Maximum CCA Score (across resolutions)", fontsize=12)
     plt.ylabel("Density", fontsize=12)
-    plt.title(f"Corrected Null Distribution\n{column} - Accounts for Resolution Selection", fontsize=14, fontweight="bold")
+    plt.title(
+        f"Corrected Null Distribution ({modality})\n{column} - Accounts for Resolution Selection",
+        fontsize=14,
+        fontweight="bold",
+    )
     plt.grid(True, alpha=0.3)
 
     stats_text = (
@@ -385,34 +460,49 @@ def _plot_corrected_null_distribution(corrected_null: np.ndarray, column: str, o
         f"Std: {np.std(corrected_null):.4f}\n"
         f"95th percentile: {np.percentile(corrected_null, 95):.4f}"
     )
-    plt.text(0.02, 0.98, stats_text, transform=plt.gca().transAxes, fontsize=10,
-             verticalalignment="top", bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+    plt.text(
+        0.02, 0.98, stats_text,
+        transform=plt.gca().transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
 
     plt.savefig(os.path.join(output_dir, "corrected_null_distribution.png"), dpi=300, bbox_inches="tight")
     plt.close()
 
 
 def _write_final_summary(
-    main_output_dir: str, summary_dir: str, column: str,
-    cell_embedding_column: str, cell_embedding_num_pcs: int,
-    sample_embedding_dimension: int, n_cca_pcs: int, n_hvg_features: int,
-    best_row: pd.Series, valid_results: pd.DataFrame, compute_corrected_pvalues: bool
+    main_output_dir: str,
+    summary_dir: str,
+    column: str,
+    modality: str,
+    feature_type: str,
+    cell_embedding_column: str,
+    cell_embedding_num_pcs: int,
+    sample_embedding_dimension: int,
+    n_cca_pcs: int,
+    n_hvg_features: int,
+    best_row: pd.Series,
+    valid_results: pd.DataFrame,
+    compute_corrected_pvalues: bool,
 ) -> None:
     """Write final summary report to file."""
     summary_path = os.path.join(main_output_dir, "FINAL_SUMMARY.txt")
 
     with open(summary_path, "w") as f:
-        f.write("RNA-SEQ RESOLUTION OPTIMIZATION FINAL SUMMARY\n")
+        f.write(f"{modality} RESOLUTION OPTIMIZATION FINAL SUMMARY\n")
         f.write("=" * 60 + "\n\n")
         f.write(f"Analysis completed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
         f.write("OPTIMIZATION PARAMETERS:\n")
+        f.write(f"  - Modality: {modality}\n")
         f.write(f"  - Column analyzed: {column}\n")
         f.write(f"  - Cell embedding: {cell_embedding_column}\n")
-        f.write(f"  - Cell embedding PCs: {cell_embedding_num_pcs}\n")
+        f.write(f"  - Cell embedding components: {cell_embedding_num_pcs}\n")
         f.write(f"  - Sample embedding dimension: {sample_embedding_dimension}\n")
         f.write(f"  - CCA PCs: {n_cca_pcs}\n")
-        f.write(f"  - HVG features: {n_hvg_features}\n\n")
+        f.write(f"  - {feature_type}: {n_hvg_features}\n\n")
 
         f.write("RESULTS:\n")
         f.write(f"  - Optimal resolution: {best_row['resolution']:.3f}\n")
