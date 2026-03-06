@@ -1,2 +1,0 @@
-/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
-  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)

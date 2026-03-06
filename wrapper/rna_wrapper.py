@@ -14,7 +14,7 @@ from visualization.visualization_other import visualization
 from sample_trajectory.CCA import CCA_Call
 from preparation.cell_type_cpu import cell_types
 from sample_trajectory.CCA_test import cca_pvalue_test
-from sample_trajectory.optimal_resolution_cpu import find_optimal_cell_resolution
+from parameter_selection.cpu_optimal_resolution import find_optimal_cell_resolution
 from sample_trajectory.TSCAN import TSCAN
 from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
 from cluster import cluster
@@ -285,7 +285,7 @@ def rna_wrapper(
     if use_gpu:
         from preparation.rna_preprocess_gpu import preprocess_linux
         from preparation.cell_type_gpu import cell_types_linux
-        from sample_trajectory.optimal_resolution_gpu import find_optimal_cell_resolution_linux
+        from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
     
     # Set default values for list parameters
     if grouping_columns is None:

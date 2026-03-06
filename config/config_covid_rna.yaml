@@ -9,7 +9,7 @@ run_atac_pipeline: true
 run_multiomics_pipeline: false
 
 # General settings
-use_gpu: false
+use_gpu: true
 initialization: false
 verbose: true
 save_intermediate: true
@@ -127,10 +127,10 @@ atac_output_dir: null  # defaults to {output_dir}/atac
 # --- Pipeline Control Flags ---
 atac_preprocessing: false
 atac_cell_type_cluster: false
-atac_derive_sample_embedding: true
+atac_derive_sample_embedding: false
 atac_cca_based_cell_resolution_selection: false
 atac_sample_distance_calculation: false
-atac_trajectory_analysis: false
+atac_trajectory_analysis: true
 atac_trajectory_dge: false
 atac_sample_cluster: false
 atac_proportion_test: false

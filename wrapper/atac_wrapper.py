@@ -20,6 +20,7 @@ from sample_clustering.RAISIN import raisinfit
 from sample_clustering.RAISIN_TEST import run_pairwise_tests
 from sample_clustering.proportion_test import proportion_test as run_proportion_test
 from visualization.visualization_other import visualization
+from parameter_selection.cpu_optimal_resolution import find_optimal_cell_resolution
 
 
 def atac_wrapper(
@@ -301,9 +302,7 @@ def atac_wrapper(
     if use_gpu:
         from preparation.atac_preprocess_gpu import preprocess_linux
         from preparation.cell_type_gpu import cell_types_linux
-        from sample_trajectory.optimal_resolution_gpu import find_optimal_cell_resolution_linux
-    else:
-        from sample_trajectory.optimal_resolution_cpu import find_optimal_cell_resolution
+        from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
     
     # Set default values for list parameters
     if grouping_columns is None:

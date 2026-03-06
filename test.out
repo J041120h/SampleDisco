@@ -4,9 +4,12 @@ Resuming from previous progress:
     "preprocessing": true,
     "cell_type_cluster": true,
     "derive_sample_embedding": true,
+    "cca_based_cell_resolution_selection": false,
     "sample_distance_calculation": false,
     "trajectory_analysis": true,
     "trajectory_dge": true,
+    "sample_cluster": false,
+    "proportion_test": false,
     "cluster_dge": true,
     "visualization": false,
     "dimensionality_reduction": true
@@ -15,9 +18,12 @@ Resuming from previous progress:
     "preprocessing": true,
     "cell_type_cluster": true,
     "derive_sample_embedding": true,
+    "cca_based_cell_resolution_selection": false,
     "sample_distance_calculation": false,
     "trajectory_analysis": false,
     "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
     "cluster_dge": true,
     "visualization": false,
     "dimensionality_reduction": false
@@ -38,8 +44,8 @@ Resuming from previous progress:
   "system_info": {
     "platform": "Linux",
     "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-    "use_gpu": false,
-    "gpu_available": false
+    "use_gpu": true,
+    "gpu_available": true
   }
 }
 
@@ -47,174 +53,14 @@ Resuming from previous progress:
 RUNNING ATAC PIPELINE
 ============================================================
 Starting ATAC wrapper function...
-Starting sample embedding derivation...
-[Pseudobulk] Input: 86907 cells, 228384 genes
-[Pseudobulk] Data appears to be raw counts, will normalize after pseudobulk aggregation
-[Pseudobulk] Using CPU
-[Pseudobulk] 24 samples, 12 cell types
-[Pseudobulk] Batch correction: disabled
-[Pseudobulk] Phase 1: Aggregating...
-  Aggregating 86907 cells -> 24 samples x 12 cell types
-  Created 12 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/12] 1
-Processing 24 cells × 228376 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.342
-    Selected 40000 HVGs
-  [2/12] 10
-Processing 24 cells × 228199 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.463
-    Selected 40000 HVGs
-  [3/12] 11
-Processing 24 cells × 222801 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.647
-    Selected 40000 HVGs
-  [4/12] 12
-Processing 24 cells × 219450 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.719
-    Selected 40000 HVGs
-  [5/12] 2
-Processing 24 cells × 228376 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.389
-    Selected 40000 HVGs
-  [6/12] 3
-Processing 24 cells × 228384 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.149
-    Selected 40000 HVGs
-  [7/12] 4
-Processing 24 cells × 228381 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.291
-    Selected 40000 HVGs
-  [8/12] 5
-Processing 24 cells × 228384 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.196
-    Selected 40000 HVGs
-  [9/12] 6
-Processing 24 cells × 228384 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.160
-    Selected 40000 HVGs
-  [10/12] 7
-Processing 24 cells × 228348 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.407
-    Selected 40000 HVGs
-  [11/12] 8
-Processing 24 cells × 228384 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.280
-    Selected 40000 HVGs
-  [12/12] 9
-Processing 24 cells × 228283 peaks
-Input matrix is dense
-Converting to sparse matrix...
-Computing TF...
-Computing IDF...
-Computing TF-IDF...
-Processed 24/24 cells
-Output matrix sparsity: 0.477
-    Selected 40000 HVGs
-[Pseudobulk] Retained 12 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 40002
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete (35.3s)
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/test/atac/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 24 samples, 40002 features
-[DimRed] Starting dimension reduction computation...
-[DimRed] Mode: ATAC (LSI)
-[DimRed] Output directory: /dcs07/hongkai/data/harry/result/test/atac/pseudobulk
-[DimRed] Components: expression=23, proportion=12
-[DimRed] Computing LSI for ATAC data with 23 components on (24, 40002) data
-[LSI] Computing LSI with 23 components on (24, 40002) data
-[LSI] Scanpy LSI failed: lsi
-[LSI] Attempting manual LSI with TF-IDF
-[LSI] Original shape: (24, 40002)
-[LSI] TF-IDF matrix stats: shape=(24, 40002), min=-0.011111, max=0.039660
-[LSI] Manual LSI computation successful. Shape: (24, 23)
-[Storage] Stored X_DR_expression in both objects (shape: (24, 23))
-[DimRed] Completed - results stored as X_DR_expression
-[DimRed] Expression dimension reduction completed
-[Proportion] Computing PCA with 12 components...
-[Storage] Stored X_DR_proportion in both objects (shape: (24, 12))
-[Proportion] Completed using PCA. Shape: (24, 12)
-[DimRed] Proportion dimension reduction completed
-[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/test/atac/embeddings/sample_expression_embedding.csv (shape: (24, 23))
-[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/test/atac/embeddings/sample_proportion_embedding.csv (shape: (24, 12))
-[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/test/atac/embeddings
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/test/atac/pseudobulk/pseudobulk_sample.h5ad
-[Save] Successfully saved pseudobulk_anndata (3.8 MB)
+Loading pseudobulk from: /dcs07/hongkai/data/harry/result/test/atac/pseudobulk/pseudobulk_sample.h5ad
+Starting trajectory analysis...
 
-[DimRed] === SUMMARY ===
-Runtime: 13.53s
-Expression: Success
-Proportion: Success
+CCA Analysis Summary:
+  Proportion: score=0.1976 (PC1 + PC2)
+  Expression: score=0.1178 (PC1 + PC2)
 ATAC analysis completed successfully!
 
 ATAC pipeline completed successfully!
 
-Total execution time: 57.73 seconds (0.96 minutes)
+Total execution time: 28.40 seconds (0.47 minutes)
