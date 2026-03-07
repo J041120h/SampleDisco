@@ -1,12 +1,62 @@
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata.py:79: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
 Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/sample_trajectory/trajectory_diff_gene.py", line 938, in run_trajectory_gam_differential_gene_analysis
-    from trajectory_DGE_visualization import generate_all_visualizations
-ModuleNotFoundError: No module named 'trajectory_DGE_visualization'
-/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:220: UserWarning: Both sample_to_clade and group_col provided. Using group_col and ignoring sample_to_clade.
-  warnings.warn(
-2026-03-06 15:25:12 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
-2026-03-06 15:25:12 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
-/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:220: UserWarning: Both sample_to_clade and group_col provided. Using group_col and ignoring sample_to_clade.
-  warnings.warn(
-2026-03-06 15:25:16 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
-2026-03-06 15:25:16 | [INFO] Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 613, in wrapper
+    atac_results = atac_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/atac_wrapper.py", line 503, in atac_wrapper
+    pseudo_adata = replace_optimal_dimension_reduction(atac_output_dir)
+  File "/users/hjiang/GenoDistance/code/utils/unify_optimal.py", line 103, in replace_optimal_dimension_reduction
+    raise FileNotFoundError(error_msg)
+FileNotFoundError: The following files were not found:
+  - Optimal expression: /dcs07/hongkai/data/harry/result/test/atac/RNA_resolution_optimization_expression/summary/optimal.h5ad
+  - Optimal proportion: /dcs07/hongkai/data/harry/result/test/atac/RNA_resolution_optimization_proportion/summary/optimal.h5ad
