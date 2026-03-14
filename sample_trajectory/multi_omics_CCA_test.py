@@ -1,7 +1,7 @@
 import os
 import anndata as ad
-from CCA_test import *
-from CCA import *
+from .CCA_test import *
+from .CCA import *
 
 def integration_CCA_test(pseudobulk_anndata_path,
                         output_dir,

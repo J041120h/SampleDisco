@@ -5,11 +5,11 @@ Resuming from previous progress:
     "cell_type_cluster": true,
     "derive_sample_embedding": true,
     "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
+    "sample_distance_calculation": true,
     "trajectory_analysis": true,
     "trajectory_dge": true,
-    "sample_cluster": false,
-    "proportion_test": false,
+    "sample_cluster": true,
+    "proportion_test": true,
     "cluster_dge": true,
     "visualization": false,
     "dimensionality_reduction": true
@@ -36,10 +36,10 @@ Resuming from previous progress:
     "glue_cell_types": false,
     "glue_visualization": false,
     "integration_preprocessing": false,
-    "derive_sample_embedding": false,
+    "dimensionality_reduction": false,
     "embedding_visualization": false,
     "optimal_resolution": false,
-    "dimensionality_reduction": false
+    "derive_sample_embedding": false
   },
   "system_info": {
     "platform": "Linux",
@@ -50,306 +50,87 @@ Resuming from previous progress:
 }
 
 ============================================================
-RUNNING RNA PIPELINE
+RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting RNA wrapper function...
-Starting preprocessing...
-=== Reading input dataset ===
-Raw shape: 29989 cells × 14881 genes
-=== Merging sample-level metadata into adata.obs ===
-   📄 Reading CSV metadata file: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
-   🔄 Dropping 2 overlapping columns from adata.obs: ['batch', 'sev.level']
-      Will use metadata versions instead
-   ✅ Added 4 new metadata columns
-   🔗 Matched 29989/29989 entries (100.0%)
-All required columns are present in adata.obs.
-=== Processing data for clustering ===
-Running HVG selection on CPU...
-After HVG: 29680 cells × 2000 genes
-Moving to GPU for normalization, PCA, and Harmony...
-=== [GPU] Running Harmony integration ===
-Variables to regress: sample
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-	Completed 9 / 30 iteration(s).
-	Completed 10 / 30 iteration(s).
-	Completed 11 / 30 iteration(s).
-Reach convergence after 11 iteration(s).
-End of harmony for adata_cluster.
-=== [CPU] Processing data for sample differences ===
-Saving original expression matrix (temporary variable)
-Normalizing and PCA on CPU...
-Total runtime: 52.14 seconds
-Starting cell type clustering at resolution: 0.99
-[cell_types] No cell type annotation found. Performing clustering.
-[cell_types] Building neighborhood graph...
-[cell_types] Standard Leiden (resolution=0.99)
-[cell_types] Finished assigning cell types.
-[cell_types] Computing UMAP...
-[cell_types] Converting GPU arrays to CPU...
-[cell_types] Generating UMAP plots...
-[generate_umap_visualizations] Generating UMAP plots...
-[generate_umap_visualizations] → Plotting UMAP colored by 'cell_type' (20 categories)
-[generate_umap_visualizations] ✓ Saved: /dcs07/hongkai/data/harry/result/test/rna/preprocess/umap_cell_type.png
-[cell_types] Assigning cell_type to anndata_sample
-[cell_types] Saved cell type CSV to /dcs07/hongkai/data/harry/result/test/rna/preprocess/cell_type.csv
-[cell_types] Saved output anndatas to preprocess/
-Starting sample embedding derivation...
-[Pseudobulk] Input: 29680 cells, 9936 genes
-[Pseudobulk] Data appears to be raw counts, will normalize after pseudobulk aggregation
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] 8 samples, 20 cell types
-[Pseudobulk] Batch correction: ['batch']
-[Pseudobulk] Phase 1: Aggregating...
-  Aggregating 29680 cells -> 8 samples x 20 cell types
-  Created 20 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/20] 1
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [2/20] 10
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [3/20] 11
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [4/20] 12
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [5/20] 13
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [6/20] 14
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [7/20] 15
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [8/20] 16
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [9/20] 17
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [10/20] 18
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2001 HVGs
-  [11/20] 19
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2002 HVGs
-  [12/20] 2
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [13/20] 20
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [14/20] 3
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [15/20] 4
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [16/20] 5
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [17/20] 6
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [18/20] 7
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [19/20] 8
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-  [20/20] 9
-    Batches: 2, sizes: 4-4
-    Applied ComBat
-    Selected 2000 HVGs
-[Pseudobulk] Retained 20 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 2000
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 8 samples, 2000 features
-[DimRed] Starting dimension reduction computation...
-[DimRed] Mode: RNA (PCA)
-[DimRed] Batch column(s): batch
-[DimRed] Output directory: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk
-[DimRed] Components: expression=7, proportion=8
-[DimRed] Computing PCA for RNA data with 7 components on (8, 2000) data
-[PCA] Success. Shape: (8, 7)
-[Storage] Stored X_DR_expression in both objects (shape: (8, 7))
-[DimRed] Completed - results stored as X_DR_expression
-[DimRed] Expression dimension reduction completed
-[Proportion] Only 8 samples. Skipping Harmony.
-[Proportion] Computing PCA with 7 components...
-[Storage] Stored X_DR_proportion in both objects (shape: (8, 7))
-[Proportion] Completed using PCA. Shape: (8, 7)
-[DimRed] Proportion dimension reduction completed
-[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/test/rna/embeddings/sample_expression_embedding.csv (shape: (8, 7))
-[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/test/rna/embeddings/sample_proportion_embedding.csv (shape: (8, 7))
-[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/test/rna/embeddings
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Successfully saved pseudobulk_anndata (0.3 MB)
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/test/multiomics
+Step 1b: Running cell type assignment...
 
-[DimRed] === SUMMARY ===
-Runtime: 0.09s
-Expression: Success
-Proportion: Success
-Starting sample distance calculation...
-Running sample distance: cosine
-Computing cosine distance...
-Computing expression DR distances (X_DR_expression)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/cosine/expression_DR_distance/distance_check_results_expression_DR_cosine.txt
-Score for expression_DR (cosine): 1.320264
-Summary updated in /dcs07/hongkai/data/harry/result/test/rna/summary_sample.csv
-  Distance check for expression_DR: score = 1.320264
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/cosine/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-  expression_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/cosine/expression_DR_distance
-Computing proportion DR distances (X_DR_proportion)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/cosine/proportion_DR_distance/distance_check_results_proportion_DR_cosine.txt
-Score for proportion_DR (cosine): 1.087319
-Summary updated in /dcs07/hongkai/data/harry/result/test/rna/summary_sample.csv
-  Distance check for proportion_DR: score = 1.087319
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/cosine/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-  proportion_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/cosine/proportion_DR_distance
-Statistics saved to: /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/cosine/distance_statistics_summary_cosine.csv
-Running sample distance: correlation
-Computing correlation distance...
-Computing expression DR distances (X_DR_expression)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/correlation/expression_DR_distance/distance_check_results_expression_DR_correlation.txt
-Score for expression_DR (correlation): 1.120711
-Summary updated in /dcs07/hongkai/data/harry/result/test/rna/summary_sample.csv
-  Distance check for expression_DR: score = 1.120711
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/correlation/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
-  expression_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/correlation/expression_DR_distance
-Computing proportion DR distances (X_DR_proportion)...
-Distance check results saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/correlation/proportion_DR_distance/distance_check_results_proportion_DR_correlation.txt
-Score for proportion_DR (correlation): 1.155826
-Summary updated in /dcs07/hongkai/data/harry/result/test/rna/summary_sample.csv
-  Distance check for proportion_DR: score = 1.155826
-Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/correlation/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
-  proportion_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/correlation/proportion_DR_distance
-Statistics saved to: /dcs07/hongkai/data/harry/result/test/rna/Sample_distance/correlation/distance_statistics_summary_correlation.csv
-Sample distance calculation completed: /dcs07/hongkai/data/harry/result/test/rna/Sample_distance
-Starting trajectory analysis...
-Warning: Only 7 components available, using all of them.
-Warning: Only 7 components available, using all of them.
+============================================================
+Cell Type Assignment for Multi-omics Data
+============================================================
 
-CCA Analysis Summary:
-  Proportion: score=0.7232 (PC1 + PC5)
-  Expression: score=0.8787 (PC1 + PC4)
-P-value for observed correlation 0.7232281851534326: 0.09
-[CCA p-test] Runtime: 1.48 seconds
-P-value for observed correlation 0.8787399561429295: 0.0
-[CCA p-test] Runtime: 1.56 seconds
-Running trajectory differential gene analysis...
-======================================================================
-TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS
-======================================================================
+Data composition:
+  RNA cells: 29989
+  ATAC cells: 30373
+  Total cells: 60362
 
-[1/5] Loading pseudotime...
-  → Loaded 8 pseudotime values; aligned 8 to pseudobulk samples
+--- Step 1: Clustering RNA cells ---
+  Resolution: 1.0
+  Building neighborhood graph for RNA cells...
+  Performing Leiden clustering...
+  Found 25 clusters in RNA cells
 
-[2/5] Preparing GAM input matrices...
-  → Prepared design matrix: 8 samples × 1 features
-  → Expression matrix: 8 samples × 2000 genes
+--- Step 2: Transferring labels to ATAC cells ---
+  Using k=3 nearest neighbors with Jaccard-weighted SNN
+  Metric: cosine
+  Building k-NN graphs...
+  Computing Jaccard-weighted adjacency matrices...
+  Computing label predictions...
+  Label transfer complete
+  Mean transfer confidence: 0.920
 
-[3/5] Fitting GAM models for 2000 genes...
-  → Spline parameters: n_splines=4, order=3
-  → Processing gene 500/2000...
-  → Processing gene 1000/2000...
-  → Processing gene 1500/2000...
-  → Processing gene 2000/2000...
-  → Successfully fitted 0/2000 genes
-  → Skipped 2000 genes:
-      too_few_samples: 2000
+--- Step 3: Combining cell type assignments ---
+  Cell type assignments complete
 
-⚠ Warning: No genes were successfully analyzed
-Trajectory differential gene analysis completed!
-Starting sample clustering...
-[INFO] K-means output directory: /dcs07/hongkai/data/harry/result/test/rna/sample_cluster
-[INFO] Running K-means on expression embedding 'X_DR_expression', shape=(8, 7)
-[INFO] Saved expression clustering CSV: /dcs07/hongkai/data/harry/result/test/rna/sample_cluster/kmeans_clusters_expression.csv
-[INFO] Saved plot: /dcs07/hongkai/data/harry/result/test/rna/sample_cluster/kmeans_expression_embedding.png
-[INFO] Running K-means on proportion embedding 'X_DR_proportion', shape=(8, 7)
-[INFO] Saved proportion clustering CSV: /dcs07/hongkai/data/harry/result/test/rna/sample_cluster/kmeans_clusters_proportion.csv
-[INFO] Saved plot: /dcs07/hongkai/data/harry/result/test/rna/sample_cluster/kmeans_proportion_embedding.png
-[INFO] K-means clustering completed.
-Starting proportion tests...
-Proportion tests completed.
-Running RAISIN analysis...
+  Cell type distribution:
+    Cluster 1: RNA=4417, ATAC=1630
+    Cluster 10: RNA=722, ATAC=1459
+    Cluster 11: RNA=1038, ATAC=1268
+    Cluster 12: RNA=1070, ATAC=2322
+    Cluster 13: RNA=450, ATAC=575
+    Cluster 14: RNA=661, ATAC=1166
+    Cluster 15: RNA=115, ATAC=25
+    Cluster 16: RNA=775, ATAC=1586
+    Cluster 17: RNA=318, ATAC=492
+    Cluster 18: RNA=2573, ATAC=1516
+    Cluster 19: RNA=2106, ATAC=1654
+    Cluster 2: RNA=1009, ATAC=1556
+    Cluster 20: RNA=1332, ATAC=2216
+    Cluster 21: RNA=233, ATAC=311
+    Cluster 22: RNA=1025, ATAC=800
+    Cluster 23: RNA=388, ATAC=948
+    Cluster 24: RNA=929, ATAC=2406
+    Cluster 25: RNA=51, ATAC=56
+    Cluster 3: RNA=1184, ATAC=1631
+    Cluster 4: RNA=257, ATAC=510
+    Cluster 5: RNA=1346, ATAC=1057
+    Cluster 6: RNA=4194, ATAC=2301
+    Cluster 7: RNA=2364, ATAC=1894
+    Cluster 8: RNA=564, ATAC=236
+    Cluster 9: RNA=868, ATAC=758
 
-===== Starting RAISIN fitting =====
-Using 48 CPU cores
-Available columns in adata.obs: ['celltype', 'sample', 'old', 'large', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level', 'n_genes', 'n_genes_by_counts', 'total_counts', 'pct_counts_in_top_50_genes', 'pct_counts_in_top_100_genes', 'pct_counts_in_top_200_genes', 'pct_counts_in_top_500_genes', 'total_counts_mt', 'pct_counts_mt', 'cell_type']
-Note: group_col='sev.level' provided; sample_to_clade is ignored (not needed).
+--- Step 4: Filtering modality-imbalanced clusters ---
+[Modality Balance] All clusters balanced, no filtering needed
 
-Batch correction requested using column: batch
-Preserving biological effects from group_col: sev.level
+--- Step 5: Computing UMAP ---
 
-===== Applying ComBat batch correction =====
-Batch variable: batch
-Preserving biological effects from: sev.level
-Running ComBat correction...
-Found 2 batches.
-Adjusting for 1 covariate(s) or covariate level(s).
-Standardizing Data across genes.
-Fitting L/S model and finding priors.
-Finding parametric adjustments.
-Adjusting the Data
-ComBat correction complete
-Original expression stored in layer: 'original' or 'original_raw'
-Using counts from adata.X
-Using group_col='sev.level' for grouping
-Expression matrix: 9936 genes x 29680 cells
-Design matrix X: 8 samples x 3 features
-Random effects Z: 8 samples x 8 effects
-Unique variance groups: ['1' '4']
+--- Step 6: Saving cell type information ---
+  Saved cell type assignments to: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/cell_type.csv
 
-===== Estimating variance for group: 1 =====
-  alpha=0.0006, gamma=0.0002
+--- Step 7: Generating visualizations ---
+  Generating cell type UMAP...
+  Generating modality UMAP...
+  Generating split modality UMAPs...
+  Generating cell type composition heatmap...
+  Saved distribution table to: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/visualization/celltype_modality_distribution.csv
+  Visualizations complete!
 
-===== Estimating variance for group: 4 =====
-  alpha=0.0009, gamma=0.0002
+============================================================
+Cell type assignment complete!
+============================================================
 
-===== Model fitting complete =====
-Note: ComBat batch correction was applied
-Starting pairwise comparisons. Found 1 pairs.
-Testing: 1_vs_4
-Skipping 1_vs_4: Columns not found in design matrix.
-RAISIN analysis completed.
-RNA analysis completed successfully!
+Cell type assignment completed successfully
 
-RNA pipeline completed successfully!
+Multiomics pipeline failed: Integration preprocessing is required. Set run_integrate_preprocess=True or ensure preprocessed data exists.
 
-Total execution time: 218.41 seconds (3.64 minutes)
+Total execution time: 190.48 seconds (3.17 minutes)

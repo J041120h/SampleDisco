@@ -254,7 +254,7 @@ def wrapper(
     multiomics_rna_sample_column: str = "sample",
     multiomics_atac_sample_column: str = "sample",
     multiomics_sample_col: str = 'sample',
-    multiomics_batch_col: Optional[List[str]] = None,
+    multiomics_batch_col: Optional[str] = None,
     multiomics_celltype_col: str = 'cell_type',
     multiomics_modality_col: str = 'modality',
     
@@ -270,6 +270,7 @@ def wrapper(
     multiomics_n_top_genes: int = 2000,
     multiomics_n_pca_comps: int = 50,
     multiomics_n_lsi_comps: int = 50,
+    multiomics_lsi_n_iter: int = 15,
     multiomics_gtf_by: str = "gene_name",
     multiomics_flavor: str = "seurat_v3",
     multiomics_generate_umap: bool = False,
@@ -306,8 +307,9 @@ def wrapper(
     
     # Sample embedding parameters
     multiomics_sample_hvg_number: int = 2000,
-    multiomics_preserve_cols_in_sample_embedding: Optional[List[str]] = None,
-    multiomics_sample_embedding_dimension: int = 10,
+    multiomics_preserve_cols_for_sample_embedding: Optional[List[str]] = None,
+    multiomics_n_expression_components: int = 10,
+    multiomics_n_proportion_components: int = 10,
     multiomics_harmony_for_proportion: bool = True,
     
     # Embedding visualization parameters
@@ -325,7 +327,7 @@ def wrapper(
     
     # Optimal resolution parameters
     multiomics_optimization_target: str = "rna",
-    multiomics_trajectory_col: str = "sev.level",
+    multiomics_sev_col: str = "sev.level",
     multiomics_resolution_use_rep: str = 'X_glue',
     multiomics_num_pcs: int = 20,
     multiomics_visualize_cell_types: bool = True,
@@ -442,7 +444,7 @@ def wrapper(
             "glue_cell_types": False,
             "glue_visualization": False,
             "integration_preprocessing": False,
-            "derive_sample_embedding": False,
+            "dimensionality_reduction": False,
             "embedding_visualization": False,
             "optimal_resolution": False
         },
@@ -723,46 +725,46 @@ def wrapper(
         multiomics_output_dir = multiomics_output_dir or os.path.join(output_dir, 'multiomics')
         
         if multiomics_run_glue and (multiomics_rna_file is None or multiomics_atac_file is None):
-            raise ValueError("Multiomics pipeline with GLUE requires rna_file and atac_file")
+            raise ValueError("Multiomics pipeline with GLUE requires multiomics_rna_file and multiomics_atac_file")
         
         try:
             from .multiomics_wrapper import multiomics_wrapper
             
             multiomics_results = multiomics_wrapper(
+                # ===== Required Parameters =====
                 rna_file=multiomics_rna_file,
                 atac_file=multiomics_atac_file,
                 multiomics_output_dir=multiomics_output_dir,
-                # Pipeline control flags
+                
+                # ===== Process Control Flags =====
                 run_glue=multiomics_run_glue,
                 run_integrate_preprocess=multiomics_run_integrate_preprocess,
                 run_dimensionality_reduction=multiomics_run_dimensionality_reduction,
                 run_visualize_embedding=multiomics_run_visualize_embedding,
                 run_find_optimal_resolution=multiomics_run_find_optimal_resolution,
-                # GLUE sub-pipeline flags
-                run_glue_preprocessing=multiomics_run_glue_preprocessing,
-                run_glue_training=multiomics_run_glue_training,
-                run_glue_gene_activity=multiomics_run_glue_gene_activity,
-                run_glue_cell_types=multiomics_run_glue_cell_types,
-                run_glue_visualization=multiomics_run_glue_visualization,
-                # General settings
-                multiomics_verbose=multiomics_verbose,
-                save_intermediate=save_intermediate,
-                use_gpu=multiomics_use_gpu,
-                random_state=multiomics_random_state,
-                status_flags=status_flags,
-                # Input data paths
-                integrated_h5ad_path=multiomics_integrated_h5ad_path,
-                pseudobulk_h5ad_path=multiomics_pseudobulk_h5ad_path,
+                
+                # ===== Basic Parameters =====
                 rna_sample_meta_file=multiomics_rna_sample_meta_file,
                 atac_sample_meta_file=multiomics_atac_sample_meta_file,
                 additional_hvg_file=multiomics_additional_hvg_file,
-                # Common column names
                 rna_sample_column=multiomics_rna_sample_column,
                 atac_sample_column=multiomics_atac_sample_column,
                 sample_col=multiomics_sample_col,
                 batch_col=multiomics_batch_col,
                 celltype_col=multiomics_celltype_col,
                 modality_col=multiomics_modality_col,
+                multiomics_verbose=multiomics_verbose,
+                save_intermediate=save_intermediate,
+                use_gpu=multiomics_use_gpu and gpu_available,
+                random_state=multiomics_random_state,
+                
+                # ===== GLUE Integration Parameters =====
+                run_glue_preprocessing=multiomics_run_glue_preprocessing,
+                run_glue_training=multiomics_run_glue_training,
+                run_glue_gene_activity=multiomics_run_glue_gene_activity,
+                run_glue_cell_types=multiomics_run_glue_cell_types,
+                run_glue_visualization=multiomics_run_glue_visualization,
+                
                 # GLUE preprocessing parameters
                 ensembl_release=multiomics_ensembl_release,
                 species=multiomics_species,
@@ -770,40 +772,49 @@ def wrapper(
                 n_top_genes=multiomics_n_top_genes,
                 n_pca_comps=multiomics_n_pca_comps,
                 n_lsi_comps=multiomics_n_lsi_comps,
+                lsi_n_iter=multiomics_lsi_n_iter,
                 gtf_by=multiomics_gtf_by,
                 flavor=multiomics_flavor,
                 generate_umap=multiomics_generate_umap,
                 compression=multiomics_compression,
+                
                 # GLUE training parameters
                 consistency_threshold=multiomics_consistency_threshold,
                 treat_sample_as_batch=multiomics_treat_sample_as_batch,
                 save_prefix=multiomics_save_prefix,
-                # Neighbor/metric parameters
+                
+                # GLUE gene activity parameters
                 k_neighbors=multiomics_k_neighbors,
                 use_rep=multiomics_use_rep,
                 metric=multiomics_metric,
-                # Cell type clustering parameters
+                
+                # GLUE cell type parameters
                 existing_cell_types=multiomics_existing_cell_types,
                 n_target_clusters=multiomics_n_target_clusters,
                 cluster_resolution=multiomics_cluster_resolution,
                 use_rep_celltype=multiomics_use_rep_celltype,
                 markers=multiomics_markers,
                 generate_umap_celltype=multiomics_generate_umap_celltype,
-                # Visualization parameters
+                
+                # GLUE visualization parameters
                 plot_columns=multiomics_plot_columns,
-                # Integration preprocessing parameters
+                
+                # ===== Integration Preprocessing Parameters =====
                 min_cells_sample=multiomics_min_cells_sample,
                 min_cell_gene=multiomics_min_cell_gene,
                 min_features=multiomics_min_features,
                 pct_mito_cutoff=multiomics_pct_mito_cutoff,
                 exclude_genes=multiomics_exclude_genes,
                 doublet=multiomics_doublet,
-                # Sample embedding parameters
+                
+                # ===== Dimensionality Reduction Parameters =====
                 sample_hvg_number=multiomics_sample_hvg_number,
-                preserve_cols_in_sample_embedding=multiomics_preserve_cols_in_sample_embedding,
-                sample_embedding_dimension=multiomics_sample_embedding_dimension,
+                preserve_cols_for_sample_embedding=multiomics_preserve_cols_for_sample_embedding,
+                n_expression_components=multiomics_n_expression_components,
+                n_proportion_components=multiomics_n_proportion_components,
                 multiomics_harmony_for_proportion=multiomics_harmony_for_proportion,
-                # Embedding visualization parameters
+                
+                # ===== Visualization Parameters =====
                 color_col=multiomics_color_col,
                 visualization_grouping_column=multiomics_visualization_grouping_column,
                 target_modality=multiomics_target_modality,
@@ -815,12 +826,20 @@ def wrapper(
                 colormap=multiomics_colormap,
                 show_sample_names=multiomics_show_sample_names,
                 force_data_type=multiomics_force_data_type,
-                # Optimal resolution parameters
+                
+                # ===== Optimal Resolution Parameters =====
                 optimization_target=multiomics_optimization_target,
-                trajectory_col=multiomics_trajectory_col,
+                sev_col=multiomics_sev_col,
                 resolution_use_rep=multiomics_resolution_use_rep,
                 num_PCs=multiomics_num_pcs,
                 visualize_cell_types=multiomics_visualize_cell_types,
+                
+                # ===== Paths for Skipping Steps =====
+                integrated_h5ad_path=multiomics_integrated_h5ad_path,
+                pseudobulk_h5ad_path=multiomics_pseudobulk_h5ad_path,
+                
+                # ===== System Parameters =====
+                status_flags=status_flags,
             )
             
             results['multiomics_results'] = multiomics_results

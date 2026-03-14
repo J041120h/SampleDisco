@@ -32,11 +32,11 @@ import sys
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from integration.integration_cell_type import cell_types_multiomics
-from integration.integration_visualization import *
-from csample_embedding.DR import dimension_reduction
-from CCA import *
-from CCA_test import *
+from preparation.multi_omics_cell_type import cell_types_multiomics
+from visualization.multi_omics_visualization import *
+from sample_embedding.DR import dimension_reduction
+from sample_trajectory.CCA import *
+from sample_trajectory.CCA_test import *
 
 
 # =============================================================================
@@ -791,7 +791,7 @@ def find_optimal_cell_resolution_integration(
             print(f"  Clusters: {n_clusters}")
             
             # Step 3: Pseudobulk
-            from integration.integration_pseudobulk import compute_pseudobulk_adata_linux
+            from sample_embedding.multi_omics_pseudobulk import compute_pseudobulk_adata_linux
             pseudobulk_dict, pseudobulk_adata = compute_pseudobulk_adata_linux(
                 adata=AnnData_integrated, batch_col=batch_col if batch_col else None,
                 sample_col=sample_col, celltype_col='cell_type', n_features=n_features,
@@ -810,7 +810,7 @@ def find_optimal_cell_resolution_integration(
             
             # Step 5: CCA analysis - only for the selected dr_type
             # Import the visualization function from CCA_test
-            from CCA_test import run_cca_on_pca_from_adata, plot_cca_on_2d_pca
+            from sample_trajectory.CCA_test import run_cca_on_pca_from_adata, plot_cca_on_2d_pca
             
             cca_results_df = batch_cca_analysis(
                 pseudobulk_adata=pseudobulk_adata, 

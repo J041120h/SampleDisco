@@ -10,12 +10,12 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
-from multi_omics.integration_glue import *
-from multi_omics.integration_preprocess import *
-from multi_omics.integration_CCA_test import *
-from multi_omics.integration_optimal_resolution import *
-from multi_omics.integration_visualization import *
-from multi_omics.integration_cell_type import cell_types_multiomics
+from preparation.multi_omics_glue import multiomics_preparation
+from preparation.multi_omics_preprocess import integrate_preprocess
+from sample_trajectory.multi_omics_CCA_test import integration_CCA_test
+from parameter_selection.multi_omics_optimal_resolution import find_optimal_cell_resolution_integration, suppress_warnings
+from visualization.multi_omics_visualization import visualize_multimodal_embedding
+from preparation.multi_omics_cell_type import cell_types_multiomics
 from utils.multi_omics_unify_optimal import replace_optimal_dimension_reduction
 
 def multiomics_wrapper(
@@ -169,7 +169,7 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
         
-        glue_result = glue(
+        glue_result = multiomics_preparation(
             rna_file=rna_file,
             atac_file=atac_file,
             rna_sample_meta_file=rna_sample_meta_file,
@@ -188,8 +188,6 @@ def multiomics_wrapper(
             gtf_by=gtf_by,
             flavor=flavor,
             generate_umap=generate_umap,
-            compression=compression,
-            random_state=random_state,
             rna_sample_column=rna_sample_column,
             atac_sample_column=atac_sample_column,
             consistency_threshold=consistency_threshold,

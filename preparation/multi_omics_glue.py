@@ -27,7 +27,7 @@ from cupyx.scipy import sparse as cusparse
 # Local/project
 from utils.safe_save import safe_h5ad_write
 from utils.merge_sample_meta import merge_sample_metadata
-from integration.integration_visualization import glue_visualize
+from visualization.multi_omics_visualization import glue_visualize
 
 def glue_preprocess_pipeline(
     rna_file: str,
@@ -949,7 +949,7 @@ def compute_gene_activity_from_knn(
     
     return merged_adata
 
-def glue(
+def multiomics_preparation(
     # Data files
     rna_file: str,
     atac_file: str,
@@ -973,8 +973,6 @@ def glue(
     gtf_by: str = "gene_name",
     flavor: str = "seurat_v3",
     generate_umap: bool = False,
-    compression: str = "gzip",
-    random_state: int = 42,
     rna_sample_column: str = "sample",
     atac_sample_column: str = "sample",
     
@@ -984,7 +982,7 @@ def glue(
     save_prefix: str = "glue",
     
     # Gene activity computation parameters
-    k_neighbors: int = 10,
+    k_neighbors: int = 1,
     use_rep: str = "X_glue",
     metric: str = "cosine",
     use_gpu: bool = True,
@@ -1025,6 +1023,7 @@ def glue(
             n_top_genes=n_top_genes,
             n_pca_comps=n_pca_comps,
             n_lsi_comps=n_lsi_comps,
+            gtf_by=gtf_by,
             flavor=flavor,
             generate_umap=generate_umap,
             rna_sample_column=rna_sample_column,

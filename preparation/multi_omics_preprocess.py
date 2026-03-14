@@ -3,9 +3,9 @@ import time
 import pandas as pd
 import scanpy as sc
 
-from code.sample_embedding.pseudo_adata import *
-from code.sample_embedding.DR import *
-from code.preparation.cell_type_cpu import *
+from sample_embedding.pseudo_adata import *
+from sample_embedding.DR import *
+from preparation.cell_type_cpu import *
 
 
 def _store_original_sample_ids(
@@ -54,10 +54,10 @@ def _maybe_append_modality_to_duplicates(
     # 🔑 Ensure the target column is NOT categorical before assignment
     adata.obs[sample_column] = adata.obs[sample_column].astype(str)
 
-    m = adata.obs[modality_col].astype(str)
+    modality_labels = adata.obs[modality_col].astype(str)
 
     adata.obs.loc[dup_mask, sample_column] = (
-        s[dup_mask] + "_" + m[dup_mask]
+        s[dup_mask] + "_" + modality_labels[dup_mask]
     )
 
     if verbose:
