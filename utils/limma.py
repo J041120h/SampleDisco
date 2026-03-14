@@ -2,15 +2,6 @@ import numpy as np
 import pandas as pd
 import patsy
 
-
-# =============================================================================
-# Limma-like correction (matches YOUR definition)
-#
-# pheno: metadata
-# exprs: (n_samples, n_genes)  [AnnData.X convention]
-# covariate_formula: variance to KEEP (preserve)
-# design_formula: variance to REMOVE (batch)
-# =============================================================================
 def limma(
     pheno: pd.DataFrame,
     exprs: np.ndarray,                 # (n_samples, n_genes)

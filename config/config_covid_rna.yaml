@@ -9,7 +9,7 @@ run_atac_pipeline: true
 run_multiomics_pipeline: false
 
 # General settings
-use_gpu: false
+use_gpu: true
 initialization: false
 verbose: true
 save_intermediate: true
@@ -121,20 +121,20 @@ rna_plot_cell_type_expression_umap_flag: true
 # =============================================================================
 
 # --- Input/Output Paths ---
-atac_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
+atac_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
 atac_output_dir: null  # defaults to {output_dir}/atac
 
 # --- Pipeline Control Flags ---
 atac_preprocessing: false
 atac_cell_type_cluster: false
 atac_derive_sample_embedding: false
-atac_cca_based_cell_resolution_selection: true
+atac_cca_based_cell_resolution_selection: false
 atac_sample_distance_calculation: false
 atac_trajectory_analysis: false
 atac_trajectory_dge: false
-atac_sample_cluster: false
-atac_proportion_test: false
-atac_cluster_dge: false
+atac_sample_cluster: true
+atac_proportion_test: true
+atac_cluster_dge: true
 atac_visualize_data: false
 
 # --- Resume Paths (for skipping preprocessing) ---
