@@ -1,18 +1,54 @@
+2026-03-14 14:09:37 | [INFO] init
+... storing 'sample' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'study' as categorical
+... storing 'sex' as categorical
+... storing 'severity' as categorical
+... storing 'batch' as categorical
 /users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:220: UserWarning: Both sample_to_clade and group_col provided. Using group_col and ignoring sample_to_clade.
   warnings.warn(
-/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:67: RuntimeWarning: divide by zero encountered in log
-  mean_log_s2 - np.mean([digamma(d / 2) - np.log(d / 2) for d in df_ok])
-/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:67: RuntimeWarning: invalid value encountered in scalar subtract
-  mean_log_s2 - np.mean([digamma(d / 2) - np.log(d / 2) for d in df_ok])
 /users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:220: UserWarning: Both sample_to_clade and group_col provided. Using group_col and ignoring sample_to_clade.
   warnings.warn(
-/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:67: RuntimeWarning: divide by zero encountered in log
-  mean_log_s2 - np.mean([digamma(d / 2) - np.log(d / 2) for d in df_ok])
-/users/hjiang/GenoDistance/code/sample_clustering/proportion_test.py:67: RuntimeWarning: invalid value encountered in scalar subtract
-  mean_log_s2 - np.mean([digamma(d / 2) - np.log(d / 2) for d in df_ok])
-/users/hjiang/GenoDistance/code/sample_clustering/RAISIN.py:796: UserWarning: Unable to estimate variance for group 0, setting to 0.
-  warnings.warn(f"Unable to estimate variance for group {current_group}, setting to 0.")
-/users/hjiang/GenoDistance/code/sample_clustering/RAISIN.py:796: UserWarning: Unable to estimate variance for group 2, setting to 0.
-  warnings.warn(f"Unable to estimate variance for group {current_group}, setting to 0.")
-/users/hjiang/GenoDistance/code/sample_clustering/RAISIN_TEST.py:239: FutureWarning: DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
-  pseudobulk = means_df.groupby(groups, axis=1).mean()

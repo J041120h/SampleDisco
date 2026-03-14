@@ -4,8 +4,8 @@
 output_dir: "/dcs07/hongkai/data/harry/result/test"
 
 # Pipeline selection
-run_rna_pipeline: false
-run_atac_pipeline: true
+run_rna_pipeline: true
+run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # General settings
@@ -20,20 +20,20 @@ large_data_need_extra_memory: false
 # =============================================================================
 
 # --- Input/Output Paths ---
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark/count_data_subsample_25samples.h5ad"
+rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/test_RNA.h5ad"
 rna_output_dir: null  # defaults to {output_dir}/rna
 
 # --- Pipeline Control Flags ---
-rna_preprocessing: false
+rna_preprocessing: true
 rna_cell_type_cluster: true
-rna_derive_sample_embedding: false
+rna_derive_sample_embedding: true
 rna_cca_based_cell_resolution_selection: false
-rna_sample_distance_calculation: false
+rna_sample_distance_calculation: true
 rna_trajectory_analysis: true
 rna_trajectory_dge: true
-rna_sample_cluster: false
-rna_proportion_test: false
-rna_cluster_dge: false
+rna_sample_cluster: true
+rna_proportion_test: true
+rna_cluster_dge: true
 rna_visualize_data: false
 
 # --- Resume Paths (for skipping preprocessing) ---
@@ -59,7 +59,7 @@ rna_vars_to_regress: null
 
 # --- Cell Type Clustering Parameters ---
 rna_leiden_cluster_resolution: 0.990
-rna_cell_embedding_column: null  # auto-detected: X_pca_harmony if batch_col set
+rna_cell_embedding_column: null
 rna_existing_cell_types: false
 rna_n_target_cell_clusters: null
 rna_umap: true

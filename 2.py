@@ -1,224 +1,331 @@
-# Check whether test_ATAC.h5ad is compressed / has suspicious hidden payloads.
-# If the file appears uncompressed (or if force_rewrite=True), rewrite it with gzip
-# and atomically overwrite the original file.
-#
-# This does NOT intentionally modify AnnData contents; it just rewrites the file.
-# To be safe, it first writes a temporary compressed copy, verifies it can be read,
-# then renames the original to a backup and replaces it.
+#!/usr/bin/env python3
 
-from pathlib import Path
 import os
-import shutil
-import h5py
-import anndata as ad
+import sys
+import numpy as np
+import pandas as pd
+import scanpy as sc
 
-# =========================
+
+# ============================================================
 # USER CONFIG
-# =========================
-h5ad_path = Path("/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad")
-compression = "gzip"          # use gzip for .h5ad rewrite
-force_rewrite = False         # if True, rewrite even if file already looks compressed
-keep_backup = True            # keep original as .bak after successful overwrite
-verbose_max_datasets = 200    # just for printing
+# ============================================================
+H5AD_PATH = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data.h5ad"
+SAMPLE_META_PATH = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
+OUTPUT_H5AD_PATH = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/test_RNA.h5ad"
+OUTPUT_SAMPLE_CSV_PATH = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data_subsample_8samples_selected_samples.csv"
 
-# =========================
-# HELPER FUNCTIONS
-# =========================
-def format_bytes(n: int) -> str:
-    units = ["B", "KB", "MB", "GB", "TB"]
-    x = float(n)
-    for u in units:
-        if x < 1024 or u == units[-1]:
-            return f"{x:.2f} {u}"
-        x /= 1024
+# Column in adata.obs that identifies sample
+SAMPLE_COLUMN = "sample"
 
-def inspect_h5ad_storage(path: Path, verbose: bool = True, max_print: int = 200):
+# Column names in sample metadata
+# Change these if your sample_data.csv uses different names
+BATCH_CANDIDATE_COLUMNS = ["batch", "study", "dataset", "cohort", "source"]
+SEVERITY_CANDIDATE_COLUMNS = ["sev.level", "sev_level", "severity", "sev"]
+
+# Desired design
+N_TOTAL_SAMPLES = 8
+N_SEV1 = 4
+N_SEV4 = 4
+SEV1_VALUE = 1
+SEV4_VALUE = 4
+
+# Random seed for reproducibility
+RANDOM_SEED = 42
+
+# Whether to require balanced selection within each batch:
+#   True  -> try to pick 2 sev1 + 2 sev4 from each of 2 batches
+#   False -> only enforce total 4 sev1 + 4 sev4 across 2 batches
+REQUIRE_PER_BATCH_BALANCE = True
+# ============================================================
+
+
+def detect_column(df, candidates, required=True, label="column"):
+    for col in candidates:
+        if col in df.columns:
+            return col
+    if required:
+        raise KeyError(
+            f"Could not find {label}. Tried columns: {candidates}. "
+            f"Available columns are: {df.columns.tolist()}"
+        )
+    return None
+
+
+def standardize_sample_meta(sample_meta, sample_col, batch_col, sev_col):
+    meta = sample_meta.copy()
+
+    if sample_col not in meta.columns:
+        raise KeyError(
+            f"Sample metadata must contain sample column '{sample_col}'. "
+            f"Available columns: {meta.columns.tolist()}"
+        )
+
+    meta[sample_col] = meta[sample_col].astype(str).str.strip()
+    meta[batch_col] = meta[batch_col].astype(str).str.strip()
+
+    # Convert severity to numeric if possible
+    meta[sev_col] = pd.to_numeric(meta[sev_col], errors="coerce")
+
+    # Drop rows missing critical info
+    meta = meta.dropna(subset=[sample_col, batch_col, sev_col]).copy()
+
+    # Keep only one row per sample
+    # If duplicates exist, keep the first one
+    meta = meta.drop_duplicates(subset=[sample_col]).copy()
+
+    return meta
+
+
+def choose_samples_balanced_per_batch(meta, sample_col, batch_col, sev_col, rng):
     """
-    Inspect HDF5 dataset-level compression/chunking and summarize what is stored.
+    Try to find two batches such that each batch has at least:
+      - 2 samples with sev.level == 1
+      - 2 samples with sev.level == 4
+    Then pick 2+2 from each batch, total 8 samples.
     """
-    summary = {
-        "datasets": [],
-        "compressed_count": 0,
-        "uncompressed_count": 0,
-        "total_datasets": 0,
-        "groups_present": set(),
-    }
+    batch_summary = []
+    for b, dfb in meta.groupby(batch_col):
+        sev1_samples = sorted(dfb.loc[dfb[sev_col] == SEV1_VALUE, sample_col].unique().tolist())
+        sev4_samples = sorted(dfb.loc[dfb[sev_col] == SEV4_VALUE, sample_col].unique().tolist())
+        batch_summary.append({
+            "batch": b,
+            "n_sev1": len(sev1_samples),
+            "n_sev4": len(sev4_samples),
+            "sev1_samples": sev1_samples,
+            "sev4_samples": sev4_samples,
+        })
 
-    with h5py.File(path, "r") as f:
-        def visitor(name, obj):
-            if isinstance(obj, h5py.Dataset):
-                rec = {
-                    "name": name,
-                    "shape": obj.shape,
-                    "dtype": str(obj.dtype),
-                    "compression": obj.compression,
-                    "chunks": obj.chunks,
-                    "nbytes": getattr(obj, "nbytes", None),
-                }
-                summary["datasets"].append(rec)
-                summary["total_datasets"] += 1
-                if obj.compression is None:
-                    summary["uncompressed_count"] += 1
-                else:
-                    summary["compressed_count"] += 1
-            elif isinstance(obj, h5py.Group):
-                summary["groups_present"].add(name)
+    batch_summary = pd.DataFrame(batch_summary)
 
-        f.visititems(visitor)
+    eligible = batch_summary[
+        (batch_summary["n_sev1"] >= 2) &
+        (batch_summary["n_sev4"] >= 2)
+    ].copy()
 
-    # Sort biggest first if sizes available
-    summary["datasets"].sort(
-        key=lambda x: (-1 if x["nbytes"] is None else -x["nbytes"], x["name"])
+    if eligible.shape[0] < 2:
+        return None, batch_summary
+
+    chosen_batches = sorted(
+        rng.choice(eligible["batch"].values, size=2, replace=False).tolist()
     )
 
-    if verbose:
-        print("=" * 100)
-        print(f"Inspecting HDF5 storage: {path}")
-        print(f"On-disk file size: {format_bytes(path.stat().st_size)}")
-        print(f"Total datasets: {summary['total_datasets']}")
-        print(f"Compressed datasets: {summary['compressed_count']}")
-        print(f"Uncompressed datasets: {summary['uncompressed_count']}")
-        print(f"Top-level-ish groups seen: {sorted(g for g in summary['groups_present'] if '/' not in g)}")
-        print()
+    selected_rows = []
+    for b in chosen_batches:
+        row = eligible.loc[eligible["batch"] == b].iloc[0]
+        sev1_pick = sorted(rng.choice(row["sev1_samples"], size=2, replace=False).tolist())
+        sev4_pick = sorted(rng.choice(row["sev4_samples"], size=2, replace=False).tolist())
 
-        print("Largest datasets:")
-        for rec in summary["datasets"][:max_print]:
-            print(
-                f"{rec['name'][:60]:60s} "
-                f"shape={str(rec['shape']):20s} "
-                f"dtype={rec['dtype']:10s} "
-                f"compression={str(rec['compression']):8s} "
-                f"chunks={str(rec['chunks'])[:18]:18s} "
-                f"nbytes={format_bytes(rec['nbytes']) if rec['nbytes'] is not None else 'NA'}"
+        for s in sev1_pick:
+            selected_rows.append({
+                sample_col: s,
+                batch_col: b,
+                sev_col: SEV1_VALUE
+            })
+        for s in sev4_pick:
+            selected_rows.append({
+                sample_col: s,
+                batch_col: b,
+                sev_col: SEV4_VALUE
+            })
+
+    selected_df = pd.DataFrame(selected_rows)
+    return selected_df, batch_summary
+
+
+def choose_samples_total_only(meta, sample_col, batch_col, sev_col, rng):
+    """
+    Relaxed fallback:
+      - choose 2 batches
+      - total 4 samples with sev==1 and 4 samples with sev==4 across those 2 batches
+    """
+    batches = sorted(meta[batch_col].unique().tolist())
+    if len(batches) < 2:
+        raise ValueError(f"Need at least 2 batches, found only {len(batches)}.")
+
+    # Evaluate all pairs
+    best_pair = None
+    for i in range(len(batches)):
+        for j in range(i + 1, len(batches)):
+            b1, b2 = batches[i], batches[j]
+            sub = meta[meta[batch_col].isin([b1, b2])].copy()
+
+            sev1_samples = sorted(sub.loc[sub[sev_col] == SEV1_VALUE, sample_col].unique().tolist())
+            sev4_samples = sorted(sub.loc[sub[sev_col] == SEV4_VALUE, sample_col].unique().tolist())
+
+            if len(sev1_samples) >= N_SEV1 and len(sev4_samples) >= N_SEV4:
+                best_pair = (b1, b2)
+                break
+        if best_pair is not None:
+            break
+
+    if best_pair is None:
+        raise ValueError(
+            "Could not find any pair of batches with enough samples to satisfy "
+            f"{N_SEV1} samples of severity {SEV1_VALUE} and "
+            f"{N_SEV4} samples of severity {SEV4_VALUE}."
+        )
+
+    sub = meta[meta[batch_col].isin(best_pair)].copy()
+    sev1_pool = sorted(sub.loc[sub[sev_col] == SEV1_VALUE, sample_col].unique().tolist())
+    sev4_pool = sorted(sub.loc[sub[sev_col] == SEV4_VALUE, sample_col].unique().tolist())
+
+    sev1_pick = sorted(rng.choice(sev1_pool, size=N_SEV1, replace=False).tolist())
+    sev4_pick = sorted(rng.choice(sev4_pool, size=N_SEV4, replace=False).tolist())
+
+    selected_samples = sev1_pick + sev4_pick
+    selected_df = sub[sub[sample_col].isin(selected_samples)][[sample_col, batch_col, sev_col]].drop_duplicates().copy()
+
+    return selected_df
+
+
+def main():
+    rng = np.random.default_rng(RANDOM_SEED)
+
+    print("=== Reading AnnData ===")
+    adata = sc.read_h5ad(H5AD_PATH)
+    print(f"AnnData shape: {adata.shape[0]} cells × {adata.shape[1]} genes")
+
+    if SAMPLE_COLUMN not in adata.obs.columns:
+        raise KeyError(
+            f"'{SAMPLE_COLUMN}' not found in adata.obs. "
+            f"Available obs columns: {adata.obs.columns.tolist()}"
+        )
+
+    print("=== Reading sample metadata ===")
+    sample_meta = pd.read_csv(SAMPLE_META_PATH)
+    print(f"Sample metadata shape: {sample_meta.shape}")
+
+    batch_col = detect_column(
+        sample_meta,
+        BATCH_CANDIDATE_COLUMNS,
+        required=True,
+        label="batch/study column"
+    )
+    sev_col = detect_column(
+        sample_meta,
+        SEVERITY_CANDIDATE_COLUMNS,
+        required=True,
+        label="severity column"
+    )
+
+    print(f"Detected batch/study column: {batch_col}")
+    print(f"Detected severity column: {sev_col}")
+
+    sample_meta = standardize_sample_meta(
+        sample_meta=sample_meta,
+        sample_col=SAMPLE_COLUMN,
+        batch_col=batch_col,
+        sev_col=sev_col,
+    )
+
+    # Keep only samples that actually exist in the AnnData
+    adata_samples = pd.Index(adata.obs[SAMPLE_COLUMN].astype(str).unique())
+    sample_meta = sample_meta[sample_meta[SAMPLE_COLUMN].isin(adata_samples)].copy()
+
+    print("=== Metadata after filtering to samples present in AnnData ===")
+    print(f"Number of metadata rows kept: {sample_meta.shape[0]}")
+    print(f"Unique batches/studies: {sample_meta[batch_col].nunique()}")
+    print("Severity counts by sample:")
+    print(sample_meta[sev_col].value_counts(dropna=False).sort_index())
+
+    print("\n=== Trying to choose samples ===")
+    selected_df = None
+
+    if REQUIRE_PER_BATCH_BALANCE:
+        selected_df, batch_summary = choose_samples_balanced_per_batch(
+            meta=sample_meta,
+            sample_col=SAMPLE_COLUMN,
+            batch_col=batch_col,
+            sev_col=sev_col,
+            rng=rng,
+        )
+
+        print("Per-batch summary:")
+        print(batch_summary[[ "batch", "n_sev1", "n_sev4" ]].sort_values("batch").to_string(index=False))
+
+        if selected_df is None:
+            print("\nCould not satisfy strict per-batch balance (2 sev1 + 2 sev4 in each batch).")
+            print("Falling back to relaxed selection across 2 batches.")
+            selected_df = choose_samples_total_only(
+                meta=sample_meta,
+                sample_col=SAMPLE_COLUMN,
+                batch_col=batch_col,
+                sev_col=sev_col,
+                rng=rng,
             )
+    else:
+        selected_df = choose_samples_total_only(
+            meta=sample_meta,
+            sample_col=SAMPLE_COLUMN,
+            batch_col=batch_col,
+            sev_col=sev_col,
+            rng=rng,
+        )
 
-    return summary
+    selected_df = selected_df.drop_duplicates(subset=[SAMPLE_COLUMN]).copy()
 
-def ann_data_summary(path: Path):
-    """
-    Read the file normally and summarize AnnData-visible content.
-    """
-    a = ad.read_h5ad(path)
-    out = {
-        "shape": a.shape,
-        "layers": list(a.layers.keys()),
-        "obsm": list(a.obsm.keys()),
-        "varm": list(a.varm.keys()),
-        "obsp": list(a.obsp.keys()),
-        "varp": list(a.varp.keys()),
-        "uns_keys": list(a.uns.keys()),
-        "has_raw": a.raw is not None,
-        "X_type": type(a.X).__name__,
-        "X_dtype": str(a.X.dtype),
-    }
-    del a
-    return out
+    # Final checks
+    if selected_df.shape[0] != N_TOTAL_SAMPLES:
+        raise ValueError(
+            f"Expected {N_TOTAL_SAMPLES} selected samples, but got {selected_df.shape[0]}."
+        )
 
-def print_anndata_summary(label: str, summary: dict):
-    print("=" * 100)
-    print(label)
-    for k, v in summary.items():
-        if k == "uns_keys" and len(v) > 30:
-            print(f"{k}: {v[:30]} ... ({len(v)} total)")
-        else:
-            print(f"{k}: {v}")
+    batch_n = selected_df[batch_col].nunique()
+    if batch_n != 2:
+        raise ValueError(f"Expected 2 batches/studies, but got {batch_n}.")
 
-def rewrite_with_compression_inplace(path: Path, compression: str = "gzip", keep_backup: bool = True):
-    """
-    Rewrite .h5ad using compression and atomically replace original.
-    """
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
-    bak_path = path.with_suffix(path.suffix + ".bak")
+    sev_counts = selected_df[sev_col].value_counts().to_dict()
+    if sev_counts.get(SEV1_VALUE, 0) != N_SEV1:
+        raise ValueError(
+            f"Expected {N_SEV1} samples with severity {SEV1_VALUE}, "
+            f"but got {sev_counts.get(SEV1_VALUE, 0)}."
+        )
+    if sev_counts.get(SEV4_VALUE, 0) != N_SEV4:
+        raise ValueError(
+            f"Expected {N_SEV4} samples with severity {SEV4_VALUE}, "
+            f"but got {sev_counts.get(SEV4_VALUE, 0)}."
+        )
 
-    print("=" * 100)
-    print("Reading original AnnData...")
-    adata = ad.read_h5ad(path)
+    selected_samples = sorted(selected_df[SAMPLE_COLUMN].astype(str).tolist())
 
-    print("Writing temporary compressed file...")
-    adata.write_h5ad(tmp_path, compression=compression)
+    print("\n=== Selected samples ===")
+    print(selected_df.sort_values([batch_col, sev_col, SAMPLE_COLUMN]).to_string(index=False))
 
-    print("Verifying temporary file can be opened...")
-    test = ad.read_h5ad(tmp_path, backed="r")
-    _ = test.shape
-    del test
-    del adata
+    # Subset AnnData by sample
+    print("\n=== Subsetting AnnData ===")
+    mask = adata.obs[SAMPLE_COLUMN].astype(str).isin(selected_samples)
+    adata_sub = adata[mask].copy()
 
-    print("Swapping files...")
-    if bak_path.exists():
-        bak_path.unlink()
+    print(f"Subset shape: {adata_sub.shape[0]} cells × {adata_sub.shape[1]} genes")
+    print(f"Unique samples in subset: {adata_sub.obs[SAMPLE_COLUMN].nunique()}")
 
-    os.replace(path, bak_path)
-    os.replace(tmp_path, path)
+    # Optional: add selected sample-level metadata into obs
+    selected_meta = selected_df.set_index(SAMPLE_COLUMN)
+    adata_sub.obs = adata_sub.obs.join(selected_meta, on=SAMPLE_COLUMN, rsuffix="_samplemeta")
 
-    if not keep_backup:
-        bak_path.unlink()
+    print("\n=== Saving outputs ===")
+    os.makedirs(os.path.dirname(OUTPUT_H5AD_PATH), exist_ok=True)
+    adata_sub.write_h5ad(OUTPUT_H5AD_PATH)
 
-    return bak_path if keep_backup else None
-
-# =========================
-# STEP 1: Inspect current file
-# =========================
-if not h5ad_path.exists():
-    raise FileNotFoundError(h5ad_path)
-
-before_size = h5ad_path.stat().st_size
-storage_before = inspect_h5ad_storage(h5ad_path, verbose=True, max_print=verbose_max_datasets)
-adata_before = ann_data_summary(h5ad_path)
-print_anndata_summary("AnnData-visible summary BEFORE rewrite", adata_before)
-
-# Determine whether rewrite is needed
-looks_uncompressed = storage_before["compressed_count"] == 0
-has_some_uncompressed = storage_before["uncompressed_count"] > 0
-
-print("=" * 100)
-print(f"looks_uncompressed = {looks_uncompressed}")
-print(f"has_some_uncompressed = {has_some_uncompressed}")
-print(f"force_rewrite = {force_rewrite}")
-
-need_rewrite = looks_uncompressed or force_rewrite
-
-if not need_rewrite:
-    print("\nFile already has at least some compression. No overwrite performed.")
-    print("Set force_rewrite=True if you still want to rewrite it cleanly with gzip.")
-else:
-    # =========================
-    # STEP 2: Rewrite with compression
-    # =========================
-    backup_path = rewrite_with_compression_inplace(
-        h5ad_path,
-        compression=compression,
-        keep_backup=keep_backup,
+    selected_df.sort_values([batch_col, sev_col, SAMPLE_COLUMN]).to_csv(
+        OUTPUT_SAMPLE_CSV_PATH,
+        index=False
     )
 
-    # =========================
-    # STEP 3: Re-inspect rewritten file
-    # =========================
-    after_size = h5ad_path.stat().st_size
-    storage_after = inspect_h5ad_storage(h5ad_path, verbose=True, max_print=verbose_max_datasets)
-    adata_after = ann_data_summary(h5ad_path)
-    print_anndata_summary("AnnData-visible summary AFTER rewrite", adata_after)
+    print(f"Saved subset h5ad: {OUTPUT_H5AD_PATH}")
+    print(f"Saved selected sample table: {OUTPUT_SAMPLE_CSV_PATH}")
 
-    print("=" * 100)
-    print("SIZE COMPARISON")
-    print(f"Before: {format_bytes(before_size)}")
-    print(f"After : {format_bytes(after_size)}")
-    delta = after_size - before_size
-    sign = "+" if delta >= 0 else ""
-    print(f"Delta : {sign}{format_bytes(delta)}")
+    print("\n=== Final verification ===")
+    print("Cells per selected sample:")
+    print(adata_sub.obs[SAMPLE_COLUMN].value_counts().sort_index().to_string())
 
-    print("=" * 100)
-    print("INTEGRITY CHECK")
-    same_summary = (
-        adata_before["shape"] == adata_after["shape"]
-        and adata_before["layers"] == adata_after["layers"]
-        and adata_before["obsm"] == adata_after["obsm"]
-        and adata_before["varm"] == adata_after["varm"]
-        and adata_before["obsp"] == adata_after["obsp"]
-        and adata_before["varp"] == adata_after["varp"]
-        and adata_before["has_raw"] == adata_after["has_raw"]
-        and adata_before["X_dtype"] == adata_after["X_dtype"]
-    )
-    print(f"AnnData structure preserved: {same_summary}")
+    print("\nSeverity distribution among selected samples:")
+    print(selected_df[sev_col].value_counts().sort_index().to_string())
 
-    if keep_backup:
-        print(f"Backup kept at: {backup_path}")
+    print("\nBatch/study distribution among selected samples:")
+    print(selected_df[batch_col].value_counts().sort_index().to_string())
+
+
+if __name__ == "__main__":
+    main()
