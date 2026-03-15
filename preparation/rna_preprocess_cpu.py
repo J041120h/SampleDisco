@@ -84,7 +84,6 @@ def anndata_sample(
 
     return adata_sample_diff
 
-
 def _flatten_to_strings(values):
     """Flatten nested iterables to a list of strings."""
     flattened = []
@@ -94,7 +93,6 @@ def _flatten_to_strings(values):
         else:
             flattened.append(str(value))
     return flattened
-
 
 def _ensure_sample_column(adata, sample_column, verbose=True):
     """Infer sample column from obs_names if not present."""

@@ -1,9 +1,3 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
-INFO:numba.cuda.cudadrv.driver:init
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 733, in wrapper
-    multiomics_results = multiomics_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 293, in multiomics_wrapper
-    raise ValueError("Integration preprocessing is required. Set integration_preprocessing=True or ensure preprocessed data exists.")
-ValueError: Integration preprocessing is required. Set integration_preprocessing=True or ensure preprocessed data exists.
+Error: No module named 'preparation.multi_omics_cell_type'

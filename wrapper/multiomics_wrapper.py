@@ -9,13 +9,14 @@ from pathlib import Path
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
+from sample_embedding.DR import dimension_reduction
+from sample_embedding.multi_omics_pseudobulk_cpu import compute_pseudobulk_adata_cpu
 from preparation.multi_omics_glue import multiomics_preparation
 from preparation.multi_omics_preprocess import integrate_preprocess
 from sample_trajectory.multi_omics_CCA_test import integration_CCA_test
 from parameter_selection.multi_omics_optimal_resolution import find_optimal_cell_resolution_integration, suppress_warnings
 from visualization.multi_omics_visualization import visualize_multimodal_embedding
-from preparation.multi_omics_cell_type import cell_types_multiomics
+from preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from utils.multi_omics_unify_optimal import replace_optimal_dimension_reduction
 
 def multiomics_wrapper(
@@ -50,7 +51,7 @@ def multiomics_wrapper(
     run_glue_preprocessing=True,
     run_glue_training=True,
     run_glue_gene_activity=True,
-    run_glue_cell_types=True,
+    cell_type_cluster=True,
     run_glue_visualization=True,
     
     # GLUE preprocessing parameters
@@ -218,9 +219,13 @@ def multiomics_wrapper(
             print("GLUE integration completed successfully")
 
     # Step 1b: Cell type assignment
-    if run_glue_cell_types:
+    if cell_type_cluster:
         if multiomics_verbose:
             print("Step 1b: Running cell type assignment...")
+        cell_types_func = cell_types_multiomics
+        if use_gpu:
+            from preparation.multi_omics_cell_type_gpu import cell_types_multiomics_linux
+            cell_types_func = cell_types_multiomics_linux
         
         merged_adata = results.get('glue')
         if merged_adata is None:
@@ -229,7 +234,7 @@ def multiomics_wrapper(
             else:
                 raise ValueError(f"Integrated data not found at {h5ad_path}. Run GLUE gene activity first.")
         
-        merged_adata = cell_types_multiomics(
+        merged_adata = cell_types_func(
             adata=merged_adata,
             modality_column=modality_col,
             rna_modality_value="RNA",
@@ -309,20 +314,37 @@ def multiomics_wrapper(
         if modality_col not in batch_cols:
             batch_cols.append(modality_col)
 
-        pseudobulk_df, pseudobulk_adata = calculate_sample_embedding(
+        compute_pseudobulk_func = compute_pseudobulk_adata_cpu
+        if use_gpu:
+            from sample_embedding.multi_omics_pseudobulk_gpu import compute_pseudobulk_adata_linux
+            compute_pseudobulk_func = compute_pseudobulk_adata_linux
+
+        pseudobulk_df, pseudobulk_adata = compute_pseudobulk_func(
             adata=adata_for_dr,
+            batch_col=batch_cols,
             sample_col=sample_col,
             celltype_col=celltype_col,
-            batch_col=batch_cols,
             output_dir=multiomics_output_dir,
+            save=True,
             sample_hvg_number=sample_hvg_number,
+            atac=False,
+            verbose=multiomics_verbose,
+            preserve_cols=preserve_cols_for_sample_embedding,
+        )
+
+        pseudobulk_adata = dimension_reduction(
+            adata=adata_for_dr,
+            pseudobulk=pseudobulk_df,
+            pseudobulk_anndata=pseudobulk_adata,
+            sample_col=sample_col,
             n_expression_components=n_expression_components,
             n_proportion_components=n_proportion_components,
+            batch_col=batch_cols,
             harmony_for_proportion=multiomics_harmony_for_proportion,
-            preserve_cols=preserve_cols_for_sample_embedding,
-            use_gpu=use_gpu,
+            preserve_cols_in_sample_embedding=preserve_cols_for_sample_embedding,
+            output_dir=multiomics_output_dir,
+            not_save=False,
             atac=False,
-            save=True,
             verbose=multiomics_verbose,
         )
 

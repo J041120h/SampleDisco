@@ -240,7 +240,7 @@ def wrapper(
     multiomics_run_glue_preprocessing: bool = True,
     multiomics_run_glue_training: bool = True,
     multiomics_run_glue_gene_activity: bool = True,
-    multiomics_run_glue_cell_types: bool = True,
+    multiomics_cell_type_cluster: bool = True,
     multiomics_run_glue_visualization: bool = True,
     
     # Input data paths (for resuming)
@@ -762,7 +762,7 @@ def wrapper(
                 run_glue_preprocessing=multiomics_run_glue_preprocessing,
                 run_glue_training=multiomics_run_glue_training,
                 run_glue_gene_activity=multiomics_run_glue_gene_activity,
-                run_glue_cell_types=multiomics_run_glue_cell_types,
+                cell_type_cluster=multiomics_cell_type_cluster,
                 run_glue_visualization=multiomics_run_glue_visualization,
                 
                 # GLUE preprocessing parameters
