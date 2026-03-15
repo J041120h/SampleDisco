@@ -1,3 +1,10 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
-Error: No module named 'preparation.multi_omics_cell_type'
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 733, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 227, in multiomics_wrapper
+    from preparation.multi_omics_cell_type_gpu import cell_types_multiomics_linux
+  File "/users/hjiang/GenoDistance/code/preparation/multi_omics_cell_type_gpu.py", line 1, in <module>
+    from preparation.multi_omics_cell_type import cell_types_multiomics as cell_types_multiomics_linux
+ModuleNotFoundError: No module named 'preparation.multi_omics_cell_type'

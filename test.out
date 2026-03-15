@@ -1,0 +1,60 @@
+Resuming from previous progress:
+{
+  "rna": {
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "derive_sample_embedding": true,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": true,
+    "trajectory_analysis": true,
+    "trajectory_dge": true,
+    "sample_cluster": true,
+    "proportion_test": true,
+    "cluster_dge": true,
+    "visualization": false,
+    "dimensionality_reduction": true
+  },
+  "atac": {
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "derive_sample_embedding": true,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": true,
+    "trajectory_dge": true,
+    "sample_cluster": true,
+    "proportion_test": true,
+    "cluster_dge": true,
+    "visualization": false,
+    "dimensionality_reduction": false
+  },
+  "multiomics": {
+    "glue_integration": false,
+    "glue_preprocessing": false,
+    "glue_training": false,
+    "glue_gene_activity": false,
+    "glue_cell_types": false,
+    "glue_visualization": false,
+    "integration_preprocessing": false,
+    "dimensionality_reduction": false,
+    "embedding_visualization": false,
+    "optimal_resolution": false,
+    "derive_sample_embedding": false
+  },
+  "system_info": {
+    "platform": "Linux",
+    "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+    "use_gpu": true,
+    "gpu_available": true
+  }
+}
+
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/test/multiomics
+Step 1b: Running cell type assignment...
+
+Multiomics pipeline failed: No module named 'preparation.multi_omics_cell_type'
+
+Total execution time: 4.42 seconds (0.07 minutes)

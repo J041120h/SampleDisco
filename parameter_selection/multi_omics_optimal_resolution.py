@@ -32,7 +32,7 @@ import sys
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from preparation.multi_omics_cell_type import cell_types_multiomics
+from preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from visualization.multi_omics_visualization import *
 from sample_embedding.DR import dimension_reduction
 from sample_trajectory.CCA import *
