@@ -12,8 +12,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sample_embedding.calculate_multiomics_sample_embedding import calculate_multiomics_sample_embedding
 from preparation.multi_omics_glue import multiomics_preparation
 from preparation.multi_omics_preprocess import integrate_preprocess
-from sample_trajectory.multi_omics_CCA_test import integration_CCA_test
-from visualization.multi_omics_visualization import visualize_multimodal_embedding
 from preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from parameter_selection.multi_omics_unify_optimal import replace_optimal_dimension_reduction
 
@@ -28,7 +26,6 @@ def multiomics_wrapper(
     integration=True,
     integration_preprocessing=True,
     dimensionality_reduction=True,
-    visualize_embedding=True,
     find_optimal_resolution=False,
 
     # ===== Basic Parameters =====
@@ -102,26 +99,12 @@ def multiomics_wrapper(
     n_proportion_components=10,
     multiomics_harmony_for_proportion=True,
     
-    # ===== Visualization Parameters =====
-    color_col=None,
-    visualization_grouping_column=None,
-    target_modality='ATAC',
-    expression_key='X_DR_expression',
-    proportion_key='X_DR_proportion',
-    figsize=(20, 8),
-    point_size=60,
-    alpha=0.8,
-    colormap='viridis',
-    show_sample_names=False,
-    force_data_type=None,
-    
     # ===== Optimal Resolution Parameters =====
     optimization_target="rna",
     sev_col="sev.level",
     resolution_use_rep='X_glue',
     num_PCs=20,
     visualize_cell_types=True,
-    # Search parameters for optimal resolution
     coarse_start=0.1,
     coarse_end=1.0,
     coarse_step=0.1,
@@ -138,67 +121,14 @@ def multiomics_wrapper(
     status_flags=None,
 ) -> Dict[str, Any]:
     """
-    Comprehensive wrapper for multi-modal single-cell analysis pipeline.
+    Multi-omics wrapper: GLUE integration, preprocessing, cell typing,
+    optional CCA-based resolution selection, and sample embedding.
     
-    This wrapper orchestrates the complete multi-omics analysis workflow including:
-    1. GLUE integration of RNA and ATAC data
-    2. Cell type assignment with label transfer
-    3. Integration preprocessing (QC, filtering, normalization)
-    4. Dimensionality reduction (expression and proportion embeddings)
-    5. Optimal resolution finding via CCA optimization
-    6. Embedding visualization
+    Note: find_optimal_resolution runs BEFORE dimensionality_reduction.
     
-    Parameters
-    ----------
-    rna_file : str
-        Path to RNA-seq AnnData file (.h5ad)
-    atac_file : str
-        Path to ATAC-seq AnnData file (.h5ad)
-    multiomics_output_dir : str
-        Output directory for all results
-        
-    integration : bool, default True
-        Whether to run GLUE integration
-    integration_preprocessing : bool, default True
-        Whether to run integration preprocessing
-    dimensionality_reduction : bool, default True
-        Whether to run dimensionality reduction
-    visualize_embedding : bool, default True
-        Whether to visualize embeddings
-    find_optimal_resolution : bool, default False
-        Whether to find optimal clustering resolution via CCA
-        
-    use_gpu : bool, default True
-        Whether to use GPU-accelerated functions (requires RAPIDS)
-        
-    optimization_target : str, default "rna"
-        Which modality to optimize for resolution finding: "rna" or "atac"
-    coarse_start : float, default 0.1
-        Starting resolution for coarse search
-    coarse_end : float, default 1.0
-        Ending resolution for coarse search
-    coarse_step : float, default 0.1
-        Step size for coarse search
-    fine_range : float, default 0.05
-        Range around best resolution for fine search
-    fine_step : float, default 0.01
-        Step size for fine search
-    analyze_modality_alignment : bool, default True
-        Whether to analyze RNA/ATAC score correlation during optimization
-    compute_corrected_pvalues : bool, default False
-        Whether to compute corrected p-values for CCA scores
-        
-    Returns
-    -------
-    Dict[str, Any]
-        Results dictionary containing:
-        - 'glue': Integrated AnnData from GLUE
-        - 'adata': Preprocessed AnnData
-        - 'pseudobulk_df': Pseudobulk expression DataFrame
-        - 'pseudobulk_adata': Pseudobulk AnnData with embeddings
-        - 'visualization': Figure and axes from embedding visualization
-        - 'optimal_resolution_results': Results from resolution optimization
-        - 'status_flags': Dictionary tracking completed steps
+    Returns dict with adata, adata_sample, pseudo_adata, status_flags.
+    Downstream analysis (trajectory, clustering, etc.) is handled by the shared
+    downstream_analysis() function in wrapper.py.
     """
     
     if any(var is None for var in [rna_file, atac_file, multiomics_output_dir]):
@@ -213,9 +143,17 @@ def multiomics_wrapper(
         "glue_cell_types": False,
         "glue_visualization": False,
         "integration_preprocessing": False,
+        "optimal_resolution": False,
         "dimensionality_reduction": False,
+        "cca_based_cell_resolution_selection": False,
+        "sample_distance_calculation": False,
+        "trajectory_analysis": False,
+        "trajectory_dge": False,
+        "sample_cluster": False,
+        "proportion_test": False,
+        "cluster_dge": False,
         "embedding_visualization": False,
-        "optimal_resolution": False
+        "visualization": False,
     }
     
     if status_flags is None:
@@ -232,10 +170,9 @@ def multiomics_wrapper(
     
     h5ad_path = integrated_h5ad_path if integrated_h5ad_path and os.path.exists(integrated_h5ad_path) else f"{multiomics_output_dir}/preprocess/adata_sample.h5ad"
     
-    # Track current in-memory adata to avoid stale data issues
     current_adata = None
-    
-    # Step 1: GLUE integration
+
+    # ==================== STEP 1: GLUE INTEGRATION ====================
     if integration:
         if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
@@ -288,7 +225,7 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("GLUE integration completed successfully")
     
-    # Step 2: Integration preprocessing
+    # ==================== STEP 2: INTEGRATION PREPROCESSING ====================
     if integration_preprocessing:
         if multiomics_verbose:
             print("Step 2: Running integration preprocessing...")
@@ -328,16 +265,14 @@ def multiomics_wrapper(
         else:
             raise ValueError("Integration preprocessing is required. Set integration_preprocessing=True or ensure preprocessed data exists.")
     
-    # Cell type clustering - use current_adata directly instead of re-reading
+    # ==================== STEP 2b: CELL TYPE CLUSTERING ====================
     if cell_type_cluster:
         if multiomics_verbose:
-            print("Step 1b: Running cell type assignment...")
+            print("Step 2b: Running cell type assignment...")
         
-        # Ensure we have adata loaded
         if current_adata is None:
             current_adata = ad.read_h5ad(h5ad_path)
         
-        # Select appropriate cell type function based on GPU setting
         cell_types_func = cell_types_multiomics
         if use_gpu:
             from preparation.multi_omics_cell_type_gpu import cell_types_multiomics_linux
@@ -366,26 +301,82 @@ def multiomics_wrapper(
         
         if multiomics_verbose:
             print("Cell type assignment completed successfully")
+
+    # ==================== STEP 3: FIND OPTIMAL RESOLUTION (before sample embedding) ====================
+    if find_optimal_resolution:
+        if multiomics_verbose:
+            print("Step 3: Finding optimal cell resolution...")
+        
+        if current_adata is None:
+            current_adata = ad.read_h5ad(h5ad_path)
+            results['adata'] = current_adata
+
+        adata_for_resolution = current_adata.copy()
+        
+        if use_gpu:
+            from parameter_selection.multi_omics_optimal_resolution_gpu import (
+                find_optimal_cell_resolution_multiomics_linux as find_resolution_func,
+                suppress_warnings
+            )
+        else:
+            from parameter_selection.multi_omics_optimal_resolution_cpu import (
+                find_optimal_cell_resolution_multiomics as find_resolution_func,
+                suppress_warnings
+            )
+        
+        suppress_warnings()
+        
+        for dr_type in ["expression", "proportion"]:
+            if multiomics_verbose:
+                print(f"\n  Running optimization for {dr_type.upper()}...")
             
-    # Step 3: Dimensionality Reduction
+            resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization_{dr_type}"
+            
+            find_resolution_func(
+                AnnData_integrated=adata_for_resolution.copy(),
+                output_dir=resolution_output_dir,
+                optimization_target=optimization_target,
+                dr_type=dr_type,
+                sev_col=sev_col,
+                batch_col=batch_col,
+                sample_col=sample_col,
+                celltype_col=celltype_col,
+                modality_col=modality_col,
+                use_rep=resolution_use_rep,
+                sample_hvg_number=sample_hvg_number,
+                n_expression_components=n_expression_components,
+                n_proportion_components=n_proportion_components,
+                harmony_for_proportion=multiomics_harmony_for_proportion,
+                preserve_cols=preserve_cols_for_sample_embedding,
+                hvg_modality="RNA",
+                visualize_cell_types=visualize_cell_types,
+                verbose=multiomics_verbose
+            )
+        
+        status_flags["multiomics"]["optimal_resolution"] = True
+        
+        if multiomics_verbose:
+            print("Optimal resolution finding completed successfully")
+
+    # ==================== STEP 4: DIMENSIONALITY REDUCTION ====================
+    pseudobulk_adata = None
+    
     if dimensionality_reduction:
         if multiomics_verbose:
-            print("Step 3: Running dimensionality reduction...")
+            print("Step 4: Running dimensionality reduction...")
         
         if not status_flags["multiomics"]["integration_preprocessing"]:
             raise ValueError("Integration preprocessing is required before dimensionality reduction.")
         
-        # Ensure we have current adata
         if current_adata is None:
             current_adata = ad.read_h5ad(h5ad_path)
             results['adata'] = current_adata
         
-        # Ensure modality is included in batch columns
         batch_cols = [batch_col] if isinstance(batch_col, str) else list(batch_col or [])
         if modality_col not in batch_cols:
             batch_cols.append(modality_col)
 
-        pseudobulk_df, pseudobulk_adata = calculate_multiomics_sample_embedding(
+        _, pseudobulk_adata = calculate_multiomics_sample_embedding(
             adata=current_adata,
             sample_col=sample_col,
             celltype_col=celltype_col,
@@ -404,154 +395,41 @@ def multiomics_wrapper(
             modality_col=modality_col,
         )
 
-        results['pseudobulk_df'] = pseudobulk_df
-        results['pseudobulk_adata'] = pseudobulk_adata
         status_flags["multiomics"]["dimensionality_reduction"] = True
         
         if multiomics_verbose:
             print("Dimensionality reduction completed successfully")
     else:
         if pseudobulk_h5ad_path and os.path.exists(pseudobulk_h5ad_path):
-            results['pseudobulk_adata'] = sc.read_h5ad(pseudobulk_h5ad_path)
+            pseudobulk_adata = sc.read_h5ad(pseudobulk_h5ad_path)
             status_flags["multiomics"]["dimensionality_reduction"] = True
             if multiomics_verbose:
                 print(f"Loaded dimensionality reduction data from: {pseudobulk_h5ad_path}")
         else:
             pseudobulk_adata_path = os.path.join(multiomics_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
             
-            missing_files = [p for p in [pseudobulk_adata_path] if not os.path.exists(p)]
-            
-            if missing_files:
+            if not os.path.exists(pseudobulk_adata_path):
                 raise FileNotFoundError(
-                    "Dimensionality reduction is required. Missing file(s):\n" + 
-                    "\n".join(f" - {path}" for path in missing_files)
+                    f"Dimensionality reduction is required. Missing file: {pseudobulk_adata_path}"
                 )
-            results['pseudobulk_adata'] = sc.read(pseudobulk_adata_path)
+            pseudobulk_adata = sc.read(pseudobulk_adata_path)
             status_flags["multiomics"]["dimensionality_reduction"] = True
             if multiomics_verbose:
                 print("Loaded dimensionality reduction data from existing files")
-                
-    # Step 4: Find optimal resolution
-    if find_optimal_resolution:
-        if multiomics_verbose:
-            print("Step 4: Finding optimal cell resolution...")
-        
-        if current_adata is None:
-            current_adata = ad.read_h5ad(h5ad_path)
-            results['adata'] = current_adata
 
-        adata_for_resolution = current_adata.copy()
-        
-        if use_gpu:
-            from parameter_selection.multi_omics_optimal_resolution_gpu import (
-                find_optimal_cell_resolution_multiomics_linux,
-                suppress_warnings
-            )
-            find_resolution_func = find_optimal_cell_resolution_multiomics_linux
-        else:
-            from parameter_selection.multi_omics_optimal_resolution_cpu import (
-                find_optimal_cell_resolution_multiomics,
-                suppress_warnings
-            )
-            find_resolution_func = find_optimal_cell_resolution_multiomics
-        
-        suppress_warnings()
-        
-        # for dr_type in ["expression", "proportion"]:
-        #     if multiomics_verbose:
-        #         print(f"\n  Running optimization for {dr_type.upper()}...")
-            
-        #     # Each dr_type gets its own output directory
-        #     resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization_{dr_type}"
-            
-        #     # Use a fresh copy for each iteration to prevent cross-contamination
-        #     find_resolution_func(
-        #         AnnData_integrated=adata_for_resolution.copy(),
-        #         output_dir=resolution_output_dir,
-        #         optimization_target=optimization_target,
-        #         dr_type=dr_type,
-        #         sev_col=sev_col,
-        #         batch_col=batch_col,
-        #         sample_col=sample_col,
-        #         celltype_col=celltype_col,
-        #         modality_col=modality_col,
-        #         use_rep=resolution_use_rep,
-        #         sample_hvg_number=sample_hvg_number,
-        #         n_expression_components=n_expression_components,
-        #         n_proportion_components=n_proportion_components,
-        #         harmony_for_proportion=multiomics_harmony_for_proportion,
-        #         preserve_cols=preserve_cols_for_sample_embedding,
-        #         hvg_modality="RNA",
-        #         visualize_cell_types=visualize_cell_types,
-        #         verbose=multiomics_verbose
-        #     )
-        
-        # status_flags["multiomics"]["optimal_resolution"] = True
-        
-        if multiomics_verbose:
-            print("Optimal resolution finding completed successfully")
-            
-        results['pseudobulk_adata'] = replace_optimal_dimension_reduction(
+    # If optimal resolution was run, replace embeddings with optimal ones
+    if find_optimal_resolution:
+        pseudobulk_adata = replace_optimal_dimension_reduction(
             base_path=multiomics_output_dir,
             optimization_target=optimization_target,
             verbose=multiomics_verbose
         )
-        
-        if multiomics_verbose:
-            print("Optimal resolution finding completed successfully")
-            
-    # Step 5: Visualize embedding
-    if visualize_embedding:
-        if multiomics_verbose:
-            print("Step 5: Visualizing multimodal embedding...")
-        
-        if not status_flags["multiomics"]["dimensionality_reduction"]:
-            raise ValueError("Dimensionality reduction is required before embedding visualization.")
-        
-        fig, axes = visualize_multimodal_embedding(
-            adata=results.get('pseudobulk_adata'),
-            modality_col=modality_col,
-            color_col=color_col,
-            visualization_grouping_column=visualization_grouping_column,
-            target_modality=target_modality,
-            expression_key=expression_key,
-            proportion_key=proportion_key,
-            figsize=figsize,
-            point_size=point_size,
-            alpha=alpha,
-            colormap=colormap,
-            output_dir=multiomics_output_dir,
-            show_sample_names=show_sample_names,
-            force_data_type=force_data_type,
-            verbose=multiomics_verbose,
-        )
-        
-        results['visualization'] = {'fig': fig, 'axes': axes}
-        status_flags["multiomics"]["embedding_visualization"] = True
-        
-        if multiomics_verbose:
-            print("Embedding visualization completed successfully")
+
+    print("Multiomics preprocessing pipeline completed successfully!")
     
-    results['status_flags'] = status_flags
-    if multiomics_verbose:
-        print("\n" + "=" * 60)
-        print("PIPELINE COMPLETED SUCCESSFULLY!")
-        print("=" * 60)
-        print(f"Results saved to: {multiomics_output_dir}")
-        completed_steps = sum(status_flags['multiomics'].values())
-        total_steps = len(status_flags['multiomics'])
-        print(f"Completed steps: {completed_steps}/{total_steps}")
-        
-        # Print summary of completed steps
-        print("\nStep Summary:")
-        for step, completed in status_flags['multiomics'].items():
-            status = "✓" if completed else "○"
-            print(f"  {status} {step.replace('_', ' ').title()}")
-        
-        # Print optimal resolution summary if available
-        if find_optimal_resolution and 'optimal_resolution_results' in results:
-            print("\nOptimal Resolution Results:")
-            for dr_type, res_data in results['optimal_resolution_results'].items():
-                print(f"  {dr_type.capitalize()}: {res_data['optimal_resolution']:.3f}")
-        
-    return results
+    return {
+        'adata': current_adata,
+        'adata_sample': current_adata,  # alias for downstream_analysis compatibility
+        'pseudo_adata': pseudobulk_adata,
+        'status_flags': status_flags
+    }

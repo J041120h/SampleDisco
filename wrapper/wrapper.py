@@ -12,6 +12,385 @@ from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
 
 
+# =============================================================================
+# SHARED DOWNSTREAM ANALYSIS
+# =============================================================================
+
+def downstream_analysis(
+    # ===== Required =====
+    pseudo_adata,
+    output_dir: str,
+    modality: str,              # "rna", "atac", or "multiomics"
+    status_flags: dict,
+    
+    # ===== Data references (needed by some steps) =====
+    adata_cell=None,
+    adata_sample=None,
+    
+    # ===== Step control flags =====
+    sample_distance_calculation: bool = True,
+    trajectory_analysis: bool = True,
+    trajectory_DGE: bool = True,
+    sample_cluster: bool = True,
+    proportion_test: bool = False,
+    cluster_DGE: bool = False,
+    visualize_data: bool = True,
+    # Multiomics-only: embedding visualization
+    visualize_embedding: bool = False,
+    
+    # ===== General settings =====
+    use_gpu: bool = False,
+    verbose: bool = True,
+    
+    # ===== Common column names =====
+    sample_col: str = 'sample',
+    batch_col: Optional[str] = None,
+    celltype_col: str = 'cell_type',
+
+    # ===== Sample distance parameters =====
+    sample_distance_methods: Optional[List[str]] = None,
+    grouping_columns: Optional[List[str]] = None,
+    summary_sample_csv_path: Optional[str] = None,
+    
+    # ===== Trajectory analysis parameters =====
+    n_cca_pcs: int = 2,
+    trajectory_col: str = "sev.level",
+    trajectory_supervised: bool = False,
+    trajectory_visualization_label: Optional[List[str]] = None,
+    cca_pvalue: bool = False,
+    tscan_origin: Optional[str] = None,
+    
+    # ===== Trajectory DGE parameters =====
+    fdr_threshold: float = 0.05,
+    effect_size_threshold: float = 1,
+    top_n_genes: int = 100,
+    trajectory_diff_gene_covariate: Optional[List] = None,
+    num_splines: int = 5,
+    spline_order: int = 3,
+    visualization_gene_list: Optional[List] = None,
+    
+    # ===== Sample clustering parameters =====
+    cluster_number: int = 4,
+    cluster_differential_gene_group_col: Optional[str] = None,
+    
+    # ===== Visualization parameters =====
+    age_bin_size: Optional[int] = None,
+    age_column: str = 'age',
+    plot_dendrogram_flag: bool = True,
+    plot_cell_type_proportions_pca_flag: bool = False,
+    plot_cell_type_expression_umap_flag: bool = False,
+    
+    # ===== Multiomics embedding visualization parameters =====
+    multiomics_modality_col: str = 'modality',
+    multiomics_color_col: Optional[str] = None,
+    multiomics_visualization_grouping_column: Optional[List[str]] = None,
+    multiomics_target_modality: str = 'ATAC',
+    multiomics_expression_key: str = 'X_DR_expression',
+    multiomics_proportion_key: str = 'X_DR_proportion',
+    multiomics_figsize: Tuple[int, int] = (20, 8),
+    multiomics_point_size: int = 60,
+    multiomics_alpha: float = 0.8,
+    multiomics_colormap: str = 'viridis',
+    multiomics_show_sample_names: bool = False,
+    multiomics_force_data_type: Optional[str] = None,
+    
+) -> dict:
+    """
+    Shared downstream analysis after sample embedding derivation.
+    
+    Works for RNA, ATAC, and multiomics pipelines. Steps include:
+    sample distance, trajectory analysis, trajectory DGE, sample clustering,
+    proportion test, cluster DGE (RAISIN), and visualization.
+    
+    Note: CCA-based resolution selection is handled by each individual wrapper,
+    not here, because it occurs at different pipeline positions per modality.
+    """
+    import scanpy as sc
+    import pandas as pd
+    
+    is_multiomics = (modality == "multiomics")
+    sf = status_flags[modality]
+    
+    # Defaults
+    if grouping_columns is None:
+        grouping_columns = ['sev.level']
+    if sample_distance_methods is None:
+        sample_distance_methods = ['cosine', 'correlation']
+    if trajectory_visualization_label is None:
+        trajectory_visualization_label = ['sev.level']
+    if summary_sample_csv_path is None:
+        summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
+    
+    trajectory_diff_gene_output_dir = os.path.join(output_dir, 'trajectoryDEG')
+
+    # ==================== SAMPLE DISTANCE CALCULATION ====================
+    if sample_distance_calculation:
+        print("Starting sample distance calculation...")
+        from sample_distance.sample_distance import sample_distance
+        
+        for distance_method in sample_distance_methods:
+            print(f"Running sample distance: {distance_method}")
+            sample_distance(
+                adata=pseudo_adata,
+                output_dir=os.path.join(output_dir, 'Sample_distance'),
+                method=distance_method,
+                grouping_columns=grouping_columns,
+                summary_csv_path=summary_sample_csv_path,
+                cell_adata=adata_cell,
+                cell_type_column=celltype_col,
+                sample_column=sample_col,
+                pseudobulk_adata=pseudo_adata
+            )
+        
+        sf["sample_distance_calculation"] = True
+        if verbose:
+            print(f"Sample distance calculation completed: {os.path.join(output_dir, 'Sample_distance')}")
+
+    # ==================== TRAJECTORY ANALYSIS ====================
+    ptime_expression = None
+    ptime_proportion = None
+    
+    if trajectory_analysis:
+        print("Starting trajectory analysis...")
+        from sample_trajectory.CCA import CCA_Call
+        from sample_trajectory.CCA_test import cca_pvalue_test
+        from sample_trajectory.TSCAN import TSCAN
+        
+        if trajectory_supervised:
+            if trajectory_col not in pseudo_adata.obs.columns:
+                raise ValueError(f"Trajectory column '{trajectory_col}' not found in pseudo_adata.obs.")
+            
+            cca_score_proportion, cca_score_expression, ptime_proportion, ptime_expression = CCA_Call(
+                adata=pseudo_adata,
+                n_components=n_cca_pcs,
+                output_dir=output_dir,
+                trajectory_col=trajectory_col,
+                verbose=verbose
+            )
+            
+            if cca_pvalue:
+                cca_pvalue_test(
+                    pseudo_adata=pseudo_adata,
+                    column="X_DR_proportion",
+                    input_correlation=cca_score_proportion,
+                    output_directory=output_dir,
+                    trajectory_col=trajectory_col,
+                    verbose=verbose
+                )
+                cca_pvalue_test(
+                    pseudo_adata=pseudo_adata,
+                    column="X_DR_expression",
+                    input_correlation=cca_score_expression,
+                    output_directory=output_dir,
+                    trajectory_col=trajectory_col,
+                    verbose=verbose
+                )
+        else:
+            tscan_result_expression = TSCAN(
+                AnnData_sample=pseudo_adata,
+                column="X_DR_expression",
+                output_dir=output_dir,
+                grouping_columns=trajectory_visualization_label,
+                verbose=verbose,
+                origin=tscan_origin
+            )
+            
+            tscan_result_proportion = TSCAN(
+                AnnData_sample=pseudo_adata,
+                column="X_DR_proportion",
+                output_dir=output_dir,
+                grouping_columns=trajectory_visualization_label,
+                verbose=verbose,
+                origin=tscan_origin
+            )
+            
+            ptime_expression = pd.Series(
+                tscan_result_expression["pseudotime"]["main_path"],
+                name="tscan_pseudotime_expression"
+            ).reindex(pseudo_adata.obs.index)
+            
+            ptime_proportion = pd.Series(
+                tscan_result_proportion["pseudotime"]["main_path"],
+                name="tscan_pseudotime_proportion"
+            ).reindex(pseudo_adata.obs.index)
+        
+        sf["trajectory_analysis"] = True
+
+        # ==================== TRAJECTORY DGE ====================
+        if trajectory_DGE:
+            print("Running trajectory differential gene analysis...")
+            from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
+            
+            run_trajectory_gam_differential_gene_analysis(
+                pseudobulk_adata=pseudo_adata,
+                pseudotime_source=ptime_expression,
+                sample_col=sample_col,
+                pseudotime_col="pseudotime",
+                covariate_columns=trajectory_diff_gene_covariate,
+                fdr_threshold=fdr_threshold,
+                effect_size_threshold=effect_size_threshold,
+                top_n_genes=top_n_genes,
+                num_splines=num_splines,
+                spline_order=spline_order,
+                output_dir=os.path.join(trajectory_diff_gene_output_dir, "expression"),
+                visualization_gene_list=visualization_gene_list,
+                verbose=verbose
+            )
+            
+            sf["trajectory_dge"] = True
+            print("Trajectory differential gene analysis completed!")
+
+    # Clean up summary file if exists
+    if os.path.exists(summary_sample_csv_path):
+        os.remove(summary_sample_csv_path)
+
+    # ==================== SAMPLE CLUSTERING ====================
+    expr_results, prop_results = {}, {}
+    
+    if sample_cluster:
+        print("Starting sample clustering...")
+        from cluster import cluster
+        
+        expr_results, prop_results = cluster(
+            pseudobulk_adata=pseudo_adata,
+            output_dir=output_dir,
+            number_of_clusters=cluster_number,
+            use_expression=True,
+            use_proportion=True,
+            random_state=0,
+        )
+        
+        sf["sample_cluster"] = True
+
+    # ==================== PROPORTION TEST ====================
+    if proportion_test:
+        print("Starting proportion tests...")
+        from sample_clustering.proportion_test import proportion_test as run_proportion_test
+        
+        try:
+            if cluster_differential_gene_group_col is not None or expr_results:
+                run_proportion_test(
+                    adata=adata_sample,
+                    sample_col=sample_col,
+                    sample_to_clade=expr_results,
+                    group_col=cluster_differential_gene_group_col,
+                    celltype_col=celltype_col,
+                    output_dir=os.path.join(output_dir, "sample_cluster", "expression", "proportion_test"),
+                    verbose=True
+                )
+            
+            if cluster_differential_gene_group_col is not None or prop_results:
+                run_proportion_test(
+                    adata=adata_sample,
+                    sample_col=sample_col,
+                    sample_to_clade=prop_results,
+                    group_col=cluster_differential_gene_group_col,
+                    celltype_col=celltype_col,
+                    output_dir=os.path.join(output_dir, "sample_cluster", "proportion", "proportion_test"),
+                    verbose=True
+                )
+            
+            sf["proportion_test"] = True
+            print("Proportion tests completed.")
+        except Exception as e:
+            print(f"Error in proportion test: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # ==================== CLUSTER DGE (RAISIN) ====================
+    if cluster_DGE:
+        print("Running RAISIN analysis...")
+        from sample_clustering.RAISIN import raisinfit
+        from sample_clustering.RAISIN_TEST import run_pairwise_tests
+        
+        try:
+            if cluster_differential_gene_group_col is not None or expr_results:
+                fit = raisinfit(
+                    adata=adata_sample,
+                    sample_col=sample_col,
+                    testtype='unpaired',
+                    batch_col=batch_col,
+                    sample_to_clade=expr_results,
+                    group_col=cluster_differential_gene_group_col,
+                    verbose=verbose,
+                    intercept=True,
+                    n_jobs=-1,
+                )
+                run_pairwise_tests(
+                    fit=fit,
+                    output_dir=os.path.join(output_dir, 'raisin_results_expression'),
+                    fdrmethod='fdr_bh',
+                    fdr_threshold=0.05,
+                    verbose=True
+                )
+            else:
+                print("No expression results available. Skipping RAISIN analysis.")
+            
+            sf["cluster_dge"] = True
+            print("RAISIN analysis completed.")
+        except Exception as e:
+            print(f"Error in RAISIN analysis: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # ==================== VISUALIZATION ====================
+    if visualize_data:
+        print("Starting visualization...")
+        from visualization.visualization_other import visualization
+        
+        if plot_dendrogram_flag and not sf.get("cell_type_cluster", False) and not sf.get("glue_cell_types", False):
+            raise ValueError("Cell type clustering required for dendrogram visualization.")
+        
+        if (plot_cell_type_proportions_pca_flag or plot_cell_type_expression_umap_flag) and not sf.get("derive_sample_embedding", False) and not sf.get("dimensionality_reduction", False):
+            raise ValueError("Sample embedding derivation required for requested visualization.")
+        
+        visualization(
+            AnnData_cell=adata_cell,
+            pseudobulk_anndata=pseudo_adata,
+            output_dir=output_dir,
+            grouping_columns=grouping_columns,
+            age_bin_size=age_bin_size,
+            age_column=age_column,
+            verbose=verbose,
+            plot_dendrogram_flag=plot_dendrogram_flag,
+            plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
+            plot_cell_type_expression_umap_flag=plot_cell_type_expression_umap_flag
+        )
+        sf["visualization"] = True
+
+    # ==================== MULTIOMICS EMBEDDING VISUALIZATION ====================
+    if visualize_embedding and is_multiomics:
+        print("Visualizing multimodal embedding...")
+        from visualization.multi_omics_visualization import visualize_multimodal_embedding
+        
+        fig, axes = visualize_multimodal_embedding(
+            adata=pseudo_adata,
+            modality_col=multiomics_modality_col,
+            color_col=multiomics_color_col,
+            visualization_grouping_column=multiomics_visualization_grouping_column,
+            target_modality=multiomics_target_modality,
+            expression_key=multiomics_expression_key,
+            proportion_key=multiomics_proportion_key,
+            figsize=multiomics_figsize,
+            point_size=multiomics_point_size,
+            alpha=multiomics_alpha,
+            colormap=multiomics_colormap,
+            output_dir=output_dir,
+            show_sample_names=multiomics_show_sample_names,
+            force_data_type=multiomics_force_data_type,
+            verbose=verbose,
+        )
+        sf["embedding_visualization"] = True
+        print("Embedding visualization completed successfully")
+
+    print(f"{modality.upper()} downstream analysis completed!")
+    return {'pseudo_adata': pseudo_adata, 'status_flags': status_flags}
+
+
+# =============================================================================
+# MAIN WRAPPER
+# =============================================================================
+
 def wrapper(
     output_dir: str,
     
@@ -51,6 +430,7 @@ def wrapper(
     rna_adata_sample_path: Optional[str] = None,
     rna_sample_meta_path: Optional[str] = None,
     rna_cell_meta_path: Optional[str] = None,
+    rna_pseudo_adata_path: Optional[str] = None,
     
     # Common column names
     rna_sample_col: str = 'sample',
@@ -75,19 +455,10 @@ def wrapper(
     rna_umap: bool = False,
     
     # Sample embedding parameters
-    rna_pseudo_adata_path: Optional[str] = None,
     rna_sample_hvg_number: int = 2000,
     rna_sample_embedding_dimension: int = 10,
     rna_harmony_for_proportion: bool = True,
     rna_preserve_cols_in_sample_embedding: Optional[List[str]] = None,
-    
-    # Trajectory analysis parameters
-    rna_n_cca_pcs: int = 2,
-    rna_trajectory_col: str = "sev.level",
-    rna_trajectory_supervised: bool = False,
-    rna_trajectory_visualization_label: Optional[List[str]] = None,
-    rna_cca_pvalue: bool = False,
-    rna_tscan_origin: Optional[int] = None,
     
     # CCA-based resolution selection parameters
     rna_cca_compute_corrected_pvalues: bool = True,
@@ -97,12 +468,20 @@ def wrapper(
     rna_cca_fine_range: float = 0.02,
     rna_cca_fine_step: float = 0.01,
     
+    # Trajectory analysis parameters
+    rna_n_cca_pcs: int = 2,
+    rna_trajectory_col: str = "sev.level",
+    rna_trajectory_supervised: bool = False,
+    rna_trajectory_visualization_label: Optional[List[str]] = None,
+    rna_cca_pvalue: bool = False,
+    rna_tscan_origin: Optional[int] = None,
+    
     # Sample distance parameters
     rna_sample_distance_methods: Optional[List[str]] = None,
     rna_grouping_columns: Optional[List[str]] = None,
     rna_summary_sample_csv_path: Optional[str] = None,
     
-    # Trajectory differential gene analysis parameters
+    # Trajectory DGE parameters
     rna_fdr_threshold: float = 0.05,
     rna_effect_size_threshold: float = 1,
     rna_top_n_genes: int = 100,
@@ -181,14 +560,6 @@ def wrapper(
     atac_harmony_for_proportion: bool = True,
     atac_preserve_cols_in_sample_embedding: Optional[List[str]] = None,
     
-    # Trajectory analysis parameters
-    atac_n_cca_pcs: int = 2,
-    atac_trajectory_col: str = "sev.level",
-    atac_trajectory_supervised: bool = True,
-    atac_trajectory_visualization_label: Optional[List[str]] = None,
-    atac_cca_pvalue: bool = False,
-    atac_tscan_origin: Optional[str] = None,
-    
     # CCA-based resolution selection parameters
     atac_cca_compute_corrected_pvalues: bool = True,
     atac_cca_coarse_start: float = 0.1,
@@ -197,12 +568,20 @@ def wrapper(
     atac_cca_fine_range: float = 0.02,
     atac_cca_fine_step: float = 0.01,
     
+    # Trajectory analysis parameters
+    atac_n_cca_pcs: int = 2,
+    atac_trajectory_col: str = "sev.level",
+    atac_trajectory_supervised: bool = True,
+    atac_trajectory_visualization_label: Optional[List[str]] = None,
+    atac_cca_pvalue: bool = False,
+    atac_tscan_origin: Optional[str] = None,
+    
     # Sample distance parameters
     atac_sample_distance_methods: Optional[List[str]] = None,
     atac_grouping_columns: Optional[List[str]] = None,
     atac_summary_sample_csv_path: Optional[str] = None,
     
-    # Trajectory differential gene analysis parameters
+    # Trajectory DGE parameters
     atac_fdr_threshold: float = 0.05,
     atac_effect_size_threshold: float = 1.0,
     atac_top_n_genes: int = 100,
@@ -229,12 +608,20 @@ def wrapper(
     multiomics_atac_file: Optional[str] = None,
     multiomics_output_dir: Optional[str] = None,
     
-    # Pipeline control flags
+    # Pipeline control flags -- preprocessing & resolution
     multiomics_integration: bool = True,
     multiomics_integration_preprocessing: bool = True,
     multiomics_dimensionality_reduction: bool = True,
-    multiomics_visualize_embedding: bool = True,
     multiomics_find_optimal_resolution: bool = False,
+    # Pipeline control flags -- downstream
+    multiomics_sample_distance_calculation: bool = True,
+    multiomics_trajectory_analysis: bool = True,
+    multiomics_trajectory_dge: bool = True,
+    multiomics_sample_cluster: bool = True,
+    multiomics_proportion_test: bool = False,
+    multiomics_cluster_dge: bool = False,
+    multiomics_visualize_data: bool = True,
+    multiomics_visualize_embedding: bool = True,
     
     # GLUE sub-pipeline flags
     multiomics_run_glue_preprocessing: bool = True,
@@ -312,6 +699,53 @@ def wrapper(
     multiomics_n_proportion_components: int = 10,
     multiomics_harmony_for_proportion: bool = True,
     
+    # Optimal resolution parameters
+    multiomics_optimization_target: str = "rna",
+    multiomics_sev_col: str = "sev.level",
+    multiomics_resolution_use_rep: str = 'X_glue',
+    multiomics_num_pcs: int = 20,
+    multiomics_visualize_cell_types: bool = True,
+    multiomics_cca_coarse_start: float = 0.1,
+    multiomics_cca_coarse_end: float = 1.0,
+    multiomics_cca_coarse_step: float = 0.1,
+    multiomics_cca_fine_range: float = 0.05,
+    multiomics_cca_fine_step: float = 0.01,
+    multiomics_compute_corrected_pvalues: bool = False,
+    multiomics_analyze_modality_alignment: bool = True,
+    
+    # Trajectory analysis parameters
+    multiomics_trajectory_col: str = "sev.level",
+    multiomics_trajectory_supervised: bool = False,
+    multiomics_trajectory_visualization_label: Optional[List[str]] = None,
+    multiomics_n_cca_pcs: int = 2,
+    multiomics_cca_pvalue: bool = False,
+    multiomics_tscan_origin: Optional[str] = None,
+    
+    # Sample distance parameters
+    multiomics_sample_distance_methods: Optional[List[str]] = None,
+    multiomics_grouping_columns: Optional[List[str]] = None,
+    multiomics_summary_sample_csv_path: Optional[str] = None,
+    
+    # Trajectory DGE parameters
+    multiomics_fdr_threshold: float = 0.05,
+    multiomics_effect_size_threshold: float = 1.0,
+    multiomics_top_n_genes: int = 100,
+    multiomics_trajectory_diff_gene_covariate: Optional[List] = None,
+    multiomics_num_splines: int = 5,
+    multiomics_spline_order: int = 3,
+    multiomics_visualization_gene_list: Optional[List] = None,
+    
+    # Sample clustering parameters
+    multiomics_cluster_number: int = 4,
+    multiomics_cluster_differential_gene_group_col: Optional[str] = None,
+    
+    # Visualization parameters (general)
+    multiomics_age_bin_size: Optional[int] = None,
+    multiomics_age_column: str = 'age',
+    multiomics_plot_dendrogram_flag: bool = True,
+    multiomics_plot_cell_type_proportions_pca_flag: bool = False,
+    multiomics_plot_cell_type_expression_umap_flag: bool = False,
+    
     # Embedding visualization parameters
     multiomics_color_col: Optional[str] = None,
     multiomics_visualization_grouping_column: Optional[List[str]] = None,
@@ -325,16 +759,13 @@ def wrapper(
     multiomics_show_sample_names: bool = False,
     multiomics_force_data_type: Optional[str] = None,
     
-    # Optimal resolution parameters
-    multiomics_optimization_target: str = "rna",
-    multiomics_sev_col: str = "sev.level",
-    multiomics_resolution_use_rep: str = 'X_glue',
-    multiomics_num_pcs: int = 20,
-    multiomics_visualize_cell_types: bool = True,
-    
 ) -> Dict[str, Any]:
     """
     Main wrapper function that orchestrates RNA, ATAC, and Multiomics pipelines.
+    
+    Each pipeline runs in two phases:
+    1. Modality-specific preprocessing + resolution selection (individual wrappers)
+    2. Shared downstream analysis (downstream_analysis())
     
     Parameters
     ----------
@@ -377,10 +808,6 @@ def wrapper(
         'use_gpu': use_gpu,
         'gpu_available': gpu_available
     }
-    
-    # Import multiomics wrapper if needed
-    if run_multiomics_pipeline and gpu_available:
-        from .multiomics_wrapper import multiomics_wrapper
     
     # Initialize GPU if available
     if gpu_available:
@@ -444,9 +871,17 @@ def wrapper(
             "glue_cell_types": False,
             "glue_visualization": False,
             "integration_preprocessing": False,
+            "optimal_resolution": False,
             "dimensionality_reduction": False,
+            "cca_based_cell_resolution_selection": False,
+            "sample_distance_calculation": False,
+            "trajectory_analysis": False,
+            "trajectory_dge": False,
+            "sample_cluster": False,
+            "proportion_test": False,
+            "cluster_dge": False,
             "embedding_visualization": False,
-            "optimal_resolution": False
+            "visualization": False,
         },
         "system_info": system_info
     }
@@ -479,15 +914,6 @@ def wrapper(
             json.dump(status_flags, f, indent=2)
     
     results = {'status_flags': status_flags, 'system_info': system_info}
-    
-    # Set default values for list parameters
-    rna_grouping_columns = rna_grouping_columns or ['sev.level']
-    rna_trajectory_visualization_label = rna_trajectory_visualization_label or ['sev.level']
-    rna_sample_distance_methods = rna_sample_distance_methods or ['cosine', 'correlation']
-    
-    atac_grouping_columns = atac_grouping_columns or ['sev.level']
-    atac_sample_distance_methods = atac_sample_distance_methods or ['cosine', 'correlation']
-    atac_trajectory_visualization_label = atac_trajectory_visualization_label or ['sev.level']
 
     # ==================== RNA PIPELINE ====================
     if run_rna_pipeline:
@@ -501,35 +927,30 @@ def wrapper(
             raise ValueError("RNA pipeline requires rna_count_data_path")
         
         try:
+            # Phase 1: Preprocessing + resolution selection
             rna_results = rna_wrapper(
                 rna_count_data_path=rna_count_data_path,
                 rna_output_dir=rna_output_dir,
-                # Pipeline control flags
+                # Pipeline control
                 preprocessing=rna_preprocessing,
                 cell_type_cluster=rna_cell_type_cluster,
                 derive_sample_embedding=rna_derive_sample_embedding,
                 cca_based_cell_resolution_selection=rna_cca_based_cell_resolution_selection,
-                sample_distance_calculation=rna_sample_distance_calculation,
-                trajectory_analysis=rna_trajectory_analysis,
-                trajectory_DGE=rna_trajectory_dge,
-                sample_cluster=rna_sample_cluster,
-                proportion_test=rna_proportion_test,
-                cluster_DGE=rna_cluster_dge,
-                visualize_data=rna_visualize_data,
-                # General settings
+                # General
                 use_gpu=gpu_available,
                 verbose=verbose,
                 status_flags=status_flags,
-                # Input data paths
+                # Input paths
                 adata_cell_path=rna_adata_cell_path,
                 adata_sample_path=rna_adata_sample_path,
                 rna_sample_meta_path=rna_sample_meta_path,
                 cell_meta_path=rna_cell_meta_path,
-                # Common column names
+                pseudo_adata_path=rna_pseudo_adata_path,
+                # Column names
                 sample_col=rna_sample_col,
                 batch_col=rna_batch_col,
                 celltype_col=rna_celltype_col,
-                # Preprocessing parameters
+                # Preprocessing
                 min_cells=rna_min_cells,
                 min_genes=rna_min_genes,
                 pct_mito_cutoff=rna_pct_mito_cutoff,
@@ -538,37 +959,64 @@ def wrapper(
                 cell_embedding_num_pcs=rna_cell_embedding_num_pcs,
                 num_harmony_iterations=rna_num_harmony_iterations,
                 vars_to_regress=rna_vars_to_regress,
-                # Cell type clustering parameters
+                # Cell type clustering
                 leiden_cluster_resolution=rna_leiden_cluster_resolution,
                 cell_embedding_column=rna_cell_embedding_column,
                 existing_cell_types=rna_existing_cell_types,
                 n_target_cell_clusters=rna_n_target_cell_clusters,
                 umap=rna_umap,
-                # Sample embedding parameters
-                pseudo_adata_path=rna_pseudo_adata_path,
+                # Sample embedding
                 sample_hvg_number=rna_sample_hvg_number,
                 sample_embedding_dimension=rna_sample_embedding_dimension,
                 harmony_for_proportion=rna_harmony_for_proportion,
                 preserve_cols_in_sample_embedding=rna_preserve_cols_in_sample_embedding,
-                # Trajectory analysis parameters
-                n_cca_pcs=rna_n_cca_pcs,
+                # CCA resolution selection
                 trajectory_col=rna_trajectory_col,
-                trajectory_supervised=rna_trajectory_supervised,
-                trajectory_visualization_label=rna_trajectory_visualization_label,
-                cca_pvalue=rna_cca_pvalue,
-                tscan_origin=rna_tscan_origin,
-                # CCA-based resolution selection parameters
+                n_cca_pcs=rna_n_cca_pcs,
                 cca_compute_corrected_pvalues=rna_cca_compute_corrected_pvalues,
                 cca_coarse_start=rna_cca_coarse_start,
                 cca_coarse_end=rna_cca_coarse_end,
                 cca_coarse_step=rna_cca_coarse_step,
                 cca_fine_range=rna_cca_fine_range,
                 cca_fine_step=rna_cca_fine_step,
-                # Sample distance parameters
-                sample_distance_methods=rna_sample_distance_methods,
-                grouping_columns=rna_grouping_columns,
+            )
+            status_flags = rna_results['status_flags']
+            
+            # Phase 2: Downstream analysis
+            downstream_results = downstream_analysis(
+                pseudo_adata=rna_results['pseudo_adata'],
+                output_dir=rna_output_dir,
+                modality="rna",
+                status_flags=status_flags,
+                adata_cell=rna_results['adata_cell'],
+                adata_sample=rna_results['adata_sample'],
+                # Step control
+                sample_distance_calculation=rna_sample_distance_calculation,
+                trajectory_analysis=rna_trajectory_analysis,
+                trajectory_DGE=rna_trajectory_dge,
+                sample_cluster=rna_sample_cluster,
+                proportion_test=rna_proportion_test,
+                cluster_DGE=rna_cluster_dge,
+                visualize_data=rna_visualize_data,
+                # General
+                use_gpu=gpu_available,
+                verbose=verbose,
+                # Column names
+                sample_col=rna_sample_col,
+                batch_col=rna_batch_col,
+                celltype_col=rna_celltype_col,
+                # Sample distance
+                sample_distance_methods=rna_sample_distance_methods or ['cosine', 'correlation'],
+                grouping_columns=rna_grouping_columns or ['sev.level'],
                 summary_sample_csv_path=rna_summary_sample_csv_path,
-                # Trajectory differential gene analysis parameters
+                # Trajectory
+                n_cca_pcs=rna_n_cca_pcs,
+                trajectory_col=rna_trajectory_col,
+                trajectory_supervised=rna_trajectory_supervised,
+                trajectory_visualization_label=rna_trajectory_visualization_label or ['sev.level'],
+                cca_pvalue=rna_cca_pvalue,
+                tscan_origin=rna_tscan_origin,
+                # Trajectory DGE
                 fdr_threshold=rna_fdr_threshold,
                 effect_size_threshold=rna_effect_size_threshold,
                 top_n_genes=rna_top_n_genes,
@@ -576,10 +1024,10 @@ def wrapper(
                 num_splines=rna_num_splines,
                 spline_order=rna_spline_order,
                 visualization_gene_list=rna_visualization_gene_list,
-                # Sample clustering parameters
+                # Sample clustering
                 cluster_number=rna_cluster_number,
                 cluster_differential_gene_group_col=rna_cluster_differential_gene_group_col,
-                # Visualization parameters
+                # Visualization
                 age_bin_size=rna_age_bin_size,
                 age_column=rna_age_column,
                 plot_dendrogram_flag=rna_plot_dendrogram_flag,
@@ -587,9 +1035,8 @@ def wrapper(
                 plot_cell_type_expression_umap_flag=rna_plot_cell_type_expression_umap_flag,
             )
             
-            results['rna_results'] = rna_results
-            if 'status_flags' in rna_results:
-                status_flags = rna_results['status_flags']
+            status_flags = downstream_results['status_flags']
+            results['rna_results'] = {**rna_results, **downstream_results}
             _save_status(status_file_path, status_flags)
             print("\nRNA pipeline completed successfully!")
             
@@ -612,37 +1059,31 @@ def wrapper(
             raise ValueError("ATAC pipeline requires atac_count_data_path")
         
         try:
+            # Phase 1: Preprocessing + resolution selection
             atac_results = atac_wrapper(
                 atac_count_data_path=atac_count_data_path,
                 atac_output_dir=atac_output_dir,
-                # Pipeline control flags
+                # Pipeline control
                 preprocessing=atac_preprocessing,
                 cell_type_cluster=atac_cell_type_cluster,
                 derive_sample_embedding=atac_derive_sample_embedding,
                 cca_based_cell_resolution_selection=atac_cca_based_cell_resolution_selection,
-                sample_distance_calculation=atac_sample_distance_calculation,
-                trajectory_analysis=atac_trajectory_analysis,
-                trajectory_DGE=atac_trajectory_dge,
-                sample_cluster=atac_sample_cluster,
-                proportion_test=atac_proportion_test,
-                cluster_DGE=atac_cluster_dge,
-                visualize_data=atac_visualize_data,
-                # General settings
+                # General
                 use_gpu=gpu_available,
                 verbose=verbose,
                 status_flags=status_flags,
-                # Input data paths
+                # Input paths
                 adata_cell_path=atac_adata_cell_path,
                 adata_sample_path=atac_adata_sample_path,
                 atac_sample_meta_path=atac_sample_meta_path,
                 cell_meta_path=atac_cell_meta_path,
                 pseudo_adata_path=atac_pseudo_adata_path,
-                # Common column names
+                # Column names
                 sample_col=atac_sample_col,
                 batch_col=atac_batch_col,
                 celltype_col=atac_celltype_col,
                 cell_embedding_column=atac_cell_embedding_column,
-                # ATAC-specific preprocessing parameters
+                # Preprocessing
                 min_cells=atac_min_cells,
                 min_features=atac_min_features,
                 max_features=atac_max_features,
@@ -656,35 +1097,63 @@ def wrapper(
                 tfidf_scale_factor=atac_tfidf_scale_factor,
                 log_transform=atac_log_transform,
                 drop_first_lsi=atac_drop_first_lsi,
-                # Cell type clustering parameters
+                # Cell type clustering
                 leiden_cluster_resolution=atac_leiden_cluster_resolution,
                 existing_cell_types=atac_existing_cell_types,
                 n_target_cell_clusters=atac_n_target_cell_clusters,
                 umap=atac_umap,
-                # Sample embedding parameters
+                # Sample embedding
                 sample_hvg_number=atac_sample_hvg_number,
                 sample_embedding_dimension=atac_sample_embedding_dimension,
                 harmony_for_proportion=atac_harmony_for_proportion,
                 preserve_cols_in_sample_embedding=atac_preserve_cols_in_sample_embedding,
-                # Trajectory analysis parameters
-                n_cca_pcs=atac_n_cca_pcs,
+                # CCA resolution selection
                 trajectory_col=atac_trajectory_col,
-                trajectory_supervised=atac_trajectory_supervised,
-                trajectory_visualization_label=atac_trajectory_visualization_label,
-                cca_pvalue=atac_cca_pvalue,
-                tscan_origin=atac_tscan_origin,
-                # CCA-based resolution selection parameters
+                n_cca_pcs=atac_n_cca_pcs,
                 cca_compute_corrected_pvalues=atac_cca_compute_corrected_pvalues,
                 cca_coarse_start=atac_cca_coarse_start,
                 cca_coarse_end=atac_cca_coarse_end,
                 cca_coarse_step=atac_cca_coarse_step,
                 cca_fine_range=atac_cca_fine_range,
                 cca_fine_step=atac_cca_fine_step,
-                # Sample distance parameters
-                sample_distance_methods=atac_sample_distance_methods,
-                grouping_columns=atac_grouping_columns,
+            )
+            status_flags = atac_results['status_flags']
+            
+            # Phase 2: Downstream analysis
+            downstream_results = downstream_analysis(
+                pseudo_adata=atac_results['pseudo_adata'],
+                output_dir=atac_output_dir,
+                modality="atac",
+                status_flags=status_flags,
+                adata_cell=atac_results['adata_cell'],
+                adata_sample=atac_results['adata_sample'],
+                # Step control
+                sample_distance_calculation=atac_sample_distance_calculation,
+                trajectory_analysis=atac_trajectory_analysis,
+                trajectory_DGE=atac_trajectory_dge,
+                sample_cluster=atac_sample_cluster,
+                proportion_test=atac_proportion_test,
+                cluster_DGE=atac_cluster_dge,
+                visualize_data=atac_visualize_data,
+                # General
+                use_gpu=gpu_available,
+                verbose=verbose,
+                # Column names
+                sample_col=atac_sample_col,
+                batch_col=atac_batch_col,
+                celltype_col=atac_celltype_col,
+                # Sample distance
+                sample_distance_methods=atac_sample_distance_methods or ['cosine', 'correlation'],
+                grouping_columns=atac_grouping_columns or ['sev.level'],
                 summary_sample_csv_path=atac_summary_sample_csv_path,
-                # Trajectory differential gene analysis parameters
+                # Trajectory
+                n_cca_pcs=atac_n_cca_pcs,
+                trajectory_col=atac_trajectory_col,
+                trajectory_supervised=atac_trajectory_supervised,
+                trajectory_visualization_label=atac_trajectory_visualization_label or ['sev.level'],
+                cca_pvalue=atac_cca_pvalue,
+                tscan_origin=atac_tscan_origin,
+                # Trajectory DGE
                 fdr_threshold=atac_fdr_threshold,
                 effect_size_threshold=atac_effect_size_threshold,
                 top_n_genes=atac_top_n_genes,
@@ -692,10 +1161,10 @@ def wrapper(
                 num_splines=atac_num_splines,
                 spline_order=atac_spline_order,
                 visualization_gene_list=atac_visualization_gene_list,
-                # Sample clustering parameters
+                # Sample clustering
                 cluster_number=atac_cluster_number,
                 cluster_differential_gene_group_col=atac_cluster_differential_gene_group_col,
-                # Visualization parameters
+                # Visualization
                 age_bin_size=atac_age_bin_size,
                 age_column=atac_age_column,
                 plot_dendrogram_flag=atac_plot_dendrogram_flag,
@@ -703,9 +1172,8 @@ def wrapper(
                 plot_cell_type_expression_umap_flag=atac_plot_cell_type_expression_umap_flag,
             )
             
-            results['atac_results'] = atac_results
-            if isinstance(atac_results, dict) and 'status_flags' in atac_results:
-                status_flags = atac_results['status_flags']
+            status_flags = downstream_results['status_flags']
+            results['atac_results'] = {**atac_results, **downstream_results}
             _save_status(status_file_path, status_flags)
             print("\nATAC pipeline completed successfully!")
             
@@ -730,20 +1198,17 @@ def wrapper(
         try:
             from .multiomics_wrapper import multiomics_wrapper
             
+            # Phase 1: Preprocessing + resolution selection + sample embedding
             multiomics_results = multiomics_wrapper(
-                # ===== Required Parameters =====
                 rna_file=multiomics_rna_file,
                 atac_file=multiomics_atac_file,
                 multiomics_output_dir=multiomics_output_dir,
-                
-                # ===== Process Control Flags =====
+                # Pipeline control
                 integration=multiomics_integration,
                 integration_preprocessing=multiomics_integration_preprocessing,
                 dimensionality_reduction=multiomics_dimensionality_reduction,
-                visualize_embedding=multiomics_visualize_embedding,
                 find_optimal_resolution=multiomics_find_optimal_resolution,
-                
-                # ===== Basic Parameters =====
+                # Basic parameters
                 rna_sample_meta_file=multiomics_rna_sample_meta_file,
                 atac_sample_meta_file=multiomics_atac_sample_meta_file,
                 additional_hvg_file=multiomics_additional_hvg_file,
@@ -757,15 +1222,13 @@ def wrapper(
                 save_intermediate=save_intermediate,
                 use_gpu=multiomics_use_gpu and gpu_available,
                 random_state=multiomics_random_state,
-                
-                # ===== GLUE Integration Parameters =====
+                # GLUE flags
                 run_glue_preprocessing=multiomics_run_glue_preprocessing,
                 run_glue_training=multiomics_run_glue_training,
                 run_glue_gene_activity=multiomics_run_glue_gene_activity,
                 cell_type_cluster=multiomics_cell_type_cluster,
                 run_glue_visualization=multiomics_run_glue_visualization,
-                
-                # GLUE preprocessing parameters
+                # GLUE preprocessing
                 ensembl_release=multiomics_ensembl_release,
                 species=multiomics_species,
                 use_highly_variable=multiomics_use_highly_variable,
@@ -777,74 +1240,124 @@ def wrapper(
                 flavor=multiomics_flavor,
                 generate_umap=multiomics_generate_umap,
                 compression=multiomics_compression,
-                
-                # GLUE training parameters
+                # GLUE training
                 consistency_threshold=multiomics_consistency_threshold,
                 treat_sample_as_batch=multiomics_treat_sample_as_batch,
                 save_prefix=multiomics_save_prefix,
-                
-                # GLUE gene activity parameters
+                # GLUE gene activity
                 k_neighbors=multiomics_k_neighbors,
                 use_rep=multiomics_use_rep,
                 metric=multiomics_metric,
-                
-                # GLUE cell type parameters
+                # Cell type
                 existing_cell_types=multiomics_existing_cell_types,
                 n_target_clusters=multiomics_n_target_clusters,
                 cluster_resolution=multiomics_cluster_resolution,
                 use_rep_celltype=multiomics_use_rep_celltype,
                 markers=multiomics_markers,
                 generate_umap_celltype=multiomics_generate_umap_celltype,
-                
-                # GLUE visualization parameters
                 plot_columns=multiomics_plot_columns,
-                
-                # ===== Integration Preprocessing Parameters =====
+                # Integration preprocessing
                 min_cells_sample=multiomics_min_cells_sample,
                 min_cell_gene=multiomics_min_cell_gene,
                 min_features=multiomics_min_features,
                 pct_mito_cutoff=multiomics_pct_mito_cutoff,
                 exclude_genes=multiomics_exclude_genes,
                 doublet=multiomics_doublet,
-                
-                # ===== Dimensionality Reduction Parameters =====
+                # Sample embedding
                 sample_hvg_number=multiomics_sample_hvg_number,
                 preserve_cols_for_sample_embedding=multiomics_preserve_cols_for_sample_embedding,
                 n_expression_components=multiomics_n_expression_components,
                 n_proportion_components=multiomics_n_proportion_components,
                 multiomics_harmony_for_proportion=multiomics_harmony_for_proportion,
-                
-                # ===== Visualization Parameters =====
-                color_col=multiomics_color_col,
-                visualization_grouping_column=multiomics_visualization_grouping_column,
-                target_modality=multiomics_target_modality,
-                expression_key=multiomics_expression_key,
-                proportion_key=multiomics_proportion_key,
-                figsize=multiomics_figsize,
-                point_size=multiomics_point_size,
-                alpha=multiomics_alpha,
-                colormap=multiomics_colormap,
-                show_sample_names=multiomics_show_sample_names,
-                force_data_type=multiomics_force_data_type,
-                
-                # ===== Optimal Resolution Parameters =====
+                # Optimal resolution
                 optimization_target=multiomics_optimization_target,
                 sev_col=multiomics_sev_col,
                 resolution_use_rep=multiomics_resolution_use_rep,
                 num_PCs=multiomics_num_pcs,
                 visualize_cell_types=multiomics_visualize_cell_types,
-                
-                # ===== Paths for Skipping Steps =====
+                coarse_start=multiomics_cca_coarse_start,
+                coarse_end=multiomics_cca_coarse_end,
+                coarse_step=multiomics_cca_coarse_step,
+                fine_range=multiomics_cca_fine_range,
+                fine_step=multiomics_cca_fine_step,
+                compute_corrected_pvalues=multiomics_compute_corrected_pvalues,
+                analyze_modality_alignment=multiomics_analyze_modality_alignment,
+                # Paths for skipping
                 integrated_h5ad_path=multiomics_integrated_h5ad_path,
                 pseudobulk_h5ad_path=multiomics_pseudobulk_h5ad_path,
-                
-                # ===== System Parameters =====
                 status_flags=status_flags,
             )
+            status_flags = multiomics_results['status_flags']
             
-            results['multiomics_results'] = multiomics_results
-            if 'status_flags' in multiomics_results:
-                status_flags = multiomics_results['status_flags']
+            # Phase 2: Downstream analysis
+            downstream_results = downstream_analysis(
+                pseudo_adata=multiomics_results['pseudo_adata'],
+                output_dir=multiomics_output_dir,
+                modality="multiomics",
+                status_flags=status_flags,
+                adata_cell=None,
+                adata_sample=multiomics_results.get('adata_sample'),
+                # Step control
+                sample_distance_calculation=multiomics_sample_distance_calculation,
+                trajectory_analysis=multiomics_trajectory_analysis,
+                trajectory_DGE=multiomics_trajectory_dge,
+                sample_cluster=multiomics_sample_cluster,
+                proportion_test=multiomics_proportion_test,
+                cluster_DGE=multiomics_cluster_dge,
+                visualize_data=multiomics_visualize_data,
+                visualize_embedding=multiomics_visualize_embedding,
+                # General
+                use_gpu=multiomics_use_gpu and gpu_available,
+                verbose=multiomics_verbose,
+                # Column names
+                sample_col=multiomics_sample_col,
+                batch_col=multiomics_batch_col,
+                celltype_col=multiomics_celltype_col,
+                # Sample distance
+                sample_distance_methods=multiomics_sample_distance_methods or ['cosine', 'correlation'],
+                grouping_columns=multiomics_grouping_columns or ['sev.level'],
+                summary_sample_csv_path=multiomics_summary_sample_csv_path,
+                # Trajectory
+                n_cca_pcs=multiomics_n_cca_pcs,
+                trajectory_col=multiomics_trajectory_col,
+                trajectory_supervised=multiomics_trajectory_supervised,
+                trajectory_visualization_label=multiomics_trajectory_visualization_label or ['sev.level'],
+                cca_pvalue=multiomics_cca_pvalue,
+                tscan_origin=multiomics_tscan_origin,
+                # Trajectory DGE
+                fdr_threshold=multiomics_fdr_threshold,
+                effect_size_threshold=multiomics_effect_size_threshold,
+                top_n_genes=multiomics_top_n_genes,
+                trajectory_diff_gene_covariate=multiomics_trajectory_diff_gene_covariate,
+                num_splines=multiomics_num_splines,
+                spline_order=multiomics_spline_order,
+                visualization_gene_list=multiomics_visualization_gene_list,
+                # Sample clustering
+                cluster_number=multiomics_cluster_number,
+                cluster_differential_gene_group_col=multiomics_cluster_differential_gene_group_col,
+                # Visualization
+                age_bin_size=multiomics_age_bin_size,
+                age_column=multiomics_age_column,
+                plot_dendrogram_flag=multiomics_plot_dendrogram_flag,
+                plot_cell_type_proportions_pca_flag=multiomics_plot_cell_type_proportions_pca_flag,
+                plot_cell_type_expression_umap_flag=multiomics_plot_cell_type_expression_umap_flag,
+                # Multiomics embedding visualization
+                multiomics_modality_col=multiomics_modality_col,
+                multiomics_color_col=multiomics_color_col,
+                multiomics_visualization_grouping_column=multiomics_visualization_grouping_column,
+                multiomics_target_modality=multiomics_target_modality,
+                multiomics_expression_key=multiomics_expression_key,
+                multiomics_proportion_key=multiomics_proportion_key,
+                multiomics_figsize=multiomics_figsize,
+                multiomics_point_size=multiomics_point_size,
+                multiomics_alpha=multiomics_alpha,
+                multiomics_colormap=multiomics_colormap,
+                multiomics_show_sample_names=multiomics_show_sample_names,
+                multiomics_force_data_type=multiomics_force_data_type,
+            )
+            
+            status_flags = downstream_results['status_flags']
+            results['multiomics_results'] = {**multiomics_results, **downstream_results}
             _save_status(status_file_path, status_flags)
             print("\nMultiomics pipeline completed successfully!")
             

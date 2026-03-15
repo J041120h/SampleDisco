@@ -10,21 +10,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from preparation.atac_preprocess_cpu import preprocess
 from preparation.cell_type_cpu import cell_types
 from sample_embedding.calculate_sample_embedding import calculate_sample_embedding
-from sample_trajectory.CCA import CCA_Call
-from sample_trajectory.CCA_test import cca_pvalue_test
-from sample_trajectory.TSCAN import TSCAN
-from sample_distance.sample_distance import sample_distance
-from cluster import cluster
-from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
-from sample_clustering.RAISIN import raisinfit
-from sample_clustering.RAISIN_TEST import run_pairwise_tests
-from sample_clustering.proportion_test import proportion_test as run_proportion_test
-from visualization.visualization_other import visualization
 from parameter_selection.cpu_optimal_resolution import find_optimal_cell_resolution
 
 
 def atac_wrapper(
-    # Required paths
     atac_count_data_path: str = None,
     atac_output_dir: str = None,
     
@@ -33,13 +22,6 @@ def atac_wrapper(
     cell_type_cluster: bool = True,
     derive_sample_embedding: bool = True,
     cca_based_cell_resolution_selection: bool = False,
-    sample_distance_calculation: bool = True,
-    trajectory_analysis: bool = True,
-    trajectory_DGE: bool = True,
-    sample_cluster: bool = True,
-    proportion_test: bool = False,
-    cluster_DGE: bool = False,
-    visualize_data: bool = True,
     
     # General settings
     use_gpu: bool = False,
@@ -86,15 +68,9 @@ def atac_wrapper(
     harmony_for_proportion: bool = True,
     preserve_cols_in_sample_embedding: list = None,
     
-    # Trajectory analysis parameters
-    n_cca_pcs: int = 2,
-    trajectory_col: str = "sev.level",
-    trajectory_supervised: bool = True,
-    trajectory_visualization_label: list = None,
-    cca_pvalue: bool = False,
-    tscan_origin: str = None,
-    
     # CCA-based resolution selection parameters
+    trajectory_col: str = "sev.level",
+    n_cca_pcs: int = 2,
     cca_compute_corrected_pvalues: bool = True,
     cca_coarse_start: float = 0.1,
     cca_coarse_end: float = 1.0,
@@ -102,221 +78,27 @@ def atac_wrapper(
     cca_fine_range: float = 0.02,
     cca_fine_step: float = 0.01,
     
-    # Trajectory differential gene analysis parameters
-    fdr_threshold: float = 0.05,
-    effect_size_threshold: float = 1.0,
-    top_n_genes: int = 100,
-    trajectory_diff_gene_covariate: list = None,
-    num_splines: int = 5,
-    spline_order: int = 3,
-    visualization_gene_list: list = None,
-    
-    # Sample distance parameters
-    sample_distance_methods: list = None,
-    grouping_columns: list = None,
-    summary_sample_csv_path: str = None,
-    
-    # Sample clustering parameters
-    cluster_number: int = 4,
-    cluster_differential_gene_group_col: str = None,
-    
-    # Visualization parameters
-    age_bin_size: int = None,
-    age_column: str = 'age',
-    plot_dendrogram_flag: bool = True,
-    plot_cell_type_proportions_pca_flag: bool = False,
-    plot_cell_type_expression_umap_flag: bool = False,
-    
 ) -> dict:
     """
-    ATAC-seq analysis wrapper function that processes single-cell ATAC data.
+    ATAC-seq analysis wrapper: preprocessing, cell type clustering, sample embedding,
+    and optional CCA-based resolution selection.
     
-    This wrapper performs preprocessing, cell type clustering, sample embedding,
-    trajectory analysis, differential gene analysis, sample clustering, and visualization.
-    
-    Parameters
-    ----------
-    atac_count_data_path : str
-        Path to the input ATAC h5ad file
-    atac_output_dir : str
-        Output directory for results
-    preprocessing : bool
-        Whether to run preprocessing
-    cell_type_cluster : bool
-        Whether to run cell type clustering
-    derive_sample_embedding : bool
-        Whether to derive sample embeddings
-    cca_based_cell_resolution_selection : bool
-        Whether to find optimal clustering resolution using CCA
-    sample_distance_calculation : bool
-        Whether to calculate sample distances
-    trajectory_analysis : bool
-        Whether to run trajectory analysis
-    trajectory_DGE : bool
-        Whether to run trajectory differential gene expression
-    sample_cluster : bool
-        Whether to run sample clustering
-    proportion_test : bool
-        Whether to run proportion tests
-    cluster_DGE : bool
-        Whether to run cluster differential gene expression
-    visualize_data : bool
-        Whether to generate visualizations
-    use_gpu : bool
-        Whether to use GPU acceleration
-    verbose : bool
-        Whether to print verbose output
-    status_flags : dict
-        Dictionary to track pipeline status
-    adata_cell_path : str, optional
-        Path to preprocessed cell data
-    adata_sample_path : str, optional
-        Path to preprocessed sample data
-    atac_sample_meta_path : str, optional
-        Path to sample metadata
-    cell_meta_path : str, optional
-        Path to cell metadata
-    pseudo_adata_path : str, optional
-        Path to pseudobulk data
-    sample_col : str
-        Column name for sample identifiers
-    batch_col : str, optional
-        Column name for batch information
-    celltype_col : str
-        Column name for cell type assignments
-    cell_embedding_column : str, optional
-        Column name for cell embedding (auto-detected if None)
-    min_cells : int
-        Minimum cells per feature
-    min_features : int
-        Minimum features per cell
-    max_features : int
-        Maximum features per cell
-    min_cells_per_sample : int
-        Minimum cells per sample
-    exclude_features : list, optional
-        Features to exclude
-    vars_to_regress : list, optional
-        Variables to regress out
-    doublet_detection : bool
-        Whether to detect doublets
-    num_cell_hvfs : int
-        Number of highly variable features for cell embedding
-    cell_embedding_num_pcs : int
-        Number of LSI components for cell embedding
-    num_harmony_iterations : int
-        Number of Harmony iterations
-    tfidf_scale_factor : float
-        TF-IDF scale factor
-    log_transform : bool
-        Whether to log transform
-    drop_first_lsi : bool
-        Whether to drop first LSI component
-    leiden_cluster_resolution : float
-        Resolution for Leiden clustering
-    existing_cell_types : bool
-        Whether cell types already exist
-    n_target_cell_clusters : int, optional
-        Target number of clusters
-    umap : bool
-        Whether to compute UMAP
-    sample_hvg_number : int
-        Number of HVFs for sample embedding
-    sample_embedding_dimension : int
-        Dimension of sample embedding
-    harmony_for_proportion : bool
-        Whether to apply Harmony to proportion embedding
-    preserve_cols_in_sample_embedding : list, optional
-        Columns to preserve during batch correction
-    n_cca_pcs : int
-        Number of PCs for CCA analysis
-    trajectory_col : str
-        Column name for trajectory labels
-    trajectory_supervised : bool
-        Whether to use supervised trajectory analysis
-    trajectory_visualization_label : list, optional
-        Labels for trajectory visualization
-    cca_pvalue : bool
-        Whether to compute CCA p-values
-    tscan_origin : str, optional
-        Origin for TSCAN analysis
-    cca_compute_corrected_pvalues : bool
-        Whether to compute corrected p-values in resolution selection
-    cca_coarse_start : float
-        Starting resolution for coarse search
-    cca_coarse_end : float
-        Ending resolution for coarse search
-    cca_coarse_step : float
-        Step size for coarse search
-    cca_fine_range : float
-        Range around best resolution for fine search
-    cca_fine_step : float
-        Step size for fine search
-    fdr_threshold : float
-        FDR threshold for differential analysis
-    effect_size_threshold : float
-        Effect size threshold for differential analysis
-    top_n_genes : int
-        Number of top genes to report
-    trajectory_diff_gene_covariate : list, optional
-        Covariates for trajectory differential analysis
-    num_splines : int
-        Number of splines for GAM
-    spline_order : int
-        Order of splines for GAM
-    visualization_gene_list : list, optional
-        Genes to visualize
-    sample_distance_methods : list, optional
-        Methods for sample distance calculation
-    grouping_columns : list, optional
-        Columns for grouping samples
-    summary_sample_csv_path : str, optional
-        Path to save sample summary CSV
-    cluster_number : int
-        Number of clusters for sample clustering
-    cluster_differential_gene_group_col : str, optional
-        Column for cluster differential gene analysis
-    age_bin_size : int, optional
-        Bin size for age grouping
-    age_column : str
-        Column name for age
-    plot_dendrogram_flag : bool
-        Whether to plot dendrogram
-    plot_cell_type_proportions_pca_flag : bool
-        Whether to plot cell type proportions PCA
-    plot_cell_type_expression_umap_flag : bool
-        Whether to plot cell type expression UMAP
-        
-    Returns
-    -------
-    dict
-        Dictionary containing analysis results
+    Returns dict with adata_cell, adata_sample, pseudo_adata, status_flags.
+    Downstream analysis (trajectory, clustering, etc.) is handled by the shared
+    downstream_analysis() function in wrapper.py.
     """
     print("Starting ATAC wrapper function...")
     
-    # Validate required parameters
     if atac_count_data_path is None or atac_output_dir is None:
         raise ValueError("Required parameters atac_count_data_path and atac_output_dir must be provided.")
     
-    # Import GPU-specific functions if needed
     if use_gpu:
         from preparation.atac_preprocess_gpu import preprocess_linux
         from preparation.cell_type_gpu import cell_types_linux
         from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
     
-    # Set default values for list parameters
-    if grouping_columns is None:
-        grouping_columns = ['sev.level']
     if vars_to_regress is None:
         vars_to_regress = []
-    if sample_distance_methods is None:
-        sample_distance_methods = ['cosine', 'correlation']
-    if trajectory_visualization_label is None:
-        trajectory_visualization_label = ['sev.level']
-    if summary_sample_csv_path is None:
-        summary_sample_csv_path = os.path.join(atac_output_dir, 'summary_sample.csv')
-    
-    trajectory_diff_gene_output_dir = os.path.join(atac_output_dir, 'trajectoryDEG')
     
     # Initialize status flags
     default_status = {
@@ -338,10 +120,8 @@ def atac_wrapper(
     elif "atac" not in status_flags:
         status_flags["atac"] = default_status.copy()
 
-    # Initialize data objects
     adata_cell = None
     adata_sample = None
-    pseudobulk_df = None
     pseudo_adata = None
 
     # ==================== PREPROCESSING ====================
@@ -382,12 +162,7 @@ def atac_wrapper(
         status_flags["atac"]["preprocessing"] = True
         status_flags["atac"]["cell_type_cluster"] = True
         
-        needs_data = any([
-            cell_type_cluster, derive_sample_embedding, trajectory_analysis,
-            trajectory_DGE, sample_cluster, cluster_DGE, proportion_test,
-            cca_based_cell_resolution_selection, visualize_data
-        ])
-        
+        needs_data = any([cell_type_cluster, derive_sample_embedding, cca_based_cell_resolution_selection])
         if needs_data:
             adata_cell = sc.read(cell_path)
             adata_sample = sc.read(sample_path)
@@ -398,7 +173,6 @@ def atac_wrapper(
     # ==================== CELL TYPE CLUSTERING ====================
     if cell_type_cluster:
         print(f"Starting cell type clustering at resolution: {leiden_cluster_resolution}")
-        
         cell_types_func = cell_types_linux if use_gpu else cell_types
         
         adata_cell, adata_sample = cell_types_func(
@@ -425,7 +199,7 @@ def atac_wrapper(
         if not status_flags["atac"]["cell_type_cluster"]:
             raise ValueError("Cell type clustering required before sample embedding derivation.")
         
-        pseudobulk_df, pseudo_adata = calculate_sample_embedding(
+        _, pseudo_adata = calculate_sample_embedding(
             adata=adata_sample,
             sample_col=sample_col,
             celltype_col=celltype_col,
@@ -445,11 +219,6 @@ def atac_wrapper(
     else:
         pseudobulk_path = pseudo_adata_path or os.path.join(atac_output_dir, "pseudobulk", "pseudobulk_sample.h5ad")
         
-        needs_pseudobulk = any([trajectory_analysis, trajectory_DGE, sample_cluster, cluster_DGE, visualize_data])
-        
-        if needs_pseudobulk and not os.path.exists(pseudobulk_path):
-            raise ValueError("Sample embedding skipped but no sample embedding data found.")
-        
         if os.path.exists(pseudobulk_path):
             print(f"Loading pseudobulk from: {pseudobulk_path}")
             pseudo_adata = sc.read(pseudobulk_path)
@@ -460,13 +229,8 @@ def atac_wrapper(
     if cca_based_cell_resolution_selection:
         print("Finding optimal cell resolution using CCA optimization...")
         
-        # Select appropriate function based on GPU usage
-        if use_gpu:
-            find_resolution_func = find_optimal_cell_resolution_linux
-        else:
-            find_resolution_func = find_optimal_cell_resolution
+        find_resolution_func = find_optimal_cell_resolution_linux if use_gpu else find_optimal_cell_resolution
         
-        # Run optimization for both expression and proportion embeddings
         for column in ["X_DR_expression", "X_DR_proportion"]:
             print(f"\nOptimizing resolution for {column}...")
             
@@ -495,250 +259,19 @@ def atac_wrapper(
                 fine_step=cca_fine_step,
                 verbose=verbose,
             )
-            
             print(f"Optimal resolution for {column}: {optimal_resolution:.3f}")
         
-        # Replace dimension reductions with optimal ones
         from utils.unify_optimal import replace_optimal_dimension_reduction
         pseudo_adata = replace_optimal_dimension_reduction(atac_output_dir)
         
         status_flags["atac"]["cca_based_cell_resolution_selection"] = True
         print("CCA-based resolution selection completed!")
 
-    # ==================== SAMPLE DISTANCE CALCULATION ====================
-    if sample_distance_calculation:
-        print("Starting sample distance calculation...")
-        
-        for distance_method in sample_distance_methods:
-            print(f"Running sample distance: {distance_method}")
-            sample_distance(
-                adata=pseudo_adata,
-                output_dir=os.path.join(atac_output_dir, 'Sample_distance'),
-                method=distance_method,
-                grouping_columns=grouping_columns,
-                summary_csv_path=summary_sample_csv_path,
-                cell_adata=adata_cell,
-                cell_type_column=celltype_col,
-                sample_column=sample_col,
-                pseudobulk_adata=pseudo_adata
-            )
-        
-        status_flags["atac"]["sample_distance_calculation"] = True
-        if verbose:
-            print(f"Sample distance calculation completed: {os.path.join(atac_output_dir, 'Sample_distance')}")
-
-    # ==================== TRAJECTORY ANALYSIS ====================
-    ptime_expression = None
-    ptime_proportion = None
-    
-    if trajectory_analysis:
-        print("Starting trajectory analysis...")
-        
-        if not status_flags["atac"]["derive_sample_embedding"]:
-            raise ValueError("Sample embedding derivation required before trajectory analysis.")
-        
-        if trajectory_supervised:
-            if trajectory_col not in pseudo_adata.obs.columns:
-                raise ValueError(f"Trajectory column '{trajectory_col}' not found in pseudo_adata.obs.")
-            
-            cca_score_proportion, cca_score_expression, ptime_proportion, ptime_expression = CCA_Call(
-                adata=pseudo_adata,
-                n_components=n_cca_pcs,
-                output_dir=atac_output_dir,
-                trajectory_col=trajectory_col,
-                verbose=verbose
-            )
-            
-            if cca_pvalue:
-                cca_pvalue_test(
-                    pseudo_adata=pseudo_adata,
-                    column="X_DR_proportion",
-                    input_correlation=cca_score_proportion,
-                    output_directory=atac_output_dir,
-                    trajectory_col=trajectory_col,
-                    verbose=verbose
-                )
-                cca_pvalue_test(
-                    pseudo_adata=pseudo_adata,
-                    column="X_DR_expression",
-                    input_correlation=cca_score_expression,
-                    output_directory=atac_output_dir,
-                    trajectory_col=trajectory_col,
-                    verbose=verbose
-                )
-        else:
-            tscan_result_expression = TSCAN(
-                AnnData_sample=pseudo_adata,
-                column="X_DR_expression",
-                output_dir=atac_output_dir,
-                grouping_columns=trajectory_visualization_label,
-                verbose=verbose,
-                origin=tscan_origin
-            )
-            
-            tscan_result_proportion = TSCAN(
-                AnnData_sample=pseudo_adata,
-                column="X_DR_proportion",
-                output_dir=atac_output_dir,
-                grouping_columns=trajectory_visualization_label,
-                verbose=verbose,
-                origin=tscan_origin
-            )
-            
-            ptime_expression = pd.Series(
-                tscan_result_expression["pseudotime"]["main_path"],
-                name="tscan_pseudotime_expression"
-            ).reindex(pseudo_adata.obs.index)
-            
-            ptime_proportion = pd.Series(
-                tscan_result_proportion["pseudotime"]["main_path"],
-                name="tscan_pseudotime_proportion"
-            ).reindex(pseudo_adata.obs.index)
-        
-        status_flags["atac"]["trajectory_analysis"] = True
-
-        # ==================== TRAJECTORY DIFFERENTIAL GENE ANALYSIS ====================
-        if trajectory_DGE:
-            print("Running trajectory differential gene analysis...")
-            
-            run_trajectory_gam_differential_gene_analysis(
-                pseudobulk_adata=pseudo_adata,
-                pseudotime_source=ptime_expression,
-                sample_col=sample_col,
-                pseudotime_col="pseudotime",
-                covariate_columns=trajectory_diff_gene_covariate,
-                fdr_threshold=fdr_threshold,
-                effect_size_threshold=effect_size_threshold,
-                top_n_genes=top_n_genes,
-                num_splines=num_splines,
-                spline_order=spline_order,
-                output_dir=os.path.join(trajectory_diff_gene_output_dir, "expression"),
-                visualization_gene_list=visualization_gene_list,
-                verbose=verbose
-            )
-            
-            status_flags["atac"]["trajectory_dge"] = True
-            print("Trajectory differential gene analysis completed!")
-
-    # Clean up summary file if exists
-    if os.path.exists(summary_sample_csv_path):
-        os.remove(summary_sample_csv_path)
-
-    # ==================== SAMPLE CLUSTERING ====================
-    expr_results, prop_results = {}, {}
-    
-    if sample_cluster:
-        print("Starting sample clustering...")
-        
-        expr_results, prop_results = cluster(
-            pseudobulk_adata=pseudo_adata,
-            output_dir=atac_output_dir,
-            number_of_clusters=cluster_number,
-            use_expression=True,
-            use_proportion=True,
-            random_state=0,
-        )
-        
-        status_flags["atac"]["sample_cluster"] = True
-
-    # ==================== PROPORTION TEST ====================
-    if proportion_test:
-        print("Starting proportion tests...")
-        
-        try:
-            if cluster_differential_gene_group_col is not None or expr_results:
-                run_proportion_test(
-                    adata=adata_sample,
-                    sample_col=sample_col,
-                    sample_to_clade=expr_results,
-                    group_col=cluster_differential_gene_group_col,
-                    celltype_col=celltype_col,
-                    output_dir=os.path.join(atac_output_dir, "sample_cluster", "expression", "proportion_test"),
-                    verbose=True
-                )
-            
-            if cluster_differential_gene_group_col is not None or prop_results:
-                run_proportion_test(
-                    adata=adata_sample,
-                    sample_col=sample_col,
-                    sample_to_clade=prop_results,
-                    group_col=cluster_differential_gene_group_col,
-                    celltype_col=celltype_col,
-                    output_dir=os.path.join(atac_output_dir, "sample_cluster", "proportion", "proportion_test"),
-                    verbose=True
-                )
-            
-            status_flags["atac"]["proportion_test"] = True
-            print("Proportion tests completed.")
-        except Exception as e:
-            print(f"Error in proportion test: {e}")
-            import traceback
-            traceback.print_exc()
-
-    # ==================== CLUSTER DIFFERENTIAL GENE EXPRESSION ====================
-    if cluster_DGE:
-        print("Running RAISIN analysis...")
-        
-        try:
-            if cluster_differential_gene_group_col is not None or expr_results:
-                fit = raisinfit(
-                    adata=adata_sample,
-                    sample_col=sample_col,
-                    testtype='unpaired',
-                    batch_col=batch_col,
-                    sample_to_clade=expr_results,
-                    group_col=cluster_differential_gene_group_col,
-                    verbose=verbose,
-                    intercept=True,
-                    n_jobs=-1,
-                )
-                run_pairwise_tests(
-                    fit=fit,
-                    output_dir=os.path.join(atac_output_dir, 'raisin_results_expression'),
-                    fdrmethod='fdr_bh',
-                    fdr_threshold=0.05,
-                    verbose=True
-                )
-            else:
-                print("No expression results available. Skipping RAISIN analysis.")
-            
-            status_flags["atac"]["cluster_dge"] = True
-            print("RAISIN analysis completed.")
-        except Exception as e:
-            print(f"Error in RAISIN analysis: {e}")
-            import traceback
-            traceback.print_exc()
-
-    # ==================== VISUALIZATION ====================
-    if visualize_data:
-        print("Starting visualization...")
-        
-        if plot_dendrogram_flag and not status_flags["atac"]["cell_type_cluster"]:
-            raise ValueError("Cell type clustering required for dendrogram visualization.")
-        
-        if (plot_cell_type_proportions_pca_flag or plot_cell_type_expression_umap_flag) and not status_flags["atac"]["derive_sample_embedding"]:
-            raise ValueError("Sample embedding derivation required for requested visualization.")
-        
-        visualization(
-            AnnData_cell=adata_cell,
-            pseudobulk_anndata=pseudo_adata,
-            output_dir=atac_output_dir,
-            grouping_columns=grouping_columns,
-            age_bin_size=age_bin_size,
-            age_column=age_column,
-            verbose=verbose,
-            plot_dendrogram_flag=plot_dendrogram_flag,
-            plot_cell_type_proportions_pca_flag=plot_cell_type_proportions_pca_flag,
-            plot_cell_type_expression_umap_flag=plot_cell_type_expression_umap_flag
-        )
-        status_flags["atac"]["visualization"] = True
-
-    print("ATAC analysis completed successfully!")
+    print("ATAC preprocessing pipeline completed successfully!")
     
     return {
         'adata_cell': adata_cell,
         'adata_sample': adata_sample,
-        'pseudobulk_df': pseudobulk_df,
         'pseudo_adata': pseudo_adata,
         'status_flags': status_flags
     }
