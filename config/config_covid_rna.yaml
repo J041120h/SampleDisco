@@ -235,9 +235,9 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 multiomics_integration: false
 multiomics_integration_preprocessing: false
 multiomics_cell_type_cluster: false
-multiomics_dimensionality_reduction: true
+multiomics_dimensionality_reduction: false
 multiomics_visualize_embedding: true
-multiomics_find_optimal_resolution: false
+multiomics_find_optimal_resolution: true
 
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: false

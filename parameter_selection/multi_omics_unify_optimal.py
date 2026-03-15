@@ -17,27 +17,25 @@ def replace_optimal_dimension_reduction(
     Replaces dimension reduction results AND pseudobulk expression in pseudobulk_sample.h5ad
     with optimal results from resolution optimization for BOTH expression and proportion.
 
-    New strategy:
-    -------------
-    - Use `optimal_expression` AnnData as the TEMPLATE for the updated pseudobulk.
-    - Ensure sample indices match between `optimal_expression` and the original `pseudobulk_sample`.
-    - Copy all sample metadata (obs columns) from `pseudobulk_sample` into the new object.
-    - Merge .uns and .obsm from `pseudobulk_sample`, then overwrite DR-related keys with
-      values from `optimal_expression` and `optimal_proportion`.
-    - Save this updated AnnData back to pseudobulk_path (with a .backup created first).
-    - Update unified embedding CSVs.
-
-    File structure:
-    ---------------
-    resolution_optimization_{dr_type}/
-        Integration_optimization_{target}_{dr_type}/
-            summary/optimal_{target}_{dr_type}.h5ad
+    Expected file structure (created by find_optimal_cell_resolution_multiomics):
+    -------------------------------------------------------------------------------
+    base_path/
+        resolution_optimization_expression/
+            Integration_optimization_{target}_expression/
+                summary/
+                    optimal_{target}_expression.h5ad
+        resolution_optimization_proportion/
+            Integration_optimization_{target}_proportion/
+                summary/
+                    optimal_{target}_proportion.h5ad
+        pseudobulk/
+            pseudobulk_sample.h5ad
 
     Parameters
     ----------
     base_path : str
         Base path to the output directory
-        Example: '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/multiomics'
+        Example: '/path/to/multiomics'
     expression_resolution_dir : str, optional
         Path to the expression resolution optimization directory
         If None, defaults to base_path/resolution_optimization_expression
@@ -80,6 +78,8 @@ def replace_optimal_dimension_reduction(
             "pseudobulk_sample.h5ad"
         )
 
+    # Construct paths to optimal h5ad files
+    # Structure: resolution_optimization_{dr_type}/Integration_optimization_{target}_{dr_type}/summary/optimal_{target}_{dr_type}.h5ad
     optimal_expression_path = os.path.join(
         expression_resolution_dir,
         f"Integration_optimization_{optimization_target}_expression",
@@ -140,7 +140,7 @@ def replace_optimal_dimension_reduction(
         raise RuntimeError(f"[ERROR] Failed to load h5ad files: {str(e)}")
 
     # ------------------------------------------------------------------
-    # Verify sample alignment (obs indices), but DO NOT require gene match
+    # Verify sample alignment (obs indices)
     # ------------------------------------------------------------------
     if not np.array_equal(optimal_expression.obs.index,
                           pseudobulk_sample_original.obs.index):
@@ -156,12 +156,11 @@ def replace_optimal_dimension_reduction(
         )
 
     # ------------------------------------------------------------------
-    # NEW STRATEGY: Use optimal_expression as TEMPLATE for updated pseudobulk
+    # Use optimal_expression as TEMPLATE for updated pseudobulk
     # ------------------------------------------------------------------
     if verbose:
         print("\n[Replace DR] Building updated pseudobulk using optimal EXPRESSION as template...")
 
-    # Start from optimal_expression: X, var, layers, obsm, uns, etc.
     updated_pseudobulk = optimal_expression.copy()
 
     if verbose:
@@ -169,24 +168,20 @@ def replace_optimal_dimension_reduction(
         print(f"  • Template genes: {updated_pseudobulk.var.shape[0]}")
 
     # ------------------------------------------------------------------
-    # Copy / merge obs: ensure we preserve all sample metadata from original pseudobulk
+    # Copy / merge obs: preserve all sample metadata from original pseudobulk
     # ------------------------------------------------------------------
     if verbose:
         print("  • Merging sample metadata (obs) from original pseudobulk...")
 
-    # Start with the template obs, then add/overwrite columns from original
     original_obs = pseudobulk_sample_original.obs
     template_obs = updated_pseudobulk.obs
 
-    # Align original obs to template index (they should match already)
     original_obs_aligned = original_obs.reindex(template_obs.index)
 
-    # Add any missing columns from original to template
     for col in original_obs_aligned.columns:
         if col not in template_obs.columns:
             template_obs[col] = original_obs_aligned[col]
         else:
-            # Overwrite existing column with original, to keep original metadata
             template_obs[col] = original_obs_aligned[col]
 
     updated_pseudobulk.obs = template_obs
@@ -195,17 +190,15 @@ def replace_optimal_dimension_reduction(
         print(f"  ✓ Updated obs columns: {list(updated_pseudobulk.obs.columns)}")
 
     # ------------------------------------------------------------------
-    # Merge .uns and .obsm with original pseudobulk for non-DR metadata
+    # Merge .uns and .obsm from original pseudobulk for non-DR metadata
     # ------------------------------------------------------------------
     if verbose:
         print("  • Merging .uns and .obsm from original pseudobulk (non-DR metadata)...")
 
-    # For .uns: original keys, then overlay optimized expression .uns
-    merged_uns = dict(pseudobulk_sample_original.uns)  # base: original
-    merged_uns.update(optimal_expression.uns)          # overwrite with optimized expression info
+    merged_uns = dict(pseudobulk_sample_original.uns)
+    merged_uns.update(optimal_expression.uns)
     updated_pseudobulk.uns = merged_uns
 
-    # For .obsm: original keys, then overlay optimized expression .obsm
     merged_obsm = dict(pseudobulk_sample_original.obsm)
     merged_obsm.update(optimal_expression.obsm)
     updated_pseudobulk.obsm = merged_obsm
@@ -349,7 +342,7 @@ def replace_optimal_dimension_reduction(
         raise RuntimeError(f"[ERROR] Failed to save updated pseudobulk file: {str(e)}")
 
     # ------------------------------------------------------------------
-    # Update CSV embeddings like the main pipeline
+    # Update CSV embeddings
     # ------------------------------------------------------------------
     try:
         if verbose:

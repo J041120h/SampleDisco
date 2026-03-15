@@ -55,257 +55,67 @@ RUNNING MULTIOMICS PIPELINE
 Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/test/multiomics
 GPU mode: Enabled
 Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad
-Step 3: Running dimensionality reduction...
-[Pseudobulk] Input: 60362 cells, 14881 genes
-[Pseudobulk] HVG selection modality: RNA (both rounds)
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] HVG selection will use RNA cells only (both rounds)
-[Pseudobulk] 16 samples, 25 cell types
-[Pseudobulk] Batch correction: ['modality']
-[Pseudobulk] Modality distribution: {'ATAC': np.int64(30373), 'RNA': np.int64(29989)}
-[Pseudobulk] Phase 1: Aggregating cells...
-  Aggregating 60362 cells -> 16 samples x 25 cell types
-  Created 25 cell type layers
-  Filtered to RNA cells: 29989 / 60362
-  Aggregating 29989 cells -> 8 samples x 25 cell types
-  Created 25 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/25] 1
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [2/25] 10
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [3/25] 11
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [4/25] 12
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [5/25] 13
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [6/25] 14
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [7/25] 15
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2001 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2001 HVGs
-  [8/25] 16
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [9/25] 17
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [10/25] 18
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [11/25] 19
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [12/25] 2
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [13/25] 20
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [14/25] 21
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [15/25] 22
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [16/25] 23
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [17/25] 24
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [18/25] 25
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [19/25] 3
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [20/25] 4
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [21/25] 5
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [22/25] 6
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [23/25] 7
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [24/25] 8
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [25/25] 9
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-[Pseudobulk] Retained 25 cell types
-[Pseudobulk] Phase 3: Round 2 HVG selection from RNA cells...
-[Pseudobulk] Phase 4: Building final matrix...
-[Pseudobulk] Final features: 2000
-[Pseudobulk] Phase 5: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 16 samples, 2000 features
-[DimRed] Starting dimension reduction computation...
-[DimRed] Mode: RNA (PCA)
-[DimRed] Batch column(s): ['modality']
-[DimRed] Output directory: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk
-[DimRed] Components: expression=10, proportion=10
-[DimRed] Computing PCA for RNA data with 10 components on (16, 2000) data
-[PCA] Success. Shape: (16, 10)
-[Storage] Stored X_DR_expression in both objects (shape: (16, 10))
-[DimRed] Completed - results stored as X_DR_expression
-[DimRed] Expression dimension reduction completed
-[Proportion] Computing PCA with 10 components...
-[Harmony] Applying with batch column(s): ['modality']
-[Harmony] Completed with 1 batch factor(s)
-[Storage] Stored X_DR_proportion in both objects (shape: (16, 10))
-[Proportion] Completed using Harmony-integrated PCA. Shape: (16, 10)
-[DimRed] Proportion dimension reduction completed
-[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_expression_embedding.csv (shape: (16, 10))
-[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_proportion_embedding.csv (shape: (16, 10))
-[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/test/multiomics/embeddings
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] Successfully saved pseudobulk_anndata (0.3 MB)
+Loaded dimensionality reduction data from existing files
+Step 4: Finding optimal cell resolution...
+Optimal resolution finding completed successfully
 
-[DimRed] === SUMMARY ===
-Runtime: 14.86s
-Expression: Success
-Proportion: Success
-Dimensionality reduction completed successfully
+======================================================================
+Replacing Dimension Reduction and Expression with Optimal Results
+======================================================================
+
+[Replace DR] Configuration:
+  - Optimization target: RNA
+
+[Replace DR] File paths:
+  - Optimal expression: /dcs07/hongkai/data/harry/result/test/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/summary/optimal_rna_expression.h5ad
+  - Optimal proportion: /dcs07/hongkai/data/harry/result/test/multiomics/resolution_optimization_proportion/Integration_optimization_rna_proportion/summary/optimal_rna_proportion.h5ad
+  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
+
+[Replace DR] Loading files...
+  ✓ Optimal expression loaded: (16, 2000)
+  ✓ Optimal proportion loaded: (16, 2000)
+  ✓ Original pseudobulk loaded: (16, 2000)
+
+[Replace DR] Building updated pseudobulk using optimal EXPRESSION as template...
+  • Template (optimal_expression) shape: (16, 2000)
+  • Template genes: 2000
+  • Merging sample metadata (obs) from original pseudobulk...
+  ✓ Updated obs columns: ['modality', 'original_sample', 'age_cluster', 'batch', 'sev.level', 'sex']
+  • Merging .uns and .obsm from original pseudobulk (non-DR metadata)...
+  ✓ .uns keys after merge: ['X_DR_expression', 'X_DR_proportion', 'cell_proportions']
+  ✓ .obsm keys after merge: ['X_DR_expression', 'X_DR_proportion']
+
+[Replace DR] Ensuring EXPRESSION dimension reduction results are from optimal_expression...
+  ✓ Ensured .uns['X_DR_expression'] from optimal_expression (shape: (16, 10))
+  ✓ Ensured .obsm['X_DR_expression'] from optimal_expression (shape: (16, 10))
+  → Total expression DR-related keys ensured: 2
+
+[Replace DR] Replacing PROPORTION dimension reduction results with optimal_proportion...
+  ✓ Copied .uns['X_DR_proportion'] from optimal_proportion (shape: (16, 10))
+  ✓ Copied .obsm['X_DR_proportion'] from optimal_proportion (shape: (16, 10))
+  → Total proportion DR-related keys copied: 2
+
+[Replace DR] Saving updated pseudobulk_sample...
+  Destination: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  ✓ Created backup: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
+  ✓ Successfully saved updated pseudobulk (0.3 MB)
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Optimization target: RNA
+  Expression DR keys ensured: 2
+  Proportion DR keys copied: 2
+  Total DR keys updated: 4
+  Expression matrix source: optimal_expression (template)
+  File updated: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  Backup saved: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
+======================================================================
+
+[Replace DR] Updating embedding CSV files...
+  ✓ Saved expression embedding to /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_expression_embedding.csv (shape: (16, 10))
+  ✓ Saved proportion embedding to /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_proportion_embedding.csv (shape: (16, 10))
+Optimal resolution finding completed successfully
 Step 5: Visualizing multimodal embedding...
 Creating default embedding visualization (all samples)
 Expression key: X_DR_expression
@@ -313,6 +123,35 @@ Proportion key: X_DR_proportion
 Additional color columns: ['sev.level']
 Created/using visualization directory: /dcs07/hongkai/data/harry/result/test/multiomics/visualization
 
-Multiomics pipeline failed: Columns not found in adata.obs: ['sev.level']. Available columns: ['modality']
+Creating colored visualizations for 1 column(s)...
 
-Total execution time: 49.89 seconds (0.83 minutes)
+--- Processing color column: sev.level ---
+  Column 'sev.level': numerical with 3 unique values
+  Saved: /dcs07/hongkai/data/harry/result/test/multiomics/visualization/all_samples_expression_by_sev.level.png
+  Column 'sev.level': numerical with 3 unique values
+  Saved: /dcs07/hongkai/data/harry/result/test/multiomics/visualization/all_samples_proportion_by_sev.level.png
+  Combined saved: /dcs07/hongkai/data/harry/result/test/multiomics/visualization/all_samples_combined_by_sev.level.png
+Embedding visualization completed successfully
+
+============================================================
+PIPELINE COMPLETED SUCCESSFULLY!
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/multiomics
+Completed steps: 7/11
+
+Step Summary:
+  ✓ Glue Integration
+  ○ Glue Preprocessing
+  ○ Glue Training
+  ✓ Glue Gene Activity
+  ✓ Glue Cell Types
+  ✓ Glue Visualization
+  ✓ Integration Preprocessing
+  ✓ Dimensionality Reduction
+  ✓ Embedding Visualization
+  ○ Optimal Resolution
+  ○ Derive Sample Embedding
+
+Multiomics pipeline completed successfully!
+
+Total execution time: 18.99 seconds (0.32 minutes)
