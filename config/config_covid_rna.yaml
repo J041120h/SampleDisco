@@ -232,12 +232,12 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
 multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
 # --- Pipeline Control Flags ---
-multiomics_run_glue: false
+multiomics_integration: false
 multiomics_run_glue_cell_types: true
-multiomics_run_integrate_preprocess: false
-multiomics_run_dimensionality_reduction: false
-multiomics_run_visualize_embedding: false
-multiomics_run_find_optimal_resolution: false
+multiomics_integration_preprocessing: false
+multiomics_dimensionality_reduction: false
+multiomics_visualize_embedding: false
+multiomics_find_optimal_resolution: false
 
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: true

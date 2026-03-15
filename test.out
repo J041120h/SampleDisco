@@ -131,6 +131,6 @@ Cell type assignment complete!
 
 Cell type assignment completed successfully
 
-Multiomics pipeline failed: Integration preprocessing is required. Set run_integrate_preprocess=True or ensure preprocessed data exists.
+Multiomics pipeline failed: Integration preprocessing is required. Set integration_preprocessing=True or ensure preprocessed data exists.
 
-Total execution time: 190.48 seconds (3.17 minutes)
+Total execution time: 193.29 seconds (3.22 minutes)

@@ -230,11 +230,11 @@ def wrapper(
     multiomics_output_dir: Optional[str] = None,
     
     # Pipeline control flags
-    multiomics_run_glue: bool = True,
-    multiomics_run_integrate_preprocess: bool = True,
-    multiomics_run_dimensionality_reduction: bool = True,
-    multiomics_run_visualize_embedding: bool = True,
-    multiomics_run_find_optimal_resolution: bool = False,
+    multiomics_integration: bool = True,
+    multiomics_integration_preprocessing: bool = True,
+    multiomics_dimensionality_reduction: bool = True,
+    multiomics_visualize_embedding: bool = True,
+    multiomics_find_optimal_resolution: bool = False,
     
     # GLUE sub-pipeline flags
     multiomics_run_glue_preprocessing: bool = True,
@@ -724,7 +724,7 @@ def wrapper(
         
         multiomics_output_dir = multiomics_output_dir or os.path.join(output_dir, 'multiomics')
         
-        if multiomics_run_glue and (multiomics_rna_file is None or multiomics_atac_file is None):
+        if multiomics_integration and (multiomics_rna_file is None or multiomics_atac_file is None):
             raise ValueError("Multiomics pipeline with GLUE requires multiomics_rna_file and multiomics_atac_file")
         
         try:
@@ -737,11 +737,11 @@ def wrapper(
                 multiomics_output_dir=multiomics_output_dir,
                 
                 # ===== Process Control Flags =====
-                run_glue=multiomics_run_glue,
-                run_integrate_preprocess=multiomics_run_integrate_preprocess,
-                run_dimensionality_reduction=multiomics_run_dimensionality_reduction,
-                run_visualize_embedding=multiomics_run_visualize_embedding,
-                run_find_optimal_resolution=multiomics_run_find_optimal_resolution,
+                integration=multiomics_integration,
+                integration_preprocessing=multiomics_integration_preprocessing,
+                dimensionality_reduction=multiomics_dimensionality_reduction,
+                visualize_embedding=multiomics_visualize_embedding,
+                find_optimal_resolution=multiomics_find_optimal_resolution,
                 
                 # ===== Basic Parameters =====
                 rna_sample_meta_file=multiomics_rna_sample_meta_file,

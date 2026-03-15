@@ -25,11 +25,11 @@ def multiomics_wrapper(
     multiomics_output_dir=None,
     
     # ===== Process Control Flags =====
-    run_glue=True,
-    run_integrate_preprocess=True,
-    run_dimensionality_reduction=True,
-    run_visualize_embedding=True,
-    run_find_optimal_resolution=False,
+    integration=True,
+    integration_preprocessing=True,
+    dimensionality_reduction=True,
+    visualize_embedding=True,
+    find_optimal_resolution=False,
 
     # ===== Basic Parameters =====
     rna_sample_meta_file=None,
@@ -165,7 +165,7 @@ def multiomics_wrapper(
     h5ad_path = integrated_h5ad_path if integrated_h5ad_path and os.path.exists(integrated_h5ad_path) else f"{multiomics_output_dir}/preprocess/atac_rna_integrated.h5ad"
     
     # Step 1: GLUE integration
-    if run_glue:
+    if integration:
         if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
         
@@ -254,7 +254,7 @@ def multiomics_wrapper(
             print("Cell type assignment completed successfully")
     
     # Step 2: Integration preprocessing
-    if run_integrate_preprocess:
+    if integration_preprocessing:
         if multiomics_verbose:
             print("Step 2: Running integration preprocessing...")
         
@@ -290,10 +290,10 @@ def multiomics_wrapper(
             if multiomics_verbose:
                 print(f"Loaded preprocessed data from: {preprocessed_path}")
         else:
-            raise ValueError("Integration preprocessing is required. Set run_integrate_preprocess=True or ensure preprocessed data exists.")
+            raise ValueError("Integration preprocessing is required. Set integration_preprocessing=True or ensure preprocessed data exists.")
 
     # Step 3: Dimensionality Reduction
-    if run_dimensionality_reduction:
+    if dimensionality_reduction:
         if multiomics_verbose:
             print("Step 3: Running dimensionality reduction...")
         
@@ -357,7 +357,7 @@ def multiomics_wrapper(
                 print("Loaded dimensionality reduction data from existing files")
                 
     # Step 4: Find optimal resolution
-    if run_find_optimal_resolution:
+    if find_optimal_resolution:
         if multiomics_verbose:
             print("Step 4: Finding optimal cell resolution...")
         
@@ -408,7 +408,7 @@ def multiomics_wrapper(
             print("Optimal resolution finding completed successfully")
             
     # Step 5: Visualize embedding
-    if run_visualize_embedding:
+    if visualize_embedding:
         if multiomics_verbose:
             print("Step 5: Visualizing multimodal embedding...")
         
