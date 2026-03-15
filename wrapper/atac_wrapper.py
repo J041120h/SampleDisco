@@ -162,10 +162,9 @@ def atac_wrapper(
         status_flags["atac"]["preprocessing"] = True
         status_flags["atac"]["cell_type_cluster"] = True
         
-        needs_data = any([cell_type_cluster, derive_sample_embedding, cca_based_cell_resolution_selection])
-        if needs_data:
-            adata_cell = sc.read(cell_path)
-            adata_sample = sc.read(sample_path)
+        # Always load when skipping preprocessing — downstream may need these
+        adata_cell = sc.read(cell_path)
+        adata_sample = sc.read(sample_path)
     
     if not status_flags["atac"]["preprocessing"]:
         raise ValueError("ATAC preprocessing skipped but no preprocessed data found.")

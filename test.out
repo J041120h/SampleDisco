@@ -36,9 +36,17 @@ Resuming from previous progress:
     "glue_cell_types": true,
     "glue_visualization": true,
     "integration_preprocessing": true,
-    "dimensionality_reduction": true,
-    "embedding_visualization": true,
     "optimal_resolution": false,
+    "dimensionality_reduction": true,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "embedding_visualization": true,
+    "visualization": false,
     "derive_sample_embedding": false
   },
   "system_info": {
@@ -56,67 +64,122 @@ Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/r
 GPU mode: Enabled
 Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad
 Loaded dimensionality reduction data from existing files
-Step 4: Finding optimal cell resolution...
-Optimal resolution finding completed successfully
+Multiomics preprocessing pipeline completed successfully!
+Starting sample distance calculation...
+Running sample distance: cosine
+Computing cosine distance...
+Computing expression DR distances (X_DR_expression)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/cosine/expression_DR_distance/distance_check_results_expression_DR_cosine.txt
+Score for expression_DR (cosine): 1.031314
+Summary updated in /dcs07/hongkai/data/harry/result/test/multiomics/summary_sample.csv
+  Distance check for expression_DR: score = 1.031314
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/cosine/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
+  expression_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/cosine/expression_DR_distance
+Computing proportion DR distances (X_DR_proportion)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/cosine/proportion_DR_distance/distance_check_results_proportion_DR_cosine.txt
+Score for proportion_DR (cosine): 1.048658
+Summary updated in /dcs07/hongkai/data/harry/result/test/multiomics/summary_sample.csv
+  Distance check for proportion_DR: score = 1.048658
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/cosine/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
+  proportion_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/cosine/proportion_DR_distance
+Statistics saved to: /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/cosine/distance_statistics_summary_cosine.csv
+Running sample distance: correlation
+Computing correlation distance...
+Computing expression DR distances (X_DR_expression)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/correlation/expression_DR_distance/distance_check_results_expression_DR_correlation.txt
+Score for expression_DR (correlation): 1.018030
+Summary updated in /dcs07/hongkai/data/harry/result/test/multiomics/summary_sample.csv
+  Distance check for expression_DR: score = 1.018030
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/correlation/expression_DR_distance/sample_distance_expression_DR_heatmap.pdf
+  expression_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/correlation/expression_DR_distance
+Computing proportion DR distances (X_DR_proportion)...
+Distance check results saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/correlation/proportion_DR_distance/distance_check_results_proportion_DR_correlation.txt
+Score for proportion_DR (correlation): 1.031102
+Summary updated in /dcs07/hongkai/data/harry/result/test/multiomics/summary_sample.csv
+  Distance check for proportion_DR: score = 1.031102
+Sample distance heatmap saved to /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/correlation/proportion_DR_distance/sample_distance_proportion_DR_heatmap.pdf
+  proportion_DR distance matrix saved to: /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/correlation/proportion_DR_distance
+Statistics saved to: /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance/correlation/distance_statistics_summary_correlation.csv
+Sample distance calculation completed: /dcs07/hongkai/data/harry/result/test/multiomics/Sample_distance
+Starting trajectory analysis...
 
+CCA Analysis Summary:
+  Proportion: score=0.4384 (PC1 + PC2)
+  Expression: score=0.5699 (PC1 + PC2)
+Running trajectory differential gene analysis...
 ======================================================================
-Replacing Dimension Reduction and Expression with Optimal Results
-======================================================================
-
-[Replace DR] Configuration:
-  - Optimization target: RNA
-
-[Replace DR] File paths:
-  - Optimal expression: /dcs07/hongkai/data/harry/result/test/multiomics/resolution_optimization_expression/Integration_optimization_rna_expression/summary/optimal_rna_expression.h5ad
-  - Optimal proportion: /dcs07/hongkai/data/harry/result/test/multiomics/resolution_optimization_proportion/Integration_optimization_rna_proportion/summary/optimal_rna_proportion.h5ad
-  - Pseudobulk sample: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-
-[Replace DR] Loading files...
-  ✓ Optimal expression loaded: (16, 2000)
-  ✓ Optimal proportion loaded: (16, 2000)
-  ✓ Original pseudobulk loaded: (16, 2000)
-
-[Replace DR] Building updated pseudobulk using optimal EXPRESSION as template...
-  • Template (optimal_expression) shape: (16, 2000)
-  • Template genes: 2000
-  • Merging sample metadata (obs) from original pseudobulk...
-  ✓ Updated obs columns: ['modality', 'original_sample', 'age_cluster', 'batch', 'sev.level', 'sex']
-  • Merging .uns and .obsm from original pseudobulk (non-DR metadata)...
-  ✓ .uns keys after merge: ['X_DR_expression', 'X_DR_proportion', 'cell_proportions']
-  ✓ .obsm keys after merge: ['X_DR_expression', 'X_DR_proportion']
-
-[Replace DR] Ensuring EXPRESSION dimension reduction results are from optimal_expression...
-  ✓ Ensured .uns['X_DR_expression'] from optimal_expression (shape: (16, 10))
-  ✓ Ensured .obsm['X_DR_expression'] from optimal_expression (shape: (16, 10))
-  → Total expression DR-related keys ensured: 2
-
-[Replace DR] Replacing PROPORTION dimension reduction results with optimal_proportion...
-  ✓ Copied .uns['X_DR_proportion'] from optimal_proportion (shape: (16, 10))
-  ✓ Copied .obsm['X_DR_proportion'] from optimal_proportion (shape: (16, 10))
-  → Total proportion DR-related keys copied: 2
-
-[Replace DR] Saving updated pseudobulk_sample...
-  Destination: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-  ✓ Created backup: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
-  ✓ Successfully saved updated pseudobulk (0.3 MB)
-
-----------------------------------------------------------------------
-SUMMARY
-----------------------------------------------------------------------
-  Optimization target: RNA
-  Expression DR keys ensured: 2
-  Proportion DR keys copied: 2
-  Total DR keys updated: 4
-  Expression matrix source: optimal_expression (template)
-  File updated: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-  Backup saved: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad.backup
+TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS
 ======================================================================
 
-[Replace DR] Updating embedding CSV files...
-  ✓ Saved expression embedding to /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_expression_embedding.csv (shape: (16, 10))
-  ✓ Saved proportion embedding to /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_proportion_embedding.csv (shape: (16, 10))
-Optimal resolution finding completed successfully
-Step 5: Visualizing multimodal embedding...
+[1/5] Loading pseudotime...
+  → Loaded 16 pseudotime values; aligned 16 to pseudobulk samples
+
+[2/5] Preparing GAM input matrices...
+  → Prepared design matrix: 16 samples × 1 features
+  → Expression matrix: 16 samples × 2000 genes
+
+[3/5] Fitting GAM models for 2000 genes...
+  → Spline parameters: n_splines=5, order=3
+  → Processing gene 500/2000...
+  → Processing gene 1000/2000...
+  → Processing gene 1500/2000...
+  → Processing gene 2000/2000...
+  → Successfully fitted 2000/2000 genes
+  → Found 820 significant genes (FDR < 0.05)
+
+[4/5] Calculating effect sizes and regulation directions...
+  → Calculated effect sizes for 820 genes
+  → Selected 100 pseudoDEGs (top_n=100)
+  → Saved results to: /dcs07/hongkai/data/harry/result/test/multiomics/trajectoryDEG/expression
+
+======================================================================
+=== DIFFERENTIAL GENE EXPRESSION SUMMARY ===
+Total genes analyzed: 2000
+Significant genes (FDR < 0.05): 820
+Selected DEGs: 100
+  - Upregulated: 0
+  - Downregulated: 100
+
+Top 20 DEGs:
+(Sorted by Effect Size)
+1. 15 - WWC3: FDR=1.8452e-04, Effect=6.629, Direction=DOWN
+2. 18 - SNUPN: FDR=1.8452e-04, Effect=6.373, Direction=DOWN
+3. 15 - LNX2: FDR=1.8452e-04, Effect=6.307, Direction=DOWN
+4. 15 - METTL13: FDR=1.8452e-04, Effect=6.247, Direction=DOWN
+5. 15 - CENPQ: FDR=1.8452e-04, Effect=6.216, Direction=DOWN
+6. 15 - SNAPC3: FDR=1.8452e-04, Effect=6.194, Direction=DOWN
+7. 18 - MAP3K14: FDR=1.8452e-04, Effect=6.193, Direction=DOWN
+8. 15 - ZBTB48: FDR=1.8452e-04, Effect=6.191, Direction=DOWN
+9. 18 - RIC8B: FDR=1.8452e-04, Effect=6.170, Direction=DOWN
+10. 15 - TTL: FDR=1.8452e-04, Effect=6.166, Direction=DOWN
+11. 18 - SLC7A6: FDR=1.8452e-04, Effect=6.151, Direction=DOWN
+12. 6 - SIMC1: FDR=1.8452e-04, Effect=6.142, Direction=DOWN
+13. 18 - GLE1: FDR=1.8452e-04, Effect=6.129, Direction=DOWN
+14. 15 - LRRC27: FDR=1.8452e-04, Effect=6.115, Direction=DOWN
+15. 18 - NTNG2: FDR=1.8452e-04, Effect=6.107, Direction=DOWN
+16. 15 - ERMARD: FDR=1.8452e-04, Effect=6.094, Direction=DOWN
+17. 18 - C8orf58: FDR=1.8452e-04, Effect=6.092, Direction=DOWN
+18. 15 - BIK: FDR=1.8452e-04, Effect=6.087, Direction=DOWN
+19. 15 - KIR3DX1: FDR=1.8452e-04, Effect=6.083, Direction=DOWN
+20. 15 - ZNF551: FDR=1.8452e-04, Effect=6.082, Direction=DOWN
+
+[5/5] Generating Lamian-style visualizations...
+  → Visualization generation failed: No module named 'trajectory_DGE_visualization'
+
+======================================================================
+✓ Analysis complete. Results saved to: /dcs07/hongkai/data/harry/result/test/multiomics/trajectoryDEG/expression
+======================================================================
+Trajectory differential gene analysis completed!
+Starting sample clustering...
+[INFO] K-means output directory: /dcs07/hongkai/data/harry/result/test/multiomics/sample_cluster
+[INFO] Running K-means on expression embedding 'X_DR_expression', shape=(16, 10)
+[INFO] Saved expression clustering CSV: /dcs07/hongkai/data/harry/result/test/multiomics/sample_cluster/kmeans_clusters_expression.csv
+[INFO] Saved plot: /dcs07/hongkai/data/harry/result/test/multiomics/sample_cluster/kmeans_expression_embedding.png
+[INFO] Running K-means on proportion embedding 'X_DR_proportion', shape=(16, 10)
+[INFO] Saved proportion clustering CSV: /dcs07/hongkai/data/harry/result/test/multiomics/sample_cluster/kmeans_clusters_proportion.csv
+[INFO] Saved plot: /dcs07/hongkai/data/harry/result/test/multiomics/sample_cluster/kmeans_proportion_embedding.png
+[INFO] K-means clustering completed.
+Visualizing multimodal embedding...
 Creating default embedding visualization (all samples)
 Expression key: X_DR_expression
 Proportion key: X_DR_proportion
@@ -132,26 +195,8 @@ Creating colored visualizations for 1 column(s)...
   Saved: /dcs07/hongkai/data/harry/result/test/multiomics/visualization/all_samples_proportion_by_sev.level.png
   Combined saved: /dcs07/hongkai/data/harry/result/test/multiomics/visualization/all_samples_combined_by_sev.level.png
 Embedding visualization completed successfully
-
-============================================================
-PIPELINE COMPLETED SUCCESSFULLY!
-============================================================
-Results saved to: /dcs07/hongkai/data/harry/result/test/multiomics
-Completed steps: 7/11
-
-Step Summary:
-  ✓ Glue Integration
-  ○ Glue Preprocessing
-  ○ Glue Training
-  ✓ Glue Gene Activity
-  ✓ Glue Cell Types
-  ✓ Glue Visualization
-  ✓ Integration Preprocessing
-  ✓ Dimensionality Reduction
-  ✓ Embedding Visualization
-  ○ Optimal Resolution
-  ○ Derive Sample Embedding
+MULTIOMICS downstream analysis completed!
 
 Multiomics pipeline completed successfully!
 
-Total execution time: 18.99 seconds (0.32 minutes)
+Total execution time: 40.63 seconds (0.68 minutes)

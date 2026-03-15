@@ -1,2 +1,6 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/sample_trajectory/trajectory_diff_gene.py", line 938, in run_trajectory_gam_differential_gene_analysis
+    from trajectory_DGE_visualization import generate_all_visualizations
+ModuleNotFoundError: No module named 'trajectory_DGE_visualization'
