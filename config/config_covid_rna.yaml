@@ -9,7 +9,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: true
 
 # General settings
-use_gpu: true
+use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true
@@ -233,8 +233,8 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
 # --- Pipeline Control Flags ---
 multiomics_integration: false
-multiomics_cell_type_cluster: true
-multiomics_integration_preprocessing: true
+multiomics_cell_type_cluster: false
+multiomics_integration_preprocessing: false
 multiomics_dimensionality_reduction: true
 multiomics_visualize_embedding: false
 multiomics_find_optimal_resolution: false

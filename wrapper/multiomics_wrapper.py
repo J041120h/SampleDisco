@@ -9,8 +9,7 @@ from pathlib import Path
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sample_embedding.DR import dimension_reduction
-from sample_embedding.multi_omics_pseudobulk_cpu import compute_pseudobulk_adata_cpu
+from sample_embedding.calculate_multiomics_sample_embedding import calculate_multiomics_sample_embedding
 from preparation.multi_omics_glue import multiomics_preparation
 from preparation.multi_omics_preprocess import integrate_preprocess
 from sample_trajectory.multi_omics_CCA_test import integration_CCA_test
@@ -314,38 +313,23 @@ def multiomics_wrapper(
         if modality_col not in batch_cols:
             batch_cols.append(modality_col)
 
-        compute_pseudobulk_func = compute_pseudobulk_adata_cpu
-        if use_gpu:
-            from sample_embedding.multi_omics_pseudobulk_gpu import compute_pseudobulk_adata_linux
-            compute_pseudobulk_func = compute_pseudobulk_adata_linux
-
-        pseudobulk_df, pseudobulk_adata = compute_pseudobulk_func(
+        pseudobulk_df, pseudobulk_adata = calculate_multiomics_sample_embedding(
             adata=adata_for_dr,
-            batch_col=batch_cols,
             sample_col=sample_col,
             celltype_col=celltype_col,
+            batch_col=batch_cols,
             output_dir=multiomics_output_dir,
-            save=True,
             sample_hvg_number=sample_hvg_number,
-            atac=False,
-            verbose=multiomics_verbose,
-            preserve_cols=preserve_cols_for_sample_embedding,
-        )
-
-        pseudobulk_adata = dimension_reduction(
-            adata=adata_for_dr,
-            pseudobulk=pseudobulk_df,
-            pseudobulk_anndata=pseudobulk_adata,
-            sample_col=sample_col,
             n_expression_components=n_expression_components,
             n_proportion_components=n_proportion_components,
-            batch_col=batch_cols,
             harmony_for_proportion=multiomics_harmony_for_proportion,
             preserve_cols_in_sample_embedding=preserve_cols_for_sample_embedding,
-            output_dir=multiomics_output_dir,
-            not_save=False,
+            use_gpu=use_gpu,
             atac=False,
+            save=True,
             verbose=multiomics_verbose,
+            hvg_modality="RNA",
+            modality_col=modality_col,
         )
 
         results['pseudobulk_df'] = pseudobulk_df

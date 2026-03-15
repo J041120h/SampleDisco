@@ -1,10 +1,137 @@
 /users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
   from torch.distributed.optim import ZeroRedundancyOptimizer
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 733, in wrapper
-    multiomics_results = multiomics_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 227, in multiomics_wrapper
-    from preparation.multi_omics_cell_type_gpu import cell_types_multiomics_linux
-  File "/users/hjiang/GenoDistance/code/preparation/multi_omics_cell_type_gpu.py", line 1, in <module>
-    from preparation.multi_omics_cell_type import cell_types_multiomics as cell_types_multiomics_linux
-ModuleNotFoundError: No module named 'preparation.multi_omics_cell_type'
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/legacy_api_wrap/__init__.py:82: UserWarning: Some cells have zero counts
+  return fn(*args_all, **kw)
+... storing 'modality' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/GenoDistance/code/sample_embedding/multi_omics_pseudobulk_cpu.py:357: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  sample_ct_counts = adata.obs.groupby([sample_col, celltype_col]).size().unstack(fill_value=0)
+/users/hjiang/GenoDistance/code/sample_embedding/multi_omics_pseudobulk_cpu.py:43: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped = cell_adata.obs.groupby(sample_col)
+... storing 'modality' as categorical
+2026-03-15 00:19:46,793 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+INFO:harmonypy:Computing initial centroids with sklearn.KMeans...
+2026-03-15 00:19:46,863 - harmonypy - INFO - sklearn.KMeans initialization complete.
+INFO:harmonypy:sklearn.KMeans initialization complete.
+2026-03-15 00:19:46,864 - harmonypy - INFO - Iteration 1 of 30
+INFO:harmonypy:Iteration 1 of 30
+2026-03-15 00:19:46,871 - harmonypy - INFO - Converged after 1 iteration
+INFO:harmonypy:Converged after 1 iteration

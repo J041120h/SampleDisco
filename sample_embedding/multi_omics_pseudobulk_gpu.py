@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import gc
 import signal
@@ -638,6 +640,7 @@ def compute_pseudobulk_gpu(
         print("[Pseudobulk] Complete")
 
     return expr_df, props, final_adata
+
 
 def compute_pseudobulk_adata_linux(
     adata: sc.AnnData,
