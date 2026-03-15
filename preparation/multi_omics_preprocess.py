@@ -177,7 +177,7 @@ def integrate_preprocess(
     start_time = time.time()
 
     if h5ad_path is None:
-        h5ad_path = os.path.join(output_dir, "glue/atac_rna_integrated.h5ad")
+        h5ad_path = os.path.join(output_dir, "glue/adata_sample.h5ad")
 
     os.makedirs(output_dir, exist_ok=True)
     preprocess_dir = os.path.join(output_dir, "preprocess")

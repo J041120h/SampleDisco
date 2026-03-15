@@ -1060,7 +1060,7 @@ def multiomics_preparation(
         print("Gene activity computation completed.")
     else:
         # If gene activity step is skipped, load the existing merged data
-        integrated_file = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad")
+        integrated_file = os.path.join(output_dir, "preprocess", "adata_sample.h5ad")
         if os.path.exists(integrated_file):
             merged_adata = ad.read_h5ad(integrated_file)
         else:
@@ -1069,7 +1069,7 @@ def multiomics_preparation(
     # Step 4: Visualization
     if run_visualization:
         print("Running visualization...")
-        integrated_file_path = os.path.join(output_dir, "preprocess", "atac_rna_integrated.h5ad")
+        integrated_file_path = os.path.join(output_dir, "preprocess", "adata_sample.h5ad")
         glue_visualize(
             integrated_path=integrated_file_path,
             output_dir=os.path.join(output_dir, "visualization"),

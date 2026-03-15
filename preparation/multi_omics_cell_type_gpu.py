@@ -292,11 +292,13 @@ def cell_types_multiomics_linux(
     if save and output_dir and not defined_output_path:
         out_pre = os.path.join(output_dir, "preprocess")
         os.makedirs(out_pre, exist_ok=True)
-        save_path = os.path.join(out_pre, "atac_rna_integrated.h5ad")
+        save_path = os.path.join(out_pre, "adata_sample.h5ad")
+        print(f"Saving integrated data to: {save_path}")
         safe_h5ad_write(adata, save_path)
     
     if defined_output_path:
         safe_h5ad_write(adata, defined_output_path)
+        print(f"Saving integrated data to: {defined_output_path}")
     
     if verbose:
         print("\n" + "="*60)

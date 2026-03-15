@@ -1,0 +1,166 @@
+🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/atac_rna_integrated.h5ad
+
+📦 Basic Info
+  - Shape (cells × genes): 60362 × 14881
+  - Layers: []
+  - obs columns: ['sample', 'balancing_weight', 'modality', 'original_barcode', 'cell_type']
+  - var columns: []
+  - obsm keys: ['X_glue', 'X_umap']
+  - varm keys: []
+
+============================================================
+🔎 Unique values for column 'sample' (found in adata.obs):
+============================================================
+  - n_unique: 16
+     1. 'CoV-3-Wilk'
+     2. 'CoV-34-Aruna'
+     3. 'CoV-36-Aruna'
+     4. 'CoV-4-Wilk'
+     5. 'HD-1-Wilk'
+     6. 'HD-20-Aruna'
+     7. 'HD-21-Aruna'
+     8. 'HD-4-Wilk'
+     9. 'SRR14466462'
+    10. 'SRR14466463'
+    11. 'SRR14466464'
+    12. 'SRR14466470'
+    13. 'SRR14466474'
+    14. 'SRR14466475'
+    15. 'SRR14466481'
+    16. 're_SRR14466469'
+
+🔎 Inspecting .X matrix:
+  - storage type: sparse (csr_matrix)
+  - dtype: float64
+  - .X nonzeros: 127406372 / 898246922 (14.1839% nonzero, 85.8161% zero)
+  - value type: float — values appear integer-like (no fractional parts)
+  - contains NaN: False
+  - contains Inf: False
+  - min value: 1.74248e-05
+  - max value: 30539
+
+🧮 Example .X values (first 10 cells × 10 genes):
+[[0. 1. 0. 0. 0. 1. 4. 0. 2. 2.]
+ [1. 0. 0. 0. 0. 1. 0. 0. 2. 3.]
+ [0. 0. 0. 0. 0. 1. 0. 0. 2. 0.]
+ [1. 0. 0. 0. 0. 0. 0. 0. 1. 3.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 2.]
+ [0. 0. 0. 0. 0. 1. 0. 0. 2. 5.]
+ [0. 0. 0. 0. 0. 0. 0. 1. 2. 1.]
+ [0. 0. 0. 0. 0. 1. 0. 0. 1. 0.]
+ [0. 0. 0. 0. 0. 1. 0. 0. 1. 4.]
+ [0. 0. 0. 0. 0. 0. 0. 0. 0. 4.]]
+
+🧫 Example cell names:
+  - CoV-3-Wilk:TCACCTCCGAGA_RNA
+  - CoV-3-Wilk:CACCTAACTGAT_RNA
+  - CoV-3-Wilk:GCACGCGCCTCT_RNA
+  - CoV-3-Wilk:AAACCTACATGA_RNA
+  - CoV-3-Wilk:TTCCCACTACTC_RNA
+  - CoV-3-Wilk:CCCATTCGCCAT_RNA
+  - CoV-3-Wilk:GGGCGACGCAGA_RNA
+  - CoV-3-Wilk:CAACGGTCTTCC_RNA
+  - CoV-3-Wilk:GAATGCAGCCCT_RNA
+  - CoV-3-Wilk:GTCGTTGCACCG_RNA
+
+============================================================
+📋 Detailed obs columns inspection:
+============================================================
+
+    [sample]
+      dtype: category
+      non-NA: 60362/60362 (100.0%)
+      unique: 16
+      top values:
+        'CoV-3-Wilk': 6950 (11.5%)
+        'HD-4-Wilk': 5632 (9.3%)
+        'SRR14466462': 5568 (9.2%)
+        'SRR14466481': 5318 (8.8%)
+        'SRR14466475': 4773 (7.9%)
+
+    [balancing_weight]
+      dtype: float64
+      non-NA: 60362/60362 (100.0%)
+      unique: 53
+      min: 0, max: 5.51773, mean: 1
+      example values: [np.float64(1.0685349812911868), np.float64(2.0146158195318504), np.float64(0.9850465444818177), np.float64(0.5933124511133142), np.float64(3.2145523488933105)]
+
+    [modality]
+      dtype: category
+      non-NA: 60362/60362 (100.0%)
+      unique: 2
+      top values:
+        'ATAC': 30373 (50.3%)
+        'RNA': 29989 (49.7%)
+
+    [original_barcode]
+      dtype: category
+      non-NA: 60362/60362 (100.0%)
+      unique: 60362
+      top values:
+        're_SRR14466469_TTTGTGTAGGGAGATA-1': 1 (0.0%)
+        'CoV-3-Wilk:AAAAACAGTGTG': 1 (0.0%)
+        'CoV-3-Wilk:AAAAACCCCACG': 1 (0.0%)
+        'CoV-3-Wilk:AAAAACGCCAGC': 1 (0.0%)
+        'CoV-3-Wilk:AAAAAGAGTCCG': 1 (0.0%)
+
+    [cell_type]
+      dtype: category
+      non-NA: 60362/60362 (100.0%)
+      unique: 25
+      top values:
+        '6': 6495 (10.8%)
+        '1': 6047 (10.0%)
+        '7': 4258 (7.1%)
+        '18': 4089 (6.8%)
+        '19': 3760 (6.2%)
+
+📋 Example obs rows (head 10):
+                                 sample  ...  cell_type
+CoV-3-Wilk:TCACCTCCGAGA_RNA  CoV-3-Wilk  ...         22
+CoV-3-Wilk:CACCTAACTGAT_RNA  CoV-3-Wilk  ...         22
+CoV-3-Wilk:GCACGCGCCTCT_RNA  CoV-3-Wilk  ...         22
+CoV-3-Wilk:AAACCTACATGA_RNA  CoV-3-Wilk  ...         22
+CoV-3-Wilk:TTCCCACTACTC_RNA  CoV-3-Wilk  ...         22
+CoV-3-Wilk:CCCATTCGCCAT_RNA  CoV-3-Wilk  ...         13
+CoV-3-Wilk:GGGCGACGCAGA_RNA  CoV-3-Wilk  ...         13
+CoV-3-Wilk:CAACGGTCTTCC_RNA  CoV-3-Wilk  ...         22
+CoV-3-Wilk:GAATGCAGCCCT_RNA  CoV-3-Wilk  ...         13
+CoV-3-Wilk:GTCGTTGCACCG_RNA  CoV-3-Wilk  ...         13
+
+[10 rows x 5 columns]
+
+============================================================
+🧬 Detailed var columns inspection:
+============================================================
+
+🧬 Example var rows (head 10):
+Empty DataFrame
+Columns: []
+Index: [A1BG, A1BG-AS1, A2M, A2M-AS1, A4GALT, AAAS, AACS, AAED1, AAGAB, AAK1]
+
+📌 Example obsm entries:
+  ▶ 'X_glue': shape=(60362, 50), dtype=float32
+    first 10 rows × 5 cols:
+[[-0.03300036 -1.8215884  -0.16573855  0.08547834 -0.6776156 ]
+ [-0.03800504 -1.6232351  -0.18201798  0.13142948 -0.6192429 ]
+ [-0.0334927  -2.1842713   0.34199315  0.13671662 -1.0854912 ]
+ [-0.01851788 -1.3297129  -0.37355328  0.073443   -0.75309163]
+ [-0.02355615 -0.9454602  -0.32399198  0.07984914 -0.26702255]
+ [ 0.0169385  -2.4452558   0.24658968  0.10816528 -0.9465527 ]
+ [ 0.02280286 -3.1792798   0.7004465   0.06817305 -1.727756  ]
+ [-0.02537614 -1.2506984  -0.58199656  0.0943929  -0.54916966]
+ [ 0.00835397 -3.597773    0.48918822  0.0823174  -1.2839434 ]
+ [ 0.04590131 -2.8373818   0.52300864  0.06389391 -1.1454422 ]]
+  ▶ 'X_umap': shape=(60362, 2), dtype=float32
+    first 10 rows × 2 cols:
+[[-11.73605      1.0274382 ]
+ [-11.523853     0.69039726]
+ [-11.681811     0.37483406]
+ [-11.64831      1.145874  ]
+ [-11.372246     1.2196379 ]
+ [ -4.058408    -3.1621895 ]
+ [ -3.8847904   -3.4623604 ]
+ [-11.464405     1.2611609 ]
+ [ -3.4328175   -3.8659725 ]
+ [ -4.057662    -2.8291855 ]]

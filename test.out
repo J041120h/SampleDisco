@@ -29,12 +29,12 @@ Resuming from previous progress:
     "dimensionality_reduction": false
   },
   "multiomics": {
-    "glue_integration": false,
+    "glue_integration": true,
     "glue_preprocessing": false,
     "glue_training": false,
-    "glue_gene_activity": false,
-    "glue_cell_types": false,
-    "glue_visualization": false,
+    "glue_gene_activity": true,
+    "glue_cell_types": true,
+    "glue_visualization": true,
     "integration_preprocessing": true,
     "dimensionality_reduction": true,
     "embedding_visualization": false,
@@ -44,8 +44,8 @@ Resuming from previous progress:
   "system_info": {
     "platform": "Linux",
     "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-    "use_gpu": false,
-    "gpu_available": false
+    "use_gpu": true,
+    "gpu_available": true
   }
 }
 
@@ -53,263 +53,65 @@ Resuming from previous progress:
 RUNNING MULTIOMICS PIPELINE
 ============================================================
 Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/test/multiomics
-Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad
-Step 3: Running dimensionality reduction...
-[Pseudobulk] Input: 60362 cells, 14785 genes
-[Pseudobulk] HVG selection modality: RNA (both rounds)
-[Pseudobulk] Using CPU (scanpy)
-[Pseudobulk] HVG selection will use RNA cells only (both rounds)
-[Pseudobulk] 16 samples, 25 cell types
-[Pseudobulk] Batch correction: ['modality']
-[Pseudobulk] Modality distribution: {'ATAC': np.int64(30373), 'RNA': np.int64(29989)}
-[Pseudobulk] Phase 1: Aggregating cells...
-  Aggregating 60362 cells -> 16 samples x 25 cell types
-  Created 25 cell type layers
-  Filtered to RNA cells: 29989 / 60362
-  Aggregating 29989 cells -> 8 samples x 25 cell types
-  Created 25 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/25] 1
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [2/25] 10
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2001 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2001 HVGs
-  [3/25] 11
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [4/25] 12
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [5/25] 13
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [6/25] 14
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [7/25] 15
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2037 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2037 HVGs
-  [8/25] 16
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2003 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2003 HVGs
-  [9/25] 17
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [10/25] 18
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [11/25] 19
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [12/25] 2
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [13/25] 20
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [14/25] 21
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [15/25] 22
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [16/25] 23
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2001 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2001 HVGs
-  [17/25] 24
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [18/25] 25
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2004 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2004 HVGs
-  [19/25] 3
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [20/25] 4
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [21/25] 5
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [22/25] 6
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [23/25] 7
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-  [24/25] 8
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2011 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2011 HVGs
-  [25/25] 9
-    Batches: 1, sizes: 8-8
-    Skipping: only 1 batch
-    Selected 2000 HVGs
-    Extracting from ALL cells...
-    Batches: 2, sizes: 8-8
-    Applied ComBat
-    Using 2000 HVGs
-[Pseudobulk] Retained 25 cell types
-[Pseudobulk] Phase 3: Round 2 HVG selection from RNA cells...
-[Pseudobulk] Phase 4: Building final matrix...
-[Pseudobulk] Final features: 2000
-[Pseudobulk] Phase 5: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 16 samples, 2000 features
-[DimRed] Starting dimension reduction computation...
-[DimRed] Mode: RNA (PCA)
-[DimRed] Batch column(s): ['modality']
-[DimRed] Output directory: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk
-[DimRed] Components: expression=10, proportion=10
-[DimRed] Computing PCA for RNA data with 10 components on (16, 2000) data
-[PCA] Success. Shape: (16, 10)
-[Storage] Stored X_DR_expression in both objects (shape: (16, 10))
-[DimRed] Completed - results stored as X_DR_expression
-[DimRed] Expression dimension reduction completed
-[Proportion] Computing PCA with 10 components...
-[Harmony] Applying with batch column(s): ['modality']
-[Harmony] Completed with 1 batch factor(s)
-[Storage] Stored X_DR_proportion in both objects (shape: (16, 10))
-[Proportion] Completed using Harmony-integrated PCA. Shape: (16, 10)
-[DimRed] Proportion dimension reduction completed
-[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_expression_embedding.csv (shape: (16, 10))
-[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/test/multiomics/embeddings/sample_proportion_embedding.csv (shape: (16, 10))
-[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/test/multiomics/embeddings
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-[Save] Successfully saved pseudobulk_anndata (0.3 MB)
+GPU mode: Enabled
+Step 1: Running GLUE integration...
+Computing gene activity...
 
-[DimRed] === SUMMARY ===
-Runtime: 0.16s
-Expression: Success
-Proportion: Success
-Dimensionality reduction completed successfully
+🧬 Computing gene activity using raw RNA counts...
+   k_neighbors: 3
+   metric: cosine
+   GPU acceleration: enabled
+   Available GPU memory: 7.76 GB
+   Available CPU memory: 263.29 GB
 
-Pipeline completed successfully!
-Results saved to: /dcs07/hongkai/data/harry/result/test/multiomics
-Completed steps: 2/11
+📂 Loading processed RNA embeddings and metadata...
+   RNA cells: 29989
+   Obs columns: ['celltype', 'sample', 'old', 'large', 'batch', 'sev.level', 'balancing_weight']
 
-Multiomics pipeline completed successfully!
+📂 Loading ATAC embeddings...
+   ATAC cells: 30373
 
-Total execution time: 20.40 seconds (0.34 minutes)
+📂 Loading raw RNA counts...
+   RNA matrix shape: (29989, 14881)
+
+🔗 Aligning cells...
+   RNA cells: 29989, ATAC cells: 30373, Genes: 14881
+
+🔍 Finding k-nearest RNA neighbors...
+
+📐 Computing similarity weights...
+   Weight stats: min=0.000000, max=0.999983
+
+🧮 Computing weighted gene activity...
+   Batch size: 10000
+   Progress: 25.0% (1/4 batches)
+   Progress: 50.0% (2/4 batches)
+   Progress: 75.0% (3/4 batches)
+   Progress: 100.0% (4/4 batches)
+
+📦 Creating gene activity AnnData...
+   Converting sparse matrix indices to int64...
+
+📦 Creating RNA AnnData for merging...
+   Converting sparse matrix indices to int64...
+
+🔗 Merging RNA and ATAC datasets...
+   RNA cells: 29989
+   ATAC cells: 30373
+
+💾 Saving merged dataset...
+   Converting sparse matrix indices to int64...
+
+✅ Gene activity computation complete!
+   Output: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/atac_rna_integrated.h5ad
+   Shape: (60362, 14881)
+   RNA cells: 29989
+   ATAC cells: 30373
+   Obs columns: ['sample', 'balancing_weight', 'modality', 'original_barcode']
+Gene activity computation completed.
+Running visualization...
+Loading integrated RNA-ATAC data...
+
+Multiomics pipeline failed: [Errno 2] Unable to synchronously open file (unable to open file: name = '/dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
+
+Total execution time: 102.75 seconds (1.71 minutes)
