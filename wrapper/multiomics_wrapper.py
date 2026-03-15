@@ -322,7 +322,9 @@ def multiomics_wrapper(
                 print(f"Loaded preprocessed data from: {preprocessed_path}")
         else:
             raise ValueError("Integration preprocessing is required. Set integration_preprocessing=True or ensure preprocessed data exists.")
-
+        
+    adata = results.get('adata') if results.get('adata') is not None else ad.read_h5ad(h5ad_path)
+                
     if cell_type_cluster:
         if multiomics_verbose:
             print("Step 1b: Running cell type assignment...")
@@ -333,15 +335,8 @@ def multiomics_wrapper(
             from preparation.multi_omics_cell_type_gpu import cell_types_multiomics_linux
             cell_types_func = cell_types_multiomics_linux
         
-        merged_adata = results.get('glue')
-        if merged_adata is None:
-            if os.path.exists(h5ad_path):
-                merged_adata = ad.read_h5ad(h5ad_path)
-            else:
-                raise ValueError(f"Integrated data not found at {h5ad_path}. Run GLUE gene activity first.")
-        
-        merged_adata = cell_types_func(
-            adata=merged_adata,
+        adata = cell_types_func(
+            adata=adata,
             modality_column=modality_col,
             rna_modality_value="RNA",
             atac_modality_value="ATAC",
@@ -372,17 +367,13 @@ def multiomics_wrapper(
         if not status_flags["multiomics"]["integration_preprocessing"]:
             raise ValueError("Integration preprocessing is required before dimensionality reduction.")
         
-        adata_for_dr = results.get('adata')
-        if adata_for_dr is None:
-            raise ValueError("adata must be available from integration preprocessing")
-        
         # Ensure modality is included in batch columns
         batch_cols = [batch_col] if isinstance(batch_col, str) else list(batch_col or [])
         if modality_col not in batch_cols:
             batch_cols.append(modality_col)
 
         pseudobulk_df, pseudobulk_adata = calculate_multiomics_sample_embedding(
-            adata=adata_for_dr,
+            adata=adata,
             sample_col=sample_col,
             celltype_col=celltype_col,
             batch_col=batch_cols,

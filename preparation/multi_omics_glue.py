@@ -932,7 +932,7 @@ def compute_gene_activity_from_knn(
     
     output_dir_path = os.path.join(output_path, 'preprocess')
     os.makedirs(output_dir_path, exist_ok=True)
-    output_path_anndata = os.path.join(output_dir_path, 'atac_rna_integrated.h5ad')
+    output_path_anndata = os.path.join(output_dir_path, 'adata_sample.h5ad')
     safe_h5ad_write(merged_adata, output_path_anndata)
     
     if verbose:

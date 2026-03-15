@@ -1,4 +1,4 @@
-🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/atac_rna_integrated.h5ad
+🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad
 
 📦 Basic Info
   - Shape (cells × genes): 60362 × 14881

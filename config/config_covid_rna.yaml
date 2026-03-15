@@ -232,24 +232,24 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
 multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
 # --- Pipeline Control Flags ---
-multiomics_integration: true
-multiomics_integration_preprocessing: true
-multiomics_cell_type_cluster: true
-multiomics_dimensionality_reduction: false
-multiomics_visualize_embedding: false
+multiomics_integration: false
+multiomics_integration_preprocessing: false
+multiomics_cell_type_cluster: false
+multiomics_dimensionality_reduction: true
+multiomics_visualize_embedding: true
 multiomics_find_optimal_resolution: false
 
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: true
-multiomics_run_glue_visualization: true
+multiomics_run_glue_visualization: false
 
 # --- Resume Paths (for skipping steps) ---
 multiomics_integrated_h5ad_path: null
 multiomics_pseudobulk_h5ad_path: null
-multiomics_rna_sample_meta_file: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
-multiomics_atac_sample_meta_file: "/dcl01/hongkai/data/data/hjiang/Data/ATAC_Metadata.csv"
+multiomics_rna_sample_meta_file: "/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv"
+multiomics_atac_sample_meta_file: "/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv"
 multiomics_additional_hvg_file: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt"
 
 # --- Common Column Names ---
@@ -317,7 +317,7 @@ multiomics_harmony_for_proportion: true
 # --- Embedding Visualization Parameters ---
 multiomics_color_col: "modality"
 multiomics_visualization_grouping_column:
-  - "age"
+  - "sev.level"
 multiomics_target_modality: "ATAC"
 multiomics_expression_key: "X_DR_expression"
 multiomics_proportion_key: "X_DR_proportion"

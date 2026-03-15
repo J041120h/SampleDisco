@@ -6,6 +6,7 @@ import scanpy as sc
 from sample_embedding.pseudo_adata import *
 from sample_embedding.DR import *
 from preparation.cell_type_cpu import *
+from utils.safe_save import safe_h5ad_write
 
 
 def _store_original_sample_ids(
@@ -42,7 +43,6 @@ def _maybe_append_modality_to_duplicates(
             print(f"'{modality_col}' not found in .obs; no modality suffix added.")
         return
 
-    # Work on string views to detect duplicates safely
     s = adata.obs[sample_column].astype(str)
     dup_mask = s.duplicated(keep=False)
 
@@ -51,7 +51,6 @@ def _maybe_append_modality_to_duplicates(
             print(f"'{sample_column}' values are already unique; no modality suffix added.")
         return
 
-    # 🔑 Ensure the target column is NOT categorical before assignment
     adata.obs[sample_column] = adata.obs[sample_column].astype(str)
 
     modality_labels = adata.obs[modality_col].astype(str)
@@ -82,9 +81,6 @@ def fill_missing_metadata_with_placeholder(
     Sweep the metadata parts of an AnnData object (obs, var, and any
     DataFrame-like obsm/varm entries) and fill missing values with
     dtype-appropriate placeholders.
-
-    This avoids mixing numeric/string dtypes (which can break saving)
-    while ensuring there are no NaNs for downstream analysis.
     """
     from pandas.api import types as ptypes
 
@@ -102,26 +98,21 @@ def fill_missing_metadata_with_placeholder(
             if n_before == 0:
                 continue
 
-            # Categorical
             if ptypes.is_categorical_dtype(s):
                 if string_placeholder not in s.cat.categories:
                     df[col] = s.cat.add_categories([string_placeholder])
                     s = df[col]
                 df[col] = s.fillna(string_placeholder)
 
-            # Boolean
             elif ptypes.is_bool_dtype(s):
                 df[col] = s.fillna(bool_placeholder)
 
-            # Numeric (int/float)
             elif ptypes.is_numeric_dtype(s):
                 df[col] = s.fillna(numeric_placeholder)
 
-            # Datetime-like
             elif ptypes.is_datetime64_any_dtype(s):
                 df[col] = s.fillna(datetime_placeholder)
 
-            # Everything else → treat as string
             else:
                 df[col] = s.astype("object").fillna(string_placeholder)
 
@@ -136,18 +127,13 @@ def fill_missing_metadata_with_placeholder(
         if verbose:
             print(f"[NA-SWEEP] {label}: {total_before - total_after} NA filled total\n")
 
-    # obs
     _fill_df(adata.obs, "obs")
-
-    # var
     _fill_df(adata.var, "var")
 
-    # obsm: only DataFrame-like entries
     for key, val in list(adata.obsm.items()):
         if isinstance(val, pd.DataFrame):
             _fill_df(adata.obsm[key], f"obsm['{key}']")
 
-    # varm: only DataFrame-like entries
     for key, val in list(adata.varm.items()):
         if isinstance(val, pd.DataFrame):
             _fill_df(adata.varm[key], f"varm['{key}']")
@@ -177,7 +163,7 @@ def integrate_preprocess(
     start_time = time.time()
 
     if h5ad_path is None:
-        h5ad_path = os.path.join(output_dir, "glue/adata_sample.h5ad")
+        h5ad_path = os.path.join(output_dir, "preprocess/adata_sample.h5ad")
 
     os.makedirs(output_dir, exist_ok=True)
     preprocess_dir = os.path.join(output_dir, "preprocess")
@@ -202,7 +188,6 @@ def integrate_preprocess(
     if original_sample_col is None:
         original_sample_col = f"original_{sample_column}"
 
-    # 1) Store original sample IDs (before we touch/append modality suffix)
     _store_original_sample_ids(
         adata=adata,
         sample_column=sample_column,
@@ -210,8 +195,6 @@ def integrate_preprocess(
         verbose=verbose,
     )
 
-    # 2) Re-merge sample metadata for RNA and ATAC separately
-    #    This covers the case where sample names may or may not have modality suffixes.
     def _merge_metadata_for_modality(modality_value: str, meta_file: str):
         if meta_file is None:
             return
@@ -247,7 +230,6 @@ def integrate_preprocess(
         meta_df = pd.read_csv(meta_file)
         meta_df = meta_df.copy()
 
-        # Determine metadata key column for sample IDs
         if sample_column in meta_df.columns:
             meta_key = sample_column
         elif "sample" in meta_df.columns:
@@ -260,7 +242,6 @@ def integrate_preprocess(
 
         meta_df[meta_key] = meta_df[meta_key].astype(str)
 
-        # Use original sample IDs if available; otherwise fall back to current sample_column
         if original_sample_col in adata.obs.columns:
             obs_base = adata.obs.loc[mask, original_sample_col].astype(str)
             base_col_used = original_sample_col
@@ -268,9 +249,7 @@ def integrate_preprocess(
             obs_base = adata.obs.loc[mask, sample_column].astype(str)
             base_col_used = sample_column
 
-        # Candidate 1: direct match
         obs_key1 = obs_base.copy()
-        # Candidate 2: strip "_RNA" / "_ATAC" or corresponding modality suffix
         obs_key2 = obs_base.str.replace(fr"_{modality_value}$", "", regex=True)
 
         meta_keys_set = set(meta_df[meta_key].astype(str))
@@ -302,28 +281,40 @@ def integrate_preprocess(
                     f"to merge with metadata key '{meta_key}'. Overlap: {n_match2} samples."
                 )
 
-        # Only add columns that do NOT already exist in adata.obs
-        new_cols = [
-            col for col in meta_df.columns
-            if col != meta_key and col not in adata.obs.columns
-        ]
-        if not new_cols:
+        cols_to_merge = [col for col in meta_df.columns if col != meta_key]
+
+        if not cols_to_merge:
             if verbose:
                 print(
-                    f"[{modality_value}] All metadata columns already exist in adata.obs; "
-                    f"no new columns added."
+                    f"[{modality_value}] No additional metadata columns to merge."
                 )
             return
 
         meta_indexed = meta_df.set_index(meta_key)
 
-        for col in new_cols:
+        added_cols = []
+        updated_cols = []
+
+        for col in cols_to_merge:
             mapping = meta_indexed[col].to_dict()
-            # chosen_keys is indexed by the same index as adata.obs[mask]
-            adata.obs.loc[mask, col] = chosen_keys.map(mapping).values
+            mapped_values = chosen_keys.map(mapping).values
+
+            if col not in adata.obs.columns:
+                adata.obs[col] = pd.NA
+                adata.obs.loc[mask, col] = mapped_values
+                added_cols.append(col)
+            else:
+                if pd.api.types.is_categorical_dtype(adata.obs[col]):
+                    adata.obs[col] = adata.obs[col].astype(object)
+                
+                adata.obs.loc[mask, col] = mapped_values
+                updated_cols.append(col)
 
         if verbose:
-            print(f"[{modality_value}] Added metadata columns: {new_cols}")
+            if added_cols:
+                print(f"[{modality_value}] Added new columns: {added_cols}")
+            if updated_cols:
+                print(f"[{modality_value}] Updated existing columns (shared): {updated_cols}")
 
     if rna_sample_meta_file or atac_sample_meta_file:
         if verbose:
@@ -333,15 +324,12 @@ def integrate_preprocess(
         if verbose:
             print("Sample metadata re-merge complete.\n")
 
-    # 3) Ensure sample names are unique (append modality suffix only for duplicates)
     _maybe_append_modality_to_duplicates(
         adata=adata,
         sample_column=sample_column,
         modality_col=modality_col,
         verbose=verbose,
     )
-
-    # ---- Original preprocessing logic ----
 
     adata.var_names_make_unique()
 
@@ -404,7 +392,6 @@ def integrate_preprocess(
     if verbose:
         print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")
 
-    # === NEW: dtype-aware NA filling in all metadata ===
     adata = fill_missing_metadata_with_placeholder(
         adata,
         numeric_placeholder=-1.0,
@@ -418,7 +405,7 @@ def integrate_preprocess(
         print("Preprocessing complete!")
 
     output_h5ad_path = os.path.join(preprocess_dir, "adata_sample.h5ad")
-    adata.write_h5ad(output_h5ad_path)
+    safe_h5ad_write(adata, output_h5ad_path)
 
     if verbose:
         print(f"Preprocessed data saved to: {output_h5ad_path}")
