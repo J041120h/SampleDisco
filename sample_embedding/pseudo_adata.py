@@ -19,7 +19,7 @@ import pandas as pd
 import scanpy as sc
 from scipy.sparse import issparse, csr_matrix
 
-from tf_idf import tfidf_memory_efficient
+from utils.tf_idf import tfidf_memory_efficient
 from utils.random_seed import set_global_seed
 
 

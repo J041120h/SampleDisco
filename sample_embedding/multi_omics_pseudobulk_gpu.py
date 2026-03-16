@@ -16,7 +16,7 @@ from scipy.sparse import issparse, csr_matrix
 import cupy as cp
 import rapids_singlecell as rsc
 
-from tf_idf import tfidf_memory_efficient
+from utils.tf_idf import tfidf_memory_efficient
 from utils.random_seed import set_global_seed
 
 
