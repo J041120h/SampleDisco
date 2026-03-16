@@ -1,6 +1,54 @@
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
-  from torch.distributed.optim import ZeroRedundancyOptimizer
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'batch' as categorical
+... storing '_combined_batch_' as categorical
 Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/sample_trajectory/trajectory_diff_gene.py", line 938, in run_trajectory_gam_differential_gene_analysis
-    from trajectory_DGE_visualization import generate_all_visualizations
-ModuleNotFoundError: No module named 'trajectory_DGE_visualization'
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 931, in wrapper
+    rna_results = rna_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 191, in rna_wrapper
+    _, pseudo_adata = calculate_sample_embedding(
+  File "/users/hjiang/GenoDistance/code/sample_embedding/calculate_sample_embedding.py", line 85, in calculate_sample_embedding
+    pseudobulk_result_dict, pseudobulk_adata = compute_pseudobulk_adata_linux(
+  File "/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata_linux.py", line 265, in compute_pseudobulk_adata_linux
+    expression_dataframe, cell_type_proportions, final_adata = compute_pseudobulk_gpu(
+  File "/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata_linux.py", line 217, in compute_pseudobulk_gpu
+    return compute_basic_pseudobulk_core(
+  File "/users/hjiang/GenoDistance/code/sample_embedding/pseudobulk_common.py", line 440, in compute_basic_pseudobulk_core
+    concatenated_adata = select_final_features(concatenated_adata, n_features=n_features, backend=backend)
+TypeError: select_final_features() got an unexpected keyword argument 'n_features'
