@@ -935,7 +935,7 @@ def run_trajectory_gam_differential_gene_analysis(
         if verbose:
             print("\n[5/5] Generating Lamian-style visualizations...")
         try:
-            from trajectory_DGE_visualization import generate_all_visualizations
+            from .trajectory_DGE_visualization import generate_all_visualizations
             generate_all_visualizations(
                 X=X,
                 Y=Y,

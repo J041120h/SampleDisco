@@ -192,17 +192,17 @@ def preprocess_linux(
     if cell_meta_path is None:
         if sample_column not in adata.obs.columns:
             if verbose:
-                print(f"   ℹ️ No '{sample_column}' column in adata.obs; inferring from obs_names")
+                print(f"No '{sample_column}' column in adata.obs; inferring from obs_names")
             adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
     else:
         if verbose:
-            print(f"   📄 Merging cell-level metadata from: {cell_meta_path}")
+            print(f"   Merging cell-level metadata from: {cell_meta_path}")
         cell_metadata = pd.read_csv(cell_meta_path).set_index("barcode")
         adata.obs = adata.obs.join(cell_metadata, how="left")
 
         if sample_column not in adata.obs.columns:
             if verbose:
-                print(f"   ℹ️ Still no '{sample_column}' column after cell_meta merge; "
+                print(f"Still no '{sample_column}' column after cell_meta merge; "
                       f"inferring from obs_names")
             adata.obs[sample_column] = adata.obs_names.str.split(":").str[0]
 

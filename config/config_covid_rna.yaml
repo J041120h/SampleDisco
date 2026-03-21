@@ -1,7 +1,7 @@
 # =============================================================================
 # MAIN CONFIGURATION
 # =============================================================================
-output_dir: "/dcs07/hongkai/data/harry/result/test"
+output_dir: "/dcs07/hongkai/data/harry/result/long_covid"
 
 # Pipeline selection
 run_rna_pipeline: true
@@ -20,7 +20,7 @@ large_data_need_extra_memory: false
 # =============================================================================
 
 # --- Input/Output Paths ---
-rna_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/test_RNA.h5ad"
+rna_count_data_path: "/dcs07/hongkai/data/harry/result/long_covid/analysis/preprocess/adata_filtered.h5ad"
 rna_output_dir: null  # defaults to {output_dir}/rna
 
 # --- Pipeline Control Flags ---
@@ -29,16 +29,16 @@ rna_cell_type_cluster: false
 rna_derive_sample_embedding: true
 rna_cca_based_cell_resolution_selection: false
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: false
-rna_trajectory_dge: false
+rna_trajectory_analysis: true
+rna_trajectory_dge: true
 rna_sample_cluster: false
 rna_proportion_test: false
 rna_cluster_dge: false
 rna_visualize_data: false
 
 # --- Resume Paths (for skipping preprocessing) ---
-rna_adata_cell_path: null
-rna_adata_sample_path: null
+rna_adata_cell_path: "/dcs07/hongkai/data/harry/result/long_covid/analysis/preprocess/adata_filtered.h5ad"
+rna_adata_sample_path: "/dcs07/hongkai/data/harry/result/long_covid/analysis/preprocess/adata_filtered.h5ad"
 rna_sample_meta_path: "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
 rna_cell_meta_path: null
 rna_pseudo_adata_path: null
@@ -81,10 +81,10 @@ rna_cca_fine_step: 0.01
 
 # --- Trajectory Analysis Parameters ---
 rna_n_cca_pcs: 10
-rna_trajectory_col: "sev.level"
+rna_trajectory_col: "month"
 rna_trajectory_supervised: true
 rna_trajectory_visualization_label:
-  - "sev.level"
+  - "month"
 rna_cca_pvalue: true
 rna_tscan_origin: null
 
@@ -93,7 +93,7 @@ rna_sample_distance_methods:
   - "cosine"
   - "correlation"
 rna_grouping_columns:
-  - "sev.level"
+  - "month"
 rna_summary_sample_csv_path: null
 
 # --- Trajectory Differential Gene Analysis Parameters ---

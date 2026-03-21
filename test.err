@@ -1,54 +1,11 @@
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-... storing 'batch' as categorical
-... storing '_combined_batch_' as categorical
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 931, in wrapper
-    rna_results = rna_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 191, in rna_wrapper
-    _, pseudo_adata = calculate_sample_embedding(
-  File "/users/hjiang/GenoDistance/code/sample_embedding/calculate_sample_embedding.py", line 85, in calculate_sample_embedding
-    pseudobulk_result_dict, pseudobulk_adata = compute_pseudobulk_adata_linux(
-  File "/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata_linux.py", line 265, in compute_pseudobulk_adata_linux
-    expression_dataframe, cell_type_proportions, final_adata = compute_pseudobulk_gpu(
-  File "/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata_linux.py", line 217, in compute_pseudobulk_gpu
-    return compute_basic_pseudobulk_core(
-  File "/users/hjiang/GenoDistance/code/sample_embedding/pseudobulk_common.py", line 440, in compute_basic_pseudobulk_core
-    concatenated_adata = select_final_features(concatenated_adata, n_features=n_features, backend=backend)
-TypeError: select_final_features() got an unexpected keyword argument 'n_features'
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata_linux.py:88: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+... storing 'filename_sample_id' as categorical
+... storing 'month' as categorical
+... storing 'OutSMART short number' as categorical
+... storing 'OutSMART ID' as categorical
+... storing 'Sex' as categorical
+... storing 'LC/Recovered' as categorical
+... storing 'BMI category' as categorical
+... storing 'Age at enrollment' as categorical
+... storing 'age_cluster' as categorical

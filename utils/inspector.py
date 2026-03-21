@@ -399,9 +399,9 @@ def summarize_h5ad(
 
 if __name__ == "__main__":
     summarize_h5ad(
-        h5ad_path="/dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad",
+        h5ad_path="/dcs07/hongkai/data/harry/result/long_covid/analysis/preprocess/adata_sample.h5ad",
         # Optional: print unique values of a column in obs/var
-        print_unique_column='sample',         # e.g., "cell_type" or "highly_variable"
+        print_unique_column='cell_type',         # e.g., "cell_type" or "highly_variable"
         unique_column_where="auto",       # "auto" | "obs" | "var"
         unique_max_values=200             # set None to print all unique values
     )
