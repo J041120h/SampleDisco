@@ -6,10 +6,34 @@ import shutil
 import platform
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Union
 
 from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
+
+
+def _coerce_sample_level_batch_col_list(value: Optional[Any]) -> List[str]:
+    """Normalize YAML string or list into a list of obs column names."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    if isinstance(value, (list, tuple)):
+        return [str(x) for x in value if x is not None and str(x).strip() != ""]
+    return []
+
+
+def _first_batch_col_for_raisin(
+    batch_col: Optional[Union[str, List[str]]],
+) -> Optional[str]:
+    """RAISIN expects a single batch column name."""
+    if batch_col is None:
+        return None
+    if isinstance(batch_col, str):
+        return batch_col
+    if isinstance(batch_col, (list, tuple)) and len(batch_col) > 0:
+        return str(batch_col[0])
+    return None
 
 
 # =============================================================================
@@ -44,7 +68,7 @@ def downstream_analysis(
     
     # ===== Common column names =====
     sample_col: str = 'sample',
-    batch_col: Optional[str] = None,
+    batch_col: Optional[Union[str, List[str]]] = None,
     celltype_col: str = 'cell_type',
 
     # ===== Sample distance parameters =====
@@ -309,7 +333,7 @@ def downstream_analysis(
                     adata=adata_sample,
                     sample_col=sample_col,
                     testtype='unpaired',
-                    batch_col=batch_col,
+                    batch_col=_first_batch_col_for_raisin(batch_col),
                     sample_to_clade=expr_results,
                     group_col=cluster_differential_gene_group_col,
                     verbose=verbose,
@@ -434,7 +458,7 @@ def wrapper(
     
     # Common column names
     rna_sample_col: str = 'sample',
-    rna_batch_col: Optional[str] = None,
+    rna_sample_level_batch_col: Optional[Union[str, List[str]]] = None,
     rna_celltype_col: str = 'cell_type',
     
     # Preprocessing parameters
@@ -529,7 +553,7 @@ def wrapper(
     
     # Common column names
     atac_sample_col: str = "sample",
-    atac_batch_col: Optional[str] = None,
+    atac_sample_level_batch_col: Optional[Union[str, List[str]]] = None,
     atac_celltype_col: str = "cell_type",
     atac_cell_embedding_column: Optional[str] = None,
     
@@ -927,6 +951,7 @@ def wrapper(
             raise ValueError("RNA pipeline requires rna_count_data_path")
         
         try:
+            rna_slb_list = _coerce_sample_level_batch_col_list(rna_sample_level_batch_col)
             # Phase 1: Preprocessing + resolution selection
             rna_results = rna_wrapper(
                 rna_count_data_path=rna_count_data_path,
@@ -948,7 +973,7 @@ def wrapper(
                 pseudo_adata_path=rna_pseudo_adata_path,
                 # Column names
                 sample_col=rna_sample_col,
-                batch_col=rna_batch_col,
+                sample_level_batch_col=rna_slb_list,
                 celltype_col=rna_celltype_col,
                 # Preprocessing
                 min_cells=rna_min_cells,
@@ -1003,7 +1028,7 @@ def wrapper(
                 verbose=verbose,
                 # Column names
                 sample_col=rna_sample_col,
-                batch_col=rna_batch_col,
+                batch_col=rna_slb_list or None,
                 celltype_col=rna_celltype_col,
                 # Sample distance
                 sample_distance_methods=rna_sample_distance_methods or ['cosine', 'correlation'],
@@ -1059,6 +1084,7 @@ def wrapper(
             raise ValueError("ATAC pipeline requires atac_count_data_path")
         
         try:
+            atac_slb_list = _coerce_sample_level_batch_col_list(atac_sample_level_batch_col)
             # Phase 1: Preprocessing + resolution selection
             atac_results = atac_wrapper(
                 atac_count_data_path=atac_count_data_path,
@@ -1080,7 +1106,7 @@ def wrapper(
                 pseudo_adata_path=atac_pseudo_adata_path,
                 # Column names
                 sample_col=atac_sample_col,
-                batch_col=atac_batch_col,
+                sample_level_batch_col=atac_slb_list,
                 celltype_col=atac_celltype_col,
                 cell_embedding_column=atac_cell_embedding_column,
                 # Preprocessing
@@ -1140,7 +1166,7 @@ def wrapper(
                 verbose=verbose,
                 # Column names
                 sample_col=atac_sample_col,
-                batch_col=atac_batch_col,
+                batch_col=atac_slb_list or None,
                 celltype_col=atac_celltype_col,
                 # Sample distance
                 sample_distance_methods=atac_sample_distance_methods or ['cosine', 'correlation'],

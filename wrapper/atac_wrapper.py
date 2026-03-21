@@ -2,6 +2,8 @@
 
 import os
 import sys
+from typing import List, Optional
+
 import scanpy as sc
 import pandas as pd
 
@@ -37,7 +39,7 @@ def atac_wrapper(
     
     # Common column names
     sample_col: str = 'sample',
-    batch_col: str = None,
+    sample_level_batch_col: Optional[List[str]] = None,
     celltype_col: str = 'cell_type',
     cell_embedding_column: str = None,
     
@@ -99,6 +101,8 @@ def atac_wrapper(
     
     if cell_level_batch_key is None:
         cell_level_batch_key = []
+    if sample_level_batch_col is None:
+        sample_level_batch_col = []
     
     # Initialize status flags
     default_status = {
@@ -135,7 +139,7 @@ def atac_wrapper(
             output_dir=atac_output_dir,
             sample_column=sample_col,
             cell_meta_path=cell_meta_path,
-            sample_level_batch_key=batch_col,
+            sample_level_batch_key=sample_level_batch_col,
             cell_embedding_num_PCs=cell_embedding_num_pcs,
             num_harmony_iterations=num_harmony_iterations,
             num_cell_hvfs=num_cell_hvfs,
@@ -202,7 +206,7 @@ def atac_wrapper(
             adata=adata_sample,
             sample_col=sample_col,
             celltype_col=celltype_col,
-            batch_col=batch_col,
+            batch_col=sample_level_batch_col or None,
             output_dir=atac_output_dir,
             sample_hvg_number=sample_hvg_number,
             n_expression_components=sample_embedding_dimension,
@@ -240,7 +244,7 @@ def atac_wrapper(
                 column=column,
                 modality="atac",
                 trajectory_col=trajectory_col,
-                batch_col=batch_col,
+                batch_col=sample_level_batch_col or None,
                 sample_col=sample_col,
                 celltype_col=celltype_col,
                 cell_embedding_column=cell_embedding_column,

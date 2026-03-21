@@ -45,7 +45,7 @@ rna_pseudo_adata_path: null
 
 # --- Common Column Names ---
 rna_sample_col: "sample"
-rna_batch_col: "batch"
+rna_sample_level_batch_col: "batch"
 rna_celltype_col: "cell_type"
 
 # --- Preprocessing Parameters ---
@@ -146,9 +146,9 @@ atac_pseudo_adata_path: null
 
 # --- Common Column Names ---
 atac_sample_col: "sample"
-atac_batch_col: null
+atac_sample_level_batch_col: null
 atac_celltype_col: "cell_type"
-atac_cell_embedding_column: null  # auto-detected: X_lsi_harmony if batch_col set
+atac_cell_embedding_column: null  # auto-detected: X_lsi_harmony if sample-level batch set
 
 # --- ATAC-Specific Preprocessing Parameters ---
 atac_min_cells: 3

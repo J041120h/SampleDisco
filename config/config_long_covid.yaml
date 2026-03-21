@@ -51,7 +51,7 @@ rna_grouping_columns:
   - "Age at enrollment"
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: 
+rna_sample_level_batch_col: 
 - "Sex"
 - "BMI category"
 - "month"
@@ -182,7 +182,7 @@ atac_pseudobulk_adata_path: null
 
 # ATAC Column specifications
 atac_sample_col: "sample"
-atac_batch_col: 
+atac_sample_level_batch_col: 
 - 'tissue'
 atac_cell_type_column: "cell_type"
 atac_grouping_columns:

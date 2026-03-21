@@ -47,7 +47,7 @@ rna_sample_col: "sample"
 rna_grouping_columns: null
 rna_cell_type_column: "cell_type"
 rna_cell_meta_path: null
-rna_batch_col: 'batch'
+rna_sample_level_batch_col: 'batch'
 rna_markers: null
 rna_cluster_resolution: 0.180
 rna_num_pcs: 20
@@ -169,7 +169,7 @@ atac_pseudobulk_adata_path: null
 
 # ATAC Column specifications
 atac_sample_col: "sample"
-atac_batch_col: null
+atac_sample_level_batch_col: null
 atac_cell_type_column: "cell_type"
 atac_grouping_columns: null
 
