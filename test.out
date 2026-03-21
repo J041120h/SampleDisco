@@ -3,16 +3,15 @@ Resuming from previous progress:
   "rna": {
     "preprocessing": true,
     "cell_type_cluster": true,
-    "derive_sample_embedding": false,
+    "derive_sample_embedding": true,
     "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": true,
+    "sample_distance_calculation": false,
     "trajectory_analysis": true,
     "trajectory_dge": true,
     "sample_cluster": false,
     "proportion_test": false,
-    "cluster_dge": true,
-    "visualization": true,
-    "dimensionality_reduction": true
+    "cluster_dge": false,
+    "visualization": false
   },
   "atac": {
     "preprocessing": false,
@@ -25,8 +24,7 @@ Resuming from previous progress:
     "sample_cluster": false,
     "proportion_test": false,
     "cluster_dge": false,
-    "visualization": false,
-    "dimensionality_reduction": false
+    "visualization": false
   },
   "multiomics": {
     "glue_integration": false,
@@ -61,109 +59,197 @@ RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function...
 Starting sample embedding derivation...
-[Pseudobulk] Input: 259084 cells, 15725 genes
+[Pseudobulk] Input: 156743 cells, 15725 genes
 [Pseudobulk] Data appears to be raw counts, will normalize after pseudobulk aggregation
 [Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] 35 samples, 41 cell types
-[Pseudobulk] Batch correction: disabled
+[Pseudobulk] 35 samples, 34 cell types
+[Pseudobulk] Batch correction: ['Sex', 'BMI category', 'month', 'LC/Recovered']
 [Pseudobulk] Phase 1: Aggregating...
-  Aggregating 259084 cells -> 35 samples x 41 cell types
-  Created 41 cell type layers
+  Aggregating 156743 cells -> 35 samples x 34 cell types
+  Created 34 cell type layers
 [Pseudobulk] Phase 2: Processing cell types...
-  [1/41] AS-DC
+  [1/34] B invar
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2132 HVGs
+  [2/34] B n-sw mem
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2009 HVGs
+  [3/34] B n-sw mem IFN stim
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2311 HVGs
+  [4/34] B naive
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [2/41] B invar
+  [5/34] B naive IFN stim
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2466 HVGs
+  [6/34] B sw mem
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2292 HVGs
+  [7/34] Cycling
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [3/41] B n-sw mem
+  [8/34] ILC
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [4/41] B n-sw mem IFN stim
+  [9/34] MAIT
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [5/41] B naive
+  [10/34] Monocyte CD14
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2003 HVGs
+  [11/34] Monocyte CD14 IL6
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2001 HVGs
+  [12/34] Monocyte CD16
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [6/41] B naive IFN stim
+  [13/34] Monocyte CD16+C1
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2861 HVGs
+  [14/34] NK
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [7/41] B sw mem
+  [15/34] NK CD56
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [8/41] Baso/Eos
+  [16/34] NK IFN stim
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2821 HVGs
+  [17/34] NKT
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [9/41] Cycling
+  [18/34] Plasma cells
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2661 HVGs
+  [19/34] Plasmablasts
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2972 HVGs
+  [20/34] Platelets
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2005 HVGs
+  [21/34] RBC
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2001 HVGs
+  [22/34] T CD4 CTL
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [10/41] HPC
+  [23/34] T CD4 helper
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [11/41] HPC IFN stim
+  [24/34] T CD4 naive
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [12/41] ILC
+  [25/34] T CD4 naive IFN stim
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 2013 HVGs
+  [26/34] T CD8 CM
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [13/41] MAIT
+  [27/34] T CD8 CTL
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [14/41] Monocyte CD14
+  [28/34] T CD8 CTL IFN stim
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
+    Selected 1179 HVGs
+  [29/34] T CD8 EM
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [15/41] Monocyte CD14 IFN stim
+  [30/34] T CD8 EMRA
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [16/41] Monocyte CD14 IL6
+  [31/34] T CD8 naive
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [17/41] Monocyte CD16
+  [32/34] T g/d
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [18/41] Monocyte CD16 IFN stim
+  [33/34] T reg
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [19/41] Monocyte CD16+C1
+  [34/34] cDC2
+    Batches: 21, sizes: 1-2
+    Skipping ComBat: batches <2 samples
+    Applied limma
     Selected 2000 HVGs
-  [20/41] NK
-    Selected 2000 HVGs
-  [21/41] NK CD56
-    Selected 2000 HVGs
-  [22/41] NK IFN stim
-    Selected 2000 HVGs
-  [23/41] NKT
-    Selected 2000 HVGs
-  [24/41] Plasma cells
-    Selected 2000 HVGs
-  [25/41] Plasmablasts
-    Selected 2000 HVGs
-  [26/41] RBC
-    Selected 2000 HVGs
-  [27/41] T CD4 CTL
-    Selected 2000 HVGs
-  [28/41] T CD4 helper
-    Selected 2000 HVGs
-  [29/41] T CD4 naive
-    Selected 2000 HVGs
-  [30/41] T CD4 naive IFN stim
-    Selected 2000 HVGs
-  [31/41] T CD8 CM
-    Selected 2000 HVGs
-  [32/41] T CD8 CTL
-    Selected 2000 HVGs
-  [33/41] T CD8 CTL IFN stim
-    Selected 2000 HVGs
-  [34/41] T CD8 EM
-    Selected 2000 HVGs
-  [35/41] T CD8 EMRA
-    Selected 2000 HVGs
-  [36/41] T CD8 naive
-    Selected 2000 HVGs
-  [37/41] T g/d
-    Selected 2000 HVGs
-  [38/41] T reg
-    Selected 2000 HVGs
-  [39/41] cDC1
-    Selected 2000 HVGs
-  [40/41] cDC2
-    Selected 2000 HVGs
-  [41/41] pDC
-    Selected 2000 HVGs
-[Pseudobulk] Retained 41 cell types
+[Pseudobulk] Retained 34 cell types
 [Pseudobulk] Phase 3: Building final matrix...
 [Pseudobulk] Final features: 2000
 [Pseudobulk] Phase 4: Computing proportions...
 [Pseudobulk] Complete
 [Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
+[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/pseudobulk/pseudobulk_sample.h5ad
 [Pseudobulk] Output: 35 samples, 2000 features
 [DimRed] Starting dimension reduction computation...
 [DimRed] Mode: RNA (PCA)
-[DimRed] Batch column(s): batch
-[DimRed] Output directory: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk
+[DimRed] Batch column(s): ['Sex', 'BMI category', 'month', 'LC/Recovered']
+[DimRed] Output directory: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/pseudobulk
 [DimRed] Components: expression=10, proportion=10
 [DimRed] Computing PCA for RNA data with 10 components on (35, 2000) data
 [PCA] Success. Shape: (35, 10)
@@ -171,29 +257,31 @@ Starting sample embedding derivation...
 [DimRed] Completed - results stored as X_DR_expression
 [DimRed] Expression dimension reduction completed
 [Proportion] Computing PCA with 10 components...
+[Harmony] Applying with batch column(s): ['Sex', 'BMI category', 'month', 'LC/Recovered']
+[Harmony] Completed with 4 batch factor(s)
 [Storage] Stored X_DR_proportion in both objects (shape: (35, 10))
-[Proportion] Completed using PCA. Shape: (35, 10)
+[Proportion] Completed using Harmony-integrated PCA. Shape: (35, 10)
 [DimRed] Proportion dimension reduction completed
-[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings/sample_expression_embedding.csv (shape: (35, 10))
-[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings/sample_proportion_embedding.csv (shape: (35, 10))
-[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/long_covid/rna/embeddings
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/long_covid/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Successfully saved pseudobulk_anndata (0.4 MB)
+[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/embeddings/sample_expression_embedding.csv (shape: (35, 10))
+[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/embeddings/sample_proportion_embedding.csv (shape: (35, 10))
+[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/embeddings
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] Successfully saved pseudobulk_anndata (0.5 MB)
 
 [DimRed] === SUMMARY ===
-Runtime: 0.13s
+Runtime: 0.25s
 Expression: Success
 Proportion: Success
 RNA preprocessing pipeline completed successfully!
 Starting trajectory analysis...
 
 CCA Analysis Summary:
-  Proportion: score=0.3330 (PC2 + PC9)
-  Expression: score=0.3392 (PC1 + PC3)
-P-value for observed correlation 0.33302226455601974: 0.143
+  Proportion: score=0.4594 (PC2 + PC6)
+  Expression: score=0.3922 (PC1 + PC9)
+P-value for observed correlation 0.45937613670463817: 0.019
 [CCA p-test] Runtime: 1.39 seconds
-P-value for observed correlation 0.33920420549112773: 0.116
-[CCA p-test] Runtime: 1.36 seconds
+P-value for observed correlation 0.39220710973062656: 0.066
+[CCA p-test] Runtime: 1.37 seconds
 Running trajectory differential gene analysis...
 ======================================================================
 TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS
@@ -212,46 +300,44 @@ TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS
   → Processing gene 1000/2000...
   → Processing gene 1500/2000...
   → Processing gene 2000/2000...
-  → Successfully fitted 419/2000 genes
-  → Skipped 1581 genes:
-      too_few_samples: 1581
-  → Found 179 significant genes (FDR < 0.05)
+  → Successfully fitted 2000/2000 genes
+  → Found 163 significant genes (FDR < 0.05)
 
 [4/5] Calculating effect sizes and regulation directions...
-  → Calculated effect sizes for 179 genes
+  → Calculated effect sizes for 163 genes
   → Selected 100 pseudoDEGs (top_n=100)
-  → Saved results to: /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression
+  → Saved results to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression
 
 ======================================================================
 === DIFFERENTIAL GENE EXPRESSION SUMMARY ===
-Total genes analyzed: 419
-Significant genes (FDR < 0.05): 179
+Total genes analyzed: 2000
+Significant genes (FDR < 0.05): 163
 Selected DEGs: 100
-  - Upregulated: 1
-  - Downregulated: 99
+  - Upregulated: 88
+  - Downregulated: 12
 
 Top 20 DEGs:
 (Sorted by Effect Size)
-1. Plasmablasts - KIAA0040: FDR=4.6258e-10, Effect=13.033, Direction=DOWN
-2. Plasmablasts - ANKRD33B: FDR=5.1100e-08, Effect=11.667, Direction=DOWN
-3. Monocyte CD14 IFN stim - BLTP3A: FDR=2.9074e-15, Effect=9.733, Direction=DOWN
-4. Monocyte CD14 IFN stim - PIK3AP1: FDR=2.9074e-15, Effect=9.210, Direction=DOWN
-5. Monocyte CD14 IFN stim - DLGAP1: FDR=2.9074e-15, Effect=9.179, Direction=DOWN
-6. Monocyte CD14 IFN stim - YIPF2: FDR=1.1630e-14, Effect=9.146, Direction=DOWN
-7. Monocyte CD14 IFN stim - PHLDB3: FDR=2.1321e-14, Effect=9.119, Direction=DOWN
-8. Monocyte CD14 IFN stim - DDX52: FDR=2.9074e-15, Effect=9.019, Direction=DOWN
-9. Monocyte CD14 IFN stim - FAAP100: FDR=1.6916e-14, Effect=9.002, Direction=DOWN
-10. Plasmablasts - HMBOX1: FDR=1.0788e-08, Effect=8.983, Direction=DOWN
-11. Monocyte CD14 IFN stim - GPR137B: FDR=2.9074e-15, Effect=8.965, Direction=DOWN
-12. Monocyte CD14 IFN stim - POLR2C: FDR=2.9074e-15, Effect=8.930, Direction=DOWN
-13. Monocyte CD14 IFN stim - TCTA: FDR=2.1321e-14, Effect=8.904, Direction=DOWN
-14. Monocyte CD14 IFN stim - POFUT2: FDR=5.4727e-15, Effect=8.859, Direction=DOWN
-15. Monocyte CD14 IFN stim - TP53: FDR=2.1470e-14, Effect=8.833, Direction=DOWN
-16. Monocyte CD14 IFN stim - SGSH: FDR=7.3450e-15, Effect=8.769, Direction=DOWN
-17. Monocyte CD14 IFN stim - NUTM2A-AS1: FDR=2.9074e-15, Effect=8.753, Direction=DOWN
-18. Monocyte CD14 IFN stim - KMO: FDR=5.0107e-13, Effect=8.749, Direction=DOWN
-19. Monocyte CD14 IFN stim - ZNF789: FDR=1.3943e-12, Effect=8.665, Direction=DOWN
-20. Plasmablasts - H2BC18: FDR=7.5718e-08, Effect=8.577, Direction=DOWN
+1. Monocyte CD14 - SAMHD1: FDR=1.8307e-07, Effect=8.165, Direction=UP
+2. Monocyte CD14 - DOCK2: FDR=7.4080e-06, Effect=6.603, Direction=UP
+3. Monocyte CD14 - ZNF451: FDR=6.8030e-05, Effect=6.061, Direction=UP
+4. Monocyte CD14 - RANBP2: FDR=6.8030e-05, Effect=6.011, Direction=UP
+5. Monocyte CD14 - TTC39C: FDR=1.1899e-04, Effect=5.706, Direction=UP
+6. Monocyte CD14 - MYH9: FDR=1.8709e-04, Effect=5.555, Direction=UP
+7. Monocyte CD14 - SERINC5: FDR=3.8373e-04, Effect=5.250, Direction=UP
+8. Monocyte CD14 - CAMK2D: FDR=3.8373e-04, Effect=5.249, Direction=UP
+9. Monocyte CD14 - LRIG1: FDR=4.2241e-04, Effect=5.169, Direction=UP
+10. Monocyte CD14 - TOM1: FDR=3.8373e-04, Effect=5.132, Direction=UP
+11. Monocyte CD14 - UBE2K: FDR=3.8373e-04, Effect=5.121, Direction=UP
+12. Monocyte CD14 - ACTB: FDR=3.5171e-04, Effect=5.035, Direction=UP
+13. Monocyte CD14 - AGO2: FDR=6.6238e-04, Effect=5.023, Direction=UP
+14. Monocyte CD14 - CBLB: FDR=4.3883e-04, Effect=4.833, Direction=UP
+15. Monocyte CD14 - SGMS1: FDR=3.8373e-04, Effect=4.745, Direction=UP
+16. NK CD56 - ADNP: FDR=1.3901e-03, Effect=4.719, Direction=DOWN
+17. Monocyte CD14 - MPP7: FDR=4.8553e-04, Effect=4.704, Direction=UP
+18. Monocyte CD14 - KDM5A: FDR=1.3901e-03, Effect=4.666, Direction=UP
+19. Monocyte CD14 - ARHGAP15: FDR=1.3901e-03, Effect=4.626, Direction=UP
+20. Monocyte CD14 - TRAPPC10: FDR=1.4121e-03, Effect=4.598, Direction=UP
 
 [5/5] Generating Lamian-style visualizations...
 [DEBUG] Step 5/5: Generating Lamian-style visualizations...
@@ -260,23 +346,23 @@ Top 20 DEGs:
 [VIZ] Creating volcano plot...
 [VIZ] Creating gene expression curves with GAM fits...
 [VIZ] Plotting 20 genes (selected by effect size, FDR < 0.05)
-[VIZ] GAM models available: 419
-[VIZ] GAM models provided: 419 models
+[VIZ] GAM models available: 2000
+[VIZ] GAM models provided: 2000 models
 [VIZ] Inferred GAM feature count: 2
-[VIZ] Saved gene expression curves to /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression/visualizations/05_gene_curves.png
+[VIZ] Saved gene expression curves to /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression/visualizations/05_gene_curves.png
 [VIZ] Creating sample density plot...
 [VIZ] Creating cluster pattern summary...
 [VIZ] Creating sample-level expression curves...
-[VIZ] Top gene by effect size: Plasmablasts - KIAA0040
-[VIZ] Saved sample-level curves to /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression/visualizations/08_sample_level_curves.png
-[VIZ] Visualizations saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression/visualizations
+[VIZ] Top gene by effect size: Monocyte CD14 - SAMHD1
+[VIZ] Saved sample-level curves to /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression/visualizations/08_sample_level_curves.png
+[VIZ] Visualizations saved to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression/visualizations
 
 ======================================================================
-✓ Analysis complete. Results saved to: /dcs07/hongkai/data/harry/result/long_covid/rna/trajectoryDEG/expression
+✓ Analysis complete. Results saved to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression
 ======================================================================
 Trajectory differential gene analysis completed!
 RNA downstream analysis completed!
 
 RNA pipeline completed successfully!
 
-Total execution time: 40.01 seconds (0.67 minutes)
+Total execution time: 60.09 seconds (1.00 minutes)

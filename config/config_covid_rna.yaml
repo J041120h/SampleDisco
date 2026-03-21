@@ -30,7 +30,7 @@ rna_derive_sample_embedding: true
 rna_cca_based_cell_resolution_selection: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: true
-rna_trajectory_dge: true
+rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_proportion_test: false
 rna_cluster_dge: false
@@ -45,7 +45,11 @@ rna_pseudo_adata_path: null
 
 # --- Common Column Names ---
 rna_sample_col: "sample"
-rna_sample_level_batch_col: "batch"
+rna_sample_level_batch_col: 
+- "Sex"
+- "BMI category"
+- "month"
+- "LC/Recovered"
 rna_celltype_col: "cell_type"
 
 # --- Preprocessing Parameters ---
@@ -81,10 +85,10 @@ rna_cca_fine_step: 0.01
 
 # --- Trajectory Analysis Parameters ---
 rna_n_cca_pcs: 10
-rna_trajectory_col: "month"
+rna_trajectory_col: "age"
 rna_trajectory_supervised: true
 rna_trajectory_visualization_label:
-  - "month"
+  - "age"
 rna_cca_pvalue: true
 rna_tscan_origin: null
 
