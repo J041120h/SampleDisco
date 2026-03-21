@@ -48,7 +48,7 @@ def rna_wrapper(
     num_cell_hvgs: int = 2000,
     cell_embedding_num_pcs: int = 20,
     num_harmony_iterations: int = 30,
-    vars_to_regress: list = None,
+    cell_level_batch_key: list = None,
     
     # Cell type clustering parameters
     leiden_cluster_resolution: float = 0.8,
@@ -92,8 +92,8 @@ def rna_wrapper(
         from preparation.cell_type_gpu import cell_types_linux
         from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
     
-    if vars_to_regress is None:
-        vars_to_regress = []
+    if cell_level_batch_key is None:
+        cell_level_batch_key = []
     
     # Initialize status flags
     default_status = {
@@ -130,7 +130,7 @@ def rna_wrapper(
             output_dir=rna_output_dir,
             sample_column=sample_col,
             cell_meta_path=cell_meta_path,
-            batch_key=batch_col,
+            sample_level_batch_key=batch_col,
             cell_embedding_num_PCs=cell_embedding_num_pcs,
             num_harmony_iterations=num_harmony_iterations,
             num_cell_hvgs=num_cell_hvgs,
@@ -138,7 +138,7 @@ def rna_wrapper(
             min_genes=min_genes,
             pct_mito_cutoff=pct_mito_cutoff,
             exclude_genes=exclude_genes,
-            vars_to_regress=vars_to_regress,
+            cell_level_batch_key=cell_level_batch_key,
             verbose=verbose
         )
         status_flags["rna"]["preprocessing"] = True

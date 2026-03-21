@@ -445,7 +445,7 @@ def wrapper(
     rna_num_cell_hvgs: int = 2000,
     rna_cell_embedding_num_pcs: int = 20,
     rna_num_harmony_iterations: int = 30,
-    rna_vars_to_regress: Optional[List] = None,
+    rna_cell_level_batch_key: Optional[List] = None,
     
     # Cell type clustering parameters
     rna_leiden_cluster_resolution: float = 0.8,
@@ -539,7 +539,7 @@ def wrapper(
     atac_max_features: int = 15000,
     atac_min_cells_per_sample: int = 1,
     atac_exclude_features: Optional[List] = None,
-    atac_vars_to_regress: Optional[List] = None,
+    atac_cell_level_batch_key: Optional[List] = None,
     atac_doublet_detection: bool = True,
     atac_num_cell_hvfs: int = 50000,
     atac_cell_embedding_num_pcs: int = 50,
@@ -958,7 +958,7 @@ def wrapper(
                 num_cell_hvgs=rna_num_cell_hvgs,
                 cell_embedding_num_pcs=rna_cell_embedding_num_pcs,
                 num_harmony_iterations=rna_num_harmony_iterations,
-                vars_to_regress=rna_vars_to_regress,
+                cell_level_batch_key=rna_cell_level_batch_key,
                 # Cell type clustering
                 leiden_cluster_resolution=rna_leiden_cluster_resolution,
                 cell_embedding_column=rna_cell_embedding_column,
@@ -1089,7 +1089,7 @@ def wrapper(
                 max_features=atac_max_features,
                 min_cells_per_sample=atac_min_cells_per_sample,
                 exclude_features=atac_exclude_features,
-                vars_to_regress=atac_vars_to_regress,
+                cell_level_batch_key=atac_cell_level_batch_key,
                 doublet_detection=atac_doublet_detection,
                 num_cell_hvfs=atac_num_cell_hvfs,
                 cell_embedding_num_pcs=atac_cell_embedding_num_pcs,

@@ -18,7 +18,7 @@ def anndata_cluster(
     num_cell_hvgs=2000,
     cell_embedding_num_PCs=20,
     num_harmony_iterations=30,
-    vars_to_regress_for_harmony=None,
+    cell_level_batch_key_for_harmony=None,
     verbose=True,
 ):
     if verbose:
@@ -41,12 +41,12 @@ def anndata_cluster(
 
     if verbose:
         print("=== [CPU] Running Harmony integration ===")
-        print("Variables to regress:", ", ".join(vars_to_regress_for_harmony or []))
+        print("Cell-level batch keys (Harmony):", ", ".join(cell_level_batch_key_for_harmony or []))
 
     harmony_embeddings = harmonize(
         adata_cluster.obsm["X_pca"],
         adata_cluster.obs,
-        batch_key=vars_to_regress_for_harmony,
+        batch_key=cell_level_batch_key_for_harmony,
         max_iter_harmony=num_harmony_iterations,
         use_gpu=False,
     )
@@ -108,7 +108,7 @@ def preprocess(
     output_dir,
     sample_column="sample",
     cell_meta_path=None,
-    batch_key=None,
+    sample_level_batch_key=None,
     cell_embedding_num_PCs=20,
     num_harmony_iterations=30,
     num_cell_hvgs=2000,
@@ -116,7 +116,7 @@ def preprocess(
     min_genes=500,
     pct_mito_cutoff=20,
     exclude_genes=None,
-    vars_to_regress=None,
+    cell_level_batch_key=None,
     verbose=True,
 ):
     """
@@ -142,8 +142,8 @@ def preprocess(
         Column name in adata.obs that identifies samples.
     cell_meta_path : str, optional
         Path to the cell-level metadata CSV file.
-    batch_key : str, optional
-        Column name(s) for batch information.
+    sample_level_batch_key : str, optional
+        Column name(s) for sample-level batch information (must exist in adata.obs).
     cell_embedding_num_PCs : int, default=20
         Number of principal components for cell-level PCA.
     num_harmony_iterations : int, default=30
@@ -158,8 +158,8 @@ def preprocess(
         Maximum percentage of mitochondrial counts allowed per cell.
     exclude_genes : list, optional
         List of gene names to exclude from analysis.
-    vars_to_regress : list, optional
-        Variables to regress out during Harmony integration.
+    cell_level_batch_key : list, optional
+        obs column name(s) used as Harmony batch keys at cell level (sample id is always included).
     verbose : bool, default=True
         Whether to print progress messages.
 
@@ -203,14 +203,18 @@ def preprocess(
             verbose=verbose,
         )
 
-    flattened_vars_to_regress = _flatten_to_strings(vars_to_regress or [])
-    vars_to_regress_for_harmony = flattened_vars_to_regress.copy()
-    if sample_column not in vars_to_regress_for_harmony:
-        vars_to_regress_for_harmony.append(sample_column)
+    flattened_cell_level_batch_key = _flatten_to_strings(cell_level_batch_key or [])
+    cell_level_batch_key_for_harmony = flattened_cell_level_batch_key.copy()
+    if sample_column not in cell_level_batch_key_for_harmony:
+        cell_level_batch_key_for_harmony.append(sample_column)
 
-    flattened_batch_keys = _flatten_to_strings([batch_key] if batch_key else [])
+    flattened_sample_level_batch_keys = _flatten_to_strings(
+        [sample_level_batch_key] if sample_level_batch_key else []
+    )
 
-    required_columns = list(dict.fromkeys(flattened_vars_to_regress + flattened_batch_keys))
+    required_columns = list(
+        dict.fromkeys(flattened_cell_level_batch_key + flattened_sample_level_batch_keys)
+    )
     if required_columns:
         missing_columns = sorted(set(required_columns) - set(adata.obs.columns.astype(str)))
         if missing_columns:
@@ -274,7 +278,7 @@ def preprocess(
         num_cell_hvgs=num_cell_hvgs,
         cell_embedding_num_PCs=cell_embedding_num_PCs,
         num_harmony_iterations=num_harmony_iterations,
-        vars_to_regress_for_harmony=vars_to_regress_for_harmony,
+        cell_level_batch_key_for_harmony=cell_level_batch_key_for_harmony,
         verbose=verbose,
     )
 

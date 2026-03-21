@@ -56,7 +56,7 @@ rna_exclude_genes: null
 rna_num_cell_hvgs: 2000
 rna_cell_embedding_num_pcs: 20
 rna_num_harmony_iterations: 30
-rna_vars_to_regress: null
+rna_cell_level_batch_key: null
 
 # --- Cell Type Clustering Parameters ---
 rna_leiden_cluster_resolution: 0.990
@@ -156,7 +156,7 @@ atac_min_features: 1000
 atac_max_features: 15000
 atac_min_cells_per_sample: 500
 atac_exclude_features: null
-atac_vars_to_regress: null
+atac_cell_level_batch_key: null
 atac_doublet_detection: false
 atac_num_cell_hvfs: 20000
 atac_cell_embedding_num_pcs: 30

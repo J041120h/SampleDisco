@@ -47,7 +47,7 @@ def atac_wrapper(
     max_features: int = 15000,
     min_cells_per_sample: int = 1,
     exclude_features: list = None,
-    vars_to_regress: list = None,
+    cell_level_batch_key: list = None,
     doublet_detection: bool = True,
     num_cell_hvfs: int = 50000,
     cell_embedding_num_pcs: int = 50,
@@ -97,8 +97,8 @@ def atac_wrapper(
         from preparation.cell_type_gpu import cell_types_linux
         from parameter_selection.gpu_optimal_resolution import find_optimal_cell_resolution_linux
     
-    if vars_to_regress is None:
-        vars_to_regress = []
+    if cell_level_batch_key is None:
+        cell_level_batch_key = []
     
     # Initialize status flags
     default_status = {
@@ -135,7 +135,7 @@ def atac_wrapper(
             output_dir=atac_output_dir,
             sample_column=sample_col,
             cell_meta_path=cell_meta_path,
-            batch_key=batch_col,
+            sample_level_batch_key=batch_col,
             cell_embedding_num_PCs=cell_embedding_num_pcs,
             num_harmony_iterations=num_harmony_iterations,
             num_cell_hvfs=num_cell_hvfs,
@@ -144,7 +144,7 @@ def atac_wrapper(
             max_features=max_features,
             min_cells_per_sample=min_cells_per_sample,
             exclude_features=exclude_features,
-            vars_to_regress=vars_to_regress,
+            cell_level_batch_key=cell_level_batch_key,
             doublet_detection=doublet_detection,
             tfidf_scale_factor=tfidf_scale_factor,
             log_transform=log_transform,

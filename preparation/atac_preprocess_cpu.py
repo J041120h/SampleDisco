@@ -22,7 +22,7 @@ def anndata_cluster(
     num_cell_hvfs=50000,
     cell_embedding_num_PCs=50,
     num_harmony_iterations=30,
-    vars_to_regress_for_harmony=None,
+    cell_level_batch_key_for_harmony=None,
     tfidf_scale_factor=1e4,
     log_transform=True,
     drop_first_lsi=True,
@@ -45,8 +45,8 @@ def anndata_cluster(
         Number of LSI components.
     num_harmony_iterations : int, default=30
         Maximum Harmony iterations.
-    vars_to_regress_for_harmony : list, optional
-        Variables for Harmony batch correction.
+    cell_level_batch_key_for_harmony : list, optional
+        obs column name(s) passed to Harmony as batch keys at cell level.
     tfidf_scale_factor : float, default=1e4
         Scale factor for TF-IDF normalization.
     log_transform : bool, default=True
@@ -103,13 +103,13 @@ def anndata_cluster(
     # Harmony integration
     if verbose:
         print("=== [CPU] Running Harmony integration ===")
-        print("Variables to regress:", ", ".join(vars_to_regress_for_harmony or []))
+        print("Cell-level batch keys (Harmony):", ", ".join(cell_level_batch_key_for_harmony or []))
 
-    if vars_to_regress_for_harmony:
+    if cell_level_batch_key_for_harmony:
         harmony_embeddings = harmonize(
             adata_cluster.obsm["X_lsi"],
             adata_cluster.obs,
-            batch_key=vars_to_regress_for_harmony,
+            batch_key=cell_level_batch_key_for_harmony,
             max_iter_harmony=num_harmony_iterations,
             use_gpu=False,
         )
@@ -220,7 +220,7 @@ def preprocess(
     output_dir,
     sample_column="sample",
     cell_meta_path=None,
-    batch_key=None,
+    sample_level_batch_key=None,
     cell_embedding_num_PCs=50,
     num_harmony_iterations=30,
     num_cell_hvfs=50000,
@@ -229,7 +229,7 @@ def preprocess(
     max_features=15000,
     min_cells_per_sample=1,
     exclude_features=None,
-    vars_to_regress=None,
+    cell_level_batch_key=None,
     doublet_detection=True,
     tfidf_scale_factor=1e4,
     log_transform=True,
@@ -259,8 +259,8 @@ def preprocess(
         Column name in adata.obs that identifies samples.
     cell_meta_path : str, optional
         Path to the cell-level metadata CSV file.
-    batch_key : str or list, optional
-        Column name(s) for batch information.
+    sample_level_batch_key : str or list, optional
+        Column name(s) for sample-level batch information (must exist in adata.obs).
     cell_embedding_num_PCs : int, default=50
         Number of LSI components for cell-level analysis.
     num_harmony_iterations : int, default=30
@@ -277,8 +277,8 @@ def preprocess(
         Minimum cells per sample to keep the sample.
     exclude_features : list, optional
         List of feature names to exclude from analysis.
-    vars_to_regress : list, optional
-        Variables to regress out during Harmony integration.
+    cell_level_batch_key : list, optional
+        obs column name(s) used as Harmony batch keys at cell level (sample id is always included).
     doublet_detection : bool, default=True
         Whether to run doublet detection.
     tfidf_scale_factor : float, default=1e4
@@ -332,17 +332,21 @@ def preprocess(
             verbose=verbose,
         )
 
-    # Process vars_to_regress
-    flattened_vars_to_regress = _flatten_to_strings(vars_to_regress or [])
-    vars_to_regress_for_harmony = flattened_vars_to_regress.copy()
-    if sample_column not in vars_to_regress_for_harmony:
-        vars_to_regress_for_harmony.append(sample_column)
+    # Process cell_level_batch_key
+    flattened_cell_level_batch_key = _flatten_to_strings(cell_level_batch_key or [])
+    cell_level_batch_key_for_harmony = flattened_cell_level_batch_key.copy()
+    if sample_column not in cell_level_batch_key_for_harmony:
+        cell_level_batch_key_for_harmony.append(sample_column)
 
-    # Process batch_key
-    flattened_batch_keys = _flatten_to_strings([batch_key] if batch_key else [])
+    # Process sample_level_batch_key
+    flattened_sample_level_batch_keys = _flatten_to_strings(
+        [sample_level_batch_key] if sample_level_batch_key else []
+    )
 
     # Validate required columns
-    required_columns = list(dict.fromkeys(flattened_vars_to_regress + flattened_batch_keys))
+    required_columns = list(
+        dict.fromkeys(flattened_cell_level_batch_key + flattened_sample_level_batch_keys)
+    )
     if required_columns:
         missing_columns = sorted(set(required_columns) - set(adata.obs.columns.astype(str)))
         if missing_columns:
@@ -429,7 +433,7 @@ def preprocess(
         num_cell_hvfs=num_cell_hvfs,
         cell_embedding_num_PCs=cell_embedding_num_PCs,
         num_harmony_iterations=num_harmony_iterations,
-        vars_to_regress_for_harmony=vars_to_regress_for_harmony,
+        cell_level_batch_key_for_harmony=cell_level_batch_key_for_harmony,
         tfidf_scale_factor=tfidf_scale_factor,
         log_transform=log_transform,
         drop_first_lsi=drop_first_lsi,
