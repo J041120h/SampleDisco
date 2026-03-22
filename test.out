@@ -5,46 +5,49 @@ Resuming from previous progress:
     "cell_type_cluster": true,
     "derive_sample_embedding": true,
     "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": true,
+    "trajectory_analysis": true,
+    "trajectory_dge": true,
+    "sample_cluster": true,
+    "proportion_test": true,
+    "cluster_dge": true,
+    "visualization": false,
+    "dimensionality_reduction": true
+  },
+  "atac": {
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "derive_sample_embedding": true,
+    "cca_based_cell_resolution_selection": false,
     "sample_distance_calculation": false,
     "trajectory_analysis": true,
     "trajectory_dge": true,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": false,
-    "visualization": false
-  },
-  "atac": {
-    "preprocessing": false,
-    "cell_type_cluster": false,
-    "derive_sample_embedding": false,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
-    "trajectory_analysis": false,
-    "trajectory_dge": false,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": false,
-    "visualization": false
+    "sample_cluster": true,
+    "proportion_test": true,
+    "cluster_dge": true,
+    "visualization": true,
+    "dimensionality_reduction": false
   },
   "multiomics": {
-    "glue_integration": false,
+    "glue_integration": true,
     "glue_preprocessing": false,
     "glue_training": false,
-    "glue_gene_activity": false,
-    "glue_cell_types": false,
-    "glue_visualization": false,
-    "integration_preprocessing": false,
+    "glue_gene_activity": true,
+    "glue_cell_types": true,
+    "glue_visualization": true,
+    "integration_preprocessing": true,
     "optimal_resolution": false,
-    "dimensionality_reduction": false,
+    "dimensionality_reduction": true,
     "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
-    "trajectory_analysis": false,
-    "trajectory_dge": false,
-    "sample_cluster": false,
+    "sample_distance_calculation": true,
+    "trajectory_analysis": true,
+    "trajectory_dge": true,
+    "sample_cluster": true,
     "proportion_test": false,
     "cluster_dge": false,
-    "embedding_visualization": false,
-    "visualization": false
+    "embedding_visualization": true,
+    "visualization": false,
+    "derive_sample_embedding": false
   },
   "system_info": {
     "platform": "Linux",
@@ -55,314 +58,93 @@ Resuming from previous progress:
 }
 
 ============================================================
-RUNNING RNA PIPELINE
+RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting RNA wrapper function...
-Starting sample embedding derivation...
-[Pseudobulk] Input: 156743 cells, 15725 genes
-[Pseudobulk] Data appears to be raw counts, will normalize after pseudobulk aggregation
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] 35 samples, 34 cell types
-[Pseudobulk] Batch correction: ['Sex', 'BMI category', 'month', 'LC/Recovered']
-[Pseudobulk] Phase 1: Aggregating...
-  Aggregating 156743 cells -> 35 samples x 34 cell types
-  Created 34 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/34] B invar
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2132 HVGs
-  [2/34] B n-sw mem
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2009 HVGs
-  [3/34] B n-sw mem IFN stim
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2311 HVGs
-  [4/34] B naive
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [5/34] B naive IFN stim
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2466 HVGs
-  [6/34] B sw mem
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2292 HVGs
-  [7/34] Cycling
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [8/34] ILC
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [9/34] MAIT
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [10/34] Monocyte CD14
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2003 HVGs
-  [11/34] Monocyte CD14 IL6
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2001 HVGs
-  [12/34] Monocyte CD16
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [13/34] Monocyte CD16+C1
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2861 HVGs
-  [14/34] NK
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [15/34] NK CD56
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [16/34] NK IFN stim
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2821 HVGs
-  [17/34] NKT
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [18/34] Plasma cells
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2661 HVGs
-  [19/34] Plasmablasts
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2972 HVGs
-  [20/34] Platelets
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2005 HVGs
-  [21/34] RBC
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2001 HVGs
-  [22/34] T CD4 CTL
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [23/34] T CD4 helper
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [24/34] T CD4 naive
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [25/34] T CD4 naive IFN stim
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2013 HVGs
-  [26/34] T CD8 CM
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [27/34] T CD8 CTL
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [28/34] T CD8 CTL IFN stim
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 1179 HVGs
-  [29/34] T CD8 EM
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [30/34] T CD8 EMRA
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [31/34] T CD8 naive
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [32/34] T g/d
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [33/34] T reg
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-  [34/34] cDC2
-    Batches: 21, sizes: 1-2
-    Skipping ComBat: batches <2 samples
-    Applied limma
-    Selected 2000 HVGs
-[Pseudobulk] Retained 34 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 2000
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 35 samples, 2000 features
-[DimRed] Starting dimension reduction computation...
-[DimRed] Mode: RNA (PCA)
-[DimRed] Batch column(s): ['Sex', 'BMI category', 'month', 'LC/Recovered']
-[DimRed] Output directory: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/pseudobulk
-[DimRed] Components: expression=10, proportion=10
-[DimRed] Computing PCA for RNA data with 10 components on (35, 2000) data
-[PCA] Success. Shape: (35, 10)
-[Storage] Stored X_DR_expression in both objects (shape: (35, 10))
-[DimRed] Completed - results stored as X_DR_expression
-[DimRed] Expression dimension reduction completed
-[Proportion] Computing PCA with 10 components...
-[Harmony] Applying with batch column(s): ['Sex', 'BMI category', 'month', 'LC/Recovered']
-[Harmony] Completed with 4 batch factor(s)
-[Storage] Stored X_DR_proportion in both objects (shape: (35, 10))
-[Proportion] Completed using Harmony-integrated PCA. Shape: (35, 10)
-[DimRed] Proportion dimension reduction completed
-[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/embeddings/sample_expression_embedding.csv (shape: (35, 10))
-[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/embeddings/sample_proportion_embedding.csv (shape: (35, 10))
-[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/embeddings
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Successfully saved pseudobulk_anndata (0.5 MB)
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/test/multiomics
+GPU mode: Enabled
+Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad
+Step 2b: Running cell type assignment...
 
-[DimRed] === SUMMARY ===
-Runtime: 0.25s
-Expression: Success
-Proportion: Success
-RNA preprocessing pipeline completed successfully!
-Starting trajectory analysis...
+============================================================
+Cell Type Assignment for Multi-omics Data
+============================================================
 
-CCA Analysis Summary:
-  Proportion: score=0.4594 (PC2 + PC6)
-  Expression: score=0.3922 (PC1 + PC9)
-P-value for observed correlation 0.45937613670463817: 0.019
-[CCA p-test] Runtime: 1.39 seconds
-P-value for observed correlation 0.39220710973062656: 0.066
-[CCA p-test] Runtime: 1.37 seconds
-Running trajectory differential gene analysis...
-======================================================================
-TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS
-======================================================================
+Data composition:
+  RNA cells: 29989
+  ATAC cells: 29021
+  Total cells: 59010
 
-[1/5] Loading pseudotime...
-  → Loaded 35 pseudotime values; aligned 35 to pseudobulk samples
+--- Step 1: Clustering RNA cells ---
+  Resolution: 0.8
+  Building neighborhood graph for RNA cells...
+  Performing Leiden clustering...
+  Found 17 clusters in RNA cells
 
-[2/5] Preparing GAM input matrices...
-  → Prepared design matrix: 35 samples × 1 features
-  → Expression matrix: 35 samples × 2000 genes
+--- Step 2: Transferring labels to ATAC cells ---
+  Using k=3 nearest neighbors with Jaccard-weighted SNN
+  Metric: cosine
+  Building k-NN graphs...
+  Computing Jaccard-weighted adjacency matrices...
+  Computing label predictions...
+  Label transfer complete
+  Mean transfer confidence: 0.884
 
-[3/5] Fitting GAM models for 2000 genes...
-  → Spline parameters: n_splines=5, order=3
-  → Processing gene 500/2000...
-  → Processing gene 1000/2000...
-  → Processing gene 1500/2000...
-  → Processing gene 2000/2000...
-  → Successfully fitted 2000/2000 genes
-  → Found 163 significant genes (FDR < 0.05)
+--- Step 3: Combining cell type assignments ---
+  Cell type assignments complete
 
-[4/5] Calculating effect sizes and regulation directions...
-  → Calculated effect sizes for 163 genes
-  → Selected 100 pseudoDEGs (top_n=100)
-  → Saved results to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression
+  Cell type distribution:
+    Cluster 1: RNA=1183, ATAC=933
+    Cluster 10: RNA=1486, ATAC=1308
+    Cluster 11: RNA=1978, ATAC=2320
+    Cluster 12: RNA=1360, ATAC=1355
+    Cluster 13: RNA=2191, ATAC=2255
+    Cluster 14: RNA=241, ATAC=172
+    Cluster 15: RNA=83, ATAC=186
+    Cluster 16: RNA=990, ATAC=498
+    Cluster 17: RNA=658, ATAC=1585
+    Cluster 2: RNA=2010, ATAC=2305
+    Cluster 3: RNA=5127, ATAC=3427
+    Cluster 4: RNA=3755, ATAC=2427
+    Cluster 5: RNA=3463, ATAC=5232
+    Cluster 6: RNA=448, ATAC=559
+    Cluster 7: RNA=3542, ATAC=2917
+    Cluster 8: RNA=1146, ATAC=1411
+    Cluster 9: RNA=328, ATAC=131
 
-======================================================================
-=== DIFFERENTIAL GENE EXPRESSION SUMMARY ===
-Total genes analyzed: 2000
-Significant genes (FDR < 0.05): 163
-Selected DEGs: 100
-  - Upregulated: 88
-  - Downregulated: 12
+--- Step 4: Filtering modality-imbalanced clusters ---
+[Modality Balance] All clusters balanced, no filtering needed
 
-Top 20 DEGs:
-(Sorted by Effect Size)
-1. Monocyte CD14 - SAMHD1: FDR=1.8307e-07, Effect=8.165, Direction=UP
-2. Monocyte CD14 - DOCK2: FDR=7.4080e-06, Effect=6.603, Direction=UP
-3. Monocyte CD14 - ZNF451: FDR=6.8030e-05, Effect=6.061, Direction=UP
-4. Monocyte CD14 - RANBP2: FDR=6.8030e-05, Effect=6.011, Direction=UP
-5. Monocyte CD14 - TTC39C: FDR=1.1899e-04, Effect=5.706, Direction=UP
-6. Monocyte CD14 - MYH9: FDR=1.8709e-04, Effect=5.555, Direction=UP
-7. Monocyte CD14 - SERINC5: FDR=3.8373e-04, Effect=5.250, Direction=UP
-8. Monocyte CD14 - CAMK2D: FDR=3.8373e-04, Effect=5.249, Direction=UP
-9. Monocyte CD14 - LRIG1: FDR=4.2241e-04, Effect=5.169, Direction=UP
-10. Monocyte CD14 - TOM1: FDR=3.8373e-04, Effect=5.132, Direction=UP
-11. Monocyte CD14 - UBE2K: FDR=3.8373e-04, Effect=5.121, Direction=UP
-12. Monocyte CD14 - ACTB: FDR=3.5171e-04, Effect=5.035, Direction=UP
-13. Monocyte CD14 - AGO2: FDR=6.6238e-04, Effect=5.023, Direction=UP
-14. Monocyte CD14 - CBLB: FDR=4.3883e-04, Effect=4.833, Direction=UP
-15. Monocyte CD14 - SGMS1: FDR=3.8373e-04, Effect=4.745, Direction=UP
-16. NK CD56 - ADNP: FDR=1.3901e-03, Effect=4.719, Direction=DOWN
-17. Monocyte CD14 - MPP7: FDR=4.8553e-04, Effect=4.704, Direction=UP
-18. Monocyte CD14 - KDM5A: FDR=1.3901e-03, Effect=4.666, Direction=UP
-19. Monocyte CD14 - ARHGAP15: FDR=1.3901e-03, Effect=4.626, Direction=UP
-20. Monocyte CD14 - TRAPPC10: FDR=1.4121e-03, Effect=4.598, Direction=UP
+--- Step 5: Computing UMAP ---
 
-[5/5] Generating Lamian-style visualizations...
-[DEBUG] Step 5/5: Generating Lamian-style visualizations...
-[VIZ] Creating results summary...
-[VIZ] Creating TDE heatmap...
-[VIZ] Creating volcano plot...
-[VIZ] Creating gene expression curves with GAM fits...
-[VIZ] Plotting 20 genes (selected by effect size, FDR < 0.05)
-[VIZ] GAM models available: 2000
-[VIZ] GAM models provided: 2000 models
-[VIZ] Inferred GAM feature count: 2
-[VIZ] Saved gene expression curves to /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression/visualizations/05_gene_curves.png
-[VIZ] Creating sample density plot...
-[VIZ] Creating cluster pattern summary...
-[VIZ] Creating sample-level expression curves...
-[VIZ] Top gene by effect size: Monocyte CD14 - SAMHD1
-[VIZ] Saved sample-level curves to /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression/visualizations/08_sample_level_curves.png
-[VIZ] Visualizations saved to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression/visualizations
+--- Step 6: Saving cell type information ---
+  Saved cell type assignments to: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/cell_type.csv
 
-======================================================================
-✓ Analysis complete. Results saved to: /dcs07/hongkai/data/harry/result/long_covid/subset/T_SampleDisc/rna/trajectoryDEG/expression
-======================================================================
-Trajectory differential gene analysis completed!
-RNA downstream analysis completed!
+--- Step 7: Generating visualizations ---
+  Generating cell type UMAP...
+  Generating modality UMAP...
+  Generating split modality UMAPs...
+  Generating cell type composition heatmap...
+  Saved distribution table to: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/visualization/celltype_modality_distribution.csv
+  Visualizations complete!
+Saving integrated data to: /dcs07/hongkai/data/harry/result/test/multiomics/preprocess/adata_sample.h5ad
 
-RNA pipeline completed successfully!
+============================================================
+Cell type assignment complete!
+============================================================
 
-Total execution time: 60.09 seconds (1.00 minutes)
+Cell type assignment completed successfully
+Loaded dimensionality reduction data from existing files
+Multiomics preprocessing pipeline completed successfully!
+Visualizing multimodal embedding...
+Creating default embedding visualization (all samples)
+Expression key: X_DR_expression
+Proportion key: X_DR_proportion
+Created/using visualization directory: /dcs07/hongkai/data/harry/result/test/multiomics/visualization
+Expression plot saved to: /dcs07/hongkai/data/harry/result/test/multiomics/visualization/all_samples_expression.png
+Proportion plot saved to: /dcs07/hongkai/data/harry/result/test/multiomics/visualization/all_samples_proportion.png
+Embedding visualization completed successfully
+MULTIOMICS downstream analysis completed!
+
+Multiomics pipeline completed successfully!
+
+Total execution time: 93.29 seconds (1.55 minutes)

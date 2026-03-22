@@ -249,7 +249,6 @@ multiomics_trajectory_dge: true
 multiomics_sample_cluster: true
 multiomics_proportion_test: false
 multiomics_cluster_dge: false
-multiomics_visualize_data: false
 multiomics_visualize_embedding: true
 
 # --- GLUE Sub-Pipeline Flags ---

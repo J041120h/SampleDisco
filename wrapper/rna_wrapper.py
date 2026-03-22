@@ -255,7 +255,7 @@ def rna_wrapper(
             print(f"Optimal resolution for {column}: {optimal_resolution:.3f}")
         
         from utils.unify_optimal import replace_optimal_dimension_reduction
-        pseudo_adata = replace_optimal_dimension_reduction(rna_output_dir)
+        pseudo_adata = replace_optimal_dimension_reduction(rna_output_dir, modality="RNA")
         
         status_flags["rna"]["cca_based_cell_resolution_selection"] = True
         print("CCA-based resolution selection completed!")

@@ -265,7 +265,9 @@ def atac_wrapper(
             print(f"Optimal resolution for {column}: {optimal_resolution:.3f}")
         
         from utils.unify_optimal import replace_optimal_dimension_reduction
-        pseudo_adata = replace_optimal_dimension_reduction(atac_output_dir)
+        pseudo_adata = replace_optimal_dimension_reduction(
+            atac_output_dir, modality="ATAC"
+        )
         
         status_flags["atac"]["cca_based_cell_resolution_selection"] = True
         print("CCA-based resolution selection completed!")

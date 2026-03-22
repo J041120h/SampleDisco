@@ -44,7 +44,7 @@ def downstream_analysis(
     # ===== Required =====
     pseudo_adata,
     output_dir: str,
-    modality: str,              # "rna", "atac", or "multiomics"
+    modality: str,              
     status_flags: dict,
     
     # ===== Data references (needed by some steps) =====
@@ -228,15 +228,9 @@ def downstream_analysis(
                 origin=tscan_origin
             )
             
-            ptime_expression = pd.Series(
-                tscan_result_expression["pseudotime"]["main_path"],
-                name="tscan_pseudotime_expression"
-            ).reindex(pseudo_adata.obs.index)
-            
-            ptime_proportion = pd.Series(
-                tscan_result_proportion["pseudotime"]["main_path"],
-                name="tscan_pseudotime_proportion"
-            ).reindex(pseudo_adata.obs.index)
+        # Keep as dictionary - matching CCA output format
+        ptime_expression = tscan_result_expression["pseudotime"]["main_path"]
+        ptime_proportion = tscan_result_proportion["pseudotime"]["main_path"]
         
         sf["trajectory_analysis"] = True
 
@@ -257,6 +251,22 @@ def downstream_analysis(
                 num_splines=num_splines,
                 spline_order=spline_order,
                 output_dir=os.path.join(trajectory_diff_gene_output_dir, "expression"),
+                visualization_gene_list=visualization_gene_list,
+                verbose=verbose
+            )
+            
+            run_trajectory_gam_differential_gene_analysis(
+                pseudobulk_adata=pseudo_adata,
+                pseudotime_source=ptime_proportion,
+                sample_col=sample_col,
+                pseudotime_col="pseudotime",
+                covariate_columns=trajectory_diff_gene_covariate,
+                fdr_threshold=fdr_threshold,
+                effect_size_threshold=effect_size_threshold,
+                top_n_genes=top_n_genes,
+                num_splines=num_splines,
+                spline_order=spline_order,
+                output_dir=os.path.join(trajectory_diff_gene_output_dir, "proportion"),
                 visualization_gene_list=visualization_gene_list,
                 verbose=verbose
             )
@@ -644,7 +654,6 @@ def wrapper(
     multiomics_sample_cluster: bool = True,
     multiomics_proportion_test: bool = False,
     multiomics_cluster_dge: bool = False,
-    multiomics_visualize_data: bool = True,
     multiomics_visualize_embedding: bool = True,
     
     # GLUE sub-pipeline flags
@@ -1315,13 +1324,27 @@ def wrapper(
             )
             status_flags = multiomics_results['status_flags']
             
+            multiomics_adata_cell = multiomics_results.get("adata")
+            if multiomics_adata_cell is None:
+                import scanpy as sc
+                _cell_paths = []
+                if multiomics_integrated_h5ad_path:
+                    _cell_paths.append(multiomics_integrated_h5ad_path)
+                _cell_paths.append(
+                    os.path.join(multiomics_output_dir, "preprocess", "adata_sample.h5ad")
+                )
+                for _p in _cell_paths:
+                    if _p and os.path.exists(_p):
+                        multiomics_adata_cell = sc.read(_p)
+                        break
+            
             # Phase 2: Downstream analysis
             downstream_results = downstream_analysis(
                 pseudo_adata=multiomics_results['pseudo_adata'],
                 output_dir=multiomics_output_dir,
                 modality="multiomics",
                 status_flags=status_flags,
-                adata_cell=None,
+                adata_cell=multiomics_adata_cell,
                 adata_sample=multiomics_results.get('adata_sample'),
                 # Step control
                 sample_distance_calculation=multiomics_sample_distance_calculation,
@@ -1330,7 +1353,7 @@ def wrapper(
                 sample_cluster=multiomics_sample_cluster,
                 proportion_test=multiomics_proportion_test,
                 cluster_DGE=multiomics_cluster_dge,
-                visualize_data=multiomics_visualize_data,
+                visualize_data=False,
                 visualize_embedding=multiomics_visualize_embedding,
                 # General
                 use_gpu=multiomics_use_gpu and gpu_available,

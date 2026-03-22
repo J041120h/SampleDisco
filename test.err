@@ -1,28 +1,3 @@
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/preprocessing/_hvg.py:421: UserWarning: `n_top_genes` > number of normalized dispersions, returning all genes with normalized dispersions.
-  warnings.warn(msg, UserWarning)
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/rapids_singlecell/preprocessing/_hvg.py:421: UserWarning: `n_top_genes` > number of normalized dispersions, returning all genes with normalized dispersions.
-  warnings.warn(msg, UserWarning)
-/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata_linux.py:88: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
-  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
-... storing 'filename_sample_id' as categorical
-... storing 'month' as categorical
-... storing 'OutSMART short number' as categorical
-... storing 'OutSMART ID' as categorical
-... storing 'Sex' as categorical
-... storing 'LC/Recovered' as categorical
-... storing 'BMI category' as categorical
-... storing 'Age at enrollment' as categorical
-... storing 'age_cluster' as categorical
-... storing 'patient' as categorical
-2026-03-21 18:01:00,637 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
-2026-03-21 18:01:00 | [INFO] Computing initial centroids with sklearn.KMeans...
-2026-03-21 18:01:00,712 - harmonypy - INFO - sklearn.KMeans initialization complete.
-2026-03-21 18:01:00 | [INFO] sklearn.KMeans initialization complete.
-2026-03-21 18:01:00,712 - harmonypy - INFO - Iteration 1 of 30
-2026-03-21 18:01:00 | [INFO] Iteration 1 of 30
-2026-03-21 18:01:00,724 - harmonypy - INFO - Iteration 2 of 30
-2026-03-21 18:01:00 | [INFO] Iteration 2 of 30
-2026-03-21 18:01:00,740 - harmonypy - INFO - Iteration 3 of 30
-2026-03-21 18:01:00 | [INFO] Iteration 3 of 30
-2026-03-21 18:01:00,752 - harmonypy - INFO - Converged after 3 iterations
-2026-03-21 18:01:00 | [INFO] Converged after 3 iterations
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+INFO:numba.cuda.cudadrv.driver:init

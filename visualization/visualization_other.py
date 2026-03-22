@@ -41,10 +41,10 @@ def _preprocessing(
     return output_dir
 
 def plot_dendrogram(AnnData_cell, output_dir, verbose=True):
-    if 'X_pca_harmony' not in AnnData_cell.obsm.keys():
-        raise ValueError("X_pca_harmony not found in AnnData_cell.obsm.")
-    
-    X_harmony = AnnData_cell.obsm['X_pca_harmony']
+    obsm = AnnData_cell.obsm
+    if 'X_pca_harmony' not in obsm and 'X_lsi_harmony' not in obsm and "X_glue" not in obsm:
+        raise ValueError("Neither X_pca_harmony nor X_lsi_harmony found in AnnData_cell.obsm.")
+    X_harmony = obsm['X_pca_harmony'] if 'X_pca_harmony' in obsm else obsm['X_lsi_harmony']
     cell_type_col = next((col for col in ['cell_type', 'celltype', 'cluster', 'leiden', 'seurat_clusters'] if col in AnnData_cell.obs.columns), None)
     if cell_type_col is None:
         raise ValueError("No cell type column found.")

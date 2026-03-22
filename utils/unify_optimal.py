@@ -6,7 +6,8 @@ import numpy as np
 
 def replace_optimal_dimension_reduction(
     base_path: str,
-    verbose: bool = True
+    verbose: bool = True,
+    modality: str = "RNA",
 ) -> sc.AnnData:
     """
     Replaces dimension reduction results AND pseudobulk expression in
@@ -42,6 +43,10 @@ def replace_optimal_dimension_reduction(
         Example: '/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna'
     verbose : bool, default True
         Whether to print verbose output
+    modality : str, default "RNA"
+        "RNA" or "ATAC". Subdirectories are
+        ``{modality}_resolution_optimization_expression`` and
+        ``{modality}_resolution_optimization_proportion``.
 
     Returns
     -------
@@ -55,21 +60,25 @@ def replace_optimal_dimension_reduction(
     ... )
     """
 
+    modality_upper = str(modality).strip().upper()
+    if modality_upper not in ("RNA", "ATAC"):
+        raise ValueError(f"modality must be 'RNA' or 'ATAC', got {modality!r}")
+
     # ------------------------------------------------------------------
     # Construct file paths based on the pattern provided
     # ------------------------------------------------------------------
     optimal_expression_path = os.path.join(
         base_path,
-        "RNA_resolution_optimization_expression",
+        f"{modality_upper}_resolution_optimization_expression",
         "summary",
-        "optimal.h5ad"
+        "optimal.h5ad",
     )
 
     optimal_proportion_path = os.path.join(
         base_path,
-        "RNA_resolution_optimization_proportion",
+        f"{modality_upper}_resolution_optimization_proportion",
         "summary",
-        "optimal.h5ad"
+        "optimal.h5ad",
     )
 
     pseudobulk_path = os.path.join(
