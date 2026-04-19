@@ -4,9 +4,9 @@
 output_dir: "/dcs07/hongkai/data/harry/result/test"
 
 # Pipeline selection
-run_rna_pipeline: false
+run_rna_pipeline: true
 run_atac_pipeline: false
-run_multiomics_pipeline: true
+run_multiomics_pipeline: false
 
 # General settings
 use_gpu: true
@@ -30,7 +30,7 @@ rna_derive_sample_embedding: false
 rna_cca_based_cell_resolution_selection: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: true
-rna_trajectory_dge: true
+rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_proportion_test: false
 rna_cluster_dge: false
@@ -74,11 +74,13 @@ rna_preserve_cols_in_sample_embedding: null
 # --- Trajectory Analysis Parameters ---
 rna_n_cca_pcs: 10
 rna_trajectory_col: "sev.level"
-rna_trajectory_supervised: true
+rna_trajectory_supervised: false
 rna_trajectory_visualization_label:
   - "sev.level"
 rna_cca_pvalue: true
 rna_tscan_origin: null
+rna_tscan_n_clusters: null  # int; null lets TSCAN auto-select via BIC (2-20)
+rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
 
 # --- CCA-Based Resolution Selection Parameters ---
 rna_cca_compute_corrected_pvalues: true
@@ -115,6 +117,33 @@ rna_age_column: "age"
 rna_plot_dendrogram_flag: true
 rna_plot_cell_type_proportions_pca_flag: true
 rna_plot_cell_type_expression_umap_flag: true
+
+# --- Prediction Parameters ---
+# Set rna_prediction_enabled: true to run phenotype prediction from embeddings.
+# feature_source: expression | proportion | cluster_expression | cluster_proportion
+#                 | pseudotime_expression | pseudotime_proportion
+# model (regression): ridge | lasso | rf | svm
+# model (classification): logreg | rf | svm
+rna_prediction_enabled: true
+rna_prediction_target_col: "sev.level"
+rna_prediction_feature_source: "expression"
+rna_prediction_task_type: "auto"
+rna_prediction_model: "ridge"
+rna_prediction_cv: "auto"
+rna_prediction_n_permutations: 0
+
+# --- Association Parameters ---
+# Set rna_association_enabled: true to run correlation + PERMANOVA tests.
+# Continuous cols tested against each DR component (Pearson/Spearman + permutation FDR).
+# Categorical cols tested against distance matrices via PERMANOVA.
+rna_association_enabled: true
+rna_association_continuous_cols: null   # e.g. ["age", "bmi"] — fill in if available
+rna_association_categorical_cols:
+  - "sev.level"
+rna_association_distance_methods:
+  - "cosine"
+  - "correlation"
+rna_association_n_permutations: 999
 
 # =============================================================================
 # ATAC PIPELINE PARAMETERS
@@ -185,6 +214,8 @@ atac_trajectory_visualization_label:
   - "sev.level"
 atac_cca_pvalue: false
 atac_tscan_origin: null
+atac_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
+atac_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
 
 # --- CCA-Based Resolution Selection Parameters ---
 atac_cca_compute_corrected_pvalues: true
@@ -344,6 +375,8 @@ multiomics_trajectory_visualization_label:
 multiomics_n_cca_pcs: 2
 multiomics_cca_pvalue: false
 multiomics_tscan_origin: null
+multiomics_tscan_n_clusters: null  # int; null lets TSCAN auto-select via BIC (2-20)
+multiomics_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
 
 # --- Sample Distance Parameters ---
 multiomics_sample_distance_methods:

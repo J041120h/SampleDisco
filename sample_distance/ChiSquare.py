@@ -92,8 +92,7 @@ def calculate_sample_distances_cell_proportion_chi_square(
                 sample_distance_matrix.loc[sample_i, sample_j] = chi_square
                 sample_distance_matrix.loc[sample_j, sample_i] = chi_square
 
-    # Apply log transformation and normalization (same as vector distance)
-    sample_distance_matrix = np.log1p(np.maximum(sample_distance_matrix, 0))
+    # Normalize to [0, 1]
     if sample_distance_matrix.max().max() > 0:  # Avoid division by zero
         sample_distance_matrix = sample_distance_matrix / sample_distance_matrix.max().max()
 

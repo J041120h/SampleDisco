@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 import scanpy as sc
 import statsmodels.api as sm
-from scipy.special import logit, digamma, polygamma
+from scipy.special import digamma, polygamma
 from scipy.optimize import brentq
 from statsmodels.stats.multitest import multipletests
 import warnings
@@ -185,7 +185,11 @@ def proportion_test(
     Perform proportion test on cell type proportions.
 
     Tests if proportions of cell types differ across groups using
-    limma-style eBayes moderation on logit-transformed proportions.
+    limma-style eBayes moderation on CLR-transformed proportions.
+    The CLR (centered log-ratio) transform is compositional-aware:
+    each sample is referenced against its own geometric mean over
+    cell types, so passive shifts driven by sum-to-one constraints
+    do not inflate false positives.
 
     Parameters
     ----------
@@ -277,10 +281,12 @@ def proportion_test(
     min_nonzero = prop[prop > 0].min() if (prop > 0).any() else 1e-10
     prop = np.clip(prop, min_nonzero, 1 - min_nonzero)
 
-    # Logit transform
-    prop_logit = np.log(prop / (1 - prop))
+    # Centered log-ratio (CLR) transform — compositional-aware.
+    # For each sample (column), subtract the geometric mean of its cell-type proportions.
+    log_p = np.log(prop)
+    prop_clr = log_p - log_p.mean(axis=0, keepdims=True)
 
-    prop_logit_df = pd.DataFrame(prop_logit, index=ct_sample_counts.index, columns=unique_samples)
+    prop_clr_df = pd.DataFrame(prop_clr, index=ct_sample_counts.index, columns=unique_samples)
 
     # Get unique groups
     unique_groups = sorted(set(sample_groups.values()))
@@ -301,14 +307,14 @@ def proportion_test(
         samples_g2 = [s for s in unique_samples if sample_groups[s] == group2]
 
         selected_samples = samples_g1 + samples_g2
-        selected_prop_logit = prop_logit_df[selected_samples]
+        selected_prop_clr = prop_clr_df[selected_samples]
 
         group_labels = [1 if s in samples_g1 else 0 for s in selected_samples]
         X = np.column_stack([np.ones(len(group_labels)), group_labels])
 
-        Y = selected_prop_logit.values
+        Y = selected_prop_clr.values
         result_df = ebayes_test(Y, X, coef=1)
-        result_df.index = selected_prop_logit.index
+        result_df.index = selected_prop_clr.index
 
         df_result = pd.DataFrame(
             {
@@ -493,10 +499,10 @@ def _proportion_test_visualization(
     1) Keep the original mean-proportion heatmap filename, but use a robust vmax so
        low-abundance cell types are visually separable.
     2) Add two additional heatmaps:
-       - logit(mean proportion): matches the testing scale more closely
+       - CLR(mean proportion): matches the testing scale more closely
        - per-celltype z-score across groups: highlights relative shifts per cell type
     3) Add an optional significance overlay heatmap (FDR<alpha) for quick interpretation.
-    4) For logit and z-score heatmaps, order cell types by uniform significance across groups.
+    4) For CLR and z-score heatmaps, order cell types by uniform significance across groups.
     5) Use per-column (per cell type) normalization so nuances within each cell type are visible.
     """
     import matplotlib.pyplot as plt
@@ -571,23 +577,27 @@ def _proportion_test_visualization(
     plt.close()
 
     # -------------------------------------------------------------
-    # (B) Logit-scale heatmap of group-averaged proportions
-    #     (closer to the testing scale).
+    # (B) CLR-scale heatmap of group-averaged proportions
+    #     (matches the testing scale).
     #     Cell types ordered by uniform significance across groups.
     #     Per-column normalization to show nuances within each cell type.
     # -------------------------------------------------------------
     # Reorder columns (cell types) by uniform significance
     plot_mat_ordered = plot_mat[[ct for ct in celltype_order if ct in plot_mat.columns]]
-    
+
     eps = 1e-6
-    logit_mat = np.log(np.clip(plot_mat_ordered, eps, 1 - eps) / (1 - np.clip(plot_mat_ordered, eps, 1 - eps)))
+    clipped = np.clip(plot_mat_ordered.values, eps, 1 - eps)
+    log_clipped = np.log(clipped)
+    # CLR: subtract per-row (per-group) geometric mean across cell types
+    clr_values = log_clipped - log_clipped.mean(axis=1, keepdims=True)
+    clr_mat = pd.DataFrame(clr_values, index=plot_mat_ordered.index, columns=plot_mat_ordered.columns)
 
     # Normalize per column (per cell type) to 0-1 range
-    logit_mat_normalized = _normalize_per_column(logit_mat)
+    clr_mat_normalized = _normalize_per_column(clr_mat)
 
     plt.figure(figsize=(12, 8))
     ax = sns.heatmap(
-        logit_mat_normalized,
+        clr_mat_normalized,
         cmap="viridis",
         annot=False,
         cbar=True,
@@ -595,15 +605,15 @@ def _proportion_test_visualization(
         linecolor="white",
         vmin=0.0,
         vmax=1.0,
-        cbar_kws={"label": "Relative logit (per cell type, 0=min, 1=max)"},
+        cbar_kws={"label": "Relative CLR (per cell type, 0=min, 1=max)"},
     )
-    ax.set_title("Cell Type Proportions (logit scale, per-celltype normalized)\nOrdered by uniform significance", pad=16)
+    ax.set_title("Cell Type Proportions (CLR scale, per-celltype normalized)\nOrdered by uniform significance", pad=16)
     ax.set_xlabel("Cell Types (ordered by uniform significance)")
     ax.set_ylabel("Groups")
     plt.xticks(rotation=45, ha="right")
     plt.yticks(rotation=0)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, "proportion_heatmap_group_by_celltype_logit.png"), dpi=300)
+    plt.savefig(os.path.join(output_dir, "proportion_heatmap_group_by_celltype_clr.png"), dpi=300)
     plt.close()
 
     # -------------------------------------------------------------

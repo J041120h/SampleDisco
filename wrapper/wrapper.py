@@ -23,6 +23,24 @@ def _coerce_sample_level_batch_col_list(value: Optional[Any]) -> List[str]:
     return []
 
 
+def _store_pseudotime_in_obs(pseudo_adata, ptime, col_name: str) -> None:
+    """Write pseudotime values into pseudo_adata.obs so downstream modules can find them."""
+    if ptime is None:
+        return
+    try:
+        if isinstance(ptime, dict):
+            series = pd.Series(ptime)
+        elif isinstance(ptime, pd.DataFrame) and "pseudotime" in ptime.columns:
+            series = ptime["pseudotime"]
+        elif isinstance(ptime, pd.Series):
+            series = ptime
+        else:
+            return
+        pseudo_adata.obs[col_name] = pseudo_adata.obs_names.map(series)
+    except Exception as e:
+        print(f"Warning: could not store pseudotime column '{col_name}': {e}")
+
+
 def _first_batch_col_for_raisin(
     batch_col: Optional[Union[str, List[str]]],
 ) -> Optional[str]:
@@ -83,7 +101,9 @@ def downstream_analysis(
     trajectory_visualization_label: Optional[List[str]] = None,
     cca_pvalue: bool = False,
     tscan_origin: Optional[str] = None,
-    
+    tscan_n_clusters: Optional[int] = None,
+    tscan_pseudotime_mode: str = "rank",
+
     # ===== Trajectory DGE parameters =====
     fdr_threshold: float = 0.05,
     effect_size_threshold: float = 1,
@@ -103,7 +123,23 @@ def downstream_analysis(
     plot_dendrogram_flag: bool = True,
     plot_cell_type_proportions_pca_flag: bool = False,
     plot_cell_type_expression_umap_flag: bool = False,
-    
+
+    # ===== Prediction parameters =====
+    prediction_enabled: bool = False,
+    prediction_target_col: Optional[str] = None,
+    prediction_feature_source: Union[str, List[str]] = "expression",
+    prediction_task_type: str = "auto",
+    prediction_model: str = "ridge",
+    prediction_cv: str = "auto",
+    prediction_n_permutations: int = 0,
+
+    # ===== Association parameters =====
+    association_enabled: bool = False,
+    association_continuous_cols: Optional[List[str]] = None,
+    association_categorical_cols: Optional[List[str]] = None,
+    association_distance_methods: Optional[List[str]] = None,
+    association_n_permutations: int = 999,
+
     # ===== Multiomics embedding visualization parameters =====
     multiomics_modality_col: str = 'modality',
     multiomics_color_col: Optional[str] = None,
@@ -151,13 +187,17 @@ def downstream_analysis(
     if sample_distance_calculation:
         print("Starting sample distance calculation...")
         from sample_distance.sample_distance import sample_distance
-        
+
+        data_type_map = {'rna': 'RNA', 'atac': 'ATAC', 'multiomics': 'multiomics'}
+        data_type = data_type_map.get(modality.lower(), 'RNA')
+
         for distance_method in sample_distance_methods:
             print(f"Running sample distance: {distance_method}")
             sample_distance(
                 adata=pseudo_adata,
                 output_dir=os.path.join(output_dir, 'Sample_distance'),
                 method=distance_method,
+                data_type=data_type,
                 grouping_columns=grouping_columns,
                 summary_csv_path=summary_sample_csv_path,
                 cell_adata=adata_cell,
@@ -213,19 +253,23 @@ def downstream_analysis(
             tscan_result_expression = TSCAN(
                 AnnData_sample=pseudo_adata,
                 column="X_DR_expression",
+                n_clusters=tscan_n_clusters,
                 output_dir=output_dir,
                 grouping_columns=trajectory_visualization_label,
                 verbose=verbose,
-                origin=tscan_origin
+                origin=tscan_origin,
+                pseudotime_mode=tscan_pseudotime_mode,
             )
-            
+
             tscan_result_proportion = TSCAN(
                 AnnData_sample=pseudo_adata,
                 column="X_DR_proportion",
+                n_clusters=tscan_n_clusters,
                 output_dir=output_dir,
                 grouping_columns=trajectory_visualization_label,
                 verbose=verbose,
-                origin=tscan_origin
+                origin=tscan_origin,
+                pseudotime_mode=tscan_pseudotime_mode,
             )
             
         # Keep as dictionary - matching CCA output format
@@ -233,6 +277,10 @@ def downstream_analysis(
         ptime_proportion = tscan_result_proportion["pseudotime"]["main_path"]
         
         sf["trajectory_analysis"] = True
+
+        # Store pseudotime in obs so prediction/association modules can use it
+        _store_pseudotime_in_obs(pseudo_adata, ptime_expression, "pseudotime_expression")
+        _store_pseudotime_in_obs(pseudo_adata, ptime_proportion, "pseudotime_proportion")
 
         # ==================== TRAJECTORY DGE ====================
         if trajectory_DGE:
@@ -417,6 +465,80 @@ def downstream_analysis(
         sf["embedding_visualization"] = True
         print("Embedding visualization completed successfully")
 
+    # ==================== PREDICTION ====================
+    if prediction_enabled and prediction_target_col:
+        print("Starting sample prediction...")
+        from sample_prediction.predict_sample_phenotype import predict_sample_phenotype
+
+        pred_output_dir = os.path.join(output_dir, "sample_prediction")
+        sources = (
+            prediction_feature_source
+            if isinstance(prediction_feature_source, list)
+            else [prediction_feature_source]
+        )
+        for src in sources:
+            try:
+                predict_sample_phenotype(
+                    pseudo_adata=pseudo_adata,
+                    target_col=prediction_target_col,
+                    feature_source=src,
+                    task_type=prediction_task_type,
+                    model=prediction_model,
+                    cv=prediction_cv,
+                    n_permutations=prediction_n_permutations,
+                    output_dir=pred_output_dir,
+                    verbose=verbose,
+                )
+            except Exception as e:
+                print(f"[Prediction] Warning: failed for source={src}: {e}")
+                if verbose:
+                    import traceback; traceback.print_exc()
+
+        sf["prediction"] = True
+        print(f"Prediction completed: {pred_output_dir}")
+
+    # ==================== ASSOCIATION ====================
+    if association_enabled:
+        print("Starting association analysis...")
+        from sample_association.association import (
+            correlate_embedding_with_variable,
+            permanova_on_distance,
+        )
+        assoc_output_dir = os.path.join(output_dir, "sample_association")
+
+        if association_continuous_cols:
+            try:
+                correlate_embedding_with_variable(
+                    pseudo_adata=pseudo_adata,
+                    continuous_cols=association_continuous_cols,
+                    output_dir=os.path.join(assoc_output_dir, "correlation"),
+                    n_permutations=association_n_permutations,
+                    verbose=verbose,
+                )
+            except Exception as e:
+                print(f"[Association] Warning: correlation failed: {e}")
+                if verbose:
+                    import traceback; traceback.print_exc()
+
+        if association_categorical_cols:
+            try:
+                permanova_on_distance(
+                    pseudo_adata=pseudo_adata,
+                    categorical_cols=association_categorical_cols,
+                    distance_dir=os.path.join(output_dir, "Sample_distance"),
+                    output_dir=os.path.join(assoc_output_dir, "permanova"),
+                    distance_methods=association_distance_methods or ["cosine"],
+                    n_permutations=association_n_permutations,
+                    verbose=verbose,
+                )
+            except Exception as e:
+                print(f"[Association] Warning: PERMANOVA failed: {e}")
+                if verbose:
+                    import traceback; traceback.print_exc()
+
+        sf["association"] = True
+        print(f"Association analysis completed: {assoc_output_dir}")
+
     print(f"{modality.upper()} downstream analysis completed!")
     return {'pseudo_adata': pseudo_adata, 'status_flags': status_flags}
 
@@ -509,6 +631,8 @@ def wrapper(
     rna_trajectory_visualization_label: Optional[List[str]] = None,
     rna_cca_pvalue: bool = False,
     rna_tscan_origin: Optional[int] = None,
+    rna_tscan_n_clusters: Optional[int] = None,
+    rna_tscan_pseudotime_mode: str = "rank",
     
     # Sample distance parameters
     rna_sample_distance_methods: Optional[List[str]] = None,
@@ -534,7 +658,23 @@ def wrapper(
     rna_plot_dendrogram_flag: bool = True,
     rna_plot_cell_type_proportions_pca_flag: bool = False,
     rna_plot_cell_type_expression_umap_flag: bool = False,
-    
+
+    # Prediction parameters
+    rna_prediction_enabled: bool = False,
+    rna_prediction_target_col: Optional[str] = None,
+    rna_prediction_feature_source: Union[str, List[str]] = "expression",
+    rna_prediction_task_type: str = "auto",
+    rna_prediction_model: str = "ridge",
+    rna_prediction_cv: str = "auto",
+    rna_prediction_n_permutations: int = 0,
+
+    # Association parameters
+    rna_association_enabled: bool = False,
+    rna_association_continuous_cols: Optional[List[str]] = None,
+    rna_association_categorical_cols: Optional[List[str]] = None,
+    rna_association_distance_methods: Optional[List[str]] = None,
+    rna_association_n_permutations: int = 999,
+
     # ==========================================================================
     # ATAC PIPELINE PARAMETERS
     # ==========================================================================
@@ -609,6 +749,8 @@ def wrapper(
     atac_trajectory_visualization_label: Optional[List[str]] = None,
     atac_cca_pvalue: bool = False,
     atac_tscan_origin: Optional[str] = None,
+    atac_tscan_n_clusters: Optional[int] = None,
+    atac_tscan_pseudotime_mode: str = "rank",
     
     # Sample distance parameters
     atac_sample_distance_methods: Optional[List[str]] = None,
@@ -634,7 +776,23 @@ def wrapper(
     atac_plot_dendrogram_flag: bool = True,
     atac_plot_cell_type_proportions_pca_flag: bool = False,
     atac_plot_cell_type_expression_umap_flag: bool = False,
-    
+
+    # Prediction parameters
+    atac_prediction_enabled: bool = False,
+    atac_prediction_target_col: Optional[str] = None,
+    atac_prediction_feature_source: Union[str, List[str]] = "expression",
+    atac_prediction_task_type: str = "auto",
+    atac_prediction_model: str = "ridge",
+    atac_prediction_cv: str = "auto",
+    atac_prediction_n_permutations: int = 0,
+
+    # Association parameters
+    atac_association_enabled: bool = False,
+    atac_association_continuous_cols: Optional[List[str]] = None,
+    atac_association_categorical_cols: Optional[List[str]] = None,
+    atac_association_distance_methods: Optional[List[str]] = None,
+    atac_association_n_permutations: int = 999,
+
     # ==========================================================================
     # MULTIOMICS PIPELINE PARAMETERS
     # ==========================================================================
@@ -753,6 +911,8 @@ def wrapper(
     multiomics_n_cca_pcs: int = 2,
     multiomics_cca_pvalue: bool = False,
     multiomics_tscan_origin: Optional[str] = None,
+    multiomics_tscan_n_clusters: Optional[int] = None,
+    multiomics_tscan_pseudotime_mode: str = "rank",
     
     # Sample distance parameters
     multiomics_sample_distance_methods: Optional[List[str]] = None,
@@ -791,7 +951,23 @@ def wrapper(
     multiomics_colormap: str = 'viridis',
     multiomics_show_sample_names: bool = False,
     multiomics_force_data_type: Optional[str] = None,
-    
+
+    # Prediction parameters
+    multiomics_prediction_enabled: bool = False,
+    multiomics_prediction_target_col: Optional[str] = None,
+    multiomics_prediction_feature_source: Union[str, List[str]] = "expression",
+    multiomics_prediction_task_type: str = "auto",
+    multiomics_prediction_model: str = "ridge",
+    multiomics_prediction_cv: str = "auto",
+    multiomics_prediction_n_permutations: int = 0,
+
+    # Association parameters
+    multiomics_association_enabled: bool = False,
+    multiomics_association_continuous_cols: Optional[List[str]] = None,
+    multiomics_association_categorical_cols: Optional[List[str]] = None,
+    multiomics_association_distance_methods: Optional[List[str]] = None,
+    multiomics_association_n_permutations: int = 999,
+
 ) -> Dict[str, Any]:
     """
     Main wrapper function that orchestrates RNA, ATAC, and Multiomics pipelines.
@@ -890,7 +1066,9 @@ def wrapper(
         "sample_cluster": False,
         "proportion_test": False,
         "cluster_dge": False,
-        "visualization": False
+        "visualization": False,
+        "prediction": False,
+        "association": False,
     }
     
     status_flags = {
@@ -915,6 +1093,8 @@ def wrapper(
             "cluster_dge": False,
             "embedding_visualization": False,
             "visualization": False,
+            "prediction": False,
+            "association": False,
         },
         "system_info": system_info
     }
@@ -1050,6 +1230,8 @@ def wrapper(
                 trajectory_visualization_label=rna_trajectory_visualization_label or ['sev.level'],
                 cca_pvalue=rna_cca_pvalue,
                 tscan_origin=rna_tscan_origin,
+                tscan_n_clusters=rna_tscan_n_clusters,
+                tscan_pseudotime_mode=rna_tscan_pseudotime_mode,
                 # Trajectory DGE
                 fdr_threshold=rna_fdr_threshold,
                 effect_size_threshold=rna_effect_size_threshold,
@@ -1067,8 +1249,22 @@ def wrapper(
                 plot_dendrogram_flag=rna_plot_dendrogram_flag,
                 plot_cell_type_proportions_pca_flag=rna_plot_cell_type_proportions_pca_flag,
                 plot_cell_type_expression_umap_flag=rna_plot_cell_type_expression_umap_flag,
+                # Prediction
+                prediction_enabled=rna_prediction_enabled,
+                prediction_target_col=rna_prediction_target_col,
+                prediction_feature_source=rna_prediction_feature_source,
+                prediction_task_type=rna_prediction_task_type,
+                prediction_model=rna_prediction_model,
+                prediction_cv=rna_prediction_cv,
+                prediction_n_permutations=rna_prediction_n_permutations,
+                # Association
+                association_enabled=rna_association_enabled,
+                association_continuous_cols=rna_association_continuous_cols,
+                association_categorical_cols=rna_association_categorical_cols,
+                association_distance_methods=rna_association_distance_methods,
+                association_n_permutations=rna_association_n_permutations,
             )
-            
+
             status_flags = downstream_results['status_flags']
             results['rna_results'] = {**rna_results, **downstream_results}
             _save_status(status_file_path, status_flags)
@@ -1188,6 +1384,8 @@ def wrapper(
                 trajectory_visualization_label=atac_trajectory_visualization_label or ['sev.level'],
                 cca_pvalue=atac_cca_pvalue,
                 tscan_origin=atac_tscan_origin,
+                tscan_n_clusters=atac_tscan_n_clusters,
+                tscan_pseudotime_mode=atac_tscan_pseudotime_mode,
                 # Trajectory DGE
                 fdr_threshold=atac_fdr_threshold,
                 effect_size_threshold=atac_effect_size_threshold,
@@ -1205,8 +1403,22 @@ def wrapper(
                 plot_dendrogram_flag=atac_plot_dendrogram_flag,
                 plot_cell_type_proportions_pca_flag=atac_plot_cell_type_proportions_pca_flag,
                 plot_cell_type_expression_umap_flag=atac_plot_cell_type_expression_umap_flag,
+                # Prediction
+                prediction_enabled=atac_prediction_enabled,
+                prediction_target_col=atac_prediction_target_col,
+                prediction_feature_source=atac_prediction_feature_source,
+                prediction_task_type=atac_prediction_task_type,
+                prediction_model=atac_prediction_model,
+                prediction_cv=atac_prediction_cv,
+                prediction_n_permutations=atac_prediction_n_permutations,
+                # Association
+                association_enabled=atac_association_enabled,
+                association_continuous_cols=atac_association_continuous_cols,
+                association_categorical_cols=atac_association_categorical_cols,
+                association_distance_methods=atac_association_distance_methods,
+                association_n_permutations=atac_association_n_permutations,
             )
-            
+
             status_flags = downstream_results['status_flags']
             results['atac_results'] = {**atac_results, **downstream_results}
             _save_status(status_file_path, status_flags)
@@ -1373,6 +1585,8 @@ def wrapper(
                 trajectory_visualization_label=multiomics_trajectory_visualization_label or ['sev.level'],
                 cca_pvalue=multiomics_cca_pvalue,
                 tscan_origin=multiomics_tscan_origin,
+                tscan_n_clusters=multiomics_tscan_n_clusters,
+                tscan_pseudotime_mode=multiomics_tscan_pseudotime_mode,
                 # Trajectory DGE
                 fdr_threshold=multiomics_fdr_threshold,
                 effect_size_threshold=multiomics_effect_size_threshold,
@@ -1403,8 +1617,22 @@ def wrapper(
                 multiomics_colormap=multiomics_colormap,
                 multiomics_show_sample_names=multiomics_show_sample_names,
                 multiomics_force_data_type=multiomics_force_data_type,
+                # Prediction
+                prediction_enabled=multiomics_prediction_enabled,
+                prediction_target_col=multiomics_prediction_target_col,
+                prediction_feature_source=multiomics_prediction_feature_source,
+                prediction_task_type=multiomics_prediction_task_type,
+                prediction_model=multiomics_prediction_model,
+                prediction_cv=multiomics_prediction_cv,
+                prediction_n_permutations=multiomics_prediction_n_permutations,
+                # Association
+                association_enabled=multiomics_association_enabled,
+                association_continuous_cols=multiomics_association_continuous_cols,
+                association_categorical_cols=multiomics_association_categorical_cols,
+                association_distance_methods=multiomics_association_distance_methods,
+                association_n_permutations=multiomics_association_n_permutations,
             )
-            
+
             status_flags = downstream_results['status_flags']
             results['multiomics_results'] = {**multiomics_results, **downstream_results}
             _save_status(status_file_path, status_flags)

@@ -131,7 +131,7 @@ rna_plot_cell_type_expression_umap_flag: true
 
 # RNA Cluster Based DEG
 rna_kmeans_based_cluster_flag: true
-rna_tree_building_method: 
+rna_tree_building_method:
   - "HRA_VEC"
   - "HRC_VEC"
   - "NN"
@@ -141,6 +141,23 @@ rna_raisin_analysis: true
 rna_cluster_distance_method: "cosine"
 rna_cluster_number: 4
 rna_user_provided_sample_to_clade: null
+
+# RNA Prediction Parameters
+rna_prediction_enabled: false
+rna_prediction_target_col: null
+rna_prediction_feature_source: "expression"
+rna_prediction_task_type: "auto"
+rna_prediction_model: "ridge"
+rna_prediction_cv: "auto"
+rna_prediction_n_permutations: 0
+
+# RNA Association Parameters
+rna_association_enabled: false
+rna_association_continuous_cols: null
+rna_association_categorical_cols: null
+rna_association_distance_methods:
+  - "cosine"
+rna_association_n_permutations: 999
 
 # ========================================
 # ATAC PIPELINE PARAMETERS
@@ -254,7 +271,7 @@ atac_summary_sample_csv_path: null
 
 # ATAC Clustering parameters
 atac_kmeans_based_cluster_flag: false
-atac_tree_building_method: 
+atac_tree_building_method:
   - "HRA_VEC"
   - "HRC_VEC"
   - "NN"
@@ -264,6 +281,23 @@ atac_raisin_analysis: false
 atac_cluster_distance_method: "cosine"
 atac_cluster_number: 4
 atac_user_provided_sample_to_clade: null
+
+# ATAC Prediction Parameters
+atac_prediction_enabled: false
+atac_prediction_target_col: null
+atac_prediction_feature_source: "expression"
+atac_prediction_task_type: "auto"
+atac_prediction_model: "ridge"
+atac_prediction_cv: "auto"
+atac_prediction_n_permutations: 0
+
+# ATAC Association Parameters
+atac_association_enabled: false
+atac_association_continuous_cols: null
+atac_association_categorical_cols: null
+atac_association_distance_methods:
+  - "cosine"
+atac_association_n_permutations: 999
 
 # ATAC Visualization parameters
 atac_figsize: [10, 8]
@@ -421,3 +455,20 @@ multiomics_resolution_output_dir: null
 # Multiomics Paths for Skipping Steps
 multiomics_integrated_h5ad_path: null
 multiomics_pseudobulk_h5ad_path: null
+
+# Multiomics Prediction Parameters
+multiomics_prediction_enabled: false
+multiomics_prediction_target_col: null
+multiomics_prediction_feature_source: "expression"
+multiomics_prediction_task_type: "auto"
+multiomics_prediction_model: "ridge"
+multiomics_prediction_cv: "auto"
+multiomics_prediction_n_permutations: 0
+
+# Multiomics Association Parameters
+multiomics_association_enabled: false
+multiomics_association_continuous_cols: null
+multiomics_association_categorical_cols: null
+multiomics_association_distance_methods:
+  - "cosine"
+multiomics_association_n_permutations: 999

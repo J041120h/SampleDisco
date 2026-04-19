@@ -398,8 +398,7 @@ def calculate_sample_distances_DR(
         columns=dr_data.index
     )
     
-    # Log transform and normalize
-    distance_df = np.log1p(np.maximum(distance_df, 0))
+    # Normalize to [0, 1]
     if distance_df.max().max() > 0:
         distance_df = distance_df / distance_df.max().max()
     
@@ -471,6 +470,30 @@ def _match_samples(dr_data: pd.DataFrame, adata: AnnData) -> pd.DataFrame:
 # =============================================================================
 # Helper Functions for DR Key Selection
 # =============================================================================
+
+def _default_cell_embedding_key(adata: AnnData, data_type: str) -> str:
+    """Pick the modality-appropriate default cell-level embedding key from adata.obsm.
+
+    RNA → prefer X_pca_harmony, fall back to X_pca.
+    ATAC → prefer X_lsi_harmony, fall back to X_lsi.
+    multiomics → prefer X_glue, fall back to X_pca_harmony.
+    """
+    dt = data_type.lower()
+    if dt == 'multiomics':
+        priority = ['X_glue', 'X_pca_harmony']
+    elif dt == 'atac':
+        priority = ['X_lsi_harmony', 'X_lsi']
+    else:
+        priority = ['X_pca_harmony', 'X_pca']
+
+    for k in priority:
+        if k in adata.obsm:
+            return k
+    raise KeyError(
+        f"No expected cell-level embedding found in adata.obsm for data_type='{data_type}'. "
+        f"Tried {priority}. Available keys: {list(adata.obsm.keys())}"
+    )
+
 
 def get_best_expression_dr_key(adata: AnnData, data_type: str = 'ATAC') -> Optional[str]:
     """Get best available expression DR key based on data type."""
@@ -650,7 +673,7 @@ def sample_distance(
     cell_adata: Optional[AnnData] = None,
     cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
-    embedding_key: str = 'X_pca_harmony',
+    embedding_key: Optional[str] = None,
     n_pcs: int = 20,
     proportions: Optional[pd.DataFrame] = None,
     centroids: Optional[Union[pd.DataFrame, np.ndarray]] = None,
@@ -684,8 +707,9 @@ def sample_distance(
         Column name for cell types.
     sample_column : str
         Column name for samples.
-    embedding_key : str
-        Key in obsm for embeddings (EMD only).
+    embedding_key : str, optional
+        Key in obsm for embeddings (EMD only). If None, picked from data_type:
+        RNA→X_pca_harmony, ATAC→X_lsi_harmony, multiomics→X_glue.
     n_pcs : int
         Number of PCs to use (EMD only).
     proportions : pd.DataFrame, optional
@@ -719,13 +743,15 @@ def sample_distance(
     elif method == "EMD":
         if cell_adata is None:
             raise ValueError("cell_adata required for EMD distance")
-        
+
+        resolved_embedding_key = embedding_key or _default_cell_embedding_key(cell_adata, data_type)
+
         distance_df = emd_distance(
             adata=cell_adata,
             output_dir=output_dir,
             sample_column=sample_column,
             cell_type_column=cell_type_column,
-            embedding_key=embedding_key,
+            embedding_key=resolved_embedding_key,
             n_pcs=n_pcs,
             proportions=proportions,
             centroids=centroids,
