@@ -79,15 +79,23 @@ def cell_types_multiomics_linux(
     if verbose:
         print(f"\n--- Step 1: Clustering RNA cells ---")
         print(f"  Resolution: {cluster_resolution}")
-    
-    rna_adata = adata[rna_mask].copy()
-    
+
+    # Build a minimal AnnData with only the embedding — avoids moving the full
+    # X matrix to GPU (Leiden only reads obsm[use_rep]).
+    rna_indices = adata.obs.index[rna_mask]
+    rna_embedding_np = embedding[rna_mask.values] if hasattr(rna_mask, 'values') else embedding[rna_mask]
+    rna_adata = ad.AnnData(
+        X=sparse.csr_matrix((n_rna, 1), dtype=np.float32),
+        obs=pd.DataFrame(index=rna_indices),
+        obsm={use_rep: np.ascontiguousarray(rna_embedding_np, dtype=np.float32)},
+    )
+
     rsc.get.anndata_to_GPU(rna_adata)
-    
+
     if verbose:
         print("  Building neighborhood graph for RNA cells...")
     rsc.pp.neighbors(rna_adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
-    
+
     if verbose:
         print("  Performing Leiden clustering...")
     rsc.tl.leiden(
@@ -96,18 +104,22 @@ def cell_types_multiomics_linux(
         key_added=cell_type_column,
         random_state=42,
     )
-    
+
     rna_adata.obs[cell_type_column] = (
         (rna_adata.obs[cell_type_column].astype(int) + 1).astype(str).astype("category")
     )
-    
+
     n_clusters = rna_adata.obs[cell_type_column].nunique()
     if verbose:
         print(f"  Found {n_clusters} clusters in RNA cells")
-    
+
     rsc.get.anndata_to_CPU(rna_adata)
-    
+
     rna_cell_types = rna_adata.obs[cell_type_column].copy()
+
+    del rna_adata
+    import cupy as _cp
+    _cp.get_default_memory_pool().free_all_blocks()
     
     if verbose:
         print(f"\n--- Step 2: Transferring labels to ATAC cells ---")
@@ -242,14 +254,29 @@ def cell_types_multiomics_linux(
     if compute_umap:
         if verbose:
             print(f"\n--- Step 5: Computing UMAP ---")
-        
-        rsc.get.anndata_to_GPU(adata)
-        
-        rsc.pp.neighbors(adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
-        
-        rsc.tl.umap(adata, min_dist=0.5)
-        
-        rsc.get.anndata_to_CPU(adata)
+
+        # Build a minimal AnnData for UMAP to avoid moving the full X to GPU.
+        full_embedding_np = adata.obsm[use_rep]
+        if hasattr(full_embedding_np, 'get'):
+            full_embedding_np = full_embedding_np.get()
+        if num_PCs is not None and full_embedding_np.shape[1] > num_PCs:
+            full_embedding_np = full_embedding_np[:, :num_PCs]
+
+        umap_adata = ad.AnnData(
+            X=sparse.csr_matrix((adata.n_obs, 1), dtype=np.float32),
+            obs=pd.DataFrame(index=adata.obs.index),
+            obsm={use_rep: np.ascontiguousarray(full_embedding_np, dtype=np.float32)},
+        )
+
+        rsc.get.anndata_to_GPU(umap_adata)
+        rsc.pp.neighbors(umap_adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
+        rsc.tl.umap(umap_adata, min_dist=0.5)
+        rsc.get.anndata_to_CPU(umap_adata)
+
+        adata.obsm['X_umap'] = umap_adata.obsm['X_umap']
+        del umap_adata
+        import cupy as _cp
+        _cp.get_default_memory_pool().free_all_blocks()
     
     adata = ensure_cpu_arrays(adata)
     

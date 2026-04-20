@@ -4,12 +4,12 @@
 output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired"
 
 # Pipeline selection
-run_rna_pipeline: true
+run_rna_pipeline: false
 run_atac_pipeline: false
-run_multiomics_pipeline: false
+run_multiomics_pipeline: true
 
 # General settings
-use_gpu: false
+use_gpu: true
 initialization: false
 verbose: true
 save_intermediate: true
@@ -274,7 +274,7 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 multiomics_integration: false
 multiomics_integration_preprocessing: false
 multiomics_dimensionality_reduction: false
-multiomics_find_optimal_resolution: false
+multiomics_find_optimal_resolution: true
 
 # --- Pipeline Control Flags (Downstream) ---
 multiomics_sample_distance_calculation: false

@@ -1,78 +1,91 @@
-Resuming process from previous progress:
+Resuming from previous progress:
 {
-    "rna": {
-        "preprocessing": true,
-        "cell_type_cluster": true,
-        "dimensionality_reduction": true,
-        "sample_distance_calculation": true,
-        "trajectory_analysis": true,
-        "trajectory_dge": true,
-        "cluster_dge": true,
-        "visualization": false
-    },
-    "atac": {
-        "preprocessing": true,
-        "cell_type_cluster": false,
-        "dimensionality_reduction": false,
-        "sample_distance_calculation": false,
-        "trajectory_analysis": false,
-        "trajectory_dge": false,
-        "cluster_dge": false,
-        "visualization": false
-    },
-    "multiomics": {
-        "glue_integration": true,
-        "glue_preprocessing": true,
-        "glue_training": true,
-        "glue_gene_activity": true,
-        "glue_cell_types": true,
-        "glue_visualization": true,
-        "integration_preprocessing": true,
-        "dimensionality_reduction": true,
-        "embedding_visualization": true,
-        "optimal_resolution": true
-    },
-    "system_info": {
-        "platform": "Linux",
-        "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-        "use_gpu": false,
-        "linux_system": false
-    }
+  "rna": {
+    "preprocessing": true,
+    "cell_type_cluster": true,
+    "derive_sample_embedding": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": true,
+    "trajectory_analysis": true,
+    "trajectory_dge": true,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": true,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false,
+    "dimensionality_reduction": true
+  },
+  "atac": {
+    "preprocessing": true,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false,
+    "dimensionality_reduction": false
+  },
+  "multiomics": {
+    "glue_integration": true,
+    "glue_preprocessing": true,
+    "glue_training": true,
+    "glue_gene_activity": true,
+    "glue_cell_types": true,
+    "glue_visualization": true,
+    "integration_preprocessing": true,
+    "optimal_resolution": true,
+    "dimensionality_reduction": true,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "embedding_visualization": true,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "system_info": {
+    "platform": "Linux",
+    "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+    "use_gpu": true,
+    "gpu_available": true
+  }
 }
 
 ============================================================
-RUNNING RNA PIPELINE
+RUNNING MULTIOMICS PIPELINE
 ============================================================
-Starting RNA wrapper function with provided parameters...
-Reading Pseudobulk from provided or default path: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/pseudobulk/pseudobulk_sample.h5ad
-Starting clustering and differential gene expression...
-[INFO] K-means output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/sample_cluster
-[INFO] Running K-means on expression embedding 'X_DR_expression', shape=(431, 30)
-[INFO] Saved expression clustering CSV: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/sample_cluster/kmeans_clusters_expression.csv
-[INFO] Saved plot: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/sample_cluster/kmeans_expression_embedding.png
-[INFO] Running K-means on proportion embedding 'X_DR_proportion', shape=(431, 10)
-[INFO] Saved proportion clustering CSV: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/sample_cluster/kmeans_clusters_proportion.csv
-[INFO] Saved plot: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/rna/sample_cluster/kmeans_proportion_embedding.png
-[INFO] K-means clustering completed.
-[INFO] Starting proportion tests...
-[INFO] Proportion tests completed.
-RNA analysis completed successfully!
-
-✓ RNA pipeline completed successfully!
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
+GPU mode: Enabled
+Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
+Step 2b: Running cell type assignment...
 
 ============================================================
-PIPELINE EXECUTION SUMMARY
+Cell Type Assignment for Multi-omics Data
 ============================================================
-RNA Pipeline: ⚠ PARTIAL
-  - preprocessing: ✓
-  - cell_type_cluster: ✓
-  - dimensionality_reduction: ✓
-  - sample_distance_calculation: ✓
-  - trajectory_analysis: ✓
-  - trajectory_dge: ✓
-  - cluster_dge: ✓
-  - visualization: ✗
 
-Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired
-Status file: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/sys_log/main_process_status.json
-Execution time: 80.7623 seconds
+Data composition:
+  RNA cells: 898435
+  ATAC cells: 88962
+  Total cells: 987397
+
+--- Step 1: Clustering RNA cells ---
+  Resolution: 0.8
+  Building neighborhood graph for RNA cells...
+  Performing Leiden clustering...
+  Found 29 clusters in RNA cells
+
+--- Step 2: Transferring labels to ATAC cells ---
+  Using k=3 nearest neighbors with Jaccard-weighted SNN
+  Metric: cosine
+  Building k-NN graphs...

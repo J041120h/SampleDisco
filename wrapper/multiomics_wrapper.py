@@ -326,37 +326,37 @@ def multiomics_wrapper(
         
         suppress_warnings()
         
-        for dr_type in ["expression", "proportion"]:
-            if multiomics_verbose:
-                print(f"\n  Running optimization for {dr_type.upper()}...")
+        # for dr_type in ["expression", "proportion"]:
+        #     if multiomics_verbose:
+        #         print(f"\n  Running optimization for {dr_type.upper()}...")
             
-            resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization_{dr_type}"
+        #     resolution_output_dir = f"{multiomics_output_dir}/resolution_optimization_{dr_type}"
             
-            find_resolution_func(
-                AnnData_integrated=adata_for_resolution.copy(),
-                output_dir=resolution_output_dir,
-                optimization_target=optimization_target,
-                dr_type=dr_type,
-                sev_col=sev_col,
-                batch_col=batch_col,
-                sample_col=sample_col,
-                celltype_col=celltype_col,
-                modality_col=modality_col,
-                use_rep=resolution_use_rep,
-                sample_hvg_number=sample_hvg_number,
-                n_expression_components=n_expression_components,
-                n_proportion_components=n_proportion_components,
-                harmony_for_proportion=multiomics_harmony_for_proportion,
-                preserve_cols=preserve_cols_for_sample_embedding,
-                hvg_modality="RNA",
-                visualize_cell_types=visualize_cell_types,
-                verbose=multiomics_verbose
-            )
+        #     find_resolution_func(
+        #         AnnData_integrated=adata_for_resolution.copy(),
+        #         output_dir=resolution_output_dir,
+        #         optimization_target=optimization_target,
+        #         dr_type=dr_type,
+        #         sev_col=sev_col,
+        #         batch_col=batch_col,
+        #         sample_col=sample_col,
+        #         celltype_col=celltype_col,
+        #         modality_col=modality_col,
+        #         use_rep=resolution_use_rep,
+        #         sample_hvg_number=sample_hvg_number,
+        #         n_expression_components=n_expression_components,
+        #         n_proportion_components=n_proportion_components,
+        #         harmony_for_proportion=multiomics_harmony_for_proportion,
+        #         preserve_cols=preserve_cols_for_sample_embedding,
+        #         hvg_modality="RNA",
+        #         visualize_cell_types=visualize_cell_types,
+        #         verbose=multiomics_verbose
+        #     )
         
-        status_flags["multiomics"]["optimal_resolution"] = True
+        # status_flags["multiomics"]["optimal_resolution"] = True
         
-        if multiomics_verbose:
-            print("Optimal resolution finding completed successfully")
+        # if multiomics_verbose:
+        #     print("Optimal resolution finding completed successfully")
 
     # ==================== STEP 4: DIMENSIONALITY REDUCTION ====================
     pseudobulk_adata = None
