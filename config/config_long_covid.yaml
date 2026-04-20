@@ -35,6 +35,8 @@ rna_sample_cluster: false
 rna_proportion_test: false
 rna_cluster_dge: false
 rna_visualize_data: false
+rna_phenotype_prediction: false
+rna_dimension_association_analysis: false
 
 # --- Resume Paths (for skipping preprocessing) ---
 rna_adata_cell_path: "/dcs07/hongkai/data/harry/result/long_covid/subset/T_count_for_pseudobulk.h5ad"
@@ -45,11 +47,11 @@ rna_pseudo_adata_path: null
 
 # --- Common Column Names ---
 rna_sample_col: "sample"
-rna_sample_level_batch_col: 
-- "Sex"
-- "BMI category"
-- "month"
-- "LC/Recovered"
+rna_sample_level_batch_col:  # Can be string or list of strings
+  - "Sex"
+  - "BMI category"
+  - "month"
+  - "LC/Recovered"
 rna_celltype_col: "cell_type"
 
 # --- Preprocessing Parameters ---
@@ -63,7 +65,7 @@ rna_num_harmony_iterations: 30
 rna_cell_level_batch_key: null
 
 # --- Cell Type Clustering Parameters ---
-rna_leiden_cluster_resolution: 0.990
+rna_leiden_cluster_resolution: 0.99
 rna_cell_embedding_column: null
 rna_existing_cell_types: false
 rna_n_target_cell_clusters: null
@@ -75,14 +77,6 @@ rna_sample_embedding_dimension: 10
 rna_harmony_for_proportion: true
 rna_preserve_cols_in_sample_embedding: null
 
-# --- CCA-Based Resolution Selection Parameters ---
-rna_cca_compute_corrected_pvalues: true
-rna_cca_coarse_start: 0.1
-rna_cca_coarse_end: 1.0
-rna_cca_coarse_step: 0.1
-rna_cca_fine_range: 0.02
-rna_cca_fine_step: 0.01
-
 # --- Trajectory Analysis Parameters ---
 rna_n_cca_pcs: 10
 rna_trajectory_col: "Age at enrollment"
@@ -91,6 +85,16 @@ rna_trajectory_visualization_label:
   - "Age at enrollment"
 rna_cca_pvalue: true
 rna_tscan_origin: null
+rna_tscan_n_clusters: null  # int; null lets TSCAN auto-select via BIC (2-20)
+rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+
+# --- CCA-Based Resolution Selection Parameters ---
+rna_cca_compute_corrected_pvalues: true
+rna_cca_coarse_start: 0.1
+rna_cca_coarse_end: 1.0
+rna_cca_coarse_step: 0.1
+rna_cca_fine_range: 0.02
+rna_cca_fine_step: 0.01
 
 # --- Sample Distance Parameters ---
 rna_sample_distance_methods:
@@ -120,6 +124,25 @@ rna_plot_dendrogram_flag: true
 rna_plot_cell_type_proportions_pca_flag: true
 rna_plot_cell_type_expression_umap_flag: true
 
+# --- Phenotype Prediction Parameters ---
+# Toggle via rna_phenotype_prediction in the Pipeline Control Flags section.
+# feature_source: expression | proportion | cluster_expression | cluster_proportion
+#                 | pseudotime_expression | pseudotime_proportion
+# Model: Ridge for regression targets, Logistic Regression for classification (hardcoded).
+rna_prediction_target_col: null
+rna_prediction_feature_source: "expression"
+rna_prediction_task_type: "auto"
+rna_prediction_cv: "auto"
+rna_prediction_n_permutations: 0
+
+# --- Dimension Association Analysis Parameters ---
+# Toggle via rna_dimension_association_analysis in the Pipeline Control Flags section.
+# If the *_cols lists are null, all sample-level obs columns are auto-classified
+# into continuous / categorical and tested.
+rna_association_continuous_cols: null
+rna_association_categorical_cols: null
+rna_association_n_permutations: 999
+
 # =============================================================================
 # ATAC PIPELINE PARAMETERS
 # =============================================================================
@@ -140,6 +163,8 @@ atac_sample_cluster: false
 atac_proportion_test: false
 atac_cluster_dge: false
 atac_visualize_data: false
+atac_phenotype_prediction: false
+atac_dimension_association_analysis: false
 
 # --- Resume Paths (for skipping preprocessing) ---
 atac_adata_cell_path: null
@@ -150,9 +175,9 @@ atac_pseudo_adata_path: null
 
 # --- Common Column Names ---
 atac_sample_col: "sample"
-atac_sample_level_batch_col: null
+atac_sample_level_batch_col: null  # Can be string or list of strings
 atac_celltype_col: "cell_type"
-atac_cell_embedding_column: null  # auto-detected: X_lsi_harmony if sample-level batch set
+atac_cell_embedding_column: null  # auto-detected: X_lsi_harmony if batch_col set
 
 # --- ATAC-Specific Preprocessing Parameters ---
 atac_min_cells: 3
@@ -181,14 +206,6 @@ atac_sample_embedding_dimension: 30
 atac_harmony_for_proportion: true
 atac_preserve_cols_in_sample_embedding: null
 
-# --- CCA-Based Resolution Selection Parameters ---
-atac_cca_compute_corrected_pvalues: true
-atac_cca_coarse_start: 0.1
-atac_cca_coarse_end: 1.0
-atac_cca_coarse_step: 0.1
-atac_cca_fine_range: 0.02
-atac_cca_fine_step: 0.01
-
 # --- Trajectory Analysis Parameters ---
 atac_n_cca_pcs: 2
 atac_trajectory_col: "sev.level"
@@ -197,6 +214,16 @@ atac_trajectory_visualization_label:
   - "sev.level"
 atac_cca_pvalue: false
 atac_tscan_origin: null
+atac_tscan_n_clusters: null  # int; null lets TSCAN auto-select via BIC (2-20)
+atac_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+
+# --- CCA-Based Resolution Selection Parameters ---
+atac_cca_compute_corrected_pvalues: true
+atac_cca_coarse_start: 0.1
+atac_cca_coarse_end: 1.0
+atac_cca_coarse_step: 0.1
+atac_cca_fine_range: 0.02
+atac_cca_fine_step: 0.01
 
 # --- Sample Distance Parameters ---
 atac_sample_distance_methods:
@@ -226,6 +253,18 @@ atac_plot_dendrogram_flag: true
 atac_plot_cell_type_proportions_pca_flag: true
 atac_plot_cell_type_expression_umap_flag: true
 
+# --- Phenotype Prediction Parameters ---
+atac_prediction_target_col: null
+atac_prediction_feature_source: "expression"
+atac_prediction_task_type: "auto"
+atac_prediction_cv: "auto"
+atac_prediction_n_permutations: 0
+
+# --- Dimension Association Analysis Parameters ---
+atac_association_continuous_cols: null
+atac_association_categorical_cols: null
+atac_association_n_permutations: 999
+
 # =============================================================================
 # MULTIOMICS PIPELINE PARAMETERS
 # =============================================================================
@@ -235,14 +274,13 @@ multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/test_RNA.h5ad"
 multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
 multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
-# --- Pipeline Control Flags (preprocessing & resolution) ---
+# --- Pipeline Control Flags (Preprocessing & Resolution) ---
 multiomics_integration: false
 multiomics_integration_preprocessing: false
-multiomics_cell_type_cluster: false
 multiomics_dimensionality_reduction: false
 multiomics_find_optimal_resolution: false
 
-# --- Pipeline Control Flags (downstream) ---
+# --- Pipeline Control Flags (Downstream) ---
 multiomics_sample_distance_calculation: true
 multiomics_trajectory_analysis: true
 multiomics_trajectory_dge: true
@@ -250,11 +288,14 @@ multiomics_sample_cluster: true
 multiomics_proportion_test: false
 multiomics_cluster_dge: false
 multiomics_visualize_embedding: true
+multiomics_phenotype_prediction: false
+multiomics_dimension_association_analysis: false
 
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_run_glue_gene_activity: true
+multiomics_cell_type_cluster: false
 multiomics_run_glue_visualization: false
 
 # --- Resume Paths (for skipping steps) ---
@@ -303,7 +344,7 @@ multiomics_metric: "cosine"
 # --- Cell Type Clustering Parameters ---
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: null
-multiomics_cluster_resolution: 1.00
+multiomics_cluster_resolution: 1.0
 multiomics_use_rep_celltype: "X_glue"
 multiomics_markers: null
 multiomics_generate_umap_celltype: true
@@ -348,6 +389,8 @@ multiomics_trajectory_visualization_label:
 multiomics_n_cca_pcs: 2
 multiomics_cca_pvalue: false
 multiomics_tscan_origin: null
+multiomics_tscan_n_clusters: null  # int; null lets TSCAN auto-select via BIC (2-20)
+multiomics_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
 
 # --- Sample Distance Parameters ---
 multiomics_sample_distance_methods:
@@ -370,7 +413,7 @@ multiomics_visualization_gene_list: null
 multiomics_cluster_number: 4
 multiomics_cluster_differential_gene_group_col: null
 
-# --- Visualization Parameters (general) ---
+# --- Visualization Parameters (General) ---
 multiomics_age_bin_size: null
 multiomics_age_column: "age"
 multiomics_plot_dendrogram_flag: true
@@ -384,9 +427,23 @@ multiomics_visualization_grouping_column:
 multiomics_target_modality: "ATAC"
 multiomics_expression_key: "X_DR_expression"
 multiomics_proportion_key: "X_DR_proportion"
-multiomics_figsize: [20, 8]
+multiomics_figsize:
+  - 20
+  - 8
 multiomics_point_size: 60
 multiomics_alpha: 0.8
 multiomics_colormap: "viridis"
 multiomics_show_sample_names: false
 multiomics_force_data_type: null
+
+# --- Phenotype Prediction Parameters ---
+multiomics_prediction_target_col: null
+multiomics_prediction_feature_source: "expression"
+multiomics_prediction_task_type: "auto"
+multiomics_prediction_cv: "auto"
+multiomics_prediction_n_permutations: 0
+
+# --- Dimension Association Analysis Parameters ---
+multiomics_association_continuous_cols: null
+multiomics_association_categorical_cols: null
+multiomics_association_n_permutations: 999

@@ -8,6 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple, Union
 
+import pandas as pd
+
 from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
 
@@ -124,20 +126,18 @@ def downstream_analysis(
     plot_cell_type_proportions_pca_flag: bool = False,
     plot_cell_type_expression_umap_flag: bool = False,
 
-    # ===== Prediction parameters =====
-    prediction_enabled: bool = False,
+    # ===== Phenotype prediction parameters =====
+    phenotype_prediction: bool = False,
     prediction_target_col: Optional[str] = None,
     prediction_feature_source: Union[str, List[str]] = "expression",
     prediction_task_type: str = "auto",
-    prediction_model: str = "ridge",
     prediction_cv: str = "auto",
     prediction_n_permutations: int = 0,
 
-    # ===== Association parameters =====
-    association_enabled: bool = False,
+    # ===== Dimension association analysis parameters =====
+    dimension_association_analysis: bool = False,
     association_continuous_cols: Optional[List[str]] = None,
     association_categorical_cols: Optional[List[str]] = None,
-    association_distance_methods: Optional[List[str]] = None,
     association_n_permutations: int = 999,
 
     # ===== Multiomics embedding visualization parameters =====
@@ -465,8 +465,8 @@ def downstream_analysis(
         sf["embedding_visualization"] = True
         print("Embedding visualization completed successfully")
 
-    # ==================== PREDICTION ====================
-    if prediction_enabled and prediction_target_col:
+    # ==================== PHENOTYPE PREDICTION ====================
+    if phenotype_prediction and prediction_target_col:
         print("Starting sample prediction...")
         from sample_prediction.predict_sample_phenotype import predict_sample_phenotype
 
@@ -483,7 +483,6 @@ def downstream_analysis(
                     target_col=prediction_target_col,
                     feature_source=src,
                     task_type=prediction_task_type,
-                    model=prediction_model,
                     cv=prediction_cv,
                     n_permutations=prediction_n_permutations,
                     output_dir=pred_output_dir,
@@ -494,50 +493,32 @@ def downstream_analysis(
                 if verbose:
                     import traceback; traceback.print_exc()
 
-        sf["prediction"] = True
-        print(f"Prediction completed: {pred_output_dir}")
+        sf["phenotype_prediction"] = True
+        print(f"Phenotype prediction completed: {pred_output_dir}")
 
-    # ==================== ASSOCIATION ====================
-    if association_enabled:
-        print("Starting association analysis...")
-        from sample_association.association import (
-            correlate_embedding_with_variable,
-            permanova_on_distance,
-        )
+    # ==================== DIMENSION ASSOCIATION ANALYSIS ====================
+    if dimension_association_analysis:
+        print("Starting dimension association analysis...")
+        from sample_association.association import run_dimension_association_analysis
+
         assoc_output_dir = os.path.join(output_dir, "sample_association")
+        try:
+            run_dimension_association_analysis(
+                pseudo_adata=pseudo_adata,
+                output_dir=assoc_output_dir,
+                continuous_cols=association_continuous_cols,
+                categorical_cols=association_categorical_cols,
+                n_permutations=association_n_permutations,
+                sample_col=sample_col,
+                verbose=verbose,
+            )
+        except Exception as e:
+            print(f"[Association] Warning: analysis failed: {e}")
+            if verbose:
+                import traceback; traceback.print_exc()
 
-        if association_continuous_cols:
-            try:
-                correlate_embedding_with_variable(
-                    pseudo_adata=pseudo_adata,
-                    continuous_cols=association_continuous_cols,
-                    output_dir=os.path.join(assoc_output_dir, "correlation"),
-                    n_permutations=association_n_permutations,
-                    verbose=verbose,
-                )
-            except Exception as e:
-                print(f"[Association] Warning: correlation failed: {e}")
-                if verbose:
-                    import traceback; traceback.print_exc()
-
-        if association_categorical_cols:
-            try:
-                permanova_on_distance(
-                    pseudo_adata=pseudo_adata,
-                    categorical_cols=association_categorical_cols,
-                    distance_dir=os.path.join(output_dir, "Sample_distance"),
-                    output_dir=os.path.join(assoc_output_dir, "permanova"),
-                    distance_methods=association_distance_methods or ["cosine"],
-                    n_permutations=association_n_permutations,
-                    verbose=verbose,
-                )
-            except Exception as e:
-                print(f"[Association] Warning: PERMANOVA failed: {e}")
-                if verbose:
-                    import traceback; traceback.print_exc()
-
-        sf["association"] = True
-        print(f"Association analysis completed: {assoc_output_dir}")
+        sf["dimension_association_analysis"] = True
+        print(f"Dimension association analysis completed: {assoc_output_dir}")
 
     print(f"{modality.upper()} downstream analysis completed!")
     return {'pseudo_adata': pseudo_adata, 'status_flags': status_flags}
@@ -580,7 +561,9 @@ def wrapper(
     rna_proportion_test: bool = False,
     rna_cluster_dge: bool = False,
     rna_visualize_data: bool = True,
-    
+    rna_phenotype_prediction: bool = False,
+    rna_dimension_association_analysis: bool = False,
+
     # Input data paths (for resuming)
     rna_adata_cell_path: Optional[str] = None,
     rna_adata_sample_path: Optional[str] = None,
@@ -659,20 +642,16 @@ def wrapper(
     rna_plot_cell_type_proportions_pca_flag: bool = False,
     rna_plot_cell_type_expression_umap_flag: bool = False,
 
-    # Prediction parameters
-    rna_prediction_enabled: bool = False,
+    # Phenotype prediction parameters
     rna_prediction_target_col: Optional[str] = None,
     rna_prediction_feature_source: Union[str, List[str]] = "expression",
     rna_prediction_task_type: str = "auto",
-    rna_prediction_model: str = "ridge",
     rna_prediction_cv: str = "auto",
     rna_prediction_n_permutations: int = 0,
 
-    # Association parameters
-    rna_association_enabled: bool = False,
+    # Dimension association analysis parameters
     rna_association_continuous_cols: Optional[List[str]] = None,
     rna_association_categorical_cols: Optional[List[str]] = None,
-    rna_association_distance_methods: Optional[List[str]] = None,
     rna_association_n_permutations: int = 999,
 
     # ==========================================================================
@@ -693,7 +672,9 @@ def wrapper(
     atac_proportion_test: bool = False,
     atac_cluster_dge: bool = False,
     atac_visualize_data: bool = True,
-    
+    atac_phenotype_prediction: bool = False,
+    atac_dimension_association_analysis: bool = False,
+
     # Input data paths (for resuming)
     atac_adata_cell_path: Optional[str] = None,
     atac_adata_sample_path: Optional[str] = None,
@@ -777,20 +758,16 @@ def wrapper(
     atac_plot_cell_type_proportions_pca_flag: bool = False,
     atac_plot_cell_type_expression_umap_flag: bool = False,
 
-    # Prediction parameters
-    atac_prediction_enabled: bool = False,
+    # Phenotype prediction parameters
     atac_prediction_target_col: Optional[str] = None,
     atac_prediction_feature_source: Union[str, List[str]] = "expression",
     atac_prediction_task_type: str = "auto",
-    atac_prediction_model: str = "ridge",
     atac_prediction_cv: str = "auto",
     atac_prediction_n_permutations: int = 0,
 
-    # Association parameters
-    atac_association_enabled: bool = False,
+    # Dimension association analysis parameters
     atac_association_continuous_cols: Optional[List[str]] = None,
     atac_association_categorical_cols: Optional[List[str]] = None,
-    atac_association_distance_methods: Optional[List[str]] = None,
     atac_association_n_permutations: int = 999,
 
     # ==========================================================================
@@ -813,6 +790,8 @@ def wrapper(
     multiomics_proportion_test: bool = False,
     multiomics_cluster_dge: bool = False,
     multiomics_visualize_embedding: bool = True,
+    multiomics_phenotype_prediction: bool = False,
+    multiomics_dimension_association_analysis: bool = False,
     
     # GLUE sub-pipeline flags
     multiomics_run_glue_preprocessing: bool = True,
@@ -952,20 +931,16 @@ def wrapper(
     multiomics_show_sample_names: bool = False,
     multiomics_force_data_type: Optional[str] = None,
 
-    # Prediction parameters
-    multiomics_prediction_enabled: bool = False,
+    # Phenotype prediction parameters
     multiomics_prediction_target_col: Optional[str] = None,
     multiomics_prediction_feature_source: Union[str, List[str]] = "expression",
     multiomics_prediction_task_type: str = "auto",
-    multiomics_prediction_model: str = "ridge",
     multiomics_prediction_cv: str = "auto",
     multiomics_prediction_n_permutations: int = 0,
 
-    # Association parameters
-    multiomics_association_enabled: bool = False,
+    # Dimension association analysis parameters
     multiomics_association_continuous_cols: Optional[List[str]] = None,
     multiomics_association_categorical_cols: Optional[List[str]] = None,
-    multiomics_association_distance_methods: Optional[List[str]] = None,
     multiomics_association_n_permutations: int = 999,
 
 ) -> Dict[str, Any]:
@@ -1018,20 +993,20 @@ def wrapper(
         'gpu_available': gpu_available
     }
     
-    # Initialize GPU if available
+    # Initialize GPU if available; fall back to CPU on any import or runtime error
     if gpu_available:
         try:
             import rmm
             import cupy as cp
             from rmm.allocators.cupy import rmm_cupy_allocator
-            
+
             rmm.reinitialize(
                 managed_memory=large_data_need_extra_memory,
                 pool_allocator=not large_data_need_extra_memory,
             )
             cp.cuda.set_allocator(rmm_cupy_allocator)
-        except ImportError as e:
-            print(f"Warning: GPU libraries not available: {e}")
+        except Exception as e:
+            print(f"Warning: GPU initialization failed ({type(e).__name__}: {e}). Falling back to CPU.")
             gpu_available = False
             system_info['gpu_available'] = False
     
@@ -1067,8 +1042,8 @@ def wrapper(
         "proportion_test": False,
         "cluster_dge": False,
         "visualization": False,
-        "prediction": False,
-        "association": False,
+        "phenotype_prediction": False,
+        "dimension_association_analysis": False,
     }
     
     status_flags = {
@@ -1093,8 +1068,8 @@ def wrapper(
             "cluster_dge": False,
             "embedding_visualization": False,
             "visualization": False,
-            "prediction": False,
-            "association": False,
+            "phenotype_prediction": False,
+            "dimension_association_analysis": False,
         },
         "system_info": system_info
     }
@@ -1249,19 +1224,17 @@ def wrapper(
                 plot_dendrogram_flag=rna_plot_dendrogram_flag,
                 plot_cell_type_proportions_pca_flag=rna_plot_cell_type_proportions_pca_flag,
                 plot_cell_type_expression_umap_flag=rna_plot_cell_type_expression_umap_flag,
-                # Prediction
-                prediction_enabled=rna_prediction_enabled,
+                # Phenotype prediction
+                phenotype_prediction=rna_phenotype_prediction,
                 prediction_target_col=rna_prediction_target_col,
                 prediction_feature_source=rna_prediction_feature_source,
                 prediction_task_type=rna_prediction_task_type,
-                prediction_model=rna_prediction_model,
                 prediction_cv=rna_prediction_cv,
                 prediction_n_permutations=rna_prediction_n_permutations,
-                # Association
-                association_enabled=rna_association_enabled,
+                # Dimension association analysis
+                dimension_association_analysis=rna_dimension_association_analysis,
                 association_continuous_cols=rna_association_continuous_cols,
                 association_categorical_cols=rna_association_categorical_cols,
-                association_distance_methods=rna_association_distance_methods,
                 association_n_permutations=rna_association_n_permutations,
             )
 
@@ -1403,19 +1376,17 @@ def wrapper(
                 plot_dendrogram_flag=atac_plot_dendrogram_flag,
                 plot_cell_type_proportions_pca_flag=atac_plot_cell_type_proportions_pca_flag,
                 plot_cell_type_expression_umap_flag=atac_plot_cell_type_expression_umap_flag,
-                # Prediction
-                prediction_enabled=atac_prediction_enabled,
+                # Phenotype prediction
+                phenotype_prediction=atac_phenotype_prediction,
                 prediction_target_col=atac_prediction_target_col,
                 prediction_feature_source=atac_prediction_feature_source,
                 prediction_task_type=atac_prediction_task_type,
-                prediction_model=atac_prediction_model,
                 prediction_cv=atac_prediction_cv,
                 prediction_n_permutations=atac_prediction_n_permutations,
-                # Association
-                association_enabled=atac_association_enabled,
+                # Dimension association analysis
+                dimension_association_analysis=atac_dimension_association_analysis,
                 association_continuous_cols=atac_association_continuous_cols,
                 association_categorical_cols=atac_association_categorical_cols,
-                association_distance_methods=atac_association_distance_methods,
                 association_n_permutations=atac_association_n_permutations,
             )
 
@@ -1617,19 +1588,17 @@ def wrapper(
                 multiomics_colormap=multiomics_colormap,
                 multiomics_show_sample_names=multiomics_show_sample_names,
                 multiomics_force_data_type=multiomics_force_data_type,
-                # Prediction
-                prediction_enabled=multiomics_prediction_enabled,
+                # Phenotype prediction
+                phenotype_prediction=multiomics_phenotype_prediction,
                 prediction_target_col=multiomics_prediction_target_col,
                 prediction_feature_source=multiomics_prediction_feature_source,
                 prediction_task_type=multiomics_prediction_task_type,
-                prediction_model=multiomics_prediction_model,
                 prediction_cv=multiomics_prediction_cv,
                 prediction_n_permutations=multiomics_prediction_n_permutations,
-                # Association
-                association_enabled=multiomics_association_enabled,
+                # Dimension association analysis
+                dimension_association_analysis=multiomics_dimension_association_analysis,
                 association_continuous_cols=multiomics_association_continuous_cols,
                 association_categorical_cols=multiomics_association_categorical_cols,
-                association_distance_methods=multiomics_association_distance_methods,
                 association_n_permutations=multiomics_association_n_permutations,
             )
 

@@ -79,60 +79,68 @@ def cluster_samples_gmm(
         - Dictionary mapping cluster names to sample lists
         - Cluster labels for each sample
     """
-    X = pca_data.values
+    X = pca_data.values.astype(np.float64)
     n_samples = X.shape[0]
-    
+
     if n_clusters is None:
-        # Use BIC to select optimal number of clusters (as in mclust)
-        # TSCAN R: clusternum = 2:9 by default (minimum cluster is 2)
-        max_k = min(max_clusters, n_samples - 1)
+        # Cap at n_samples // 2 so every cluster has at least 2 samples
+        max_k = min(max_clusters, max(2, n_samples // 2))
         best_bic = np.inf
-        best_k = 2  # Changed: TSCAN requires minimum 2 clusters for MST
-        
+        best_k = 2
+
         if verbose:
             print("Determining optimal cluster number using BIC...")
-        
-        for k in range(2, max_k + 1):  # Changed: start from 2, matching R TSCAN default clusternum=2:9
+
+        for k in range(2, max_k + 1):
             try:
                 gmm = GaussianMixture(
                     n_components=k,
-                    covariance_type='full',  # Ellipsoidal, varying volume/shape/orientation
+                    covariance_type='full',
+                    reg_covar=1e-3,
                     random_state=random_state,
-                    n_init=5,  # Changed: increase n_init for stability
-                    max_iter=300,  # Changed: allow more iterations for convergence
+                    n_init=5,
+                    max_iter=300,
                 )
                 gmm.fit(X)
                 bic = gmm.bic(X)
-                
+
                 if bic < best_bic:
                     best_bic = bic
                     best_k = k
             except Exception:
                 continue
-        
+
         n_clusters = best_k
         if verbose:
             print(f"  Optimal clusters by BIC: {n_clusters}")
-    
-    # Fit final GMM with selected number of clusters
-    # Changed: use multiple random restarts and pick the best to reduce
-    # sensitivity to initialization (mclust does this internally)
+
+    # Fit final GMM; use multiple restarts, pick best log-likelihood
     best_gmm = None
     best_ll = -np.inf
     for _ in range(10):
-        gmm = GaussianMixture(
-            n_components=n_clusters,
-            covariance_type='full',
-            random_state=random_state,
-            n_init=1,
-            max_iter=300,
+        try:
+            gmm = GaussianMixture(
+                n_components=n_clusters,
+                covariance_type='full',
+                reg_covar=1e-3,
+                random_state=random_state,
+                n_init=1,
+                max_iter=300,
+            )
+            gmm.fit(X)
+            ll = gmm.score(X)
+            if ll > best_ll:
+                best_ll = ll
+                best_gmm = gmm
+        except Exception:
+            pass
+        random_state += 1
+
+    if best_gmm is None:
+        raise RuntimeError(
+            f"GMM fitting failed for all restarts with n_clusters={n_clusters}. "
+            "Try setting rna_tscan_n_clusters to a smaller value in the config."
         )
-        gmm.fit(X)
-        ll = gmm.score(X)
-        if ll > best_ll:
-            best_ll = ll
-            best_gmm = gmm
-        random_state += 1  # vary seed across restarts
 
     cluster_labels = best_gmm.predict(X)
     

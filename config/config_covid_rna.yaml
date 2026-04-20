@@ -35,6 +35,8 @@ rna_sample_cluster: false
 rna_proportion_test: false
 rna_cluster_dge: false
 rna_visualize_data: false
+rna_phenotype_prediction: true
+rna_dimension_association_analysis: true
 
 # --- Resume Paths (for skipping preprocessing) ---
 rna_adata_cell_path: null
@@ -79,7 +81,7 @@ rna_trajectory_visualization_label:
   - "sev.level"
 rna_cca_pvalue: true
 rna_tscan_origin: null
-rna_tscan_n_clusters: null  # int; null lets TSCAN auto-select via BIC (2-20)
+rna_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
 rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
 
 # --- CCA-Based Resolution Selection Parameters ---
@@ -118,31 +120,23 @@ rna_plot_dendrogram_flag: true
 rna_plot_cell_type_proportions_pca_flag: true
 rna_plot_cell_type_expression_umap_flag: true
 
-# --- Prediction Parameters ---
-# Set rna_prediction_enabled: true to run phenotype prediction from embeddings.
+# --- Phenotype Prediction Parameters ---
+# Toggle via rna_phenotype_prediction in the Pipeline Control Flags section.
 # feature_source: expression | proportion | cluster_expression | cluster_proportion
 #                 | pseudotime_expression | pseudotime_proportion
-# model (regression): ridge | lasso | rf | svm
-# model (classification): logreg | rf | svm
-rna_prediction_enabled: true
+# Model: Ridge for regression targets, Logistic Regression for classification (hardcoded).
 rna_prediction_target_col: "sev.level"
 rna_prediction_feature_source: "expression"
 rna_prediction_task_type: "auto"
-rna_prediction_model: "ridge"
 rna_prediction_cv: "auto"
 rna_prediction_n_permutations: 0
 
-# --- Association Parameters ---
-# Set rna_association_enabled: true to run correlation + PERMANOVA tests.
-# Continuous cols tested against each DR component (Pearson/Spearman + permutation FDR).
-# Categorical cols tested against distance matrices via PERMANOVA.
-rna_association_enabled: true
-rna_association_continuous_cols: null   # e.g. ["age", "bmi"] — fill in if available
-rna_association_categorical_cols:
-  - "sev.level"
-rna_association_distance_methods:
-  - "cosine"
-  - "correlation"
+# --- Dimension Association Analysis Parameters ---
+# Toggle via rna_dimension_association_analysis in the Pipeline Control Flags section.
+# If the *_cols lists are null, all sample-level obs columns are auto-classified
+# into continuous / categorical and tested.
+rna_association_continuous_cols: null
+rna_association_categorical_cols: null
 rna_association_n_permutations: 999
 
 # =============================================================================
@@ -165,6 +159,8 @@ atac_sample_cluster: false
 atac_proportion_test: false
 atac_cluster_dge: false
 atac_visualize_data: true
+atac_phenotype_prediction: false
+atac_dimension_association_analysis: false
 
 # --- Resume Paths (for skipping preprocessing) ---
 atac_adata_cell_path: null
@@ -253,6 +249,18 @@ atac_plot_dendrogram_flag: true
 atac_plot_cell_type_proportions_pca_flag: false
 atac_plot_cell_type_expression_umap_flag: false
 
+# --- Phenotype Prediction Parameters ---
+atac_prediction_target_col: null
+atac_prediction_feature_source: "expression"
+atac_prediction_task_type: "auto"
+atac_prediction_cv: "auto"
+atac_prediction_n_permutations: 0
+
+# --- Dimension Association Analysis Parameters ---
+atac_association_continuous_cols: null
+atac_association_categorical_cols: null
+atac_association_n_permutations: 999
+
 # =============================================================================
 # MULTIOMICS PIPELINE PARAMETERS
 # =============================================================================
@@ -276,6 +284,8 @@ multiomics_sample_cluster: false
 multiomics_proportion_test: false
 multiomics_cluster_dge: false
 multiomics_visualize_embedding: true
+multiomics_phenotype_prediction: false
+multiomics_dimension_association_analysis: false
 
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: true
@@ -420,3 +430,15 @@ multiomics_alpha: 0.8
 multiomics_colormap: "viridis"
 multiomics_show_sample_names: false
 multiomics_force_data_type: null
+
+# --- Phenotype Prediction Parameters ---
+multiomics_prediction_target_col: null
+multiomics_prediction_feature_source: "expression"
+multiomics_prediction_task_type: "auto"
+multiomics_prediction_cv: "auto"
+multiomics_prediction_n_permutations: 0
+
+# --- Dimension Association Analysis Parameters ---
+multiomics_association_continuous_cols: null
+multiomics_association_categorical_cols: null
+multiomics_association_n_permutations: 999

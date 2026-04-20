@@ -64,28 +64,11 @@ def _detect_task_type(y: np.ndarray) -> str:
     return "classification"
 
 
-def _build_model(model: str, task_type: str, random_state: int = 42):
-    from sklearn.linear_model import Ridge, Lasso, LogisticRegression
-    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-    from sklearn.svm import SVR, SVC
-
-    reg_opts = {
-        "ridge": Ridge(alpha=1.0),
-        "lasso": Lasso(alpha=0.01, max_iter=5000),
-        "rf": RandomForestRegressor(n_estimators=100, random_state=random_state),
-        "svm": SVR(kernel="rbf"),
-    }
-    clf_opts = {
-        "logreg": LogisticRegression(max_iter=1000, random_state=random_state),
-        "rf": RandomForestClassifier(n_estimators=100, random_state=random_state),
-        "svm": SVC(kernel="rbf", probability=True, random_state=random_state),
-    }
-    options = reg_opts if task_type == "regression" else clf_opts
-    if model not in options:
-        raise ValueError(
-            f"Model '{model}' not supported for {task_type}. Options: {list(options)}"
-        )
-    return options[model]
+def _build_model(task_type: str, random_state: int = 42):
+    from sklearn.linear_model import Ridge, LogisticRegression
+    if task_type == "regression":
+        return Ridge(alpha=1.0)
+    return LogisticRegression(max_iter=1000, random_state=random_state)
 
 
 def _get_cv_splitter(n_samples: int, task_type: str, cv: str = "auto"):
@@ -157,13 +140,8 @@ def _feature_importance(estimator, X: np.ndarray, y: np.ndarray,
     est = copy.deepcopy(estimator)
     est.fit(X_s, y_fit)
 
-    if hasattr(est, "coef_"):
-        coefs = est.coef_
-        imp = np.abs(coefs.mean(axis=0) if coefs.ndim > 1 else coefs)
-    elif hasattr(est, "feature_importances_"):
-        imp = est.feature_importances_
-    else:
-        imp = np.ones(len(feature_names)) / len(feature_names)
+    coefs = est.coef_
+    imp = np.abs(coefs.mean(axis=0) if coefs.ndim > 1 else coefs)
 
     return (
         pd.DataFrame({"feature": feature_names, "importance": imp})
@@ -254,13 +232,14 @@ def _save_classification_plots(y_true, y_pred_cv, feature_imp_df,
     from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
     valid = ~pd.isna(pd.Series(y_pred_cv))
-    yt = np.array(y_true)[valid]
-    yp = np.array(y_pred_cv)[valid]
+    yt = np.array(y_true)[valid].astype(str)
+    yp = np.array(y_pred_cv)[valid].astype(str)
+    class_labels = [str(c) for c in classes]
 
     # confusion matrix
-    cm = confusion_matrix(yt, yp, labels=classes)
-    fig, ax = plt.subplots(figsize=(max(4, len(classes)), max(3, len(classes))))
-    ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes).plot(ax=ax, colorbar=False)
+    cm = confusion_matrix(yt, yp, labels=class_labels)
+    fig, ax = plt.subplots(figsize=(max(4, len(class_labels)), max(3, len(class_labels))))
+    ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels).plot(ax=ax, colorbar=False)
     ax.set_title(f"Confusion Matrix — {target_col}")
     plt.tight_layout()
     plt.savefig(os.path.join(plots_dir, "confusion_matrix.png"), dpi=150, bbox_inches="tight")
@@ -291,10 +270,10 @@ def _save_classification_plots(y_true, y_pred_cv, feature_imp_df,
     # pseudotime density
     if "pseudotime" in feature_source:
         fig, ax = plt.subplots(figsize=(7, 4))
-        for cls in classes:
-            mask = yt == str(cls)
+        for cls in class_labels:
+            mask = yt == cls
             if mask.sum() > 1:
-                sns.kdeplot(yp[mask].astype(float), ax=ax, label=str(cls), fill=True, alpha=0.3)
+                sns.kdeplot(yp[mask].astype(float), ax=ax, label=cls, fill=True, alpha=0.3)
         ax.set_xlabel("Pseudotime prediction")
         ax.set_title(f"Target Density by Pseudotime — {target_col}")
         ax.legend()
@@ -312,7 +291,6 @@ def predict_sample_phenotype(
     target_col: str,
     feature_source: str = "expression",
     task_type: str = "auto",
-    model: str = "ridge",
     cv: str = "auto",
     n_permutations: int = 0,
     output_dir: Optional[str] = None,
@@ -320,6 +298,9 @@ def predict_sample_phenotype(
 ) -> dict:
     """
     Predict a sample-level phenotype from one of the pipeline's sample-level embeddings.
+
+    Uses Ridge regression for regression targets and Logistic Regression for
+    classification targets.
 
     Parameters
     ----------
@@ -333,15 +314,12 @@ def predict_sample_phenotype(
         cluster_proportion, pseudotime_expression, pseudotime_proportion.
     task_type : str
         "auto", "regression", or "classification".
-    model : str
-        Regression: "ridge", "lasso", "rf", "svm".
-        Classification: "logreg", "rf", "svm".
     cv : str
         "auto" → LOOCV if n<30 else 5-fold. Or integer string for explicit k-fold.
     n_permutations : int
         If >0, run permutation test on mean CV score.
     output_dir : str, optional
-        Outputs go to {output_dir}/prediction_{target}_{source}_{model}/.
+        Outputs go to {output_dir}/prediction_{target}_{source}/.
     verbose : bool
 
     Returns
@@ -372,10 +350,10 @@ def predict_sample_phenotype(
     if verbose:
         print(
             f"[Prediction] target={target_col}, source={feature_source}, "
-            f"model={model}, task={task_type}, n={n_samples}"
+            f"task={task_type}, n={n_samples}"
         )
 
-    estimator = _build_model(model, task_type)
+    estimator = _build_model(task_type)
     cv_splitter, cv_label = _get_cv_splitter(n_samples, task_type, cv)
 
     if verbose:
@@ -431,7 +409,7 @@ def predict_sample_phenotype(
     }
 
     if output_dir is not None:
-        subdir = os.path.join(output_dir, f"prediction_{target_col}_{feature_source}_{model}")
+        subdir = os.path.join(output_dir, f"prediction_{target_col}_{feature_source}")
         plots_dir = os.path.join(subdir, "plots")
         os.makedirs(subdir, exist_ok=True)
 
