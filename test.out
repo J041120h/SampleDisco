@@ -94,9 +94,158 @@ End of harmony for adata_cluster.
 === [CPU] Processing data for sample differences ===
 Saving original expression matrix (temporary variable)
 Normalizing and PCA on CPU...
-Total runtime: 1132.75 seconds
+Total runtime: 1133.41 seconds
 Starting sample embedding derivation...
+[Pseudobulk] Input: 928274 cells, 18846 genes
+[Pseudobulk] Data appears to be raw counts, will normalize after pseudobulk aggregation
+[Pseudobulk] Using GPU (rapids_singlecell)
+[Pseudobulk] 790 samples, 26 cell types
+[Pseudobulk] Batch correction: ['chem']
+[Pseudobulk] Phase 1: Aggregating...
+  Aggregating 928274 cells -> 790 samples x 26 cell types
+  Created 26 cell type layers
+[Pseudobulk] Phase 2: Processing cell types...
+  [1/26] B
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [2/26] NK
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [3/26] NKbright
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [4/26] NKdim
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [5/26] T helper
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [6/26] cyto CD4T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [7/26] double negative T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [8/26] hemapoietic stem
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [9/26] mDC
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [10/26] megakaryocyte
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [11/26] memory CD4T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 6338 HVGs
+  [12/26] memory CD8T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [13/26] memory CD8T left and naive CD8T right
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [14/26] mono 1
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [15/26] mono 2
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [16/26] mono 3
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [17/26] mono 4
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [18/26] naive CD4T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [19/26] naive CD4T transitioning to stim
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [20/26] naive CD8T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [21/26] pDC
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [22/26] plasma B
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [23/26] reg CD4T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [24/26] th1 CD4T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [25/26] th2 CD4T
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+  [26/26] unknown
+    Batches: 2, sizes: 240-550
+    Applied ComBat
+    Selected 2000 HVGs
+[Pseudobulk] Retained 26 cell types
+[Pseudobulk] Phase 3: Building final matrix...
+[Pseudobulk] Final features: 2000
+[Pseudobulk] Phase 4: Computing proportions...
+[Pseudobulk] Complete
+[Pseudobulk] Extracting sample metadata...
+[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/pseudobulk/pseudobulk_sample.h5ad
+[Pseudobulk] Output: 790 samples, 2000 features
+[DimRed] Starting dimension reduction computation...
+[DimRed] Mode: RNA (PCA)
+[DimRed] Batch column(s): ['chem']
+[DimRed] Output directory: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/pseudobulk
+[DimRed] Components: expression=10, proportion=10
+[DimRed] Computing PCA for RNA data with 10 components on (790, 2000) data
+[PCA] Success. Shape: (790, 10)
+[Storage] Stored X_DR_expression in both objects (shape: (790, 10))
+[DimRed] Completed - results stored as X_DR_expression
+[DimRed] Expression dimension reduction completed
+[Proportion] Computing PCA with 10 components...
+[Harmony] Applying with batch column(s): ['chem']
+[Harmony] Completed with 1 batch factor(s)
+[Storage] Stored X_DR_proportion in both objects (shape: (790, 10))
+[Proportion] Completed using Harmony-integrated PCA. Shape: (790, 10)
+[DimRed] Proportion dimension reduction completed
+[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/embeddings/sample_expression_embedding.csv (shape: (790, 10))
+[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/embeddings/sample_proportion_embedding.csv (shape: (790, 10))
+[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/embeddings
+[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/pseudobulk/pseudobulk_sample.h5ad
+[Save] Successfully saved pseudobulk_anndata (4.6 MB)
 
-RNA pipeline failed: Cell type clustering required before sample embedding derivation.
+[DimRed] === SUMMARY ===
+Runtime: 1.31s
+Expression: Success
+Proportion: Success
+RNA preprocessing pipeline completed successfully!
+Starting visualization...
 
-Total execution time: 1135.65 seconds (18.93 minutes)
+RNA pipeline failed: Cell type clustering required for dendrogram visualization.
+
+Total execution time: 1300.77 seconds (21.68 minutes)

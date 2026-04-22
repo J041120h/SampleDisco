@@ -420,8 +420,13 @@ def downstream_analysis(
         print("Starting visualization...")
         from visualization.visualization_other import visualization
         
-        if plot_dendrogram_flag and not sf.get("cell_type_cluster", False) and not sf.get("glue_cell_types", False):
-            raise ValueError("Cell type clustering required for dendrogram visualization.")
+        if plot_dendrogram_flag:
+            if adata_cell is None or celltype_col not in adata_cell.obs.columns:
+                raise ValueError(
+                    f"Cell type column '{celltype_col}' not found in adata_cell.obs; "
+                    "dendrogram visualization requires a cell type column. "
+                    "Provide an input with the column present, or enable cell type clustering to generate it."
+                )
         
         if (plot_cell_type_proportions_pca_flag or plot_cell_type_expression_umap_flag) and not sf.get("derive_sample_embedding", False) and not sf.get("dimensionality_reduction", False):
             raise ValueError("Sample embedding derivation required for requested visualization.")

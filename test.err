@@ -1,6 +1,75 @@
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+... storing 'chem' as categorical
+... storing '_combined_batch_' as categorical
+/users/hjiang/GenoDistance/code/sample_embedding/pseudo_adata_linux.py:88: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  grouped_by_sample = cell_level_adata.obs.groupby(sample_column)
+... storing 'assignment' as categorical
+... storing 'chem' as categorical
+... storing 'stimulation_conditions' as categorical
+2026-04-22 13:55:37,768 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-04-22 13:55:37 | [INFO] Computing initial centroids with sklearn.KMeans...
+2026-04-22 13:55:37,902 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-04-22 13:55:37 | [INFO] sklearn.KMeans initialization complete.
+2026-04-22 13:55:37,903 - harmonypy - INFO - Iteration 1 of 30
+2026-04-22 13:55:37 | [INFO] Iteration 1 of 30
+2026-04-22 13:55:37,921 - harmonypy - INFO - Iteration 2 of 30
+2026-04-22 13:55:37 | [INFO] Iteration 2 of 30
+2026-04-22 13:55:37,965 - harmonypy - INFO - Iteration 3 of 30
+2026-04-22 13:55:37 | [INFO] Iteration 3 of 30
+2026-04-22 13:55:37,993 - harmonypy - INFO - Converged after 3 iterations
+2026-04-22 13:55:37 | [INFO] Converged after 3 iterations
 Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 1120, in wrapper
-    rna_results = rna_wrapper(
-  File "/users/hjiang/GenoDistance/code/wrapper/rna_wrapper.py", line 193, in rna_wrapper
-    raise ValueError("Cell type clustering required before sample embedding derivation.")
-ValueError: Cell type clustering required before sample embedding derivation.
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 1175, in wrapper
+    downstream_results = downstream_analysis(
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 424, in downstream_analysis
+    raise ValueError("Cell type clustering required for dendrogram visualization.")
+ValueError: Cell type clustering required for dendrogram visualization.
