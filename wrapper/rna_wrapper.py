@@ -188,10 +188,14 @@ def rna_wrapper(
     # ==================== SAMPLE EMBEDDING ====================
     if derive_sample_embedding:
         print("Starting sample embedding derivation...")
-        
-        if not status_flags["rna"]["cell_type_cluster"]:
-            raise ValueError("Cell type clustering required before sample embedding derivation.")
-        
+
+        if celltype_col not in adata_sample.obs.columns:
+            raise ValueError(
+                f"Cell type column '{celltype_col}' not found in adata_sample.obs. "
+                "Provide a preprocessed input with the cell type column present, "
+                "or enable rna_cell_type_cluster to generate it."
+            )
+
         _, pseudo_adata = calculate_sample_embedding(
             adata=adata_sample,
             sample_col=sample_col,

@@ -272,8 +272,8 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
 # --- Pipeline Control Flags (Preprocessing & Resolution) ---
 multiomics_integration: false
-multiomics_integration_preprocessing: false
-multiomics_dimensionality_reduction: false
+multiomics_integration_preprocessing: true
+multiomics_dimensionality_reduction: true
 multiomics_find_optimal_resolution: true
 
 # --- Pipeline Control Flags (Downstream) ---
@@ -284,8 +284,8 @@ multiomics_sample_cluster: false
 multiomics_proportion_test: false
 multiomics_cluster_dge: false
 multiomics_visualize_embedding: true
-multiomics_phenotype_prediction: false
-multiomics_dimension_association_analysis: false
+multiomics_phenotype_prediction: true
+multiomics_dimension_association_analysis: true
 
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: true

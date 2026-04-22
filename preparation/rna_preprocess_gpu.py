@@ -32,12 +32,30 @@ def anndata_cluster(
 
     if verbose:
         print("Running HVG selection on CPU...")
-    sc.pp.highly_variable_genes(
-        adata_cluster,
-        n_top_genes=num_cell_hvgs,
-        flavor="seurat_v3",
-        batch_key=sample_column,
-    )
+    # LOESS inside seurat_v3 HVG can fail with "reciprocal condition number"
+    # on tightly clustered mean/var points. Retry with progressively wider spans.
+    hvg_spans = [0.3, 0.5, 0.8, 1.0]
+    for attempt, span in enumerate(hvg_spans):
+        try:
+            sc.pp.highly_variable_genes(
+                adata_cluster,
+                n_top_genes=num_cell_hvgs,
+                flavor="seurat_v3",
+                batch_key=sample_column,
+                span=span,
+            )
+            if verbose and attempt > 0:
+                print(f"HVG selection succeeded with span={span}")
+            break
+        except ValueError as e:
+            arg = e.args[0] if e.args else ""
+            msg = arg.decode("utf-8", "ignore") if isinstance(arg, bytes) else str(arg)
+            if "reciprocal condition number" not in msg:
+                raise
+            if attempt == len(hvg_spans) - 1:
+                raise
+            if verbose:
+                print(f"HVG LOESS fit failed with span={span} ({msg}); retrying with span={hvg_spans[attempt + 1]}")
     adata_cluster = adata_cluster[:, adata_cluster.var["highly_variable"]].copy()
 
     if verbose:

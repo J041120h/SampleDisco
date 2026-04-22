@@ -1,59 +1,56 @@
 Resuming from previous progress:
 {
   "rna": {
-    "preprocessing": true,
-    "cell_type_cluster": true,
-    "derive_sample_embedding": true,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": true,
-    "trajectory_analysis": true,
-    "trajectory_dge": true,
-    "sample_cluster": true,
-    "proportion_test": true,
-    "cluster_dge": true,
-    "visualization": false,
-    "prediction": true,
-    "association": true,
-    "dimensionality_reduction": true
-  },
-  "atac": {
-    "preprocessing": true,
-    "cell_type_cluster": true,
-    "derive_sample_embedding": true,
+    "preprocessing": false,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
     "cca_based_cell_resolution_selection": false,
     "sample_distance_calculation": false,
-    "trajectory_analysis": true,
-    "trajectory_dge": true,
-    "sample_cluster": true,
-    "proportion_test": true,
-    "cluster_dge": true,
-    "visualization": true,
-    "prediction": false,
-    "association": false,
-    "dimensionality_reduction": false
-  },
-  "multiomics": {
-    "glue_integration": true,
-    "glue_preprocessing": false,
-    "glue_training": false,
-    "glue_gene_activity": true,
-    "glue_cell_types": true,
-    "glue_visualization": true,
-    "integration_preprocessing": true,
-    "optimal_resolution": false,
-    "dimensionality_reduction": true,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": true,
-    "trajectory_analysis": true,
-    "trajectory_dge": true,
-    "sample_cluster": true,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
     "proportion_test": false,
     "cluster_dge": false,
-    "embedding_visualization": true,
     "visualization": false,
-    "prediction": false,
-    "association": false,
-    "derive_sample_embedding": false
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "atac": {
+    "preprocessing": false,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "multiomics": {
+    "glue_integration": false,
+    "glue_preprocessing": false,
+    "glue_training": false,
+    "glue_gene_activity": false,
+    "glue_cell_types": false,
+    "glue_visualization": false,
+    "integration_preprocessing": false,
+    "optimal_resolution": false,
+    "dimensionality_reduction": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "embedding_visualization": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
   },
   "system_info": {
     "platform": "Linux",
@@ -67,83 +64,39 @@ Resuming from previous progress:
 RUNNING RNA PIPELINE
 ============================================================
 Starting RNA wrapper function...
-Loading pseudobulk from: /dcs07/hongkai/data/harry/result/test/rna/pseudobulk/pseudobulk_sample.h5ad
-RNA preprocessing pipeline completed successfully!
-Starting trajectory analysis...
-Starting TSCAN analysis:
-  Samples: 8
-  Genes: 2000
-  N clusters: 3
-  Embedding key: X_DR_expression
-GMM clustering complete:
-  Clusters: 3
-    cluster_1: 2 samples
-    cluster_2: 5 samples
-    cluster_3: 1 samples
-Computed pairwise euclidean distances among 3 cluster centroids
-MST construction complete with shape: (3, 3)
-Principal path found: 3 clusters, 8 total samples
-Path: cluster_2 -> cluster_1 -> cluster_3
-Using random endpoint as origin: cluster_3
-Found 0 branching paths
-Projection complete for 8 samples
-Sample ordering complete: 8 samples
-Cluster plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster.png
-Plotted 8 samples across 3 clusters
-Cluster plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster_X_DR_expression.png
-Grouping plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping.png
-Grouping plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping_X_DR_expression.png
-Pseudotime data saved: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/X_DR_expression_pseudotime.csv
-  Total samples in CSV: 8
+Starting preprocessing...
+=== Reading input dataset ===
+Raw shape: 928274 cells × 23320 genes
+All required columns are present in adata.obs.
+=== Processing data for clustering ===
+Running HVG selection on CPU...
+HVG LOESS fit failed with span=0.3 (reciprocal condition number  4.9207e-15); retrying with span=0.5
+HVG selection succeeded with span=0.5
+After HVG: 928274 cells × 2000 genes
+Moving to GPU for normalization, PCA, and Harmony...
+=== [GPU] Running Harmony integration ===
+Cell-level batch keys (Harmony): id
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 30 iteration(s).
+	Completed 2 / 30 iteration(s).
+	Completed 3 / 30 iteration(s).
+	Completed 4 / 30 iteration(s).
+	Completed 5 / 30 iteration(s).
+	Completed 6 / 30 iteration(s).
+	Completed 7 / 30 iteration(s).
+	Completed 8 / 30 iteration(s).
+	Completed 9 / 30 iteration(s).
+	Completed 10 / 30 iteration(s).
+	Completed 11 / 30 iteration(s).
+Reach convergence after 11 iteration(s).
+End of harmony for adata_cluster.
+=== [CPU] Processing data for sample differences ===
+Saving original expression matrix (temporary variable)
+Normalizing and PCA on CPU...
+Total runtime: 1132.75 seconds
+Starting sample embedding derivation...
 
-TSCAN analysis completed successfully!
-  Main path: 8 samples across 3 clusters
-  Total samples processed: 8
-  Results saved to: /dcs07/hongkai/data/harry/result/test/rna/TSCAN
-Starting TSCAN analysis:
-  Samples: 8
-  Genes: 2000
-  N clusters: 3
-  Embedding key: X_DR_proportion
-GMM clustering complete:
-  Clusters: 3
-    cluster_1: 3 samples
-    cluster_2: 4 samples
-    cluster_3: 1 samples
-Computed pairwise euclidean distances among 3 cluster centroids
-MST construction complete with shape: (3, 3)
-Principal path found: 3 clusters, 8 total samples
-Path: cluster_1 -> cluster_2 -> cluster_3
-Using random endpoint as origin: cluster_3
-Found 0 branching paths
-Projection complete for 8 samples
-Sample ordering complete: 8 samples
-Cluster plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster.png
-Plotted 8 samples across 3 clusters
-Cluster plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_cluster_X_DR_proportion.png
-Grouping plot saved to /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping.png
-Grouping plot saved as: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/clusters_by_grouping_X_DR_proportion.png
-Pseudotime data saved: /dcs07/hongkai/data/harry/result/test/rna/TSCAN/X_DR_proportion_pseudotime.csv
-  Total samples in CSV: 8
+RNA pipeline failed: Cell type clustering required before sample embedding derivation.
 
-TSCAN analysis completed successfully!
-  Main path: 8 samples across 3 clusters
-  Total samples processed: 8
-  Results saved to: /dcs07/hongkai/data/harry/result/test/rna/TSCAN
-Starting sample prediction...
-[Prediction] target=sev.level, source=expression, model=ridge, task=classification, n=8
-[Prediction] Model 'ridge' not supported for classification; falling back to 'logreg'. Options: ['logreg', 'rf', 'svm']
-[Prediction] CV strategy: LOOCV
-[Prediction] CV Accuracy: 0.1250 ± 0.3307
-[Prediction] Results saved to: /dcs07/hongkai/data/harry/result/test/rna/sample_prediction/prediction_sev.level_expression_ridge
-Prediction completed: /dcs07/hongkai/data/harry/result/test/rna/sample_prediction
-Starting association analysis...
-[PERMANOVA] cosine × sev.level: pseudo_F=3.689, R²=0.381, p=0.0330
-[PERMANOVA] correlation × sev.level: pseudo_F=1.970, R²=0.247, p=0.1360
-[PERMANOVA] Summary saved to: /dcs07/hongkai/data/harry/result/test/rna/sample_association/permanova/permanova_summary.csv
-Association analysis completed: /dcs07/hongkai/data/harry/result/test/rna/sample_association
-RNA downstream analysis completed!
-
-RNA pipeline completed successfully!
-
-Total execution time: 10.96 seconds (0.18 minutes)
+Total execution time: 1135.65 seconds (18.93 minutes)

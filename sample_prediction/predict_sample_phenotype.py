@@ -454,3 +454,217 @@ def predict_sample_phenotype(
             print(f"[Prediction] Results saved to: {subdir}")
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Cross-modality prediction
+# ---------------------------------------------------------------------------
+
+def predict_cross_modality(
+    pseudo_adata: AnnData,
+    target_col: str,
+    train_modality: str,
+    test_modality: str,
+    modality_col: str = "modality",
+    feature_source: str = "expression",
+    task_type: str = "auto",
+    integer_output: bool = False,
+    output_dir: Optional[str] = None,
+    verbose: bool = True,
+) -> dict:
+    """
+    Train on samples from one modality and predict on samples from another, using a
+    shared sample-level embedding (e.g. GLUE-aligned X_DR_expression).
+
+    Uses Ridge for regression and Logistic Regression for classification.
+
+    If integer_output=True, forces regression and rounds+clips predictions to
+    the observed integer class range of the training target (useful when the
+    target is ordinal, e.g. severity levels 1..4).
+    """
+    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.metrics import (
+        r2_score, accuracy_score, mean_absolute_error,
+        confusion_matrix, ConfusionMatrixDisplay,
+    )
+
+    if modality_col not in pseudo_adata.obs.columns:
+        raise KeyError(f"modality_col '{modality_col}' not in pseudo_adata.obs")
+    if target_col not in pseudo_adata.obs.columns:
+        raise KeyError(f"target_col '{target_col}' not in pseudo_adata.obs")
+
+    X_all, feature_names = _get_feature_matrix(pseudo_adata, feature_source)
+    modality = pseudo_adata.obs[modality_col].astype(str).values
+    y_all = pseudo_adata.obs[target_col].values
+    ids = np.array(pseudo_adata.obs_names)
+
+    train_mask = (modality == str(train_modality)) & ~pd.isna(pd.Series(y_all))
+    test_mask = (modality == str(test_modality)) & ~pd.isna(pd.Series(y_all))
+    if train_mask.sum() < 3:
+        raise ValueError(f"Too few training samples (n={train_mask.sum()}) for modality={train_modality}")
+    if test_mask.sum() < 1:
+        raise ValueError(f"No test samples for modality={test_modality}")
+
+    X_tr_raw, X_te_raw = X_all[train_mask], X_all[test_mask]
+    y_tr_raw, y_te_raw = y_all[train_mask], y_all[test_mask]
+    ids_te = ids[test_mask]
+
+    if integer_output:
+        task_type = "regression"
+    elif task_type == "auto":
+        task_type = _detect_task_type(y_tr_raw)
+
+    if verbose:
+        mode = " [ordinal-integer]" if integer_output else ""
+        print(
+            f"[CrossModality] train={train_modality} (n={train_mask.sum()}) → "
+            f"test={test_modality} (n={test_mask.sum()}), source={feature_source}, "
+            f"task={task_type}{mode}"
+        )
+
+    scaler = StandardScaler()
+    X_tr = scaler.fit_transform(X_tr_raw)
+    X_te = scaler.transform(X_te_raw)
+
+    le = None
+    if task_type == "classification":
+        le = LabelEncoder()
+        y_tr = le.fit_transform(y_tr_raw.astype(str))
+        test_classes = set(np.array(y_te_raw).astype(str))
+        unseen = test_classes - set(le.classes_.astype(str))
+        if unseen and verbose:
+            print(f"[CrossModality] Warning: test classes not in train set: {unseen}")
+    else:
+        y_tr = y_tr_raw.astype(float)
+
+    estimator = _build_model(task_type)
+    estimator.fit(X_tr, y_tr)
+    preds_raw = estimator.predict(X_te)
+
+    y_pred_int = None
+    r2 = mae = np.nan
+    if task_type == "classification":
+        y_pred = le.inverse_transform(preds_raw)
+        y_true = np.array(y_te_raw).astype(str)
+        y_pred = y_pred.astype(str)
+        score = accuracy_score(y_true, y_pred)
+        metric = "Accuracy"
+    elif integer_output:
+        y_true_float = np.array(y_te_raw).astype(float)
+        y_min = int(np.floor(y_tr_raw.astype(float).min()))
+        y_max = int(np.ceil(y_tr_raw.astype(float).max()))
+        y_pred_int = np.clip(np.rint(preds_raw), y_min, y_max).astype(int)
+        y_true_int = y_true_float.astype(int)
+        score = accuracy_score(y_true_int.astype(str), y_pred_int.astype(str))
+        r2 = r2_score(y_true_float, preds_raw) if len(y_true_float) > 1 else np.nan
+        mae = mean_absolute_error(y_true_float, preds_raw)
+        y_true = y_true_float
+        y_pred = preds_raw
+        metric = "Accuracy"
+    else:
+        y_pred = preds_raw
+        y_true = np.array(y_te_raw).astype(float)
+        score = r2_score(y_true, y_pred) if len(y_true) > 1 else np.nan
+        metric = "R²"
+
+    if verbose:
+        if integer_output:
+            print(
+                f"[CrossModality] Test Accuracy (integerized): {score:.4f} | "
+                f"R²={r2:.4f} | MAE={mae:.4f}"
+            )
+        else:
+            print(f"[CrossModality] Test {metric}: {score:.4f}")
+
+    pred_df = pd.DataFrame({"sample_id": ids_te, "y_true": y_true, "y_pred": y_pred})
+    if y_pred_int is not None:
+        pred_df["y_pred_int"] = y_pred_int
+    feature_imp_df = _feature_importance(estimator, X_tr_raw, y_tr_raw, feature_names, task_type)
+
+    result = {
+        "score": float(score) if not np.isnan(score) else np.nan,
+        "metric": metric,
+        "task_type": task_type,
+        "predictions_df": pred_df,
+        "feature_importance_df": feature_imp_df,
+        "r2": float(r2) if not np.isnan(r2) else np.nan,
+        "mae": float(mae) if not np.isnan(mae) else np.nan,
+        "output_subdir": None,
+    }
+
+    if output_dir is not None:
+        suffix = "_ordinal" if integer_output else ""
+        subdir = os.path.join(
+            output_dir,
+            f"cross_{train_modality}_to_{test_modality}_{target_col}_{feature_source}{suffix}",
+        )
+        plots_dir = os.path.join(subdir, "plots")
+        os.makedirs(plots_dir, exist_ok=True)
+
+        pred_df.to_csv(os.path.join(subdir, "predictions.csv"), index=False)
+        feature_imp_df.to_csv(os.path.join(subdir, "feature_importance.csv"), index=False)
+        if integer_output:
+            pd.DataFrame({"accuracy": [score], "r2": [r2], "mae": [mae],
+                          "n_train": [int(train_mask.sum())], "n_test": [int(test_mask.sum())]}
+                         ).to_csv(os.path.join(subdir, "score.csv"), index=False)
+        else:
+            pd.DataFrame({"metric": [metric], "score": [score],
+                          "n_train": [int(train_mask.sum())], "n_test": [int(test_mask.sum())]}
+                         ).to_csv(os.path.join(subdir, "score.csv"), index=False)
+
+        try:
+            if task_type == "classification":
+                class_labels = [str(c) for c in le.classes_]
+                cm = confusion_matrix(y_true, y_pred, labels=class_labels)
+                fig, ax = plt.subplots(figsize=(max(4, len(class_labels)), max(3, len(class_labels))))
+                ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels).plot(ax=ax, colorbar=False)
+                ax.set_title(f"{train_modality}→{test_modality}: {target_col} (acc={score:.3f})")
+                plt.tight_layout()
+                plt.savefig(os.path.join(plots_dir, "confusion_matrix.png"), dpi=150, bbox_inches="tight")
+                plt.close()
+            else:
+                fig, ax = plt.subplots(figsize=(6, 6))
+                ax.scatter(y_true, y_pred, alpha=0.7, edgecolors="k", linewidths=0.5)
+                lo, hi = float(min(y_true.min(), y_pred.min())), float(max(y_true.max(), y_pred.max()))
+                ax.plot([lo, hi], [lo, hi], "r--", lw=1.5)
+                ax.set_xlabel(f"Actual {target_col}")
+                ax.set_ylabel(f"Predicted {target_col}")
+                title_score = f"acc={score:.3f}, R²={r2:.3f}" if integer_output else f"R²={score:.3f}"
+                ax.set_title(f"{train_modality}→{test_modality} ({title_score})")
+                plt.tight_layout()
+                plt.savefig(os.path.join(plots_dir, "predicted_vs_actual.png"), dpi=150, bbox_inches="tight")
+                plt.close()
+
+                if integer_output:
+                    class_labels = sorted({int(v) for v in np.unique(np.concatenate([y_true.astype(int), y_pred_int]))})
+                    class_labels = [str(c) for c in class_labels]
+                    cm = confusion_matrix(y_true.astype(int).astype(str), y_pred_int.astype(str),
+                                          labels=class_labels)
+                    fig, ax = plt.subplots(figsize=(max(4, len(class_labels)), max(3, len(class_labels))))
+                    ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels).plot(
+                        ax=ax, colorbar=False
+                    )
+                    ax.set_title(
+                        f"{train_modality}→{test_modality}: {target_col} (acc={score:.3f}, integerized)"
+                    )
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(plots_dir, "confusion_matrix.png"), dpi=150, bbox_inches="tight")
+                    plt.close()
+
+            if feature_source not in _SKIP_IMP and len(feature_imp_df):
+                top = feature_imp_df.head(20)
+                fig, ax = plt.subplots(figsize=(8, max(4, len(top) * 0.35)))
+                ax.barh(top["feature"][::-1], top["importance"][::-1])
+                ax.set_xlabel("Importance")
+                ax.set_title("Top Feature Importances")
+                plt.tight_layout()
+                plt.savefig(os.path.join(plots_dir, "feature_importance_top20.png"), dpi=150, bbox_inches="tight")
+                plt.close()
+        except Exception as e:
+            print(f"[CrossModality] Warning: plot failed: {e}")
+
+        result["output_subdir"] = subdir
+        if verbose:
+            print(f"[CrossModality] Results saved to: {subdir}")
+
+    return result

@@ -1,91 +1,77 @@
-Resuming from previous progress:
-{
-  "rna": {
-    "preprocessing": true,
-    "cell_type_cluster": true,
-    "derive_sample_embedding": false,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": true,
-    "trajectory_analysis": true,
-    "trajectory_dge": true,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": true,
-    "visualization": false,
-    "phenotype_prediction": false,
-    "dimension_association_analysis": false,
-    "dimensionality_reduction": true
-  },
-  "atac": {
-    "preprocessing": true,
-    "cell_type_cluster": false,
-    "derive_sample_embedding": false,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
-    "trajectory_analysis": false,
-    "trajectory_dge": false,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": false,
-    "visualization": false,
-    "phenotype_prediction": false,
-    "dimension_association_analysis": false,
-    "dimensionality_reduction": false
-  },
-  "multiomics": {
-    "glue_integration": true,
-    "glue_preprocessing": true,
-    "glue_training": true,
-    "glue_gene_activity": true,
-    "glue_cell_types": true,
-    "glue_visualization": true,
-    "integration_preprocessing": true,
-    "optimal_resolution": true,
-    "dimensionality_reduction": true,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
-    "trajectory_analysis": false,
-    "trajectory_dge": false,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": false,
-    "embedding_visualization": true,
-    "visualization": false,
-    "phenotype_prediction": false,
-    "dimension_association_analysis": false
-  },
-  "system_info": {
-    "platform": "Linux",
-    "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-    "use_gpu": true,
-    "gpu_available": true
-  }
-}
 
-============================================================
-RUNNING MULTIOMICS PIPELINE
-============================================================
-Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics
-GPU mode: Enabled
-Loaded preprocessed data from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/adata_sample.h5ad
-Step 2b: Running cell type assignment...
+========================================================================
+Loading (read-only): /dcs07/hongkai/data/harry/result/1M-scBloodNL/data/1M-scBloodNL.h5ad
+========================================================================
+  shape: (928274, 23320)
+  obs columns: ['cell_type', 'cell_type_lowerres', 'assignment', 'timepoint', 'chem', 'stimulation_conditions']
 
-============================================================
-Cell Type Assignment for Multi-omics Data
-============================================================
+========================================================================
+Check 1: assignment parses cleanly to integers
+========================================================================
+  example raw values: ['1.0', '12.0', '8.0', '11.0', '4.0']
+  ✓ all 928274 values parsed to int
+  donor range: [1, 126], unique donors: 120
 
-Data composition:
-  RNA cells: 898435
-  ATAC cells: 88962
-  Total cells: 987397
+========================================================================
+Check 2: construct proposed `id` in memory (NOT saved)
+========================================================================
+  unique sample ids: 790
+  paper expectation: 840 designed, ~782 after QC (per Fig.1 + page 5)
+  ✓ within expected range
 
---- Step 1: Clustering RNA cells ---
-  Resolution: 0.8
-  Building neighborhood graph for RNA cells...
-  Performing Leiden clustering...
-  Found 29 clusters in RNA cells
+========================================================================
+Check 3: id is unique per (donor, stim, timepoint)
+========================================================================
+  ✓ every id maps to exactly one (donor, stim, timepoint)
 
---- Step 2: Transferring labels to ATAC cells ---
-  Using k=3 nearest neighbors with Jaccard-weighted SNN
-  Metric: cosine
-  Building k-NN graphs...
+========================================================================
+Check 4: cells per sample
+========================================================================
+  min   : 222
+  q25   : 896
+  median: 1122
+  q75   : 1364
+  max   : 6271
+  ✓ no sample has <50 cells
+
+========================================================================
+Check 5: chemistry mixing within id
+========================================================================
+  samples spanning >1 chemistry: 0 / 790 (0.00%)
+  ✓ no id mixes chemistries — chem is a strict between-sample batch.
+
+========================================================================
+Preview: 10 most/least populated proposed ids
+========================================================================
+Most populated:
+             n_cells  n_chem
+_id                         
+D3_PA_3h        6271       1
+D49_CA_3h       3796       1
+D44_CA_3h       3218       1
+D31_MTB_3h      3177       1
+D115_CA_3h      3103       1
+D91_MTB_3h      2818       1
+D117_CA_24h     2758       1
+D114_MTB_3h     2653       1
+D21_PA_3h       2627       1
+D99_CA_3h       2467       1
+
+Least populated:
+              n_cells  n_chem
+_id                          
+D72_CA_3h         222       1
+D9_MTB_3h         231       1
+D84_PA_3h         325       1
+D120_CA_24h       327       1
+D71_PA_24h        360       1
+D66_PA_24h        362       1
+D26_CA_3h         376       1
+D123_CA_24h       396       1
+D126_MTB_24h      460       1
+D22_CA_3h         474       1
+
+========================================================================
+DRY RUN COMPLETE — no changes were written.
+If everything looks good, run add_sample_id.py to commit the column.
+========================================================================
