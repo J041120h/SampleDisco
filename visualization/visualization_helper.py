@@ -186,7 +186,7 @@ def plot_clusters_by_cluster(
     main_path: List[int],
     branching_paths: List[List[int]],
     output_path: str,
-    pca_key: str = "X_DR_expression",
+    pca_key: str = "X_DR_sample",
     cluster_col: str = "tscan_cluster",
     verbose: bool = False
 ):
@@ -346,7 +346,7 @@ def plot_clusters_by_grouping(
     main_path: List[int],
     branching_paths: List[List[int]],
     output_path: str,
-    pca_key: str = "X_DR_expression",
+    pca_key: str = "X_DR_sample",
     grouping_columns: List[str] = ["sev.level"],
     verbose: bool = False
 ):

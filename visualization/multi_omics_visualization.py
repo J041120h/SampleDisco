@@ -626,7 +626,7 @@ def create_single_embedding_plot(adata, modality_col, color_col, target_modality
 
 
 def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, target_modality=None,
-                                  expression_key='X_DR_expression', proportion_key='X_DR_proportion',
+                                  expression_key='X_DR_sample', proportion_key='X_DR_sample',
                                   figsize=(20, 8), point_size=60, alpha=0.8, 
                                   colormap='viridis', categorical_cmap='tab10',
                                   output_dir=None, 
@@ -1135,8 +1135,8 @@ def visualize_multimodal_embedding_with_cca(
     color_col, 
     target_modality,
     cca_results_df=None,
-    expression_key='X_DR_expression',
-    proportion_key='X_DR_proportion',
+    expression_key='X_DR_sample',
+    proportion_key='X_DR_sample',
     figsize=(10, 8),
     point_size=60,
     alpha=0.8,

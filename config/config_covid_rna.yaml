@@ -27,7 +27,6 @@ rna_output_dir: null  # defaults to {output_dir}/rna
 rna_preprocessing: false
 rna_cell_type_cluster: false
 rna_derive_sample_embedding: false
-rna_cca_based_cell_resolution_selection: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: true
 rna_trajectory_dge: false
@@ -156,7 +155,6 @@ atac_output_dir: null  # defaults to {output_dir}/atac
 atac_preprocessing: false
 atac_cell_type_cluster: false
 atac_derive_sample_embedding: false
-atac_cca_based_cell_resolution_selection: false
 atac_sample_distance_calculation: false
 atac_trajectory_analysis: false
 atac_trajectory_dge: false
