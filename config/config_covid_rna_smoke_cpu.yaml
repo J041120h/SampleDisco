@@ -1,7 +1,7 @@
 # =============================================================================
 # MAIN CONFIGURATION
 # =============================================================================
-output_dir: "/dcs07/hongkai/data/harry/result/test"
+output_dir: "/dcs07/hongkai/data/harry/result/test_cpu"
 
 # Pipeline selection
 run_rna_pipeline: true
@@ -9,7 +9,7 @@ run_atac_pipeline: false
 run_multiomics_pipeline: false
 
 # General settings
-use_gpu: true
+use_gpu: false
 initialization: false
 verbose: true
 save_intermediate: true
@@ -26,12 +26,12 @@ rna_output_dir: null  # defaults to {output_dir}/rna
 # --- Pipeline Control Flags ---
 rna_preprocessing: false
 rna_cell_type_cluster: false
-rna_derive_sample_embedding: false
+rna_derive_sample_embedding: true
 rna_cca_based_cell_resolution_selection: false
-rna_sample_distance_calculation: false
+rna_sample_distance_calculation: true
 rna_trajectory_analysis: true
 rna_trajectory_dge: false
-rna_sample_cluster: false
+rna_sample_cluster: true
 rna_proportion_test: false
 rna_cluster_dge: false
 rna_visualize_data: false

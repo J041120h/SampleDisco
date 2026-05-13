@@ -67,11 +67,24 @@ rna_existing_cell_types: false
 rna_n_target_cell_clusters: null
 rna_umap: true
 
-# --- Sample Embedding Parameters ---
-rna_sample_hvg_number: 2000
-rna_sample_embedding_dimension: 10
-rna_harmony_for_proportion: true
-rna_preserve_cols_in_sample_embedding: null
+# --- Sample Embedding Parameters (composition + CMD) ---
+rna_sample_embedding_medium_K: 120
+rna_sample_embedding_fine_K: 300
+rna_sample_embedding_cmd_dim: 8
+rna_sample_embedding_use_clr: false
+rna_sample_embedding_use_cmd: true
+rna_sample_embedding_block_weights: null
+rna_sample_embedding_cmd_weight: 0.60
+rna_sample_embedding_pca_components: 10
+rna_sample_embedding_batch_method: "harmony"
+
+# --- Autotune Parameters ---
+rna_autotune_enable: false
+rna_autotune_search: "bayesian"
+rna_autotune_scoring: "auto"
+rna_autotune_scope: "alpha_only"
+rna_autotune_alpha_bounds: [0.1, 10.0]
+rna_autotune_grouping_col: null
 
 # --- Trajectory Analysis Parameters ---
 rna_n_cca_pcs: 10
@@ -83,14 +96,6 @@ rna_cca_pvalue: true
 rna_tscan_origin: null
 rna_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
 rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
-
-# --- CCA-Based Resolution Selection Parameters ---
-rna_cca_compute_corrected_pvalues: true
-rna_cca_coarse_start: 0.1
-rna_cca_coarse_end: 1.0
-rna_cca_coarse_step: 0.1
-rna_cca_fine_range: 0.02
-rna_cca_fine_step: 0.01
 
 # --- Sample Distance Parameters ---
 rna_sample_distance_methods:
@@ -196,11 +201,24 @@ atac_existing_cell_types: false
 atac_n_target_cell_clusters: null
 atac_umap: false
 
-# --- Sample Embedding Parameters ---
-atac_sample_hvg_number: 50000
-atac_sample_embedding_dimension: 30
-atac_harmony_for_proportion: true
-atac_preserve_cols_in_sample_embedding: null
+# --- Sample Embedding Parameters (composition + CMD) ---
+atac_sample_embedding_medium_K: 120
+atac_sample_embedding_fine_K: 300
+atac_sample_embedding_cmd_dim: 8
+atac_sample_embedding_use_clr: false
+atac_sample_embedding_use_cmd: true
+atac_sample_embedding_block_weights: null
+atac_sample_embedding_cmd_weight: 0.60
+atac_sample_embedding_pca_components: 10
+atac_sample_embedding_batch_method: "harmony"
+
+# --- Autotune Parameters ---
+atac_autotune_enable: false
+atac_autotune_search: "bayesian"
+atac_autotune_scoring: "auto"
+atac_autotune_scope: "alpha_only"
+atac_autotune_alpha_bounds: [0.1, 10.0]
+atac_autotune_grouping_col: null
 
 # --- Trajectory Analysis Parameters ---
 atac_n_cca_pcs: 2
@@ -212,14 +230,6 @@ atac_cca_pvalue: false
 atac_tscan_origin: null
 atac_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
 atac_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
-
-# --- CCA-Based Resolution Selection Parameters ---
-atac_cca_compute_corrected_pvalues: true
-atac_cca_coarse_start: 0.1
-atac_cca_coarse_end: 1.0
-atac_cca_coarse_step: 0.1
-atac_cca_fine_range: 0.02
-atac_cca_fine_step: 0.01
 
 # --- Sample Distance Parameters ---
 atac_sample_distance_methods:
@@ -270,11 +280,9 @@ multiomics_rna_file: "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/rn
 multiomics_atac_file: "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/atac_raw.h5ad"
 multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
-# --- Pipeline Control Flags (Preprocessing & Resolution) ---
+# --- Pipeline Control Flags (Preprocessing) ---
 multiomics_integration: false
 multiomics_integration_preprocessing: false
-multiomics_dimensionality_reduction: false
-multiomics_find_optimal_resolution: false
 
 # --- Pipeline Control Flags (Downstream) ---
 multiomics_sample_distance_calculation: false
@@ -356,26 +364,25 @@ multiomics_pct_mito_cutoff: 20
 multiomics_exclude_genes: null
 multiomics_doublet: true
 
-# --- Sample Embedding / Dimensionality Reduction Parameters ---
-multiomics_sample_hvg_number: 2000
-multiomics_preserve_cols_for_sample_embedding: null
-multiomics_n_expression_components: 10
-multiomics_n_proportion_components: 10
-multiomics_harmony_for_proportion: true
+# --- Sample Embedding Parameters (composition + CMD on X_glue) ---
+multiomics_derive_sample_embedding: true
+multiomics_sample_embedding_medium_K: 120
+multiomics_sample_embedding_fine_K: 300
+multiomics_sample_embedding_cmd_dim: 8
+multiomics_sample_embedding_use_clr: false
+multiomics_sample_embedding_use_cmd: true
+multiomics_sample_embedding_block_weights: null
+multiomics_sample_embedding_cmd_weight: 0.60
+multiomics_sample_embedding_pca_components: 10
+multiomics_sample_embedding_batch_method: "harmony"
 
-# --- Optimal Resolution Parameters ---
-multiomics_optimization_target: "rna"
-multiomics_sev_col: "sev.level"
-multiomics_resolution_use_rep: "X_glue"
-multiomics_num_pcs: 20
-multiomics_visualize_cell_types: true
-multiomics_cca_coarse_start: 0.1
-multiomics_cca_coarse_end: 1.0
-multiomics_cca_coarse_step: 0.1
-multiomics_cca_fine_range: 0.05
-multiomics_cca_fine_step: 0.01
-multiomics_compute_corrected_pvalues: false
-multiomics_analyze_modality_alignment: true
+# --- Autotune Parameters ---
+multiomics_autotune_enable: false
+multiomics_autotune_search: "bayesian"
+multiomics_autotune_scoring: "auto"
+multiomics_autotune_scope: "alpha_only"
+multiomics_autotune_alpha_bounds: [0.1, 10.0]
+multiomics_autotune_grouping_col: null
 
 # --- Trajectory Analysis Parameters ---
 multiomics_trajectory_col: "sev.level"
@@ -420,8 +427,7 @@ multiomics_plot_cell_type_expression_umap_flag: false
 multiomics_color_col: null
 multiomics_visualization_grouping_column: null
 multiomics_target_modality: "ATAC"
-multiomics_expression_key: "X_DR_expression"
-multiomics_proportion_key: "X_DR_proportion"
+multiomics_sample_embedding_key: "X_DR_sample"
 multiomics_figsize:
   - 20
   - 8

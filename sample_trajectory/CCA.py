@@ -422,23 +422,30 @@ def CCA_Call(
         output_dir = os.path.join(output_dir, 'CCA')
         os.makedirs(output_dir, exist_ok=True)
 
+    if "X_DR_sample" not in adata.uns:
+        if verbose:
+            print("  CCA: 'X_DR_sample' not in adata.uns; skipping")
+        return (np.nan, np.nan, {}, {})
+
+    dr_keys = ["X_DR_sample"]
     paths = {
-        "X_DR_proportion": os.path.join(output_dir, f"pca_{n_components}d_cca_proportion.pdf") if output_dir else None,
-        "X_DR_expression": os.path.join(output_dir, f"pca_{n_components}d_cca_expression.pdf") if output_dir else None
+        k: (os.path.join(output_dir, f"pca_{n_components}d_cca_{k.replace('X_DR_', '')}.pdf")
+            if output_dir else None)
+        for k in dr_keys
     }
 
     results = {}
     sample_dicts = {}
     pc_info = {}
 
-    for key in ["X_DR_proportion", "X_DR_expression"]:
+    for key in dr_keys:
         try:
             pca_coords_full, sev_levels, samples, n_components_used = run_cca_on_pca_from_adata(
                 adata=adata,
                 column=key,
                 trajectory_col=trajectory_col,
                 n_components=n_components,
-                verbose=verbose
+                verbose=verbose,
             )
 
             cca_score, pc_indices_used, cca_model = plot_cca_on_2d_pca(
@@ -449,20 +456,19 @@ def CCA_Call(
                 output_path=paths[key],
                 sample_labels=samples if show_sample_labels else None,
                 title_suffix=key.replace("X_DR_", "").title(),
-                verbose=verbose
+                verbose=verbose,
             )
-            
+
             results[key] = cca_score
             pc_info[key] = pc_indices_used
 
             pca_coords_2d = pca_coords_full[:, list(pc_indices_used)]
-            
             sample_dicts[key] = assign_pseudotime_from_cca(
-                pca_coords_2d=pca_coords_2d, 
-                cca=cca_model, 
-                sample_labels=samples
+                pca_coords_2d=pca_coords_2d,
+                cca=cca_model,
+                sample_labels=samples,
             )
-            
+
         except Exception as e:
             if verbose:
                 print(f"Error processing {key}: {str(e)}")
@@ -471,22 +477,19 @@ def CCA_Call(
             pc_info[key] = None
 
     if output_dir:
-        for key in ["X_DR_proportion", "X_DR_expression"]:
+        for key in dr_keys:
             if sample_dicts[key]:
                 pseudotime_df = pd.DataFrame([
                     {'sample': sample_id, 'pseudotime': pseudotime_value}
                     for sample_id, pseudotime_value in sample_dicts[key].items()
                 ])
-                
                 data_type = key.replace("X_DR_", "")
                 csv_filename = f"pseudotime_{data_type}.csv"
-                csv_path = os.path.join(output_dir, csv_filename)
-                
-                pseudotime_df.to_csv(csv_path, index=False)
+                pseudotime_df.to_csv(os.path.join(output_dir, csv_filename), index=False)
 
     if verbose:
         print("\nCCA Analysis Summary:")
-        for key in ["X_DR_proportion", "X_DR_expression"]:
+        for key in dr_keys:
             score = results.get(key, np.nan)
             pc_indices = pc_info.get(key, None)
             data_type = key.replace("X_DR_", "").title()
@@ -495,7 +498,8 @@ def CCA_Call(
             else:
                 print(f"  {data_type}: Failed")
 
-    return (results.get("X_DR_proportion", np.nan), 
-            results.get("X_DR_expression", np.nan), 
-            sample_dicts.get("X_DR_proportion", {}), 
-            sample_dicts.get("X_DR_expression", {}))
+    # CCA_Call still returns a 4-tuple shape for back-compat with the wrapper;
+    # in the single-key pipeline the two slots collapse to the same sample DR.
+    score = results.get("X_DR_sample", np.nan)
+    ptime = sample_dicts.get("X_DR_sample", {})
+    return (score, score, ptime, ptime)

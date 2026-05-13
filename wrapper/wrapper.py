@@ -145,15 +145,19 @@ def downstream_analysis(
     multiomics_color_col: Optional[str] = None,
     multiomics_visualization_grouping_column: Optional[List[str]] = None,
     multiomics_target_modality: str = 'ATAC',
-    multiomics_expression_key: str = 'X_DR_expression',
-    multiomics_proportion_key: str = 'X_DR_proportion',
+    multiomics_sample_embedding_key: str = 'X_DR_sample',
     multiomics_figsize: Tuple[int, int] = (20, 8),
     multiomics_point_size: int = 60,
     multiomics_alpha: float = 0.8,
     multiomics_colormap: str = 'viridis',
     multiomics_show_sample_names: bool = False,
     multiomics_force_data_type: Optional[str] = None,
-    
+
+    # ===== DGE pseudobulk parameters (used by trajectory_DGE) =====
+    dge_pseudobulk_celltype_col: Optional[str] = None,
+    dge_pseudobulk_batch_col: Optional[Union[str, List[str]]] = None,
+    dge_pseudobulk_n_features_per_celltype: Optional[int] = 2000,
+    dge_pseudobulk_columns_to_preserve: Optional[Union[str, List[str]]] = None,
 ) -> dict:
     """
     Shared downstream analysis after sample embedding derivation.
@@ -211,48 +215,42 @@ def downstream_analysis(
             print(f"Sample distance calculation completed: {os.path.join(output_dir, 'Sample_distance')}")
 
     # ==================== TRAJECTORY ANALYSIS ====================
-    ptime_expression = None
-    ptime_proportion = None
-    
+    ptime_sample = None
+
     if trajectory_analysis:
         print("Starting trajectory analysis...")
         from sample_trajectory.CCA import CCA_Call
         from sample_trajectory.CCA_test import cca_pvalue_test
         from sample_trajectory.TSCAN import TSCAN
-        
+
         if trajectory_supervised:
             if trajectory_col not in pseudo_adata.obs.columns:
                 raise ValueError(f"Trajectory column '{trajectory_col}' not found in pseudo_adata.obs.")
-            
-            cca_score_proportion, cca_score_expression, ptime_proportion, ptime_expression = CCA_Call(
+
+            # CCA_Call still returns the legacy 4-tuple for back-compat; in the
+            # single-key world the two slots return the same data.
+            cca_score_a, cca_score_b, ptime_a, ptime_b = CCA_Call(
                 adata=pseudo_adata,
                 n_components=n_cca_pcs,
                 output_dir=output_dir,
                 trajectory_col=trajectory_col,
-                verbose=verbose
+                verbose=verbose,
             )
-            
+            ptime_sample = ptime_a if ptime_a else ptime_b
+
             if cca_pvalue:
                 cca_pvalue_test(
                     pseudo_adata=pseudo_adata,
-                    column="X_DR_proportion",
-                    input_correlation=cca_score_proportion,
+                    column="X_DR_sample",
+                    input_correlation=cca_score_a if cca_score_a is not None else cca_score_b,
                     output_directory=output_dir,
                     trajectory_col=trajectory_col,
-                    verbose=verbose
-                )
-                cca_pvalue_test(
-                    pseudo_adata=pseudo_adata,
-                    column="X_DR_expression",
-                    input_correlation=cca_score_expression,
-                    output_directory=output_dir,
-                    trajectory_col=trajectory_col,
-                    verbose=verbose
+                    verbose=verbose,
                 )
         else:
-            tscan_result_expression = TSCAN(
+            tscan_result = TSCAN(
                 AnnData_sample=pseudo_adata,
-                column="X_DR_expression",
+                column="X_DR_sample",
                 n_clusters=tscan_n_clusters,
                 output_dir=output_dir,
                 grouping_columns=trajectory_visualization_label,
@@ -260,37 +258,27 @@ def downstream_analysis(
                 origin=tscan_origin,
                 pseudotime_mode=tscan_pseudotime_mode,
             )
+            ptime_sample = tscan_result["pseudotime"]["main_path"]
 
-            tscan_result_proportion = TSCAN(
-                AnnData_sample=pseudo_adata,
-                column="X_DR_proportion",
-                n_clusters=tscan_n_clusters,
-                output_dir=output_dir,
-                grouping_columns=trajectory_visualization_label,
-                verbose=verbose,
-                origin=tscan_origin,
-                pseudotime_mode=tscan_pseudotime_mode,
-            )
-            
-        # Keep as dictionary - matching CCA output format
-        ptime_expression = tscan_result_expression["pseudotime"]["main_path"]
-        ptime_proportion = tscan_result_proportion["pseudotime"]["main_path"]
-        
         sf["trajectory_analysis"] = True
 
         # Store pseudotime in obs so prediction/association modules can use it
-        _store_pseudotime_in_obs(pseudo_adata, ptime_expression, "pseudotime_expression")
-        _store_pseudotime_in_obs(pseudo_adata, ptime_proportion, "pseudotime_proportion")
+        _store_pseudotime_in_obs(pseudo_adata, ptime_sample, "pseudotime_sample")
 
         # ==================== TRAJECTORY DGE ====================
         if trajectory_DGE:
             print("Running trajectory differential gene analysis...")
             from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
-            
+
+            # Build pseudobulk on-the-fly from the cell-level adata.
             run_trajectory_gam_differential_gene_analysis(
-                pseudobulk_adata=pseudo_adata,
-                pseudotime_source=ptime_expression,
+                adata=adata_cell if adata_cell is not None else adata_sample,
+                pseudotime_source=ptime_sample,
                 sample_col=sample_col,
+                celltype_col=dge_pseudobulk_celltype_col or celltype_col,
+                batch_col=dge_pseudobulk_batch_col or batch_col,
+                n_features_per_celltype=dge_pseudobulk_n_features_per_celltype,
+                columns_to_preserve=dge_pseudobulk_columns_to_preserve,
                 pseudotime_col="pseudotime",
                 covariate_columns=trajectory_diff_gene_covariate,
                 fdr_threshold=fdr_threshold,
@@ -298,27 +286,11 @@ def downstream_analysis(
                 top_n_genes=top_n_genes,
                 num_splines=num_splines,
                 spline_order=spline_order,
-                output_dir=os.path.join(trajectory_diff_gene_output_dir, "expression"),
+                output_dir=trajectory_diff_gene_output_dir,
                 visualization_gene_list=visualization_gene_list,
-                verbose=verbose
+                verbose=verbose,
             )
-            
-            run_trajectory_gam_differential_gene_analysis(
-                pseudobulk_adata=pseudo_adata,
-                pseudotime_source=ptime_proportion,
-                sample_col=sample_col,
-                pseudotime_col="pseudotime",
-                covariate_columns=trajectory_diff_gene_covariate,
-                fdr_threshold=fdr_threshold,
-                effect_size_threshold=effect_size_threshold,
-                top_n_genes=top_n_genes,
-                num_splines=num_splines,
-                spline_order=spline_order,
-                output_dir=os.path.join(trajectory_diff_gene_output_dir, "proportion"),
-                visualization_gene_list=visualization_gene_list,
-                verbose=verbose
-            )
-            
+
             sf["trajectory_dge"] = True
             print("Trajectory differential gene analysis completed!")
 
@@ -448,27 +420,32 @@ def downstream_analysis(
     # ==================== MULTIOMICS EMBEDDING VISUALIZATION ====================
     if visualize_embedding and is_multiomics:
         print("Visualizing multimodal embedding...")
-        from visualization.multi_omics_visualization import visualize_multimodal_embedding
-        
-        fig, axes = visualize_multimodal_embedding(
-            adata=pseudo_adata,
-            modality_col=multiomics_modality_col,
-            color_col=multiomics_color_col,
-            visualization_grouping_column=multiomics_visualization_grouping_column,
-            target_modality=multiomics_target_modality,
-            expression_key=multiomics_expression_key,
-            proportion_key=multiomics_proportion_key,
-            figsize=multiomics_figsize,
-            point_size=multiomics_point_size,
-            alpha=multiomics_alpha,
-            colormap=multiomics_colormap,
-            output_dir=output_dir,
-            show_sample_names=multiomics_show_sample_names,
-            force_data_type=multiomics_force_data_type,
-            verbose=verbose,
-        )
-        sf["embedding_visualization"] = True
-        print("Embedding visualization completed successfully")
+        try:
+            from visualization.multi_omics_visualization import visualize_multimodal_embedding
+            # The legacy viz signature expected `expression_key`/`proportion_key`; in
+            # the single-key pipeline we pass the same key for both so the function
+            # still runs.
+            visualize_multimodal_embedding(
+                adata=pseudo_adata,
+                modality_col=multiomics_modality_col,
+                color_col=multiomics_color_col,
+                visualization_grouping_column=multiomics_visualization_grouping_column,
+                target_modality=multiomics_target_modality,
+                expression_key=multiomics_sample_embedding_key,
+                proportion_key=multiomics_sample_embedding_key,
+                figsize=multiomics_figsize,
+                point_size=multiomics_point_size,
+                alpha=multiomics_alpha,
+                colormap=multiomics_colormap,
+                output_dir=output_dir,
+                show_sample_names=multiomics_show_sample_names,
+                force_data_type=multiomics_force_data_type,
+                verbose=verbose,
+            )
+            sf["embedding_visualization"] = True
+            print("Embedding visualization completed successfully")
+        except Exception as exc:
+            print(f"[embedding_visualization] failed: {exc}")
 
     # ==================== PHENOTYPE PREDICTION ====================
     if phenotype_prediction and prediction_target_col:
@@ -598,20 +575,25 @@ def wrapper(
     rna_n_target_cell_clusters: Optional[int] = None,
     rna_umap: bool = False,
     
-    # Sample embedding parameters
-    rna_sample_hvg_number: int = 2000,
-    rna_sample_embedding_dimension: int = 10,
-    rna_harmony_for_proportion: bool = True,
-    rna_preserve_cols_in_sample_embedding: Optional[List[str]] = None,
-    
-    # CCA-based resolution selection parameters
-    rna_cca_compute_corrected_pvalues: bool = True,
-    rna_cca_coarse_start: float = 0.1,
-    rna_cca_coarse_end: float = 1.0,
-    rna_cca_coarse_step: float = 0.1,
-    rna_cca_fine_range: float = 0.02,
-    rna_cca_fine_step: float = 0.01,
-    
+    # Sample embedding parameters (new method)
+    rna_sample_embedding_medium_K: int = 120,
+    rna_sample_embedding_fine_K: int = 300,
+    rna_sample_embedding_cmd_dim: int = 8,
+    rna_sample_embedding_use_clr: bool = False,
+    rna_sample_embedding_use_cmd: bool = True,
+    rna_sample_embedding_block_weights: Optional[List[float]] = None,
+    rna_sample_embedding_cmd_weight: float = 0.60,
+    rna_sample_embedding_pca_components: int = 10,
+    rna_sample_embedding_batch_method: str = "harmony",
+
+    # Autotune parameters
+    rna_autotune_enable: bool = False,
+    rna_autotune_search: str = "bayesian",
+    rna_autotune_scoring: str = "auto",
+    rna_autotune_scope: str = "alpha_only",
+    rna_autotune_alpha_bounds: tuple = (0.1, 10.0),
+    rna_autotune_grouping_col: Optional[str] = None,
+
     # Trajectory analysis parameters
     rna_n_cca_pcs: int = 2,
     rna_trajectory_col: str = "sev.level",
@@ -714,19 +696,25 @@ def wrapper(
     atac_n_target_cell_clusters: Optional[int] = None,
     atac_umap: bool = False,
     
-    # Sample embedding parameters
-    atac_sample_hvg_number: int = 50000,
-    atac_sample_embedding_dimension: int = 30,
-    atac_harmony_for_proportion: bool = True,
-    atac_preserve_cols_in_sample_embedding: Optional[List[str]] = None,
-    
-    # CCA-based resolution selection parameters
-    atac_cca_compute_corrected_pvalues: bool = True,
-    atac_cca_coarse_start: float = 0.1,
-    atac_cca_coarse_end: float = 1.0,
-    atac_cca_coarse_step: float = 0.1,
-    atac_cca_fine_range: float = 0.02,
-    atac_cca_fine_step: float = 0.01,
+    # Sample embedding parameters (new method)
+    atac_sample_embedding_medium_K: int = 120,
+    atac_sample_embedding_fine_K: int = 300,
+    atac_sample_embedding_cmd_dim: int = 8,
+    atac_sample_embedding_use_clr: bool = False,
+    atac_sample_embedding_use_cmd: bool = True,
+    atac_sample_embedding_block_weights: Optional[List[float]] = None,
+    atac_sample_embedding_cmd_weight: float = 0.60,
+    atac_sample_embedding_pca_components: int = 10,
+    atac_sample_embedding_batch_method: str = "harmony",
+
+    # Autotune parameters
+    atac_autotune_enable: bool = False,
+    atac_autotune_search: str = "bayesian",
+    atac_autotune_scoring: str = "auto",
+    atac_autotune_scope: str = "alpha_only",
+    atac_autotune_alpha_bounds: tuple = (0.1, 10.0),
+    atac_autotune_grouping_col: Optional[str] = None,
+
     
     # Trajectory analysis parameters
     atac_n_cca_pcs: int = 2,
@@ -785,8 +773,6 @@ def wrapper(
     # Pipeline control flags -- preprocessing & resolution
     multiomics_integration: bool = True,
     multiomics_integration_preprocessing: bool = True,
-    multiomics_dimensionality_reduction: bool = True,
-    multiomics_find_optimal_resolution: bool = False,
     # Pipeline control flags -- downstream
     multiomics_sample_distance_calculation: bool = True,
     multiomics_trajectory_analysis: bool = True,
@@ -867,27 +853,26 @@ def wrapper(
     multiomics_exclude_genes: Optional[List] = None,
     multiomics_doublet: bool = True,
     
-    # Sample embedding parameters
-    multiomics_sample_hvg_number: int = 2000,
-    multiomics_preserve_cols_for_sample_embedding: Optional[List[str]] = None,
-    multiomics_n_expression_components: int = 10,
-    multiomics_n_proportion_components: int = 10,
-    multiomics_harmony_for_proportion: bool = True,
-    
-    # Optimal resolution parameters
-    multiomics_optimization_target: str = "rna",
-    multiomics_sev_col: str = "sev.level",
-    multiomics_resolution_use_rep: str = 'X_glue',
-    multiomics_num_pcs: int = 20,
-    multiomics_visualize_cell_types: bool = True,
-    multiomics_cca_coarse_start: float = 0.1,
-    multiomics_cca_coarse_end: float = 1.0,
-    multiomics_cca_coarse_step: float = 0.1,
-    multiomics_cca_fine_range: float = 0.05,
-    multiomics_cca_fine_step: float = 0.01,
-    multiomics_compute_corrected_pvalues: bool = False,
-    multiomics_analyze_modality_alignment: bool = True,
-    
+    # Sample embedding parameters (new method)
+    multiomics_derive_sample_embedding: bool = True,
+    multiomics_sample_embedding_medium_K: int = 120,
+    multiomics_sample_embedding_fine_K: int = 300,
+    multiomics_sample_embedding_cmd_dim: int = 8,
+    multiomics_sample_embedding_use_clr: bool = False,
+    multiomics_sample_embedding_use_cmd: bool = True,
+    multiomics_sample_embedding_block_weights: Optional[List[float]] = None,
+    multiomics_sample_embedding_cmd_weight: float = 0.60,
+    multiomics_sample_embedding_pca_components: int = 10,
+    multiomics_sample_embedding_batch_method: str = "harmony",
+
+    # Autotune parameters
+    multiomics_autotune_enable: bool = False,
+    multiomics_autotune_search: str = "bayesian",
+    multiomics_autotune_scoring: str = "auto",
+    multiomics_autotune_scope: str = "alpha_only",
+    multiomics_autotune_alpha_bounds: tuple = (0.1, 10.0),
+    multiomics_autotune_grouping_col: Optional[str] = None,
+
     # Trajectory analysis parameters
     multiomics_trajectory_col: str = "sev.level",
     multiomics_trajectory_supervised: bool = False,
@@ -927,8 +912,7 @@ def wrapper(
     multiomics_color_col: Optional[str] = None,
     multiomics_visualization_grouping_column: Optional[List[str]] = None,
     multiomics_target_modality: str = 'ATAC',
-    multiomics_expression_key: str = 'X_DR_expression',
-    multiomics_proportion_key: str = 'X_DR_proportion',
+    multiomics_sample_embedding_key: str = 'X_DR_sample',
     multiomics_figsize: Tuple[int, int] = (20, 8),
     multiomics_point_size: int = 60,
     multiomics_alpha: float = 0.8,
@@ -1121,7 +1105,7 @@ def wrapper(
         
         try:
             rna_slb_list = _coerce_sample_level_batch_col_list(rna_sample_level_batch_col)
-            # Phase 1: Preprocessing + resolution selection
+            # Phase 1: Preprocessing + sample embedding
             rna_results = rna_wrapper(
                 rna_count_data_path=rna_count_data_path,
                 rna_output_dir=rna_output_dir,
@@ -1129,17 +1113,16 @@ def wrapper(
                 preprocessing=rna_preprocessing,
                 cell_type_cluster=rna_cell_type_cluster,
                 derive_sample_embedding=rna_derive_sample_embedding,
-                cca_based_cell_resolution_selection=rna_cca_based_cell_resolution_selection,
+                autotune_enable=rna_autotune_enable,
                 # General
                 use_gpu=gpu_available,
                 verbose=verbose,
                 status_flags=status_flags,
                 # Input paths
-                adata_cell_path=rna_adata_cell_path,
-                adata_sample_path=rna_adata_sample_path,
+                adata_path=rna_adata_cell_path,
+                sample_adata_path=rna_pseudo_adata_path,
                 rna_sample_meta_path=rna_sample_meta_path,
                 cell_meta_path=rna_cell_meta_path,
-                pseudo_adata_path=rna_pseudo_adata_path,
                 # Column names
                 sample_col=rna_sample_col,
                 sample_level_batch_col=rna_slb_list,
@@ -1159,31 +1142,39 @@ def wrapper(
                 existing_cell_types=rna_existing_cell_types,
                 n_target_cell_clusters=rna_n_target_cell_clusters,
                 umap=rna_umap,
-                # Sample embedding
-                sample_hvg_number=rna_sample_hvg_number,
-                sample_embedding_dimension=rna_sample_embedding_dimension,
-                harmony_for_proportion=rna_harmony_for_proportion,
-                preserve_cols_in_sample_embedding=rna_preserve_cols_in_sample_embedding,
-                # CCA resolution selection
-                trajectory_col=rna_trajectory_col,
-                n_cca_pcs=rna_n_cca_pcs,
-                cca_compute_corrected_pvalues=rna_cca_compute_corrected_pvalues,
-                cca_coarse_start=rna_cca_coarse_start,
-                cca_coarse_end=rna_cca_coarse_end,
-                cca_coarse_step=rna_cca_coarse_step,
-                cca_fine_range=rna_cca_fine_range,
-                cca_fine_step=rna_cca_fine_step,
+                # Sample embedding (new method)
+                sample_embedding_medium_K=rna_sample_embedding_medium_K,
+                sample_embedding_fine_K=rna_sample_embedding_fine_K,
+                sample_embedding_cmd_dim=rna_sample_embedding_cmd_dim,
+                sample_embedding_use_clr=rna_sample_embedding_use_clr,
+                sample_embedding_use_cmd=rna_sample_embedding_use_cmd,
+                sample_embedding_block_weights=rna_sample_embedding_block_weights,
+                sample_embedding_cmd_weight=rna_sample_embedding_cmd_weight,
+                sample_embedding_pca_components=rna_sample_embedding_pca_components,
+                sample_embedding_batch_method=rna_sample_embedding_batch_method,
+                # Autotune
+                autotune_search=rna_autotune_search,
+                autotune_scoring=rna_autotune_scoring,
+                autotune_scope=rna_autotune_scope,
+                autotune_alpha_bounds=rna_autotune_alpha_bounds,
+                autotune_grouping_col=rna_autotune_grouping_col,
             )
             status_flags = rna_results['status_flags']
             
+            # Build the in-memory sample-level AnnData from the cell-level adata
+            # (its .uns['X_DR_sample'] was populated by compute_sample_embedding).
+            from sample_embedding.sample_embedding import build_sample_adata
+            _rna_sample_adata = build_sample_adata(
+                rna_results['adata'], sample_col=rna_sample_col)
+
             # Phase 2: Downstream analysis
             downstream_results = downstream_analysis(
-                pseudo_adata=rna_results['pseudo_adata'],
+                pseudo_adata=_rna_sample_adata,
                 output_dir=rna_output_dir,
                 modality="rna",
                 status_flags=status_flags,
-                adata_cell=rna_results['adata_cell'],
-                adata_sample=rna_results['adata_sample'],
+                adata_cell=rna_results['adata'],
+                adata_sample=rna_results['adata'],
                 # Step control
                 sample_distance_calculation=rna_sample_distance_calculation,
                 trajectory_analysis=rna_trajectory_analysis,
@@ -1268,7 +1259,7 @@ def wrapper(
         
         try:
             atac_slb_list = _coerce_sample_level_batch_col_list(atac_sample_level_batch_col)
-            # Phase 1: Preprocessing + resolution selection
+            # Phase 1: Preprocessing + sample embedding
             atac_results = atac_wrapper(
                 atac_count_data_path=atac_count_data_path,
                 atac_output_dir=atac_output_dir,
@@ -1276,17 +1267,16 @@ def wrapper(
                 preprocessing=atac_preprocessing,
                 cell_type_cluster=atac_cell_type_cluster,
                 derive_sample_embedding=atac_derive_sample_embedding,
-                cca_based_cell_resolution_selection=atac_cca_based_cell_resolution_selection,
+                autotune_enable=atac_autotune_enable,
                 # General
                 use_gpu=gpu_available,
                 verbose=verbose,
                 status_flags=status_flags,
                 # Input paths
-                adata_cell_path=atac_adata_cell_path,
-                adata_sample_path=atac_adata_sample_path,
+                adata_path=atac_adata_cell_path,
+                sample_adata_path=atac_pseudo_adata_path,
                 atac_sample_meta_path=atac_sample_meta_path,
                 cell_meta_path=atac_cell_meta_path,
-                pseudo_adata_path=atac_pseudo_adata_path,
                 # Column names
                 sample_col=atac_sample_col,
                 sample_level_batch_col=atac_slb_list,
@@ -1311,31 +1301,37 @@ def wrapper(
                 existing_cell_types=atac_existing_cell_types,
                 n_target_cell_clusters=atac_n_target_cell_clusters,
                 umap=atac_umap,
-                # Sample embedding
-                sample_hvg_number=atac_sample_hvg_number,
-                sample_embedding_dimension=atac_sample_embedding_dimension,
-                harmony_for_proportion=atac_harmony_for_proportion,
-                preserve_cols_in_sample_embedding=atac_preserve_cols_in_sample_embedding,
-                # CCA resolution selection
-                trajectory_col=atac_trajectory_col,
-                n_cca_pcs=atac_n_cca_pcs,
-                cca_compute_corrected_pvalues=atac_cca_compute_corrected_pvalues,
-                cca_coarse_start=atac_cca_coarse_start,
-                cca_coarse_end=atac_cca_coarse_end,
-                cca_coarse_step=atac_cca_coarse_step,
-                cca_fine_range=atac_cca_fine_range,
-                cca_fine_step=atac_cca_fine_step,
+                # Sample embedding (new method)
+                sample_embedding_medium_K=atac_sample_embedding_medium_K,
+                sample_embedding_fine_K=atac_sample_embedding_fine_K,
+                sample_embedding_cmd_dim=atac_sample_embedding_cmd_dim,
+                sample_embedding_use_clr=atac_sample_embedding_use_clr,
+                sample_embedding_use_cmd=atac_sample_embedding_use_cmd,
+                sample_embedding_block_weights=atac_sample_embedding_block_weights,
+                sample_embedding_cmd_weight=atac_sample_embedding_cmd_weight,
+                sample_embedding_pca_components=atac_sample_embedding_pca_components,
+                sample_embedding_batch_method=atac_sample_embedding_batch_method,
+                # Autotune
+                autotune_search=atac_autotune_search,
+                autotune_scoring=atac_autotune_scoring,
+                autotune_scope=atac_autotune_scope,
+                autotune_alpha_bounds=atac_autotune_alpha_bounds,
+                autotune_grouping_col=atac_autotune_grouping_col,
             )
             status_flags = atac_results['status_flags']
             
+            from sample_embedding.sample_embedding import build_sample_adata
+            _atac_sample_adata = build_sample_adata(
+                atac_results['adata'], sample_col=atac_sample_col)
+
             # Phase 2: Downstream analysis
             downstream_results = downstream_analysis(
-                pseudo_adata=atac_results['pseudo_adata'],
+                pseudo_adata=_atac_sample_adata,
                 output_dir=atac_output_dir,
                 modality="atac",
                 status_flags=status_flags,
-                adata_cell=atac_results['adata_cell'],
-                adata_sample=atac_results['adata_sample'],
+                adata_cell=atac_results['adata'],
+                adata_sample=atac_results['adata'],
                 # Step control
                 sample_distance_calculation=atac_sample_distance_calculation,
                 trajectory_analysis=atac_trajectory_analysis,
@@ -1421,7 +1417,7 @@ def wrapper(
         try:
             from .multiomics_wrapper import multiomics_wrapper
             
-            # Phase 1: Preprocessing + resolution selection + sample embedding
+            # Phase 1: Preprocessing + GLUE + sample embedding
             multiomics_results = multiomics_wrapper(
                 rna_file=multiomics_rna_file,
                 atac_file=multiomics_atac_file,
@@ -1429,8 +1425,8 @@ def wrapper(
                 # Pipeline control
                 integration=multiomics_integration,
                 integration_preprocessing=multiomics_integration_preprocessing,
-                dimensionality_reduction=multiomics_dimensionality_reduction,
-                find_optimal_resolution=multiomics_find_optimal_resolution,
+                derive_sample_embedding=multiomics_derive_sample_embedding,
+                autotune_enable=multiomics_autotune_enable,
                 # Basic parameters
                 rna_sample_meta_file=multiomics_rna_sample_meta_file,
                 atac_sample_meta_file=multiomics_atac_sample_meta_file,
@@ -1486,32 +1482,29 @@ def wrapper(
                 pct_mito_cutoff=multiomics_pct_mito_cutoff,
                 exclude_genes=multiomics_exclude_genes,
                 doublet=multiomics_doublet,
-                # Sample embedding
-                sample_hvg_number=multiomics_sample_hvg_number,
-                preserve_cols_for_sample_embedding=multiomics_preserve_cols_for_sample_embedding,
-                n_expression_components=multiomics_n_expression_components,
-                n_proportion_components=multiomics_n_proportion_components,
-                multiomics_harmony_for_proportion=multiomics_harmony_for_proportion,
-                # Optimal resolution
-                optimization_target=multiomics_optimization_target,
-                sev_col=multiomics_sev_col,
-                resolution_use_rep=multiomics_resolution_use_rep,
-                num_PCs=multiomics_num_pcs,
-                visualize_cell_types=multiomics_visualize_cell_types,
-                coarse_start=multiomics_cca_coarse_start,
-                coarse_end=multiomics_cca_coarse_end,
-                coarse_step=multiomics_cca_coarse_step,
-                fine_range=multiomics_cca_fine_range,
-                fine_step=multiomics_cca_fine_step,
-                compute_corrected_pvalues=multiomics_compute_corrected_pvalues,
-                analyze_modality_alignment=multiomics_analyze_modality_alignment,
+                # Sample embedding (new method)
+                sample_embedding_medium_K=multiomics_sample_embedding_medium_K,
+                sample_embedding_fine_K=multiomics_sample_embedding_fine_K,
+                sample_embedding_cmd_dim=multiomics_sample_embedding_cmd_dim,
+                sample_embedding_use_clr=multiomics_sample_embedding_use_clr,
+                sample_embedding_use_cmd=multiomics_sample_embedding_use_cmd,
+                sample_embedding_block_weights=multiomics_sample_embedding_block_weights,
+                sample_embedding_cmd_weight=multiomics_sample_embedding_cmd_weight,
+                sample_embedding_pca_components=multiomics_sample_embedding_pca_components,
+                sample_embedding_batch_method=multiomics_sample_embedding_batch_method,
+                # Autotune
+                autotune_search=multiomics_autotune_search,
+                autotune_scoring=multiomics_autotune_scoring,
+                autotune_scope=multiomics_autotune_scope,
+                autotune_alpha_bounds=multiomics_autotune_alpha_bounds,
+                autotune_grouping_col=multiomics_autotune_grouping_col,
                 # Paths for skipping
                 integrated_h5ad_path=multiomics_integrated_h5ad_path,
-                pseudobulk_h5ad_path=multiomics_pseudobulk_h5ad_path,
+                sample_adata_path=multiomics_pseudobulk_h5ad_path,
                 status_flags=status_flags,
             )
             status_flags = multiomics_results['status_flags']
-            
+
             multiomics_adata_cell = multiomics_results.get("adata")
             if multiomics_adata_cell is None:
                 import scanpy as sc
@@ -1519,21 +1512,28 @@ def wrapper(
                 if multiomics_integrated_h5ad_path:
                     _cell_paths.append(multiomics_integrated_h5ad_path)
                 _cell_paths.append(
-                    os.path.join(multiomics_output_dir, "preprocess", "adata_sample.h5ad")
+                    os.path.join(multiomics_output_dir, "preprocess", "adata_preprocessed.h5ad")
                 )
                 for _p in _cell_paths:
                     if _p and os.path.exists(_p):
                         multiomics_adata_cell = sc.read(_p)
                         break
-            
+
+            from sample_embedding.sample_embedding import build_sample_adata
+            _mo_sample_adata = build_sample_adata(
+                multiomics_adata_cell,
+                sample_col=multiomics_sample_col,
+                modality_col=multiomics_modality_col,
+            )
+
             # Phase 2: Downstream analysis
             downstream_results = downstream_analysis(
-                pseudo_adata=multiomics_results['pseudo_adata'],
+                pseudo_adata=_mo_sample_adata,
                 output_dir=multiomics_output_dir,
                 modality="multiomics",
                 status_flags=status_flags,
                 adata_cell=multiomics_adata_cell,
-                adata_sample=multiomics_results.get('adata_sample'),
+                adata_sample=multiomics_adata_cell,
                 # Step control
                 sample_distance_calculation=multiomics_sample_distance_calculation,
                 trajectory_analysis=multiomics_trajectory_analysis,
@@ -1585,8 +1585,7 @@ def wrapper(
                 multiomics_color_col=multiomics_color_col,
                 multiomics_visualization_grouping_column=multiomics_visualization_grouping_column,
                 multiomics_target_modality=multiomics_target_modality,
-                multiomics_expression_key=multiomics_expression_key,
-                multiomics_proportion_key=multiomics_proportion_key,
+                multiomics_sample_embedding_key=multiomics_sample_embedding_key,
                 multiomics_figsize=multiomics_figsize,
                 multiomics_point_size=multiomics_point_size,
                 multiomics_alpha=multiomics_alpha,

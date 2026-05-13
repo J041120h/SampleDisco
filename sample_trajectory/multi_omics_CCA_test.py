@@ -86,7 +86,7 @@ def integration_CCA_test(pseudobulk_anndata_path,
         import pandas as pd
         import numpy as np
         
-        pca_keys = ["X_DR_expression", "X_DR_proportion"]
+        pca_keys = ["X_DR_sample"]
         
         for key in pca_keys:
             if key in adata.uns:
@@ -135,7 +135,7 @@ def integration_CCA_test(pseudobulk_anndata_path,
         # Check PCA coordinates in .uns
         for modality_name, adata in [("RNA", pseudobulk_rna), ("ATAC", pseudobulk_atac)]:
             print(f"\n{modality_name} PCA coordinates in .uns:")
-            for key in ["X_DR_expression", "X_DR_proportion"]:
+            for key in ["X_DR_sample"]:
                 if key in adata.uns:
                     print(f"  {key} shape: {adata.uns[key].shape}")
                 else:
@@ -185,7 +185,7 @@ def integration_CCA_test(pseudobulk_anndata_path,
     # Final validation: Check that PCA coordinates match sample counts
     def validate_pca_coordinates(adata, modality_name):
         """Final validation that PCA coordinates match the number of samples"""
-        pca_keys = ["X_DR_expression", "X_DR_proportion"]
+        pca_keys = ["X_DR_sample"]
         for key in pca_keys:
             if key in adata.uns:
                 if adata.uns[key].shape[0] != adata.n_obs:

@@ -99,14 +99,13 @@ def _get_dr_matrix(pseudo_adata: AnnData, embedding_key: str) -> Tuple[np.ndarra
 
 
 def _available_embeddings(pseudo_adata: AnnData) -> List[str]:
-    """Return DR embeddings present (expression, proportion)."""
+    """Return the available DR embedding key."""
     out = []
-    for key in ("X_DR_expression", "X_DR_proportion"):
-        try:
-            _get_dr_matrix(pseudo_adata, key)
-            out.append(key)
-        except KeyError:
-            continue
+    try:
+        _get_dr_matrix(pseudo_adata, "X_DR_sample")
+        out.append("X_DR_sample")
+    except KeyError:
+        pass
     return out
 
 
