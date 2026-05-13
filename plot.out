@@ -1,77 +1,189 @@
+🔍 Loading AnnData from: /dcs07/hongkai/data/harry/result/1M-scBloodNL/data/1M-scBloodNL_V2.h5ad
 
-========================================================================
-Loading (read-only): /dcs07/hongkai/data/harry/result/1M-scBloodNL/data/1M-scBloodNL.h5ad
-========================================================================
-  shape: (928274, 23320)
-  obs columns: ['cell_type', 'cell_type_lowerres', 'assignment', 'timepoint', 'chem', 'stimulation_conditions']
+📦 Basic Info
+  - Shape (cells × genes): 625677 × 23320
+  - Layers: []
+  - obs columns: ['cell_type', 'cell_type_lowerres', 'assignment', 'timepoint', 'stimulation_conditions', 'id', 'seq_date', 'seq_lane', 'seq_batch']
+  - var columns: []
+  - obsm keys: []
+  - varm keys: []
 
-========================================================================
-Check 1: assignment parses cleanly to integers
-========================================================================
-  example raw values: ['1.0', '12.0', '8.0', '11.0', '4.0']
-  ✓ all 928274 values parsed to int
-  donor range: [1, 126], unique donors: 120
+============================================================
+🔎 Unique values for column 'cell_type' (found in adata.obs):
+============================================================
+  - n_unique: 20
+     1. 'B'
+     2. 'NK'
+     3. 'NKbright'
+     4. 'NKdim'
+     5. 'hemapoietic stem'
+     6. 'mDC'
+     7. 'megakaryocyte'
+     8. 'memory CD4T'
+     9. 'memory CD8T'
+    10. 'mono 1'
+    11. 'mono 2'
+    12. 'mono 4'
+    13. 'naive CD4T'
+    14. 'naive CD8T'
+    15. 'pDC'
+    16. 'plasma B'
+    17. 'reg CD4T'
+    18. 'th1 CD4T'
+    19. 'th2 CD4T'
+    20. 'unknown'
 
-========================================================================
-Check 2: construct proposed `id` in memory (NOT saved)
-========================================================================
-  unique sample ids: 790
-  paper expectation: 840 designed, ~782 after QC (per Fig.1 + page 5)
-  ✓ within expected range
+🔎 Inspecting .X matrix:
+  - storage type: sparse (csr_matrix)
+  - dtype: int32
+  - .X nonzeros: 601726919 / 14590787640 (4.1240% nonzero, 95.8760% zero)
+  - value type: integer — values appear integer-like (no fractional parts)
+  - contains NaN: False
+  - min value: 1
+  - max value: 10588
 
-========================================================================
-Check 3: id is unique per (donor, stim, timepoint)
-========================================================================
-  ✓ every id maps to exactly one (donor, stim, timepoint)
+🧮 Example .X values (first 10 cells × 10 genes):
+[[0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 1]
+ [0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 1]
+ [0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 1]]
 
-========================================================================
-Check 4: cells per sample
-========================================================================
-  min   : 222
-  q25   : 896
-  median: 1122
-  q75   : 1364
-  max   : 6271
-  ✓ no sample has <50 cells
+🧫 Example cell names:
+  - AAACCTGAGAAACCAT_180920_lane1
+  - AAACCTGAGTAGCCGA_180920_lane1
+  - AAACCTGCAATCTACG_180920_lane1
+  - AAACCTGCACATCCAA_180920_lane1
+  - AAACCTGCAGCTCGAC_180920_lane1
+  - AAACCTGCAGGTCGTC_180920_lane1
+  - AAACCTGCAGTGACAG_180920_lane1
+  - AAACCTGCATCACAAC_180920_lane1
+  - AAACCTGCATCAGTCA_180920_lane1
+  - AAACCTGCATCGGTTA_180920_lane1
 
-========================================================================
-Check 5: chemistry mixing within id
-========================================================================
-  samples spanning >1 chemistry: 0 / 790 (0.00%)
-  ✓ no id mixes chemistries — chem is a strict between-sample batch.
+============================================================
+📋 Detailed obs columns inspection:
+============================================================
 
-========================================================================
-Preview: 10 most/least populated proposed ids
-========================================================================
-Most populated:
-             n_cells  n_chem
-_id                         
-D3_PA_3h        6271       1
-D49_CA_3h       3796       1
-D44_CA_3h       3218       1
-D31_MTB_3h      3177       1
-D115_CA_3h      3103       1
-D91_MTB_3h      2818       1
-D117_CA_24h     2758       1
-D114_MTB_3h     2653       1
-D21_PA_3h       2627       1
-D99_CA_3h       2467       1
+    [cell_type]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 20
+      top values:
+        'naive CD4T': 169820 (27.1%)
+        'memory CD8T': 87776 (14.0%)
+        'mono 1': 74480 (11.9%)
+        'naive CD8T': 60512 (9.7%)
+        'NKdim': 50499 (8.1%)
 
-Least populated:
-              n_cells  n_chem
-_id                          
-D72_CA_3h         222       1
-D9_MTB_3h         231       1
-D84_PA_3h         325       1
-D120_CA_24h       327       1
-D71_PA_24h        360       1
-D66_PA_24h        362       1
-D26_CA_3h         376       1
-D123_CA_24h       396       1
-D126_MTB_24h      460       1
-D22_CA_3h         474       1
+    [cell_type_lowerres]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 10
+      top values:
+        'CD4T': 228333 (36.5%)
+        'CD8T': 148288 (23.7%)
+        'monocyte': 104238 (16.7%)
+        'NK': 93707 (15.0%)
+        'unknown': 17000 (2.7%)
 
-========================================================================
-DRY RUN COMPLETE — no changes were written.
-If everything looks good, run add_sample_id.py to commit the column.
-========================================================================
+    [assignment]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 88
+      top values:
+        '3.0': 14527 (2.3%)
+        '92.0': 11289 (1.8%)
+        '89.0': 10593 (1.7%)
+        '21.0': 10483 (1.7%)
+        '12.0': 10327 (1.7%)
+
+    [timepoint]
+      dtype: int32
+      non-NA: 625677/625677 (100.0%)
+      unique: 3
+      min: 0, max: 24, mean: 11.5611
+      example values: [np.int32(3), np.int32(24), np.int32(0)]
+
+    [stimulation_conditions]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 4
+      top values:
+        'PA': 199519 (31.9%)
+        'CA': 176549 (28.2%)
+        'MTB': 171678 (27.4%)
+        'UT': 77931 (12.5%)
+
+    [id]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 550
+      top values:
+        'D3_PA_3h': 6271 (1.0%)
+        'D44_CA_3h': 3218 (0.5%)
+        'D31_MTB_3h': 3177 (0.5%)
+        'D91_MTB_3h': 2818 (0.5%)
+        'D21_PA_3h': 2627 (0.4%)
+
+    [seq_date]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 32
+      top values:
+        '181218': 41329 (6.6%)
+        '181219': 30134 (4.8%)
+        '181003': 29391 (4.7%)
+        '181213': 26338 (4.2%)
+        '180920': 22645 (3.6%)
+
+    [seq_lane]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 4
+      top values:
+        'lane1': 291735 (46.6%)
+        'lane2': 284355 (45.4%)
+        'lane3': 39785 (6.4%)
+        'lane4': 9802 (1.6%)
+
+    [seq_batch]
+      dtype: category
+      non-NA: 625677/625677 (100.0%)
+      unique: 69
+      top values:
+        '181218_lane3': 12572 (2.0%)
+        '180927_lane1': 11872 (1.9%)
+        '180920_lane2': 11872 (1.9%)
+        '181017_lane1': 11610 (1.9%)
+        '180928_lane1': 11601 (1.9%)
+
+📋 Example obs rows (head 10):
+                                 cell_type  ...     seq_batch
+barcode                                     ...              
+AAACCTGAGAAACCAT_180920_lane1  memory CD8T  ...  180920_lane1
+AAACCTGAGTAGCCGA_180920_lane1       mono 2  ...  180920_lane1
+AAACCTGCAATCTACG_180920_lane1           NK  ...  180920_lane1
+AAACCTGCACATCCAA_180920_lane1  memory CD8T  ...  180920_lane1
+AAACCTGCAGCTCGAC_180920_lane1           NK  ...  180920_lane1
+AAACCTGCAGGTCGTC_180920_lane1  memory CD8T  ...  180920_lane1
+AAACCTGCAGTGACAG_180920_lane1   naive CD4T  ...  180920_lane1
+AAACCTGCATCACAAC_180920_lane1       mono 1  ...  180920_lane1
+AAACCTGCATCAGTCA_180920_lane1  memory CD8T  ...  180920_lane1
+AAACCTGCATCGGTTA_180920_lane1   naive CD8T  ...  180920_lane1
+
+[10 rows x 9 columns]
+
+============================================================
+🧬 Detailed var columns inspection:
+============================================================
+
+🧬 Example var rows (head 10):
+Empty DataFrame
+Columns: []
+Index: [RP11-34P13.7, AL627309.1, AP006222.2, RP4-669L17.10, RP11-206L10.3, RP11-206L10.2, RP11-206L10.9, LINC00115, FAM41C, NOC2L]

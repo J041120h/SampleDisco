@@ -299,7 +299,7 @@ multiomics_integrated_h5ad_path: null
 multiomics_pseudobulk_h5ad_path: null
 multiomics_rna_sample_meta_file: null
 multiomics_atac_sample_meta_file: null
-multiomics_additional_hvg_file: "/dcl01/hongkai/data/data/hjiang/Data/multi_omics_testing/unique_genes.txt"
+multiomics_additional_hvg_file: null
 
 # --- Common Column Names ---
 multiomics_rna_sample_column: "sample"
