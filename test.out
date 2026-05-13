@@ -1,251 +1,263 @@
-Resuming from previous progress:
-{
-  "rna": {
-    "preprocessing": false,
-    "cell_type_cluster": false,
-    "derive_sample_embedding": false,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
-    "trajectory_analysis": false,
-    "trajectory_dge": false,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": false,
-    "visualization": false,
-    "phenotype_prediction": false,
-    "dimension_association_analysis": false
-  },
-  "atac": {
-    "preprocessing": false,
-    "cell_type_cluster": false,
-    "derive_sample_embedding": false,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
-    "trajectory_analysis": false,
-    "trajectory_dge": false,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": false,
-    "visualization": false,
-    "phenotype_prediction": false,
-    "dimension_association_analysis": false
-  },
-  "multiomics": {
-    "glue_integration": false,
-    "glue_preprocessing": false,
-    "glue_training": false,
-    "glue_gene_activity": false,
-    "glue_cell_types": false,
-    "glue_visualization": false,
-    "integration_preprocessing": false,
-    "optimal_resolution": false,
-    "dimensionality_reduction": false,
-    "cca_based_cell_resolution_selection": false,
-    "sample_distance_calculation": false,
-    "trajectory_analysis": false,
-    "trajectory_dge": false,
-    "sample_cluster": false,
-    "proportion_test": false,
-    "cluster_dge": false,
-    "embedding_visualization": false,
-    "visualization": false,
-    "phenotype_prediction": false,
-    "dimension_association_analysis": false
-  },
-  "system_info": {
-    "platform": "Linux",
-    "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
-    "use_gpu": true,
-    "gpu_available": true
-  }
-}
+========================================================================================
+# eye_lutea
+========================================================================================
+pseudobulk: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/pseudobulk/pseudobulk_sample.h5ad
+metadata:   /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+note:       meta CSV has a trailing empty column + 2 blank rows; BOM on header
 
-============================================================
-RUNNING RNA PIPELINE
-============================================================
-Starting RNA wrapper function...
-Starting preprocessing...
-=== Reading input dataset ===
-Raw shape: 928274 cells × 23320 genes
-All required columns are present in adata.obs.
-=== Processing data for clustering ===
-Running HVG selection on CPU...
-HVG LOESS fit failed with span=0.3 (reciprocal condition number  4.9207e-15); retrying with span=0.5
-HVG selection succeeded with span=0.5
-After HVG: 928274 cells × 2000 genes
-Moving to GPU for normalization, PCA, and Harmony...
-=== [GPU] Running Harmony integration ===
-Cell-level batch keys (Harmony): id
-Use GPU mode.
-	Initialization is completed.
-	Completed 1 / 30 iteration(s).
-	Completed 2 / 30 iteration(s).
-	Completed 3 / 30 iteration(s).
-	Completed 4 / 30 iteration(s).
-	Completed 5 / 30 iteration(s).
-	Completed 6 / 30 iteration(s).
-	Completed 7 / 30 iteration(s).
-	Completed 8 / 30 iteration(s).
-	Completed 9 / 30 iteration(s).
-	Completed 10 / 30 iteration(s).
-	Completed 11 / 30 iteration(s).
-Reach convergence after 11 iteration(s).
-End of harmony for adata_cluster.
-=== [CPU] Processing data for sample differences ===
-Saving original expression matrix (temporary variable)
-Normalizing and PCA on CPU...
-Total runtime: 1133.41 seconds
-Starting sample embedding derivation...
-[Pseudobulk] Input: 928274 cells, 18846 genes
-[Pseudobulk] Data appears to be raw counts, will normalize after pseudobulk aggregation
-[Pseudobulk] Using GPU (rapids_singlecell)
-[Pseudobulk] 790 samples, 26 cell types
-[Pseudobulk] Batch correction: ['chem']
-[Pseudobulk] Phase 1: Aggregating...
-  Aggregating 928274 cells -> 790 samples x 26 cell types
-  Created 26 cell type layers
-[Pseudobulk] Phase 2: Processing cell types...
-  [1/26] B
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [2/26] NK
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [3/26] NKbright
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [4/26] NKdim
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [5/26] T helper
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [6/26] cyto CD4T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [7/26] double negative T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [8/26] hemapoietic stem
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [9/26] mDC
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [10/26] megakaryocyte
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [11/26] memory CD4T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 6338 HVGs
-  [12/26] memory CD8T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [13/26] memory CD8T left and naive CD8T right
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [14/26] mono 1
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [15/26] mono 2
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [16/26] mono 3
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [17/26] mono 4
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [18/26] naive CD4T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [19/26] naive CD4T transitioning to stim
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [20/26] naive CD8T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [21/26] pDC
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [22/26] plasma B
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [23/26] reg CD4T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [24/26] th1 CD4T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [25/26] th2 CD4T
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-  [26/26] unknown
-    Batches: 2, sizes: 240-550
-    Applied ComBat
-    Selected 2000 HVGs
-[Pseudobulk] Retained 26 cell types
-[Pseudobulk] Phase 3: Building final matrix...
-[Pseudobulk] Final features: 2000
-[Pseudobulk] Phase 4: Computing proportions...
-[Pseudobulk] Complete
-[Pseudobulk] Extracting sample metadata...
-[Pseudobulk] Saving to /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/pseudobulk/pseudobulk_sample.h5ad
-[Pseudobulk] Output: 790 samples, 2000 features
-[DimRed] Starting dimension reduction computation...
-[DimRed] Mode: RNA (PCA)
-[DimRed] Batch column(s): ['chem']
-[DimRed] Output directory: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/pseudobulk
-[DimRed] Components: expression=10, proportion=10
-[DimRed] Computing PCA for RNA data with 10 components on (790, 2000) data
-[PCA] Success. Shape: (790, 10)
-[Storage] Stored X_DR_expression in both objects (shape: (790, 10))
-[DimRed] Completed - results stored as X_DR_expression
-[DimRed] Expression dimension reduction completed
-[Proportion] Computing PCA with 10 components...
-[Harmony] Applying with batch column(s): ['chem']
-[Harmony] Completed with 1 batch factor(s)
-[Storage] Stored X_DR_proportion in both objects (shape: (790, 10))
-[Proportion] Completed using Harmony-integrated PCA. Shape: (790, 10)
-[DimRed] Proportion dimension reduction completed
-[SaveCSV] Saved sample expression embedding: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/embeddings/sample_expression_embedding.csv (shape: (790, 10))
-[SaveCSV] Saved sample proportion embedding: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/embeddings/sample_proportion_embedding.csv (shape: (790, 10))
-[SaveEmbeddings] Saved 2 embedding file(s) to: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/embeddings
-[Save] Saving pseudobulk_anndata to: /dcs07/hongkai/data/harry/result/1M-scBloodNL/rna/pseudobulk/pseudobulk_sample.h5ad
-[Save] Successfully saved pseudobulk_anndata (4.6 MB)
+[1] pseudo_adata inspection
+  adata = AnnData object with n_obs × n_vars = 24 × 34000
+    obs: 'database', 'dataset', 'batch', 'tissue', 'source_file', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'modality', 'original_sample', 'total_counts_mt', 'pct_counts_mt'
+    var: 'n_cells', 'highly_variable', 'means', 'dispersions', 'dispersions_norm'
+    uns: 'X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'hvg', 'pca_proportion_variance_ratio'
+    obsm: 'X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion'
+  obs.shape = (24, 14)
+  obs columns:
+    - 'database': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['HCA']
+    - 'dataset': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['PMID_31436334_10w_FR', 'PMID_31436334_11w2d_FR', 'PMID_31436334_12w3d_FR', 'PMID_31436334_13W_FR', 'PMID_31436334_14w2d_FR', 'PMID_31436334_14w5d_FR'] ... (6 more)
+    - 'batch': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['HCA-PMID_31436334_10w_FR', 'HCA-PMID_31436334_11w2d_FR', 'HCA-PMID_31436334_12w3d_FR', 'HCA-PMID_31436334_13W_FR', 'HCA-PMID_31436334_14w2d_FR', 'HCA-PMID_31436334_14w5d_FR'] ... (6 more)
+    - 'tissue': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['retina']
+    - 'source_file': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['multi_PMID_31436334_10w_FR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_11w2d_FR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_12w3d_FR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_13W_FR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_14w2d_FR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_14w5d_FR_DHS_blacklist_rm_noY'] ... (6 more)
+    - 'age': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['70.0', '79.0', '87.0', '91.0', '100.0', '103.0'] ... (6 more)
+    - 'sex': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['not determined']
+    - 'disease_state': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['Unspecified']
+    - 'organ_part': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['macula lutea']
+    - 'Unnamed: 5': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['-1.0']
+    - 'modality': dtype=category, n=24, n_nonnull=24, n_unique=2, examples=['ATAC', 'RNA']
+    - 'original_sample': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['10w_FR', '11w2d_FR', '12w3d_FR', '13W_FR', '14w2d_FR', '14w5d_FR'] ... (6 more)
+    - 'total_counts_mt': dtype=float64, n=24, n_nonnull=24, n_unique=1, examples=[np.float64(0.0)]
+    - 'pct_counts_mt': dtype=float64, n=24, n_nonnull=24, n_unique=1, examples=[np.float64(0.0)]
+  uns keys: ['X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'hvg', 'pca_proportion_variance_ratio']
+    uns['X_DR_expression']: DataFrame shape=(24, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+    uns['X_DR_proportion']: DataFrame shape=(24, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['10w_fr_atac', '10w_fr_rna', '11w2d_fr_atac', '11w2d_fr_rna', '12w3d_fr_atac']
+  obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
+    obsm['X_DR_expression']: shape=(24, 10)
+    obsm['X_DR_proportion']: shape=(24, 10)
+    obsm['X_pca_expression_method']: shape=(24, 10)
+    obsm['X_pca_proportion']: shape=(24, 10)
 
-[DimRed] === SUMMARY ===
-Runtime: 1.31s
-Expression: Success
-Proportion: Success
-RNA preprocessing pipeline completed successfully!
-Starting visualization...
+[2] metadata inspection
+  meta.shape = (24, 5)
+  meta columns:
+    - 'sample': dtype=object, n=24, n_nonnull=24, n_unique=24, examples=['10w_FR', '10w_NR', '11w2d_FR', '11w2d_NR', '12w3d_FR', '12w3d_NR'] ... (18 more)
+    - 'age': dtype=float64, n=24, n_nonnull=24, n_unique=12, examples=[np.float64(70.0), np.float64(79.0), np.float64(87.0), np.float64(91.0), np.float64(100.0), np.float64(103.0)] ... (6 more)
+    - 'sex': dtype=object, n=24, n_nonnull=24, n_unique=1, examples=['not determined']
+    - 'disease_state': dtype=object, n=24, n_nonnull=24, n_unique=1, examples=['Unspecified']
+    - 'organ_part': dtype=object, n=24, n_nonnull=24, n_unique=2, examples=['macula lutea', 'peripheral region of retina']
+  meta sample column detected: 'sample'
 
-RNA pipeline failed: Cell type clustering required for dendrogram visualization.
+[3] sample-id alignment
+  adata sample ids (24): ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC', '12w3d_FR_RNA', '13W_FR_ATAC', '13W_FR_RNA', '14w2d_FR_ATAC', '14w2d_FR_RNA'] ...
+  meta sample ids (24): ['10w_FR', '10w_NR', '11w2d_FR', '11w2d_NR', '12w3d_FR', '12w3d_NR', '13W_FR', '13W_NR', '14w2d_FR', '14w2d_NR'] ...
+  sample overlap: 0 / adata=24 / meta=24
+    in adata, NOT in meta (24): ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC', '12w3d_FR_RNA', '13W_FR_ATAC', '13W_FR_RNA', '14w2d_FR_ATAC', '14w2d_FR_RNA'] ...
+    in meta, NOT in adata (24): ['10w_FR', '10w_NR', '11w2d_FR', '11w2d_NR', '12w3d_FR', '12w3d_NR', '13W_FR', '13W_NR', '14w2d_FR', '14w2d_NR'] ...
 
-Total execution time: 1300.77 seconds (21.68 minutes)
+[4] auto-classification on (current obs) — BEFORE any merge
+  continuous: []
+  categorical: ['dataset', 'batch', 'source_file', 'age', 'modality', 'original_sample']
+  skipped: [('database', 'n_unique=1'), ('tissue', 'n_unique=1'), ('sex', 'n_unique=1'), ('disease_state', 'n_unique=1'), ('organ_part', 'n_unique=1'), ('Unnamed: 5', 'n_unique=1'), ('total_counts_mt', 'n_unique=1'), ('pct_counts_mt', 'n_unique=1')]
+
+[5] auto-classification on obs AFTER a trial merge with metadata
+  trial merge: matched 24/24 rows with any metadata
+  continuous: []
+  categorical: ['dataset', 'batch', 'source_file', 'modality', 'original_sample']
+  skipped: [('database', 'n_unique=1'), ('tissue', 'n_unique=1'), ('Unnamed: 5', 'n_unique=1'), ('total_counts_mt', 'n_unique=1'), ('pct_counts_mt', 'n_unique=1'), ('sample', 'sample-col/internal'), ('age', 'n_unique=0'), ('sex', 'n_unique=0'), ('disease_state', 'n_unique=0'), ('organ_part', 'n_unique=0')]
+
+========================================================================================
+# eye_retina
+========================================================================================
+pseudobulk: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/pseudobulk/pseudobulk_sample.h5ad
+metadata:   /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+note:       same metadata file as lutea
+
+[1] pseudo_adata inspection
+  adata = AnnData object with n_obs × n_vars = 24 × 2000
+    obs: 'database', 'dataset', 'batch', 'tissue', 'source_file', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'modality', 'original_sample', 'total_counts_mt', 'pct_counts_mt'
+    var: 'n_cells', 'highly_variable', 'means', 'dispersions', 'dispersions_norm'
+    uns: 'X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'hvg', 'pca_proportion_variance_ratio'
+    obsm: 'X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion'
+  obs.shape = (24, 14)
+  obs columns:
+    - 'database': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['HCA']
+    - 'dataset': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['PMID_31436334_10w_NR', 'PMID_31436334_11w2d_NR', 'PMID_31436334_12w3d_NR', 'PMID_31436334_13W_NR', 'PMID_31436334_14w2d_NR', 'PMID_31436334_14w5d_NR'] ... (6 more)
+    - 'batch': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['HCA-PMID_31436334_10w_NR', 'HCA-PMID_31436334_11w2d_NR', 'HCA-PMID_31436334_12w3d_NR', 'HCA-PMID_31436334_13W_NR', 'HCA-PMID_31436334_14w2d_NR', 'HCA-PMID_31436334_14w5d_NR'] ... (6 more)
+    - 'tissue': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['retina']
+    - 'source_file': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['multi_PMID_31436334_10w_NR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_11w2d_NR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_12w3d_NR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_13W_NR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_14w2d_NR_DHS_blacklist_rm_noY', 'multi_PMID_31436334_14w5d_NR_DHS_blacklist_rm_noY'] ... (6 more)
+    - 'age': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['70.0', '79.0', '87.0', '91.0', '100.0', '103.0'] ... (6 more)
+    - 'sex': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['not determined']
+    - 'disease_state': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['Unspecified']
+    - 'organ_part': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['peripheral region of retina']
+    - 'Unnamed: 5': dtype=category, n=24, n_nonnull=24, n_unique=1, examples=['-1.0']
+    - 'modality': dtype=category, n=24, n_nonnull=24, n_unique=2, examples=['ATAC', 'RNA']
+    - 'original_sample': dtype=category, n=24, n_nonnull=24, n_unique=12, examples=['10w_NR', '11w2d_NR', '12w3d_NR', '13W_NR', '14w2d_NR', '14w5d_NR'] ... (6 more)
+    - 'total_counts_mt': dtype=float64, n=24, n_nonnull=24, n_unique=1, examples=[np.float64(0.0)]
+    - 'pct_counts_mt': dtype=float64, n=24, n_nonnull=24, n_unique=1, examples=[np.float64(0.0)]
+  uns keys: ['X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'hvg', 'pca_proportion_variance_ratio']
+    uns['X_DR_expression']: DataFrame shape=(24, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+    uns['X_DR_proportion']: DataFrame shape=(24, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['10w_nr_atac', '10w_nr_rna', '11w2d_nr_atac', '11w2d_nr_rna', '12w3d_nr_atac']
+  obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
+    obsm['X_DR_expression']: shape=(24, 10)
+    obsm['X_DR_proportion']: shape=(24, 10)
+    obsm['X_pca_expression_method']: shape=(24, 10)
+    obsm['X_pca_proportion']: shape=(24, 10)
+
+[2] metadata inspection
+  meta.shape = (24, 5)
+  meta columns:
+    - 'sample': dtype=object, n=24, n_nonnull=24, n_unique=24, examples=['10w_FR', '10w_NR', '11w2d_FR', '11w2d_NR', '12w3d_FR', '12w3d_NR'] ... (18 more)
+    - 'age': dtype=float64, n=24, n_nonnull=24, n_unique=12, examples=[np.float64(70.0), np.float64(79.0), np.float64(87.0), np.float64(91.0), np.float64(100.0), np.float64(103.0)] ... (6 more)
+    - 'sex': dtype=object, n=24, n_nonnull=24, n_unique=1, examples=['not determined']
+    - 'disease_state': dtype=object, n=24, n_nonnull=24, n_unique=1, examples=['Unspecified']
+    - 'organ_part': dtype=object, n=24, n_nonnull=24, n_unique=2, examples=['macula lutea', 'peripheral region of retina']
+  meta sample column detected: 'sample'
+
+[3] sample-id alignment
+  adata sample ids (24): ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC', '12w3d_NR_RNA', '13W_NR_ATAC', '13W_NR_RNA', '14w2d_NR_ATAC', '14w2d_NR_RNA'] ...
+  meta sample ids (24): ['10w_FR', '10w_NR', '11w2d_FR', '11w2d_NR', '12w3d_FR', '12w3d_NR', '13W_FR', '13W_NR', '14w2d_FR', '14w2d_NR'] ...
+  sample overlap: 0 / adata=24 / meta=24
+    in adata, NOT in meta (24): ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC', '12w3d_NR_RNA', '13W_NR_ATAC', '13W_NR_RNA', '14w2d_NR_ATAC', '14w2d_NR_RNA'] ...
+    in meta, NOT in adata (24): ['10w_FR', '10w_NR', '11w2d_FR', '11w2d_NR', '12w3d_FR', '12w3d_NR', '13W_FR', '13W_NR', '14w2d_FR', '14w2d_NR'] ...
+
+[4] auto-classification on (current obs) — BEFORE any merge
+  continuous: []
+  categorical: ['dataset', 'batch', 'source_file', 'age', 'modality', 'original_sample']
+  skipped: [('database', 'n_unique=1'), ('tissue', 'n_unique=1'), ('sex', 'n_unique=1'), ('disease_state', 'n_unique=1'), ('organ_part', 'n_unique=1'), ('Unnamed: 5', 'n_unique=1'), ('total_counts_mt', 'n_unique=1'), ('pct_counts_mt', 'n_unique=1')]
+
+[5] auto-classification on obs AFTER a trial merge with metadata
+  trial merge: matched 24/24 rows with any metadata
+  continuous: []
+  categorical: ['dataset', 'batch', 'source_file', 'modality', 'original_sample']
+  skipped: [('database', 'n_unique=1'), ('tissue', 'n_unique=1'), ('Unnamed: 5', 'n_unique=1'), ('total_counts_mt', 'n_unique=1'), ('pct_counts_mt', 'n_unique=1'), ('sample', 'sample-col/internal'), ('age', 'n_unique=0'), ('sex', 'n_unique=0'), ('disease_state', 'n_unique=0'), ('organ_part', 'n_unique=0')]
+
+========================================================================================
+# heart_SD
+========================================================================================
+pseudobulk: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
+metadata:   /dcs07/hongkai/data/harry/result/multi_omics_heart/data/heart_updated_sample_meta.csv
+note:       meta has 'organ part' (space, not underscore); lots of trailing empty cols
+
+[1] pseudo_adata inspection
+  adata = AnnData object with n_obs × n_vars = 44 × 2000
+    obs: 'database', 'dataset', 'batch', 'tissue', 'source_file', 'age', 'sex', 'disease_state', 'organ_part', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'modality', 'original_sample', 'total_counts_mt', 'pct_counts_mt'
+    uns: 'X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'pca_proportion_variance_ratio'
+    obsm: 'X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion'
+  obs.shape = (44, 20)
+  obs columns:
+    - 'database': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['HCA']
+    - 'dataset': dtype=category, n=44, n_nonnull=44, n_unique=22, examples=['GSE218392_MA10_heart', 'GSE218392_MA11_heart', 'GSE218392_MA13_heart', 'GSE218392_MA14_heart', 'GSE218392_MA19_heart', 'GSE218392_MA20_heart'] ... (16 more)
+    - 'batch': dtype=category, n=44, n_nonnull=44, n_unique=22, examples=['HCA-GSE218392_MA10_heart', 'HCA-GSE218392_MA11_heart', 'HCA-GSE218392_MA13_heart', 'HCA-GSE218392_MA14_heart', 'HCA-GSE218392_MA19_heart', 'HCA-GSE218392_MA20_heart'] ... (16 more)
+    - 'tissue': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['Heart']
+    - 'source_file': dtype=category, n=44, n_nonnull=44, n_unique=22, examples=['multi_GSE218392_MA10_heart_DHS_blacklist_rm', 'multi_GSE218392_MA11_heart_DHS_blacklist_rm', 'multi_GSE218392_MA13_heart_DHS_blacklist_rm', 'multi_GSE218392_MA14_heart_DHS_blacklist_rm', 'multi_GSE218392_MA19_heart_DHS_blacklist_rm', 'multi_GSE218392_MA20_heart_DHS_blacklist_rm'] ... (16 more)
+    - 'age': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['post-embryonic stage']
+    - 'sex': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['unknown']
+    - 'disease_state': dtype=category, n=44, n_nonnull=44, n_unique=3, examples=['cardiomyopathy', 'acute myocardial infarction', 'normal']
+    - 'organ_part': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['heart']
+    - 'Unnamed: 5': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['-1.0']
+    - 'Unnamed: 6': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['-1.0']
+    - 'Unnamed: 7': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['-1.0']
+    - 'Unnamed: 8': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['-1.0']
+    - 'Unnamed: 9': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['-1.0']
+    - 'Unnamed: 10': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['-1.0']
+    - 'Unnamed: 11': dtype=category, n=44, n_nonnull=44, n_unique=1, examples=['-1.0']
+    - 'modality': dtype=category, n=44, n_nonnull=44, n_unique=2, examples=['ATAC', 'RNA']
+    - 'original_sample': dtype=category, n=44, n_nonnull=44, n_unique=22, examples=['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart', 'MA20_heart'] ... (16 more)
+    - 'total_counts_mt': dtype=float64, n=44, n_nonnull=44, n_unique=1, examples=[np.float64(0.0)]
+    - 'pct_counts_mt': dtype=float64, n=44, n_nonnull=44, n_unique=1, examples=[np.float64(0.0)]
+  uns keys: ['X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'pca_proportion_variance_ratio']
+    uns['X_DR_expression']: DataFrame shape=(44, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
+    uns['X_DR_proportion']: DataFrame shape=(44, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['ma10_heart_atac', 'ma10_heart_rna', 'ma11_heart_atac', 'ma11_heart_rna', 'ma13_heart_atac']
+  obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
+    obsm['X_DR_expression']: shape=(44, 10)
+    obsm['X_DR_proportion']: shape=(44, 10)
+    obsm['X_pca_expression_method']: shape=(44, 10)
+    obsm['X_pca_proportion']: shape=(44, 10)
+
+[2] metadata inspection
+  meta.shape = (23, 5)
+  meta columns:
+    - 'sample': dtype=object, n=23, n_nonnull=23, n_unique=23, examples=['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart', 'MA20_heart'] ... (17 more)
+    - 'age': dtype=object, n=23, n_nonnull=23, n_unique=1, examples=['post-embryonic stage']
+    - 'sex': dtype=object, n=23, n_nonnull=23, n_unique=1, examples=['unknown']
+    - 'disease_state': dtype=object, n=23, n_nonnull=23, n_unique=4, examples=['NICM', 'AMI', 'Donor', 'ICM']
+    - 'organ part': dtype=object, n=23, n_nonnull=23, n_unique=1, examples=['heart']
+  meta sample column detected: 'sample'
+
+[3] sample-id alignment
+  adata sample ids (44): ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC', 'MA13_heart_RNA', 'MA14_heart_ATAC', 'MA14_heart_RNA', 'MA19_heart_ATAC', 'MA19_heart_RNA'] ...
+  meta sample ids (23): ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart', 'MA20_heart', 'MA22_heart', 'MA23_heart', 'MA24_heart', 'MA25_heart'] ...
+  sample overlap: 0 / adata=44 / meta=23
+    in adata, NOT in meta (44): ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC', 'MA13_heart_RNA', 'MA14_heart_ATAC', 'MA14_heart_RNA', 'MA19_heart_ATAC', 'MA19_heart_RNA'] ...
+    in meta, NOT in adata (23): ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart', 'MA20_heart', 'MA22_heart', 'MA23_heart', 'MA24_heart', 'MA25_heart'] ...
+
+[4] auto-classification on (current obs) — BEFORE any merge
+  continuous: []
+  categorical: ['dataset', 'batch', 'source_file', 'disease_state', 'modality', 'original_sample']
+  skipped: [('database', 'n_unique=1'), ('tissue', 'n_unique=1'), ('age', 'n_unique=1'), ('sex', 'n_unique=1'), ('organ_part', 'n_unique=1'), ('Unnamed: 5', 'n_unique=1'), ('Unnamed: 6', 'n_unique=1'), ('Unnamed: 7', 'n_unique=1'), ('Unnamed: 8', 'n_unique=1'), ('Unnamed: 9', 'n_unique=1'), ('Unnamed: 10', 'n_unique=1'), ('Unnamed: 11', 'n_unique=1'), ('total_counts_mt', 'n_unique=1'), ('pct_counts_mt', 'n_unique=1')]
+
+[5] auto-classification on obs AFTER a trial merge with metadata
+  trial merge: matched 44/44 rows with any metadata
+  continuous: []
+  categorical: ['dataset', 'batch', 'source_file', 'modality', 'original_sample']
+  skipped: [('database', 'n_unique=1'), ('tissue', 'n_unique=1'), ('organ_part', 'n_unique=1'), ('Unnamed: 5', 'n_unique=1'), ('Unnamed: 6', 'n_unique=1'), ('Unnamed: 7', 'n_unique=1'), ('Unnamed: 8', 'n_unique=1'), ('Unnamed: 9', 'n_unique=1'), ('Unnamed: 10', 'n_unique=1'), ('Unnamed: 11', 'n_unique=1'), ('total_counts_mt', 'n_unique=1'), ('pct_counts_mt', 'n_unique=1'), ('sample', 'sample-col/internal'), ('age', 'n_unique=0'), ('sex', 'n_unique=0'), ('disease_state', 'n_unique=0'), ('organ part', 'n_unique=0')]
+
+========================================================================================
+# ENCODE
+========================================================================================
+pseudobulk: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/pseudobulk/pseudobulk_sample.h5ad
+metadata:   /dcl01/hongkai/data/data/hjiang/Data/paired/sample_metadata.csv
+note:       metadata duplicates each biosample as _ATAC and _RNA rows; sample_metadata_fixed.csv has one row per biosample without suffix
+
+[1] pseudo_adata inspection
+  adata = AnnData object with n_obs × n_vars = 88 × 64001
+    obs: 'modality', 'original_sample'
+    var: 'n_cells', 'highly_variable', 'means', 'dispersions', 'dispersions_norm'
+    uns: 'X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'hvg', 'pca_proportion_variance_ratio'
+    obsm: 'X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion'
+  obs.shape = (88, 2)
+  obs columns:
+    - 'modality': dtype=category, n=88, n_nonnull=88, n_unique=2, examples=['ATAC', 'RNA']
+    - 'original_sample': dtype=category, n=88, n_nonnull=88, n_unique=44, examples=['ENCSR033MDU', 'ENCSR128ZLB', 'ENCSR158DQA', 'ENCSR201BHG', 'ENCSR212VKB', 'ENCSR222ZFD'] ... (38 more)
+  uns keys: ['X_DR_expression', 'X_DR_expression_variance', 'X_DR_expression_variance_ratio', 'X_DR_proportion', 'X_DR_proportion_variance_ratio', 'X_pca_expression_method', 'cell_proportions', 'hvg', 'pca_proportion_variance_ratio']
+    uns['X_DR_expression']: DataFrame shape=(88, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC']
+    uns['X_DR_proportion']: DataFrame shape=(88, 10), cols=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6', 'PC7', 'PC8'], index_head=['encsr033mdu_atac', 'encsr033mdu_rna', 'encsr128zlb_atac', 'encsr128zlb_rna', 'encsr158dqa_atac']
+  obsm keys: ['X_DR_expression', 'X_DR_proportion', 'X_pca_expression_method', 'X_pca_proportion']
+    obsm['X_DR_expression']: shape=(88, 10)
+    obsm['X_DR_proportion']: shape=(88, 10)
+    obsm['X_pca_expression_method']: shape=(88, 10)
+    obsm['X_pca_proportion']: shape=(88, 10)
+
+[2] metadata inspection
+  meta.shape = (88, 4)
+  meta columns:
+    - 'sample': dtype=object, n=88, n_nonnull=88, n_unique=88, examples=['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC', 'ENCSR158DQA_RNA'] ... (82 more)
+    - 'modality': dtype=object, n=88, n_nonnull=88, n_unique=2, examples=['ATAC', 'RNA']
+    - 'predicted_doublet': dtype=bool, n=88, n_nonnull=88, n_unique=1, examples=[np.False_]
+    - 'tissue': dtype=object, n=88, n_nonnull=88, n_unique=10, examples=['pancreas', 'lung', 'heart', 'adrenal_gland', 'ovary', 'psoas_muscle'] ... (4 more)
+  meta sample column detected: 'sample'
+
+[3] sample-id alignment
+  adata sample ids (88): ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC', 'ENCSR158DQA_RNA', 'ENCSR201BHG_ATAC', 'ENCSR201BHG_RNA', 'ENCSR212VKB_ATAC', 'ENCSR212VKB_RNA'] ...
+  meta sample ids (88): ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC', 'ENCSR158DQA_RNA', 'ENCSR201BHG_ATAC', 'ENCSR201BHG_RNA', 'ENCSR212VKB_ATAC', 'ENCSR212VKB_RNA'] ...
+  sample overlap: 88 / adata=88 / meta=88
+  [after stripping _ATAC/_RNA suffix from metadata] overlap: 0 / adata=88 / meta(stripped-unique)=44
+
+[3b] ENCODE fixed metadata inspection: /dcl01/hongkai/data/data/hjiang/Data/paired/sample_metadata_fixed.csv
+  meta_fixed.shape = (44, 3)
+    - 'sample': dtype=object, n=44, n_nonnull=44, n_unique=44, examples=['ENCSR033MDU', 'ENCSR128ZLB', 'ENCSR158DQA', 'ENCSR201BHG', 'ENCSR212VKB', 'ENCSR222ZFD'] ... (38 more)
+    - 'predicted_doublet': dtype=bool, n=44, n_nonnull=44, n_unique=1, examples=[np.False_]
+    - 'tissue': dtype=object, n=44, n_nonnull=44, n_unique=10, examples=['pancreas', 'lung', 'heart', 'adrenal_gland', 'ovary', 'psoas_muscle'] ... (4 more)
+  sample overlap: 0 / adata=88 / meta=44
+    in adata, NOT in meta (88): ['ENCSR033MDU_ATAC', 'ENCSR033MDU_RNA', 'ENCSR128ZLB_ATAC', 'ENCSR128ZLB_RNA', 'ENCSR158DQA_ATAC', 'ENCSR158DQA_RNA', 'ENCSR201BHG_ATAC', 'ENCSR201BHG_RNA', 'ENCSR212VKB_ATAC', 'ENCSR212VKB_RNA'] ...
+    in meta, NOT in adata (44): ['ENCSR033MDU', 'ENCSR128ZLB', 'ENCSR158DQA', 'ENCSR201BHG', 'ENCSR212VKB', 'ENCSR222ZFD', 'ENCSR233SQG', 'ENCSR245BNT', 'ENCSR255POA', 'ENCSR264JIX'] ...
+
+[4] auto-classification on (current obs) — BEFORE any merge
+  continuous: []
+  categorical: ['modality', 'original_sample']
+
+[5] auto-classification on obs AFTER a trial merge with metadata
+  trial merge: matched 88/88 rows with any metadata
+  continuous: []
+  categorical: ['original_sample']
+  skipped: [('sample', 'sample-col/internal'), ('modality', 'n_unique=0'), ('predicted_doublet', 'n_unique=0'), ('tissue', 'n_unique=0')]
+

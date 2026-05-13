@@ -1,7 +1,7 @@
 # =============================================================================
 # MAIN CONFIGURATION
 # =============================================================================
-output_dir: "/dcs07/hongkai/data/harry/result/1M-scBloodNL"
+output_dir: "/dcs07/hongkai/data/harry/result/1M-scBloodNL/V3"
 
 # Pipeline selection
 run_rna_pipeline: true
@@ -20,7 +20,7 @@ large_data_need_extra_memory: false
 # =============================================================================
 
 # --- Input/Output Paths ---
-rna_count_data_path: "/dcs07/hongkai/data/harry/result/1M-scBloodNL/data/1M-scBloodNL.h5ad"
+rna_count_data_path: "/dcs07/hongkai/data/harry/result/1M-scBloodNL/data/1M-scBloodNL_V3.h5ad"
 rna_output_dir: null  # defaults to {output_dir}/rna
 
 # --- Pipeline Control Flags ---
@@ -47,7 +47,8 @@ rna_pseudo_adata_path: null
 
 # --- Common Column Names ---
 rna_sample_col: "id"
-rna_sample_level_batch_col: 'chem'
+rna_sample_level_batch_col: 
+- 'seq_date'
 rna_celltype_col: "cell_type"
 
 # --- Preprocessing Parameters ---

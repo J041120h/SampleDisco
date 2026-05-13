@@ -1,0 +1,101 @@
+========================================================================================
+RUNNING: eye_lutea  →  /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/sample_association
+========================================================================================
+
+--- loading eye_lutea ---
+  pseudo: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/pseudobulk/pseudobulk_sample.h5ad
+  shape = (24, 34000)
+  coerced 'age' to numeric: 12 string uniques → 12 numeric uniques, 0 NaN
+  obs after cleanup: ['modality', 'original_sample', 'age', 'sex', 'disease_state', 'organ_part', 'sample']
+  [align] X_DR_expression: uns ≡ obsm ✓ (using uns for PC column names)
+  [align] X_DR_proportion: uns ≡ obsm ✓ (using uns for PC column names)
+[Association] Continuous variables (1): ['age']
+[Association] Categorical variables (2): ['modality', 'original_sample']
+[Association] X_DR_expression: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/sample_association/variance_explained_expression.csv
+[Association] X_DR_proportion: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/sample_association/variance_explained_proportion.csv
+
+  [eye_lutea/X_DR_expression] top R² per variable:
+                     age  PC1       R²=0.893  perm_p=0.001  FDR=0.01
+                modality  PC6       R²=0.108  perm_p=0.112  FDR=0.974
+         original_sample  PC1       R²=0.986  perm_p=0.001  FDR=0.01
+
+  [eye_lutea/X_DR_proportion] top R² per variable:
+                     age  PC1       R²=0.949  perm_p=0.001  FDR=0.01
+                modality  PC5       R²=0.030  perm_p=0.44  FDR=0.989
+         original_sample  PC1       R²=0.999  perm_p=0.001  FDR=0.0025
+========================================================================================
+RUNNING: eye_retina  →  /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/sample_association
+========================================================================================
+
+--- loading eye_retina ---
+  pseudo: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/pseudobulk/pseudobulk_sample.h5ad
+  shape = (24, 2000)
+  coerced 'age' to numeric: 12 string uniques → 12 numeric uniques, 0 NaN
+  obs after cleanup: ['modality', 'original_sample', 'age', 'sex', 'disease_state', 'organ_part', 'sample']
+  [align] X_DR_expression: uns ≡ obsm ✓ (using uns for PC column names)
+  [align] X_DR_proportion: uns ≡ obsm ✓ (using uns for PC column names)
+[Association] Continuous variables (1): ['age']
+[Association] Categorical variables (2): ['modality', 'original_sample']
+[Association] X_DR_expression: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/sample_association/variance_explained_expression.csv
+[Association] X_DR_proportion: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/sample_association/variance_explained_proportion.csv
+
+  [eye_retina/X_DR_expression] top R² per variable:
+                     age  PC1       R²=0.607  perm_p=0.001  FDR=0.01
+                modality  PC4       R²=0.142  perm_p=0.062  FDR=0.35
+         original_sample  PC1       R²=0.805  perm_p=0.009  FDR=0.07
+
+  [eye_retina/X_DR_proportion] top R² per variable:
+                     age  PC1       R²=0.890  perm_p=0.001  FDR=0.01
+                modality  PC7       R²=0.014  perm_p=0.591  FDR=0.987
+         original_sample  PC1       R²=0.999  perm_p=0.001  FDR=0.0025
+========================================================================================
+RUNNING: heart_SD  →  /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/sample_association
+========================================================================================
+
+--- loading heart_SD ---
+  pseudo: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  shape = (44, 2000)
+  obs after cleanup: ['modality', 'original_sample', 'age', 'sex', 'disease_state', 'organ_part', 'sample']
+  [align] X_DR_expression: uns ≡ obsm ✓ (using uns for PC column names)
+  [align] X_DR_proportion: uns ≡ obsm ✓ (using uns for PC column names)
+[Association] Continuous variables (0): []
+[Association] Categorical variables (3): ['modality', 'original_sample', 'disease_state']
+[Association] X_DR_expression: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/sample_association/variance_explained_expression.csv
+[Association] X_DR_proportion: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/sample_association/variance_explained_proportion.csv
+
+  [heart_SD/X_DR_expression] top R² per variable:
+           disease_state  PC4       R²=0.129  perm_p=0.062  FDR=0.26
+                modality  PC3       R²=0.636  perm_p=0.001  FDR=0.01
+         original_sample  PC2       R²=0.688  perm_p=0.039  FDR=0.195
+
+  [heart_SD/X_DR_proportion] top R² per variable:
+           disease_state  PC5       R²=0.432  perm_p=0.001  FDR=0.005
+                modality  PC1       R²=0.065  perm_p=0.088  FDR=0.88
+         original_sample  PC2       R²=0.939  perm_p=0.001  FDR=0.0025
+========================================================================================
+RUNNING: ENCODE  →  /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/sample_association
+========================================================================================
+
+--- loading ENCODE ---
+  pseudo: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/pseudobulk/pseudobulk_sample.h5ad
+  shape = (88, 64001)
+  merging metadata from: /dcl01/hongkai/data/data/hjiang/Data/paired/sample_metadata.csv
+    dropping overlapping obs cols (keeping metadata versions): ['modality']
+    matched 88/88 rows
+  obs after cleanup: ['modality', 'original_sample', 'tissue', 'predicted_doublet', 'sample']
+  [align] X_DR_expression: uns ≡ obsm ✓ (using uns for PC column names)
+  [align] X_DR_proportion: uns ≡ obsm ✓ (using uns for PC column names)
+[Association] Continuous variables (0): []
+[Association] Categorical variables (3): ['modality', 'original_sample', 'tissue']
+[Association] X_DR_expression: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/sample_association/variance_explained_expression.csv
+[Association] X_DR_proportion: 30 rows → /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/sample_association/variance_explained_proportion.csv
+
+  [ENCODE/X_DR_expression] top R² per variable:
+                modality  PC7       R²=0.019  perm_p=0.232  FDR=0.807
+         original_sample  PC3       R²=0.825  perm_p=0.001  FDR=0.01
+                  tissue  PC3       R²=0.735  perm_p=0.001  FDR=0.00167
+
+  [ENCODE/X_DR_proportion] top R² per variable:
+                modality  PC2       R²=0.001  perm_p=0.811  FDR=0.989
+         original_sample  PC6       R²=0.994  perm_p=0.001  FDR=0.001
+                  tissue  PC1       R²=0.990  perm_p=0.001  FDR=0.00125
