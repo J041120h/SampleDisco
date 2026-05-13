@@ -11,7 +11,6 @@ from visualization.visualization_helper import generate_umap_visualizations
 
 def cell_types(
     anndata_cell,
-    anndata_sample=None,
     cell_type_column="cell_type",
     existing_cell_types=False,
     n_target_clusters=None,
@@ -19,13 +18,12 @@ def cell_types(
     save=False,
     output_dir=None,
     defined_output_path=None,
-    defined_sample_output_path=None,
     leiden_cluster_resolution=0.8,
     cell_embedding_column=None,
     cell_embedding_num_PCs=20,
     verbose=True,
     umap_plots=True,
-    _recursion_depth=0
+    _recursion_depth=0,
 ):
     MAX_RESOLUTION = 5.0
     RESOLUTION_STEP = 0.5
@@ -106,7 +104,7 @@ def cell_types(
                     print(f"{indent}[cell_types] Over-shot target; recursing with dendrogram aggregation")
 
                 return cell_types(
-                    anndata_cell=adata, anndata_sample=anndata_sample, cell_type_column="cell_type",
+                    anndata_cell=adata, cell_type_column="cell_type",
                     existing_cell_types=True, n_target_clusters=n_target_clusters, umap=False, save=False,
                     cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs,
                     verbose=verbose, umap_plots=False, _recursion_depth=_recursion_depth + 1,
@@ -115,7 +113,7 @@ def cell_types(
             new_resolution = leiden_cluster_resolution + RESOLUTION_STEP
             if new_resolution <= MAX_RESOLUTION:
                 return cell_types(
-                    anndata_cell=adata, anndata_sample=anndata_sample, cell_type_column=cell_type_column,
+                    anndata_cell=adata, cell_type_column=cell_type_column,
                     existing_cell_types=False, n_target_clusters=n_target_clusters, umap=False, save=False,
                     leiden_cluster_resolution=new_resolution, cell_embedding_column=cell_embedding_column,
                     cell_embedding_num_PCs=cell_embedding_num_PCs, verbose=verbose, umap_plots=False,
@@ -143,15 +141,6 @@ def cell_types(
                 print("[cell_types] Generating UMAP plots...")
             generate_umap_visualizations(adata=adata, output_dir=output_dir, groupby="cell_type", figsize=(12, 8), point_size=20, dpi=300, palette="tab20", verbose=verbose)
 
-        if anndata_sample is not None:
-            if verbose:
-                print("[cell_types] Assigning cell_type to anndata_sample")
-            if anndata_sample.obs_names.equals(adata.obs_names):
-                anndata_sample.obs["cell_type"] = adata.obs["cell_type"].values
-            else:
-                cell_type_series = pd.Series(adata.obs["cell_type"].values, index=adata.obs_names, name="cell_type")
-                anndata_sample.obs["cell_type"] = cell_type_series.reindex(anndata_sample.obs_names).values
-
         if output_dir:
             preprocess_output_dir = os.path.join(output_dir, "preprocess")
             os.makedirs(preprocess_output_dir, exist_ok=True)
@@ -164,17 +153,12 @@ def cell_types(
         if save and output_dir:
             preprocess_output_dir = os.path.join(output_dir, "preprocess")
             os.makedirs(preprocess_output_dir, exist_ok=True)
-            cell_save_path = defined_output_path or os.path.join(preprocess_output_dir, "adata_cell.h5ad")
+            cell_save_path = defined_output_path or os.path.join(preprocess_output_dir, "adata_preprocessed.h5ad")
             adata.write(cell_save_path)
-            if anndata_sample is not None:
-                sample_save_path = defined_sample_output_path or os.path.join(preprocess_output_dir, "adata_sample.h5ad")
-                anndata_sample.write(sample_save_path)
             if verbose:
-                print("[cell_types] Saved output anndatas to preprocess/")
+                print(f"[cell_types] Saved {cell_save_path}")
 
-    if anndata_sample is None:
-        return adata
-    return adata, anndata_sample
+    return adata
 
 
 def cell_type_dendrogram(adata, n_clusters, groupby="cell_type", cell_embedding_column="X_pca_harmony", cell_embedding_num_PCs=20, is_atac=False):

@@ -3,9 +3,6 @@ import time
 import pandas as pd
 import scanpy as sc
 
-from sample_embedding.pseudo_adata import *
-from sample_embedding.DR import *
-from preparation.cell_type_cpu import *
 from utils.safe_save import safe_h5ad_write
 
 
@@ -163,6 +160,8 @@ def integrate_preprocess(
     start_time = time.time()
 
     if h5ad_path is None:
+        # Default input is the GLUE-merged file written by multi_omics_glue.py
+        # (the merged-but-not-yet-QC'd cell-level adata).
         h5ad_path = os.path.join(output_dir, "preprocess/adata_sample.h5ad")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -404,7 +403,7 @@ def integrate_preprocess(
     if verbose:
         print("Preprocessing complete!")
 
-    output_h5ad_path = os.path.join(preprocess_dir, "adata_sample.h5ad")
+    output_h5ad_path = os.path.join(preprocess_dir, "adata_preprocessed.h5ad")
     safe_h5ad_write(adata, output_h5ad_path)
 
     if verbose:

@@ -1,31 +1,230 @@
 #!/usr/bin/env python3
 """
-Trajectory Differential Gene Analysis (GAM) - SINGLE pseudotime only [DENSE FIX]
+Trajectory Differential Gene Analysis (GAM) — SINGLE pseudotime only.
 
-SIMPLIFIED:
-- You provide ONE pseudotime table (DataFrame or CSV/TSV path) with sample -> pseudotime.
-- The script aligns it to `pseudobulk_adata.obs_names` (samples x genes).
-- Fits one GAM per gene (smooth over pseudotime + optional covariates).
-- BH-FDR correction + effect-size computation + optional pseudoDEG selection.
-- Saves results + summary for this single pseudotime.
-- Generates comprehensive Lamian-style visualizations.
+Builds the per-sample pseudobulk **on the fly** from the cell-level
+`adata_preprocessed` so we don't need a separate sample-level adata in the
+pipeline. The recipe mirrors the original `compute_pseudobulk_adata`:
 
-FIX STRATEGY:
-- Pre-emptively converts sparse gene matrices to dense NumPy arrays.
-- This avoids 'csr_matrix' compatibility issues in pygam without needing patches.
+  1. Aggregate cells per (sample × celltype) by mean (no double normalization —
+     `.X` is already normalized + log1p from preprocessing).
+  2. Per cell type: optional Limma batch correction; optional first-round HVG
+     selection for noise reduction.
+  3. Concatenate per-celltype HVGs → `samples × (celltype-gene)` matrix.
+
+The existing GAM stack operates on that samples × features matrix unchanged.
 """
 
 import os
 import datetime
-from typing import Dict, Optional, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import anndata as ad
+import scanpy as sc
 
-from scipy.sparse import issparse
+from scipy.sparse import csr_matrix, issparse
 from statsmodels.stats.multitest import multipletests
 from pygam import LinearGAM, s, f
+
+
+# =============================================================================
+# Pseudobulk-on-the-fly helper
+# =============================================================================
+
+def _to_list(value):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    return list(value)
+
+
+def _attempt_limma(temp_adata, batch_col, preserve_cols, verbose=False):
+    """Apply Limma correction in-place on `temp_adata.X`."""
+    try:
+        from utils.limma import limma
+        X = temp_adata.X.toarray() if issparse(temp_adata.X) else np.asarray(temp_adata.X)
+        if preserve_cols:
+            quoted = [f'Q("{c}")' for c in preserve_cols]
+            covariate_formula = "~ " + " + ".join(quoted)
+        else:
+            covariate_formula = "1"
+        temp_adata.X = limma(
+            pheno=temp_adata.obs, exprs=X,
+            covariate_formula=covariate_formula,
+            design_formula=f'~ Q("{batch_col}")',
+            rcond=1e-8, verbose=False,
+        )
+        return True
+    except Exception as exc:
+        if verbose:
+            print(f"    Limma failed: {type(exc).__name__}: {exc}")
+        return False
+
+
+def _build_sample_pseudobulk(
+    adata: ad.AnnData,
+    sample_col: str,
+    celltype_col: Optional[str] = "cell_type",
+    batch_col: Optional[Union[str, List[str]]] = None,
+    n_features_per_celltype: Optional[int] = 2000,
+    columns_to_preserve: Optional[Union[str, List[str]]] = None,
+    verbose: bool = False,
+) -> ad.AnnData:
+    """Aggregate cell-level `adata` into a `samples × (celltype-gene)` AnnData.
+
+    Mirrors the recipe used by the legacy ``compute_pseudobulk_adata`` (per-
+    cell-type aggregation + optional Limma + optional first-round HVG), but
+    omits the second normalization pass (``adata.X`` is already normalized /
+    log-transformed by preprocessing) and the second HVG round.
+    """
+    if sample_col not in adata.obs.columns:
+        raise KeyError(f"sample_col '{sample_col}' not in adata.obs")
+
+    preserve_cols = [c for c in _to_list(columns_to_preserve)
+                     if c in adata.obs.columns]
+    if isinstance(batch_col, list):
+        batch_cols = [c for c in batch_col if c and c in adata.obs.columns]
+        if not batch_cols:
+            batch_col_to_use = None
+        elif len(batch_cols) == 1:
+            batch_col_to_use = batch_cols[0]
+        else:
+            # Combine multiple batch columns into a synthetic one.
+            adata.obs["__pb_batch__"] = adata.obs[batch_cols].astype(str).agg("|".join, axis=1)
+            batch_col_to_use = "__pb_batch__"
+    else:
+        batch_col_to_use = batch_col if (batch_col and batch_col in adata.obs.columns) else None
+
+    samples_sorted = sorted(adata.obs[sample_col].astype(str).unique())
+    sample_idx = {s: i for i, s in enumerate(samples_sorted)}
+    n_samples = len(samples_sorted)
+    n_genes = adata.n_vars
+
+    # --- Aggregate cells → (sample × celltype) means via sparse outer product
+    if celltype_col is None or celltype_col not in adata.obs.columns:
+        # No celltype split — simple per-sample mean of all cells.
+        sample_arr = adata.obs[sample_col].astype(str).values
+        cell_to_sample = np.asarray([sample_idx[s] for s in sample_arr])
+        valid = cell_to_sample >= 0
+        if not valid.all():
+            sample_arr = sample_arr[valid]
+            cell_to_sample = cell_to_sample[valid]
+        n_cells = len(cell_to_sample)
+        indicator = csr_matrix(
+            (np.ones(n_cells, dtype=np.float32),
+             (cell_to_sample, np.arange(n_cells))),
+            shape=(n_samples, n_cells),
+        )
+        cells_per_sample = np.array(indicator.sum(axis=1)).flatten()
+        cells_per_sample[cells_per_sample == 0] = 1
+        X = adata.X.tocsr() if issparse(adata.X) else adata.X
+        summed = indicator @ (X[valid] if not valid.all() else X)
+        if issparse(summed):
+            summed = np.asarray(summed.todense())
+        mean_X = (summed / cells_per_sample[:, None]).astype(np.float32)
+        pb_obs = pd.DataFrame(index=pd.Index(samples_sorted, name=sample_col))
+        # Carry over sample-level metadata
+        sample_to_meta = adata.obs.drop_duplicates(subset=[sample_col]).set_index(
+            adata.obs[sample_col].drop_duplicates().values)
+        sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
+        pb_obs = pb_obs.join(sample_to_meta, how="left")
+        out = ad.AnnData(X=mean_X, obs=pb_obs, var=adata.var.copy())
+        return out
+
+    # --- Per (sample × celltype) aggregation ---
+    cell_types_sorted = sorted(adata.obs[celltype_col].astype(str).unique())
+    if verbose:
+        print(f"[pseudobulk] {len(samples_sorted)} samples × {len(cell_types_sorted)} cell types")
+    sample_arr = adata.obs[sample_col].astype(str).values
+    celltype_arr = adata.obs[celltype_col].astype(str).values
+
+    pb_obs = pd.DataFrame(index=pd.Index(samples_sorted, name=sample_col))
+    sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
+    pb_obs = pb_obs.join(sample_to_meta, how="left")
+
+    X_full = adata.X.tocsr() if issparse(adata.X) else adata.X
+
+    feature_blocks = []
+    feature_names = []
+    for celltype in cell_types_sorted:
+        ct_mask = celltype_arr == celltype
+        if ct_mask.sum() == 0:
+            continue
+        ct_samples = sample_arr[ct_mask]
+        ct_sample_idx = np.array([sample_idx[s] for s in ct_samples])
+        n_cells_ct = len(ct_sample_idx)
+        indicator = csr_matrix(
+            (np.ones(n_cells_ct, dtype=np.float32),
+             (ct_sample_idx, np.arange(n_cells_ct))),
+            shape=(n_samples, n_cells_ct),
+        )
+        cells_per = np.array(indicator.sum(axis=1)).flatten()
+        cells_per_safe = cells_per.copy()
+        cells_per_safe[cells_per_safe == 0] = 1
+        X_ct = X_full[ct_mask]
+        summed = indicator @ X_ct
+        if issparse(summed):
+            summed = np.asarray(summed.todense())
+        ct_pb = (summed / cells_per_safe[:, None]).astype(np.float32)
+
+        # Build temporary per-celltype AnnData for batch correction + HVG
+        temp = sc.AnnData(
+            X=ct_pb.copy(),
+            obs=pb_obs.copy(),
+            var=adata.var.copy(),
+        )
+        # Drop genes with all-zero pseudobulk (filter_genes complains otherwise)
+        gene_keep = np.asarray((ct_pb != 0).any(axis=0)).flatten()
+        if gene_keep.sum() == 0:
+            continue
+        temp = temp[:, gene_keep].copy()
+
+        # Optional Limma batch correction within this cell type.
+        if batch_col_to_use is not None and batch_col_to_use in temp.obs.columns:
+            nb = temp.obs[batch_col_to_use].nunique(dropna=True)
+            if nb >= 2:
+                _attempt_limma(temp, batch_col_to_use, preserve_cols, verbose=verbose)
+
+        # Replace NaN/Inf
+        if issparse(temp.X):
+            mask = np.isnan(temp.X.data) | np.isinf(temp.X.data)
+            if mask.any():
+                temp.X.data[mask] = 0.0
+                temp.X.eliminate_zeros()
+        else:
+            np.nan_to_num(temp.X, copy=False)
+
+        # Optional first-round HVG (per cell type) for noise reduction.
+        if n_features_per_celltype is not None and 0 < n_features_per_celltype < temp.n_vars:
+            try:
+                sc.pp.highly_variable_genes(
+                    temp, n_top_genes=n_features_per_celltype, subset=False,
+                )
+                hvg_mask = temp.var["highly_variable"].values
+                temp = temp[:, hvg_mask].copy()
+            except Exception as exc:
+                if verbose:
+                    print(f"    HVG selection failed for celltype '{celltype}': {exc}")
+
+        if temp.n_vars == 0:
+            continue
+        # Convert to dense for the final concatenation.
+        block = temp.X.toarray() if issparse(temp.X) else np.asarray(temp.X)
+        feature_blocks.append(block.astype(np.float32))
+        feature_names.extend(f"{celltype} - {g}" for g in temp.var_names)
+
+    if not feature_blocks:
+        raise RuntimeError("No features survived pseudobulk aggregation")
+
+    concat_X = np.concatenate(feature_blocks, axis=1)
+    var = pd.DataFrame(index=pd.Index(feature_names, name="feature"))
+    out = ad.AnnData(X=concat_X, obs=pb_obs.copy(), var=var)
+    if verbose:
+        print(f"[pseudobulk] result shape: {out.shape}")
+    return out
 
 def _read_pseudotime_table(obj: Union[str, pd.DataFrame, Dict]) -> pd.DataFrame:
     """
@@ -756,10 +955,14 @@ def generate_gene_visualizations(
         print(f"  → Visualization failed for {error_count} genes")
 
 def run_trajectory_gam_differential_gene_analysis(
-    pseudobulk_adata: ad.AnnData,
+    adata: ad.AnnData,
     pseudotime_source: Union[str, pd.DataFrame, Dict],
     *,
     sample_col: str = "sample",
+    celltype_col: Optional[str] = "cell_type",
+    batch_col: Optional[Union[str, List[str]]] = None,
+    n_features_per_celltype: Optional[int] = 2000,
+    columns_to_preserve: Optional[Union[str, List[str]]] = None,
     pseudotime_col: str = "pseudotime",
     covariate_columns: Optional[List[str]] = None,
     fdr_threshold: float = 0.01,
@@ -774,7 +977,7 @@ def run_trajectory_gam_differential_gene_analysis(
     group_col: Optional[str] = None,
     n_clusters: int = 3,
     top_n_genes_for_curves: int = 20,
-    verbose: bool = True
+    verbose: bool = True,
 ) -> pd.DataFrame:
     """
     Run trajectory differential gene analysis for ONE pseudotime vector.
@@ -833,6 +1036,19 @@ def run_trajectory_gam_differential_gene_analysis(
         print("="*70)
         print("TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS")
         print("="*70)
+
+    # 0. Build per-sample pseudobulk from the cell-level AnnData on the fly.
+    if verbose:
+        print("\n[0/5] Building per-sample pseudobulk from cell-level adata...")
+    pseudobulk_adata = _build_sample_pseudobulk(
+        adata,
+        sample_col=sample_col,
+        celltype_col=celltype_col,
+        batch_col=batch_col,
+        n_features_per_celltype=n_features_per_celltype,
+        columns_to_preserve=columns_to_preserve,
+        verbose=verbose,
+    )
 
     # 1. Load pseudotime
     if verbose:

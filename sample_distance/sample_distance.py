@@ -495,31 +495,9 @@ def _default_cell_embedding_key(adata: AnnData, data_type: str) -> str:
     )
 
 
-def get_best_expression_dr_key(adata: AnnData, data_type: str = 'ATAC') -> Optional[str]:
-    """Get best available expression DR key based on data type."""
-    if 'X_DR_expression' in adata.uns:
-        return 'X_DR_expression'
-    
-    if data_type.upper() == 'ATAC':
-        priority = ['X_lsi_expression_method', 'X_pca_expression_method', 'X_spectral_expression_method']
-    else:
-        priority = ['X_pca_expression_method', 'X_lsi_expression_method', 'X_spectral_expression_method']
-    
-    for key in priority:
-        if key in adata.uns:
-            return key
-    return None
-
-
-def get_best_proportion_dr_key(adata: AnnData) -> Optional[str]:
-    """Get best available proportion DR key."""
-    if 'X_DR_proportion' in adata.uns:
-        return 'X_DR_proportion'
-    
-    for key in ['X_pca_proportion_method', 'X_lsi_proportion_method', 'X_spectral_proportion_method']:
-        if key in adata.uns:
-            return key
-    return None
+def get_best_sample_dr_key(adata: AnnData, data_type: str = 'ATAC') -> Optional[str]:
+    """Return the sample-level DR key, or None if absent."""
+    return 'X_DR_sample' if 'X_DR_sample' in adata.uns else None
 
 
 # =============================================================================
@@ -573,45 +551,26 @@ def sample_distance_vector(
         grouping_columns = valid_cols if valid_cols else None
     
     distance_results = {}
-    
-    # Expression DR distance
-    expr_key = get_best_expression_dr_key(adata, data_type)
-    if expr_key:
+
+    # Single-key sample DR distance
+    sample_key = get_best_sample_dr_key(adata, data_type)
+    if sample_key:
         try:
-            print(f"Computing expression DR distances ({expr_key})...")
-            distance_results['expression_DR'] = calculate_sample_distances_DR(
+            print(f"Computing sample DR distances ({sample_key})...")
+            distance_results['sample_DR'] = calculate_sample_distances_DR(
                 adata=adata,
-                DR_key=expr_key,
-                output_dir=os.path.join(method_output_dir, 'expression_DR_distance'),
+                DR_key=sample_key,
+                output_dir=os.path.join(method_output_dir, 'sample_DR_distance'),
                 method=method,
                 grouping_columns=grouping_columns,
-                dr_name='expression_DR',
-                summary_csv_path=summary_csv_path
+                dr_name='sample_DR',
+                summary_csv_path=summary_csv_path,
             )
         except Exception as e:
             print(f"  Failed: {e}")
     else:
-        print("  Warning: No expression DR results found")
-    
-    # Proportion DR distance
-    prop_key = get_best_proportion_dr_key(adata)
-    if prop_key:
-        try:
-            print(f"Computing proportion DR distances ({prop_key})...")
-            distance_results['proportion_DR'] = calculate_sample_distances_DR(
-                adata=adata,
-                DR_key=prop_key,
-                output_dir=os.path.join(method_output_dir, 'proportion_DR_distance'),
-                method=method,
-                grouping_columns=grouping_columns,
-                dr_name='proportion_DR',
-                summary_csv_path=summary_csv_path
-            )
-        except Exception as e:
-            print(f"  Failed: {e}")
-    else:
-        print("  Warning: No proportion DR results found")
-    
+        print("  Warning: No sample DR results found in adata.uns")
+
     if not distance_results:
         raise ValueError("No dimension reduction results found in adata.uns")
     

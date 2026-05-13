@@ -18,30 +18,38 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # ---------------------------------------------------------------------------
 
 def _get_feature_matrix(pseudo_adata: AnnData, feature_source: str):
-    """Return (X ndarray, feature_names list) for the requested source."""
-    if feature_source == "expression":
-        if "X_DR_expression" not in pseudo_adata.obsm:
-            raise KeyError("X_DR_expression not found in pseudo_adata.obsm")
-        X = pseudo_adata.obsm["X_DR_expression"]
-        return X, [f"Expr_PC{i+1}" for i in range(X.shape[1])]
+    """Return (X ndarray, feature_names list) for the requested source.
 
-    if feature_source == "proportion":
-        if "X_DR_proportion" not in pseudo_adata.obsm:
-            raise KeyError("X_DR_proportion not found in pseudo_adata.obsm")
-        X = pseudo_adata.obsm["X_DR_proportion"]
-        return X, [f"Prop_PC{i+1}" for i in range(X.shape[1])]
+    Available sources: ``sample`` (the sample-level DR embedding), ``cluster_sample``
+    (K-means clusters of the sample embedding), ``pseudotime_sample``
+    (pseudotime from trajectory analysis).
+    """
+    # The legacy aliases ``expression`` / ``proportion`` (and the matching
+    # cluster_*/pseudotime_* names) all map to the single ``sample`` source
+    # since the refactored pipeline writes one embedding.
+    alias = {
+        "expression": "sample", "proportion": "sample",
+        "cluster_expression": "cluster_sample", "cluster_proportion": "cluster_sample",
+        "pseudotime_expression": "pseudotime_sample",
+        "pseudotime_proportion": "pseudotime_sample",
+    }
+    source = alias.get(feature_source, feature_source)
 
-    if feature_source in ("cluster_expression", "cluster_proportion"):
-        suffix = feature_source.split("_")[1]
-        col = f"cluster_{suffix}_kmeans"
+    if source == "sample":
+        if "X_DR_sample" not in pseudo_adata.obsm:
+            raise KeyError("X_DR_sample not in pseudo_adata.obsm")
+        X = pseudo_adata.obsm["X_DR_sample"]
+        return X, [f"PC{i+1}" for i in range(X.shape[1])]
+
+    if source == "cluster_sample":
+        col = "cluster_sample_kmeans"
         if col not in pseudo_adata.obs.columns:
             raise KeyError(f"'{col}' not in pseudo_adata.obs — run sample clustering first.")
         dummies = pd.get_dummies(pseudo_adata.obs[col].astype(str))
         return dummies.values.astype(float), list(dummies.columns)
 
-    if feature_source in ("pseudotime_expression", "pseudotime_proportion"):
-        suffix = feature_source.split("_")[1]
-        col = f"pseudotime_{suffix}"
+    if source == "pseudotime_sample":
+        col = "pseudotime_sample"
         if col not in pseudo_adata.obs.columns:
             raise KeyError(f"'{col}' not in pseudo_adata.obs — run trajectory analysis first.")
         X = pseudo_adata.obs[col].values.reshape(-1, 1).astype(float)
@@ -49,8 +57,7 @@ def _get_feature_matrix(pseudo_adata: AnnData, feature_source: str):
 
     raise ValueError(
         f"Unknown feature_source '{feature_source}'. Choose from: "
-        "expression, proportion, cluster_expression, cluster_proportion, "
-        "pseudotime_expression, pseudotime_proportion"
+        "sample, cluster_sample, pseudotime_sample"
     )
 
 
@@ -154,7 +161,12 @@ def _feature_importance(estimator, X: np.ndarray, y: np.ndarray,
 # Visualizations
 # ---------------------------------------------------------------------------
 
-_SKIP_IMP = {"cluster_expression", "cluster_proportion", "pseudotime_expression", "pseudotime_proportion"}
+_SKIP_IMP = {
+    "cluster_sample", "pseudotime_sample",
+    # legacy aliases — still recognized by _get_feature_matrix:
+    "cluster_expression", "cluster_proportion",
+    "pseudotime_expression", "pseudotime_proportion",
+}
 
 
 def _save_regression_plots(y_true, y_pred_cv, feature_imp_df,
