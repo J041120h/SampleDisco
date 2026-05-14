@@ -17,7 +17,6 @@ in `sample_embedding/blocks.py`.
 
 from __future__ import annotations
 
-import json
 import math
 import os
 import time
@@ -500,7 +499,10 @@ def run_autotune(
                          best_params={"cmd_weight": 0.60},
                          best_score=float("nan"),
                          trace=[], search=search, scoring=scoring,
-                         scope=scope, output_dir=output_dir, save=save,
+                         scope=scope, alpha_bounds=alpha_bounds,
+                         pca_components=pca_components,
+                         batch_method=batch_method,
+                         output_dir=output_dir, save=save,
                          t_start=t0, verbose=verbose)
 
     if scope != "alpha_only":
@@ -550,15 +552,122 @@ def run_autotune(
                      best_params={"cmd_weight": float(best_alpha)},
                      best_score=float(best_score),
                      trace=trace, search=search, scoring=scoring,
-                     scope=scope, output_dir=output_dir, save=save,
+                     scope=scope, alpha_bounds=alpha_bounds,
+                     pca_components=pca_components,
+                     batch_method=batch_method,
+                     output_dir=output_dir, save=save,
                      t_start=t0, verbose=verbose)
+
+
+# Proxy-component descriptions for the human-readable report.
+_PROXY_DESCRIPTIONS = {
+    "cca":             ("supervised", "CCA(emb, grouping_col) — canonical correlation between embedding and grouping label"),
+    "sps":             ("supervised", "SPS(emb, grouping_col) — between/within-quartile distance ratio"),
+    "cv_knn_severity": ("supervised", "CV-kNN — 5-fold cross-validated MAE of k=3 kNN regression on grouping"),
+    "pseudotime_spearman": ("supervised", "|Spearman(PC1, grouping)| — pseudotime alignment"),
+    "ilisi_batch":     ("unsupervised", "iLISI(emb, batch) — k-NN batch mixing"),
+    "neg_asw_batch":   ("unsupervised", "−ASW(emb, batch) — negative silhouette of batch labels"),
+}
+
+
+def _active_proxies(scoring: str, has_batch: bool, has_grouping: bool):
+    """Return the list of proxy names the scorer actually evaluates."""
+    if scoring in ("auto", "multi_metric_proxy"):
+        names = []
+        if has_grouping:
+            names += ["cca", "sps"]
+        if has_batch:
+            names += ["ilisi_batch", "neg_asw_batch"]
+        return names
+    return [scoring] if scoring in _PROXY_DESCRIPTIONS else [scoring]
+
+
+def _format_autotune_report(*, best_params, best_score, trace, weights,
+                              blocks, search, scoring, scope, alpha_bounds,
+                              pca_components, batch_method, elapsed_s):
+    """Build the human-readable autotune_record.txt content."""
+    has_batch = bool(blocks.get("has_batch"))
+    has_grouping = bool(blocks.get("has_grouping"))
+    n_units = int(blocks.get("n_units", 0))
+    n_groups = len(set(blocks.get("unit_groups") or []))
+    proxies = _active_proxies(scoring, has_batch, has_grouping)
+
+    lines = []
+    lines.append("Sample-embedding autotune — composition + CMD")
+    lines.append("=" * 68)
+    lines.append("")
+    lines.append("Configuration")
+    lines.append("-" * 68)
+    lines.append(f"  search algorithm   : {search}")
+    lines.append(f"  scoring strategy   : {scoring}")
+    lines.append(f"  scope              : {scope}")
+    lines.append(f"  α bounds           : [{alpha_bounds[0]:g}, {alpha_bounds[1]:g}]")
+    lines.append(f"  PCA components     : {pca_components}")
+    lines.append(f"  sample Harmony     : {batch_method}")
+    lines.append(f"  number of units    : {n_units}")
+    lines.append(f"  unique groups      : {n_groups}")
+    lines.append(f"  has batch column   : {has_batch}")
+    lines.append(f"  has grouping col   : {has_grouping}")
+    lines.append("")
+    lines.append("Block setup (inverse-variance weights from K values)")
+    lines.append("-" * 68)
+    lines.append(f"  K_c   (cell types) : {int(blocks['K_c'])}")
+    lines.append(f"  K_med (k-means)    : {int(blocks['K_med'])}")
+    lines.append(f"  K_fine (k-means)   : {int(blocks['K_fine'])}")
+    lines.append(f"  cluster_emb_key    : {blocks.get('cluster_emb_key', '?')}")
+    lines.append(f"  cmd_emb_key        : {blocks.get('cmd_emb_key', '?')}")
+    lines.append("")
+    lines.append("Active scoring proxies (gated by data availability)")
+    lines.append("-" * 68)
+    if not proxies:
+        lines.append("  (none — no batch or grouping column available; defaults used)")
+    else:
+        for name in proxies:
+            kind, desc = _PROXY_DESCRIPTIONS.get(name, ("?", name))
+            lines.append(f"  - [{kind:<12s}] {name:<20s}  {desc}")
+        if scoring in ("auto", "multi_metric_proxy"):
+            lines.append("  ensemble: multi_metric_proxy = mean of the proxies above (each min-max scaled).")
+    lines.append("")
+    lines.append("Result")
+    lines.append("-" * 68)
+    for k, v in best_params.items():
+        if isinstance(v, float):
+            lines.append(f"  best {k:<14s}: {v:.6f}")
+        else:
+            lines.append(f"  best {k:<14s}: {v}")
+    lines.append(f"  best score        : {best_score:.6f}")
+    lines.append(f"  block weights     : "
+                  + ", ".join(f"{x:.4f}" for x in weights)
+                  + "  (A1, A2, A3, CMD)")
+    lines.append(f"  total evaluations : {len(trace)}")
+    lines.append(f"  wall time         : {elapsed_s:.2f} s")
+    lines.append("")
+    lines.append(f"Search trace ({len(trace)} evals, top 25 by score)")
+    lines.append("-" * 68)
+    lines.append(f"  {'rank':>4s}  {'α (cmd_weight)':>16s}  {'score':>10s}")
+    sorted_trace = sorted(trace, key=lambda r: r[1], reverse=True)
+    for i, (a, s) in enumerate(sorted_trace[:25], 1):
+        marker = "  ★ best" if i == 1 else ""
+        lines.append(f"  {i:>4d}  {a:>16.6f}  {s:>10.4f}{marker}")
+    if len(sorted_trace) > 25:
+        lines.append(f"  ... ({len(sorted_trace) - 25} more)")
+    lines.append("")
+    lines.append(f"Full chronological trace ({len(trace)} evals)")
+    lines.append("-" * 68)
+    lines.append(f"  {'step':>4s}  {'α (cmd_weight)':>16s}  {'score':>10s}")
+    for i, (a, s) in enumerate(trace, 1):
+        lines.append(f"  {i:>4d}  {a:>16.6f}  {s:>10.4f}")
+    lines.append("")
+    return "\n".join(lines)
 
 
 def _finalize(adata, blocks, final_emb, weights, *,
                best_params, best_score, trace,
-               search, scoring, scope, output_dir, save,
-               t_start, verbose):
+               search, scoring, scope, alpha_bounds,
+               pca_components, batch_method,
+               output_dir, save, t_start, verbose):
     """Write the autotuned embedding into the cell-level adata and persist artifacts."""
+    elapsed = time.time() - t_start
     adata.uns["X_DR_sample"] = final_emb.copy()
     adata.uns["sample_embedding_params"] = {
         "best_params": best_params,
@@ -570,8 +679,11 @@ def _finalize(adata, blocks, final_emb, weights, *,
         "K_c": int(blocks["K_c"]),
         "K_med": int(blocks["K_med"]),
         "K_fine": int(blocks["K_fine"]),
+        "cluster_emb_key": str(blocks.get("cluster_emb_key", "")),
+        "cmd_emb_key": str(blocks.get("cmd_emb_key", "")),
         "n_evals": len(trace),
         "autotuned": True,
+        "wall_time_s": float(elapsed),
     }
 
     if save:
@@ -579,6 +691,7 @@ def _finalize(adata, blocks, final_emb, weights, *,
         os.makedirs(out_dir, exist_ok=True)
         emb_csv = os.path.join(out_dir, "sample_embedding.csv")
         final_emb.to_csv(emb_csv)
+
         preprocessed_h5 = os.path.join(output_dir, "preprocess", "adata_preprocessed.h5ad")
         if os.path.exists(preprocessed_h5):
             try:
@@ -587,22 +700,23 @@ def _finalize(adata, blocks, final_emb, weights, *,
                 if verbose:
                     print(f"[autotune] WARNING: could not re-save "
                           f"{preprocessed_h5}: {exc}")
-        record = {
-            "best_params": best_params,
-            "best_score": best_score,
-            "search": search,
-            "scoring": scoring,
-            "scope": scope,
-            "weights": list(map(float, weights)),
-            "trace": trace,
-        }
-        with open(os.path.join(out_dir, "autotune_record.json"), "w") as f:
-            json.dump(record, f, indent=2)
+
+        report = _format_autotune_report(
+            best_params=best_params, best_score=best_score, trace=trace,
+            weights=weights, blocks=blocks, search=search, scoring=scoring,
+            scope=scope, alpha_bounds=alpha_bounds,
+            pca_components=pca_components, batch_method=batch_method,
+            elapsed_s=elapsed,
+        )
+        report_path = os.path.join(out_dir, "autotune_record.txt")
+        with open(report_path, "w") as f:
+            f.write(report)
         if verbose:
             print(f"[autotune] wrote {emb_csv}")
+            print(f"[autotune] wrote {report_path}")
 
     if verbose:
-        print(f"[autotune] done in {time.time() - t_start:.2f}s")
+        print(f"[autotune] done in {elapsed:.2f}s")
 
     return {
         "best_params": best_params,

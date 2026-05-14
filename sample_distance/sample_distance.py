@@ -552,7 +552,8 @@ def sample_distance_vector(
     
     distance_results = {}
 
-    # Single-key sample DR distance
+    # Single-key sample DR distance — outputs go directly under method_output_dir
+    # (no `sample_DR_distance/` subfolder since there's only one embedding).
     sample_key = get_best_sample_dr_key(adata, data_type)
     if sample_key:
         try:
@@ -560,7 +561,7 @@ def sample_distance_vector(
             distance_results['sample_DR'] = calculate_sample_distances_DR(
                 adata=adata,
                 DR_key=sample_key,
-                output_dir=os.path.join(method_output_dir, 'sample_DR_distance'),
+                output_dir=method_output_dir,
                 method=method,
                 grouping_columns=grouping_columns,
                 dr_name='sample_DR',
