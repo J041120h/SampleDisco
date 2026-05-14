@@ -4,9 +4,9 @@
 output_dir: "/dcs07/hongkai/data/harry/result/test"
 
 # Pipeline selection
-run_rna_pipeline: true
+run_rna_pipeline: false
 run_atac_pipeline: false
-run_multiomics_pipeline: false
+run_multiomics_pipeline: true
 
 # General settings
 use_gpu: true
@@ -161,7 +161,7 @@ atac_trajectory_dge: false
 atac_sample_cluster: false
 atac_proportion_test: false
 atac_cluster_dge: false
-atac_visualize_data: true
+atac_visualize_data: false
 atac_phenotype_prediction: false
 atac_dimension_association_analysis: false
 
@@ -281,15 +281,16 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 # --- Pipeline Control Flags (Preprocessing) ---
 multiomics_integration: false
 multiomics_integration_preprocessing: false
+multiomics_cell_type_cluster: true
 
 # --- Pipeline Control Flags (Downstream) ---
-multiomics_sample_distance_calculation: false
+multiomics_sample_distance_calculation: true
 multiomics_trajectory_analysis: false
 multiomics_trajectory_dge: false
 multiomics_sample_cluster: false
 multiomics_proportion_test: false
 multiomics_cluster_dge: false
-multiomics_visualize_embedding: true
+multiomics_visualize_embedding: false
 multiomics_phenotype_prediction: false
 multiomics_dimension_association_analysis: false
 
@@ -297,7 +298,6 @@ multiomics_dimension_association_analysis: false
 multiomics_run_glue_preprocessing: true
 multiomics_run_glue_training: true
 multiomics_run_glue_gene_activity: true
-multiomics_cell_type_cluster: true
 multiomics_run_glue_visualization: true
 
 # --- Resume Paths (for skipping steps) ---
