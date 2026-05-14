@@ -320,7 +320,8 @@ def downstream_analysis(
     if proportion_test:
         print("Starting proportion tests...")
         from sample_clustering.proportion_test import proportion_test as run_proportion_test
-        
+
+        # With the single-key sample DR, expr_results == prop_results — run once.
         try:
             if cluster_differential_gene_group_col is not None or expr_results:
                 run_proportion_test(
@@ -329,21 +330,9 @@ def downstream_analysis(
                     sample_to_clade=expr_results,
                     group_col=cluster_differential_gene_group_col,
                     celltype_col=celltype_col,
-                    output_dir=os.path.join(output_dir, "sample_cluster", "expression", "proportion_test"),
-                    verbose=True
+                    output_dir=os.path.join(output_dir, "sample_cluster", "proportion_test"),
+                    verbose=True,
                 )
-            
-            if cluster_differential_gene_group_col is not None or prop_results:
-                run_proportion_test(
-                    adata=adata_sample,
-                    sample_col=sample_col,
-                    sample_to_clade=prop_results,
-                    group_col=cluster_differential_gene_group_col,
-                    celltype_col=celltype_col,
-                    output_dir=os.path.join(output_dir, "sample_cluster", "proportion", "proportion_test"),
-                    verbose=True
-                )
-            
             sf["proportion_test"] = True
             print("Proportion tests completed.")
         except Exception as e:
@@ -372,13 +361,13 @@ def downstream_analysis(
                 )
                 run_pairwise_tests(
                     fit=fit,
-                    output_dir=os.path.join(output_dir, 'raisin_results_expression'),
+                    output_dir=os.path.join(output_dir, 'raisin_results'),
                     fdrmethod='fdr_bh',
                     fdr_threshold=0.05,
-                    verbose=True
+                    verbose=True,
                 )
             else:
-                print("No expression results available. Skipping RAISIN analysis.")
+                print("No sample clustering results available. Skipping RAISIN analysis.")
             
             sf["cluster_dge"] = True
             print("RAISIN analysis completed.")

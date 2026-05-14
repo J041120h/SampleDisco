@@ -26,16 +26,16 @@ rna_output_dir: null  # defaults to {output_dir}/rna
 # --- Pipeline Control Flags ---
 rna_preprocessing: false
 rna_cell_type_cluster: false
-rna_derive_sample_embedding: false
+rna_derive_sample_embedding: true
 rna_sample_distance_calculation: false
-rna_trajectory_analysis: true
+rna_trajectory_analysis: false
 rna_trajectory_dge: false
 rna_sample_cluster: false
 rna_proportion_test: false
 rna_cluster_dge: false
 rna_visualize_data: false
-rna_phenotype_prediction: true
-rna_dimension_association_analysis: true
+rna_phenotype_prediction: false
+rna_dimension_association_analysis: false
 
 # --- Resume Paths (for skipping preprocessing) ---
 rna_adata_cell_path: null
