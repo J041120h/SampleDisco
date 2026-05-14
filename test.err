@@ -1,0 +1,11 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+INFO:numba.cuda.cudadrv.driver:init
+2026-05-14 10:48:31,312 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+INFO:harmonypy:Computing initial centroids with sklearn.KMeans...
+2026-05-14 10:48:31,366 - harmonypy - INFO - sklearn.KMeans initialization complete.
+INFO:harmonypy:sklearn.KMeans initialization complete.
+2026-05-14 10:48:31,368 - harmonypy - INFO - Iteration 1 of 30
+INFO:harmonypy:Iteration 1 of 30
+2026-05-14 10:48:31,397 - harmonypy - INFO - Converged after 1 iteration
+INFO:harmonypy:Converged after 1 iteration
