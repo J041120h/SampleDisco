@@ -8,8 +8,8 @@ downstream.
 For the sample-removed embedding required by cell typing + A1/A2/A3
 composition blocks, ``harmonize_xglue`` runs a single Harmony iteration on
 ``X_glue`` with ``sample_col`` (and ``batch_col`` if available) as
-batch_keys, writing ``adata.obsm['X_glue_harmony']``. Off by default;
-opt-in via the wrapper's ``glue_batch_correction=True``.
+batch_keys, writing ``adata.obsm['X_glue_harmony']``. On by default —
+controlled via the wrapper's ``harmonize_xglue`` flag.
 
 Alternative source for ``X_glue_harmony`` (also opt-in): a second scGLUE
 training run configured with ``treat_sample_as_batch=True``, merged into

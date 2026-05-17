@@ -815,16 +815,15 @@ def wrapper(
     multiomics_consistency_threshold: float = 0.05,
     multiomics_treat_sample_as_batch: bool = False,
     multiomics_save_prefix: str = "glue",
-    # V2 cluster-vs-CMD split (both default OFF — single GLUE run only):
-    #   glue_batch_correction=True → run Harmony post-pass on X_glue (sample
-    #     removal) to produce X_glue_harmony for the cluster role.
-    #   run_glue_twice_for_sample_removal=True → train scGLUE a SECOND time
-    #     with treat_sample_as_batch=True; that run's X_glue is stored under
-    #     X_glue_harmony in the merged h5ad.
-    # Pick at most one; if both are True the 2-run output takes precedence
-    # and Harmony is skipped (X_glue_harmony already exists).
-    multiomics_glue_batch_correction: bool = False,
-    multiomics_glue_batch_correction_max_iter: int = 50,
+    # V2 cluster-vs-CMD split. X_glue (from scGLUE) is sample-preserved
+    # → CMD role. The cluster role needs a sample-REMOVED variant:
+    #   harmonize_xglue=True (default) → single Harmony post-pass on
+    #     X_glue with sample (+ batch) as batch_keys → X_glue_harmony.
+    #   run_glue_twice_for_sample_removal=True → second scGLUE training
+    #     run with treat_sample_as_batch=True yields X_glue_harmony
+    #     end-to-end; Harmony post-pass auto-skips when this is True.
+    multiomics_harmonize_xglue: bool = True,
+    multiomics_harmonize_xglue_max_iter: int = 50,
     multiomics_run_glue_twice_for_sample_removal: bool = False,
     
     # Neighbor/metric parameters
@@ -850,6 +849,10 @@ def wrapper(
     multiomics_pct_mito_cutoff: int = 20,
     multiomics_exclude_genes: Optional[List] = None,
     multiomics_doublet: bool = True,
+    # Embedding-only output: drop X / layers / varm from the integrated h5ad.
+    # SE, cell typing, distance, trajectory all read only obs + obsm. Set
+    # True when differential analysis (needs X) will run on the same h5ad.
+    multiomics_keep_expression: bool = False,
     
     # Sample embedding parameters (new method)
     multiomics_derive_sample_embedding: bool = True,
@@ -1462,8 +1465,8 @@ def wrapper(
                 treat_sample_as_batch=multiomics_treat_sample_as_batch,
                 save_prefix=multiomics_save_prefix,
                 # V2 cluster-vs-CMD split
-                glue_batch_correction=multiomics_glue_batch_correction,
-                glue_batch_correction_max_iter=multiomics_glue_batch_correction_max_iter,
+                harmonize_xglue=multiomics_harmonize_xglue,
+                harmonize_xglue_max_iter=multiomics_harmonize_xglue_max_iter,
                 run_glue_twice_for_sample_removal=multiomics_run_glue_twice_for_sample_removal,
                 # GLUE gene activity
                 k_neighbors=multiomics_k_neighbors,
@@ -1484,6 +1487,7 @@ def wrapper(
                 pct_mito_cutoff=multiomics_pct_mito_cutoff,
                 exclude_genes=multiomics_exclude_genes,
                 doublet=multiomics_doublet,
+                keep_expression=multiomics_keep_expression,
                 # Sample embedding (new method)
                 sample_embedding_medium_K=multiomics_sample_embedding_medium_K,
                 sample_embedding_fine_K=multiomics_sample_embedding_fine_K,

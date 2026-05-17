@@ -332,14 +332,13 @@ multiomics_compression: "gzip"
 multiomics_consistency_threshold: 0.05
 multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V2 default)
 
-# --- V2 cluster-vs-CMD split (both off → single GLUE embedding, legacy behavior) ---
-# Pick at most one of the two:
-#   (a) Harmony post-pass on X_glue removes per-sample variance to produce
-#       X_glue_harmony (sample-removed cluster embedding).
-#   (b) Train scGLUE a SECOND time with treat_sample_as_batch=True; the
-#       second run's embedding is stored under X_glue_harmony.
-multiomics_glue_batch_correction: false
-multiomics_glue_batch_correction_max_iter: 50
+# --- Sample-removed cluster embedding (X_glue from scGLUE is the CMD/sample-preserved emb) ---
+# By default, one Harmony pass on X_glue removes per-sample variance to
+# produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
+# train scGLUE a second time with treat_sample_as_batch=True; that run's
+# embedding is merged in as X_glue_harmony and the Harmony pass auto-skips.
+multiomics_harmonize_xglue: true
+multiomics_harmonize_xglue_max_iter: 50
 multiomics_run_glue_twice_for_sample_removal: false
 multiomics_save_prefix: "glue"
 
@@ -367,6 +366,11 @@ multiomics_min_features: 500
 multiomics_pct_mito_cutoff: 20
 multiomics_exclude_genes: null
 multiomics_doublet: true
+
+# Slim integrated h5ad: drop X / layers / varm. Off by default —
+# embedding-only is all SE / cell typing / distance / trajectory needs.
+# Set true to keep expression for downstream differential analysis.
+multiomics_keep_expression: false
 
 # --- Sample Embedding / Dimensionality Reduction Parameters ---
 multiomics_sample_hvg_number: 2000

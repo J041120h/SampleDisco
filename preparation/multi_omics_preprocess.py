@@ -156,6 +156,7 @@ def integrate_preprocess(
     original_sample_col=None,
     rna_sample_meta_file=None,
     atac_sample_meta_file=None,
+    keep_expression: bool = False,
 ):
     start_time = time.time()
 
@@ -402,6 +403,13 @@ def integrate_preprocess(
 
     if verbose:
         print("Preprocessing complete!")
+
+    if not keep_expression:
+        from utils.slim_adata import slim_adata_drop_expression
+        slim_adata_drop_expression(adata)
+        if verbose:
+            print("[integrate_preprocess] dropped X / layers / varm / varp "
+                  "(keep_expression=False) — embedding-only h5ad.")
 
     output_h5ad_path = os.path.join(preprocess_dir, "adata_preprocessed.h5ad")
     safe_h5ad_write(adata, output_h5ad_path)
