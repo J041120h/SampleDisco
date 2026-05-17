@@ -815,6 +815,11 @@ def wrapper(
     multiomics_consistency_threshold: float = 0.05,
     multiomics_treat_sample_as_batch: bool = False,
     multiomics_save_prefix: str = "glue",
+    # scGLUE throughput knobs: data_batch_size lifts the library default
+    # (128 → 1024) to saturate the GPU; max_epochs=None lets scGLUE pick
+    # adaptively (its "AUTO" sentinel). Set max_epochs to an int to cap.
+    multiomics_glue_data_batch_size: int = 1024,
+    multiomics_glue_max_epochs: Optional[int] = None,
     # V2 cluster-vs-CMD split. X_glue (from scGLUE) is sample-preserved
     # → CMD role. The cluster role needs a sample-REMOVED variant:
     #   harmonize_xglue=True (default) → single Harmony post-pass on
@@ -1464,6 +1469,8 @@ def wrapper(
                 consistency_threshold=multiomics_consistency_threshold,
                 treat_sample_as_batch=multiomics_treat_sample_as_batch,
                 save_prefix=multiomics_save_prefix,
+                glue_data_batch_size=multiomics_glue_data_batch_size,
+                glue_max_epochs=multiomics_glue_max_epochs,
                 # V2 cluster-vs-CMD split
                 harmonize_xglue=multiomics_harmonize_xglue,
                 harmonize_xglue_max_iter=multiomics_harmonize_xglue_max_iter,

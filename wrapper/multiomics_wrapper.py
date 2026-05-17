@@ -102,14 +102,20 @@ def multiomics_wrapper(
 
     # GLUE training parameters
     consistency_threshold=0.05,
-    # GLUE focuses on cross-modality alignment only. Sample-level / batch-level
-    # corrections are handled downstream by STEP 2c (harmonize_xglue), which is
-    # more controllable and uses the user-supplied batch_col. Passing
-    # treat_sample_as_batch=True here would force GLUE to pull every sample to
-    # a common centroid during training, destroying per-sample variance the
-    # downstream CMD block is meant to capture.
+    # V2 default: scGLUE removes the technical batch column (``batch_col``)
+    # during training but PRESERVES per-sample variance, so its output
+    # X_glue is suitable as the CMD displacement embedding. Set
+    # treat_sample_as_batch=True only to force sample removal inside GLUE
+    # itself (legacy V1 behavior, or the 2-run secondary pass for the
+    # cluster embedding).
     treat_sample_as_batch=False,
     save_prefix="glue",
+    # scGLUE training throughput knobs. data_batch_size=1024 lifts the
+    # library default (128) to better saturate modern GPUs; set lower if
+    # GPU memory is tight. max_epochs=None lets scGLUE pick adaptively
+    # ("AUTO"); set an int to cap.
+    glue_data_batch_size: int = 1024,
+    glue_max_epochs: Optional[int] = None,
 
     # GLUE gene activity parameters
     k_neighbors=10,
@@ -239,6 +245,8 @@ def multiomics_wrapper(
             rna_sample_column=rna_sample_column, atac_sample_column=atac_sample_column,
             consistency_threshold=consistency_threshold,
             treat_sample_as_batch=treat_sample_as_batch, save_prefix=save_prefix,
+            batch_key=batch_col, sample_key=sample_col,
+            data_batch_size=glue_data_batch_size, max_epochs=glue_max_epochs,
             run_second_glue_for_sample_removal=run_glue_twice_for_sample_removal,
             second_run_emb_key=XGLUE_HARMONY_KEY,
             k_neighbors=k_neighbors, use_rep=use_rep, metric=metric,

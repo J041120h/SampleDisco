@@ -1,7 +1,7 @@
 # =============================================================================
 # MAIN CONFIGURATION
 # =============================================================================
-output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired"
+output_dir: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb"
 
 # Pipeline selection
 run_rna_pipeline: false
@@ -271,10 +271,18 @@ multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/ATAC.h5ad"
 multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
 # --- Pipeline Control Flags (Preprocessing & Resolution) ---
-multiomics_integration: false
+# Fresh from-scratch run: the previously-trained X_glue used
+# treat_sample_as_batch=True (V1) which destroyed per-sample variance, so
+# it cannot serve as the V2 CMD embedding. We re-train scGLUE with
+# treat_sample_as_batch=False (V2 default) below.
+multiomics_integration: true
 multiomics_integration_preprocessing: true
 multiomics_dimensionality_reduction: true
 multiomics_find_optimal_resolution: true
+# Derive the V2 sample embedding (composition + CMD on the di-embedding pair).
+multiomics_derive_sample_embedding: true
+multiomics_autotune_enable: true
+multiomics_autotune_grouping_col: "sev.level"
 
 # --- Pipeline Control Flags (Downstream) ---
 multiomics_sample_distance_calculation: false
@@ -294,9 +302,9 @@ multiomics_run_glue_gene_activity: true
 multiomics_cell_type_cluster: true
 multiomics_run_glue_visualization: true
 
-# --- Resume Paths (for skipping steps) ---
-multiomics_integrated_h5ad_path: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/preprocess/atac_rna_integrated.h5ad"
-multiomics_pseudobulk_h5ad_path: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired/multiomics/pseudobulk/pseudobulk_sample.h5ad"
+# --- Resume Paths (for skipping steps; null on fresh runs) ---
+multiomics_integrated_h5ad_path: null
+multiomics_pseudobulk_h5ad_path: null
 multiomics_rna_sample_meta_file: null
 multiomics_atac_sample_meta_file: null
 multiomics_additional_hvg_file: null
@@ -340,6 +348,12 @@ multiomics_harmonize_xglue: true
 multiomics_harmonize_xglue_max_iter: 50
 multiomics_run_glue_twice_for_sample_removal: false
 multiomics_save_prefix: "glue"
+
+# scGLUE throughput knobs (lifts the library default 128→1024 to saturate GPU;
+# null max_epochs lets scGLUE pick adaptively — patience-based early stop
+# usually fires well before any cap regardless).
+multiomics_glue_data_batch_size: 1024
+multiomics_glue_max_epochs: null
 
 # --- Neighbor/Metric Parameters ---
 multiomics_k_neighbors: 1
