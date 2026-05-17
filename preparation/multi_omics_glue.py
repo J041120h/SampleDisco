@@ -422,30 +422,88 @@ def glue_preprocess_pipeline(
     print("\n🎉 GLUE preprocessing pipeline completed successfully!\n")
     return rna, atac, guidance
 
+def _resolve_glue_batch_design(rna, atac, *, treat_sample_as_batch, batch_key, sample_key):
+    """Decide the single ``use_batch`` column to pass to scGLUE.
+
+    Returns None when no batch correction should be applied. When both a
+    batch key and a sample key must be jointly removed (the second-run
+    cluster embedding case), creates a synthetic ``<batch>__<sample>``
+    column on both AnnDatas and returns its name.
+    """
+    def _has(adata, col): return col and col in adata.obs.columns
+
+    if treat_sample_as_batch:
+        if not _has(rna, sample_key) or not _has(atac, sample_key):
+            raise KeyError(
+                f"sample_key={sample_key!r} missing from rna/atac obs — "
+                "required for treat_sample_as_batch=True.")
+        if _has(rna, batch_key) and _has(atac, batch_key) and batch_key != sample_key:
+            combined = f"{batch_key}__{sample_key}"
+            for a in (rna, atac):
+                a.obs[combined] = (a.obs[batch_key].astype(str) + "__" +
+                                   a.obs[sample_key].astype(str)).astype("category")
+            return combined
+        return sample_key
+
+    if _has(rna, batch_key) and _has(atac, batch_key):
+        return batch_key
+    if batch_key:
+        print(f"   [glue_train] batch_key={batch_key!r} not in obs of rna/atac — "
+              "scGLUE will run without batch correction.")
+    return None
+
+
 def glue_train(preprocess_output_dir, output_dir="glue_output",
                save_prefix="glue", consistency_threshold=0.05,
                treat_sample_as_batch=False,
-               use_highly_variable=True):
+               batch_key=None,
+               sample_key="sample",
+               use_highly_variable=True,
+               data_batch_size: int = 1024,
+               max_epochs: Optional[int] = None):
     """
-    Train SCGLUE model for single-cell multi-omics integration.
+    Train scGLUE model for single-cell multi-omics integration.
 
-    Primary (default) run writes obsm['X_glue']: batch-removed, sample-preserved.
-    The optional second run (``second_run_for_sample_removal=True``) trains
-    SCGLUE a second time with ``sample_key`` added to the batch design and
-    writes obsm[``second_run_emb_key``] — the sample-REMOVED cluster embedding.
+    scGLUE's ``configure_dataset(use_batch=...)`` accepts a single column,
+    so the batch design is resolved as follows:
 
-    Parameters:
-    -----------
+      treat_sample_as_batch  batch_key  →  use_batch
+      ─────────────────────  ─────────     ──────────
+      False (V2 default)     set       →  batch_key   (remove batch, keep sample)
+      False                  None      →  None        (no correction in GLUE)
+      True                   None      →  sample_key  (remove sample, keep batch)
+      True                   set       →  synthetic "<batch_key>__<sample_key>"
+                                          combined column (remove batch + sample)
+
+    The combined-column path lets the optional second scGLUE run yield a
+    truly batch- *and* sample-removed cluster embedding when both keys are
+    provided.
+
+    Parameters
+    ----------
     preprocess_output_dir : str
-        Directory containing preprocessed data
+        Directory containing the preprocessed rna-pp.h5ad / atac-pp.h5ad /
+        guidance graph.
     output_dir : str
-        Output directory for saving all training results
+        Output directory for trained model + embedding h5ads.
     save_prefix : str
-        Prefix for saved files
+        Filename prefix for ``<prefix>-rna-emb.h5ad`` / ``<prefix>-atac-emb.h5ad``.
     consistency_threshold : float
-        Threshold for integration consistency
+        Min integration consistency to flag the run as reliable.
+    treat_sample_as_batch : bool
+        See table above.
+    batch_key, sample_key : str | None
+        obs columns describing technical batch and biological sample.
     use_highly_variable : bool
-        Whether to use only highly variable features or all features
+        Use HVGs only when training (else all features).
+    data_batch_size : int
+        Cells per minibatch. scGLUE's library default is 128; we lift it to
+        1024 to better saturate modern GPUs (V100 / A100 easily fit it).
+    max_epochs : int | None
+        Hard upper bound on training epochs. ``None`` (default) passes
+        scGLUE's ``"AUTO"`` sentinel through to ``fit`` so the library
+        picks adaptively (typically ~100–200); early stopping via patience
+        usually fires well before the cap regardless.
     """
     print("\n\n\n🚀 Starting GLUE training pipeline...\n\n\n")
     print(f"   Feature mode: {'Highly Variable Only' if use_highly_variable else 'All Features'}")
@@ -473,24 +531,22 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     # 2. Configure datasets with negative binomial distribution
     print("\n\n\n⚙️ Configuring datasets...\n\n\n")
 
-    if treat_sample_as_batch:
-        scglue.models.configure_dataset(
-            rna, "NB", use_highly_variable=use_highly_variable, 
-            use_layer="counts", use_rep="X_pca", use_batch='sample'
-        )
-        scglue.models.configure_dataset(
-            atac, "NB", use_highly_variable=use_highly_variable, 
-            use_rep="X_lsi", use_batch='sample'
-        )
-    else:
-        scglue.models.configure_dataset(
-            rna, "NB", use_highly_variable=use_highly_variable, 
-            use_layer="counts", use_rep="X_pca"
-        )
-        scglue.models.configure_dataset(
-            atac, "NB", use_highly_variable=use_highly_variable, 
-            use_rep="X_lsi"
-        )
+    use_batch = _resolve_glue_batch_design(
+        rna, atac,
+        treat_sample_as_batch=treat_sample_as_batch,
+        batch_key=batch_key,
+        sample_key=sample_key,
+    )
+    print(f"   scGLUE use_batch = {use_batch!r}")
+
+    rna_kwargs  = dict(use_highly_variable=use_highly_variable,
+                       use_layer="counts", use_rep="X_pca")
+    atac_kwargs = dict(use_highly_variable=use_highly_variable, use_rep="X_lsi")
+    if use_batch is not None:
+        rna_kwargs["use_batch"]  = use_batch
+        atac_kwargs["use_batch"] = use_batch
+    scglue.models.configure_dataset(rna,  "NB", **rna_kwargs)
+    scglue.models.configure_dataset(atac, "NB", **atac_kwargs)
     
     # 3. Extract subgraph based on feature selection strategy
     if use_highly_variable:
@@ -509,14 +565,17 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     train_dir = os.path.join(output_dir, "training")
     os.makedirs(train_dir, exist_ok=True)
     
-    print(f"\n\n\n🤖 Training GLUE model...\n\n\n")
-    glue = scglue.models.fit_SCGLUE(
-    {"rna": rna, "atac": atac},
-    guidance_hvf,
-    fit_kws={
+    fit_kws = {
         "directory": train_dir,
-        "max_epochs": 500
-        }
+        "data_batch_size": data_batch_size,
+    }
+    if max_epochs is not None:
+        fit_kws["max_epochs"] = max_epochs
+    print(f"\n\n\n🤖 Training GLUE model (fit_kws={fit_kws})...\n\n\n")
+    glue = scglue.models.fit_SCGLUE(
+        {"rna": rna, "atac": atac},
+        guidance_hvf,
+        fit_kws=fit_kws,
     )
     
     # 6. Generate embeddings
@@ -1019,12 +1078,21 @@ def multiomics_preparation(
     consistency_threshold: float = 0.05,
     treat_sample_as_batch: bool = False,
     save_prefix: str = "glue",
+    # Batch design for scGLUE.configure_dataset(use_batch=...). With
+    # batch_key set + treat_sample_as_batch=False (V2 default), scGLUE
+    # removes the named batch column while preserving per-sample variance,
+    # so the primary X_glue is suitable as the CMD embedding.
+    batch_key: Optional[str] = None,
+    sample_key: str = "sample",
+    # scGLUE training throughput knobs (see glue_train docstring)
+    data_batch_size: int = 1024,
+    max_epochs: Optional[int] = None,
     # Optional second scGLUE training run for the sample-REMOVED cluster
-    # embedding (V2 architecture). When True, scGLUE is invoked a SECOND
-    # time with ``treat_sample_as_batch=True``; the resulting embedding is
-    # merged into the primary RNA + ATAC h5ads under
-    # ``obsm[second_run_emb_key]``. The primary X_glue (sample-preserved,
-    # batch-removed) is unchanged.
+    # embedding. When True, scGLUE is invoked a SECOND time with
+    # treat_sample_as_batch=True; if batch_key is also set, both batch and
+    # sample are removed via a synthetic combined column. The resulting
+    # embedding is merged into the primary RNA + ATAC h5ads under
+    # obsm[second_run_emb_key]. The primary X_glue is unchanged.
     run_second_glue_for_sample_removal: bool = False,
     second_run_save_prefix: str = "glue_no_sample",
     second_run_emb_key: str = "X_glue_harmony",
@@ -1080,7 +1148,7 @@ def multiomics_preparation(
         print("Preprocessing completed.")
     
     # Step 2: Training (single primary run — produces X_glue =
-    # batch-removed, sample-preserved).
+    # batch-removed (when batch_key is set), sample-preserved).
     if run_training:
         print("Running training...")
         glue_train(
@@ -1088,14 +1156,18 @@ def multiomics_preparation(
             save_prefix=save_prefix,
             consistency_threshold=consistency_threshold,
             treat_sample_as_batch=treat_sample_as_batch,
+            batch_key=batch_key,
+            sample_key=sample_key,
             use_highly_variable=use_highly_variable,
-            output_dir=glue_output_dir
+            data_batch_size=data_batch_size,
+            max_epochs=max_epochs,
+            output_dir=glue_output_dir,
         )
         print("Training completed.")
 
-        # Step 2b (optional): SECOND scGLUE run with sample as batch →
-        # produces the sample-REMOVED cluster embedding. Merged into the
-        # primary RNA/ATAC h5ads under obsm[second_run_emb_key].
+        # Step 2b (optional): SECOND scGLUE run that ALSO removes per-sample
+        # variance → the cluster embedding. When batch_key is set, batch is
+        # removed jointly via a synthetic combined column.
         if run_second_glue_for_sample_removal:
             print(f"Running second scGLUE pass for sample removal "
                   f"(treat_sample_as_batch=True) → obsm[{second_run_emb_key!r}]")
@@ -1104,7 +1176,11 @@ def multiomics_preparation(
                 save_prefix=second_run_save_prefix,
                 consistency_threshold=consistency_threshold,
                 treat_sample_as_batch=True,
+                batch_key=batch_key,
+                sample_key=sample_key,
                 use_highly_variable=use_highly_variable,
+                data_batch_size=data_batch_size,
+                max_epochs=max_epochs,
                 output_dir=glue_output_dir,
             )
             _merge_second_glue_embedding_into_primary_h5ads(
