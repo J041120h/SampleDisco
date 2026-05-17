@@ -1,0 +1,37 @@
+[23:19:41] loading h5 (backed; obs + X_glue_harmony only)
+[23:19:48]   987,474 cells × 50 dims, batches=['Aruna', 'Guo', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'UNK', 'Wen', 'Wilk', 'Yu', 'Zhu']
+[23:19:48] constructing minimal adata for scanpy
+/jhpce/shared/jhpce/core/conda/miniconda3-23.3.1/envs/cudatoolkit-11.8.0/lib/python3.12/functools.py:909: ImplicitModificationWarning: Transforming to str index.
+  return dispatch(args[0].__class__)(*args, **kw)
+[23:19:49] sc.pp.neighbors(use_rep='X_glue_harmony', n_neighbors=15) — pynndescent backend
+[23:23:47]   KNN graph built in 238.1s
+[23:23:47] indexing cells per (sample, modality) unit
+[23:23:54]   432 units; batch counts:
+Su        274
+SS2        56
+SS1        25
+Zhu        14
+Lee        14
+Wilk       13
+Aruna      12
+Yu          9
+Wen         5
+Mudd        4
+Guo         2
+Silvin      2
+UNK         2
+[23:23:54] === resolution 0.5 ===
+/users/hjiang/GenoDistance/code/claude/cluster_resolution_sweep.py:114: FutureWarning: The `igraph` implementation of leiden clustering is *orders of magnitude faster*. Set the flavor argument to (and install if needed) 'igraph' to use it.
+In the future, the default backend for leiden will be igraph instead of leidenalg. To achieve the future defaults please pass: `flavor='igraph'` and `n_iterations=2`. `directed` must also be `False` to work with igraph’s implementation.
+  sc.tl.leiden(adata, resolution=res, random_state=SEED, key_added=f'leiden_{res}')
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/claude/cluster_resolution_sweep.py", line 114, in <module>
+    sc.tl.leiden(adata, resolution=res, random_state=SEED, key_added=f'leiden_{res}')
+  File "/users/hjiang/.local/lib/python3.12/site-packages/scanpy/tools/_leiden.py", line 135, in leiden
+    flavor = _validate_flavor(flavor, partition_type=partition_type, directed=directed)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/users/hjiang/.local/lib/python3.12/site-packages/scanpy/tools/_leiden.py", line 242, in _validate_flavor
+    import leidenalg  # noqa: F401
+    ^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'leidenalg'
+Please install `scanpy[leiden]` (or `leidenalg` directly) and try again.

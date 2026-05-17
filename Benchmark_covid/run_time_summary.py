@@ -152,10 +152,10 @@ if __name__ == "__main__":
         # scPoli
         "scPoli": "/dcs07/hongkai/data/harry/result/scPoli/{}_sample/scPoli_summary.json",
 
-        # SampleDisc (NEW DIRECTORY STYLE)
+        # SampleDisc (NEW DIRECTORY STYLE — updated to current SampleDisco run)
         "SD": (
             "/dcs07/hongkai/data/harry/result/"
-            "Benchmark_covid/covid_{}_sample/run_time/sampledisco_summary.json"
+            "Benchmark_covid/covid_{}_sample/rna/sampledisco_default/sampledisco_summary.json"
         ),
     }
 

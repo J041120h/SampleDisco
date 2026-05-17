@@ -813,8 +813,19 @@ def wrapper(
     
     # GLUE training parameters
     multiomics_consistency_threshold: float = 0.05,
-    multiomics_treat_sample_as_batch: bool = True,
+    multiomics_treat_sample_as_batch: bool = False,
     multiomics_save_prefix: str = "glue",
+    # V2 cluster-vs-CMD split (both default OFF — single GLUE run only):
+    #   glue_batch_correction=True → run Harmony post-pass on X_glue (sample
+    #     removal) to produce X_glue_harmony for the cluster role.
+    #   run_glue_twice_for_sample_removal=True → train scGLUE a SECOND time
+    #     with treat_sample_as_batch=True; that run's X_glue is stored under
+    #     X_glue_harmony in the merged h5ad.
+    # Pick at most one; if both are True the 2-run output takes precedence
+    # and Harmony is skipped (X_glue_harmony already exists).
+    multiomics_glue_batch_correction: bool = False,
+    multiomics_glue_batch_correction_max_iter: int = 50,
+    multiomics_run_glue_twice_for_sample_removal: bool = False,
     
     # Neighbor/metric parameters
     multiomics_k_neighbors: int = 10,
@@ -825,7 +836,7 @@ def wrapper(
     multiomics_existing_cell_types: bool = False,
     multiomics_n_target_clusters: int = 10,
     multiomics_cluster_resolution: float = 0.8,
-    multiomics_use_rep_celltype: str = "X_glue",
+    multiomics_use_rep_celltype: Optional[str] = None,
     multiomics_markers: Optional[Dict] = None,
     multiomics_generate_umap_celltype: bool = True,
     
@@ -1450,6 +1461,10 @@ def wrapper(
                 consistency_threshold=multiomics_consistency_threshold,
                 treat_sample_as_batch=multiomics_treat_sample_as_batch,
                 save_prefix=multiomics_save_prefix,
+                # V2 cluster-vs-CMD split
+                glue_batch_correction=multiomics_glue_batch_correction,
+                glue_batch_correction_max_iter=multiomics_glue_batch_correction_max_iter,
+                run_glue_twice_for_sample_removal=multiomics_run_glue_twice_for_sample_removal,
                 # GLUE gene activity
                 k_neighbors=multiomics_k_neighbors,
                 use_rep=multiomics_use_rep,

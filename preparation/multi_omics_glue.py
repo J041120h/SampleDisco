@@ -422,13 +422,18 @@ def glue_preprocess_pipeline(
     print("\n🎉 GLUE preprocessing pipeline completed successfully!\n")
     return rna, atac, guidance
 
-def glue_train(preprocess_output_dir, output_dir="glue_output", 
+def glue_train(preprocess_output_dir, output_dir="glue_output",
                save_prefix="glue", consistency_threshold=0.05,
-               treat_sample_as_batch=True,
+               treat_sample_as_batch=False,
                use_highly_variable=True):
     """
     Train SCGLUE model for single-cell multi-omics integration.
-    
+
+    Primary (default) run writes obsm['X_glue']: batch-removed, sample-preserved.
+    The optional second run (``second_run_for_sample_removal=True``) trains
+    SCGLUE a second time with ``sample_key`` added to the batch design and
+    writes obsm[``second_run_emb_key``] — the sample-REMOVED cluster embedding.
+
     Parameters:
     -----------
     preprocess_output_dir : str
@@ -535,8 +540,10 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     rna.write(rna_emb_path, compression="gzip")
     atac.write(atac_emb_path, compression="gzip")
     nx.write_graphml(guidance_hvf, guidance_hvf_path)
-    os.remove(rna_path)
-    os.remove(atac_path)
+    # NOTE: do NOT delete rna-pp.h5ad / atac-pp.h5ad — the optional second
+    # scGLUE pass (sample-removal run, V2 architecture) re-reads them.
+    # They are small relative to the X_glue embeddings and only matter
+    # at training time.
     
     # 5. Check integration consistency
     print(f"\n\n\n📊 Checking integration consistency...\n\n\n")
@@ -949,6 +956,38 @@ def compute_gene_activity_from_knn(
     
     return merged_adata
 
+def _merge_second_glue_embedding_into_primary_h5ads(
+    glue_dir: str,
+    primary_prefix: str,
+    secondary_prefix: str,
+    target_obsm_key: str,
+) -> None:
+    """Read X_glue from the secondary GLUE run's RNA/ATAC h5ads and write it
+    into the PRIMARY RNA/ATAC h5ads under ``target_obsm_key``. Used to package
+    the V2 sample-removed cluster embedding alongside the sample-preserved
+    primary X_glue without duplicating heavy h5ad files downstream."""
+    import os as _os
+    for mod in ("rna", "atac"):
+        primary  = _os.path.join(glue_dir, f"{primary_prefix}-{mod}-emb.h5ad")
+        secondary = _os.path.join(glue_dir, f"{secondary_prefix}-{mod}-emb.h5ad")
+        if not _os.path.exists(primary):
+            raise FileNotFoundError(f"primary GLUE h5ad missing: {primary}")
+        if not _os.path.exists(secondary):
+            raise FileNotFoundError(f"secondary GLUE h5ad missing: {secondary}")
+        a_primary = ad.read_h5ad(primary)
+        a_secondary = ad.read_h5ad(secondary)
+        if "X_glue" not in a_secondary.obsm:
+            raise KeyError(f"secondary h5ad {secondary} missing obsm['X_glue']")
+        if a_primary.n_obs != a_secondary.n_obs:
+            raise ValueError(
+                f"primary/secondary cell count mismatch for {mod}: "
+                f"{a_primary.n_obs} vs {a_secondary.n_obs}")
+        a_primary.obsm[target_obsm_key] = a_secondary.obsm["X_glue"]
+        a_primary.write(primary, compression="gzip")
+        print(f"  merged {secondary} → {primary}  obsm[{target_obsm_key!r}] "
+              f"({a_primary.obsm[target_obsm_key].shape})")
+
+
 def multiomics_preparation(
     # Data files
     rna_file: str,
@@ -978,8 +1017,17 @@ def multiomics_preparation(
     
     # Training parameters
     consistency_threshold: float = 0.05,
-    treat_sample_as_batch: bool = True,
+    treat_sample_as_batch: bool = False,
     save_prefix: str = "glue",
+    # Optional second scGLUE training run for the sample-REMOVED cluster
+    # embedding (V2 architecture). When True, scGLUE is invoked a SECOND
+    # time with ``treat_sample_as_batch=True``; the resulting embedding is
+    # merged into the primary RNA + ATAC h5ads under
+    # ``obsm[second_run_emb_key]``. The primary X_glue (sample-preserved,
+    # batch-removed) is unchanged.
+    run_second_glue_for_sample_removal: bool = False,
+    second_run_save_prefix: str = "glue_no_sample",
+    second_run_emb_key: str = "X_glue_harmony",
     
     # Gene activity computation parameters
     k_neighbors: int = 1,
@@ -1031,7 +1079,8 @@ def multiomics_preparation(
         )
         print("Preprocessing completed.")
     
-    # Step 2: Training
+    # Step 2: Training (single primary run — produces X_glue =
+    # batch-removed, sample-preserved).
     if run_training:
         print("Running training...")
         glue_train(
@@ -1043,6 +1092,28 @@ def multiomics_preparation(
             output_dir=glue_output_dir
         )
         print("Training completed.")
+
+        # Step 2b (optional): SECOND scGLUE run with sample as batch →
+        # produces the sample-REMOVED cluster embedding. Merged into the
+        # primary RNA/ATAC h5ads under obsm[second_run_emb_key].
+        if run_second_glue_for_sample_removal:
+            print(f"Running second scGLUE pass for sample removal "
+                  f"(treat_sample_as_batch=True) → obsm[{second_run_emb_key!r}]")
+            glue_train(
+                preprocess_output_dir=glue_output_dir,
+                save_prefix=second_run_save_prefix,
+                consistency_threshold=consistency_threshold,
+                treat_sample_as_batch=True,
+                use_highly_variable=use_highly_variable,
+                output_dir=glue_output_dir,
+            )
+            _merge_second_glue_embedding_into_primary_h5ads(
+                glue_dir=glue_output_dir,
+                primary_prefix=save_prefix,
+                secondary_prefix=second_run_save_prefix,
+                target_obsm_key=second_run_emb_key,
+            )
+            print("Second GLUE pass merged.")
     
     # Step 3: Memory management and gene activity computation
     if run_gene_activity:

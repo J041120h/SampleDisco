@@ -1,0 +1,2053 @@
+
+==============================================================================
+COVID single-omics RNA — SampleDisco (autotuned)
+==============================================================================
+[16:12:24] covid_25_sample: loading /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_cell.h5ad
+[16:12:26] covid_25_sample: loading tuned embedding /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[16:12:26] covid_25_sample: building sample-level adata for CCA
+[16:12:27] covid_25_sample: running CCA_Call (trajectory_col='sev.level')
+
+CCA Analysis Summary:
+  Sample: score=0.5696 (PC6 + PC9)
+[16:12:27] covid_25_sample: wrote /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+[16:12:28] covid_25_sample: running 7-test benchmark → /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25
+2026-05-15 16:12:28,055 - INFO - Initialized BenchmarkWrapper (explicit paths) with:
+2026-05-15 16:12:28,056 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:12:28,056 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+2026-05-15 16:12:28,056 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:12:28,056 - INFO -   Method name:       SampleDisco
+2026-05-15 16:12:28,056 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25
+2026-05-15 16:12:28,056 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco
+2026-05-15 16:12:28,056 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv
+2026-05-15 16:12:28,056 - INFO - 
+==================================================
+2026-05-15 16:12:28,056 - INFO - Running embedding_visualization...
+2026-05-15 16:12:28,056 - INFO - ==================================================
+2026-05-15 16:12:28,056 - INFO - Running Embedding Visualization...
+2026-05-15 16:12:28,056 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+2026-05-15 16:12:28,060 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[DEBUG] Embedding matrix shape: (25, 10)
+[DEBUG] First 3 embedding indices: ['CoV-104.2-Su', 'CoV-133.1-Su', 'CoV-135.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=25, meta_only=516, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su']
+[DEBUG] After alignment: meta_df=(25, 6), embedding_df=(25, 10)
+[DEBUG] Dropped rows -> meta: 516, embed: 0
+2026-05-15 16:12:28,064 - INFO - Performing PCA to 2 components...
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.75030456 0.16102678]
+2026-05-15 16:12:28,066 - INFO - Variance explained by PC1: 75.03%
+2026-05-15 16:12:28,066 - INFO - Variance explained by PC2: 16.10%
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (6): ['Mudd', 'SS1', 'SS2', 'Su', 'Wilk', 'Zhu']
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/embedding_visualization/pca_coordinates.csv
+2026-05-15 16:12:28,565 - INFO - Creating sample distance heatmap ordered by severity level...
+[DEBUG] Severity numeric range: 1.000 – 4.000
+[DEBUG] Severity numeric unique values: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+[DEBUG] Distance matrix shape: (25, 25), metric=euclidean
+[DEBUG] Severity-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_severity.png
+2026-05-15 16:12:29,695 - INFO - Creating sample distance heatmap ordered by batch...
+[DEBUG] Distance matrix shape: (25, 25), metric=euclidean
+[DEBUG] Batch-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_batch.png
+[DEBUG] Visualization completed successfully.
+2026-05-15 16:12:31,055 - INFO - Embedding visualization completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/embedding_visualization
+2026-05-15 16:12:31,055 - INFO - 
+==================================================
+2026-05-15 16:12:31,055 - INFO - Running trajectory_anova...
+2026-05-15 16:12:31,055 - INFO - ==================================================
+2026-05-15 16:12:31,055 - INFO - Running Trajectory ANOVA Analysis...
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Using severity column: sev.level
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 25 samples
+
+Merging data...
+  Merged data: 25 samples retained
+
+Performing ANOVA...
+  Analyzing 25 samples with complete data
+  Number of batches: 6
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+2026-05-15 16:12:31,199 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:12:31,204 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:12:31,205 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 2.7144e-01 (η² = 0.401)
+  Severity Effect: p = 1.0472e-01 (η² = 0.415)
+  Interaction: p = 1.0901e-01 (η² = 0.746)
+  Overall Assessment: INEFFECTIVE
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_anova/ANOVA
+2026-05-15 16:12:33,534 - INFO - Trajectory ANOVA completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_anova
+2026-05-15 16:12:33,535 - INFO - 
+==================================================
+2026-05-15 16:12:33,535 - INFO - Running batch_removal...
+2026-05-15 16:12:33,535 - INFO - ==================================================
+2026-05-15 16:12:33,535 - INFO - Running Batch Removal Evaluation...
+Note: dropping 516 metadata rows without data match.
+Batch-removal Evaluation Summary
+================================
+Samples: 25
+Batches: 6 -> ['Mudd', 'SS1', 'SS2', 'Su', 'Wilk', 'Zhu']
+
+iLISI (mean ± sd): 4.2864 ± 0.4797
+iLISI_norm: 0.7144
+ASW-batch: 0.6544
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/batch_removal/Batch_Removal_Evaluation
+2026-05-15 16:12:33,565 - INFO - Batch removal evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/batch_removal
+2026-05-15 16:12:33,565 - INFO - 
+==================================================
+2026-05-15 16:12:33,565 - INFO - Running ari_clustering...
+2026-05-15 16:12:33,565 - INFO - ==================================================
+2026-05-15 16:12:33,565 - INFO - Running ARI Clustering Evaluation...
+Reading metadata and data files...
+Found 4 unique values in 'sev.level': [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Loaded embedding with shape (25, 10) (samples × dimensions)
+Normalizing sample IDs to lowercase for case-insensitive matching...
+Note: dropping 516 metadata rows without data match.
+Successfully aligned 25 samples.
+Found 4 unique sev.level values: [1 2 3 4]
+Using 4 clusters for KMeans clustering
+Performing KMeans clustering with k=4...
+Computing ARI and other metrics...
+Generating visualizations...
+============================================================
+ARI-based Clustering Evaluation Summary (KMeans)
+============================================================
+Label column: sev.level
+Data mode: embedding
+Total samples: 25
+Samples with valid labels: 25
+Unique sev.level values: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.0743
+Normalized Mutual Info (NMI): 0.2089
+Average Cluster Purity: 0.5464
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and sev.level
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+2026-05-15 16:12:34,768 - INFO - ARI clustering evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/ari_clustering
+2026-05-15 16:12:34,769 - INFO - 
+==================================================
+2026-05-15 16:12:34,769 - INFO - Running trajectory_analysis...
+2026-05-15 16:12:34,769 - INFO - ==================================================
+2026-05-15 16:12:34,769 - INFO - Running Trajectory Analysis...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   sev.level
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 25 samples
+
+Merging data...
+  Merged data: 25 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 25 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.4796 (p = 1.5268e-02)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation
+2026-05-15 16:12:36,107 - INFO - Trajectory analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/trajectory_analysis
+2026-05-15 16:12:36,107 - INFO - 
+==================================================
+2026-05-15 16:12:36,108 - INFO - Running pseudotime_embeddings_custom...
+2026-05-15 16:12:36,108 - INFO - ==================================================
+2026-05-15 16:12:36,108 - INFO - Running Custom Pseudotime Embeddings Benchmark (simple schema)...
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 10 samples
+Unique severity levels: [np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq   df         F    PR(>F)
+C(Q('sev.level'))  0.063156  2.0  0.586636  0.581376
+Residual           0.376801  7.0       NaN       NaN
+SciPy F-test: F=0.5866, p=0.5814
+Effect sizes: eta²=0.1435, ω²=-0.0901
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su      10
+Wilk     3
+SS1      3
+SS2      3
+Zhu      3
+Mudd     3
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 6, n_non_anchor = 15
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 15
+Anchor samples: 10
+Pool samples: 15
+k_neighbors: 1
+
+Results for 'SampleDisco':
+  Mean |Δseverity|: 0.9000
+  95% CI: [0.5000, 1.3000]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+2026-05-15 16:12:36,573 - INFO - 
+==================================================
+2026-05-15 16:12:36,574 - INFO - Running batch_mixing...
+2026-05-15 16:12:36,574 - INFO - ==================================================
+2026-05-15 16:12:36,574 - INFO - Running Batch Mixing Analysis...
+2026-05-15 16:12:36,574 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:12:36,577 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:12:36,883 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_histogram.png
+2026-05-15 16:12:36,883 - INFO - 
+        Expected same-batch proportion: 0.20
+        Observed median: 0.10
+        Observed mean: 0.21
+        
+        Interpretation:
+        - Batch effect removed: distribution centered around 0.20
+        - Batch effect present: distribution shifted toward 1.0
+        - Current shift: -0.10
+        
+2026-05-15 16:12:37,165 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_violin.png
+2026-05-15 16:12:37,731 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_annotated.png
+2026-05-15 16:12:38,451 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_clean.png
+2026-05-15 16:12:38,451 - INFO - Batch mixing analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-25/benchmark_results_SampleDisco/batch_mixing
+2026-05-15 16:12:38,452 - INFO - [DEBUG] embedding_visualization result keys: ['variance_explained', 'n_samples', 'n_features', 'sev_level_range', 'unique_batches', 'batch_labels', 'output_plot', 'output_pca', 'heatmap_severity', 'heatmap_batch']
+2026-05-15 16:12:38,452 - INFO - [DEBUG] trajectory_anova result keys: ['anova_table', 'model', 'desc_stats', 'posthoc', 'data', 'pseudotime_col', 'n_samples', 'n_batches', 'n_severity_levels', 'model_type', 'severity_col']
+2026-05-15 16:12:38,452 - INFO - [DEBUG] batch_removal result keys: ['n_samples', 'batches', 'iLISI_mean', 'iLISI_std', 'iLISI_norm_mean', 'ASW_batch_overall', 'per_sample_path', 'summary_path']
+2026-05-15 16:12:38,452 - INFO - [DEBUG] ari_clustering result keys: ['metrics', 'interpretation', 'n_samples', 'label_column', 'sev.level_values', 'per_sample_path', 'summary_path', 'metrics_json_path']
+2026-05-15 16:12:38,452 - INFO - [DEBUG] trajectory_analysis result keys: ['spearman_corr', 'spearman_p', 'n_samples', 'data', 'pseudotime_col', 'severity_col']
+2026-05-15 16:12:38,452 - INFO - [DEBUG] pseudotime_embeddings_custom result keys: ['paths', 'anova_anchor', 'anova_anchor_scipy', 'nn_gap_summary', 'nn_gap_per_sample']
+2026-05-15 16:12:38,452 - INFO - [DEBUG] batch_mixing result keys: ['histogram_path', 'mean_same_batch_proportion', 'median_same_batch_proportion', 'expected_same_batch_proportion', 'violin_path', 'mixing_matrix_annotated_path', 'mixing_matrix_clean_path', 'k_neighbors', 'n_samples']
+2026-05-15 16:12:38,452 - INFO - [DEBUG] Collected metrics: {'n_samples': 25, 'batch_partial_eta_sq': 0.4008001580823837, 'severity_partial_eta_sq': 0.41510142869567873, 'interaction_partial_eta_sq': 0.7463011405471395, 'iLISI_norm': 0.7143936103620905, 'ASW_batch': 0.6543718635786848, 'ARI': 0.07429598562013182, 'NMI': 0.20890650593901566, 'Avg_Purity': np.float64(0.5464285714285714), 'Spearman_Correlation': np.float64(0.47959402649294786), 'Spearman_pval': np.float64(0.015267769311193353), 'Mean_NN_Severity_Gap': 0.9, 'Custom_ANOVA_eta_sq': 0.1435498225463331, 'Custom_ANOVA_omega_sq': -0.09012360303829826, 'Mean_Same_Batch_Proportion': 0.206, 'Expected_Same_Batch_Proportion': 0.19999999999999996}
+2026-05-15 16:12:38,489 - INFO - Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv with column 'SampleDisco-25'
+[16:12:38] covid_25_sample: DONE
+[16:12:38] covid_50_sample: loading /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/preprocess/adata_cell.h5ad
+[16:12:45] covid_50_sample: loading tuned embedding /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[16:12:46] covid_50_sample: building sample-level adata for CCA
+[16:12:46] covid_50_sample: running CCA_Call (trajectory_col='sev.level')
+
+CCA Analysis Summary:
+  Sample: score=0.6428 (PC1 + PC5)
+[16:12:47] covid_50_sample: wrote /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+[16:12:47] covid_50_sample: running 7-test benchmark → /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50
+2026-05-15 16:12:47,093 - INFO - Initialized BenchmarkWrapper (explicit paths) with:
+2026-05-15 16:12:47,093 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:12:47,093 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+2026-05-15 16:12:47,093 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:12:47,093 - INFO -   Method name:       SampleDisco
+2026-05-15 16:12:47,093 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50
+2026-05-15 16:12:47,093 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco
+2026-05-15 16:12:47,093 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv
+2026-05-15 16:12:47,093 - INFO - 
+==================================================
+2026-05-15 16:12:47,093 - INFO - Running embedding_visualization...
+2026-05-15 16:12:47,094 - INFO - ==================================================
+2026-05-15 16:12:47,094 - INFO - Running Embedding Visualization...
+2026-05-15 16:12:47,094 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+2026-05-15 16:12:47,096 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[DEBUG] Embedding matrix shape: (50, 10)
+[DEBUG] First 3 embedding indices: ['CoV-105.1-Su', 'CoV-108.1-Su', 'CoV-108.2-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=50, meta_only=491, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su']
+[DEBUG] After alignment: meta_df=(50, 6), embedding_df=(50, 10)
+[DEBUG] Dropped rows -> meta: 491, embed: 0
+2026-05-15 16:12:47,099 - INFO - Performing PCA to 2 components...
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.56155159 0.21874396]
+2026-05-15 16:12:47,102 - INFO - Variance explained by PC1: 56.16%
+2026-05-15 16:12:47,102 - INFO - Variance explained by PC2: 21.87%
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (7): ['Lee', 'SS1', 'SS2', 'Su', 'Wilk', 'Yu', 'Zhu']
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/embedding_visualization/pca_coordinates.csv
+2026-05-15 16:12:47,601 - INFO - Creating sample distance heatmap ordered by severity level...
+[DEBUG] Severity numeric range: 1.000 – 4.000
+[DEBUG] Severity numeric unique values: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+[DEBUG] Distance matrix shape: (50, 50), metric=euclidean
+[DEBUG] Severity-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_severity.png
+2026-05-15 16:12:48,745 - INFO - Creating sample distance heatmap ordered by batch...
+[DEBUG] Distance matrix shape: (50, 50), metric=euclidean
+[DEBUG] Batch-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_batch.png
+[DEBUG] Visualization completed successfully.
+2026-05-15 16:12:49,888 - INFO - Embedding visualization completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/embedding_visualization
+2026-05-15 16:12:49,888 - INFO - 
+==================================================
+2026-05-15 16:12:49,888 - INFO - Running trajectory_anova...
+2026-05-15 16:12:49,888 - INFO - ==================================================
+2026-05-15 16:12:49,888 - INFO - Running Trajectory ANOVA Analysis...
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Using severity column: sev.level
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 50 samples
+
+Merging data...
+  Merged data: 50 samples retained
+
+Performing ANOVA...
+  Analyzing 50 samples with complete data
+  Number of batches: 7
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+2026-05-15 16:12:50,015 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:12:50,019 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:12:50,020 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 7.4468e-01 (η² = 0.051)
+  Severity Effect: p = 1.0000e+00 (η² = 0.000)
+  Interaction: p = 1.0032e-03 (η² = 0.684)
+  Overall Assessment: INEFFECTIVE
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_anova/ANOVA
+2026-05-15 16:12:52,413 - INFO - Trajectory ANOVA completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_anova
+2026-05-15 16:12:52,413 - INFO - 
+==================================================
+2026-05-15 16:12:52,413 - INFO - Running batch_removal...
+2026-05-15 16:12:52,413 - INFO - ==================================================
+2026-05-15 16:12:52,413 - INFO - Running Batch Removal Evaluation...
+Note: dropping 491 metadata rows without data match.
+Batch-removal Evaluation Summary
+================================
+Samples: 50
+Batches: 7 -> ['Lee', 'SS1', 'SS2', 'Su', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 2.5641 ± 0.5552
+iLISI_norm: 0.3663
+ASW-batch: 0.6301
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/batch_removal/Batch_Removal_Evaluation
+2026-05-15 16:12:52,447 - INFO - Batch removal evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/batch_removal
+2026-05-15 16:12:52,447 - INFO - 
+==================================================
+2026-05-15 16:12:52,447 - INFO - Running ari_clustering...
+2026-05-15 16:12:52,448 - INFO - ==================================================
+2026-05-15 16:12:52,448 - INFO - Running ARI Clustering Evaluation...
+Reading metadata and data files...
+Found 4 unique values in 'sev.level': [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Loaded embedding with shape (50, 10) (samples × dimensions)
+Normalizing sample IDs to lowercase for case-insensitive matching...
+Note: dropping 491 metadata rows without data match.
+Successfully aligned 50 samples.
+Found 4 unique sev.level values: [1 2 3 4]
+Using 4 clusters for KMeans clustering
+Performing KMeans clustering with k=4...
+Computing ARI and other metrics...
+Generating visualizations...
+============================================================
+ARI-based Clustering Evaluation Summary (KMeans)
+============================================================
+Label column: sev.level
+Data mode: embedding
+Total samples: 50
+Samples with valid labels: 50
+Unique sev.level values: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.1904
+Normalized Mutual Info (NMI): 0.2174
+Average Cluster Purity: 0.5322
+
+INTERPRETATION:
+------------------------------
+POOR: Very weak agreement between clusters and sev.level
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+2026-05-15 16:12:53,630 - INFO - ARI clustering evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/ari_clustering
+2026-05-15 16:12:53,630 - INFO - 
+==================================================
+2026-05-15 16:12:53,630 - INFO - Running trajectory_analysis...
+2026-05-15 16:12:53,630 - INFO - ==================================================
+2026-05-15 16:12:53,630 - INFO - Running Trajectory Analysis...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   sev.level
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 50 samples
+
+Merging data...
+  Merged data: 50 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 50 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = -0.6003 (p = 4.0569e-06)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation
+2026-05-15 16:12:55,354 - INFO - Trajectory analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/trajectory_analysis
+2026-05-15 16:12:55,355 - INFO - 
+==================================================
+2026-05-15 16:12:55,355 - INFO - Running pseudotime_embeddings_custom...
+2026-05-15 16:12:55,355 - INFO - ==================================================
+2026-05-15 16:12:55,355 - INFO - Running Custom Pseudotime Embeddings Benchmark (simple schema)...
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 29 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq    df          F    PR(>F)
+C(Q('sev.level'))  1.211755   3.0  12.861508  0.000028
+Residual           0.785130  25.0        NaN       NaN
+SciPy F-test: F=12.8615, p=2.803e-05
+Effect sizes: eta²=0.6068, ω²=0.5510
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su      29
+SS2      6
+Wilk     3
+Yu       3
+Lee      3
+SS1      3
+Zhu      3
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 7, n_non_anchor = 21
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 21
+Anchor samples: 29
+Pool samples: 21
+k_neighbors: 1
+
+Results for 'SampleDisco':
+  Mean |Δseverity|: 0.9310
+  95% CI: [0.6207, 1.2767]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+2026-05-15 16:12:55,836 - INFO - 
+==================================================
+2026-05-15 16:12:55,836 - INFO - Running batch_mixing...
+2026-05-15 16:12:55,836 - INFO - ==================================================
+2026-05-15 16:12:55,836 - INFO - Running Batch Mixing Analysis...
+2026-05-15 16:12:55,837 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:12:55,839 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:12:56,156 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_histogram.png
+2026-05-15 16:12:56,156 - INFO - 
+        Expected same-batch proportion: 0.36
+        Observed median: 0.57
+        Observed mean: 0.39
+        
+        Interpretation:
+        - Batch effect removed: distribution centered around 0.36
+        - Batch effect present: distribution shifted toward 1.0
+        - Current shift: 0.22
+        
+2026-05-15 16:12:56,455 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_violin.png
+2026-05-15 16:12:57,088 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_annotated.png
+2026-05-15 16:12:57,533 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_clean.png
+2026-05-15 16:12:57,533 - INFO - Batch mixing analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-50/benchmark_results_SampleDisco/batch_mixing
+2026-05-15 16:12:57,533 - INFO - [DEBUG] embedding_visualization result keys: ['variance_explained', 'n_samples', 'n_features', 'sev_level_range', 'unique_batches', 'batch_labels', 'output_plot', 'output_pca', 'heatmap_severity', 'heatmap_batch']
+2026-05-15 16:12:57,534 - INFO - [DEBUG] trajectory_anova result keys: ['anova_table', 'model', 'desc_stats', 'posthoc', 'data', 'pseudotime_col', 'n_samples', 'n_batches', 'n_severity_levels', 'model_type', 'severity_col']
+2026-05-15 16:12:57,534 - INFO - [DEBUG] batch_removal result keys: ['n_samples', 'batches', 'iLISI_mean', 'iLISI_std', 'iLISI_norm_mean', 'ASW_batch_overall', 'per_sample_path', 'summary_path']
+2026-05-15 16:12:57,534 - INFO - [DEBUG] ari_clustering result keys: ['metrics', 'interpretation', 'n_samples', 'label_column', 'sev.level_values', 'per_sample_path', 'summary_path', 'metrics_json_path']
+2026-05-15 16:12:57,534 - INFO - [DEBUG] trajectory_analysis result keys: ['spearman_corr', 'spearman_p', 'n_samples', 'data', 'pseudotime_col', 'severity_col']
+2026-05-15 16:12:57,534 - INFO - [DEBUG] pseudotime_embeddings_custom result keys: ['paths', 'anova_anchor', 'anova_anchor_scipy', 'nn_gap_summary', 'nn_gap_per_sample']
+2026-05-15 16:12:57,534 - INFO - [DEBUG] batch_mixing result keys: ['histogram_path', 'mean_same_batch_proportion', 'median_same_batch_proportion', 'expected_same_batch_proportion', 'violin_path', 'mixing_matrix_annotated_path', 'mixing_matrix_clean_path', 'k_neighbors', 'n_samples']
+2026-05-15 16:12:57,534 - INFO - [DEBUG] Collected metrics: {'n_samples': 50, 'batch_partial_eta_sq': 0.051307467491988244, 'severity_partial_eta_sq': 7.626068565457315e-13, 'interaction_partial_eta_sq': 0.6842667099588199, 'iLISI_norm': 0.36629404672376753, 'ASW_batch': 0.6301209034365924, 'ARI': 0.19044834577777162, 'NMI': 0.2173523917486884, 'Avg_Purity': np.float64(0.5321637426900585), 'Spearman_Correlation': np.float64(-0.6003330045099137), 'Spearman_pval': np.float64(4.0568621545416e-06), 'Mean_NN_Severity_Gap': 0.9310344827586207, 'Custom_ANOVA_eta_sq': 0.6068225682940915, 'Custom_ANOVA_omega_sq': 0.5509760229834558, 'Mean_Same_Batch_Proportion': 0.38900000000000007, 'Expected_Same_Batch_Proportion': 0.3559183673469388}
+2026-05-15 16:12:57,544 - INFO - Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv with column 'SampleDisco-50'
+[16:12:57] covid_50_sample: DONE
+[16:12:57] covid_100_sample: loading /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess/adata_cell.h5ad
+[16:13:10] covid_100_sample: loading tuned embedding /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[16:13:10] covid_100_sample: building sample-level adata for CCA
+[16:13:11] covid_100_sample: running CCA_Call (trajectory_col='sev.level')
+
+CCA Analysis Summary:
+  Sample: score=0.5368 (PC1 + PC6)
+[16:13:12] covid_100_sample: wrote /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+[16:13:12] covid_100_sample: running 7-test benchmark → /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100
+2026-05-15 16:13:12,169 - INFO - Initialized BenchmarkWrapper (explicit paths) with:
+2026-05-15 16:13:12,170 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:13:12,170 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+2026-05-15 16:13:12,170 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:13:12,170 - INFO -   Method name:       SampleDisco
+2026-05-15 16:13:12,170 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100
+2026-05-15 16:13:12,170 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco
+2026-05-15 16:13:12,170 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv
+2026-05-15 16:13:12,170 - INFO - 
+==================================================
+2026-05-15 16:13:12,170 - INFO - Running embedding_visualization...
+2026-05-15 16:13:12,170 - INFO - ==================================================
+2026-05-15 16:13:12,170 - INFO - Running Embedding Visualization...
+2026-05-15 16:13:12,171 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+2026-05-15 16:13:12,173 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[DEBUG] Embedding matrix shape: (100, 10)
+[DEBUG] First 3 embedding indices: ['CoV-103.1-Su', 'CoV-104.2-Su', 'CoV-105.2-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=100, meta_only=441, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su']
+[DEBUG] After alignment: meta_df=(100, 6), embedding_df=(100, 10)
+[DEBUG] Dropped rows -> meta: 441, embed: 0
+2026-05-15 16:13:12,176 - INFO - Performing PCA to 2 components...
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.59365422 0.23968549]
+2026-05-15 16:13:12,179 - INFO - Variance explained by PC1: 59.37%
+2026-05-15 16:13:12,179 - INFO - Variance explained by PC2: 23.97%
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (10): ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/embedding_visualization/pca_coordinates.csv
+2026-05-15 16:13:12,720 - INFO - Creating sample distance heatmap ordered by severity level...
+[DEBUG] Severity numeric range: 1.000 – 4.000
+[DEBUG] Severity numeric unique values: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+[DEBUG] Distance matrix shape: (100, 100), metric=euclidean
+[DEBUG] Severity-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_severity.png
+2026-05-15 16:13:13,909 - INFO - Creating sample distance heatmap ordered by batch...
+[DEBUG] Distance matrix shape: (100, 100), metric=euclidean
+[DEBUG] Batch-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_batch.png
+[DEBUG] Visualization completed successfully.
+2026-05-15 16:13:15,099 - INFO - Embedding visualization completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/embedding_visualization
+2026-05-15 16:13:15,100 - INFO - 
+==================================================
+2026-05-15 16:13:15,100 - INFO - Running trajectory_anova...
+2026-05-15 16:13:15,100 - INFO - ==================================================
+2026-05-15 16:13:15,100 - INFO - Running Trajectory ANOVA Analysis...
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Using severity column: sev.level
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 100 samples
+
+Merging data...
+  Merged data: 100 samples retained
+
+Performing ANOVA...
+  Analyzing 100 samples with complete data
+  Number of batches: 10
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+2026-05-15 16:13:15,244 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:13:15,248 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:13:15,249 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 2.2172e-01 (η² = 0.147)
+  Severity Effect: p = 1.0000e+00 (η² = -0.000)
+  Interaction: p = 6.4232e-04 (η² = 0.531)
+  Overall Assessment: INEFFECTIVE
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_anova/ANOVA
+2026-05-15 16:13:17,876 - INFO - Trajectory ANOVA completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_anova
+2026-05-15 16:13:17,876 - INFO - 
+==================================================
+2026-05-15 16:13:17,876 - INFO - Running batch_removal...
+2026-05-15 16:13:17,876 - INFO - ==================================================
+2026-05-15 16:13:17,877 - INFO - Running Batch Removal Evaluation...
+Note: dropping 441 metadata rows without data match.
+Batch-removal Evaluation Summary
+================================
+Samples: 100
+Batches: 10 -> ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 2.3526 ± 0.5404
+iLISI_norm: 0.2353
+ASW-batch: 0.6459
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/batch_removal/Batch_Removal_Evaluation
+2026-05-15 16:13:17,919 - INFO - Batch removal evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/batch_removal
+2026-05-15 16:13:17,919 - INFO - 
+==================================================
+2026-05-15 16:13:17,919 - INFO - Running ari_clustering...
+2026-05-15 16:13:17,919 - INFO - ==================================================
+2026-05-15 16:13:17,919 - INFO - Running ARI Clustering Evaluation...
+Reading metadata and data files...
+Found 4 unique values in 'sev.level': [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Loaded embedding with shape (100, 10) (samples × dimensions)
+Normalizing sample IDs to lowercase for case-insensitive matching...
+Note: dropping 441 metadata rows without data match.
+Successfully aligned 100 samples.
+Found 4 unique sev.level values: [1 2 3 4]
+Using 4 clusters for KMeans clustering
+Performing KMeans clustering with k=4...
+Computing ARI and other metrics...
+Generating visualizations...
+============================================================
+ARI-based Clustering Evaluation Summary (KMeans)
+============================================================
+Label column: sev.level
+Data mode: embedding
+Total samples: 100
+Samples with valid labels: 100
+Unique sev.level values: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.1012
+Normalized Mutual Info (NMI): 0.1284
+Average Cluster Purity: 0.5335
+
+INTERPRETATION:
+------------------------------
+POOR: Very weak agreement between clusters and sev.level
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+2026-05-15 16:13:19,624 - INFO - ARI clustering evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/ari_clustering
+2026-05-15 16:13:19,624 - INFO - 
+==================================================
+2026-05-15 16:13:19,624 - INFO - Running trajectory_analysis...
+2026-05-15 16:13:19,624 - INFO - ==================================================
+2026-05-15 16:13:19,624 - INFO - Running Trajectory Analysis...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   sev.level
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 100 samples
+
+Merging data...
+  Merged data: 100 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 100 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.4696 (p = 8.2742e-07)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation
+2026-05-15 16:13:20,958 - INFO - Trajectory analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/trajectory_analysis
+2026-05-15 16:13:20,958 - INFO - 
+==================================================
+2026-05-15 16:13:20,958 - INFO - Running pseudotime_embeddings_custom...
+2026-05-15 16:13:20,958 - INFO - ==================================================
+2026-05-15 16:13:20,958 - INFO - Running Custom Pseudotime Embeddings Benchmark (simple schema)...
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 62 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq    df          F        PR(>F)
+C(Q('sev.level'))  1.764840   3.0  17.984819  2.267234e-08
+Residual           1.897169  58.0        NaN           NaN
+SciPy F-test: F=17.9848, p=2.267e-08
+Effect sizes: eta²=0.4819, ω²=0.4511
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su       62
+SS2      10
+SS1       5
+Wilk      4
+Lee       4
+Wen       3
+Aruna     3
+Yu        3
+Zhu       3
+Mudd      3
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 10, n_non_anchor = 38
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 38
+Anchor samples: 62
+Pool samples: 38
+k_neighbors: 1
+
+Results for 'SampleDisco':
+  Mean |Δseverity|: 1.0323
+  95% CI: [0.8387, 1.2258]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+2026-05-15 16:13:21,433 - INFO - 
+==================================================
+2026-05-15 16:13:21,434 - INFO - Running batch_mixing...
+2026-05-15 16:13:21,434 - INFO - ==================================================
+2026-05-15 16:13:21,434 - INFO - Running Batch Mixing Analysis...
+2026-05-15 16:13:21,434 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:13:21,438 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:13:21,744 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_histogram.png
+2026-05-15 16:13:21,745 - INFO - 
+        Expected same-batch proportion: 0.40
+        Observed median: 0.60
+        Observed mean: 0.41
+        
+        Interpretation:
+        - Batch effect removed: distribution centered around 0.40
+        - Batch effect present: distribution shifted toward 1.0
+        - Current shift: 0.20
+        
+2026-05-15 16:13:22,042 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_violin.png
+2026-05-15 16:13:22,966 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_annotated.png
+2026-05-15 16:13:23,511 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_clean.png
+2026-05-15 16:13:23,511 - INFO - Batch mixing analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-100/benchmark_results_SampleDisco/batch_mixing
+2026-05-15 16:13:23,511 - INFO - [DEBUG] embedding_visualization result keys: ['variance_explained', 'n_samples', 'n_features', 'sev_level_range', 'unique_batches', 'batch_labels', 'output_plot', 'output_pca', 'heatmap_severity', 'heatmap_batch']
+2026-05-15 16:13:23,511 - INFO - [DEBUG] trajectory_anova result keys: ['anova_table', 'model', 'desc_stats', 'posthoc', 'data', 'pseudotime_col', 'n_samples', 'n_batches', 'n_severity_levels', 'model_type', 'severity_col']
+2026-05-15 16:13:23,512 - INFO - [DEBUG] batch_removal result keys: ['n_samples', 'batches', 'iLISI_mean', 'iLISI_std', 'iLISI_norm_mean', 'ASW_batch_overall', 'per_sample_path', 'summary_path']
+2026-05-15 16:13:23,512 - INFO - [DEBUG] ari_clustering result keys: ['metrics', 'interpretation', 'n_samples', 'label_column', 'sev.level_values', 'per_sample_path', 'summary_path', 'metrics_json_path']
+2026-05-15 16:13:23,512 - INFO - [DEBUG] trajectory_analysis result keys: ['spearman_corr', 'spearman_p', 'n_samples', 'data', 'pseudotime_col', 'severity_col']
+2026-05-15 16:13:23,512 - INFO - [DEBUG] pseudotime_embeddings_custom result keys: ['paths', 'anova_anchor', 'anova_anchor_scipy', 'nn_gap_summary', 'nn_gap_per_sample']
+2026-05-15 16:13:23,512 - INFO - [DEBUG] batch_mixing result keys: ['histogram_path', 'mean_same_batch_proportion', 'median_same_batch_proportion', 'expected_same_batch_proportion', 'violin_path', 'mixing_matrix_annotated_path', 'mixing_matrix_clean_path', 'k_neighbors', 'n_samples']
+2026-05-15 16:13:23,512 - INFO - [DEBUG] Collected metrics: {'n_samples': 100, 'batch_partial_eta_sq': 0.14735993636685052, 'severity_partial_eta_sq': -5.1231793747253066e-12, 'interaction_partial_eta_sq': 0.5309479238987843, 'iLISI_norm': 0.2352622847793869, 'ASW_batch': 0.6458779491098668, 'ARI': 0.1012259225139893, 'NMI': 0.12837914628006317, 'Avg_Purity': np.float64(0.5334920634920635), 'Spearman_Correlation': np.float64(0.46959586157691974), 'Spearman_pval': np.float64(8.27416916952385e-07), 'Mean_NN_Severity_Gap': 1.032258064516129, 'Custom_ANOVA_eta_sq': 0.4819321964983884, 'Custom_ANOVA_omega_sq': 0.4511062134697157, 'Mean_Same_Batch_Proportion': 0.4115, 'Expected_Same_Batch_Proportion': 0.39858585858585854}
+2026-05-15 16:13:23,522 - INFO - Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv with column 'SampleDisco-100'
+[16:13:23] covid_100_sample: DONE
+[16:13:23] covid_200_sample: loading /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/preprocess/adata_cell.h5ad
+[16:13:48] covid_200_sample: loading tuned embedding /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[16:13:48] covid_200_sample: building sample-level adata for CCA
+[16:13:50] covid_200_sample: running CCA_Call (trajectory_col='sev.level')
+
+CCA Analysis Summary:
+  Sample: score=0.5614 (PC1 + PC9)
+[16:13:51] covid_200_sample: wrote /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+[16:13:51] covid_200_sample: running 7-test benchmark → /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200
+2026-05-15 16:13:51,273 - INFO - Initialized BenchmarkWrapper (explicit paths) with:
+2026-05-15 16:13:51,274 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:13:51,274 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+2026-05-15 16:13:51,274 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:13:51,274 - INFO -   Method name:       SampleDisco
+2026-05-15 16:13:51,274 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200
+2026-05-15 16:13:51,274 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco
+2026-05-15 16:13:51,274 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv
+2026-05-15 16:13:51,274 - INFO - 
+==================================================
+2026-05-15 16:13:51,274 - INFO - Running embedding_visualization...
+2026-05-15 16:13:51,274 - INFO - ==================================================
+2026-05-15 16:13:51,274 - INFO - Running Embedding Visualization...
+2026-05-15 16:13:51,274 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+2026-05-15 16:13:51,276 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[DEBUG] Embedding matrix shape: (200, 10)
+[DEBUG] First 3 embedding indices: ['CoV-1.1-Wilk', 'CoV-100.1-Su', 'CoV-100.2-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=200, meta_only=341, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.2-Wilk', 'CoV-104.1-Su', 'CoV-105.1-Su', 'CoV-105.2-Su', 'CoV-106.1-Su']
+[DEBUG] After alignment: meta_df=(200, 6), embedding_df=(200, 10)
+[DEBUG] Dropped rows -> meta: 341, embed: 0
+2026-05-15 16:13:51,280 - INFO - Performing PCA to 2 components...
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.7601851  0.19254944]
+2026-05-15 16:13:51,282 - INFO - Variance explained by PC1: 76.02%
+2026-05-15 16:13:51,282 - INFO - Variance explained by PC2: 19.25%
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (11): ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu']...
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/embedding_visualization/pca_coordinates.csv
+2026-05-15 16:13:51,839 - INFO - Creating sample distance heatmap ordered by severity level...
+[DEBUG] Severity numeric range: 1.000 – 4.000
+[DEBUG] Severity numeric unique values: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+[DEBUG] Distance matrix shape: (200, 200), metric=euclidean
+[DEBUG] Severity-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_severity.png
+2026-05-15 16:13:53,054 - INFO - Creating sample distance heatmap ordered by batch...
+[DEBUG] Distance matrix shape: (200, 200), metric=euclidean
+[DEBUG] Batch-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_batch.png
+[DEBUG] Visualization completed successfully.
+2026-05-15 16:13:54,271 - INFO - Embedding visualization completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/embedding_visualization
+2026-05-15 16:13:54,271 - INFO - 
+==================================================
+2026-05-15 16:13:54,271 - INFO - Running trajectory_anova...
+2026-05-15 16:13:54,271 - INFO - ==================================================
+2026-05-15 16:13:54,271 - INFO - Running Trajectory ANOVA Analysis...
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Using severity column: sev.level
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 200 samples
+
+Merging data...
+  Merged data: 200 samples retained
+
+Performing ANOVA...
+  Analyzing 200 samples with complete data
+  Number of batches: 11
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+2026-05-15 16:13:56,020 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:13:56,025 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:13:56,026 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 1.8521e-05 (η² = 0.400)
+  Severity Effect: p = 1.6545e-03 (η² = 0.103)
+  Interaction: p = 3.2647e-14 (η² = 0.573)
+  Overall Assessment: MODERATE
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_anova/ANOVA
+2026-05-15 16:13:58,755 - INFO - Trajectory ANOVA completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_anova
+2026-05-15 16:13:58,755 - INFO - 
+==================================================
+2026-05-15 16:13:58,755 - INFO - Running batch_removal...
+2026-05-15 16:13:58,755 - INFO - ==================================================
+2026-05-15 16:13:58,755 - INFO - Running Batch Removal Evaluation...
+Note: dropping 341 metadata rows without data match.
+Batch-removal Evaluation Summary
+================================
+Samples: 200
+Batches: 11 -> ['Aruna', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 2.1757 ± 0.7942
+iLISI_norm: 0.1978
+ASW-batch: 0.6848
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/batch_removal/Batch_Removal_Evaluation
+2026-05-15 16:13:58,801 - INFO - Batch removal evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/batch_removal
+2026-05-15 16:13:58,802 - INFO - 
+==================================================
+2026-05-15 16:13:58,802 - INFO - Running ari_clustering...
+2026-05-15 16:13:58,802 - INFO - ==================================================
+2026-05-15 16:13:58,802 - INFO - Running ARI Clustering Evaluation...
+Reading metadata and data files...
+Found 4 unique values in 'sev.level': [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Loaded embedding with shape (200, 10) (samples × dimensions)
+Normalizing sample IDs to lowercase for case-insensitive matching...
+Note: dropping 341 metadata rows without data match.
+Successfully aligned 200 samples.
+Found 4 unique sev.level values: [1 2 3 4]
+Using 4 clusters for KMeans clustering
+Performing KMeans clustering with k=4...
+Computing ARI and other metrics...
+Generating visualizations...
+============================================================
+ARI-based Clustering Evaluation Summary (KMeans)
+============================================================
+Label column: sev.level
+Data mode: embedding
+Total samples: 200
+Samples with valid labels: 200
+Unique sev.level values: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.0827
+Normalized Mutual Info (NMI): 0.1092
+Average Cluster Purity: 0.5696
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and sev.level
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+2026-05-15 16:14:00,079 - INFO - ARI clustering evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/ari_clustering
+2026-05-15 16:14:00,079 - INFO - 
+==================================================
+2026-05-15 16:14:00,079 - INFO - Running trajectory_analysis...
+2026-05-15 16:14:00,079 - INFO - ==================================================
+2026-05-15 16:14:00,079 - INFO - Running Trajectory Analysis...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   sev.level
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 200 samples
+
+Merging data...
+  Merged data: 200 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 200 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.4659 (p = 3.5850e-12)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation
+2026-05-15 16:14:01,429 - INFO - Trajectory analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/trajectory_analysis
+2026-05-15 16:14:01,429 - INFO - 
+==================================================
+2026-05-15 16:14:01,429 - INFO - Running pseudotime_embeddings_custom...
+2026-05-15 16:14:01,429 - INFO - ==================================================
+2026-05-15 16:14:01,429 - INFO - Running Custom Pseudotime Embeddings Benchmark (simple schema)...
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 129 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq     df         F        PR(>F)
+C(Q('sev.level'))  2.490447    3.0  26.46865  2.535037e-13
+Residual           3.920435  125.0       NaN           NaN
+SciPy F-test: F=26.4686, p=2.535e-13
+Effect sizes: eta²=0.3885, ω²=0.3720
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su        129
+SS2        23
+SS1        13
+Wilk        8
+Lee         7
+Zhu         6
+Yu          4
+Mudd        3
+Aruna       3
+Wen         2
+Silvin      2
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 11, n_non_anchor = 71
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 71
+Anchor samples: 129
+Pool samples: 71
+k_neighbors: 1
+
+Results for 'SampleDisco':
+  Mean |Δseverity|: 1.0543
+  95% CI: [0.8992, 1.2171]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+2026-05-15 16:14:01,890 - INFO - 
+==================================================
+2026-05-15 16:14:01,890 - INFO - Running batch_mixing...
+2026-05-15 16:14:01,890 - INFO - ==================================================
+2026-05-15 16:14:01,890 - INFO - Running Batch Mixing Analysis...
+2026-05-15 16:14:01,891 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:14:01,893 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:14:02,228 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_histogram.png
+2026-05-15 16:14:02,228 - INFO - 
+        Expected same-batch proportion: 0.44
+        Observed median: 0.60
+        Observed mean: 0.44
+        
+        Interpretation:
+        - Batch effect removed: distribution centered around 0.44
+        - Batch effect present: distribution shifted toward 1.0
+        - Current shift: 0.16
+        
+2026-05-15 16:14:02,538 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_violin.png
+2026-05-15 16:14:03,936 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_annotated.png
+2026-05-15 16:14:04,512 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_clean.png
+2026-05-15 16:14:04,512 - INFO - Batch mixing analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-200/benchmark_results_SampleDisco/batch_mixing
+2026-05-15 16:14:04,512 - INFO - [DEBUG] embedding_visualization result keys: ['variance_explained', 'n_samples', 'n_features', 'sev_level_range', 'unique_batches', 'batch_labels', 'output_plot', 'output_pca', 'heatmap_severity', 'heatmap_batch']
+2026-05-15 16:14:04,512 - INFO - [DEBUG] trajectory_anova result keys: ['anova_table', 'model', 'desc_stats', 'posthoc', 'data', 'pseudotime_col', 'n_samples', 'n_batches', 'n_severity_levels', 'model_type', 'severity_col']
+2026-05-15 16:14:04,513 - INFO - [DEBUG] batch_removal result keys: ['n_samples', 'batches', 'iLISI_mean', 'iLISI_std', 'iLISI_norm_mean', 'ASW_batch_overall', 'per_sample_path', 'summary_path']
+2026-05-15 16:14:04,513 - INFO - [DEBUG] ari_clustering result keys: ['metrics', 'interpretation', 'n_samples', 'label_column', 'sev.level_values', 'per_sample_path', 'summary_path', 'metrics_json_path']
+2026-05-15 16:14:04,513 - INFO - [DEBUG] trajectory_analysis result keys: ['spearman_corr', 'spearman_p', 'n_samples', 'data', 'pseudotime_col', 'severity_col']
+2026-05-15 16:14:04,513 - INFO - [DEBUG] pseudotime_embeddings_custom result keys: ['paths', 'anova_anchor', 'anova_anchor_scipy', 'nn_gap_summary', 'nn_gap_per_sample']
+2026-05-15 16:14:04,513 - INFO - [DEBUG] batch_mixing result keys: ['histogram_path', 'mean_same_batch_proportion', 'median_same_batch_proportion', 'expected_same_batch_proportion', 'violin_path', 'mixing_matrix_annotated_path', 'mixing_matrix_clean_path', 'k_neighbors', 'n_samples']
+2026-05-15 16:14:04,513 - INFO - [DEBUG] Collected metrics: {'n_samples': 200, 'batch_partial_eta_sq': 0.4001732203109829, 'severity_partial_eta_sq': 0.10280441072214744, 'interaction_partial_eta_sq': 0.5727912529372587, 'iLISI_norm': 0.19779201025586302, 'ASW_batch': 0.6847991366937964, 'ARI': 0.0826550633356959, 'NMI': 0.10916031798573456, 'Avg_Purity': np.float64(0.5695666969147006), 'Spearman_Correlation': np.float64(0.4659331715706545), 'Spearman_pval': np.float64(3.585040890273156e-12), 'Mean_NN_Severity_Gap': 1.054263565891473, 'Custom_ANOVA_eta_sq': 0.38847181081873644, 'Custom_ANOVA_omega_sq': 0.37197534699544055, 'Mean_Same_Batch_Proportion': 0.4435, 'Expected_Same_Batch_Proportion': 0.43542713567839203}
+2026-05-15 16:14:04,523 - INFO - Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv with column 'SampleDisco-200'
+[16:14:04] covid_200_sample: DONE
+[16:14:04] covid_279_sample: loading /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/preprocess/adata_cell.h5ad
+[16:14:22] covid_279_sample: loading tuned embedding /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[16:14:22] covid_279_sample: building sample-level adata for CCA
+[16:14:25] covid_279_sample: running CCA_Call (trajectory_col='sev.level')
+
+CCA Analysis Summary:
+  Sample: score=0.6722 (PC1 + PC10)
+[16:14:26] covid_279_sample: wrote /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+[16:14:26] covid_279_sample: running 7-test benchmark → /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279
+2026-05-15 16:14:26,302 - INFO - Initialized BenchmarkWrapper (explicit paths) with:
+2026-05-15 16:14:26,302 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:14:26,302 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+2026-05-15 16:14:26,302 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:14:26,302 - INFO -   Method name:       SampleDisco
+2026-05-15 16:14:26,302 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279
+2026-05-15 16:14:26,302 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco
+2026-05-15 16:14:26,302 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv
+2026-05-15 16:14:26,302 - INFO - 
+==================================================
+2026-05-15 16:14:26,302 - INFO - Running embedding_visualization...
+2026-05-15 16:14:26,302 - INFO - ==================================================
+2026-05-15 16:14:26,302 - INFO - Running Embedding Visualization...
+2026-05-15 16:14:26,302 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+2026-05-15 16:14:26,305 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[DEBUG] Embedding matrix shape: (249, 10)
+[DEBUG] First 3 embedding indices: ['CoV-100.1-Su', 'CoV-100.2-Su', 'CoV-101.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=249, meta_only=292, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-118.1-Su', 'CoV-121.1-Su', 'CoV-122.1-Su']
+[DEBUG] After alignment: meta_df=(249, 6), embedding_df=(249, 10)
+[DEBUG] Dropped rows -> meta: 292, embed: 0
+2026-05-15 16:14:26,308 - INFO - Performing PCA to 2 components...
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.3331485  0.14857686]
+2026-05-15 16:14:26,310 - INFO - Variance explained by PC1: 33.31%
+2026-05-15 16:14:26,310 - INFO - Variance explained by PC2: 14.86%
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (1): ['Su']
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/embedding_visualization/pca_coordinates.csv
+2026-05-15 16:14:26,769 - INFO - Creating sample distance heatmap ordered by severity level...
+[DEBUG] Severity numeric range: 1.000 – 4.000
+[DEBUG] Severity numeric unique values: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+[DEBUG] Distance matrix shape: (249, 249), metric=euclidean
+[DEBUG] Severity-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_severity.png
+2026-05-15 16:14:28,043 - INFO - Creating sample distance heatmap ordered by batch...
+[DEBUG] Distance matrix shape: (249, 249), metric=euclidean
+[DEBUG] Batch-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_batch.png
+[DEBUG] Visualization completed successfully.
+2026-05-15 16:14:29,328 - INFO - Embedding visualization completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/embedding_visualization
+2026-05-15 16:14:29,328 - INFO - 
+==================================================
+2026-05-15 16:14:29,328 - INFO - Running trajectory_anova...
+2026-05-15 16:14:29,328 - INFO - ==================================================
+2026-05-15 16:14:29,328 - INFO - Running Trajectory ANOVA Analysis...
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Using severity column: sev.level
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 249 samples
+
+Merging data...
+  Merged data: 249 samples retained
+
+Performing ANOVA...
+  Analyzing 249 samples with complete data
+  Number of batches: 1
+  Number of severity levels: 4
+  Only ONE batch detected → falling back to ONE-WAY ANOVA on severity_level.
+  ANOVA table index: ['C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+2026-05-15 16:14:29,704 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:14:29,708 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:14:29,709 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: (no batch factor — single-batch dataset)
+  Severity Effect: p = 5.5164e-34 (η² = 0.474)
+  Interaction: (not applicable for one-way severity model)
+  Overall Assessment: EXCELLENT
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_anova/ANOVA
+2026-05-15 16:14:31,708 - INFO - Trajectory ANOVA completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_anova
+2026-05-15 16:14:31,708 - INFO - 
+==================================================
+2026-05-15 16:14:31,708 - INFO - Running batch_removal...
+2026-05-15 16:14:31,708 - INFO - ==================================================
+2026-05-15 16:14:31,708 - INFO - Running Batch Removal Evaluation...
+Note: dropping 292 metadata rows without data match.
+2026-05-15 16:14:31,746 - ERROR - Error in batch removal evaluation: Number of labels is 1. Valid values are 2 to n_samples - 1 (inclusive)
+2026-05-15 16:14:31,746 - INFO - 
+==================================================
+2026-05-15 16:14:31,746 - INFO - Running ari_clustering...
+2026-05-15 16:14:31,746 - INFO - ==================================================
+2026-05-15 16:14:31,746 - INFO - Running ARI Clustering Evaluation...
+Reading metadata and data files...
+Found 4 unique values in 'sev.level': [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Loaded embedding with shape (249, 10) (samples × dimensions)
+Normalizing sample IDs to lowercase for case-insensitive matching...
+Note: dropping 292 metadata rows without data match.
+Successfully aligned 249 samples.
+Found 4 unique sev.level values: [1 2 3 4]
+Using 4 clusters for KMeans clustering
+Performing KMeans clustering with k=4...
+Computing ARI and other metrics...
+Generating visualizations...
+============================================================
+ARI-based Clustering Evaluation Summary (KMeans)
+============================================================
+Label column: sev.level
+Data mode: embedding
+Total samples: 249
+Samples with valid labels: 249
+Unique sev.level values: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.1887
+Normalized Mutual Info (NMI): 0.2168
+Average Cluster Purity: 0.6116
+
+INTERPRETATION:
+------------------------------
+POOR: Very weak agreement between clusters and sev.level
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+2026-05-15 16:14:33,016 - INFO - ARI clustering evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/ari_clustering
+2026-05-15 16:14:33,016 - INFO - 
+==================================================
+2026-05-15 16:14:33,016 - INFO - Running trajectory_analysis...
+2026-05-15 16:14:33,016 - INFO - ==================================================
+2026-05-15 16:14:33,016 - INFO - Running Trajectory Analysis...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   sev.level
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 249 samples
+
+Merging data...
+  Merged data: 249 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 249 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.7119 (p = 8.5878e-40)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation
+2026-05-15 16:14:34,351 - INFO - Trajectory analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/trajectory_analysis
+2026-05-15 16:14:34,351 - INFO - 
+==================================================
+2026-05-15 16:14:34,351 - INFO - Running pseudotime_embeddings_custom...
+2026-05-15 16:14:34,351 - INFO - ==================================================
+2026-05-15 16:14:34,351 - INFO - Running Custom Pseudotime Embeddings Benchmark (simple schema)...
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 249 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq     df         F        PR(>F)
+C(Q('sev.level'))  3.093346    3.0  73.64234  5.516384e-34
+Residual           3.430408  245.0       NaN           NaN
+SciPy F-test: F=73.6423, p=5.516e-34
+Effect sizes: eta²=0.4742, ω²=0.4667
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su    249
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 1, n_non_anchor = 0
+
+[INFO] Only anchor batch present in data. Skipping nearest-neighbor severity gap analysis.
+============================================================
+
+2026-05-15 16:14:34,588 - INFO - 
+==================================================
+2026-05-15 16:14:34,588 - INFO - Running batch_mixing...
+2026-05-15 16:14:34,588 - INFO - ==================================================
+2026-05-15 16:14:34,588 - INFO - Running Batch Mixing Analysis...
+2026-05-15 16:14:34,589 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:14:34,591 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:14:35,518 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_histogram.png
+2026-05-15 16:14:35,518 - INFO - 
+        Expected same-batch proportion: 1.00
+        Observed median: 1.00
+        Observed mean: 1.00
+        
+        Interpretation:
+        - Batch effect removed: distribution centered around 1.00
+        - Batch effect present: distribution shifted toward 1.0
+        - Current shift: 0.00
+        
+2026-05-15 16:14:35,792 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_violin.png
+2026-05-15 16:14:36,595 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_annotated.png
+2026-05-15 16:14:36,941 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_clean.png
+2026-05-15 16:14:36,941 - INFO - Batch mixing analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-279/benchmark_results_SampleDisco/batch_mixing
+2026-05-15 16:14:36,942 - INFO - [DEBUG] embedding_visualization result keys: ['variance_explained', 'n_samples', 'n_features', 'sev_level_range', 'unique_batches', 'batch_labels', 'output_plot', 'output_pca', 'heatmap_severity', 'heatmap_batch']
+2026-05-15 16:14:36,942 - INFO - [DEBUG] trajectory_anova result keys: ['anova_table', 'model', 'desc_stats', 'posthoc', 'data', 'pseudotime_col', 'n_samples', 'n_batches', 'n_severity_levels', 'model_type', 'severity_col']
+2026-05-15 16:14:36,942 - WARNING - Skipping batch_removal in summary - status was not 'success'
+2026-05-15 16:14:36,942 - INFO - [DEBUG] ari_clustering result keys: ['metrics', 'interpretation', 'n_samples', 'label_column', 'sev.level_values', 'per_sample_path', 'summary_path', 'metrics_json_path']
+2026-05-15 16:14:36,942 - INFO - [DEBUG] trajectory_analysis result keys: ['spearman_corr', 'spearman_p', 'n_samples', 'data', 'pseudotime_col', 'severity_col']
+2026-05-15 16:14:36,942 - INFO - [DEBUG] pseudotime_embeddings_custom result keys: ['paths', 'anova_anchor', 'anova_anchor_scipy', 'nn_gap_summary', 'nn_gap_per_sample']
+2026-05-15 16:14:36,942 - INFO - [DEBUG] batch_mixing result keys: ['histogram_path', 'mean_same_batch_proportion', 'median_same_batch_proportion', 'expected_same_batch_proportion', 'violin_path', 'mixing_matrix_annotated_path', 'mixing_matrix_clean_path', 'k_neighbors', 'n_samples']
+2026-05-15 16:14:36,942 - INFO - [DEBUG] Collected metrics: {'n_samples': 249, 'severity_partial_eta_sq': 0.47416657561982123, 'ARI': 0.18868072888123835, 'NMI': 0.21678405424716365, 'Avg_Purity': np.float64(0.6116457222645342), 'Spearman_Correlation': np.float64(0.7119343670782), 'Spearman_pval': np.float64(8.587825956734698e-40), 'Custom_ANOVA_eta_sq': 0.47416657561982123, 'Custom_ANOVA_omega_sq': 0.46672608399478016, 'Mean_Same_Batch_Proportion': 1.0, 'Expected_Same_Batch_Proportion': 1.0}
+2026-05-15 16:14:36,952 - INFO - Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv with column 'SampleDisco-249'
+[16:14:36] covid_279_sample: DONE
+[16:14:36] covid_400_sample: loading /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/preprocess/adata_cell.h5ad
+[16:14:47] covid_400_sample: loading tuned embedding /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[16:14:47] covid_400_sample: building sample-level adata for CCA
+[16:14:54] covid_400_sample: running CCA_Call (trajectory_col='sev.level')
+
+CCA Analysis Summary:
+  Sample: score=0.5789 (PC1 + PC4)
+[16:14:55] covid_400_sample: wrote /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+[16:14:55] covid_400_sample: running 7-test benchmark → /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400
+2026-05-15 16:14:55,484 - INFO - Initialized BenchmarkWrapper (explicit paths) with:
+2026-05-15 16:14:55,484 - INFO -   Meta CSV:          /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:14:55,484 - INFO -   Pseudotime CSV:    /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/sampledisco_tuned/CCA/pseudotime_sample.csv
+2026-05-15 16:14:55,484 - INFO -   Embedding CSV:     /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:14:55,484 - INFO -   Method name:       SampleDisco
+2026-05-15 16:14:55,484 - INFO -   Output base dir:   /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400
+2026-05-15 16:14:55,484 - INFO -   Run output dir:    /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco
+2026-05-15 16:14:55,485 - INFO -   Summary CSV:       /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv
+2026-05-15 16:14:55,485 - INFO - 
+==================================================
+2026-05-15 16:14:55,485 - INFO - Running embedding_visualization...
+2026-05-15 16:14:55,485 - INFO - ==================================================
+2026-05-15 16:14:55,485 - INFO - Running Embedding Visualization...
+2026-05-15 16:14:55,485 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+[DEBUG] Metadata loaded: shape=(541, 7), columns=['sample', 'study', 'age', 'sex', 'severity', 'batch', 'sev.level']
+2026-05-15 16:14:55,487 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+[DEBUG] Embedding matrix shape: (405, 10)
+[DEBUG] First 3 embedding indices: ['CoV-1.1-Wilk', 'CoV-1.2-Wilk', 'CoV-100.1-Su']
+[DEBUG] Setting meta_df index to 'sample'
+[DEBUG] Overlap report: common=405, meta_only=136, embed_only=0
+[DEBUG] Example meta_only IDs: ['CoV-118.1-Su', 'CoV-121.1-Su', 'CoV-122.1-Su', 'CoV-124.1-Su', 'CoV-131-Su']
+[DEBUG] After alignment: meta_df=(405, 6), embedding_df=(405, 10)
+[DEBUG] Dropped rows -> meta: 136, embed: 0
+2026-05-15 16:14:55,491 - INFO - Performing PCA to 2 components...
+[DEBUG] Running PCA on aligned embedding_df...
+[DEBUG] PCA done. Explained variance ratio: [0.60686022 0.21187492]
+2026-05-15 16:14:55,494 - INFO - Variance explained by PC1: 60.69%
+2026-05-15 16:14:55,494 - INFO - Variance explained by PC2: 21.19%
+[DEBUG] Creating figure...
+[DEBUG] Plotting sev.level panel...
+[DEBUG] sev.level raw range: min=1, max=4
+[DEBUG] sev.level normalized range: 0.000–1.000
+[DEBUG] Plotting batch panel...
+[DEBUG] Unique batches (12): ['Aruna', 'Guo', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk']...
+[DEBUG] Saving figure to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/embedding_visualization/embedding_overview.png
+[DEBUG] Saving PCA coordinates to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/embedding_visualization/pca_coordinates.csv
+2026-05-15 16:14:56,089 - INFO - Creating sample distance heatmap ordered by severity level...
+[DEBUG] Severity numeric range: 1.000 – 4.000
+[DEBUG] Severity numeric unique values: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+[DEBUG] Distance matrix shape: (405, 405), metric=euclidean
+[DEBUG] Severity-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_severity.png
+2026-05-15 16:14:57,460 - INFO - Creating sample distance heatmap ordered by batch...
+[DEBUG] Distance matrix shape: (405, 405), metric=euclidean
+[DEBUG] Batch-ordered heatmap saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/embedding_visualization/sample_distance_heatmap_batch.png
+[DEBUG] Visualization completed successfully.
+2026-05-15 16:14:58,789 - INFO - Embedding visualization completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/embedding_visualization
+2026-05-15 16:14:58,789 - INFO - 
+==================================================
+2026-05-15 16:14:58,789 - INFO - Running trajectory_anova...
+2026-05-15 16:14:58,789 - INFO - ==================================================
+2026-05-15 16:14:58,789 - INFO - Running Trajectory ANOVA Analysis...
+
+==================================================
+STARTING TWO-WAY ANOVA TRAJECTORY ANALYSIS
+==================================================
+Using severity column: sev.level
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 405 samples
+
+Merging data...
+  Merged data: 405 samples retained
+
+Performing ANOVA...
+  Analyzing 405 samples with complete data
+  Number of batches: 12
+  Number of severity levels: 4
+  Multiple batches detected → running TWO-WAY ANOVA (batch + severity + interaction).
+  ANOVA table index: ['C(batch)', 'C(severity_level)', 'C(batch):C(severity_level)', 'Residual']
+  ANOVA table columns: ['sum_sq', 'df', 'F', 'PR(>F)']
+
+Creating visualizations...
+2026-05-15 16:14:59,583 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:14:59,588 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+2026-05-15 16:14:59,589 - INFO - Using categorical units to plot a list of strings that are all parsable as floats or dates. If these strings should be plotted as numbers, cast to the appropriate data type before plotting.
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_anova/ANOVA/twoway_anova_summary.txt
+
+==================================================
+KEY RESULTS:
+  Batch Effect: p = 2.5241e-05 (η² = 0.242)
+  Severity Effect: p = 3.3513e-01 (η² = 0.009)
+  Interaction: p = 3.4619e-05 (η² = 0.211)
+  Overall Assessment: POOR
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_anova/ANOVA
+2026-05-15 16:15:02,411 - INFO - Trajectory ANOVA completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_anova
+2026-05-15 16:15:02,411 - INFO - 
+==================================================
+2026-05-15 16:15:02,411 - INFO - Running batch_removal...
+2026-05-15 16:15:02,411 - INFO - ==================================================
+2026-05-15 16:15:02,411 - INFO - Running Batch Removal Evaluation...
+Note: dropping 136 metadata rows without data match.
+Batch-removal Evaluation Summary
+================================
+Samples: 405
+Batches: 12 -> ['Aruna', 'Guo', 'Lee', 'Mudd', 'SS1', 'SS2', 'Silvin', 'Su', 'Wen', 'Wilk', 'Yu', 'Zhu']
+
+iLISI (mean ± sd): 2.4492 ± 1.1240
+iLISI_norm: 0.2041
+ASW-batch: 0.6266
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/batch_removal/Batch_Removal_Evaluation
+2026-05-15 16:15:02,470 - INFO - Batch removal evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/batch_removal
+2026-05-15 16:15:02,470 - INFO - 
+==================================================
+2026-05-15 16:15:02,470 - INFO - Running ari_clustering...
+2026-05-15 16:15:02,471 - INFO - ==================================================
+2026-05-15 16:15:02,471 - INFO - Running ARI Clustering Evaluation...
+Reading metadata and data files...
+Found 4 unique values in 'sev.level': [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Loaded embedding with shape (405, 10) (samples × dimensions)
+Normalizing sample IDs to lowercase for case-insensitive matching...
+Note: dropping 136 metadata rows without data match.
+Successfully aligned 405 samples.
+Found 4 unique sev.level values: [1 2 3 4]
+Using 4 clusters for KMeans clustering
+Performing KMeans clustering with k=4...
+Computing ARI and other metrics...
+Generating visualizations...
+============================================================
+ARI-based Clustering Evaluation Summary (KMeans)
+============================================================
+Label column: sev.level
+Data mode: embedding
+Total samples: 405
+Samples with valid labels: 405
+Unique sev.level values: 4 -> [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+Number of clusters used: 4
+
+METRICS:
+------------------------------
+Adjusted Rand Index (ARI): 0.0921
+Normalized Mutual Info (NMI): 0.1032
+Average Cluster Purity: 0.5421
+
+INTERPRETATION:
+------------------------------
+VERY POOR: Almost no agreement between clusters and sev.level
+
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/ari_clustering/ARI_Clustering_Evaluation
+============================================================
+2026-05-15 16:15:04,127 - INFO - ARI clustering evaluation completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/ari_clustering
+2026-05-15 16:15:04,127 - INFO - 
+==================================================
+2026-05-15 16:15:04,127 - INFO - Running trajectory_analysis...
+2026-05-15 16:15:04,127 - INFO - ==================================================
+2026-05-15 16:15:04,127 - INFO - Running Trajectory Analysis...
+
+==================================================
+STARTING TRAJECTORY CORRELATION ANALYSIS
+==================================================
+  Using severity column:   sev.level
+  Using pseudotime column: pseudotime
+Loading data files...
+  Loaded metadata: 541 samples
+  Loaded pseudotime: 405 samples
+
+Merging data...
+  Merged data: 405 samples retained
+
+Calculating Spearman correlation...
+  Analyzing 405 samples with complete data
+
+Creating visualizations...
+  Saved plots to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_plots.png
+
+Generating summary report...
+  Saved summary report to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation/trajectory_correlation_summary.txt
+
+==================================================
+KEY RESULTS:
+  Spearman ρ = 0.5160 (p = 6.1822e-29)
+==================================================
+
+✓ Analysis complete! Check the output directory for results.
+  Output directory: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_analysis/Spearman_Correlation
+2026-05-15 16:15:05,533 - INFO - Trajectory analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/trajectory_analysis
+2026-05-15 16:15:05,533 - INFO - 
+==================================================
+2026-05-15 16:15:05,533 - INFO - Running pseudotime_embeddings_custom...
+2026-05-15 16:15:05,533 - INFO - ==================================================
+2026-05-15 16:15:05,533 - INFO - Running Custom Pseudotime Embeddings Benchmark (simple schema)...
+
+============================================================
+DEBUG: ANOVA Analysis
+============================================================
+pseudotime_col = pseudotime
+make_plots = True
+Anchor batch 'Su' has 249 samples
+Unique severity levels: [np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+ANOVA table:
+                     sum_sq     df          F        PR(>F)
+C(Q('sev.level'))  4.744858    3.0  57.650231  3.117052e-28
+Residual           6.721512  245.0        NaN           NaN
+SciPy F-test: F=57.6502, p=3.117e-28
+Effect sizes: eta²=0.4138, ω²=0.4057
+
+>>> Generating ANOVA plot with effect size...
+>>> ANOVA plot saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/pseudotime_embeddings_custom/su_anova_box_effectsize.png
+
+[DEBUG] Batch value counts:
+batch
+Su        249
+SS2        56
+SS1        25
+Lee        14
+Zhu        14
+Wilk       13
+Aruna      12
+Yu          9
+Wen         5
+Mudd        4
+Guo         2
+Silvin      2
+Name: count, dtype: int64
+[DEBUG] anchor_batch = Su
+[DEBUG] n_batches = 12, n_non_anchor = 156
+
+============================================================
+DEBUG: Nearest Neighbor Severity Gap Analysis
+============================================================
+[DEBUG] neighbor pool size after filters = 156
+Anchor samples: 249
+Pool samples: 156
+k_neighbors: 1
+
+Results for 'SampleDisco':
+  Mean |Δseverity|: 0.8835
+  95% CI: [0.7791, 0.9920]
+
+Summary CSV saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_summary.csv
+Histogram saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/pseudotime_embeddings_custom/nn_severity_gap_hist.png
+============================================================
+
+2026-05-15 16:15:06,031 - INFO - 
+==================================================
+2026-05-15 16:15:06,031 - INFO - Running batch_mixing...
+2026-05-15 16:15:06,031 - INFO - ==================================================
+2026-05-15 16:15:06,031 - INFO - Running Batch Mixing Analysis...
+2026-05-15 16:15:06,032 - INFO - Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv
+2026-05-15 16:15:06,034 - INFO - Loading embeddings from: /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/sampledisco_tuned/sample_embedding/sample_embedding.csv
+2026-05-15 16:15:06,411 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_histogram.png
+2026-05-15 16:15:06,411 - INFO - 
+        Expected same-batch proportion: 0.40
+        Observed median: 0.55
+        Observed mean: 0.44
+        
+        Interpretation:
+        - Batch effect removed: distribution centered around 0.40
+        - Batch effect present: distribution shifted toward 1.0
+        - Current shift: 0.15
+        
+2026-05-15 16:15:06,735 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/batch_mixing/same_batch_distribution_violin.png
+2026-05-15 16:15:08,448 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_annotated.png
+2026-05-15 16:15:09,088 - INFO - Saved: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/batch_mixing/batch_mixing_matrix_normalized_clean.png
+2026-05-15 16:15:09,088 - INFO - Batch mixing analysis completed. Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/SampleDisco-400/benchmark_results_SampleDisco/batch_mixing
+2026-05-15 16:15:09,088 - INFO - [DEBUG] embedding_visualization result keys: ['variance_explained', 'n_samples', 'n_features', 'sev_level_range', 'unique_batches', 'batch_labels', 'output_plot', 'output_pca', 'heatmap_severity', 'heatmap_batch']
+2026-05-15 16:15:09,088 - INFO - [DEBUG] trajectory_anova result keys: ['anova_table', 'model', 'desc_stats', 'posthoc', 'data', 'pseudotime_col', 'n_samples', 'n_batches', 'n_severity_levels', 'model_type', 'severity_col']
+2026-05-15 16:15:09,089 - INFO - [DEBUG] batch_removal result keys: ['n_samples', 'batches', 'iLISI_mean', 'iLISI_std', 'iLISI_norm_mean', 'ASW_batch_overall', 'per_sample_path', 'summary_path']
+2026-05-15 16:15:09,089 - INFO - [DEBUG] ari_clustering result keys: ['metrics', 'interpretation', 'n_samples', 'label_column', 'sev.level_values', 'per_sample_path', 'summary_path', 'metrics_json_path']
+2026-05-15 16:15:09,089 - INFO - [DEBUG] trajectory_analysis result keys: ['spearman_corr', 'spearman_p', 'n_samples', 'data', 'pseudotime_col', 'severity_col']
+2026-05-15 16:15:09,089 - INFO - [DEBUG] pseudotime_embeddings_custom result keys: ['paths', 'anova_anchor', 'anova_anchor_scipy', 'nn_gap_summary', 'nn_gap_per_sample']
+2026-05-15 16:15:09,089 - INFO - [DEBUG] batch_mixing result keys: ['histogram_path', 'mean_same_batch_proportion', 'median_same_batch_proportion', 'expected_same_batch_proportion', 'violin_path', 'mixing_matrix_annotated_path', 'mixing_matrix_clean_path', 'k_neighbors', 'n_samples']
+2026-05-15 16:15:09,089 - INFO - [DEBUG] Collected metrics: {'n_samples': 405, 'batch_partial_eta_sq': 0.24162801445782725, 'severity_partial_eta_sq': 0.008672192534106494, 'interaction_partial_eta_sq': 0.21082874904418925, 'iLISI_norm': 0.2041022464872286, 'ASW_batch': 0.6266428852322721, 'ARI': 0.09207682896937641, 'NMI': 0.10323195716500883, 'Avg_Purity': np.float64(0.5420957096268083), 'Spearman_Correlation': np.float64(0.5159963486192143), 'Spearman_pval': np.float64(6.18220730327253e-29), 'Mean_NN_Severity_Gap': 0.8835341365461847, 'Custom_ANOVA_eta_sq': 0.4138064525189753, 'Custom_ANOVA_omega_sq': 0.405657984211742, 'Mean_Same_Batch_Proportion': 0.4377777777777777, 'Expected_Same_Batch_Proportion': 0.40454712137880444}
+2026-05-15 16:15:09,104 - INFO - Updated summary CSV at: /dcs07/hongkai/data/harry/result/Benchmark_covid/ALL_BENCHMARK_OUTPUTS/benchmark_summary_all_methods.csv with column 'SampleDisco-405'
+[16:15:09] covid_400_sample: DONE
+
+==============================================================================
+Multi-omics ENCODE — SampleDisco (default-α)
+==============================================================================
+
+============================================================
+Evaluating method: SampleDisco
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/sampledisco_default/sample_embedding/sample_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/Benchmark_result/SampleDisco/visualizations/SampleDisco_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/Benchmark_result/SampleDisco/visualizations/SampleDisco_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/Benchmark_result/SampleDisco/visualizations/SampleDisco_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: SampleDisco
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.5904
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5062
+   P-value: 3.70e-02
+
+3. Tissue Preservation Score (higher = better)
+   Value: 10.2950
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  0.4569
+  Median paired distance: 0.3791
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.7182
+  iLISI normalized: 0.8591
+  iLISI P-value:    2.79e-01
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  0.4971
+  Mean between-tissue distance: 5.1181
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/Benchmark_result/SampleDisco
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/summary.csv with column 'SampleDisco'
+[16:15:13] ENCODE: DONE
+
+==============================================================================
+Multi-omics Lutea — SampleDisco (default-α)
+==============================================================================
+
+============================================================
+Evaluating method: SampleDisco
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/sampledisco_default/sample_embedding/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9757
+  Pseudotime-age correlation: -0.9750
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SampleDisco/visualizations/SampleDisco_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SampleDisco/visualizations/SampleDisco_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SampleDisco/visualizations/SampleDisco_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SampleDisco/visualizations/SampleDisco_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SampleDisco
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 1.3223
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5329
+   P-value: 2.00e-03
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9757
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.8042
+  Median paired distance: 1.3030
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.5833
+  iLISI normalized: 0.7917
+  iLISI P-value: 3.66e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9757
+  Pseudotime-age correlation: -0.9750
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/SampleDisco
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Benchmark_result/summary.csv with column 'SampleDisco'
+[16:15:18] Lutea: DONE
+
+==============================================================================
+Multi-omics Retina — SampleDisco (default-α)
+==============================================================================
+
+============================================================
+Evaluating method: SampleDisco
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/sampledisco_default/sample_embedding/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9846
+  Pseudotime-age correlation: -0.9726
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Benchmark_result/SampleDisco/visualizations/SampleDisco_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Benchmark_result/SampleDisco/visualizations/SampleDisco_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Benchmark_result/SampleDisco/visualizations/SampleDisco_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Benchmark_result/SampleDisco/visualizations/SampleDisco_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SampleDisco
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 1.1557
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5348
+   P-value: 4.00e-03
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9846
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.5963
+  Median paired distance: 1.1450
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.6250
+  iLISI normalized: 0.8125
+  iLISI P-value: 2.49e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9846
+  Pseudotime-age correlation: -0.9726
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Benchmark_result/SampleDisco
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Benchmark_result/summary.csv with column 'SampleDisco'
+[16:15:24] Retina: DONE
+
+==============================================================================
+Multi-omics Heart — SampleDisco (default-α)
+==============================================================================
+
+============================================================
+Evaluating method: SampleDisco
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_heart/SD/multiomics/sampledisco_default/sample_embedding/sample_embedding.csv
+Inferring modality from sample names (case insensitive)...
+Modality distribution: {'ATAC': np.int64(22), 'RNA': np.int64(22)}
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 25 samples
+   - Embedding: 44 samples
+   - Sample info: 44 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['MA10_heart', 'MA11_heart', 'MA13_heart', 'MA14_heart', 'MA19_heart']
+   - Embedding index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
+   - Sample info index: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
+   - Sample info sample_id_norm: ['ma10_heart', 'ma10_heart', 'ma11_heart', 'ma11_heart', 'ma13_heart']
+
+3. Checking for duplicate indices:
+   - Metadata duplicates: 1
+     Duplicate samples in metadata: [nan]
+   - Embedding duplicates: 0
+   - Sample info duplicates: 0
+
+4. Creating sample mapping:
+   - Found 44 embedding samples with matching metadata
+   - Matched 22 unique metadata samples
+
+5. Example matches (first 5):
+   Metadata: MA10_heart → Embedding: MA10_heart_ATAC
+   Metadata: MA10_heart → Embedding: MA10_heart_RNA
+   Metadata: MA11_heart → Embedding: MA11_heart_ATAC
+   Metadata: MA11_heart → Embedding: MA11_heart_RNA
+   Metadata: MA13_heart → Embedding: MA13_heart_ATAC
+
+6. Final intersection:
+   - Embedding samples that match metadata: 44
+
+7. Aligned datasets:
+   - Total aligned samples: 44
+   - Unique metadata samples used: 22
+   - First 5 aligned sample names: ['MA10_heart_ATAC', 'MA10_heart_RNA', 'MA11_heart_ATAC', 'MA11_heart_RNA', 'MA13_heart_ATAC']
+
+Note: 3 metadata samples have no corresponding embedding data
+============================================================
+
+Aligned data: 44 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing disease state preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Disease state preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SampleDisco/visualizations/SampleDisco_by_modality.png
+   - Disease state plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SampleDisco/visualizations/SampleDisco_by_disease_state.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SampleDisco/visualizations/SampleDisco_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: SampleDisco
+============================================================
+
+Total samples: 44
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 2.2986
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5074
+   P-value: 1.18e-01
+
+3. Disease State Preservation Score (higher = better)
+   Value: 1.3532
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 22
+  Std paired distance:  1.4275
+  Median paired distance: 1.9641
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.8570
+  iLISI normalized: 0.9285
+  iLISI P-value:    9.29e-01
+
+Disease State Preservation:
+  Number of disease states: 3
+  Disease states: ['acute myocardial infarction', 'cardiomyopathy', 'normal']
+  Mean within-disease_state distance:  4.4285
+  Mean between-disease_state distance: 5.9926
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_heart/Benchmark_result/SampleDisco
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/multi_omics_heart/summary.csv with column 'SampleDisco'
+[16:15:27] Heart: DONE
+[16:15:27] All blocks done in 183s
