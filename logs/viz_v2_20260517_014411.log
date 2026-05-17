@@ -1,0 +1,357 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/louvain/__init__.py:54: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+[01:44:53] reading embedding CSV: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/sample_embedding/sample_embedding.csv
+[01:44:53]   embedding shape: (432, 10)
+[01:44:53] reading cell-level meta from /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/preprocess/atac_rna_integrated.h5ad (backed, no X)
+[01:45:01]   common units: 432
+[01:45:01] rendering first2pc → /users/hjiang/GenoDistance/figure/figure3/embedding/sampledisco_unpaired_test_v2/first2pc
+
+Using precomputed PCs from adata.obsm['X_DR_sampledisco'] with shape (432, 10)  (projection=first2pc)
+
+==================================================
+Finding best PC combination for RNA (X_DR_sampledisco)...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.5319
+PC1 + PC3: CCA score = 0.6020
+PC1 + PC4: CCA score = 0.5193
+PC1 + PC5: CCA score = 0.5135
+PC1 + PC6: CCA score = 0.5132
+PC1 + PC7: CCA score = 0.5576
+PC1 + PC8: CCA score = 0.5172
+PC1 + PC9: CCA score = 0.5431
+PC1 + PC10: CCA score = 0.5131
+PC2 + PC3: CCA score = 0.3509
+PC2 + PC4: CCA score = 0.1991
+PC2 + PC5: CCA score = 0.1475
+PC2 + PC6: CCA score = 0.1466
+PC2 + PC7: CCA score = 0.2545
+PC2 + PC8: CCA score = 0.1564
+PC2 + PC9: CCA score = 0.2308
+PC2 + PC10: CCA score = 0.1833
+PC3 + PC4: CCA score = 0.3312
+PC3 + PC5: CCA score = 0.3104
+PC3 + PC6: CCA score = 0.3141
+PC3 + PC7: CCA score = 0.3705
+PC3 + PC8: CCA score = 0.3104
+PC3 + PC9: CCA score = 0.3799
+PC3 + PC10: CCA score = 0.3210
+PC4 + PC5: CCA score = 0.1330
+PC4 + PC6: CCA score = 0.1303
+PC4 + PC7: CCA score = 0.2278
+PC4 + PC8: CCA score = 0.1399
+PC4 + PC9: CCA score = 0.2277
+PC4 + PC10: CCA score = 0.1550
+PC5 + PC6: CCA score = 0.0450
+PC5 + PC7: CCA score = 0.2019
+PC5 + PC8: CCA score = 0.0639
+PC5 + PC9: CCA score = 0.1943
+PC5 + PC10: CCA score = 0.1082
+PC6 + PC7: CCA score = 0.1943
+PC6 + PC8: CCA score = 0.0609
+PC6 + PC9: CCA score = 0.1915
+PC6 + PC10: CCA score = 0.1039
+PC7 + PC8: CCA score = 0.1977
+PC7 + PC9: CCA score = 0.2564
+PC7 + PC10: CCA score = 0.2150
+PC8 + PC9: CCA score = 0.2114
+PC8 + PC10: CCA score = 0.1103
+PC9 + PC10: CCA score = 0.2179
+Best combination: PC1 + PC3 with score 0.6020
+
+==================================================
+Finding best PC combination for ATAC (X_DR_sampledisco)...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.5377
+PC1 + PC3: CCA score = 0.6105
+PC1 + PC4: CCA score = 0.4583
+PC1 + PC5: CCA score = 0.4556
+PC1 + PC6: CCA score = 0.5822
+PC1 + PC7: CCA score = 0.4674
+PC1 + PC8: CCA score = 0.5746
+PC1 + PC9: CCA score = 0.5896
+PC1 + PC10: CCA score = 0.4505
+PC2 + PC3: CCA score = 0.5053
+PC2 + PC4: CCA score = 0.2225
+PC2 + PC5: CCA score = 0.1946
+PC2 + PC6: CCA score = 0.4041
+PC2 + PC7: CCA score = 0.2778
+PC2 + PC8: CCA score = 0.5669
+PC2 + PC9: CCA score = 0.4645
+PC2 + PC10: CCA score = 0.3034
+PC3 + PC4: CCA score = 0.4910
+PC3 + PC5: CCA score = 0.5030
+PC3 + PC6: CCA score = 0.5609
+PC3 + PC7: CCA score = 0.4980
+PC3 + PC8: CCA score = 0.5638
+PC3 + PC9: CCA score = 0.5519
+PC3 + PC10: CCA score = 0.5789
+PC4 + PC5: CCA score = 0.1518
+PC4 + PC6: CCA score = 0.3703
+PC4 + PC7: CCA score = 0.2030
+PC4 + PC8: CCA score = 0.5342
+PC4 + PC9: CCA score = 0.4377
+PC4 + PC10: CCA score = 0.2287
+PC5 + PC6: CCA score = 0.3689
+PC5 + PC7: CCA score = 0.2541
+PC5 + PC8: CCA score = 0.6061
+PC5 + PC9: CCA score = 0.4410
+PC5 + PC10: CCA score = 0.2811
+PC6 + PC7: CCA score = 0.3792
+PC6 + PC8: CCA score = 0.5900
+PC6 + PC9: CCA score = 0.5356
+PC6 + PC10: CCA score = 0.3749
+PC7 + PC8: CCA score = 0.5317
+PC7 + PC9: CCA score = 0.4570
+PC7 + PC10: CCA score = 0.3400
+PC8 + PC9: CCA score = 0.6482
+PC8 + PC10: CCA score = 0.5317
+PC9 + PC10: CCA score = 0.5202
+Best combination: PC8 + PC9 with score 0.6482
+
+==================================================
+CCA ANALYSIS SUMMARY (X_DR_sampledisco)
+==================================================
+RNA: Best PCs = 1, 3 | CCA r = 0.6020
+ATAC: Best PCs = 8, 9 | CCA r = 0.6482
+Cosine similarity (full embedding space): 0.4682
+Cosine similarity (first 2 PCs only):     0.9548
+Cosine similarity (best 2 PCs):           0.0000
+==================================================
+
+All plots for X_DR_sampledisco saved to: /users/hjiang/GenoDistance/figure/figure3/embedding/sampledisco_unpaired_test_v2/first2pc
+[01:45:03] rendering best2pc → /users/hjiang/GenoDistance/figure/figure3/embedding/sampledisco_unpaired_test_v2/best2pc
+
+Using precomputed PCs from adata.obsm['X_DR_sampledisco'] with shape (432, 10)  (projection=best2pc)
+  best 2-PC pair (combined RNA+ATAC, sev.level) = PC1, PC3
+
+==================================================
+Finding best PC combination for RNA (X_DR_sampledisco)...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.5319
+PC1 + PC3: CCA score = 0.6020
+PC1 + PC4: CCA score = 0.5193
+PC1 + PC5: CCA score = 0.5135
+PC1 + PC6: CCA score = 0.5132
+PC1 + PC7: CCA score = 0.5576
+PC1 + PC8: CCA score = 0.5172
+PC1 + PC9: CCA score = 0.5431
+PC1 + PC10: CCA score = 0.5131
+PC2 + PC3: CCA score = 0.3509
+PC2 + PC4: CCA score = 0.1991
+PC2 + PC5: CCA score = 0.1475
+PC2 + PC6: CCA score = 0.1466
+PC2 + PC7: CCA score = 0.2545
+PC2 + PC8: CCA score = 0.1564
+PC2 + PC9: CCA score = 0.2308
+PC2 + PC10: CCA score = 0.1833
+PC3 + PC4: CCA score = 0.3312
+PC3 + PC5: CCA score = 0.3104
+PC3 + PC6: CCA score = 0.3141
+PC3 + PC7: CCA score = 0.3705
+PC3 + PC8: CCA score = 0.3104
+PC3 + PC9: CCA score = 0.3799
+PC3 + PC10: CCA score = 0.3210
+PC4 + PC5: CCA score = 0.1330
+PC4 + PC6: CCA score = 0.1303
+PC4 + PC7: CCA score = 0.2278
+PC4 + PC8: CCA score = 0.1399
+PC4 + PC9: CCA score = 0.2277
+PC4 + PC10: CCA score = 0.1550
+PC5 + PC6: CCA score = 0.0450
+PC5 + PC7: CCA score = 0.2019
+PC5 + PC8: CCA score = 0.0639
+PC5 + PC9: CCA score = 0.1943
+PC5 + PC10: CCA score = 0.1082
+PC6 + PC7: CCA score = 0.1943
+PC6 + PC8: CCA score = 0.0609
+PC6 + PC9: CCA score = 0.1915
+PC6 + PC10: CCA score = 0.1039
+PC7 + PC8: CCA score = 0.1977
+PC7 + PC9: CCA score = 0.2564
+PC7 + PC10: CCA score = 0.2150
+PC8 + PC9: CCA score = 0.2114
+PC8 + PC10: CCA score = 0.1103
+PC9 + PC10: CCA score = 0.2179
+Best combination: PC1 + PC3 with score 0.6020
+
+==================================================
+Finding best PC combination for ATAC (X_DR_sampledisco)...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.5377
+PC1 + PC3: CCA score = 0.6105
+PC1 + PC4: CCA score = 0.4583
+PC1 + PC5: CCA score = 0.4556
+PC1 + PC6: CCA score = 0.5822
+PC1 + PC7: CCA score = 0.4674
+PC1 + PC8: CCA score = 0.5746
+PC1 + PC9: CCA score = 0.5896
+PC1 + PC10: CCA score = 0.4505
+PC2 + PC3: CCA score = 0.5053
+PC2 + PC4: CCA score = 0.2225
+PC2 + PC5: CCA score = 0.1946
+PC2 + PC6: CCA score = 0.4041
+PC2 + PC7: CCA score = 0.2778
+PC2 + PC8: CCA score = 0.5669
+PC2 + PC9: CCA score = 0.4645
+PC2 + PC10: CCA score = 0.3034
+PC3 + PC4: CCA score = 0.4910
+PC3 + PC5: CCA score = 0.5030
+PC3 + PC6: CCA score = 0.5609
+PC3 + PC7: CCA score = 0.4980
+PC3 + PC8: CCA score = 0.5638
+PC3 + PC9: CCA score = 0.5519
+PC3 + PC10: CCA score = 0.5789
+PC4 + PC5: CCA score = 0.1518
+PC4 + PC6: CCA score = 0.3703
+PC4 + PC7: CCA score = 0.2030
+PC4 + PC8: CCA score = 0.5342
+PC4 + PC9: CCA score = 0.4377
+PC4 + PC10: CCA score = 0.2287
+PC5 + PC6: CCA score = 0.3689
+PC5 + PC7: CCA score = 0.2541
+PC5 + PC8: CCA score = 0.6061
+PC5 + PC9: CCA score = 0.4410
+PC5 + PC10: CCA score = 0.2811
+PC6 + PC7: CCA score = 0.3792
+PC6 + PC8: CCA score = 0.5900
+PC6 + PC9: CCA score = 0.5356
+PC6 + PC10: CCA score = 0.3749
+PC7 + PC8: CCA score = 0.5317
+PC7 + PC9: CCA score = 0.4570
+PC7 + PC10: CCA score = 0.3400
+PC8 + PC9: CCA score = 0.6482
+PC8 + PC10: CCA score = 0.5317
+PC9 + PC10: CCA score = 0.5202
+Best combination: PC8 + PC9 with score 0.6482
+
+==================================================
+CCA ANALYSIS SUMMARY (X_DR_sampledisco)
+==================================================
+RNA: Best PCs = 1, 3 | CCA r = 0.6020
+ATAC: Best PCs = 8, 9 | CCA r = 0.6482
+Cosine similarity (full embedding space): 0.4682
+Cosine similarity (first 2 PCs only):     0.9548
+Cosine similarity (best 2 PCs):           0.0000
+==================================================
+
+All plots for X_DR_sampledisco saved to: /users/hjiang/GenoDistance/figure/figure3/embedding/sampledisco_unpaired_test_v2/best2pc
+[01:45:05] rendering umap → /users/hjiang/GenoDistance/figure/figure3/embedding/sampledisco_unpaired_test_v2/umap
+
+Using precomputed PCs from adata.obsm['X_DR_sampledisco'] with shape (432, 10)  (projection=umap)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/umap/umap_.py:1952: UserWarning: n_jobs value 1 overridden to 1 by setting random_state. Use no seed for parallelism.
+  warn(
+
+==================================================
+Finding best PC combination for RNA (X_DR_sampledisco)...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.5319
+PC1 + PC3: CCA score = 0.6020
+PC1 + PC4: CCA score = 0.5193
+PC1 + PC5: CCA score = 0.5135
+PC1 + PC6: CCA score = 0.5132
+PC1 + PC7: CCA score = 0.5576
+PC1 + PC8: CCA score = 0.5172
+PC1 + PC9: CCA score = 0.5431
+PC1 + PC10: CCA score = 0.5131
+PC2 + PC3: CCA score = 0.3509
+PC2 + PC4: CCA score = 0.1991
+PC2 + PC5: CCA score = 0.1475
+PC2 + PC6: CCA score = 0.1466
+PC2 + PC7: CCA score = 0.2545
+PC2 + PC8: CCA score = 0.1564
+PC2 + PC9: CCA score = 0.2308
+PC2 + PC10: CCA score = 0.1833
+PC3 + PC4: CCA score = 0.3312
+PC3 + PC5: CCA score = 0.3104
+PC3 + PC6: CCA score = 0.3141
+PC3 + PC7: CCA score = 0.3705
+PC3 + PC8: CCA score = 0.3104
+PC3 + PC9: CCA score = 0.3799
+PC3 + PC10: CCA score = 0.3210
+PC4 + PC5: CCA score = 0.1330
+PC4 + PC6: CCA score = 0.1303
+PC4 + PC7: CCA score = 0.2278
+PC4 + PC8: CCA score = 0.1399
+PC4 + PC9: CCA score = 0.2277
+PC4 + PC10: CCA score = 0.1550
+PC5 + PC6: CCA score = 0.0450
+PC5 + PC7: CCA score = 0.2019
+PC5 + PC8: CCA score = 0.0639
+PC5 + PC9: CCA score = 0.1943
+PC5 + PC10: CCA score = 0.1082
+PC6 + PC7: CCA score = 0.1943
+PC6 + PC8: CCA score = 0.0609
+PC6 + PC9: CCA score = 0.1915
+PC6 + PC10: CCA score = 0.1039
+PC7 + PC8: CCA score = 0.1977
+PC7 + PC9: CCA score = 0.2564
+PC7 + PC10: CCA score = 0.2150
+PC8 + PC9: CCA score = 0.2114
+PC8 + PC10: CCA score = 0.1103
+PC9 + PC10: CCA score = 0.2179
+Best combination: PC1 + PC3 with score 0.6020
+
+==================================================
+Finding best PC combination for ATAC (X_DR_sampledisco)...
+Testing 45 PC combinations...
+PC1 + PC2: CCA score = 0.5377
+PC1 + PC3: CCA score = 0.6105
+PC1 + PC4: CCA score = 0.4583
+PC1 + PC5: CCA score = 0.4556
+PC1 + PC6: CCA score = 0.5822
+PC1 + PC7: CCA score = 0.4674
+PC1 + PC8: CCA score = 0.5746
+PC1 + PC9: CCA score = 0.5896
+PC1 + PC10: CCA score = 0.4505
+PC2 + PC3: CCA score = 0.5053
+PC2 + PC4: CCA score = 0.2225
+PC2 + PC5: CCA score = 0.1946
+PC2 + PC6: CCA score = 0.4041
+PC2 + PC7: CCA score = 0.2778
+PC2 + PC8: CCA score = 0.5669
+PC2 + PC9: CCA score = 0.4645
+PC2 + PC10: CCA score = 0.3034
+PC3 + PC4: CCA score = 0.4910
+PC3 + PC5: CCA score = 0.5030
+PC3 + PC6: CCA score = 0.5609
+PC3 + PC7: CCA score = 0.4980
+PC3 + PC8: CCA score = 0.5638
+PC3 + PC9: CCA score = 0.5519
+PC3 + PC10: CCA score = 0.5789
+PC4 + PC5: CCA score = 0.1518
+PC4 + PC6: CCA score = 0.3703
+PC4 + PC7: CCA score = 0.2030
+PC4 + PC8: CCA score = 0.5342
+PC4 + PC9: CCA score = 0.4377
+PC4 + PC10: CCA score = 0.2287
+PC5 + PC6: CCA score = 0.3689
+PC5 + PC7: CCA score = 0.2541
+PC5 + PC8: CCA score = 0.6061
+PC5 + PC9: CCA score = 0.4410
+PC5 + PC10: CCA score = 0.2811
+PC6 + PC7: CCA score = 0.3792
+PC6 + PC8: CCA score = 0.5900
+PC6 + PC9: CCA score = 0.5356
+PC6 + PC10: CCA score = 0.3749
+PC7 + PC8: CCA score = 0.5317
+PC7 + PC9: CCA score = 0.4570
+PC7 + PC10: CCA score = 0.3400
+PC8 + PC9: CCA score = 0.6482
+PC8 + PC10: CCA score = 0.5317
+PC9 + PC10: CCA score = 0.5202
+Best combination: PC8 + PC9 with score 0.6482
+
+==================================================
+CCA ANALYSIS SUMMARY (X_DR_sampledisco)
+==================================================
+RNA: Best PCs = 1, 3 | CCA r = 0.6020
+ATAC: Best PCs = 8, 9 | CCA r = 0.6482
+Cosine similarity (full embedding space): 0.4682
+Cosine similarity (first 2 PCs only):     0.9548
+Cosine similarity (best 2 PCs):           0.0000
+==================================================
+
+/users/hjiang/GenoDistance/figure/figure3/embedding/1.py:495: UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+  leg = ax.legend(
+All plots for X_DR_sampledisco saved to: /users/hjiang/GenoDistance/figure/figure3/embedding/sampledisco_unpaired_test_v2/umap
+[01:45:23] DONE

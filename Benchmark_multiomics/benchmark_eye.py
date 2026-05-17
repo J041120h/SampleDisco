@@ -184,6 +184,29 @@ def align_data(md: pd.DataFrame, emb: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Da
 # Metric 1: Paired Sample Distance
 # =============================================================================
 
+def _compute_paired_partner_rank(emb_array, paired_indices):
+    """Scale-invariant cross-omics alignment score (RANK-based, smaller = better).
+
+    For each unit in a paired (sample, modality) pair, find the rank of its
+    partner unit among all other units (sorted by Euclidean distance, smallest
+    first). Normalize the rank to [0, 1] (0 = partner is the nearest unit;
+    1 = partner is the farthest). Average across both directions of all
+    paired pairs. Pure rank statistic — completely scale-invariant."""
+    n = emb_array.shape[0]
+    if n < 3 or not paired_indices:
+        return float('nan')
+    D = squareform(pdist(emb_array, metric='euclidean')).astype(float)
+    np.fill_diagonal(D, np.inf)
+    denom = max(n - 2, 1)
+    ranks = []
+    for i, j in paired_indices:
+        order_i = np.argsort(D[i])
+        ranks.append(int(np.where(order_i == j)[0][0]) / denom)
+        order_j = np.argsort(D[j])
+        ranks.append(int(np.where(order_j == i)[0][0]) / denom)
+    return float(np.mean(ranks))
+
+
 def compute_paired_distance(
     md: pd.DataFrame,
     emb: np.ndarray,
@@ -1239,6 +1262,7 @@ def evaluate_multimodal_integration(
         # Core metrics for summary CSV aggregation
         "n_samples": len(md_aligned),
         "n_pairs": paired_results["n_pairs"],
+        "paired_partner_rank": _compute_paired_partner_rank(emb_array, paired_results.get("paired_indices", [])),
         "mean_paired_distance": paired_results["mean_paired_distance"],
         "std_paired_distance": paired_results["std_paired_distance"],
         "median_paired_distance": paired_results["median_paired_distance"],
@@ -1285,21 +1309,14 @@ def save_to_summary_csv(
     
     method_name = results.get("method_name", "unknown")
     
-    # Metrics to save
+    # Three metrics only — per project convention:
+    #   1. paired_partner_rank (cross-omics alignment, scale-invariant; smaller = better)
+    #   2. cca_score (biological/trajectory recovery; larger = better)
+    #   3. ASW_modality (batch/modality mixing; larger = better)
     metrics_to_save = {
-        "n_samples": results.get("n_samples"),
-        "n_pairs": results.get("n_pairs"),
-        "mean_paired_distance": results.get("mean_paired_distance"),
-        "median_paired_distance": results.get("median_paired_distance"),
-        "paired_distance_pvalue": results.get("paired_distance_pvalue"),
-        "iLISI_mean": results.get("iLISI_mean"),
-        "iLISI_norm_mean": results.get("iLISI_norm_mean"),
-        "iLISI_pvalue": results.get("iLISI_pvalue"),
-        "ASW_modality": results.get("ASW_modality_overall"),
-        "ASW_pvalue": results.get("ASW_pvalue"),
-        "cca_score": results.get("cca_score"),
-        "cca_pvalue": results.get("cca_pvalue"),
-        "pseudotime_age_correlation": results.get("pseudotime_age_correlation"),
+        "paired_partner_rank": results.get("paired_partner_rank"),
+        "cca_score":           results.get("cca_score"),
+        "ASW_modality":        results.get("ASW_modality_overall"),
     }
     
     # Load existing or create new

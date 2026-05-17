@@ -11,6 +11,31 @@ from sample_embedding import compute_sample_embedding
 from preparation.multi_omics_glue import multiomics_preparation
 from preparation.multi_omics_preprocess import integrate_preprocess
 from preparation.multi_omics_cell_type_cpu import cell_types_multiomics
+from preparation.multi_omics_batch_correction import (
+    harmonize_xglue,
+    XGLUE_KEY,
+    XGLUE_HARMONY_KEY,
+)
+
+
+def _resolve_embedding_keys(adata, cluster_override=None, cmd_override=None):
+    """Return (cluster_emb_key, cmd_emb_key) for the SE / cell typing stack.
+
+    Cluster role (sample-removed) prefers ``X_glue_harmony`` when present —
+    produced by either the Harmony post-pass or the optional 2-run scGLUE —
+    and falls back to ``X_glue`` (single-run scGLUE, no sample removal).
+    CMD role (sample-preserved) is always ``X_glue``. Explicit overrides win.
+    """
+    cluster = cluster_override or (
+        XGLUE_HARMONY_KEY if XGLUE_HARMONY_KEY in adata.obsm else XGLUE_KEY
+    )
+    cmd = cmd_override or XGLUE_KEY
+    for role, key in (("cluster", cluster), ("cmd", cmd)):
+        if key not in adata.obsm:
+            raise KeyError(
+                f"{role}_emb_key={key!r} not in adata.obsm "
+                f"(available: {list(adata.obsm.keys())})")
+    return cluster, cmd
 
 
 def multiomics_wrapper(
@@ -24,6 +49,20 @@ def multiomics_wrapper(
     integration_preprocessing=True,
     derive_sample_embedding=True,
     autotune_enable=False,
+    # Harmony post-pass on X_glue is OFF by default. When ON it runs a SINGLE
+    # Harmony iteration on X_glue with the sample column (and batch, if
+    # present) as batch_keys, producing X_glue_harmony — the sample-REMOVED
+    # cluster / composition embedding (cell typing + A1/A2/A3 read it).
+    # Enable when the user has only one GLUE embedding and wants the V2
+    # cluster-vs-CMD split without retraining scGLUE.
+    glue_batch_correction=False,
+    glue_batch_correction_max_iter=50,
+    # Alternative to glue_batch_correction: run scGLUE TWICE during STEP 1.
+    # The primary run produces X_glue (sample-preserved, batch-removed). When
+    # this flag is True, a second scGLUE run with treat_sample_as_batch=True
+    # produces the sample-REMOVED cluster embedding under the same
+    # ``X_glue_harmony`` obsm key. No Harmony post-pass is then needed.
+    run_glue_twice_for_sample_removal=False,
 
     # ===== Basic Parameters =====
     rna_sample_meta_file=None,
@@ -62,7 +101,13 @@ def multiomics_wrapper(
 
     # GLUE training parameters
     consistency_threshold=0.05,
-    treat_sample_as_batch=True,
+    # GLUE focuses on cross-modality alignment only. Sample-level / batch-level
+    # corrections are handled downstream by STEP 2c (harmonize_xglue), which is
+    # more controllable and uses the user-supplied batch_col. Passing
+    # treat_sample_as_batch=True here would force GLUE to pull every sample to
+    # a common centroid during training, destroying per-sample variance the
+    # downstream CMD block is meant to capture.
+    treat_sample_as_batch=False,
     save_prefix="glue",
 
     # GLUE gene activity parameters
@@ -74,7 +119,9 @@ def multiomics_wrapper(
     existing_cell_types=False,
     n_target_clusters=10,
     cluster_resolution=0.8,
-    use_rep_celltype="X_glue",
+    # If None: auto-resolved at runtime to X_glue_harmony (sample-removed,
+    # cluster role) when present, else X_glue. Explicit override accepted.
+    use_rep_celltype=None,
     markers=None,
     generate_umap_celltype=True,
 
@@ -132,6 +179,7 @@ def multiomics_wrapper(
         "glue_cell_types": False,
         "glue_visualization": False,
         "integration_preprocessing": False,
+        "glue_batch_correction": False,
         "derive_sample_embedding": False,
         "autotune": False,
         "sample_distance_calculation": False,
@@ -184,6 +232,8 @@ def multiomics_wrapper(
             rna_sample_column=rna_sample_column, atac_sample_column=atac_sample_column,
             consistency_threshold=consistency_threshold,
             treat_sample_as_batch=treat_sample_as_batch, save_prefix=save_prefix,
+            run_second_glue_for_sample_removal=run_glue_twice_for_sample_removal,
+            second_run_emb_key=XGLUE_HARMONY_KEY,
             k_neighbors=k_neighbors, use_rep=use_rep, metric=metric,
             use_gpu=use_gpu, verbose=multiomics_verbose,
             plot_columns=plot_columns, output_dir=multiomics_output_dir,
@@ -234,12 +284,54 @@ def multiomics_wrapper(
                 "Integration preprocessing required. Set integration_preprocessing=True "
                 "or ensure preprocessed data exists.")
 
-    # ==================== STEP 2b: CELL TYPE CLUSTERING ====================
-    if cell_type_cluster:
-        if multiomics_verbose:
-            print("Step 2b: Running cell type assignment...")
+    # ==================== STEP 2b: OPTIONAL HARMONY POST-PASS ON X_glue ====================
+    # Off by default. When enabled, runs ONE Harmony iteration on X_glue with
+    # sample_col (and batch_col if present) as batch_keys, producing
+    # X_glue_harmony — the sample-REMOVED cluster / composition embedding.
+    # Skipped automatically if X_glue_harmony already exists (e.g. produced by
+    # the optional second scGLUE training run in STEP 1).
+    if glue_batch_correction:
         if current_adata is None:
             current_adata = ad.read_h5ad(h5ad_path)
+        if XGLUE_HARMONY_KEY in current_adata.obsm:
+            if multiomics_verbose:
+                print(f"Step 2b: '{XGLUE_HARMONY_KEY}' already present "
+                      f"(probably from 2-run scGLUE) — skipping Harmony pass.")
+            status_flags["multiomics"]["glue_batch_correction"] = True
+        else:
+            if multiomics_verbose:
+                print("Step 2b: Harmony post-pass on X_glue → X_glue_harmony "
+                      "(sample-removed cluster embedding)...")
+            current_adata = harmonize_xglue(
+                current_adata,
+                sample_col=sample_col,
+                batch_col=batch_col,
+                use_gpu=use_gpu,
+                max_iter=glue_batch_correction_max_iter,
+                random_state=random_state,
+                verbose=multiomics_verbose,
+            )
+            if XGLUE_HARMONY_KEY in current_adata.obsm:
+                status_flags["multiomics"]["glue_batch_correction"] = True
+                if save_intermediate:
+                    preprocessed_path = (
+                        f"{multiomics_output_dir}/preprocess/adata_preprocessed.h5ad")
+                    if os.path.exists(preprocessed_path):
+                        sc.write(preprocessed_path, current_adata)
+                        if multiomics_verbose:
+                            print(f"[xglue-harmony] re-saved {preprocessed_path}")
+
+    # ==================== STEP 2c: CELL TYPE CLUSTERING ====================
+    # Uses the sample-removed cluster embedding (`X_glue_harmony` when present
+    # — from Harmony post-pass or 2-run scGLUE — else `X_glue`).
+    if cell_type_cluster:
+        if current_adata is None:
+            current_adata = ad.read_h5ad(h5ad_path)
+
+        cluster_key, _ = _resolve_embedding_keys(
+            current_adata, cluster_override=use_rep_celltype)
+        if multiomics_verbose:
+            print(f"Step 2c: Cell type assignment (use_rep={cluster_key})...")
 
         cell_types_func = cell_types_multiomics
         if use_gpu:
@@ -253,7 +345,7 @@ def multiomics_wrapper(
             atac_modality_value="ATAC",
             cell_type_column=celltype_col,
             cluster_resolution=cluster_resolution,
-            use_rep=use_rep_celltype,
+            use_rep=cluster_key,
             k_neighbors=3,
             transfer_metric=metric,
             compute_umap=generate_umap_celltype,
@@ -284,9 +376,7 @@ def multiomics_wrapper(
                 f"Cell type column '{celltype_col}' not in adata.obs. Run "
                 "cell_type_cluster=True or provide pre-typed input.")
 
-        # Multi-omics: GLUE's X_glue serves as both cluster and CMD embedding
-        cluster_emb_key = "X_glue" if "X_glue" in current_adata.obsm else "X_pca_harmony"
-        cmd_emb_key = cluster_emb_key  # already sample-preserved by GLUE
+        cluster_emb_key, cmd_emb_key = _resolve_embedding_keys(current_adata)
 
         if autotune_enable:
             from parameter_selection.autotune import run_autotune

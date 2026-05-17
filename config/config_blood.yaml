@@ -330,7 +330,17 @@ multiomics_compression: "gzip"
 
 # --- GLUE Training Parameters ---
 multiomics_consistency_threshold: 0.05
-multiomics_treat_sample_as_batch: true
+multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V2 default)
+
+# --- V2 cluster-vs-CMD split (both off → single GLUE embedding, legacy behavior) ---
+# Pick at most one of the two:
+#   (a) Harmony post-pass on X_glue removes per-sample variance to produce
+#       X_glue_harmony (sample-removed cluster embedding).
+#   (b) Train scGLUE a SECOND time with treat_sample_as_batch=True; the
+#       second run's embedding is stored under X_glue_harmony.
+multiomics_glue_batch_correction: false
+multiomics_glue_batch_correction_max_iter: 50
+multiomics_run_glue_twice_for_sample_removal: false
 multiomics_save_prefix: "glue"
 
 # --- Neighbor/Metric Parameters ---
@@ -342,7 +352,8 @@ multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: 10
 multiomics_cluster_resolution: 0.8
-multiomics_use_rep_celltype: "X_glue"
+# null → auto-resolve to X_glue_harmony (sample-removed) if present, else X_glue
+multiomics_use_rep_celltype: null
 multiomics_markers: null
 multiomics_generate_umap_celltype: true
 

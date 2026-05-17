@@ -99,6 +99,8 @@ EXCLUDED_METHODS = {
     "fusion_mfa",
     "fusion_concat",
     "cell_embedding_pseudobulk",
+    "SD_expression",       # legacy old-pipeline column — superseded by SampleDisco
+    "SD_proportion",       # legacy old-pipeline column — superseded by SampleDisco
 }
 
 

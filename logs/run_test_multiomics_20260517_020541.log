@@ -1,0 +1,3826 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/louvain/__init__.py:54: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+[02:05:49] torch cuda? True  device: Tesla V100-PCIE-32GB
+[02:05:49] ========== SE: ENCODE ==========
+[02:05:51]   shape=(835934, 1)  obsm=['X_glue']
+[02:05:51]   (no batch col: harmonize_xglue will run sample-only pass)
+[xglue-harmony] X_glue_harmony: harmonize on 835,934 cells × 50 dims, batch_keys=['sample'], use_gpu=True, max_iter=50
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 50 iteration(s).
+	Completed 2 / 50 iteration(s).
+Reach convergence after 2 iteration(s).
+[xglue-harmony] X_glue_harmony: done in 158.7s
+[xglue-harmony] batch_col=None has <2 unique values — skipping X_glue_harmony_nosamp.
+[02:08:30]   harmony: 159.1s; obsm now ['X_glue', 'X_glue_harmony']
+[02:08:30]   cell-typing: RNA=415,746  ATAC=420,188  use_rep=X_glue_harmony
+[02:11:15]     Leiden done in 164.8s; K_c=31
+[02:11:16]     Step 2: GPU KNN (4 builds via torch)
+[02:11:25]       rna→rna  9.2s
+[02:11:34]       rna→atac 9.1s
+[02:11:43]       atac→rna 9.2s
+[02:11:53]       atac→atac 9.3s
+[02:11:53]     Step 3: Jaccard-SNN + label transfer
+[Modality Balance] All clusters balanced, no filtering needed
+[02:11:58]     K_c post-filter: 31
+[sample_embedding] cluster_emb=X_glue_harmony, cmd_emb=X_glue_harmony
+[sample_embedding] 88 units; 835934 cells; cluster_emb dim=50
+[A1] coarse cell-type composition: shape=(88, 31)
+[A2] MiniBatchKMeans K=120...
+[A2] shape=(88, 120)
+[A3] MiniBatchKMeans K=300...
+[A3] shape=(88, 300)
+[CMD] LOO displacement on cmd_emb...
+  [CMD] shape=(88, 248)
+[sample_embedding] weights=[3.111, 1.581, 1.0, 0.6] (n_blocks=4)
+  [batch correction] 2 groups (group only)
+2026-05-17 02:13:11,998 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:13:12,014 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:13:12,015 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:13:12,026 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:13:12,035 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:13:12,044 - harmonypy - INFO - Converged after 3 iterations
+[sample_embedding] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[sample_embedding] done in 83.04s; shape=(88, 10)
+[02:13:33]   default-α SE saved: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[autotune.build_blocks] K-means K=120...
+[autotune.build_blocks] K-means K=300...
+[autotune] search=bayesian  scoring=auto  scope=alpha_only  bounds=(0.1, 10.0)
+2026-05-17 02:14:35,324 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:35,340 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:35,341 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:35,353 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:35,364 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:35,376 - harmonypy - INFO - Converged after 3 iterations
+2026-05-17 02:14:35,396 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:35,411 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:35,411 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:35,424 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:35,433 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:35,442 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:35,450 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:35,467 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:35,482 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:35,483 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:35,496 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:35,506 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:35,517 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:35,527 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:35,545 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:35,560 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:35,561 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:35,572 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:35,583 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:35,593 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:35,604 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:35,623 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:35,636 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:35,637 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:35,649 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:35,662 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:35,674 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:35,689 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:35,764 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:35,777 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:35,778 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:35,787 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:35,796 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:35,805 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:35,815 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:35,934 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:35,947 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:35,947 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:35,962 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:35,972 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:35,981 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:35,990 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:36,119 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:36,133 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:36,133 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:36,144 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:36,158 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:36,176 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:36,188 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:36,331 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:36,346 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:36,346 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:36,356 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:36,365 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:36,375 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:36,384 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:36,533 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:36,551 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:36,551 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:36,563 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:36,572 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:36,581 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:36,590 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:36,699 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:36,713 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:36,713 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:36,724 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:36,735 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:36,746 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:36,757 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:36,876 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:36,890 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:36,890 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:36,902 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:36,911 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:36,920 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:36,929 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:37,098 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:37,113 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:37,113 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:37,123 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:37,132 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:37,142 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:37,151 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:37,309 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:37,324 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:37,325 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:37,336 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:37,348 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:37,359 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:37,373 - harmonypy - INFO - Converged after 4 iterations
+2026-05-17 02:14:37,517 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:37,531 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:37,532 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:37,546 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:37,557 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:37,568 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:37,579 - harmonypy - INFO - Converged after 4 iterations
+[autotune] best cmd_weight=1.0324  score=0.7534  (15 evals)
+  [batch correction] 2 groups (group only)
+2026-05-17 02:14:37,602 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:14:37,616 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:14:37,617 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:14:37,630 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:14:37,641 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:14:37,651 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:14:37,662 - harmonypy - INFO - Converged after 4 iterations
+[autotune] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+[autotune] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_tuned_v2/sample_embedding/autotune_record.txt
+[autotune] done in 64.61s
+[02:14:38]   tuned SE saved: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+[02:14:38] ========== SE: eye_retina ==========
+[02:14:40]   shape=(269810, 1)  obsm=['X_glue']
+[xglue-harmony] X_glue_harmony: harmonize on 269,810 cells × 50 dims, batch_keys=['batch', 'sample'], use_gpu=True, max_iter=50
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 50 iteration(s).
+	Completed 2 / 50 iteration(s).
+Reach convergence after 2 iteration(s).
+[xglue-harmony] X_glue_harmony: done in 82.1s
+[xglue-harmony] X_glue_harmony_nosamp: harmonize on 269,810 cells × 50 dims, batch_keys=['batch'], use_gpu=True, max_iter=50
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 50 iteration(s).
+	Completed 2 / 50 iteration(s).
+Reach convergence after 2 iteration(s).
+[xglue-harmony] X_glue_harmony_nosamp: done in 79.4s
+[02:17:22]   harmony: 161.6s; obsm now ['X_glue', 'X_glue_harmony', 'X_glue_harmony_nosamp']
+[02:17:22]   cell-typing: RNA=134,905  ATAC=134,905  use_rep=X_glue_harmony
+[02:17:52]     Leiden done in 29.6s; K_c=21
+[02:17:52]     Step 2: GPU KNN (4 builds via torch)
+[02:17:53]       rna→rna  1.2s
+[02:17:54]       rna→atac 1.2s
+[02:17:55]       atac→rna 1.2s
+[02:17:57]       atac→atac 1.2s
+[02:17:57]     Step 3: Jaccard-SNN + label transfer
+[Modality Balance] All clusters balanced, no filtering needed
+[02:17:58]     K_c post-filter: 21
+[sample_embedding] cluster_emb=X_glue_harmony, cmd_emb=X_glue_harmony_nosamp
+[sample_embedding] 24 units; 269810 cells; cluster_emb dim=50
+[A1] coarse cell-type composition: shape=(24, 21)
+[A2] MiniBatchKMeans K=120...
+[A2] shape=(24, 120)
+[A3] MiniBatchKMeans K=300...
+[A3] shape=(24, 300)
+[CMD] LOO displacement on cmd_emb...
+  [CMD] shape=(24, 168)
+[sample_embedding] weights=[3.78, 1.581, 1.0, 0.6] (n_blocks=4)
+  [batch correction] 2 groups (group only)
+2026-05-17 02:18:36,482 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:18:36,494 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:18:36,494 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:18:36,504 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:18:36,512 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:18:36,520 - harmonypy - INFO - Converged after 3 iterations
+[sample_embedding] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[sample_embedding] done in 29.65s; shape=(24, 10)
+[02:18:37]   default-α SE saved: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[autotune.build_blocks] K-means K=120...
+[autotune.build_blocks] K-means K=300...
+[autotune] search=bayesian  scoring=auto  scope=alpha_only  bounds=(0.1, 10.0)
+2026-05-17 02:19:07,061 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,075 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,075 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,084 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:07,093 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:07,102 - harmonypy - INFO - Converged after 3 iterations
+2026-05-17 02:19:07,117 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,127 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,128 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,164 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:07,182 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:07,198 - harmonypy - INFO - Converged after 3 iterations
+2026-05-17 02:19:07,212 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,223 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,223 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,244 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:07,254 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:07,263 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:19:07,273 - harmonypy - INFO - Iteration 5 of 30
+2026-05-17 02:19:07,282 - harmonypy - INFO - Converged after 5 iterations
+2026-05-17 02:19:07,295 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,306 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,306 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,315 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:19:07,330 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,342 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,342 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,351 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:19:07,410 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,421 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,422 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,464 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:07,482 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:07,498 - harmonypy - INFO - Converged after 3 iterations
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:19:07,582 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,592 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,593 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,617 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:07,627 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:07,637 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:19:07,649 - harmonypy - INFO - Iteration 5 of 30
+2026-05-17 02:19:07,659 - harmonypy - INFO - Converged after 5 iterations
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:19:07,741 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,753 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,753 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,765 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:07,774 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:07,782 - harmonypy - INFO - Converged after 3 iterations
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:19:07,864 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,876 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,876 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,885 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:19:07,970 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:07,982 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:07,982 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:07,992 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:19:08,086 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:08,097 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:08,097 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:08,109 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:08,119 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:08,129 - harmonypy - INFO - Converged after 3 iterations
+2026-05-17 02:19:08,231 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:08,243 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:08,244 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:08,276 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:08,291 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:08,304 - harmonypy - INFO - Converged after 3 iterations
+2026-05-17 02:19:08,407 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:08,418 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:08,419 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:08,428 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:19:08,536 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:08,547 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:08,547 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:08,560 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:08,570 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:08,580 - harmonypy - INFO - Converged after 3 iterations
+2026-05-17 02:19:08,681 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:08,693 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:08,693 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:08,713 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:08,724 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:08,734 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:19:08,746 - harmonypy - INFO - Iteration 5 of 30
+2026-05-17 02:19:08,758 - harmonypy - INFO - Converged after 5 iterations
+[autotune] best cmd_weight=2.5750  score=0.6573  (15 evals)
+  [batch correction] 2 groups (group only)
+2026-05-17 02:19:08,773 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:19:08,784 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:19:08,784 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:19:08,825 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:19:08,845 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:19:08,866 - harmonypy - INFO - Converged after 3 iterations
+[autotune] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+[autotune] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_tuned_v2/sample_embedding/autotune_record.txt
+[autotune] done in 31.40s
+[02:19:11]   tuned SE saved: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+[02:19:11] ========== SE: eye_lutea ==========
+[02:19:13]   shape=(288686, 1)  obsm=['X_glue']
+[xglue-harmony] X_glue_harmony: harmonize on 288,686 cells × 50 dims, batch_keys=['batch', 'sample'], use_gpu=True, max_iter=50
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 50 iteration(s).
+	Completed 2 / 50 iteration(s).
+Reach convergence after 2 iteration(s).
+[xglue-harmony] X_glue_harmony: done in 80.9s
+[xglue-harmony] X_glue_harmony_nosamp: harmonize on 288,686 cells × 50 dims, batch_keys=['batch'], use_gpu=True, max_iter=50
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 50 iteration(s).
+	Completed 2 / 50 iteration(s).
+Reach convergence after 2 iteration(s).
+[xglue-harmony] X_glue_harmony_nosamp: done in 83.4s
+[02:21:58]   harmony: 164.5s; obsm now ['X_glue', 'X_glue_harmony', 'X_glue_harmony_nosamp']
+[02:21:58]   cell-typing: RNA=144,343  ATAC=144,343  use_rep=X_glue_harmony
+[02:22:29]     Leiden done in 31.3s; K_c=27
+[02:22:30]     Step 2: GPU KNN (4 builds via torch)
+[02:22:31]       rna→rna  1.3s
+[02:22:32]       rna→atac 1.3s
+[02:22:34]       atac→rna 1.3s
+[02:22:35]       atac→atac 1.3s
+[02:22:35]     Step 3: Jaccard-SNN + label transfer
+[Modality Balance] All clusters balanced, no filtering needed
+[02:22:37]     K_c post-filter: 27
+[sample_embedding] cluster_emb=X_glue_harmony, cmd_emb=X_glue_harmony_nosamp
+[sample_embedding] 24 units; 288686 cells; cluster_emb dim=50
+[A1] coarse cell-type composition: shape=(24, 27)
+[A2] MiniBatchKMeans K=120...
+[A2] shape=(24, 120)
+[A3] MiniBatchKMeans K=300...
+[A3] shape=(24, 300)
+[CMD] LOO displacement on cmd_emb...
+  [CMD] shape=(24, 216)
+[sample_embedding] weights=[3.333, 1.581, 1.0, 0.6] (n_blocks=4)
+  [batch correction] 2 groups (group only)
+2026-05-17 02:23:07,766 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:07,778 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:07,778 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:07,787 - harmonypy - INFO - Converged after 1 iteration
+[sample_embedding] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[sample_embedding] done in 29.68s; shape=(24, 10)
+[02:23:08]   default-α SE saved: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[autotune.build_blocks] K-means K=120...
+[autotune.build_blocks] K-means K=300...
+[autotune] search=bayesian  scoring=auto  scope=alpha_only  bounds=(0.1, 10.0)
+2026-05-17 02:23:39,258 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,272 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,272 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,282 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:23:39,299 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,311 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,311 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,320 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:23:39,333 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,345 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,345 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,353 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:23:39,367 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,378 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,379 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,388 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:23:39,401 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,412 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,412 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,421 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:23:39,477 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,488 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,488 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,497 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:39,586 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,596 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,596 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,606 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:39,701 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,712 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,713 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,724 - harmonypy - INFO - Converged after 1 iteration
+2026-05-17 02:23:39,820 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,832 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,832 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,841 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:39,947 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:39,959 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:39,960 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:39,968 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:40,079 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:40,091 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:40,091 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:40,100 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:40,246 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:40,256 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:40,257 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:40,268 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:40,408 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:40,420 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:40,420 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:40,429 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:40,601 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:40,613 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:40,613 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:40,623 - harmonypy - INFO - Converged after 1 iteration
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+2026-05-17 02:23:40,740 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:40,751 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:40,752 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:40,764 - harmonypy - INFO - Converged after 1 iteration
+[autotune] best cmd_weight=1.5285  score=0.6555  (15 evals)
+  [batch correction] 2 groups (group only)
+2026-05-17 02:23:40,783 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:23:40,794 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:23:40,794 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:23:40,803 - harmonypy - INFO - Converged after 1 iteration
+[autotune] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+[autotune] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_tuned_v2/sample_embedding/autotune_record.txt
+[autotune] done in 31.94s
+[02:23:40]   tuned SE saved: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+[02:23:41] ========== SE: heart ==========
+[02:23:43]   shape=(198091, 1)  obsm=['X_glue', 'X_umap']
+[xglue-harmony] X_glue_harmony: harmonize on 198,091 cells × 50 dims, batch_keys=['batch', 'sample'], use_gpu=True, max_iter=50
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 50 iteration(s).
+	Completed 2 / 50 iteration(s).
+	Completed 3 / 50 iteration(s).
+	Completed 4 / 50 iteration(s).
+	Completed 5 / 50 iteration(s).
+	Completed 6 / 50 iteration(s).
+	Completed 7 / 50 iteration(s).
+	Completed 8 / 50 iteration(s).
+	Completed 9 / 50 iteration(s).
+	Completed 10 / 50 iteration(s).
+	Completed 11 / 50 iteration(s).
+	Completed 12 / 50 iteration(s).
+Reach convergence after 12 iteration(s).
+[xglue-harmony] X_glue_harmony: done in 69.6s
+[xglue-harmony] X_glue_harmony_nosamp: harmonize on 198,091 cells × 50 dims, batch_keys=['batch'], use_gpu=True, max_iter=50
+Use GPU mode.
+	Initialization is completed.
+	Completed 1 / 50 iteration(s).
+	Completed 2 / 50 iteration(s).
+	Completed 3 / 50 iteration(s).
+	Completed 4 / 50 iteration(s).
+	Completed 5 / 50 iteration(s).
+	Completed 6 / 50 iteration(s).
+	Completed 7 / 50 iteration(s).
+	Completed 8 / 50 iteration(s).
+	Completed 9 / 50 iteration(s).
+	Completed 10 / 50 iteration(s).
+	Completed 11 / 50 iteration(s).
+	Completed 12 / 50 iteration(s).
+Reach convergence after 12 iteration(s).
+[xglue-harmony] X_glue_harmony_nosamp: done in 75.5s
+[02:26:08]   harmony: 145.2s; obsm now ['X_glue', 'X_umap', 'X_glue_harmony', 'X_glue_harmony_nosamp']
+[02:26:08]   cell-typing: RNA=98,653  ATAC=99,438  use_rep=X_glue_harmony
+[02:26:30]     Leiden done in 22.2s; K_c=11
+[02:26:31]     Step 2: GPU KNN (4 builds via torch)
+[02:26:31]       rna→rna  0.7s
+[02:26:32]       rna→atac 0.7s
+[02:26:33]       atac→rna 0.7s
+[02:26:33]       atac→atac 0.7s
+[02:26:33]     Step 3: Jaccard-SNN + label transfer
+[Modality Balance] All clusters balanced, no filtering needed
+[02:26:34]     K_c post-filter: 11
+[sample_embedding] cluster_emb=X_glue_harmony, cmd_emb=X_glue_harmony_nosamp
+[sample_embedding] 44 units; 198091 cells; cluster_emb dim=50
+[A1] coarse cell-type composition: shape=(44, 11)
+[A2] MiniBatchKMeans K=120...
+[A2] shape=(44, 120)
+[A3] MiniBatchKMeans K=300...
+[A3] shape=(44, 300)
+[CMD] LOO displacement on cmd_emb...
+  [CMD] shape=(44, 88)
+[sample_embedding] weights=[5.222, 1.581, 1.0, 0.6] (n_blocks=4)
+  [batch correction] 2 groups (group only)
+2026-05-17 02:27:01,641 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:27:01,655 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:27:01,655 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:27:01,665 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 02:27:01,676 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 02:27:01,684 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 02:27:01,693 - harmonypy - INFO - Converged after 4 iterations
+[sample_embedding] wrote /dcs07/hongkai/data/harry/result/test/test_run_multiomics/heart/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[sample_embedding] done in 26.31s; shape=(44, 10)
+[02:27:01]   default-α SE saved: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/heart/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+[autotune.build_blocks] K-means K=120...
+[autotune.build_blocks] K-means K=300...
+[autotune] search=bayesian  scoring=auto  scope=alpha_only  bounds=(0.1, 10.0)
+2026-05-17 02:27:28,765 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 02:27:28,781 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 02:27:28,782 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 02:27:28,793 - harmonypy - INFO - Converged after 1 iteration
+[02:27:28] !! heart SE failed: ValueError: could not convert string to float: np.str_('cardiomyopathy')
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/claude/run_test_multiomics.py", line 389, in main
+    se_results[name] = run_se_one_dataset(name, cfg, TEST_ROOT)
+  File "/users/hjiang/GenoDistance/code/claude/run_test_multiomics.py", line 320, in run_se_one_dataset
+    run_autotune(
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 534, in run_autotune
+    best_alpha, best_score, trace = SEARCH_FUNCS[search](objective, alpha_bounds)
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 438, in <lambda>
+    "bayesian":        lambda obj, b: search_bayesian(obj, bounds=b, n_init=5, n_iter=10),
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 408, in search_bayesian
+    s = objective(float(x[0]))
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 527, in objective
+    return float(score_fn(emb_df.values))
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 342, in f
+    vals = [c(emb) for c in components]
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 342, in <listcomp>
+    vals = [c(emb) for c in components]
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 333, in <lambda>
+    components.append(lambda emb: _minmax(_cca_corr(emb, grouping), *SCORING_BOUNDS["cca"]))
+  File "/users/hjiang/GenoDistance/code/parameter_selection/autotune.py", line 164, in _cca_corr
+    t = np.asarray(target, dtype=float).reshape(-1, 1)
+ValueError: could not convert string to float: np.str_('cardiomyopathy')
+[02:27:28] ========== BENCH: ENCODE ==========
+[02:27:37]   evaluating SD_expression ← /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/embeddings/sample_expression_embedding.csv
+
+============================================================
+Evaluating method: SD_expression
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/embeddings/sample_expression_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_expression/visualizations/SD_expression_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_expression/visualizations/SD_expression_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_expression/visualizations/SD_expression_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: SD_expression
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 14.3056
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.4702
+   P-value: 1.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 1.5452
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  9.8733
+  Median paired distance: 11.1261
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.3136
+  iLISI normalized: 0.6568
+  iLISI P-value:    1.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  12.0354
+  Mean between-tissue distance: 18.5968
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_expression
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'SD_expression'
+[02:28:00]   evaluating SD_proportion ← /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/embeddings/sample_proportion_embedding.csv
+
+============================================================
+Evaluating method: SD_proportion
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/embeddings/sample_proportion_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'unknown': np.int64(88)}
+/users/hjiang/GenoDistance/code/Benchmark_multiomics/benchmark_metircs_ENCODE.py:1153: UserWarning: Found 88 samples with unknown modality
+  warnings.warn(f"Found {mod_counts['unknown']} samples with unknown modality")
+[02:28:00]     !! SD_proportion failed: ValueError: No overlapping sample IDs between metadata, embedding, and sample info.
+[02:28:00]   evaluating pilot ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/pilot/pilot_native_embedding.csv
+
+============================================================
+Evaluating method: pilot
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/pilot/pilot_native_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 2 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pilot/visualizations/pilot_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pilot/visualizations/pilot_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pilot/visualizations/pilot_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: pilot
+============================================================
+
+Total samples: 88
+Embedding dimensions: 2
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 1.5402
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5085
+   P-value: 1.86e-01
+
+3. Tissue Preservation Score (higher = better)
+   Value: 0.9815
+   P-value: 7.47e-01
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  7.0879
+  Median paired distance: 0.0007
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.7795
+  iLISI normalized: 0.8898
+  iLISI P-value:    2.00e-02
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  17.3219
+  Mean between-tissue distance: 17.0014
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pilot
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'pilot'
+[02:28:18]   evaluating pseudobulk ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/pseudobulk/pseudobulk/pca_embeddings.csv
+
+============================================================
+Evaluating method: pseudobulk
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/pseudobulk/pseudobulk/pca_embeddings.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pseudobulk/visualizations/pseudobulk_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pseudobulk/visualizations/pseudobulk_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pseudobulk/visualizations/pseudobulk_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: pseudobulk
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 29.8951
+   P-value: 1.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.2703
+   P-value: 1.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 1.4565
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  3.6491
+  Median paired distance: 30.0444
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0386
+  iLISI normalized: 0.5193
+  iLISI P-value:    1.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  18.6795
+  Mean between-tissue distance: 27.2058
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/pseudobulk
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'pseudobulk'
+[02:28:26]   evaluating QOT ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/QOT/88_qot_distance_matrix_mds_10d.csv
+
+============================================================
+Evaluating method: QOT
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/QOT/88_qot_distance_matrix_mds_10d.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/QOT/visualizations/QOT_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/QOT/visualizations/QOT_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/QOT/visualizations/QOT_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: QOT
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.2802
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5067
+   P-value: 1.10e-02
+
+3. Tissue Preservation Score (higher = better)
+   Value: 1.0205
+   P-value: 1.62e-01
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  0.2238
+  Median paired distance: 0.2269
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.7205
+  iLISI normalized: 0.8602
+  iLISI P-value:    2.68e-01
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  0.9122
+  Mean between-tissue distance: 0.9308
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/QOT
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'QOT'
+[02:28:31]   evaluating GEDI ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/GEDI/gedi_sample_embedding.csv
+
+============================================================
+Evaluating method: GEDI
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/GEDI/gedi_sample_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/GEDI/visualizations/GEDI_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/GEDI/visualizations/GEDI_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/GEDI/visualizations/GEDI_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: GEDI
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 3.2053
+   P-value: 1.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.2910
+   P-value: 1.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 1.2960
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  0.5490
+  Median paired distance: 3.1470
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value:    1.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  2.2094
+  Mean between-tissue distance: 2.8634
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/GEDI
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'GEDI'
+[02:28:37]   evaluating Gloscope ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/Gloscope/knn_divergence_mds_10d.csv
+
+============================================================
+Evaluating method: Gloscope
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/Gloscope/knn_divergence_mds_10d.csv
+Inferring modality from sample names...
+Modality distribution: {'RNA': np.int64(44), 'ATAC': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/Gloscope/visualizations/Gloscope_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/Gloscope/visualizations/Gloscope_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/Gloscope/visualizations/Gloscope_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: Gloscope
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 56.7460
+   P-value: 1.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.2551
+   P-value: 1.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 1.3878
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  5.0520
+  Median paired distance: 57.0274
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0136
+  iLISI normalized: 0.5068
+  iLISI P-value:    1.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  35.0644
+  Mean between-tissue distance: 48.6640
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/Gloscope
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'Gloscope'
+[02:28:42]   evaluating MFA ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/MFA/sample_embeddings.csv
+
+============================================================
+Evaluating method: MFA
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/MFA/sample_embeddings.csv
+Inferring modality from sample names...
+Modality distribution: {'RNA': np.int64(44), 'ATAC': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/MFA/visualizations/MFA_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/MFA/visualizations/MFA_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/MFA/visualizations/MFA_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: MFA
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 2.5747
+   P-value: 6.59e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.4453
+   P-value: 1.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 2.5618
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  1.3759
+  Median paired distance: 1.8824
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.1545
+  iLISI normalized: 0.5773
+  iLISI P-value:    1.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  1.1219
+  Mean between-tissue distance: 2.8741
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/MFA
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'MFA'
+[02:28:48]   evaluating mustard ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/mustard/sample_embedding.csv
+
+============================================================
+Evaluating method: mustard
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/mustard/sample_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'RNA': np.int64(44), 'ATAC': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/mustard/visualizations/mustard_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/mustard/visualizations/mustard_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/mustard/visualizations/mustard_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: mustard
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.3681
+   P-value: 1.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.3135
+   P-value: 1.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 1.2016
+   P-value: 4.00e-03
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  0.0921
+  Median paired distance: 0.3687
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.0409
+  iLISI normalized: 0.5205
+  iLISI P-value:    1.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  0.2655
+  Mean between-tissue distance: 0.3190
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/mustard
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'mustard'
+[02:28:54]   evaluating scPoli ← /dcs07/hongkai/data/harry/result/Benchmark_multiomics/scPoli/sample_embeddings_full.csv
+
+============================================================
+Evaluating method: scPoli
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/Benchmark_multiomics/scPoli/sample_embeddings_full.csv
+Inferring modality from sample names...
+Modality distribution: {'RNA': np.int64(44), 'ATAC': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/scPoli/visualizations/scPoli_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/scPoli/visualizations/scPoli_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/scPoli/visualizations/scPoli_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: scPoli
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.9446
+   P-value: 8.60e-02
+
+2. ASW Modality (higher = better)
+   Value: 0.3522
+   P-value: 1.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 1.6720
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  0.0947
+  Median paired distance: 0.9433
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.2227
+  iLISI normalized: 0.6114
+  iLISI P-value:    1.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  0.6501
+  Mean between-tissue distance: 1.0870
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/scPoli
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'scPoli'
+[02:29:03]   evaluating SD_v2_tuned ← /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+Evaluating method: SD_v2_tuned
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: SD_v2_tuned
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.4438
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5102
+   P-value: 0.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 4.0183
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  0.2551
+  Median paired distance: 0.3719
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.8409
+  iLISI normalized: 0.9205
+  iLISI P-value:    0.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  1.4011
+  Mean between-tissue distance: 5.6301
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_tuned
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'SD_v2_tuned'
+[02:29:09]   evaluating SD_v2_default ← /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+Evaluating method: SD_v2_default
+============================================================
+Loading metadata from: /dcl01/hongkai/data/data/hjiang/Data/multiomics_benchmark_data/sample_metadata.csv
+Loading embedding from: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+Inferring modality from sample names...
+Modality distribution: {'ATAC': np.int64(44), 'RNA': np.int64(44)}
+Aligned data: 88 samples, 10 dimensions
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing tissue preservation...
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Tissue preservation permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_by_modality.png
+   - Tissue plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_by_tissue.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_paired_connections.png
+
+============================================================
+Multimodal Integration Evaluation: SD_v2_default
+============================================================
+
+Total samples: 88
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.4565
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5101
+   P-value: 0.00e+00
+
+3. Tissue Preservation Score (higher = better)
+   Value: 3.9564
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 44
+  Std paired distance:  0.2618
+  Median paired distance: 0.3854
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean:       1.8364
+  iLISI normalized: 0.9182
+  iLISI P-value:    0.00e+00
+
+Tissue Preservation:
+  Number of tissues: 10
+  Tissues: ['adrenal_gland', 'colon', 'fallopian_tube', 'heart', 'liver', 'lung', 'ovary', 'pancreas', 'placenta', 'psoas_muscle']
+  Mean within-tissue distance:  1.4036
+  Mean between-tissue distance: 5.5530
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/SD_v2_default
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv with column 'SD_v2_default'
+[02:29:14]   summary at: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv
+[02:29:14] ========== BENCH: eye_retina ==========
+[02:29:15]   evaluating SD_expression ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/embeddings/sample_expression_embedding.csv
+
+============================================================
+Evaluating method: SD_expression
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/embeddings/sample_expression_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.7793
+  Pseudotime-age correlation: 0.7792
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_expression/visualizations/SD_expression_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_expression/visualizations/SD_expression_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_expression/visualizations/SD_expression_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_expression/visualizations/SD_expression_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_expression
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 14.9796
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.4948
+   P-value: 6.88e-01
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.7793
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 11.6609
+  Median paired distance: 9.3134
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.2500
+  iLISI normalized: 0.6250
+  iLISI P-value: 9.95e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.7793
+  Pseudotime-age correlation: 0.7792
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_expression
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'SD_expression'
+[02:29:23]   evaluating SD_proportion ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/embeddings/sample_proportion_embedding.csv
+
+============================================================
+Evaluating method: SD_proportion
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/retina/embeddings/sample_proportion_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_nr_atac', '10w_nr_rna', '11w2d_nr_atac', '11w2d_nr_rna', '12w3d_nr_atac']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_nr_atac', '10w_nr_rna', '11w2d_nr_atac', '11w2d_nr_rna', '12w3d_nr_atac']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9782
+  Pseudotime-age correlation: -0.9635
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_proportion/visualizations/SD_proportion_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_proportion/visualizations/SD_proportion_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_proportion/visualizations/SD_proportion_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_proportion/visualizations/SD_proportion_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_proportion
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.0721
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5345
+   P-value: 4.00e-03
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9782
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0409
+  Median paired distance: 0.0735
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.7500
+  iLISI normalized: 0.8750
+  iLISI P-value: 2.40e-02
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9782
+  Pseudotime-age correlation: -0.9635
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_proportion
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'SD_proportion'
+[02:29:28]   evaluating pilot ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/pilot/wasserstein_distance_mds_10d.csv
+
+============================================================
+Evaluating method: pilot
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/pilot/wasserstein_distance_mds_10d.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['14w5d_NR_RNA', '20w1d_NR_RNA', '20W2d_NR_RNA', '23w1d_NR_RNA', '12w3d_NR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.8328
+  Pseudotime-age correlation: -0.7855
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pilot/visualizations/pilot_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pilot/visualizations/pilot_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pilot/visualizations/pilot_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pilot/visualizations/pilot_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: pilot
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.5413
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1312
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.8328
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0976
+  Median paired distance: 0.5025
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.8328
+  Pseudotime-age correlation: -0.7855
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pilot
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'pilot'
+[02:29:34]   evaluating pseudobulk ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/pseudobulk/pseudobulk/pca_embeddings.csv
+
+============================================================
+Evaluating method: pseudobulk
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/pseudobulk/pseudobulk/pca_embeddings.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.8561
+  Pseudotime-age correlation: -0.8470
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pseudobulk/visualizations/pseudobulk_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pseudobulk/visualizations/pseudobulk_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pseudobulk/visualizations/pseudobulk_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pseudobulk/visualizations/pseudobulk_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: pseudobulk
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 31.9184
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1689
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.8561
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 3.5055
+  Median paired distance: 30.7693
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.8561
+  Pseudotime-age correlation: -0.8470
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/pseudobulk
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'pseudobulk'
+[02:29:40]   evaluating QOT ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/QOT/24_qot_distance_matrix_mds_10d.csv
+
+============================================================
+Evaluating method: QOT
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/QOT/24_qot_distance_matrix_mds_10d.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9215
+  Pseudotime-age correlation: -0.9168
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/QOT/visualizations/QOT_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/QOT/visualizations/QOT_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/QOT/visualizations/QOT_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/QOT/visualizations/QOT_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: QOT
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.3179
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5201
+   P-value: 2.41e-01
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9215
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.1276
+  Median paired distance: 0.3034
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.5833
+  iLISI normalized: 0.7917
+  iLISI P-value: 3.47e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9215
+  Pseudotime-age correlation: -0.9168
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/QOT
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'QOT'
+[02:29:47]   evaluating GEDI ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/GEDI/gedi_sample_embedding.csv
+
+============================================================
+Evaluating method: GEDI
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/GEDI/gedi_sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.3330
+  Pseudotime-age correlation: 0.3066
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/GEDI/visualizations/GEDI_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/GEDI/visualizations/GEDI_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/GEDI/visualizations/GEDI_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/GEDI/visualizations/GEDI_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: GEDI
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 3.3914
+   P-value: 9.98e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.2137
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.3330
+   P-value: 2.91e-01
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.6222
+  Median paired distance: 3.3367
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.3330
+  Pseudotime-age correlation: 0.3066
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/GEDI
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'GEDI'
+[02:29:53]   evaluating Gloscope ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Gloscope/knn_divergence_mds_10d.csv
+
+============================================================
+Evaluating method: Gloscope
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/Gloscope/knn_divergence_mds_10d.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['14w5d_NR_RNA', '20w1d_NR_RNA', '20W2d_NR_RNA', '23w1d_NR_RNA', '12w3d_NR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.7784
+  Pseudotime-age correlation: -0.7782
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/Gloscope/visualizations/Gloscope_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/Gloscope/visualizations/Gloscope_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/Gloscope/visualizations/Gloscope_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/Gloscope/visualizations/Gloscope_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: Gloscope
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 55.2163
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1533
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.7784
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 5.1895
+  Median paired distance: 53.7521
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.7784
+  Pseudotime-age correlation: -0.7782
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/Gloscope
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'Gloscope'
+[02:29:59]   evaluating MFA ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/MFA/sample_embeddings.csv
+
+============================================================
+Evaluating method: MFA
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/MFA/sample_embeddings.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['14w5d_NR_RNA', '20W2d_NR_RNA', '12w3d_NR_RNA', '19W4d_NR_RNA', '10w_NR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.1607
+  Pseudotime-age correlation: -0.1526
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/MFA/visualizations/MFA_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/MFA/visualizations/MFA_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/MFA/visualizations/MFA_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/MFA/visualizations/MFA_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: MFA
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 3.6392
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.0369
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.1607
+   P-value: 7.62e-01
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0614
+  Median paired distance: 3.6479
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.1607
+  Pseudotime-age correlation: -0.1526
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/MFA
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'MFA'
+[02:30:12]   evaluating mustard ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/mustard/sample_embedding.csv
+
+============================================================
+Evaluating method: mustard
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/mustard/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['14w5d_NR_RNA', '20w1d_NR_RNA', '20W2d_NR_RNA', '23w1d_NR_RNA', '12w3d_NR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.5204
+  Pseudotime-age correlation: 0.3239
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/mustard/visualizations/mustard_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/mustard/visualizations/mustard_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/mustard/visualizations/mustard_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/mustard/visualizations/mustard_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: mustard
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.8459
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1935
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.5204
+   P-value: 3.30e-02
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0322
+  Median paired distance: 0.8483
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.5204
+  Pseudotime-age correlation: 0.3239
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/mustard
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'mustard'
+[02:30:38]   evaluating scPoli ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/scPoli/sample_embeddings_full.csv
+
+============================================================
+Evaluating method: scPoli
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_retina/scPoli/sample_embeddings_full.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['14w5d_NR_RNA', '20w1d_NR_RNA', '20W2d_NR_RNA', '23w1d_NR_RNA', '12w3d_NR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.6477
+  Pseudotime-age correlation: 0.6474
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/scPoli/visualizations/scPoli_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/scPoli/visualizations/scPoli_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/scPoli/visualizations/scPoli_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/scPoli/visualizations/scPoli_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: scPoli
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 1.3111
+   P-value: 9.82e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.3436
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.6477
+   P-value: 4.00e-03
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0437
+  Median paired distance: 1.3105
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.6477
+  Pseudotime-age correlation: 0.6474
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/scPoli
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'scPoli'
+[02:30:43]   evaluating SD_v2_tuned ← /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+Evaluating method: SD_v2_tuned
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9765
+  Pseudotime-age correlation: 0.9761
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_v2_tuned
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 3.4476
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5226
+   P-value: 1.00e-02
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9765
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 1.1324
+  Median paired distance: 3.4535
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.6667
+  iLISI normalized: 0.8333
+  iLISI P-value: 1.61e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9765
+  Pseudotime-age correlation: 0.9761
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_tuned
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'SD_v2_tuned'
+[02:30:49]   evaluating SD_v2_default ← /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+Evaluating method: SD_v2_default
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_NR_ATAC', '10w_NR_RNA', '11w2d_NR_ATAC', '11w2d_NR_RNA', '12w3d_NR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9829
+  Pseudotime-age correlation: 0.9827
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_v2_default
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 2.2979
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5268
+   P-value: 4.00e-03
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9829
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.7858
+  Median paired distance: 2.3244
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.7083
+  iLISI normalized: 0.8542
+  iLISI P-value: 7.40e-02
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9829
+  Pseudotime-age correlation: 0.9827
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/SD_v2_default
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv with column 'SD_v2_default'
+[02:31:00]   summary at: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv
+[02:31:00] ========== BENCH: eye_lutea ==========
+[02:31:00]   evaluating SD_expression ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_expression_embedding.csv
+
+============================================================
+Evaluating method: SD_expression
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_expression_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9455
+  Pseudotime-age correlation: 0.9454
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_expression/visualizations/SD_expression_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_expression
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 11.7138
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5022
+   P-value: 5.29e-01
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9455
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 8.4325
+  Median paired distance: 8.1933
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.4167
+  iLISI normalized: 0.7083
+  iLISI P-value: 8.29e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9455
+  Pseudotime-age correlation: 0.9454
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_expression
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'SD_expression'
+[02:31:10]   evaluating SD_proportion ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_proportion_embedding.csv
+
+============================================================
+Evaluating method: SD_proportion
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/lutea/embeddings/sample_proportion_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_fr_atac', '10w_fr_rna', '11w2d_fr_atac', '11w2d_fr_rna', '12w3d_fr_atac']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_fr_atac', '10w_fr_rna', '11w2d_fr_atac', '11w2d_fr_rna', '12w3d_fr_atac']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9775
+  Pseudotime-age correlation: -0.9764
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_proportion/visualizations/SD_proportion_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_proportion
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.0759
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5319
+   P-value: 5.00e-03
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9775
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0476
+  Median paired distance: 0.0603
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.6250
+  iLISI normalized: 0.8125
+  iLISI P-value: 2.44e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9775
+  Pseudotime-age correlation: -0.9764
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_proportion
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'SD_proportion'
+[02:31:16]   evaluating pilot ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pilot/wasserstein_distance_mds_10d.csv
+
+============================================================
+Evaluating method: pilot
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pilot/wasserstein_distance_mds_10d.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '23w1d_FR_RNA', '16w4d_FR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.8717
+  Pseudotime-age correlation: -0.8574
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pilot/visualizations/pilot_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pilot/visualizations/pilot_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pilot/visualizations/pilot_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pilot/visualizations/pilot_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: pilot
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.5890
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1211
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.8717
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0676
+  Median paired distance: 0.5793
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.8717
+  Pseudotime-age correlation: -0.8574
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pilot
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'pilot'
+[02:31:38]   evaluating pseudobulk ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pseudobulk/pseudobulk/pca_embeddings.csv
+
+============================================================
+Evaluating method: pseudobulk
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/pseudobulk/pseudobulk/pca_embeddings.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.8349
+  Pseudotime-age correlation: 0.8334
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pseudobulk/visualizations/pseudobulk_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: pseudobulk
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 33.0818
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1583
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.8349
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 3.2426
+  Median paired distance: 32.5832
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.8349
+  Pseudotime-age correlation: 0.8334
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/pseudobulk
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'pseudobulk'
+[02:31:57]   evaluating QOT ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/QOT/24_qot_distance_matrix_mds_10d.csv
+
+============================================================
+Evaluating method: QOT
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/QOT/24_qot_distance_matrix_mds_10d.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9006
+  Pseudotime-age correlation: -0.8872
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/QOT/visualizations/QOT_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/QOT/visualizations/QOT_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/QOT/visualizations/QOT_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/QOT/visualizations/QOT_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: QOT
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.2583
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5280
+   P-value: 1.07e-01
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9006
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.1150
+  Median paired distance: 0.2408
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.6250
+  iLISI normalized: 0.8125
+  iLISI P-value: 2.84e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9006
+  Pseudotime-age correlation: -0.8872
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/QOT
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'QOT'
+[02:32:06]   evaluating GEDI ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/GEDI/gedi_sample_embedding.csv
+
+============================================================
+Evaluating method: GEDI
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/GEDI/gedi_sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.3925
+  Pseudotime-age correlation: 0.3698
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/GEDI/visualizations/GEDI_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/GEDI/visualizations/GEDI_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/GEDI/visualizations/GEDI_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/GEDI/visualizations/GEDI_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: GEDI
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 3.2161
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1972
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.3925
+   P-value: 1.64e-01
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.5459
+  Median paired distance: 3.1526
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.3925
+  Pseudotime-age correlation: 0.3698
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/GEDI
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'GEDI'
+[02:32:11]   evaluating Gloscope ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Gloscope/knn_divergence_mds_10d.csv
+
+============================================================
+Evaluating method: Gloscope
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/Gloscope/knn_divergence_mds_10d.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '23w1d_FR_RNA', '16w4d_FR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.7513
+  Pseudotime-age correlation: -0.7513
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/Gloscope/visualizations/Gloscope_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: Gloscope
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 57.7641
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1387
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.7513
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 5.3848
+  Median paired distance: 56.7271
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.7513
+  Pseudotime-age correlation: -0.7513
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/Gloscope
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'Gloscope'
+[02:32:28]   evaluating MFA ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/MFA/sample_embeddings.csv
+
+============================================================
+Evaluating method: MFA
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/MFA/sample_embeddings.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '16w4d_FR_RNA', '12w3d_FR_RNA', '11w2d_FR_RNA', '14w2d_FR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.6937
+  Pseudotime-age correlation: 0.6908
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/MFA/visualizations/MFA_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/MFA/visualizations/MFA_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/MFA/visualizations/MFA_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/MFA/visualizations/MFA_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: MFA
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 3.7068
+   P-value: 9.99e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.1112
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.6937
+   P-value: 1.00e-03
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.1288
+  Median paired distance: 3.6851
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.6937
+  Pseudotime-age correlation: 0.6908
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/MFA
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'MFA'
+[02:32:33]   evaluating mustard ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/mustard/sample_embedding.csv
+
+============================================================
+Evaluating method: mustard
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/mustard/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '16w4d_FR_RNA', '11w2d_FR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.7629
+  Pseudotime-age correlation: 0.7375
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/mustard/visualizations/mustard_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/mustard/visualizations/mustard_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/mustard/visualizations/mustard_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/mustard/visualizations/mustard_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: mustard
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 0.7775
+   P-value: 1.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.1503
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.7629
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.1219
+  Median paired distance: 0.7155
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.7629
+  Pseudotime-age correlation: 0.7375
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/mustard
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'mustard'
+[02:32:39]   evaluating scPoli ← /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/scPoli/sample_embeddings_full.csv
+
+============================================================
+Evaluating method: scPoli
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/multi_omics_eye/benchmark_lutea/scPoli/sample_embeddings_full.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['13W_FR_RNA', '10w_FR_RNA', '20w1d_FR_RNA', '23w1d_FR_RNA', '16w4d_FR_RNA']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.3005
+  Pseudotime-age correlation: 0.2965
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/scPoli/visualizations/scPoli_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/scPoli/visualizations/scPoli_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/scPoli/visualizations/scPoli_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/scPoli/visualizations/scPoli_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: scPoli
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 1.3166
+   P-value: 9.75e-01
+
+2. ASW Modality (higher = better)
+   Value: 0.3327
+   P-value: 1.00e+00
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.3005
+   P-value: 3.84e-01
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.0876
+  Median paired distance: 1.3223
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.0000
+  iLISI normalized: 0.5000
+  iLISI P-value: 1.00e+00
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.3005
+  Pseudotime-age correlation: 0.2965
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/scPoli
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'scPoli'
+[02:32:59]   evaluating SD_v2_tuned ← /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+Evaluating method: SD_v2_tuned
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_tuned_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9802
+  Pseudotime-age correlation: 0.9802
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_tuned/visualizations/SD_v2_tuned_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_v2_tuned
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 2.5250
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5282
+   P-value: 3.00e-03
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9802
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.9691
+  Median paired distance: 2.4693
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.5417
+  iLISI normalized: 0.7708
+  iLISI P-value: 5.20e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9802
+  Pseudotime-age correlation: 0.9802
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_tuned
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'SD_v2_tuned'
+[02:33:07]   evaluating SD_v2_default ← /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+Evaluating method: SD_v2_default
+============================================================
+Loading metadata from: /dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv
+Expanded metadata from 24 samples to 48 samples (2 modalities)
+Loading embedding from: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/sampledisco_default_v2/sample_embedding/sample_embedding.csv
+
+============================================================
+DEBUG: align_data() function
+============================================================
+
+1. Input sizes:
+   - Metadata: 48 samples
+   - Embedding: 24 samples
+
+2. Sample name examples (first 5):
+   - Metadata index: ['10w_FR_RNA', '10w_FR_ATAC', '10w_NR_RNA', '10w_NR_ATAC', '11w2d_FR_RNA']
+   - Embedding index: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+
+3. Alignment results:
+   - Common samples: 24
+   - Dropping 24 metadata rows without embedding
+
+4. Aligned datasets:
+   - Total aligned samples: 24
+   - First 5 aligned sample names: ['10w_FR_ATAC', '10w_FR_RNA', '11w2d_FR_ATAC', '11w2d_FR_RNA', '12w3d_FR_ATAC']
+============================================================
+
+Aligned data: 24 samples, 10 dimensions
+Detected modalities: ['ATAC', 'RNA']
+Number of unique biological samples: 12
+Age range: 70.0 - 165.0
+
+1. Computing paired sample distances...
+
+2. Computing modality mixing (iLISI, ASW)...
+
+3. Computing trajectory analysis (age) using PC1 & PC2...
+  CCA score (PC1 & PC2): 0.9812
+  Pseudotime-age correlation: 0.9811
+
+4. Running permutation tests...
+   - Paired distance permutation test...
+   - Modality mixing permutation test...
+   - Trajectory CCA permutation test...
+
+5. Creating visualizations...
+   - Modality plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_by_modality.png
+   - Paired connections plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_paired_connections.png
+   - Trajectory embedding plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_trajectory_embedding.png
+   - Trajectory scatter plot: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_default/visualizations/SD_v2_default_trajectory_scatter.png
+
+============================================================
+Multimodal Integration Evaluation: SD_v2_default
+============================================================
+
+Total samples: 24
+Unique biological samples: 12
+Modalities: ['ATAC', 'RNA']
+Embedding dimensions: 10
+Permutations: 1000
+
+--- KEY METRICS ---
+
+1. Mean Paired Distance (lower = better)
+   Value: 1.8948
+   P-value: 0.00e+00
+
+2. ASW Modality (higher = better)
+   Value: 0.5295
+   P-value: 4.00e-03
+
+3. Trajectory CCA Score (higher = better)
+   Value: 0.9812
+   P-value: 0.00e+00
+
+--- ADDITIONAL DETAILS ---
+
+Paired Sample Distance:
+  Number of pairs: 12
+  Std paired distance: 0.9305
+  Median paired distance: 1.8340
+
+Modality Mixing:
+  Modalities: ['ATAC', 'RNA']
+  iLISI mean: 1.6250
+  iLISI normalized: 0.8125
+  iLISI P-value: 2.40e-01
+
+Trajectory Analysis:
+  Age column: age
+  Age range: 70.0 - 165.0
+  CCA score: 0.9812
+  Pseudotime-age correlation: 0.9811
+
+============================================================
+Results saved to: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/SD_v2_default
+============================================================
+
+Updated summary CSV: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv with column 'SD_v2_default'
+[02:33:16]   summary at: /dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv
+[02:33:16] ========== DONE ALL ==========
+[02:33:16] summaries: {'ENCODE': '/dcs07/hongkai/data/harry/result/test/test_run_multiomics/ENCODE/Benchmark_result/summary.csv', 'eye_retina': '/dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_retina/Benchmark_result/summary.csv', 'eye_lutea': '/dcs07/hongkai/data/harry/result/test/test_run_multiomics/eye_lutea/Benchmark_result/summary.csv'}
