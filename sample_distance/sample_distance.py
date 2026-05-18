@@ -476,11 +476,12 @@ def _default_cell_embedding_key(adata: AnnData, data_type: str) -> str:
 
     RNA → prefer X_pca_harmony, fall back to X_pca.
     ATAC → prefer X_lsi_harmony, fall back to X_lsi.
-    multiomics → prefer X_glue_harmony (sample-removed), fall back to X_glue.
+    multiomics → prefer Z_clust (sample-removed; paper's cluster view),
+        fall back to X_glue.
     """
     dt = data_type.lower()
     if dt == 'multiomics':
-        priority = ['X_glue_harmony', 'X_glue']
+        priority = ['Z_clust', 'X_glue']
     elif dt == 'atac':
         priority = ['X_lsi_harmony', 'X_lsi']
     else:
@@ -669,7 +670,7 @@ def sample_distance(
         Column name for samples.
     embedding_key : str, optional
         Key in obsm for embeddings (EMD only). If None, picked from data_type:
-        RNA→X_pca_harmony, ATAC→X_lsi_harmony, multiomics→X_glue_harmony (else X_glue).
+        RNA→X_pca_harmony, ATAC→X_lsi_harmony, multiomics→Z_clust (else X_glue).
     n_pcs : int
         Number of PCs to use (EMD only).
     proportions : pd.DataFrame, optional

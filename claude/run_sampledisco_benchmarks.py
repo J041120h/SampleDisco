@@ -38,7 +38,7 @@ from sample_embedding.sample_embedding import build_sample_adata
 
 # Lazy-imported below so the COVID and multi-omics scripts only load when needed:
 #   from other_benchmark_wrapper import run_benchmarks
-#   from benchmark_metircs_ENCODE import (evaluate_multimodal_integration as encode_eval, save_to_summary_csv as encode_save)
+#   from benchmark_metrics_ENCODE import (evaluate_multimodal_integration as encode_eval, save_to_summary_csv as encode_save)
 #   from benchmark_eye import (evaluate_multimodal_integration as eye_eval, save_to_summary_csv as eye_save)
 #   from benchmark_heart import (evaluate_multimodal_integration as heart_eval, save_to_summary_csv as heart_save)
 
@@ -178,7 +178,7 @@ def block_covid_rna() -> None:
 # --------------------------------------------------------------------------- #
 def block_mo_encode() -> None:
     _hdr("Multi-omics ENCODE — SampleDisco (default-α)")
-    from benchmark_metircs_ENCODE import (
+    from benchmark_metrics_ENCODE import (
         evaluate_multimodal_integration as encode_eval,
         save_to_summary_csv as encode_save,
     )

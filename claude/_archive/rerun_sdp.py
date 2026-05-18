@@ -42,7 +42,7 @@ def main():
         print(f"\n==== {name} ====")
         try:
             if kind == "encode":
-                from benchmark_metircs_ENCODE import (
+                from benchmark_metrics_ENCODE import (
                     evaluate_multimodal_integration as ev, save_to_summary_csv as sv)
                 summary = f"{outroot}/summary.csv"
             elif kind == "eye":

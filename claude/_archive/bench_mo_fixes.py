@@ -69,7 +69,7 @@ def run_one(name: str, ds_cfg: dict, strat: str) -> None:
     print(f"  embedding: {emb}")
     print(f"  -> {method_label} column in {ds_cfg['summary']}")
     if ds_cfg["evaluator"] == "encode":
-        from benchmark_metircs_ENCODE import (
+        from benchmark_metrics_ENCODE import (
             evaluate_multimodal_integration as ev,
             save_to_summary_csv as sv,
         )

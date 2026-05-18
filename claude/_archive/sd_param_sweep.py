@@ -129,7 +129,7 @@ def make_se(adata, variant: str, outdir: str, verbose=False):
 def evaluate(name: str, ds_cfg: dict, emb_csv: str, method_label: str) -> dict:
     """Run the right benchmark evaluator on the embedding, return the 3-metric dict."""
     if ds_cfg["evaluator"] == "encode":
-        from benchmark_metircs_ENCODE import evaluate_multimodal_integration as ev
+        from benchmark_metrics_ENCODE import evaluate_multimodal_integration as ev
         r = ev(meta_csv=ds_cfg["meta"], embedding_csv=emb_csv,
                  method_name=method_label, general_outdir=ds_cfg["outroot"],
                  k_neighbors=ds_cfg["k"], n_permutations=200,

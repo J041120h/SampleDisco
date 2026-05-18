@@ -13,23 +13,27 @@ from preparation.multi_omics_preprocess import integrate_preprocess
 from preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from preparation.multi_omics_batch_correction import (
     harmonize_xglue,
-    XGLUE_KEY,
-    XGLUE_HARMONY_KEY,
+    Z_CMD_KEY,      # paper "Z_cmd"   — sample-preserved, CMD displacement role
+    Z_CLUST_KEY,    # paper "Z_clust" — sample-removed,   cluster / composition role
+    XGLUE_KEY,      # internal — scGLUE's native obsm key (fallback only)
 )
 
 
 def _resolve_embedding_keys(adata, cluster_override=None, cmd_override=None):
     """Return (cluster_emb_key, cmd_emb_key) for the SE / cell typing stack.
 
-    Cluster role (sample-removed) prefers ``X_glue_harmony`` when present —
-    produced by either the Harmony post-pass or the optional 2-run scGLUE —
-    and falls back to ``X_glue`` (single-run scGLUE, no sample removal).
-    CMD role (sample-preserved) is always ``X_glue``. Explicit overrides win.
+    Paper-aligned (Fig. 1, Stage 2): the cluster role reads ``Z_clust`` and
+    the CMD role reads ``Z_cmd``. Both keys are written into the integrated
+    h5ad by either the Harmony post-pass (Mode A) or the 2-run scGLUE merge
+    (Mode B). Falls back to ``X_glue`` only when neither has run (un-
+    supported in the current pipeline, but keeps the failure mode honest).
     """
     cluster = cluster_override or (
-        XGLUE_HARMONY_KEY if XGLUE_HARMONY_KEY in adata.obsm else XGLUE_KEY
+        Z_CLUST_KEY if Z_CLUST_KEY in adata.obsm else XGLUE_KEY
     )
-    cmd = cmd_override or XGLUE_KEY
+    cmd = cmd_override or (
+        Z_CMD_KEY if Z_CMD_KEY in adata.obsm else XGLUE_KEY
+    )
     for role, key in (("cluster", cluster), ("cmd", cmd)):
         if key not in adata.obsm:
             raise KeyError(
@@ -121,7 +125,7 @@ def multiomics_wrapper(
     glue_data_batch_size: int = 1024,
     glue_max_epochs: Optional[int] = None,
     glue_dataloader_num_workers: int = 4,
-    glue_dataloader_fetches_per_batch: int = 8,
+    glue_dataloader_fetches_per_worker: int = 8,
     glue_array_shuffle_num_workers: int = 4,
     glue_graph_shuffle_num_workers: int = 4,
 
@@ -256,11 +260,10 @@ def multiomics_wrapper(
             batch_key=batch_col, sample_key=sample_col,
             data_batch_size=glue_data_batch_size, max_epochs=glue_max_epochs,
             dataloader_num_workers=glue_dataloader_num_workers,
-            dataloader_fetches_per_batch=glue_dataloader_fetches_per_batch,
+            dataloader_fetches_per_worker=glue_dataloader_fetches_per_worker,
             array_shuffle_num_workers=glue_array_shuffle_num_workers,
             graph_shuffle_num_workers=glue_graph_shuffle_num_workers,
             run_second_glue_for_sample_removal=run_glue_twice_for_sample_removal,
-            second_run_emb_key=XGLUE_HARMONY_KEY,
             k_neighbors=k_neighbors, use_rep=use_rep, metric=metric,
             use_gpu=use_gpu, verbose=multiomics_verbose,
             plot_columns=plot_columns, output_dir=multiomics_output_dir,
@@ -312,22 +315,22 @@ def multiomics_wrapper(
                 "Integration preprocessing required. Set integration_preprocessing=True "
                 "or ensure preprocessed data exists.")
 
-    # ==================== STEP 2b: HARMONY POST-PASS ON X_glue ====================
-    # Always run — produces X_glue_harmony (the sample-REMOVED cluster /
-    # composition embedding used by cell typing + A1 / A2 / A3 blocks).
-    # No-op when X_glue_harmony already exists (e.g. when the optional
-    # second scGLUE training run in STEP 1 produced it end-to-end).
+    # ==================== STEP 2b: PROVIDE Z_clust (paper-aligned cluster view) ===
+    # Z_clust (sample-removed cluster / composition embedding) is required
+    # downstream. Two equivalent providers — STEP 1 may have set it
+    # already via the 2-run scGLUE merge; otherwise this step runs a
+    # Harmony pass on Z_cmd (= X_glue) with sample as batch_key.
     if current_adata is None:
         current_adata = ad.read_h5ad(h5ad_path)
-    if XGLUE_HARMONY_KEY in current_adata.obsm:
+    if Z_CLUST_KEY in current_adata.obsm:
         if multiomics_verbose:
-            print(f"Step 2b: '{XGLUE_HARMONY_KEY}' already present "
-                  f"(2-run scGLUE) — skipping Harmony pass.")
+            print(f"Step 2b: obsm['{Z_CLUST_KEY}'] already present "
+                  f"(end-to-end from 2-run scGLUE) — no Harmony pass needed.")
         status_flags["multiomics"]["harmonize_xglue"] = True
     else:
         if multiomics_verbose:
-            print("Step 2b: Harmony post-pass on X_glue → X_glue_harmony "
-                  "(sample-removed cluster embedding)...")
+            print(f"Step 2b: Harmony post-pass on obsm['{XGLUE_KEY}'] "
+                  f"→ obsm['{Z_CLUST_KEY}'] (sample-removed cluster view)...")
         current_adata = harmonize_xglue(
             current_adata,
             sample_col=sample_col,
@@ -337,7 +340,7 @@ def multiomics_wrapper(
             random_state=random_state,
             verbose=multiomics_verbose,
         )
-        if XGLUE_HARMONY_KEY in current_adata.obsm:
+        if Z_CLUST_KEY in current_adata.obsm:
             status_flags["multiomics"]["harmonize_xglue"] = True
             if save_intermediate:
                 preprocessed_path = (
@@ -348,8 +351,8 @@ def multiomics_wrapper(
                         print(f"[xglue-harmony] re-saved {preprocessed_path}")
 
     # ==================== STEP 2c: CELL TYPE CLUSTERING ====================
-    # Uses the sample-removed cluster embedding (`X_glue_harmony` when present
-    # — from Harmony post-pass or 2-run scGLUE — else `X_glue`).
+    # Uses the paper's Z_clust (sample-removed cluster embedding), produced
+    # in STEP 2b by either the Harmony post-pass or the 2-run scGLUE merge.
     if cell_type_cluster:
         if current_adata is None:
             current_adata = ad.read_h5ad(h5ad_path)

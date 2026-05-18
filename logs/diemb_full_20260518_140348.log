@@ -1,0 +1,464 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/louvain/__init__.py:54: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+[run_diemb_test] config keys:    310
+[run_diemb_test] wrapper params: 311
+[run_diemb_test] dropped (unknown to current wrapper): 43
+    - atac_cca_based_cell_resolution_selection
+    - atac_cca_coarse_end
+    - atac_cca_coarse_start
+    - atac_cca_coarse_step
+    - atac_cca_compute_corrected_pvalues
+    - atac_cca_fine_range
+    - atac_cca_fine_step
+    - atac_harmony_for_proportion
+    - atac_preserve_cols_in_sample_embedding
+    - atac_sample_embedding_dimension
+    - atac_sample_hvg_number
+    - multiomics_analyze_modality_alignment
+    - multiomics_cca_coarse_end
+    - multiomics_cca_coarse_start
+    - multiomics_cca_coarse_step
+    - multiomics_cca_fine_range
+    - multiomics_cca_fine_step
+    - multiomics_compute_corrected_pvalues
+    - multiomics_dimensionality_reduction
+    - multiomics_expression_key
+    - multiomics_find_optimal_resolution
+    - multiomics_harmony_for_proportion
+    - multiomics_n_expression_components
+    - multiomics_n_proportion_components
+    - multiomics_num_pcs
+    - multiomics_optimization_target
+    - multiomics_preserve_cols_for_sample_embedding
+    - multiomics_proportion_key
+    - multiomics_resolution_use_rep
+    - multiomics_sample_hvg_number
+    - multiomics_sev_col
+    - multiomics_visualize_cell_types
+    - rna_cca_based_cell_resolution_selection
+    - rna_cca_coarse_end
+    - rna_cca_coarse_start
+    - rna_cca_coarse_step
+    - rna_cca_compute_corrected_pvalues
+    - rna_cca_fine_range
+    - rna_cca_fine_step
+    - rna_harmony_for_proportion
+    - rna_preserve_cols_in_sample_embedding
+    - rna_sample_embedding_dimension
+    - rna_sample_hvg_number
+[run_diemb_test] passing 267 kwargs to wrapper(...)
+Warning: GPU initialization failed (CUDARuntimeError: cudaErrorInsufficientDriver: CUDA driver version is insufficient for CUDA runtime version). Falling back to CPU.
+Resuming from previous progress:
+{
+  "rna": {
+    "preprocessing": false,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "atac": {
+    "preprocessing": false,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "multiomics": {
+    "glue_integration": false,
+    "glue_preprocessing": false,
+    "glue_training": false,
+    "glue_gene_activity": false,
+    "glue_cell_types": false,
+    "glue_visualization": false,
+    "integration_preprocessing": false,
+    "optimal_resolution": false,
+    "dimensionality_reduction": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "embedding_visualization": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "system_info": {
+    "platform": "Linux",
+    "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+    "use_gpu": true,
+    "gpu_available": false
+  }
+}
+
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+[multi_omics_glue] prepended /users/hjiang/.conda/envs/hongkai/bin to PATH for bedtools
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics
+GPU mode: Disabled
+Step 1: Running GLUE integration...
+Running training...
+
+
+
+⏭️  Skipping glue_train(save_prefix='glue'): all final artifacts already exist in /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue.
+      glue.dill
+      glue-rna-emb.h5ad
+      glue-atac-emb.h5ad
+
+
+
+Training completed.
+Running second scGLUE pass for sample removal (treat_sample_as_batch=True) → obsm['Z_clust']
+
+
+
+🚀 Starting GLUE training pipeline...
+
+
+
+   Feature mode: Highly Variable Only
+   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue
+
+
+
+
+📊 Loading preprocessed data from /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue...
+
+
+
+
+
+
+Data loaded - RNA: (898489, 14743), ATAC: (88985, 230356), Graph: 245099 nodes
+
+
+
+
+
+
+⚙️ Configuring datasets...
+
+
+
+   scGLUE use_batch = 'sample'
+
+
+
+🔍 Extracting highly variable feature subgraph...
+
+
+
+HVF subgraph extracted - RNA HVF: 1989, ATAC HVF: 18536
+HVF graph: 20525 nodes, 57817 edges
+
+
+
+
+
+
+🤖 Training GLUE model (fit_kws={'directory': '/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue/training/glue_no_sample', 'data_batch_size': 32768}, workers=4, prefetch=8, array_shuf=4, graph_shuf=4)...
+
+
+
+[INFO] fit_SCGLUE: Pretraining SCGLUE model...
+INFO:fit_SCGLUE:Pretraining SCGLUE model...
+[INFO] autodevice: Using GPU 0 as computation device.
+INFO:autodevice:Using GPU 0 as computation device.
+DEBUG:AnnDataset:Generating random xuid...
+DEBUG:AnnDataset:Generating random xuid...
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+[INFO] check_graph: Checking variable coverage...
+INFO:check_graph:Checking variable coverage...
+[INFO] check_graph: Checking edge attributes...
+INFO:check_graph:Checking edge attributes...
+[INFO] check_graph: Checking self-loops...
+INFO:check_graph:Checking self-loops...
+[INFO] check_graph: Checking graph symmetry...
+INFO:check_graph:Checking graph symmetry...
+[INFO] SCGLUEModel: Setting `graph_batch_size` = 19875
+INFO:SCGLUEModel:Setting `graph_batch_size` = 19875
+[INFO] SCGLUEModel: Setting `max_epochs` = 885
+INFO:SCGLUEModel:Setting `max_epochs` = 885
+[INFO] SCGLUEModel: Setting `patience` = 74
+INFO:SCGLUEModel:Setting `patience` = 74
+[INFO] SCGLUEModel: Setting `reduce_lr_patience` = 37
+INFO:SCGLUEModel:Setting `reduce_lr_patience` = 37
+DEBUG:AnnDataset:Started background process: 191497
+DEBUG:AnnDataset:Started background process: 191500
+DEBUG:AnnDataset:Started background process: 191501
+DEBUG:AnnDataset:Started background process: 191503
+DEBUG:AnnDataset:Started background process: 191504
+DEBUG:AnnDataset:Started background process: 191507
+DEBUG:AnnDataset:Started background process: 191511
+DEBUG:AnnDataset:Started background process: 191513
+DEBUG:GraphDataset:Started background process: 191514
+DEBUG:GraphDataset:Started background process: 191517
+DEBUG:GraphDataset:Started background process: 191518
+DEBUG:GraphDataset:Started background process: 191520
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/torch/optim/lr_scheduler.py:62: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+[INFO] SCGLUETrainer: Using training directory: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue/training/glue_no_sample/pretrain"
+INFO:SCGLUETrainer:Using training directory: "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue/training/glue_no_sample/pretrain"
+INFO:ignite.engine.engine.Engine:Engine run starting with max_epochs=885.
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run starting with max_epochs=1.
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[1] Complete. Time taken: 00:00:05.654
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.808
+INFO:ignite.engine.engine.Engine:Epoch[1] Complete. Time taken: 00:00:45.513
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 4, epoch 1 until 2 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[2] Complete. Time taken: 00:00:02.784
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.502
+INFO:ignite.engine.engine.Engine:Epoch[2] Complete. Time taken: 00:00:39.768
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+ERROR:ignite.engine.engine.Engine:Current run is terminating due to exception: mat1 and mat2 shapes cannot be multiplied (0x1989 and 50x256)
+ERROR:ignite.engine.engine.Engine:Engine run is terminating due to exception: mat1 and mat2 shapes cannot be multiplied (0x1989 and 50x256)
+DEBUG:AnnDataset:Joined background process: 191501
+DEBUG:AnnDataset:Joined background process: 191503
+DEBUG:AnnDataset:Joined background process: 191500
+DEBUG:AnnDataset:Joined background process: 191497
+DEBUG:AnnDataset:Joined background process: 191513
+DEBUG:AnnDataset:Joined background process: 191511
+DEBUG:AnnDataset:Joined background process: 191504
+DEBUG:AnnDataset:Joined background process: 191507
+DEBUG:GraphDataset:Joined background process: 191517
+DEBUG:GraphDataset:Joined background process: 191518
+DEBUG:GraphDataset:Joined background process: 191514
+DEBUG:GraphDataset:Joined background process: 191520
+
+Multiomics pipeline failed: mat1 and mat2 shapes cannot be multiplied (0x1989 and 50x256)
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 1430, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 244, in multiomics_wrapper
+    glue_result = multiomics_preparation(
+  File "/users/hjiang/GenoDistance/code/preparation/multi_omics_glue.py", line 1295, in multiomics_preparation
+    glue_train(
+  File "/users/hjiang/GenoDistance/code/preparation/multi_omics_glue.py", line 666, in glue_train
+    glue = scglue.models.fit_SCGLUE(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/__init__.py", line 206, in fit_SCGLUE
+    pretrain.fit(adatas, graph, **pretrain_fit_kws)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/scglue.py", line 946, in fit
+    super().fit(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/base.py", line 333, in fit
+    self.trainer.fit(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/glue.py", line 608, in fit
+    super().fit(
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/base.py", line 199, in fit
+    train_engine.run(train_loader, max_epochs=max_epochs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 905, in run
+    return self._internal_run()
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 948, in _internal_run
+    return next(self._internal_run_generator)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 1023, in _internal_run_as_gen
+    self._handle_exception(e)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 658, in _handle_exception
+    self._fire_event(Events.EXCEPTION_RAISED, e)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 435, in _fire_event
+    func(*first, *(event_args + others), **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/base.py", line 162, in _handle_exception
+    raise e
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 972, in _internal_run_as_gen
+    epoch_time_taken += yield from self._run_once_on_dataset_as_gen()
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 1128, in _run_once_on_dataset_as_gen
+    self._handle_exception(e)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 658, in _handle_exception
+    self._fire_event(Events.EXCEPTION_RAISED, e)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 435, in _fire_event
+    func(*first, *(event_args + others), **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/base.py", line 162, in _handle_exception
+    raise e
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/engine/engine.py", line 1110, in _run_once_on_dataset_as_gen
+    self.state.output = self._process_function(self, self.state.batch)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/scglue.py", line 366, in train_step
+    losses = self.compute_losses(data, epoch, dsc_only=True)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/scglue.py", line 275, in compute_losses
+    u[k], l[k] = net.x2u[k](x[k], xrep[k], lazy_normalizer=dsc_only)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/scglue/models/sc.py", line 177, in forward
+    ptr = getattr(self, f"linear_{layer}")(ptr)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (0x1989 and 50x256)
+
+Total execution time: 239.71 seconds (4.00 minutes)
