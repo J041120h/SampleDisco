@@ -1,0 +1,15 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/louvain/__init__.py:54: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+[INFO] Output directory: /users/hjiang/GenoDistance/figure/figure5/embedding
+[INFO] Loading AnnData from: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[INFO] Shape: (431, 2000)
+[INFO] Overriding X_DR_expression with V2 single embedding: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/sample_embedding/sample_embedding.csv
+[INFO] X_DR_expression shape: (431, 10)
+[INFO] Running K-means clustering (k=4)...
+[INFO] Saved K-means embedding plot: /users/hjiang/GenoDistance/figure/figure5/embedding/embedding_kmeans_X_DR_expression.png
+[INFO] Building TSCAN-style MST visualization (k=6)...
+[INFO] Saved TSCAN-style embedding plot: /users/hjiang/GenoDistance/figure/figure5/embedding/embedding_tscan_X_DR_expression.png
+[INFO] Running CCA vs severity column: sev.level
+[INFO] Saved CCA embedding plot: /users/hjiang/GenoDistance/figure/figure5/embedding/embedding_cca_X_DR_expression_sev.level.png
+[INFO] All visualizations completed.
+[INFO] Files written to: /users/hjiang/GenoDistance/figure/figure5/embedding

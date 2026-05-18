@@ -49,20 +49,20 @@ def multiomics_wrapper(
     integration_preprocessing=True,
     derive_sample_embedding=True,
     autotune_enable=False,
-    # scGLUE removes batch but PRESERVES per-sample variance, so its output
-    # X_glue serves directly as the CMD displacement embedding. For the
-    # cluster / composition role we need a SAMPLE-removed variant — by
-    # default we derive it via a single Harmony pass on X_glue with the
-    # sample column (and batch, if present) as batch_keys, producing
-    # X_glue_harmony. Set False when X_glue_harmony will be supplied another
-    # way (e.g. the 2-run scGLUE flag below).
-    harmonize_xglue=True,
+    # scGLUE removes batch but PRESERVES per-sample variance — its output
+    # X_glue is the CMD displacement embedding. For the cluster /
+    # composition role we need a SAMPLE-removed variant; the pipeline
+    # always provides one via ONE of two paths:
+    #
+    #   (default) Harmony post-pass on X_glue with the sample column
+    #             (and batch, if present) → X_glue_harmony.
+    #   (opt-in)  Train scGLUE TWICE in STEP 1; the second run (with
+    #             treat_sample_as_batch=True) yields X_glue_harmony
+    #             end-to-end. When this is enabled the Harmony post-pass
+    #             auto-skips because X_glue_harmony already exists.
+    #
+    # No "legacy" path exists — the cluster embedding is always derived.
     harmonize_xglue_max_iter=50,
-    # Alternative to harmonize_xglue: train scGLUE TWICE during STEP 1. The
-    # second run (with treat_sample_as_batch=True) yields the sample-REMOVED
-    # cluster embedding directly, merged into the primary h5ads under the
-    # same ``X_glue_harmony`` obsm key. When this is True the Harmony
-    # post-pass auto-skips (X_glue_harmony already exists).
     run_glue_twice_for_sample_removal=False,
 
     # ===== Basic Parameters =====
@@ -110,12 +110,20 @@ def multiomics_wrapper(
     # cluster embedding).
     treat_sample_as_batch=False,
     save_prefix="glue",
-    # scGLUE training throughput knobs. data_batch_size=1024 lifts the
-    # library default (128) to better saturate modern GPUs; set lower if
-    # GPU memory is tight. max_epochs=None lets scGLUE pick adaptively
-    # ("AUTO"); set an int to cap.
+    # scGLUE training throughput knobs.
+    #   data_batch_size       : cells per minibatch. Library default 128;
+    #                           bigger saturates modern GPUs better.
+    #   max_epochs            : None → scglue's "AUTO" (adaptive cap).
+    #   dataloader_*          : torch DataLoader workers/prefetch — bigger
+    #                           overlaps I/O with GPU compute.
+    #   *_shuffle_num_workers : background workers for array/graph shuffle.
+    # See preparation/multi_omics_glue.py:glue_train docstring for details.
     glue_data_batch_size: int = 1024,
     glue_max_epochs: Optional[int] = None,
+    glue_dataloader_num_workers: int = 4,
+    glue_dataloader_fetches_per_batch: int = 8,
+    glue_array_shuffle_num_workers: int = 4,
+    glue_graph_shuffle_num_workers: int = 4,
 
     # GLUE gene activity parameters
     k_neighbors=10,
@@ -247,6 +255,10 @@ def multiomics_wrapper(
             treat_sample_as_batch=treat_sample_as_batch, save_prefix=save_prefix,
             batch_key=batch_col, sample_key=sample_col,
             data_batch_size=glue_data_batch_size, max_epochs=glue_max_epochs,
+            dataloader_num_workers=glue_dataloader_num_workers,
+            dataloader_fetches_per_batch=glue_dataloader_fetches_per_batch,
+            array_shuffle_num_workers=glue_array_shuffle_num_workers,
+            graph_shuffle_num_workers=glue_graph_shuffle_num_workers,
             run_second_glue_for_sample_removal=run_glue_twice_for_sample_removal,
             second_run_emb_key=XGLUE_HARMONY_KEY,
             k_neighbors=k_neighbors, use_rep=use_rep, metric=metric,
@@ -300,42 +312,40 @@ def multiomics_wrapper(
                 "Integration preprocessing required. Set integration_preprocessing=True "
                 "or ensure preprocessed data exists.")
 
-    # ==================== STEP 2b: OPTIONAL HARMONY POST-PASS ON X_glue ====================
-    # Off by default. When enabled, runs ONE Harmony iteration on X_glue with
-    # sample_col (and batch_col if present) as batch_keys, producing
-    # X_glue_harmony — the sample-REMOVED cluster / composition embedding.
-    # Skipped automatically if X_glue_harmony already exists (e.g. produced by
-    # the optional second scGLUE training run in STEP 1).
-    if harmonize_xglue:
-        if current_adata is None:
-            current_adata = ad.read_h5ad(h5ad_path)
+    # ==================== STEP 2b: HARMONY POST-PASS ON X_glue ====================
+    # Always run — produces X_glue_harmony (the sample-REMOVED cluster /
+    # composition embedding used by cell typing + A1 / A2 / A3 blocks).
+    # No-op when X_glue_harmony already exists (e.g. when the optional
+    # second scGLUE training run in STEP 1 produced it end-to-end).
+    if current_adata is None:
+        current_adata = ad.read_h5ad(h5ad_path)
+    if XGLUE_HARMONY_KEY in current_adata.obsm:
+        if multiomics_verbose:
+            print(f"Step 2b: '{XGLUE_HARMONY_KEY}' already present "
+                  f"(2-run scGLUE) — skipping Harmony pass.")
+        status_flags["multiomics"]["harmonize_xglue"] = True
+    else:
+        if multiomics_verbose:
+            print("Step 2b: Harmony post-pass on X_glue → X_glue_harmony "
+                  "(sample-removed cluster embedding)...")
+        current_adata = harmonize_xglue(
+            current_adata,
+            sample_col=sample_col,
+            batch_col=batch_col,
+            use_gpu=use_gpu,
+            max_iter=harmonize_xglue_max_iter,
+            random_state=random_state,
+            verbose=multiomics_verbose,
+        )
         if XGLUE_HARMONY_KEY in current_adata.obsm:
-            if multiomics_verbose:
-                print(f"Step 2b: '{XGLUE_HARMONY_KEY}' already present "
-                      f"(probably from 2-run scGLUE) — skipping Harmony pass.")
             status_flags["multiomics"]["harmonize_xglue"] = True
-        else:
-            if multiomics_verbose:
-                print("Step 2b: Harmony post-pass on X_glue → X_glue_harmony "
-                      "(sample-removed cluster embedding)...")
-            current_adata = harmonize_xglue(
-                current_adata,
-                sample_col=sample_col,
-                batch_col=batch_col,
-                use_gpu=use_gpu,
-                max_iter=harmonize_xglue_max_iter,
-                random_state=random_state,
-                verbose=multiomics_verbose,
-            )
-            if XGLUE_HARMONY_KEY in current_adata.obsm:
-                status_flags["multiomics"]["harmonize_xglue"] = True
-                if save_intermediate:
-                    preprocessed_path = (
-                        f"{multiomics_output_dir}/preprocess/adata_preprocessed.h5ad")
-                    if os.path.exists(preprocessed_path):
-                        sc.write(preprocessed_path, current_adata)
-                        if multiomics_verbose:
-                            print(f"[xglue-harmony] re-saved {preprocessed_path}")
+            if save_intermediate:
+                preprocessed_path = (
+                    f"{multiomics_output_dir}/preprocess/adata_preprocessed.h5ad")
+                if os.path.exists(preprocessed_path):
+                    sc.write(preprocessed_path, current_adata)
+                    if multiomics_verbose:
+                        print(f"[xglue-harmony] re-saved {preprocessed_path}")
 
     # ==================== STEP 2c: CELL TYPE CLUSTERING ====================
     # Uses the sample-removed cluster embedding (`X_glue_harmony` when present

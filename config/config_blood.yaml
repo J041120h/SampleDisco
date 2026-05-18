@@ -337,7 +337,6 @@ multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V
 # produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
 # train scGLUE a second time with treat_sample_as_batch=True; that run's
 # embedding is merged in as X_glue_harmony and the Harmony pass auto-skips.
-multiomics_harmonize_xglue: true
 multiomics_harmonize_xglue_max_iter: 50
 multiomics_run_glue_twice_for_sample_removal: false
 multiomics_save_prefix: "glue"
@@ -347,6 +346,10 @@ multiomics_save_prefix: "glue"
 # usually fires well before any cap regardless).
 multiomics_glue_data_batch_size: 1024
 multiomics_glue_max_epochs: null
+multiomics_glue_dataloader_num_workers: 4
+multiomics_glue_dataloader_fetches_per_batch: 8
+multiomics_glue_array_shuffle_num_workers: 4
+multiomics_glue_graph_shuffle_num_workers: 4
 
 # --- Neighbor/Metric Parameters ---
 multiomics_k_neighbors: 1

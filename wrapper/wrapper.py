@@ -815,19 +815,22 @@ def wrapper(
     multiomics_consistency_threshold: float = 0.05,
     multiomics_treat_sample_as_batch: bool = False,
     multiomics_save_prefix: str = "glue",
-    # scGLUE throughput knobs: data_batch_size lifts the library default
-    # (128 → 1024) to saturate the GPU; max_epochs=None lets scGLUE pick
-    # adaptively (its "AUTO" sentinel). Set max_epochs to an int to cap.
+    # scGLUE throughput knobs (see preparation/multi_omics_glue.py
+    # glue_train docstring for per-knob detail).
     multiomics_glue_data_batch_size: int = 1024,
     multiomics_glue_max_epochs: Optional[int] = None,
+    multiomics_glue_dataloader_num_workers: int = 4,
+    multiomics_glue_dataloader_fetches_per_batch: int = 8,
+    multiomics_glue_array_shuffle_num_workers: int = 4,
+    multiomics_glue_graph_shuffle_num_workers: int = 4,
     # V2 cluster-vs-CMD split. X_glue (from scGLUE) is sample-preserved
-    # → CMD role. The cluster role needs a sample-REMOVED variant:
-    #   harmonize_xglue=True (default) → single Harmony post-pass on
-    #     X_glue with sample (+ batch) as batch_keys → X_glue_harmony.
-    #   run_glue_twice_for_sample_removal=True → second scGLUE training
-    #     run with treat_sample_as_batch=True yields X_glue_harmony
-    #     end-to-end; Harmony post-pass auto-skips when this is True.
-    multiomics_harmonize_xglue: bool = True,
+    # → CMD role. The sample-REMOVED cluster role is ALWAYS derived, via
+    # one of two paths:
+    #   (default)  Harmony post-pass on X_glue → X_glue_harmony.
+    #   (opt-in)   Train scGLUE TWICE; the second run (with
+    #              treat_sample_as_batch=True) yields X_glue_harmony
+    #              end-to-end. When enabled the Harmony post-pass
+    #              auto-skips because X_glue_harmony already exists.
     multiomics_harmonize_xglue_max_iter: int = 50,
     multiomics_run_glue_twice_for_sample_removal: bool = False,
     
@@ -1471,8 +1474,11 @@ def wrapper(
                 save_prefix=multiomics_save_prefix,
                 glue_data_batch_size=multiomics_glue_data_batch_size,
                 glue_max_epochs=multiomics_glue_max_epochs,
+                glue_dataloader_num_workers=multiomics_glue_dataloader_num_workers,
+                glue_dataloader_fetches_per_batch=multiomics_glue_dataloader_fetches_per_batch,
+                glue_array_shuffle_num_workers=multiomics_glue_array_shuffle_num_workers,
+                glue_graph_shuffle_num_workers=multiomics_glue_graph_shuffle_num_workers,
                 # V2 cluster-vs-CMD split
-                harmonize_xglue=multiomics_harmonize_xglue,
                 harmonize_xglue_max_iter=multiomics_harmonize_xglue_max_iter,
                 run_glue_twice_for_sample_removal=multiomics_run_glue_twice_for_sample_removal,
                 # GLUE gene activity

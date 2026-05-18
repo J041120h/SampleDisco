@@ -1,0 +1,10 @@
+[20:33:12] loading /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/preprocess/adata_sample.h5ad
+[20:35:11] cells=(835934, 50)
+[20:35:11] refitting UMAP on 58385 subsample (same params as build_cell_umap.py)…
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/umap/umap_.py:1952: UserWarning: n_jobs value 1 overridden to 1 by setting random_state. Use no seed for parallelism.
+  warn(
+[20:36:33] UMAP fit done
+[20:36:33] 1439 (sample, ct, mod) groups
+[20:36:33] transforming (1439, 50) group means → 2D
+[20:36:46] transform done
+[20:36:46] written /users/hjiang/GenoDistance/figure/figure2/illustration/_cache/full_means.csv  (1439 rows)

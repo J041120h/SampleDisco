@@ -31,6 +31,7 @@ from sklearn.cross_decomposition import CCA
 from sklearn.decomposition import PCA
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import silhouette_score
 from sklearn.model_selection import KFold
 from scipy.spatial.distance import pdist, squareform
@@ -159,15 +160,38 @@ def build_blocks(
 # ============================================================ #
 # Scoring functions                                              #
 # ============================================================ #
+def _is_categorical_target(target) -> bool:
+    """True when ``target`` cannot be cast to a float array — i.e. its
+    values are strings / categorical labels. Used by the scorer dispatcher
+    to pick between CCA (numeric) and PC-R² (categorical)."""
+    try:
+        np.asarray(target).astype(float)
+        return False
+    except (ValueError, TypeError):
+        return True
+
+
 def _cca_corr(emb, target):
+    """First canonical correlation between ``emb`` (n × d) and a NUMERIC
+    1-D ``target`` (continuous grouping; e.g. age, severity score).
+
+    Categorical targets should NOT call this — the dispatcher routes them
+    to ``_pc_r2_categorical`` instead. If a non-castable target is passed
+    here we return 0 as a defensive fallback rather than mis-interpret it.
+    """
     e = np.asarray(emb)
-    t = np.asarray(target, dtype=float).reshape(-1, 1)
+    try:
+        t = np.asarray(target, dtype=float).reshape(-1, 1)
+    except (ValueError, TypeError):
+        return 0.0
     keep = ~np.isnan(t.flatten())
     if keep.sum() < 4:
         return 0.0
     e = e[keep]
     t = t[keep]
     n_pc = min(10, e.shape[1], e.shape[0] - 1)
+    if n_pc < 1:
+        return 0.0
     Xr = PCA(n_components=n_pc, random_state=42).fit_transform(e)
     try:
         c = CCA(n_components=1, max_iter=500).fit(Xr, t)
@@ -176,6 +200,38 @@ def _cca_corr(emb, target):
         return r if np.isfinite(r) else 0.0
     except Exception:
         return 0.0
+
+
+def _pc_r2_categorical(emb, target):
+    """Mean R² of top-K embedding PCs regressed on one-hot ``target``.
+
+    Principled categorical analogue to CCA: how much of the linear
+    variance in the embedding's leading PCs is explained by the categorical
+    label (multi-class ANOVA framing). Bounded [0, 1] — comparable to the
+    canonical correlation magnitude used by ``_cca_corr`` so both can sit in
+    the same min-max-normalised scorer ensemble.
+    """
+    e = np.asarray(emb)
+    arr = np.asarray(target)
+    keep = pd.notna(arr)
+    if keep.sum() < 4:
+        return 0.0
+    e = e[keep]
+    Y = pd.get_dummies(pd.Series(arr[keep].astype(str))).values.astype(float)
+    if Y.shape[1] < 2:
+        return 0.0
+    n_pc = min(10, e.shape[1], e.shape[0] - 1)
+    if n_pc < 1:
+        return 0.0
+    Xr = PCA(n_components=n_pc, random_state=42).fit_transform(e)
+    r2s = []
+    for i in range(n_pc):
+        try:
+            lr = LinearRegression().fit(Y, Xr[:, i])
+            r2s.append(max(0.0, float(lr.score(Y, Xr[:, i]))))
+        except Exception:
+            continue
+    return float(np.mean(r2s)) if r2s else 0.0
 
 
 def _ilisi_norm(emb, labels, k=15):
@@ -210,17 +266,30 @@ def _asw_safe(emb, labels):
 
 
 def _sps_continuous(emb, target, q=4):
+    """Between-group / within-group mean pairwise distance ratio.
+
+    For numeric ``target`` we bin into ``q`` quartiles via ``pd.qcut``.
+    For categorical (string) ``target`` we use the unique levels directly
+    as bins (no quartile binning needed).
+    """
     e = np.asarray(emb)
-    t = np.asarray(target, dtype=float)
-    keep = ~np.isnan(t)
-    if keep.sum() < 4:
-        return 0.0
-    e = e[keep]
-    t = t[keep]
+    arr = np.asarray(target)
     try:
-        bins = pd.qcut(pd.Series(t), q=q, labels=False, duplicates="drop").values
-    except Exception:
-        return 0.0
+        t = arr.astype(float)
+        keep = ~np.isnan(t)
+        if keep.sum() < 4:
+            return 0.0
+        e = e[keep]; t = t[keep]
+        try:
+            bins = pd.qcut(pd.Series(t), q=q, labels=False, duplicates="drop").values
+        except Exception:
+            return 0.0
+    except (ValueError, TypeError):
+        keep = pd.notna(arr)
+        if keep.sum() < 4:
+            return 0.0
+        e = e[keep]
+        bins = pd.factorize(pd.Series(arr[keep].astype(str)))[0]
     if len(set(bins)) < 2:
         return 0.0
     D = squareform(pdist(e))
@@ -276,10 +345,16 @@ def _minmax(x, lo, hi):
 
 
 SCORING_BOUNDS = {
-    "cca":            (0.0, 1.0),
-    "ilisi_norm":     (0.0, 1.0),
-    "sps":            (1.0, 3.0),
-    "neg_asw_batch":  (-0.5, 0.5),
+    "cca":              (0.0, 1.0),    # numeric grouping → first canonical correlation
+    # Categorical grouping: mean top-PC R² regressed on one-hot label.
+    # Empirically lower-magnitude than CCA — only the few PCs that span the
+    # discriminant direction contribute, the rest dilute the mean. Bounds
+    # calibrated so a "good" categorical score (≈0.20) lands near 0.8 after
+    # min-max normalisation in multi_metric_proxy.
+    "pc_r2_categorical":(0.0, 0.25),
+    "ilisi_norm":       (0.0, 1.0),
+    "sps":              (1.0, 3.0),
+    "neg_asw_batch":    (-0.5, 0.5),
 }
 
 
@@ -295,11 +370,22 @@ def make_scorer(name: str, meta: Dict, lam: float = 0.5) -> Callable[[np.ndarray
     batch = meta.get("batch")
     has_grouping = bool(meta.get("has_grouping"))
     has_batch = bool(meta.get("has_batch"))
+    grouping_is_categorical = has_grouping and _is_categorical_target(grouping)
+
+    # ``cca`` is the user-facing scorer name for "embedding tracks grouping".
+    # For continuous grouping we use the proper CCA first canonical
+    # correlation; for categorical grouping we use mean top-PC R² regressed
+    # on one-hot label (a proper multi-class ANOVA framing). Both are
+    # bounded [0, 1] with higher = better.
+    def _grouping_tracking_score(emb):
+        if grouping_is_categorical:
+            return _pc_r2_categorical(emb, grouping)
+        return _cca_corr(emb, grouping)
 
     if name == "cca":
         if not has_grouping:
             return lambda emb: 0.0
-        return lambda emb: _cca_corr(emb, grouping)
+        return _grouping_tracking_score
     if name == "ilisi_batch":
         if not has_batch:
             return lambda emb: 0.0
@@ -323,14 +409,17 @@ def make_scorer(name: str, meta: Dict, lam: float = 0.5) -> Callable[[np.ndarray
 
     if name == "sev_minus_batch":
         return lambda emb: (
-            (_cca_corr(emb, grouping) if has_grouping else 0.0)
+            (_grouping_tracking_score(emb) if has_grouping else 0.0)
             - lam * (_asw_safe(emb, batch) if has_batch else 0.0)
         )
 
     if name in ("multi_metric_proxy", "auto"):
         components: List[Callable[[np.ndarray], float]] = []
         if has_grouping:
-            components.append(lambda emb: _minmax(_cca_corr(emb, grouping), *SCORING_BOUNDS["cca"]))
+            tracking_key = "pc_r2_categorical" if grouping_is_categorical else "cca"
+            components.append(
+                lambda emb: _minmax(_grouping_tracking_score(emb),
+                                    *SCORING_BOUNDS[tracking_key]))
             components.append(lambda emb: _minmax(_sps_continuous(emb, grouping), *SCORING_BOUNDS["sps"]))
         if has_batch:
             components.append(lambda emb: _minmax(_ilisi_norm(emb, batch), *SCORING_BOUNDS["ilisi_norm"]))

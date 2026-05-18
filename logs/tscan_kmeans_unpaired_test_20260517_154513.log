@@ -1,0 +1,97 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/louvain/__init__.py:54: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+[load] /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/pseudobulk/pseudobulk_sample.h5ad
+[load] pseudobulk shape=(431, 2000)
+[scan] found 2 sampledisco variant(s): ['sampledisco_default_v2_celltype-on-harmony', 'sampledisco_tuned_v2_celltype-on-harmony']
+
+==============================================================================
+[run] variant=sampledisco_default_v2_celltype-on-harmony
+      emb_csv=/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/sample_embedding/sample_embedding.csv
+==============================================================================
+      samples=431  dims=10
+Starting TSCAN analysis:
+  Samples: 431
+  Genes: 1
+  N clusters: auto (BIC)
+  Embedding key: X_DR_sample
+Determining optimal cluster number using BIC...
+  Optimal clusters by BIC: 3
+GMM clustering complete:
+  Clusters: 3
+    cluster_1: 202 samples
+    cluster_2: 178 samples
+    cluster_3: 51 samples
+Computed pairwise euclidean distances among 3 cluster centroids
+MST construction complete with shape: (3, 3)
+Principal path found: 3 clusters, 431 total samples
+Path: cluster_1 -> cluster_3 -> cluster_2
+Using random endpoint as origin: cluster_2
+Found 0 branching paths
+Projection complete for 431 samples
+Sample ordering complete: 431 samples
+Cluster plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_cluster.png
+Plotted 431 samples across 3 clusters
+Cluster plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_cluster_X_DR_sample.png
+Grouping plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_grouping.png
+Grouping plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_grouping_X_DR_sample.png
+Pseudotime data saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/trajectory/TSCAN/X_DR_sample_pseudotime.csv
+  Total samples in CSV: 431
+
+TSCAN analysis completed successfully!
+  Main path: 431 samples across 3 clusters
+  Total samples processed: 431
+  Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/trajectory/TSCAN
+      tscan: 8.25s
+[INFO] K-means output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/sample_cluster
+[INFO] Running K-means on 'X_DR_sample', shape=(431, 10)
+[INFO] Saved sample clustering CSV: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/sample_cluster/kmeans_clusters_sample.csv
+[INFO] Saved plot: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_default_v2_celltype-on-harmony/sample_cluster/kmeans_sample_embedding.png
+[INFO] K-means clustering completed.
+      kmeans: 0.73s
+
+==============================================================================
+[run] variant=sampledisco_tuned_v2_celltype-on-harmony
+      emb_csv=/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/sample_embedding/sample_embedding.csv
+==============================================================================
+      samples=431  dims=10
+Starting TSCAN analysis:
+  Samples: 431
+  Genes: 1
+  N clusters: auto (BIC)
+  Embedding key: X_DR_sample
+Determining optimal cluster number using BIC...
+  Optimal clusters by BIC: 3
+GMM clustering complete:
+  Clusters: 3
+    cluster_1: 142 samples
+    cluster_2: 191 samples
+    cluster_3: 98 samples
+Computed pairwise euclidean distances among 3 cluster centroids
+MST construction complete with shape: (3, 3)
+Principal path found: 3 clusters, 431 total samples
+Path: cluster_1 -> cluster_3 -> cluster_2
+Using random endpoint as origin: cluster_2
+Found 0 branching paths
+Projection complete for 431 samples
+Sample ordering complete: 431 samples
+Cluster plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_cluster.png
+Plotted 431 samples across 3 clusters
+Cluster plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_cluster_X_DR_sample.png
+Grouping plot saved to /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_grouping.png
+Grouping plot saved as: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/trajectory/TSCAN/clusters_by_grouping_X_DR_sample.png
+Pseudotime data saved: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/trajectory/TSCAN/X_DR_sample_pseudotime.csv
+  Total samples in CSV: 431
+
+TSCAN analysis completed successfully!
+  Main path: 431 samples across 3 clusters
+  Total samples processed: 431
+  Results saved to: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/trajectory/TSCAN
+      tscan: 6.36s
+[INFO] K-means output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/sample_cluster
+[INFO] Running K-means on 'X_DR_sample', shape=(431, 10)
+[INFO] Saved sample clustering CSV: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/sample_cluster/kmeans_clusters_sample.csv
+[INFO] Saved plot: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/sample_cluster/kmeans_sample_embedding.png
+[INFO] K-means clustering completed.
+      kmeans: 0.65s
+
+[done] all variants processed.

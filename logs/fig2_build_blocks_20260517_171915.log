@@ -1,0 +1,26 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/louvain/__init__.py:54: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+[17:19:21] loading /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/preprocess/adata_sample.h5ad
+[17:21:12] cells=835934  obsm=['X_glue']
+[17:21:19] units=88  cells=835934  d=50  K_c=32
+[17:21:20] A1 shape=(88, 32)
+[17:21:20] A2 MiniBatchKMeans K=120…
+[17:21:29] A2 shape=(88, 120)
+[17:21:29] A3 MiniBatchKMeans K=300…
+[17:21:48] A3 shape=(88, 300)
+[17:21:48] CMD LOO displacement…
+  [CMD] shape=(88, 256)
+[17:21:51] CMD shape=(88, 256)
+[17:21:51] weights=[3.0619, 1.5811, 1.0, 0.6]
+[17:21:51] F=(88, 708)  Fp=(88, 10)  loadings=(10, 708)
+  [batch correction] 2 groups (group only)
+2026-05-17 17:21:51,379 - harmonypy - INFO - Computing initial centroids with sklearn.KMeans...
+2026-05-17 17:21:51,391 - harmonypy - INFO - sklearn.KMeans initialization complete.
+2026-05-17 17:21:51,391 - harmonypy - INFO - Iteration 1 of 30
+2026-05-17 17:21:51,405 - harmonypy - INFO - Iteration 2 of 30
+2026-05-17 17:21:51,416 - harmonypy - INFO - Iteration 3 of 30
+2026-05-17 17:21:51,425 - harmonypy - INFO - Iteration 4 of 30
+2026-05-17 17:21:51,436 - harmonypy - INFO - Converged after 4 iterations
+[17:21:51] Zc final shape=(88, 10)
+[17:21:51] units df: [{'unit': 'ENCSR033MDU_ATAC', 'group': 'ATAC', 'tissue': 'pancreas'}, {'unit': 'ENCSR033MDU_RNA', 'group': 'RNA', 'tissue': 'pancreas'}, {'unit': 'ENCSR128ZLB_ATAC', 'group': 'ATAC', 'tissue': 'lung'}, {'unit': 'ENCSR128ZLB_RNA', 'group': 'RNA', 'tissue': 'lung'}, {'unit': 'ENCSR158DQA_ATAC', 'group': 'ATAC', 'tissue': 'pancreas'}]
+[17:21:53] cache dir: /users/hjiang/GenoDistance/figure/figure2/illustration/_cache
