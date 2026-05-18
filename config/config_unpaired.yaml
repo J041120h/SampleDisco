@@ -354,9 +354,9 @@ multiomics_save_prefix: "glue"
 multiomics_glue_data_batch_size: 32768      # H100 96GB sweet spot (32x library default)
 multiomics_glue_max_epochs: null
 multiomics_glue_dataloader_num_workers: 4
-multiomics_glue_dataloader_fetches_per_batch: 8
-multiomics_glue_array_shuffle_num_workers: 4
-multiomics_glue_graph_shuffle_num_workers: 4
+multiomics_glue_dataloader_fetches_per_worker: 4    # back to scglue default after sharding crash with 8
+multiomics_glue_array_shuffle_num_workers: 0        # back to scglue default after sharding crash with 4
+multiomics_glue_graph_shuffle_num_workers: 0        # back to scglue default after sharding crash with 4
 
 # --- Neighbor/Metric Parameters ---
 multiomics_k_neighbors: 1

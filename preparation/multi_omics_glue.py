@@ -499,7 +499,7 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
                data_batch_size: int = 1024,
                max_epochs: Optional[int] = None,
                dataloader_num_workers: int = 0,
-               dataloader_fetches_per_batch: int = 4,
+               dataloader_fetches_per_worker: int = 4,
                array_shuffle_num_workers: int = 0,
                graph_shuffle_num_workers: int = 0):
     """
@@ -557,9 +557,9 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
         (``scglue.config.DATALOADER_NUM_WORKERS``). Library default 0
         (single-threaded fetch → GPU often idle between steps); 4 overlaps
         I/O with GPU compute (typical 1.5–2× speedup, no convergence impact).
-    dataloader_fetches_per_batch : int
+    dataloader_fetches_per_worker : int
         Prefetch depth — number of batches each worker pre-fetches ahead of
-        the GPU (``scglue.config.DATALOADER_FETCHES_PER_BATCH``). Library
+        the GPU (``scglue.config.DATALOADER_FETCHES_PER_WORKER``). Library
         default 4. Larger = deeper pipeline = better GPU saturation, at the
         cost of host RAM.
     array_shuffle_num_workers : int
@@ -657,11 +657,11 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     # inside fit_SCGLUE. Setting these knobs here, just before training,
     # scopes the changes cleanly to this call.
     scglue.config.DATALOADER_NUM_WORKERS         = dataloader_num_workers
-    scglue.config.DATALOADER_FETCHES_PER_BATCH   = dataloader_fetches_per_batch
+    scglue.config.DATALOADER_FETCHES_PER_WORKER   = dataloader_fetches_per_worker
     scglue.config.ARRAY_SHUFFLE_NUM_WORKERS      = array_shuffle_num_workers
     scglue.config.GRAPH_SHUFFLE_NUM_WORKERS      = graph_shuffle_num_workers
     print(f"\n\n\n🤖 Training GLUE model (fit_kws={fit_kws}, "
-          f"workers={dataloader_num_workers}, prefetch={dataloader_fetches_per_batch}, "
+          f"workers={dataloader_num_workers}, prefetch={dataloader_fetches_per_worker}, "
           f"array_shuf={array_shuffle_num_workers}, graph_shuf={graph_shuffle_num_workers})...\n\n\n")
     glue = scglue.models.fit_SCGLUE(
         {"rna": rna, "atac": atac},
@@ -1117,12 +1117,21 @@ def _merge_second_glue_embedding_into_primary_h5ads(
     glue_dir: str,
     primary_prefix: str,
     secondary_prefix: str,
-    target_obsm_key: str,
+    z_clust_key: str = "Z_clust",
+    z_cmd_key: str = "Z_cmd",
 ) -> None:
-    """Read X_glue from the secondary GLUE run's RNA/ATAC h5ads and write it
-    into the PRIMARY RNA/ATAC h5ads under ``target_obsm_key``. Used to package
-    the V2 sample-removed cluster embedding alongside the sample-preserved
-    primary X_glue without duplicating heavy h5ad files downstream."""
+    """Align the primary RNA/ATAC h5ads with paper-named cell-level views.
+
+    Writes into each of ``<primary_prefix>-{rna,atac}-emb.h5ad``:
+
+      * ``obsm[z_cmd_key]``   = primary's ``obsm['X_glue']`` aliased
+                                (sample-PRESERVED — CMD displacement role)
+      * ``obsm[z_clust_key]`` = secondary's ``obsm['X_glue']`` merged in
+                                (sample-REMOVED — cluster role)
+
+    ``obsm['X_glue']`` on the primary is left untouched as the raw scGLUE
+    output. Downstream code reads ``Z_cmd`` / ``Z_clust``.
+    """
     import os as _os
     for mod in ("rna", "atac"):
         primary  = _os.path.join(glue_dir, f"{primary_prefix}-{mod}-emb.h5ad")
@@ -1133,16 +1142,19 @@ def _merge_second_glue_embedding_into_primary_h5ads(
             raise FileNotFoundError(f"secondary GLUE h5ad missing: {secondary}")
         a_primary = ad.read_h5ad(primary)
         a_secondary = ad.read_h5ad(secondary)
+        if "X_glue" not in a_primary.obsm:
+            raise KeyError(f"primary h5ad {primary} missing obsm['X_glue']")
         if "X_glue" not in a_secondary.obsm:
             raise KeyError(f"secondary h5ad {secondary} missing obsm['X_glue']")
         if a_primary.n_obs != a_secondary.n_obs:
             raise ValueError(
                 f"primary/secondary cell count mismatch for {mod}: "
                 f"{a_primary.n_obs} vs {a_secondary.n_obs}")
-        a_primary.obsm[target_obsm_key] = a_secondary.obsm["X_glue"]
+        a_primary.obsm[z_cmd_key]   = a_primary.obsm["X_glue"]
+        a_primary.obsm[z_clust_key] = a_secondary.obsm["X_glue"]
         a_primary.write(primary, compression="gzip")
-        print(f"  merged {secondary} → {primary}  obsm[{target_obsm_key!r}] "
-              f"({a_primary.obsm[target_obsm_key].shape})")
+        print(f"  ✓ {mod}: obsm[{z_cmd_key!r}] (from primary X_glue) "
+              f"+ obsm[{z_clust_key!r}] (from {secondary_prefix}) → {primary}")
 
 
 def multiomics_preparation(
@@ -1186,18 +1198,19 @@ def multiomics_preparation(
     data_batch_size: int = 1024,
     max_epochs: Optional[int] = None,
     dataloader_num_workers: int = 0,
-    dataloader_fetches_per_batch: int = 4,
+    dataloader_fetches_per_worker: int = 4,
     array_shuffle_num_workers: int = 0,
     graph_shuffle_num_workers: int = 0,
     # Optional second scGLUE training run for the sample-REMOVED cluster
-    # embedding. When True, scGLUE is invoked a SECOND time with
-    # treat_sample_as_batch=True; if batch_key is also set, both batch and
-    # sample are removed via a synthetic combined column. The resulting
-    # embedding is merged into the primary RNA + ATAC h5ads under
-    # obsm[second_run_emb_key]. The primary X_glue is unchanged.
+    # embedding (paper's ``Z_clust``). When True, scGLUE is invoked a
+    # SECOND time with ``treat_sample_as_batch=True`` (use_batch=sample,
+    # which implicitly removes batch too since each sample is in exactly
+    # one batch). After training, the merge helper writes both
+    # ``obsm['Z_cmd']`` (primary's X_glue, aliased) and
+    # ``obsm['Z_clust']`` (secondary's X_glue) into the primary RNA + ATAC
+    # h5ads so downstream code reads paper-aligned keys uniformly.
     run_second_glue_for_sample_removal: bool = False,
     second_run_save_prefix: str = "glue_no_sample",
-    second_run_emb_key: str = "X_glue_harmony",
     
     # Gene activity computation parameters
     k_neighbors: int = 1,
@@ -1264,7 +1277,7 @@ def multiomics_preparation(
             data_batch_size=data_batch_size,
             max_epochs=max_epochs,
             dataloader_num_workers=dataloader_num_workers,
-            dataloader_fetches_per_batch=dataloader_fetches_per_batch,
+            dataloader_fetches_per_worker=dataloader_fetches_per_worker,
             array_shuffle_num_workers=array_shuffle_num_workers,
             graph_shuffle_num_workers=graph_shuffle_num_workers,
             output_dir=glue_output_dir,
@@ -1272,11 +1285,13 @@ def multiomics_preparation(
         print("Training completed.")
 
         # Step 2b (optional): SECOND scGLUE run that ALSO removes per-sample
-        # variance → the cluster embedding. When batch_key is set, batch is
-        # removed jointly via a synthetic combined column.
+        # variance → produces the paper's Z_clust. With sample as use_batch
+        # (each sample lives in exactly one batch, so removing sample also
+        # removes batch), this is the end-to-end alternative to running a
+        # Harmony post-pass on Z_cmd.
         if run_second_glue_for_sample_removal:
             print(f"Running second scGLUE pass for sample removal "
-                  f"(treat_sample_as_batch=True) → obsm[{second_run_emb_key!r}]")
+                  f"(treat_sample_as_batch=True) → obsm['Z_clust']")
             glue_train(
                 preprocess_output_dir=glue_output_dir,
                 save_prefix=second_run_save_prefix,
@@ -1288,13 +1303,15 @@ def multiomics_preparation(
                 data_batch_size=data_batch_size,
                 max_epochs=max_epochs,
                 dataloader_num_workers=dataloader_num_workers,
+                dataloader_fetches_per_worker=dataloader_fetches_per_worker,
+                array_shuffle_num_workers=array_shuffle_num_workers,
+                graph_shuffle_num_workers=graph_shuffle_num_workers,
                 output_dir=glue_output_dir,
             )
             _merge_second_glue_embedding_into_primary_h5ads(
                 glue_dir=glue_output_dir,
                 primary_prefix=save_prefix,
                 secondary_prefix=second_run_save_prefix,
-                target_obsm_key=second_run_emb_key,
             )
             print("Second GLUE pass merged.")
     

@@ -1,0 +1,192 @@
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/louvain/__init__.py:54: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+[run_diemb_test] config keys:    310
+[run_diemb_test] wrapper params: 311
+[run_diemb_test] dropped (unknown to current wrapper): 43
+    - atac_cca_based_cell_resolution_selection
+    - atac_cca_coarse_end
+    - atac_cca_coarse_start
+    - atac_cca_coarse_step
+    - atac_cca_compute_corrected_pvalues
+    - atac_cca_fine_range
+    - atac_cca_fine_step
+    - atac_harmony_for_proportion
+    - atac_preserve_cols_in_sample_embedding
+    - atac_sample_embedding_dimension
+    - atac_sample_hvg_number
+    - multiomics_analyze_modality_alignment
+    - multiomics_cca_coarse_end
+    - multiomics_cca_coarse_start
+    - multiomics_cca_coarse_step
+    - multiomics_cca_fine_range
+    - multiomics_cca_fine_step
+    - multiomics_compute_corrected_pvalues
+    - multiomics_dimensionality_reduction
+    - multiomics_expression_key
+    - multiomics_find_optimal_resolution
+    - multiomics_harmony_for_proportion
+    - multiomics_n_expression_components
+    - multiomics_n_proportion_components
+    - multiomics_num_pcs
+    - multiomics_optimization_target
+    - multiomics_preserve_cols_for_sample_embedding
+    - multiomics_proportion_key
+    - multiomics_resolution_use_rep
+    - multiomics_sample_hvg_number
+    - multiomics_sev_col
+    - multiomics_visualize_cell_types
+    - rna_cca_based_cell_resolution_selection
+    - rna_cca_coarse_end
+    - rna_cca_coarse_start
+    - rna_cca_coarse_step
+    - rna_cca_compute_corrected_pvalues
+    - rna_cca_fine_range
+    - rna_cca_fine_step
+    - rna_harmony_for_proportion
+    - rna_preserve_cols_in_sample_embedding
+    - rna_sample_embedding_dimension
+    - rna_sample_hvg_number
+[run_diemb_test] passing 267 kwargs to wrapper(...)
+Warning: GPU initialization failed (CUDARuntimeError: cudaErrorInsufficientDriver: CUDA driver version is insufficient for CUDA runtime version). Falling back to CPU.
+Resuming from previous progress:
+{
+  "rna": {
+    "preprocessing": false,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "atac": {
+    "preprocessing": false,
+    "cell_type_cluster": false,
+    "derive_sample_embedding": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "multiomics": {
+    "glue_integration": false,
+    "glue_preprocessing": false,
+    "glue_training": false,
+    "glue_gene_activity": false,
+    "glue_cell_types": false,
+    "glue_visualization": false,
+    "integration_preprocessing": false,
+    "optimal_resolution": false,
+    "dimensionality_reduction": false,
+    "cca_based_cell_resolution_selection": false,
+    "sample_distance_calculation": false,
+    "trajectory_analysis": false,
+    "trajectory_dge": false,
+    "sample_cluster": false,
+    "proportion_test": false,
+    "cluster_dge": false,
+    "embedding_visualization": false,
+    "visualization": false,
+    "phenotype_prediction": false,
+    "dimension_association_analysis": false
+  },
+  "system_info": {
+    "platform": "Linux",
+    "python_version": "3.10.18 | packaged by conda-forge | (main, Jun  4 2025, 14:45:41) [GCC 13.3.0]",
+    "use_gpu": true,
+    "gpu_available": false
+  }
+}
+
+============================================================
+RUNNING MULTIOMICS PIPELINE
+============================================================
+[multi_omics_glue] prepended /users/hjiang/.conda/envs/hongkai/bin to PATH for bedtools
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+Starting multi-modal pipeline with output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics
+GPU mode: Disabled
+Step 1: Running GLUE integration...
+Running training...
+
+
+
+⏭️  Skipping glue_train(save_prefix='glue'): all final artifacts already exist in /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue.
+      glue.dill
+      glue-rna-emb.h5ad
+      glue-atac-emb.h5ad
+
+
+
+Training completed.
+Running second scGLUE pass for sample removal (treat_sample_as_batch=True) → obsm['X_glue_harmony']
+
+
+
+🚀 Starting GLUE training pipeline...
+
+
+
+   Feature mode: Highly Variable Only
+   Output directory: /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue
+
+
+
+
+📊 Loading preprocessed data from /dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/integration/glue...
+
+
+
+
+
+
+Data loaded - RNA: (898489, 14743), ATAC: (88985, 230356), Graph: 245099 nodes
+
+
+
+
+
+
+⚙️ Configuring datasets...
+
+
+
+   scGLUE use_batch = 'sample'
+
+
+
+🔍 Extracting highly variable feature subgraph...
+
+
+
+HVF subgraph extracted - RNA HVF: 1989, ATAC HVF: 18536
+HVF graph: 20525 nodes, 57817 edges
+
+
+
+
+Multiomics pipeline failed: can't set attribute 'DATALOADER_FETCHES_PER_BATCH'
+Traceback (most recent call last):
+  File "/users/hjiang/GenoDistance/code/wrapper/wrapper.py", line 1430, in wrapper
+    multiomics_results = multiomics_wrapper(
+  File "/users/hjiang/GenoDistance/code/wrapper/multiomics_wrapper.py", line 240, in multiomics_wrapper
+    glue_result = multiomics_preparation(
+  File "/users/hjiang/GenoDistance/code/preparation/multi_omics_glue.py", line 1280, in multiomics_preparation
+    glue_train(
+  File "/users/hjiang/GenoDistance/code/preparation/multi_omics_glue.py", line 660, in glue_train
+    scglue.config.DATALOADER_FETCHES_PER_BATCH   = dataloader_fetches_per_batch
+AttributeError: can't set attribute 'DATALOADER_FETCHES_PER_BATCH'
+
+Total execution time: 114.53 seconds (1.91 minutes)

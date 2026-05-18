@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_metrics_v2.py
+monitor_wrapper.py
 
 Exact totals (CPU time, peak RAM) + time-weighted averages (RAM, GPU util/mem)
 Optional: CPU cycles (perf), per-kernel GPU time (Nsight Systems).

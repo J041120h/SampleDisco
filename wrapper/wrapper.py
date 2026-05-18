@@ -820,7 +820,7 @@ def wrapper(
     multiomics_glue_data_batch_size: int = 1024,
     multiomics_glue_max_epochs: Optional[int] = None,
     multiomics_glue_dataloader_num_workers: int = 4,
-    multiomics_glue_dataloader_fetches_per_batch: int = 8,
+    multiomics_glue_dataloader_fetches_per_worker: int = 8,
     multiomics_glue_array_shuffle_num_workers: int = 4,
     multiomics_glue_graph_shuffle_num_workers: int = 4,
     # V2 cluster-vs-CMD split. X_glue (from scGLUE) is sample-preserved
@@ -1475,7 +1475,7 @@ def wrapper(
                 glue_data_batch_size=multiomics_glue_data_batch_size,
                 glue_max_epochs=multiomics_glue_max_epochs,
                 glue_dataloader_num_workers=multiomics_glue_dataloader_num_workers,
-                glue_dataloader_fetches_per_batch=multiomics_glue_dataloader_fetches_per_batch,
+                glue_dataloader_fetches_per_worker=multiomics_glue_dataloader_fetches_per_worker,
                 glue_array_shuffle_num_workers=multiomics_glue_array_shuffle_num_workers,
                 glue_graph_shuffle_num_workers=multiomics_glue_graph_shuffle_num_workers,
                 # V2 cluster-vs-CMD split

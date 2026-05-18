@@ -121,7 +121,7 @@ def make_se(adata, variant: str, outdir: str):
 
 def evaluate(ds_name: str, ds_cfg: dict, emb_csv: str, method_label: str):
     if ds_cfg["evaluator"] == "encode":
-        from benchmark_metircs_ENCODE import evaluate_multimodal_integration as ev
+        from benchmark_metrics_ENCODE import evaluate_multimodal_integration as ev
         bio_key = "tissue_preservation_score"
     elif ds_cfg["evaluator"] == "eye":
         from benchmark_eye import evaluate_multimodal_integration as ev

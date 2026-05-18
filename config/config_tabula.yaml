@@ -336,7 +336,7 @@ multiomics_save_prefix: "glue"
 multiomics_glue_data_batch_size: 1024
 multiomics_glue_max_epochs: null
 multiomics_glue_dataloader_num_workers: 4
-multiomics_glue_dataloader_fetches_per_batch: 8
+multiomics_glue_dataloader_fetches_per_worker: 8
 multiomics_glue_array_shuffle_num_workers: 4
 multiomics_glue_graph_shuffle_num_workers: 4
 
