@@ -1,11 +1,42 @@
 # Standard library
 import os
+import sys
 import gc
 import time
+import shutil as _shutil
 from pathlib import Path
 from typing import Optional, Tuple, List
 from itertools import chain
 from concurrent.futures import ThreadPoolExecutor
+
+
+# ---------------------------------------------------------------------------
+# Auto-resolve bedtools BEFORE importing scglue (which imports pybedtools at
+# module load and caches each legacy-binary's availability — once cached, no
+# late PATH change will recover sortBed/intersectBed/etc.).
+#
+# When the user invokes Python directly without ``conda activate``, the env's
+# bin/ is absent from PATH; scglue would then raise a misleading "exited with
+# code 127" or "sortBed does not appear to be installed".
+# ---------------------------------------------------------------------------
+def _resolve_bedtools_dir() -> str:
+    """Directory containing the bedtools binary, or '' if not found."""
+    found = _shutil.which("bedtools")
+    if found:
+        return os.path.dirname(found)
+    candidate = os.path.join(os.path.dirname(sys.executable), "bedtools")
+    return os.path.dirname(candidate) if os.path.exists(candidate) else ""
+
+
+_bin_dir = _resolve_bedtools_dir()
+if _bin_dir:
+    if _bin_dir not in os.environ.get("PATH", "").split(os.pathsep):
+        os.environ["PATH"] = _bin_dir + os.pathsep + os.environ.get("PATH", "")
+        print(f"[multi_omics_glue] prepended {_bin_dir} to PATH for bedtools")
+else:
+    print("[multi_omics_glue] WARNING: bedtools not found on PATH or alongside "
+          "python; rna_anchored_guidance_graph will fail.")
+
 
 # Third-party
 import numpy as np
@@ -13,16 +44,17 @@ import pandas as pd
 import anndata as ad
 import scanpy as sc
 import networkx as nx
-import scglue
+import scglue  # pulls in pybedtools — PATH must already be correct above
 import pyensembl
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import sparse
 import psutil
-import cupy as cp
-from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-from cupyx.scipy import sparse as cusparse
+# NB: cupy / cuml / cupyx are imported LAZILY inside
+# ``compute_gene_activity_from_knn`` — they're the only callsite, and a
+# broken RAPIDS install (driver mismatch) shouldn't block GLUE training
+# itself, which only needs torch + scglue.
 
 # Local/project
 from utils.safe_save import safe_h5ad_write
@@ -223,7 +255,15 @@ def glue_preprocess_pipeline(
     sc.pp.log1p(rna)
     sc.pp.scale(rna)
     sc.tl.pca(rna, n_comps=n_pca_comps, svd_solver="auto")
-    
+
+    # Release the dense scaled matrix: PCA result is in obsm['X_pca'] and
+    # GLUE reads raw counts from layers['counts'] (set at line 176). Keeping
+    # rna.X dense would carry ~50 GB unnecessarily into guidance-graph
+    # construction below (the documented OOM hotspot on large RNA datasets).
+    rna.X = rna.layers["counts"]
+    gc.collect()
+    print(f"   Freed dense rna.X (restored to sparse counts from layers['counts'])")
+
     if generate_umap:
         print("   Computing UMAP embedding...")
         sc.pp.neighbors(rna, metric="cosine")
@@ -425,10 +465,13 @@ def glue_preprocess_pipeline(
 def _resolve_glue_batch_design(rna, atac, *, treat_sample_as_batch, batch_key, sample_key):
     """Decide the single ``use_batch`` column to pass to scGLUE.
 
-    Returns None when no batch correction should be applied. When both a
-    batch key and a sample key must be jointly removed (the second-run
-    cluster embedding case), creates a synthetic ``<batch>__<sample>``
-    column on both AnnDatas and returns its name.
+    Each sample belongs to exactly one batch (single-cell biology
+    invariant), so ``sample`` is a strict refinement of ``batch`` —
+    removing per-sample variance with scGLUE already removes batch
+    variance implicitly. Therefore ``treat_sample_as_batch=True`` just
+    uses ``sample_key`` as use_batch; no synthetic combined column is
+    needed (and adding one would inflate scGLUE's per-batch internal
+    layers without giving the model any new information).
     """
     def _has(adata, col): return col and col in adata.obs.columns
 
@@ -437,12 +480,6 @@ def _resolve_glue_batch_design(rna, atac, *, treat_sample_as_batch, batch_key, s
             raise KeyError(
                 f"sample_key={sample_key!r} missing from rna/atac obs — "
                 "required for treat_sample_as_batch=True.")
-        if _has(rna, batch_key) and _has(atac, batch_key) and batch_key != sample_key:
-            combined = f"{batch_key}__{sample_key}"
-            for a in (rna, atac):
-                a.obs[combined] = (a.obs[batch_key].astype(str) + "__" +
-                                   a.obs[sample_key].astype(str)).astype("category")
-            return combined
         return sample_key
 
     if _has(rna, batch_key) and _has(atac, batch_key):
@@ -460,20 +497,31 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
                sample_key="sample",
                use_highly_variable=True,
                data_batch_size: int = 1024,
-               max_epochs: Optional[int] = None):
+               max_epochs: Optional[int] = None,
+               dataloader_num_workers: int = 0,
+               dataloader_fetches_per_batch: int = 4,
+               array_shuffle_num_workers: int = 0,
+               graph_shuffle_num_workers: int = 0):
     """
     Train scGLUE model for single-cell multi-omics integration.
 
-    scGLUE's ``configure_dataset(use_batch=...)`` accepts a single column,
-    so the batch design is resolved as follows:
+    scGLUE's ``configure_dataset(use_batch=...)`` accepts a single column.
+    Batch design:
 
       treat_sample_as_batch  batch_key  →  use_batch
       ─────────────────────  ─────────     ──────────
       False (V2 default)     set       →  batch_key   (remove batch, keep sample)
       False                  None      →  None        (no correction in GLUE)
-      True                   None      →  sample_key  (remove sample, keep batch)
-      True                   set       →  synthetic "<batch_key>__<sample_key>"
-                                          combined column (remove batch + sample)
+      True                   any       →  sample_key  (removes sample;
+                                                       since each sample is in
+                                                       exactly one batch, batch
+                                                       is implicitly removed too)
+
+    Skip-if-output-exists: if the final ``<save_prefix>.dill`` and both
+    ``<save_prefix>-{rna,atac}-emb.h5ad`` already exist in ``output_dir``,
+    this function returns early without retraining. This lets the V2 dual
+    scGLUE pass (primary + sample-removal) resume across kill/restart
+    boundaries without redoing the run whose artifacts are already saved.
 
     The combined-column path lets the optional second scGLUE run yield a
     truly batch- *and* sample-removed cluster embedding when both keys are
@@ -504,11 +552,41 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
         scGLUE's ``"AUTO"`` sentinel through to ``fit`` so the library
         picks adaptively (typically ~100–200); early stopping via patience
         usually fires well before the cap regardless.
+    dataloader_num_workers : int
+        scGLUE's torch DataLoader worker count
+        (``scglue.config.DATALOADER_NUM_WORKERS``). Library default 0
+        (single-threaded fetch → GPU often idle between steps); 4 overlaps
+        I/O with GPU compute (typical 1.5–2× speedup, no convergence impact).
+    dataloader_fetches_per_batch : int
+        Prefetch depth — number of batches each worker pre-fetches ahead of
+        the GPU (``scglue.config.DATALOADER_FETCHES_PER_BATCH``). Library
+        default 4. Larger = deeper pipeline = better GPU saturation, at the
+        cost of host RAM.
+    array_shuffle_num_workers : int
+        Background workers for the cell-data shuffle
+        (``scglue.config.ARRAY_SHUFFLE_NUM_WORKERS``). Default 0.
+    graph_shuffle_num_workers : int
+        Background workers for the guidance-graph shuffle
+        (``scglue.config.GRAPH_SHUFFLE_NUM_WORKERS``). Default 0.
     """
+    # Skip-if-output-exists: a previous run already produced this
+    # save_prefix's final artifacts. Don't redo (lets the V2 dual scGLUE
+    # pass resume across kill/restart without re-running the first pass).
+    model_path    = os.path.join(output_dir, f"{save_prefix}.dill")
+    rna_emb_path  = os.path.join(output_dir, f"{save_prefix}-rna-emb.h5ad")
+    atac_emb_path = os.path.join(output_dir, f"{save_prefix}-atac-emb.h5ad")
+    if all(os.path.exists(p) for p in (model_path, rna_emb_path, atac_emb_path)):
+        print(f"\n\n\n⏭️  Skipping glue_train(save_prefix={save_prefix!r}): "
+              f"all final artifacts already exist in {output_dir}.")
+        print(f"      {os.path.basename(model_path)}")
+        print(f"      {os.path.basename(rna_emb_path)}")
+        print(f"      {os.path.basename(atac_emb_path)}\n\n\n")
+        return
+
     print("\n\n\n🚀 Starting GLUE training pipeline...\n\n\n")
     print(f"   Feature mode: {'Highly Variable Only' if use_highly_variable else 'All Features'}")
     print(f"   Output directory: {output_dir}\n")
-    
+
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -561,8 +639,12 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
         guidance_hvf = guidance
         print(f"Full graph: {guidance_hvf.number_of_nodes()} nodes, {guidance_hvf.number_of_edges()} edges\n\n\n")
     
-    # 4. Train GLUE model (create training subdirectory)
-    train_dir = os.path.join(output_dir, "training")
+    # 4. Train GLUE model. The training subdir is per-run (keyed by
+    # save_prefix) so multiple glue_train calls under the same output_dir
+    # — e.g. the V2 dual scGLUE pass (primary + sample-removal) — do NOT
+    # overwrite each other's pretrain.dill / checkpoint_*.pt / tensorboard
+    # logs inside training/pretrain/ and training/fine-tune/.
+    train_dir = os.path.join(output_dir, "training", save_prefix)
     os.makedirs(train_dir, exist_ok=True)
     
     fit_kws = {
@@ -571,7 +653,16 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     }
     if max_epochs is not None:
         fit_kws["max_epochs"] = max_epochs
-    print(f"\n\n\n🤖 Training GLUE model (fit_kws={fit_kws})...\n\n\n")
+    # scglue.config is a module-level singleton used by the dataloaders
+    # inside fit_SCGLUE. Setting these knobs here, just before training,
+    # scopes the changes cleanly to this call.
+    scglue.config.DATALOADER_NUM_WORKERS         = dataloader_num_workers
+    scglue.config.DATALOADER_FETCHES_PER_BATCH   = dataloader_fetches_per_batch
+    scglue.config.ARRAY_SHUFFLE_NUM_WORKERS      = array_shuffle_num_workers
+    scglue.config.GRAPH_SHUFFLE_NUM_WORKERS      = graph_shuffle_num_workers
+    print(f"\n\n\n🤖 Training GLUE model (fit_kws={fit_kws}, "
+          f"workers={dataloader_num_workers}, prefetch={dataloader_fetches_per_batch}, "
+          f"array_shuf={array_shuffle_num_workers}, graph_shuf={graph_shuffle_num_workers})...\n\n\n")
     glue = scglue.models.fit_SCGLUE(
         {"rna": rna, "atac": atac},
         guidance_hvf,
@@ -636,7 +727,14 @@ def compute_gene_activity_from_knn(
     use_gpu: bool = True,
     verbose: bool = True,
 ) -> ad.AnnData:
-    
+    # Lazy GPU imports: RAPIDS (cuml/cupy/cupyx) is broken on some nodes
+    # via driver/runtime mismatch; importing at module level would block
+    # GLUE training itself. Surface a clear error only when gene activity
+    # actually runs.
+    import cupy as cp
+    from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+    from cupyx.scipy import sparse as cusparse
+
     def fix_sparse_matrix_dtype(X, verbose=False):
         if not sparse.issparse(X):
             return X
@@ -1087,6 +1185,10 @@ def multiomics_preparation(
     # scGLUE training throughput knobs (see glue_train docstring)
     data_batch_size: int = 1024,
     max_epochs: Optional[int] = None,
+    dataloader_num_workers: int = 0,
+    dataloader_fetches_per_batch: int = 4,
+    array_shuffle_num_workers: int = 0,
+    graph_shuffle_num_workers: int = 0,
     # Optional second scGLUE training run for the sample-REMOVED cluster
     # embedding. When True, scGLUE is invoked a SECOND time with
     # treat_sample_as_batch=True; if batch_key is also set, both batch and
@@ -1161,6 +1263,10 @@ def multiomics_preparation(
             use_highly_variable=use_highly_variable,
             data_batch_size=data_batch_size,
             max_epochs=max_epochs,
+            dataloader_num_workers=dataloader_num_workers,
+            dataloader_fetches_per_batch=dataloader_fetches_per_batch,
+            array_shuffle_num_workers=array_shuffle_num_workers,
+            graph_shuffle_num_workers=graph_shuffle_num_workers,
             output_dir=glue_output_dir,
         )
         print("Training completed.")
@@ -1181,6 +1287,7 @@ def multiomics_preparation(
                 use_highly_variable=use_highly_variable,
                 data_batch_size=data_batch_size,
                 max_epochs=max_epochs,
+                dataloader_num_workers=dataloader_num_workers,
                 output_dir=glue_output_dir,
             )
             _merge_second_glue_embedding_into_primary_h5ads(

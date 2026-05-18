@@ -49,6 +49,11 @@ VERBOSE = True
 # Metrics where LARGER is BETTER (no inversion needed)
 ASCENDING_METRICS = {
     "iLISI_norm",
+    # ASW_batch is reported as (1 − silhouette(batch))/2 in [0, 1] by
+    # batch_removal_test.compute_asw_batch. ASW=0 ↔ samples perfectly
+    # cluster by batch (BAD mixing); ASW=1 ↔ samples anti-cluster by batch
+    # (excellent mixing). Higher = better.
+    "ASW_batch",
     "severity_partial_eta_sq",
     "One_way_ANOVA_eta_sq",
     "Spearman_Correlation",
@@ -62,7 +67,6 @@ ASCENDING_METRICS = {
 # Metrics where SMALLER is BETTER (will be inverted: 1/value)
 DESCENDING_METRICS = {
     "batch_partial_eta_sq",
-    "ASW_batch",
     "Mean_NN_Severity_Gap",
 }
 
