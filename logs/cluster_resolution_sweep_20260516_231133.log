@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/users/hjiang/GenoDistance/code/claude/cluster_resolution_sweep.py", line 23, in <module>
-    import numpy as np, pandas as pd, scanpy as sc, anndata as ad
-ModuleNotFoundError: No module named 'scanpy'

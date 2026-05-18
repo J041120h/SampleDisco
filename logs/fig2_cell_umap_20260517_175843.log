@@ -1,8 +1,0 @@
-[17:58:54] loading /dcs07/hongkai/data/harry/result/multi_omics_ENCODE/multiomics/preprocess/adata_sample.h5ad
-[17:59:27] cells=835934  X_glue=(835934, 50)
-[17:59:28] subsampled to 58385 cells (1875/celltype cap)
-[17:59:28] running UMAP on (58385, 50)…
-/users/hjiang/.conda/envs/hongkai/lib/python3.10/site-packages/umap/umap_.py:1952: UserWarning: n_jobs value 1 overridden to 1 by setting random_state. Use no seed for parallelism.
-  warn(
-[18:01:30] UMAP done: (58385, 2)
-[18:01:31] written: umap2d_sub.npy, cell_idx_sub.npy, cell_meta_sub.csv
