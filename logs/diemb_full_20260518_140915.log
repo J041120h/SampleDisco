@@ -24213,3 +24213,2138 @@ For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndat
 For creation, use `anndata.experimental.sparse_dataset(X)` instead.
 
   return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 292, epoch 73 until 74 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[74] Complete. Time taken: 00:00:01.451
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.483
+INFO:ignite.engine.engine.Engine:Epoch[74] Complete. Time taken: 00:00:44.953
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 296, epoch 74 until 75 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[75] Complete. Time taken: 00:00:01.245
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.375
+INFO:ignite.engine.engine.Engine:Epoch[75] Complete. Time taken: 00:00:46.164
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 300, epoch 75 until 76 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[76] Complete. Time taken: 00:00:01.323
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.945
+INFO:ignite.engine.engine.Engine:Epoch[76] Complete. Time taken: 00:00:45.466
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 304, epoch 76 until 77 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[77] Complete. Time taken: 00:00:01.256
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.049
+INFO:ignite.engine.engine.Engine:Epoch[77] Complete. Time taken: 00:00:42.185
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 308, epoch 77 until 78 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[78] Complete. Time taken: 00:00:01.452
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.449
+INFO:ignite.engine.engine.Engine:Epoch[78] Complete. Time taken: 00:00:47.423
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 312, epoch 78 until 79 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[79] Complete. Time taken: 00:00:01.063
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.170
+INFO:ignite.engine.engine.Engine:Epoch[79] Complete. Time taken: 00:00:45.054
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 316, epoch 79 until 80 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[80] Complete. Time taken: 00:00:00.418
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.818
+[INFO] SCGLUETrainer: [Epoch 80] train={'g_nll': 0.429, 'g_kl': 0.007, 'g_elbo': 0.436, 'x_rna_nll': 0.276, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.284, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.692, 'vae_loss': 0.401, 'gen_loss': 0.366}, val={'g_nll': 0.429, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.275, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.283, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.687, 'vae_loss': 0.399, 'gen_loss': 0.365}, 35.6s elapsed
+INFO:SCGLUETrainer:[Epoch 80] train={'g_nll': 0.429, 'g_kl': 0.007, 'g_elbo': 0.436, 'x_rna_nll': 0.276, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.284, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.692, 'vae_loss': 0.401, 'gen_loss': 0.366}, val={'g_nll': 0.429, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.275, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.283, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.687, 'vae_loss': 0.399, 'gen_loss': 0.365}, 35.6s elapsed
+INFO:ignite.engine.engine.Engine:Epoch[80] Complete. Time taken: 00:00:44.421
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 320, epoch 80 until 81 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[81] Complete. Time taken: 00:00:01.182
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.456
+INFO:ignite.engine.engine.Engine:Epoch[81] Complete. Time taken: 00:00:45.858
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 324, epoch 81 until 82 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[82] Complete. Time taken: 00:00:01.255
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.522
+INFO:ignite.engine.engine.Engine:Epoch[82] Complete. Time taken: 00:00:45.177
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 328, epoch 82 until 83 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[83] Complete. Time taken: 00:00:00.874
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.124
+INFO:ignite.engine.engine.Engine:Epoch[83] Complete. Time taken: 00:00:46.025
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 332, epoch 83 until 84 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[84] Complete. Time taken: 00:00:01.649
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.626
+INFO:ignite.engine.engine.Engine:Epoch[84] Complete. Time taken: 00:00:44.651
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 336, epoch 84 until 85 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[85] Complete. Time taken: 00:00:00.549
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.833
+INFO:ignite.engine.engine.Engine:Epoch[85] Complete. Time taken: 00:00:44.548
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 340, epoch 85 until 86 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[86] Complete. Time taken: 00:00:00.845
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.124
+INFO:ignite.engine.engine.Engine:Epoch[86] Complete. Time taken: 00:00:42.889
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 344, epoch 86 until 87 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[87] Complete. Time taken: 00:00:00.917
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.083
+INFO:ignite.engine.engine.Engine:Epoch[87] Complete. Time taken: 00:00:44.176
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 348, epoch 87 until 88 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[88] Complete. Time taken: 00:00:00.808
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.053
+INFO:ignite.engine.engine.Engine:Epoch[88] Complete. Time taken: 00:00:44.361
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 352, epoch 88 until 89 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[89] Complete. Time taken: 00:00:01.035
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.103
+INFO:ignite.engine.engine.Engine:Epoch[89] Complete. Time taken: 00:00:44.539
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 356, epoch 89 until 90 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[90] Complete. Time taken: 00:00:01.070
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.107
+[INFO] SCGLUETrainer: [Epoch 90] train={'g_nll': 0.428, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.276, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.284, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.691, 'vae_loss': 0.401, 'gen_loss': 0.366}, val={'g_nll': 0.428, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.277, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.285, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.691, 'vae_loss': 0.401, 'gen_loss': 0.366}, 34.9s elapsed
+INFO:SCGLUETrainer:[Epoch 90] train={'g_nll': 0.428, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.276, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.284, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.691, 'vae_loss': 0.401, 'gen_loss': 0.366}, val={'g_nll': 0.428, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.277, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.285, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.691, 'vae_loss': 0.401, 'gen_loss': 0.366}, 34.9s elapsed
+INFO:ignite.engine.engine.Engine:Epoch[90] Complete. Time taken: 00:00:43.995
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 360, epoch 90 until 91 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[91] Complete. Time taken: 00:00:01.616
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.310
+INFO:ignite.engine.engine.Engine:Epoch[91] Complete. Time taken: 00:00:44.927
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 364, epoch 91 until 92 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[92] Complete. Time taken: 00:00:00.813
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.400
+INFO:ignite.engine.engine.Engine:Epoch[92] Complete. Time taken: 00:00:44.828
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 368, epoch 92 until 93 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[93] Complete. Time taken: 00:00:00.567
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.996
+INFO:ignite.engine.engine.Engine:Epoch[93] Complete. Time taken: 00:00:45.970
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 372, epoch 93 until 94 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[94] Complete. Time taken: 00:00:00.566
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.037
+INFO:ignite.engine.engine.Engine:Epoch[94] Complete. Time taken: 00:00:47.631
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 376, epoch 94 until 95 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[95] Complete. Time taken: 00:00:00.722
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.157
+INFO:ignite.engine.engine.Engine:Epoch[95] Complete. Time taken: 00:00:46.003
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 380, epoch 95 until 96 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[96] Complete. Time taken: 00:00:01.059
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.022
+INFO:ignite.engine.engine.Engine:Epoch[96] Complete. Time taken: 00:00:44.241
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 384, epoch 96 until 97 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[97] Complete. Time taken: 00:00:01.091
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.179
+INFO:ignite.engine.engine.Engine:Epoch[97] Complete. Time taken: 00:00:43.558
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 388, epoch 97 until 98 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[98] Complete. Time taken: 00:00:00.977
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.314
+INFO:ignite.engine.engine.Engine:Epoch[98] Complete. Time taken: 00:00:44.421
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 392, epoch 98 until 99 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[99] Complete. Time taken: 00:00:01.053
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.324
+INFO:ignite.engine.engine.Engine:Epoch[99] Complete. Time taken: 00:00:45.075
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 396, epoch 99 until 100 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[100] Complete. Time taken: 00:00:00.402
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.946
+[INFO] SCGLUETrainer: [Epoch 100] train={'g_nll': 0.428, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.276, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.284, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.691, 'vae_loss': 0.401, 'gen_loss': 0.366}, val={'g_nll': 0.426, 'g_kl': 0.007, 'g_elbo': 0.433, 'x_rna_nll': 0.275, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.282, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.69, 'vae_loss': 0.399, 'gen_loss': 0.364}, 35.5s elapsed
+INFO:SCGLUETrainer:[Epoch 100] train={'g_nll': 0.428, 'g_kl': 0.007, 'g_elbo': 0.435, 'x_rna_nll': 0.276, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.284, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.691, 'vae_loss': 0.401, 'gen_loss': 0.366}, val={'g_nll': 0.426, 'g_kl': 0.007, 'g_elbo': 0.433, 'x_rna_nll': 0.275, 'x_rna_kl': 0.008, 'x_rna_elbo': 0.282, 'x_atac_nll': 0.098, 'x_atac_kl': 0.001, 'x_atac_elbo': 0.099, 'dsc_loss': 0.69, 'vae_loss': 0.399, 'gen_loss': 0.364}, 35.5s elapsed
+INFO:ignite.engine.engine.Engine:Epoch[100] Complete. Time taken: 00:00:44.446
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 400, epoch 100 until 101 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[101] Complete. Time taken: 00:00:01.234
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.339
+INFO:ignite.engine.engine.Engine:Epoch[101] Complete. Time taken: 00:00:46.693
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 404, epoch 101 until 102 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[102] Complete. Time taken: 00:00:00.507
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.931
+INFO:ignite.engine.engine.Engine:Epoch[102] Complete. Time taken: 00:00:44.282
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 408, epoch 102 until 103 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[103] Complete. Time taken: 00:00:01.036
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.008
+INFO:ignite.engine.engine.Engine:Epoch[103] Complete. Time taken: 00:00:42.382
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 412, epoch 103 until 104 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[104] Complete. Time taken: 00:00:01.153
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.957
+INFO:ignite.engine.engine.Engine:Epoch[104] Complete. Time taken: 00:00:47.045
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 416, epoch 104 until 105 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[105] Complete. Time taken: 00:00:00.703
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.077
+INFO:ignite.engine.engine.Engine:Epoch[105] Complete. Time taken: 00:00:44.762
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 420, epoch 105 until 106 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[106] Complete. Time taken: 00:00:01.458
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.392
+INFO:ignite.engine.engine.Engine:Epoch[106] Complete. Time taken: 00:00:44.839
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 424, epoch 106 until 107 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[107] Complete. Time taken: 00:00:01.018
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:09.227
+INFO:ignite.engine.engine.Engine:Epoch[107] Complete. Time taken: 00:00:47.619
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 428, epoch 107 until 108 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Epoch[108] Complete. Time taken: 00:00:00.884
+INFO:ignite.engine.engine.Engine:Engine run finished. Time taken: 00:00:08.916
+INFO:ignite.engine.engine.Engine:Epoch[108] Complete. Time taken: 00:00:44.375
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+INFO:ignite.engine.engine.Engine:Engine run resuming from iteration 432, epoch 108 until 109 epochs
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
+/users/hjiang/.conda/envs/hongkai/lib/python3.10/abc.py:119: FutureWarning: SparseDataset is deprecated and will be removed in late 2024. It has been replaced by the public classes CSRDataset and CSCDataset.
+
+For instance checks, use `isinstance(X, (anndata.experimental.CSRDataset, anndata.experimental.CSCDataset))` instead.
+
+For creation, use `anndata.experimental.sparse_dataset(X)` instead.
+
+  return _abc_instancecheck(cls, instance)
