@@ -38,7 +38,7 @@ import pandas as pd
 import scanpy as sc
 
 from sample_trajectory.TSCAN import TSCAN
-from cluster import cluster as kmeans_cluster
+from sample_clustering.cluster import cluster as kmeans_cluster
 
 
 ROOT = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics"

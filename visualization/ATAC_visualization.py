@@ -4,7 +4,7 @@ import seaborn as sns
 import pandas as pd
 import os
 import numpy as np
-from Grouping import find_sample_grouping
+from utils.Grouping import find_sample_grouping
 from pandas.api.types import is_numeric_dtype
 from matplotlib.colors import ListedColormap
 
