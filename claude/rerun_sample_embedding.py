@@ -3,7 +3,7 @@ Re-run only the sample-embedding step for previously processed datasets.
 
 Blocks (run sequentially):
   1) COVID RNA (×6 sample sizes): default-α + autotuned, reusing existing
-     adata_cell.h5ad. Adds X_pca_harmony_nosamp via a harmony pass on 'batch'
+     adata_cell.h5ad. Adds Z_cmd via a harmony pass on 'batch'
      before the embedding, persisted into the original adata_cell.h5ad.
   2) COVID ATAC: full pipeline from scratch (preprocess + cell-type +
      default-α + tuned + a 2-D PCA viz colored by sev.level).
@@ -83,11 +83,11 @@ def _log(msg: str) -> None:
 # --------------------------------------------------------------------------- #
 # Block 1: COVID RNA                                                          #
 # --------------------------------------------------------------------------- #
-def _ensure_pca_harmony_nosamp(adata, batch_keys, num_iter: int = 30) -> bool:
-    """Compute X_pca_harmony_nosamp from X_pca with `batch_keys` (excluding
+def _ensure_z_cmd(adata, batch_keys, num_iter: int = 30) -> bool:
+    """Compute Z_cmd from X_pca with `batch_keys` (excluding
     the sample column). Returns True if added (i.e., wasn't already there)."""
-    if "X_pca_harmony_nosamp" in adata.obsm:
-        _log("X_pca_harmony_nosamp already present — skip recompute")
+    if "Z_cmd" in adata.obsm:
+        _log("Z_cmd already present — skip recompute")
         return False
     if "X_pca" not in adata.obsm:
         raise KeyError("X_pca missing from adata.obsm; cannot run harmony pass.")
@@ -100,8 +100,8 @@ def _ensure_pca_harmony_nosamp(adata, batch_keys, num_iter: int = 30) -> bool:
         batch_key=batch_keys,
         max_iter_harmony=num_iter,
     )
-    adata.obsm["X_pca_harmony_nosamp"] = np.asarray(Z, dtype=np.float32)
-    _log(f"Added X_pca_harmony_nosamp shape={adata.obsm['X_pca_harmony_nosamp'].shape}")
+    adata.obsm["Z_cmd"] = np.asarray(Z, dtype=np.float32)
+    _log(f"Added Z_cmd shape={adata.obsm['Z_cmd'].shape}")
     return True
 
 
@@ -122,9 +122,9 @@ def run_covid_rna_one(size: int) -> None:
     if "cell_type" not in adata.obs.columns and "celltype" in adata.obs.columns:
         adata.obs["cell_type"] = adata.obs["celltype"].astype(str)
 
-    added = _ensure_pca_harmony_nosamp(adata, batch_keys=["batch"])
+    added = _ensure_z_cmd(adata, batch_keys=["batch"])
     if added:
-        _log(f"Re-saving {cell_h5} with X_pca_harmony_nosamp")
+        _log(f"Re-saving {cell_h5} with Z_cmd")
         sc.write(cell_h5, adata)
 
     # ----- Default-α -----
@@ -135,8 +135,8 @@ def run_covid_rna_one(size: int) -> None:
         adata, out_default,
         sample_col="sample",
         celltype_col="cell_type",
-        cluster_emb_key="X_pca_harmony",
-        cmd_emb_key="X_pca_harmony_nosamp",
+        cluster_emb_key="Z_clust",
+        cmd_emb_key="Z_cmd",
         modality_col=None,
         batch_col="batch",
         save=True, verbose=True,
@@ -150,8 +150,8 @@ def run_covid_rna_one(size: int) -> None:
         adata, out_tuned,
         sample_col="sample",
         celltype_col="cell_type",
-        cluster_emb_key="X_pca_harmony",
-        cmd_emb_key="X_pca_harmony_nosamp",
+        cluster_emb_key="Z_clust",
+        cmd_emb_key="Z_cmd",
         modality_col=None,
         batch_col="batch",
         grouping_col="sev.level",
@@ -253,9 +253,9 @@ def block_covid_atac() -> None:
         adata, out_tuned,
         sample_col="sample",
         celltype_col="cell_type",
-        cluster_emb_key="X_lsi_harmony" if "X_lsi_harmony" in adata.obsm else (
+        cluster_emb_key="Z_clust" if "Z_clust" in adata.obsm else (
             list(adata.obsm.keys())[0]),
-        cmd_emb_key=None,  # auto-resolve to *_nosamp or fall back
+        cmd_emb_key=None,  # auto-resolve to Z_cmd or fall back
         modality_col=None,
         batch_col=None,
         grouping_col="sev.level",

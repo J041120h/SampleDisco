@@ -87,6 +87,7 @@ def cluster_samples_gmm(
         max_k = min(max_clusters, max(2, n_samples // 2))
         best_bic = np.inf
         best_k = 2
+        n_successful_fits = 0
 
         if verbose:
             print("Determining optimal cluster number using BIC...")
@@ -103,12 +104,18 @@ def cluster_samples_gmm(
                 )
                 gmm.fit(X)
                 bic = gmm.bic(X)
+                n_successful_fits += 1
 
                 if bic < best_bic:
                     best_bic = bic
                     best_k = k
-            except Exception:
+            except Exception as exc:
+                print(f"  [TSCAN] BIC fit failed at k={k}: {type(exc).__name__}: {exc}")
                 continue
+
+        if n_successful_fits == 0:
+            print(f"  [TSCAN] WARNING: All BIC fits k=2..{max_k} FAILED; "
+                  f"defaulting to k=2 (downstream pseudotime may be unreliable)")
 
         n_clusters = best_k
         if verbose:

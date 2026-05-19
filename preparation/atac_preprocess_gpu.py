@@ -57,8 +57,8 @@ def anndata_cluster(
       - `.X`                             TF-IDF + log1p normalized
       - `.var['highly_variable']`        HVF flag (no subsetting)
       - `.obsm['X_lsi']`                 LSI on HVF subset (drop_first applied if set)
-      - `.obsm['X_lsi_harmony']`         sample-removed Harmony (GPU)
-      - `.obsm['X_lsi_harmony_nosamp']`  sample-preserved Harmony (CMD)
+      - `.obsm['Z_clust']`         sample-removed Harmony (GPU)
+      - `.obsm['Z_cmd']`  sample-preserved Harmony (CMD)
 
     Writes a single file: `<output_dir>/adata_preprocessed.h5ad`.
     """
@@ -95,21 +95,21 @@ def anndata_cluster(
         print("=== [GPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
     if cell_level_batch_key_for_harmony:
-        adata.obsm["X_lsi_harmony"] = harmonize(
+        adata.obsm["Z_clust"] = harmonize(
             adata.obsm["X_lsi"], adata.obs,
             batch_key=cell_level_batch_key_for_harmony,
             max_iter_harmony=num_harmony_iterations,
             use_gpu=True,
         )
     else:
-        adata.obsm["X_lsi_harmony"] = adata.obsm["X_lsi"].copy()
+        adata.obsm["Z_clust"] = adata.obsm["X_lsi"].copy()
 
     # --- Pass 2: sample-preserved ---
     if cell_level_batch_key_no_sample:
         if verbose:
             print("=== [GPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
-        adata.obsm["X_lsi_harmony_nosamp"] = harmonize(
+        adata.obsm["Z_cmd"] = harmonize(
             adata.obsm["X_lsi"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
@@ -118,12 +118,12 @@ def anndata_cluster(
     else:
         if verbose:
             print("=== [GPU] Harmony pass 2: no extra batch covariate → using raw X_lsi ===")
-        adata.obsm["X_lsi_harmony_nosamp"] = np.asarray(
+        adata.obsm["Z_cmd"] = np.asarray(
             adata.obsm["X_lsi"], dtype=np.float32)
 
     if verbose:
-        print(f"  X_lsi_harmony        shape: {adata.obsm['X_lsi_harmony'].shape}")
-        print(f"  X_lsi_harmony_nosamp shape: {adata.obsm['X_lsi_harmony_nosamp'].shape}")
+        print(f"  Z_clust        shape: {adata.obsm['Z_clust'].shape}")
+        print(f"  Z_cmd shape: {adata.obsm['Z_cmd'].shape}")
 
     save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
     safe_h5ad_write(adata, save_path)
@@ -132,7 +132,7 @@ def anndata_cluster(
     return adata
 
 
-def preprocess_linux(
+def preprocess_gpu(
     h5ad_path,
     sample_meta_path,
     output_dir,

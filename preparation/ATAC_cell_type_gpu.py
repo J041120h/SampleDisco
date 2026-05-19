@@ -9,7 +9,7 @@ import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
 
-def standardize_cell_type_column_linux(adata, verbose=True):
+def standardize_cell_type_column_gpu(adata, verbose=True):
     """
     Standardize cell_type column to string categorical format.
     Only performs necessary conversions without redundancy.
@@ -62,7 +62,7 @@ def standardize_cell_type_column_linux(adata, verbose=True):
         unique_types = adata.obs['cell_type'].nunique()
         print(f"[standardize] Final cell types (n={unique_types}): {sorted(adata.obs['cell_type'].cat.categories.tolist())}")
 
-def cell_types_atac_linux(
+def cell_types_atac_gpu(
     adata, 
     cell_column='cell_type', 
     existing_cell_types=False,
@@ -125,7 +125,7 @@ def cell_types_atac_linux(
     # ============================================================================
     if cell_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:
-            print("[cell_types_atac_linux] Found existing cell type annotation.")
+            print("[cell_types_atac_gpu] Found existing cell type annotation.")
         
         # Standardize cell type column
         adata.obs['cell_type'] = adata.obs[cell_column].astype(str)
@@ -134,7 +134,7 @@ def cell_types_atac_linux(
         current_n_types = adata.obs['cell_type'].nunique()
         if verbose:
             prefix = "  " * _recursion_depth  # Indent for recursion levels
-            print(f"{prefix}[cell_types_atac_linux] Current number of cell types: {current_n_types}")
+            print(f"{prefix}[cell_types_atac_gpu] Current number of cell types: {current_n_types}")
 
         # ========================================================================
         # CONDITIONAL DENDROGRAM CONSTRUCTION AND AGGREGATION
@@ -147,11 +147,11 @@ def cell_types_atac_linux(
         if apply_dendrogram:
             if verbose:
                 prefix = "  " * _recursion_depth
-                print(f"{prefix}[cell_types_atac_linux] Aggregating {current_n_types} cell types into {n_target_clusters} clusters using dendrogram.")
-                print(f"{prefix}[cell_types_atac_linux] Using dimension reduction ({use_rep}) for dendrogram construction...")
+                print(f"{prefix}[cell_types_atac_gpu] Aggregating {current_n_types} cell types into {n_target_clusters} clusters using dendrogram.")
+                print(f"{prefix}[cell_types_atac_gpu] Using dimension reduction ({use_rep}) for dendrogram construction...")
             
             # Apply dendrogram clustering using dimension reduction
-            adata = cell_type_dendrogram_atac_linux(
+            adata = cell_type_dendrogram_atac_gpu(
                 adata=adata,
                 n_clusters=n_target_clusters,
                 groupby='cell_type',
@@ -165,18 +165,18 @@ def cell_types_atac_linux(
             
             final_n_types = adata.obs['cell_type'].nunique()
             if verbose:
-                print(f"{prefix}[cell_types_atac_linux] Successfully aggregated to {final_n_types} cell types.")
+                print(f"{prefix}[cell_types_atac_gpu] Successfully aggregated to {final_n_types} cell types.")
         
         else:
             if n_target_clusters is not None and current_n_types <= n_target_clusters:
                 if verbose:
                     prefix = "  " * _recursion_depth
-                    print(f"{prefix}[cell_types_atac_linux] Current cell types ({current_n_types}) <= target clusters ({n_target_clusters}). Using as-is.")
+                    print(f"{prefix}[cell_types_atac_gpu] Current cell types ({current_n_types}) <= target clusters ({n_target_clusters}). Using as-is.")
 
         # Build neighborhood graph for existing annotations (only on first call)
         if _recursion_depth == 0:
             if verbose:
-                print("[cell_types_atac_linux] Building neighborhood graph...")
+                print("[cell_types_atac_gpu] Building neighborhood graph...")
             # For ATAC data, we don't use n_pcs parameter since we're using diffusion maps
             rsc.pp.neighbors(adata, use_rep=use_rep, metric='cosine')
 
@@ -185,12 +185,12 @@ def cell_types_atac_linux(
     # ============================================================================
     else:
         if verbose and _recursion_depth == 0:
-            print("[cell_types_atac_linux] No cell type annotation found. Performing clustering.")
+            print("[cell_types_atac_gpu] No cell type annotation found. Performing clustering.")
 
         # Build neighborhood graph (only on first call)
         if _recursion_depth == 0:
             if verbose:
-                print("[cell_types_atac_linux] Building neighborhood graph...")
+                print("[cell_types_atac_gpu] Building neighborhood graph...")
             # For ATAC data, we don't use n_pcs parameter since we're using diffusion maps
             rsc.pp.neighbors(adata, use_rep=use_rep)
 
@@ -200,7 +200,7 @@ def cell_types_atac_linux(
         if n_target_clusters is not None:
             if verbose:
                 prefix = "  " * _recursion_depth
-                print(f"{prefix}[cell_types_atac_linux] Target: {n_target_clusters} clusters. Trying resolution: {cluster_resolution:.1f}")
+                print(f"{prefix}[cell_types_atac_gpu] Target: {n_target_clusters} clusters. Trying resolution: {cluster_resolution:.1f}")
             
             # Perform Leiden clustering with current resolution
             rsc.tl.leiden(
@@ -215,19 +215,19 @@ def cell_types_atac_linux(
             
             if verbose:
                 prefix = "  " * _recursion_depth
-                print(f"{prefix}[cell_types_atac_linux] Leiden clustering produced {num_clusters} clusters.")
+                print(f"{prefix}[cell_types_atac_gpu] Leiden clustering produced {num_clusters} clusters.")
             
             # Decision logic: recurse or aggregate
             if num_clusters >= n_target_clusters:
                 if num_clusters == n_target_clusters:
                     if verbose:
-                        print(f"{prefix}[cell_types_atac_linux] Perfect! Got exactly {n_target_clusters} clusters.")
+                        print(f"{prefix}[cell_types_atac_gpu] Perfect! Got exactly {n_target_clusters} clusters.")
                 else:
                     if verbose:
-                        print(f"{prefix}[cell_types_atac_linux] Got {num_clusters} clusters (>= target). Recursing with existing_cell_types=True...")
+                        print(f"{prefix}[cell_types_atac_gpu] Got {num_clusters} clusters (>= target). Recursing with existing_cell_types=True...")
                     
                     # RECURSIVE CALL: Now treat current clustering as "existing" and aggregate
-                    adata = cell_types_atac_linux(
+                    adata = cell_types_atac_gpu(
                         adata=adata,
                         cell_column='cell_type',
                         existing_cell_types=True,
@@ -250,13 +250,13 @@ def cell_types_atac_linux(
                 
                 if new_resolution > max_resolution:
                     if verbose:
-                        print(f"{prefix}[cell_types_atac_linux] Warning: Reached max resolution ({max_resolution}). Got {num_clusters} clusters instead of {n_target_clusters}.")
+                        print(f"{prefix}[cell_types_atac_gpu] Warning: Reached max resolution ({max_resolution}). Got {num_clusters} clusters instead of {n_target_clusters}.")
                 else:
                     if verbose:
-                        print(f"{prefix}[cell_types_atac_linux] Need more clusters. Increasing resolution to {new_resolution:.1f}...")
+                        print(f"{prefix}[cell_types_atac_gpu] Need more clusters. Increasing resolution to {new_resolution:.1f}...")
                     
                     # RECURSIVE CALL: Try higher resolution
-                    return cell_types_atac_linux(
+                    return cell_types_atac_gpu(
                         adata=adata,
                         cell_column=cell_column,
                         existing_cell_types=False,
@@ -281,7 +281,7 @@ def cell_types_atac_linux(
             # No target specified - standard clustering
             if verbose:
                 prefix = "  " * _recursion_depth
-                print(f"{prefix}[cell_types_atac_linux] No target clusters specified. Using standard Leiden clustering (resolution={cluster_resolution})...")
+                print(f"{prefix}[cell_types_atac_gpu] No target clusters specified. Using standard Leiden clustering (resolution={cluster_resolution})...")
             
             rsc.tl.leiden(
                 adata,
@@ -294,7 +294,7 @@ def cell_types_atac_linux(
             num_clusters = adata.obs['cell_type'].nunique()
             
             if verbose:
-                print(f"[cell_types_atac_linux] Found {num_clusters} clusters after Leiden clustering.")
+                print(f"[cell_types_atac_gpu] Found {num_clusters} clusters after Leiden clustering.")
 
     # ============================================================================
     # FINAL PROCESSING (ONLY ON TOP-LEVEL CALL)
@@ -304,39 +304,39 @@ def cell_types_atac_linux(
         final_cluster_count = adata.obs['cell_type'].nunique()
         if peaks is not None and len(peaks) == final_cluster_count:
             if verbose:
-                print(f"[cell_types_atac_linux] Applying custom peak names to {final_cluster_count} clusters...")
+                print(f"[cell_types_atac_gpu] Applying custom peak names to {final_cluster_count} clusters...")
             # Create mapping for string cluster labels
             peak_dict = {str(i): peaks[i - 1] for i in range(1, len(peaks) + 1)}
             adata.obs['cell_type'] = adata.obs['cell_type'].map(peak_dict)
         elif peaks is not None:
             if verbose:
-                print(f"[cell_types_atac_linux] Warning: Peak list length ({len(peaks)}) doesn't match cluster count ({final_cluster_count}). Skipping peak mapping.")
+                print(f"[cell_types_atac_gpu] Warning: Peak list length ({len(peaks)}) doesn't match cluster count ({final_cluster_count}). Skipping peak mapping.")
 
         # Find differential peaks if requested
         if verbose:
-            print("[cell_types_atac_linux] Finding differential peaks between cell types...")
+            print("[cell_types_atac_gpu] Finding differential peaks between cell types...")
         try:
             rsc.tl.rank_genes_groups(adata, groupby='cell_type', method='logreg', n_genes=100)
             if verbose:
-                print("[cell_types_atac_linux] Successfully computed differential peaks.")
+                print("[cell_types_atac_gpu] Successfully computed differential peaks.")
         except Exception as e:
             if verbose:
-                print(f"[cell_types_atac_linux] Warning: Could not compute differential peaks. Error: {e}")
+                print(f"[cell_types_atac_gpu] Warning: Could not compute differential peaks. Error: {e}")
 
         if verbose:
-            print("[cell_types_atac_linux] Finished assigning cell types.")
+            print("[cell_types_atac_gpu] Finished assigning cell types.")
         
         # Compute UMAP if requested
         if umap:
             if verbose:
-                print("[cell_types_atac_linux] Computing UMAP...")
+                print("[cell_types_atac_gpu] Computing UMAP...")
             rsc.tl.umap(adata, min_dist=0.5)
         
         # Convert back to CPU before saving/standardizing
         rsc.get.anndata_to_CPU(adata)
         
         # Save results if requested
-        standardize_cell_type_column_linux(adata, verbose=verbose)
+        standardize_cell_type_column_gpu(adata, verbose=verbose)
         
         if Save and output_dir:
             output_dir = os.path.join(output_dir, 'harmony')
@@ -344,17 +344,17 @@ def cell_types_atac_linux(
             save_path = os.path.join(output_dir, 'adata_cell_atac.h5ad')
             adata.write(save_path)
             if verbose:
-                print(f"[cell_types_atac_linux] Saved AnnData object to {save_path}")
+                print(f"[cell_types_atac_gpu] Saved AnnData object to {save_path}")
         
         # Report total execution time
         if verbose:
             end_time = time.time()
             elapsed_time = end_time - start_time
-            print(f"[cell_types_atac_linux] Total runtime: {elapsed_time:.2f} seconds")
+            print(f"[cell_types_atac_gpu] Total runtime: {elapsed_time:.2f} seconds")
 
     return adata
 
-def cell_type_dendrogram_atac_linux(
+def cell_type_dendrogram_atac_gpu(
     adata,
     n_clusters,
     groupby='cell_type',
@@ -513,7 +513,7 @@ def cell_type_dendrogram_atac_linux(
     return adata
 
 
-def cell_type_assign_atac_linux(adata_cluster, adata, Save=False, output_dir=None, verbose=True):
+def cell_type_assign_atac_gpu(adata_cluster, adata, Save=False, output_dir=None, verbose=True):
     """
     Linux/GPU version: Assign cell type labels from one AnnData object to another and optionally save the result.
     ATAC version with appropriate file naming.
@@ -541,4 +541,4 @@ def cell_type_assign_atac_linux(adata_cluster, adata, Save=False, output_dir=Non
         save_path = os.path.join(output_dir, 'adata_sample_atac.h5ad')
         adata.write(save_path)  # saving in CPU-based .h5ad format
         if verbose:
-            print(f"[cell_types_atac_linux] Saved AnnData object to {save_path}")
+            print(f"[cell_types_atac_gpu] Saved AnnData object to {save_path}")

@@ -17,6 +17,7 @@ The existing GAM stack operates on that samples × features matrix unchanged.
 
 import os
 import datetime
+import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -42,7 +43,11 @@ def _to_list(value):
 
 
 def _attempt_limma(temp_adata, batch_col, preserve_cols, verbose=False):
-    """Apply Limma correction in-place on `temp_adata.X`."""
+    """Apply Limma correction in-place on `temp_adata.X`.
+
+    On failure, emits a WARNING (unconditional, not gated by verbose) so that
+    batch-confounded results are not silently produced, and returns False.
+    """
     try:
         from utils.limma import limma
         X = temp_adata.X.toarray() if issparse(temp_adata.X) else np.asarray(temp_adata.X)
@@ -59,8 +64,13 @@ def _attempt_limma(temp_adata, batch_col, preserve_cols, verbose=False):
         )
         return True
     except Exception as exc:
-        if verbose:
-            print(f"    Limma failed: {type(exc).__name__}: {exc}")
+        warnings.warn(
+            f"[trajectory_diff_gene] Limma batch correction (batch_col={batch_col!r}) "
+            f"FAILED: {type(exc).__name__}: {exc}. Pseudobulk will be returned WITHOUT "
+            f"batch correction — downstream results may be batch-confounded.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         return False
 
 

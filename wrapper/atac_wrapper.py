@@ -86,8 +86,8 @@ def atac_wrapper(
         raise ValueError("Required: atac_count_data_path and atac_output_dir")
 
     if use_gpu:
-        from preparation.atac_preprocess_gpu import preprocess_linux
-        from preparation.cell_type_gpu import cell_types_linux
+        from preparation.atac_preprocess_gpu import preprocess_gpu
+        from preparation.cell_type_gpu import cell_types_gpu
 
     cell_level_batch_key = cell_level_batch_key or []
     sample_level_batch_col = sample_level_batch_col or []
@@ -115,7 +115,7 @@ def atac_wrapper(
     # ============================ PREPROCESSING ============================
     if preprocessing:
         print("Starting preprocessing...")
-        preprocess_func = preprocess_linux if use_gpu else preprocess
+        preprocess_func = preprocess_gpu if use_gpu else preprocess
         adata = preprocess_func(
             h5ad_path=atac_count_data_path,
             sample_meta_path=atac_sample_meta_path,
@@ -149,7 +149,7 @@ def atac_wrapper(
     # ============================ CELL TYPE CLUSTERING =====================
     if cell_type_cluster:
         print(f"Starting cell type clustering at resolution={leiden_cluster_resolution}")
-        cell_types_func = cell_types_linux if use_gpu else cell_types
+        cell_types_func = cell_types_gpu if use_gpu else cell_types
         adata = cell_types_func(
             anndata_cell=adata,
             cell_type_column=celltype_col,
@@ -173,8 +173,8 @@ def atac_wrapper(
             raise ValueError(
                 f"Cell type column '{celltype_col}' not found in adata.obs.")
 
-        cluster_emb_key = cell_embedding_column or "X_lsi_harmony"
-        cmd_emb_key = f"{cluster_emb_key}_nosamp" if f"{cluster_emb_key}_nosamp" in adata.obsm else cluster_emb_key
+        cluster_emb_key = cell_embedding_column or "Z_clust"
+        cmd_emb_key = "Z_cmd" if "Z_cmd" in adata.obsm else cluster_emb_key
 
         if autotune_enable:
             from parameter_selection.autotune import run_autotune

@@ -70,8 +70,7 @@ def build_blocks(
 ) -> Dict:
     """Build composition + CMD blocks once. Returns a dict the inner loop reuses."""
     cmd_key = cmd_emb_key if cmd_emb_key and cmd_emb_key in adata.obsm else (
-        f"{cluster_emb_key}_nosamp" if f"{cluster_emb_key}_nosamp" in adata.obsm
-        else cluster_emb_key
+        "Z_cmd" if "Z_cmd" in adata.obsm else cluster_emb_key
     )
 
     units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_clust = \
@@ -537,7 +536,7 @@ def run_autotune(
     *,
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
-    cluster_emb_key: str = "X_pca_harmony",
+    cluster_emb_key: str = "Z_clust",
     cmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,

@@ -21,6 +21,7 @@ import statsmodels.api as sm
 from scipy.special import digamma, polygamma
 from scipy.optimize import brentq
 from statsmodels.stats.multitest import multipletests
+from typing import List, Tuple
 import warnings
 import traceback
 
@@ -302,6 +303,9 @@ def proportion_test(
     # -----------------------------------------------------------------
     all_results = {}
 
+    # Collect raw p-values from all pairs first, then apply BH-FDR globally
+    # across all (pair, celltype) tests rather than per-pair.
+    pair_results: List[Tuple[str, pd.DataFrame]] = []
     for group1, group2 in itertools.combinations(unique_groups, 2):
         samples_g1 = [s for s in unique_samples if sample_groups[s] == group1]
         samples_g2 = [s for s in unique_samples if sample_groups[s] == group2]
@@ -321,15 +325,19 @@ def proportion_test(
                 "celltype": result_df.index,
                 "logFC": result_df["logFC"].values,
                 "p_value": result_df["P.Value"].values,
-                "FDR": result_df["adj.P.Val"].values,
             }
         )
+        pair_results.append((f"{group1}_vs_{group2}", df_result))
 
+    all_pvals = np.concatenate([df["p_value"].values for _, df in pair_results])
+    _, all_fdr, _, _ = multipletests(all_pvals, method="fdr_bh")
+    offset = 0
+    for comparison_name, df_result in pair_results:
+        n = len(df_result)
+        df_result["FDR"] = all_fdr[offset:offset + n]
+        offset += n
         df_result = df_result.sort_values("FDR")
-
-        comparison_name = f"{group1}_vs_{group2}"
         all_results[comparison_name] = df_result
-
         if output_dir is not None:
             output_path = os.path.join(output_dir, f"proportion_test_{comparison_name}.csv")
             df_result.to_csv(output_path, index=False)

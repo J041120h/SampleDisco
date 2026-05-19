@@ -387,7 +387,7 @@ def integrate_preprocess(
         print("\nSample counts AFTER filtering:")
         print(cell_counts_after.sort_values(ascending=False))
 
-    min_cells_for_gene = max(1, int(0.01 * adata.n_obs))
+    min_cells_for_gene = max(1, int(0.001 * adata.n_obs))
     sc.pp.filter_genes(adata, min_cells=min_cells_for_gene)
     if verbose:
         print(f"Final filtering -- Cells remaining: {adata.n_obs}, Genes remaining: {adata.n_vars}")

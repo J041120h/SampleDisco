@@ -110,8 +110,7 @@ def _gpu_harmonize(
         )
         return np.asarray(Zc, dtype=np.float32)
     except Exception as exc:
-        if verbose:
-            print(f"  [Harmony GPU] failed ({exc!r}); falling back to CPU harmonypy")
+        print(f"  [Harmony GPU] FAILED ({exc!r}); falling back to CPU harmonypy")
         try:
             import harmonypy as hm
             meta = pd.DataFrame({"batch": batch_labels}, index=unit_ids)
@@ -125,8 +124,8 @@ def _gpu_harmonize(
                 Zc = Zc.T
             return np.asarray(Zc, dtype=np.float32)
         except Exception as exc2:
-            if verbose:
-                print(f"  [Harmony CPU fallback] failed ({exc2!r}); returning raw PCA")
+            print(f"  [Harmony CPU fallback] FAILED ({exc2!r}); returning raw PCA "
+                  f"— sample embedding will NOT be batch-corrected")
             return np.asarray(Fp, dtype=np.float32)
 
 
@@ -136,7 +135,7 @@ def compute_sample_embedding(
     *,
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
-    cluster_emb_key: str = "X_pca_harmony",
+    cluster_emb_key: str = "Z_clust",
     cmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,

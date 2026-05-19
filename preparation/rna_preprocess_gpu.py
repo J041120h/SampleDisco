@@ -28,9 +28,9 @@ def anndata_cluster(
     """GPU dual-Harmony preprocessing — single saved file.
 
     Produces TWO cell-level Harmony embeddings (one preprocessing pass):
-      - obsm['X_pca_harmony']        — Harmony with `cell_level_batch_key_for_harmony`
+      - obsm['Z_clust']        — Harmony with `cell_level_batch_key_for_harmony`
                                          (typically batch + sample → sample-removed)
-      - obsm['X_pca_harmony_nosamp'] — Harmony with `cell_level_batch_key_no_sample`
+      - obsm['Z_cmd'] — Harmony with `cell_level_batch_key_no_sample`
                                          (no sample → sample-preserved, used by CMD)
 
     Keeps all genes in `.X` (post normalize+log1p); HVG selection is recorded as
@@ -85,7 +85,7 @@ def anndata_cluster(
     if verbose:
         print("=== [GPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
-    adata.obsm["X_pca_harmony"] = harmonize(
+    adata.obsm["Z_clust"] = harmonize(
         adata.obsm["X_pca"], adata.obs,
         batch_key=cell_level_batch_key_for_harmony,
         max_iter_harmony=num_harmony_iterations,
@@ -97,7 +97,7 @@ def anndata_cluster(
         if verbose:
             print("=== [GPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
-        adata.obsm["X_pca_harmony_nosamp"] = harmonize(
+        adata.obsm["Z_cmd"] = harmonize(
             adata.obsm["X_pca"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
@@ -106,12 +106,12 @@ def anndata_cluster(
     else:
         if verbose:
             print("=== [GPU] Harmony pass 2: no extra batch covariate → using raw X_pca ===")
-        adata.obsm["X_pca_harmony_nosamp"] = np.asarray(
+        adata.obsm["Z_cmd"] = np.asarray(
             adata.obsm["X_pca"], dtype=np.float32)
 
     if verbose:
-        print(f"  X_pca_harmony        shape: {adata.obsm['X_pca_harmony'].shape}")
-        print(f"  X_pca_harmony_nosamp shape: {adata.obsm['X_pca_harmony_nosamp'].shape}")
+        print(f"  Z_clust        shape: {adata.obsm['Z_clust'].shape}")
+        print(f"  Z_cmd shape: {adata.obsm['Z_cmd'].shape}")
 
     rsc.get.anndata_to_CPU(adata)
     save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
@@ -122,7 +122,7 @@ def anndata_cluster(
     return adata
 
 
-def preprocess_linux(
+def preprocess_gpu(
     h5ad_path,
     sample_meta_path,
     output_dir,
@@ -146,8 +146,8 @@ def preprocess_linux(
       - `.layers['counts']` raw counts
       - `.var['highly_variable']` HVG flag
       - `.obsm['X_pca']`         PCA on HVG subset
-      - `.obsm['X_pca_harmony']`        sample-removed Harmony
-      - `.obsm['X_pca_harmony_nosamp']` sample-preserved Harmony (used by CMD)
+      - `.obsm['Z_clust']`        sample-removed Harmony
+      - `.obsm['Z_cmd']` sample-preserved Harmony (used by CMD)
     """
     set_global_seed(seed=42)
     start_time = time.time()

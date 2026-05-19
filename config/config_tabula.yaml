@@ -44,7 +44,6 @@ rna_sample_cluster: true
 rna_proportion_test: false
 rna_cluster_dge: false
 rna_visualize_data: false
-rna_phenotype_prediction: false
 rna_dimension_association_analysis: false
 
 # --- Resume Paths (for skipping preprocessing) ---
@@ -138,11 +137,6 @@ rna_plot_cell_type_proportions_pca_flag: true
 rna_plot_cell_type_expression_umap_flag: true
 
 # --- Phenotype Prediction Parameters (disabled) ---
-rna_prediction_target_col: null
-rna_prediction_feature_source: "expression"
-rna_prediction_task_type: "auto"
-rna_prediction_cv: "auto"
-rna_prediction_n_permutations: 0
 
 # --- Dimension Association Analysis Parameters ---
 # Leave both lists null -> auto-classify all sample-level obs columns
@@ -168,7 +162,6 @@ atac_sample_cluster: false
 atac_proportion_test: false
 atac_cluster_dge: false
 atac_visualize_data: false
-atac_phenotype_prediction: false
 atac_dimension_association_analysis: false
 
 atac_adata_cell_path: null
@@ -252,12 +245,6 @@ atac_plot_dendrogram_flag: true
 atac_plot_cell_type_proportions_pca_flag: false
 atac_plot_cell_type_expression_umap_flag: false
 
-atac_prediction_target_col: null
-atac_prediction_feature_source: "expression"
-atac_prediction_task_type: "auto"
-atac_prediction_cv: "auto"
-atac_prediction_n_permutations: 0
-
 atac_association_continuous_cols: null
 atac_association_categorical_cols: null
 atac_association_n_permutations: 999
@@ -280,7 +267,6 @@ multiomics_sample_cluster: false
 multiomics_proportion_test: false
 multiomics_cluster_dge: false
 multiomics_visualize_embedding: false
-multiomics_phenotype_prediction: false
 multiomics_dimension_association_analysis: false
 
 multiomics_run_glue_preprocessing: false
@@ -430,12 +416,6 @@ multiomics_alpha: 0.8
 multiomics_colormap: "viridis"
 multiomics_show_sample_names: false
 multiomics_force_data_type: null
-
-multiomics_prediction_target_col: null
-multiomics_prediction_feature_source: "expression"
-multiomics_prediction_task_type: "auto"
-multiomics_prediction_cv: "auto"
-multiomics_prediction_n_permutations: 0
 
 multiomics_association_continuous_cols: null
 multiomics_association_categorical_cols: null

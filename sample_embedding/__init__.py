@@ -21,7 +21,7 @@ def compute_sample_embedding(
     use_gpu: bool = False,
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
-    cluster_emb_key: str = "X_pca_harmony",
+    cluster_emb_key: str = "Z_clust",
     cmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,

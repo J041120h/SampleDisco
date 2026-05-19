@@ -10,7 +10,7 @@ from visualization.visualization_helper import generate_umap_visualizations
 from utils.safe_save import safe_h5ad_write, ensure_cpu_arrays
 
 
-def cell_types_linux(
+def cell_types_gpu(
     anndata_cell,
     cell_type_column="cell_type",
     existing_cell_types=False,
@@ -42,14 +42,8 @@ def cell_types_linux(
         rsc.get.anndata_to_GPU(adata)
 
     if cell_embedding_column is None:
-        if "X_lsi_harmony" in adata.obsm:
-            cell_embedding_column = "X_lsi_harmony"
-            is_atac = True
-        else:
-            cell_embedding_column = "X_pca_harmony"
-            is_atac = False
-    else:
-        is_atac = "lsi" in cell_embedding_column.lower()
+        cell_embedding_column = "Z_clust"
+    is_atac = "X_lsi" in adata.obsm
 
     if cell_type_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:
@@ -65,7 +59,7 @@ def cell_types_linux(
             if verbose:
                 print(f"{indent}[cell_types] Aggregating {current_n_types} → {n_target_clusters} using dendrogram")
 
-            adata = cell_type_dendrogram_linux(
+            adata = cell_type_dendrogram_gpu(
                 adata=adata, n_clusters=n_target_clusters, groupby="cell_type",
                 cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs, is_atac=is_atac,
             )
@@ -105,7 +99,7 @@ def cell_types_linux(
                 if num_clusters_found > n_target_clusters and verbose:
                     print(f"{indent}[cell_types] Over-shot target; recursing with dendrogram aggregation")
 
-                return cell_types_linux(
+                return cell_types_gpu(
                     anndata_cell=adata, cell_type_column="cell_type",
                     existing_cell_types=True, n_target_clusters=n_target_clusters, umap=False, save=False,
                     cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs,
@@ -114,7 +108,7 @@ def cell_types_linux(
 
             new_resolution = leiden_cluster_resolution + RESOLUTION_STEP
             if new_resolution <= MAX_RESOLUTION:
-                return cell_types_linux(
+                return cell_types_gpu(
                     anndata_cell=adata, cell_type_column=cell_type_column,
                     existing_cell_types=False, n_target_clusters=n_target_clusters, umap=False, save=False,
                     leiden_cluster_resolution=new_resolution, cell_embedding_column=cell_embedding_column,
@@ -168,7 +162,7 @@ def cell_types_linux(
     return adata
 
 
-def cell_type_dendrogram_linux(adata, n_clusters, groupby="cell_type", cell_embedding_column="X_pca_harmony", cell_embedding_num_PCs=20, is_atac=False):
+def cell_type_dendrogram_gpu(adata, n_clusters, groupby="cell_type", cell_embedding_column="Z_clust", cell_embedding_num_PCs=20, is_atac=False):
     if n_clusters < 1:
         raise ValueError("n_clusters must be >= 1")
     if groupby not in adata.obs:

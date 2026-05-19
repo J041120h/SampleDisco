@@ -34,33 +34,33 @@ TASKS = {
     # ------------- COVID RNA (single-omics, 6 sample sizes) -------------
     "covid_rna_25":  dict(
         h5="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_25_sample/rna/preprocess/adata_cell.h5ad",
-        cluster_key="X_pca_harmony", cmd_key="X_pca_harmony_nosamp",
+        cluster_key="Z_clust", cmd_key="Z_cmd",
         modality_col=None, batch_col="batch"),
     "covid_rna_50":  dict(
         h5="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_50_sample/rna/preprocess/adata_cell.h5ad",
-        cluster_key="X_pca_harmony", cmd_key="X_pca_harmony_nosamp",
+        cluster_key="Z_clust", cmd_key="Z_cmd",
         modality_col=None, batch_col="batch"),
     "covid_rna_100": dict(
         h5="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_100_sample/rna/preprocess/adata_cell.h5ad",
-        cluster_key="X_pca_harmony", cmd_key="X_pca_harmony_nosamp",
+        cluster_key="Z_clust", cmd_key="Z_cmd",
         modality_col=None, batch_col="batch"),
     "covid_rna_200": dict(
         h5="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_200_sample/rna/preprocess/adata_cell.h5ad",
-        cluster_key="X_pca_harmony", cmd_key="X_pca_harmony_nosamp",
+        cluster_key="Z_clust", cmd_key="Z_cmd",
         modality_col=None, batch_col="batch"),
     "covid_rna_279": dict(
         h5="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_279_sample/rna/preprocess/adata_cell.h5ad",
-        cluster_key="X_pca_harmony", cmd_key="X_pca_harmony_nosamp",
+        cluster_key="Z_clust", cmd_key="Z_cmd",
         modality_col=None, batch_col="batch"),
     "covid_rna_400": dict(
         h5="/dcs07/hongkai/data/harry/result/Benchmark_covid/covid_400_sample/rna/preprocess/adata_cell.h5ad",
-        cluster_key="X_pca_harmony", cmd_key="X_pca_harmony_nosamp",
+        cluster_key="Z_clust", cmd_key="Z_cmd",
         modality_col=None, batch_col="batch"),
 
     # ------------- COVID ATAC (single-omics) -------------
     "covid_atac": dict(
         h5="/dcs07/hongkai/data/harry/result/Benchmark_covid/ATAC/preprocess/adata_preprocessed.h5ad",
-        cluster_key="X_lsi_harmony", cmd_key=None,  # auto: nosamp falls back to X_lsi_harmony
+        cluster_key="Z_clust", cmd_key=None,  # auto: nosamp falls back to Z_clust
         modality_col=None, batch_col=None),
 
     # ------------- Multi-omics (default-α) -------------
