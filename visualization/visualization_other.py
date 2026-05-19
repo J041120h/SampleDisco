@@ -7,7 +7,7 @@ import scanpy as sc
 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Grouping import find_sample_grouping
+from utils.Grouping import find_sample_grouping
 from visualization.visualization_embedding import plot_proportion_embedding, plot_expression_embedding
 
 def _preprocessing(

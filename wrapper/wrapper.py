@@ -295,7 +295,7 @@ def downstream_analysis(
     
     if sample_cluster:
         print("Starting sample clustering...")
-        from cluster import cluster
+        from sample_clustering.cluster import cluster
         
         expr_results, prop_results = cluster(
             pseudobulk_adata=pseudo_adata,
