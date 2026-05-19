@@ -1,124 +1,135 @@
-# GenoDistance
+# SampleDisco
 
-```markdown
-# Single Cell Data Downstream Analysis
+A cross-omics, cross-condition **sample embedding** tool for single-cell data.
 
-This project provides tools for downstream analysis of single-cell RNA sequencing (scRNA-seq) data. It offers a streamlined pipeline for preprocessing, integrating, and assessing sample similarity, enabling researchers to explore cell populations and their relationships across different samples effectively.
+SampleDisco takes a cell-level embedding (from any standard scRNA / scATAC / multi-omics integration method) and lifts it to a **sample-level embedding** that captures both cell-type composition and the per-cell-type state of each sample. Every downstream analysis — sample-to-sample distance, clustering, trajectory inference, phenotype association — then runs on that single shared sample embedding, regardless of modality.
 
-## Table of Contents
+Paper draft: [`/users/hjiang/GenoDistance/SampleDisco_Draft-2.pdf`](../SampleDisco_Draft-2.pdf)
 
-1. [Installation](#installation)
-2. [Preparation](#preparation)
-3. [Harmonization](#harmonization)
-4. [Sample Similarity](#sample-similarity)
-5. [Usage](#usage)
-6. [Contributing](#contributing)
-7. [License](#license)
+---
 
-## Installation
+## What the method does
 
-To get started, clone the repository and install the required packages:
+For each modality (RNA, ATAC, or integrated multi-omics) the pipeline produces two cell-level views:
 
-```bash
-git clone https://github.com/yourusername/your-repo.git
-cd your-repo
-pip install -r requirements.txt
+| Key | Role | Source |
+|---|---|---|
+| **`Z_clust`** | sample-removed embedding — used for clustering and composition blocks | Harmony (single-omics) / Harmony post-pass on scGLUE (multi-omics) |
+| **`Z_cmd`**  | sample-preserved embedding — used for the counterfactual displacement (CMD) block | second Harmony pass (single-omics) / scGLUE primary output (multi-omics) |
+
+It then assembles **four blocks** per sample (or per sample × modality for multi-omics):
+
+1. **A1** — one-hot cell-type composition
+2. **A2** — soft k-means composition at K_med (≈120)
+3. **A3** — soft k-means composition at K_fine (≈300)
+4. **CMD** — leave-one-out cell-type-resolved displacement on `Z_cmd`
+
+The four blocks are inverse-variance weighted, Frobenius-stacked, PCA-reduced to 10 dimensions, and Harmony-corrected at sample level. The result is stored as `adata.uns['X_DR_sample']` and feeds every downstream module.
+
+---
+
+## Repository layout
+
+```
+code/
+├── SampleDisc.py              # CLI entry point (simple or complex mode)
+├── config/                    # 9 YAML configs covering covid / blood / eye / heart / ENCODE / tabula / long_covid / unpaired / default
+├── wrapper/                   # Orchestration
+│   ├── wrapper.py             # Master wrapper; gates RNA + ATAC + multiomics + shared downstream
+│   ├── rna_wrapper.py
+│   ├── atac_wrapper.py
+│   └── multiomics_wrapper.py
+├── preparation/               # Preprocessing
+│   ├── rna_preprocess_{cpu,gpu}.py   # QC → HVG → PCA → dual Harmony → Z_clust + Z_cmd
+│   ├── atac_preprocess_{cpu,gpu}.py  # QC → TF-IDF → HVF → LSI → dual Harmony → Z_clust + Z_cmd
+│   ├── cell_type_{cpu,gpu}.py        # Leiden clustering on Z_clust (RNA or ATAC)
+│   ├── ATAC_cell_type{,_gpu}.py      # ATAC-specific cell typing variants
+│   ├── multi_omics_glue.py           # scGLUE integration (cross-modality VAE + guidance graph)
+│   ├── multi_omics_batch_correction.py # Harmony post-pass on X_glue → Z_clust
+│   ├── multi_omics_preprocess.py     # post-GLUE QC + slimming
+│   └── multi_omics_cell_type_{cpu,gpu}.py  # RNA-Leiden + k-NN label transfer to ATAC
+├── sample_embedding/          # Core method
+│   ├── blocks.py              # composition, CMD, weighting, Frobenius stack, final PCA + Harmony
+│   ├── sample_embedding.py    # CPU pipeline
+│   └── sample_embedding_gpu.py # GPU pipeline (cuML + cupy)
+├── parameter_selection/
+│   └── autotune.py            # Bayesian GP sweep over CMD α; adaptive proxy ensemble
+├── sample_distance/           # Pairwise sample distances (DR / EMD / chi-square / JS)
+├── sample_clustering/         # Hierarchical (HRA / HRC / NN / UPGMA / consensus), K-means, proportion test, RAISIN
+├── sample_trajectory/         # CCA (supervised) and TSCAN (unsupervised) + GAM-based trajectory DGE
+├── sample_association/        # Per-PC variance explained vs sample-level covariates (permutation FDR)
+├── visualization/             # Embedding plots, dendrograms, DGE volcanos, modality-aware multi-omics scatters
+├── utils/                     # Shared helpers: seed, safe h5ad I/O, limma, TF-IDF, batch regress, Grouping
+├── gene_activity/             # ATAC peak → gene activity inference + RNA-ATAC validation
+└── claude/                    # Active one-off run scripts (rerun launchers, monitored SE, parameter sweeps)
 ```
 
-## Preparation
-
-1. **Download Data**: Obtain the necessary data files and store them locally in a directory of your choice.
-
-2. **Configure Paths**: Update the data and output paths in the program to correctly access the data and store the results.
-
-## Harmonization
-
-The `treecor_harmony` function is designed for preprocessing and integrating scRNA-seq data using Harmony, a tool that reduces batch effects. This function loads a raw gene expression matrix and associated metadata, performs data filtering, normalization, principal component analysis (PCA), and integrates the data to mitigate batch effects.
-
-### Key Steps
-
-1. **Data Loading and Filtering**
-   - **Load Data**: Reads count data and metadata.
-   - **Filter Genes**: Removes genes with low expression.
-   - **Quality Control**: Eliminates cells with high mitochondrial gene content, which often indicates low-quality data.
-
-2. **Harmony Integration**
-   - **Batch Effect Reduction**: Applies Harmony to minimize batch effects across samples, ensuring comparability of cells from different batches.
-
-3. **Dimension Reduction and Clustering**
-   - **PCA**: Reduces data dimensionality using Principal Component Analysis.
-   - **Clustering**: Performs Leiden clustering on Harmony embeddings to identify cell subpopulations.
-
-4. **Visualization**
-   - **UMAP**: Visualizes cell clusters in 2D space.
-   - **Dendrogram**: Generates a phylogenetic tree to illustrate relationships among clusters.
-
-5. **Output**
-   - **Save Results**: Stores the processed data as an AnnData object.
-   - **Plots**: Saves cluster plots and the dendrogram to the specified output directory.
-
-### Usage Example
-
-```python
-from your_module import treecor_harmony
-
-# Define input and output paths
-input_data = 'path/to/raw_expression_matrix.h5ad'
-metadata = 'path/to/metadata.csv'
-output_dir = 'path/to/output/'
-
-# Run the harmonization pipeline
-treecor_harmony(input_data, metadata, output_dir)
-```
-
-## Sample Similarity
-
-The sample similarity module calculates similarity based on different cell types within each sample. Users can choose to focus on the average expression of each cell type or the proportion of each type by adjusting the weights of the distance matrix. Additionally, an integrated method multiplies the weight by its expression to obtain an internally weighted distance matrix. Both methods utilize the Earth Mover's Distance (EMD) and summarize the results in CSV files and heatmaps.
-
-### Key Features
-
-- **Customization**: 
-  - **Average Expression**: Focus on the average expression levels of each cell type.
-  - **Cell Type Proportion**: Emphasize the proportion of each cell type.
-  - **Integrated Method**: Combine both approaches by weighting expression with proportions.
-
-- **Visualization**: Generates heatmaps to visualize sample similarities.
-
-- **Output**: Saves similarity matrices and corresponding heatmaps in the output directory.
-
-### Usage Example
-
-```python
-from your_module import calculate_sample_similarity
-
-# Define input and output paths
-processed_data = 'path/to/processed_data.h5ad'
-output_dir = 'path/to/output/'
-
-# Calculate sample similarity based on average expression
-calculate_sample_similarity(processed_data, output_dir, method='average_expression')
-
-# Calculate sample similarity based on cell type proportion
-calculate_sample_similarity(processed_data, output_dir, method='cell_type_proportion')
-
-# Calculate sample similarity using the integrated method
-calculate_sample_similarity(processed_data, output_dir, method='integrated')
-```
+---
 
 ## Usage
 
-Provide detailed instructions or examples on how to use the different parts of the project here. This can include command-line instructions, scripts, or additional code snippets to help users get started quickly.
+### Complex mode (recommended) — YAML-driven
 
-## Contributing
+```bash
+python SampleDisc.py -m complex --config config/config.yaml
+```
 
-Contributions are welcome! Please follow these steps to contribute:
+The YAML drives every flag and parameter for all three pipelines:
 
-1. Fork the repository.
-2. Create a new branch for your feature or bugfix.
-3. Commit your changes with clear messages.
-4. Submit a pull request describing your changes.
+- **Pipeline gates** (top-level): `run_rna_pipeline`, `run_atac_pipeline`, `run_multiomics_pipeline`
+- **Per-modality phase gates** (Phase 1): `*_preprocessing`, `*_cell_type_cluster`, `*_derive_sample_embedding`
+- **Per-modality downstream gates** (Phase 2): `*_sample_distance_calculation`, `*_trajectory_analysis`, `*_trajectory_dge`, `*_sample_cluster`, `*_proportion_test`, `*_cluster_dge`, `*_visualize_data`, `*_dimension_association_analysis`
+- **Multi-omics-specific**: `multiomics_run_glue_*`, `multiomics_treat_sample_as_batch`, `multiomics_run_glue_twice_for_sample_removal`
 
-Please ensure that your contributions adhere to the project's coding standards and include appropriate tests.
+The 9 ready-to-use configs in `config/` are point-in-time snapshots for the datasets used in the paper; copy one and adjust paths / column names for your own data.
+
+### Simple mode — one positional file, defaults everywhere
+
+```bash
+python SampleDisc.py -m simple -c <count_data.h5ad> -o <output_dir>
+```
 
 ---
+
+## Inputs
+
+A standard scanpy AnnData file with at minimum:
+- `.X` — count matrix (genes for RNA, peaks for ATAC)
+- `.obs['sample']` — sample column (required)
+- Optional: `.obs['batch']`, `.obs['cell_type']`, sample-level metadata file (CSV) to merge
+
+For multi-omics, the pipeline takes two separate h5ads (RNA + ATAC) and integrates them via scGLUE; samples may be **paired** (1:1 cell correspondence) or **unpaired**.
+
+---
+
+## Outputs (under `output_dir`)
+
 ```
+<output_dir>/
+├── rna/
+│   ├── preprocess/adata_preprocessed.h5ad
+│   ├── sample_embedding/sample_embedding.csv
+│   ├── Sample_distance/{cosine,correlation}/*
+│   ├── CCA/  or  TSCAN/                       # whichever trajectory mode
+│   ├── trajectoryDEG/
+│   ├── sample_cluster/{kmeans_*,proportion_test/}
+│   ├── sample_association/variance_explained_sample.csv + figures/
+│   └── visualization/*.png
+├── atac/   (parallel structure)
+├── multiomics/
+│   ├── integration/glue/{rna-pp,atac-pp,guidance.graphml.gz}
+│   ├── preprocess/adata_sample.h5ad           # post-GLUE merged adata with Z_clust + Z_cmd
+│   ├── sample_embedding/sample_embedding.csv
+│   └── (same downstream subdirs as single-omics)
+└── sys_log/main_process_status.json           # which stages completed
+```
+
+---
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+GPU acceleration (Harmony, scanpy normalization, scGLUE training, sample embedding) requires `cupy` + `cuml` + `rapids-singlecell` and a recent CUDA driver. When the driver is too old or the libraries are missing, the pipeline auto-falls back to CPU equivalents (`harmonypy`, scikit-learn k-means, PyTorch CPU) — set `use_gpu: false` in the config to skip the GPU probe.
