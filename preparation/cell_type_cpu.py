@@ -40,14 +40,8 @@ def cell_types(
         set_global_seed(seed=42)
 
     if cell_embedding_column is None:
-        if "X_lsi_harmony" in adata.obsm:
-            cell_embedding_column = "X_lsi_harmony"
-            is_atac = True
-        else:
-            cell_embedding_column = "X_pca_harmony"
-            is_atac = False
-    else:
-        is_atac = "lsi" in cell_embedding_column.lower()
+        cell_embedding_column = "Z_clust"
+    is_atac = "X_lsi" in adata.obsm
 
     if cell_type_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:
@@ -161,7 +155,7 @@ def cell_types(
     return adata
 
 
-def cell_type_dendrogram(adata, n_clusters, groupby="cell_type", cell_embedding_column="X_pca_harmony", cell_embedding_num_PCs=20, is_atac=False):
+def cell_type_dendrogram(adata, n_clusters, groupby="cell_type", cell_embedding_column="Z_clust", cell_embedding_num_PCs=20, is_atac=False):
     if n_clusters < 1:
         raise ValueError("n_clusters must be >= 1")
     if groupby not in adata.obs:

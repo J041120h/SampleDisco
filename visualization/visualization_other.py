@@ -8,7 +8,7 @@ import scanpy as sc
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Grouping import find_sample_grouping
-from visualization.visualization_emebedding import plot_proportion_embedding, plot_expression_embedding
+from visualization.visualization_embedding import plot_proportion_embedding, plot_expression_embedding
 
 def _preprocessing(
     adata_pseudobulk,
@@ -42,9 +42,9 @@ def _preprocessing(
 
 def plot_dendrogram(AnnData_cell, output_dir, verbose=True):
     obsm = AnnData_cell.obsm
-    if 'X_pca_harmony' not in obsm and 'X_lsi_harmony' not in obsm and "X_glue" not in obsm:
-        raise ValueError("Neither X_pca_harmony nor X_lsi_harmony found in AnnData_cell.obsm.")
-    X_harmony = obsm['X_pca_harmony'] if 'X_pca_harmony' in obsm else obsm['X_lsi_harmony']
+    if 'Z_clust' not in obsm and "X_glue" not in obsm:
+        raise ValueError("Neither Z_clust (single-omics) nor X_glue (multi-omics) found in AnnData_cell.obsm.")
+    X_harmony = obsm['Z_clust'] if 'Z_clust' in obsm else obsm['X_glue']
     cell_type_col = next((col for col in ['cell_type', 'celltype', 'cluster', 'leiden', 'seurat_clusters'] if col in AnnData_cell.obs.columns), None)
     if cell_type_col is None:
         raise ValueError("No cell type column found.")

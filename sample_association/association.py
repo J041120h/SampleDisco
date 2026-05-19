@@ -302,18 +302,15 @@ def _variance_explained_one_embedding(
         ])
 
     df = pd.DataFrame(rows)
-    # BH-FDR across components within each variable
+    # Global BH-FDR across all (variable, component) tests.
+    pvals = df["perm_p"].values
+    mask = ~np.isnan(pvals)
     df["fdr"] = np.nan
-    for var, idx in df.groupby("variable").groups.items():
-        idx_list = list(idx)
-        pvals = df.loc[idx_list, "perm_p"].values
-        mask = ~np.isnan(pvals)
-        if mask.sum() == 0:
-            continue
+    if mask.sum() > 0:
         _, fdr, _, _ = multipletests(pvals[mask], method="fdr_bh")
         out = np.full(len(pvals), np.nan)
         out[mask] = fdr
-        df.loc[idx_list, "fdr"] = out
+        df["fdr"] = out
 
     return df
 

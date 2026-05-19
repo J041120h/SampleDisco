@@ -14,7 +14,7 @@ from sklearn.preprocessing import OneHotEncoder
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.safe_save import safe_h5ad_write, ensure_cpu_arrays
-from utils.imbalance_cell_type_handeler import filter_modality_imbalanced_clusters
+from utils.imbalance_cell_type_handler import filter_modality_imbalanced_clusters
 
 
 def cell_types_multiomics(

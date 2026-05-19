@@ -13,7 +13,7 @@ def compute_emd_distances(
     adata,
     sample_column='sample',
     cell_type_column='cell_type',
-    embedding_key='X_pca_harmony',
+    embedding_key='Z_clust',
     n_pcs=20,
     proportions=None,
     centroids=None,
@@ -35,7 +35,7 @@ def compute_emd_distances(
         Column name for cell type annotations.
     embedding_key : str
         Key in adata.obsm for cell embeddings.
-        Common options: 'X_pca_harmony', 'X_pca', 'X_umap'
+        Common options: 'Z_clust', 'X_pca', 'X_umap'
     n_pcs : int
         Number of dimensions to use from embedding.
     proportions : pd.DataFrame, optional

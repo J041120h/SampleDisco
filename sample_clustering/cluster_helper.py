@@ -1,6 +1,11 @@
+import os
 import matplotlib.pyplot as plt
-from scipy.cluster.hierarchy import dendrogram
 import numpy as np
+import pandas as pd
+import scipy.cluster.hierarchy as sch
+from scipy.cluster.hierarchy import dendrogram, linkage, to_tree
+from scipy.spatial.distance import pdist
+from dendropy import Tree as DendroPyTree, TaxonNamespace
 
 
 def visualizeTree(linkageMatrix, outputImagePath, treeLabel, labels):
@@ -64,3 +69,76 @@ def calculate_distance_matrix_from_tree(tree):
             distance_matrix[j, i] = distance  # symmetric matrix
 
     return distance_matrix, [term.name for term in terminals]
+
+
+def _linkage_to_newick(linkageMatrix, labels):
+    """Convert scipy linkage matrix to Newick string.
+
+    Branch lengths use the dendrogram drop from parent to child
+    (parent.dist - child.dist) — the mathematically correct definition.
+    """
+    tree = to_tree(linkageMatrix, rd=False)
+
+    def _build(node):
+        if node.is_leaf():
+            return labels[node.id]
+        left = _build(node.left)
+        right = _build(node.right)
+        leftLength = node.dist - node.left.dist
+        rightLength = node.dist - node.right.dist
+        return f"({left}:{leftLength:.2f},{right}:{rightLength:.2f})"
+
+    return _build(tree) + ";"
+
+
+def _save_trees_nexus(newickTrees, outputTreePath):
+    """Write `[(newick_string, label)]` to a NEXUS trees block."""
+    with open(outputTreePath, "w") as nexusFile:
+        nexusFile.write("#NEXUS\nBEGIN TREES;\n")
+        for newickStr, label in newickTrees:
+            nexusFile.write(f"    TREE {label} = {newickStr}\n")
+        nexusFile.write("END;\n")
+    print(f"All trees saved to '{outputTreePath}' in NEXUS format.")
+
+
+def expression_tree_to_nexus(
+    inputFilePath: str,
+    generalOutputDir: str,
+    linkage_method: str,
+    tree_label_prefix: str,
+    custom_tree_name=None,
+):
+    """Shared driver for expression-based hierarchical tree builders.
+
+    Reads samples × features expression CSV, runs scipy hierarchical
+    clustering with `linkage_method` ('average', 'complete', ...),
+    saves a PNG dendrogram and a NEXUS tree file.
+
+    Used by HRA_VEC (method='average') and HRC_VEC (method='complete').
+    """
+    if not os.path.exists(inputFilePath):
+        print(f"Input file '{inputFilePath}' not found.")
+        return
+
+    os.makedirs(generalOutputDir, exist_ok=True)
+
+    baseName = os.path.basename(inputFilePath)
+    treeLabel = custom_tree_name if custom_tree_name else os.path.splitext(baseName)[0]
+    outputImagePath = os.path.join(generalOutputDir, f"{treeLabel}.png")
+    outputTreePath = os.path.join(generalOutputDir, f"{treeLabel}.nex")
+
+    print(f"\nProcessing '{inputFilePath}' with label '{treeLabel}'...")
+    expressionDf = pd.read_csv(inputFilePath, index_col=0).transpose()
+    condensed = pdist(expressionDf.values, metric="euclidean")
+    linkageMatrix = sch.linkage(condensed, method=linkage_method)
+    labels = expressionDf.index.tolist()
+
+    visualizeTree(linkageMatrix, outputImagePath, tree_label_prefix, labels)
+    newickStr = _linkage_to_newick(linkageMatrix, labels)
+
+    dendroTree = DendroPyTree.get(
+        data=newickStr, schema="newick", taxon_namespace=TaxonNamespace()
+    )
+    newickOut = dendroTree.as_string(schema="newick").strip()
+    _save_trees_nexus([(newickOut, treeLabel)], outputTreePath)
+    print(f"Tree saved as '{treeLabel}.nex'")

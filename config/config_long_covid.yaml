@@ -34,7 +34,6 @@ rna_sample_cluster: false
 rna_proportion_test: false
 rna_cluster_dge: false
 rna_visualize_data: false
-rna_phenotype_prediction: false
 rna_dimension_association_analysis: false
 
 # --- Resume Paths (for skipping preprocessing) ---
@@ -62,7 +61,7 @@ rna_exclude_genes: null
 rna_num_cell_hvgs: 2000
 rna_cell_embedding_num_pcs: 20
 rna_num_harmony_iterations: 30
-# >>> REVIEW: cell-level batch key (used in second Harmony pass for X_pca_harmony_nosamp).
+# >>> REVIEW: cell-level batch key (used in second Harmony pass for Z_cmd).
 rna_cell_level_batch_key: null
 
 # --- Cell Type Clustering Parameters ---
@@ -131,17 +130,6 @@ rna_plot_dendrogram_flag: true
 rna_plot_cell_type_proportions_pca_flag: true
 rna_plot_cell_type_expression_umap_flag: true
 
-# --- Phenotype Prediction Parameters ---
-# Toggle via rna_phenotype_prediction in the Pipeline Control Flags section.
-# feature_source: expression | proportion | cluster_expression | cluster_proportion
-#                 | pseudotime_expression | pseudotime_proportion
-# Model: Ridge for regression targets, Logistic Regression for classification (hardcoded).
-rna_prediction_target_col: null
-rna_prediction_feature_source: "expression"
-rna_prediction_task_type: "auto"
-rna_prediction_cv: "auto"
-rna_prediction_n_permutations: 0
-
 # --- Dimension Association Analysis Parameters ---
 # Toggle via rna_dimension_association_analysis in the Pipeline Control Flags section.
 # If the *_cols lists are null, all sample-level obs columns are auto-classified
@@ -169,7 +157,6 @@ atac_sample_cluster: false
 atac_proportion_test: false
 atac_cluster_dge: false
 atac_visualize_data: false
-atac_phenotype_prediction: false
 atac_dimension_association_analysis: false
 
 # --- Resume Paths ---
@@ -183,7 +170,7 @@ atac_pseudo_adata_path: null
 atac_sample_col: "sample"
 atac_sample_level_batch_col: null  # >>> REVIEW
 atac_celltype_col: "cell_type"
-atac_cell_embedding_column: null  # auto-detected: X_lsi_harmony if batch_col set
+atac_cell_embedding_column: null  # auto-detected: Z_clust if batch_col set
 
 # --- ATAC-Specific Preprocessing Parameters ---
 atac_min_cells: 1
@@ -264,13 +251,6 @@ atac_plot_dendrogram_flag: true
 atac_plot_cell_type_proportions_pca_flag: false
 atac_plot_cell_type_expression_umap_flag: false
 
-# --- Phenotype Prediction Parameters ---
-atac_prediction_target_col: null
-atac_prediction_feature_source: "expression"
-atac_prediction_task_type: "auto"
-atac_prediction_cv: "auto"
-atac_prediction_n_permutations: 0
-
 # --- Dimension Association Analysis Parameters ---
 atac_association_continuous_cols: null
 atac_association_categorical_cols: null
@@ -298,7 +278,6 @@ multiomics_sample_cluster: false
 multiomics_proportion_test: false
 multiomics_cluster_dge: false
 multiomics_visualize_embedding: false
-multiomics_phenotype_prediction: false
 multiomics_dimension_association_analysis: false
 
 # --- GLUE Sub-Pipeline Flags ---
@@ -465,13 +444,6 @@ multiomics_alpha: 0.8
 multiomics_colormap: "viridis"
 multiomics_show_sample_names: false
 multiomics_force_data_type: null
-
-# --- Phenotype Prediction Parameters ---
-multiomics_prediction_target_col: null
-multiomics_prediction_feature_source: "expression"
-multiomics_prediction_task_type: "auto"
-multiomics_prediction_cv: "auto"
-multiomics_prediction_n_permutations: 0
 
 # --- Dimension Association Analysis Parameters ---
 multiomics_association_continuous_cols: null

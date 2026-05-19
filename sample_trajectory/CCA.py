@@ -12,61 +12,58 @@ def find_best_2pc_combination(
     sev_levels: np.ndarray
 ):
     """
-    Find the best 2-PC combination that maximizes CCA correlation.
-    
-    Parameters:
-    -----------
-    pca_coords : np.ndarray
-        PCA coordinates with shape (n_samples, n_components)
-    sev_levels : np.ndarray
-        Severity levels for each sample
-        
+    Pick the 2-PC pair best aligned with severity FOR VISUALIZATION ONLY,
+    and report an unbiased CCA score computed on the FULL PC set.
+
+    Selecting the C(n,2) PC pair with maximum |corr| cherry-picks the score
+    if returned as the statistical metric. Instead we compute the CCA score
+    on the full PC matrix (an unbiased estimate of the linear severity-
+    correlation) and use the 2-PC pair only for plotting.
+
     Returns:
-    --------
-    tuple: (best_pc_indices, best_score, best_cca_model, best_pca_coords_2d)
+        (best_pc_indices, cca_score, cca_model_2d, best_pca_coords_2d)
+        where cca_score is the full-PC CCA correlation (unbiased) and
+        cca_model_2d is the 2-PC model used to generate plot coordinates.
     """
     n_components = pca_coords.shape[1]
-    
+
     if n_components < 2:
         raise ValueError("Need at least 2 PC components")
-    
-    if n_components == 2:
-        sev_levels_2d = sev_levels.reshape(-1, 1)
-        cca = CCA(n_components=1)
-        cca.fit(pca_coords, sev_levels_2d)
-        U, V = cca.transform(pca_coords, sev_levels_2d)
-        score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-        return (0, 1), score, cca, pca_coords
-    
-    best_score = -1
-    best_combination = None
-    best_cca = None
-    best_coords_2d = None
-    
+
     sev_levels_2d = sev_levels.reshape(-1, 1)
-    
+
+    full_cca = CCA(n_components=1)
+    full_cca.fit(pca_coords, sev_levels_2d)
+    U_full, V_full = full_cca.transform(pca_coords, sev_levels_2d)
+    full_score = abs(np.corrcoef(U_full[:, 0], V_full[:, 0])[0, 1])
+
+    if n_components == 2:
+        return (0, 1), full_score, full_cca, pca_coords
+
+    best_2d_corr = -1.0
+    best_combination = None
+    best_cca_2d = None
+    best_coords_2d = None
+
     for pc1, pc2 in combinations(range(n_components), 2):
         pca_subset = pca_coords[:, [pc1, pc2]]
-        
         try:
             cca = CCA(n_components=1)
             cca.fit(pca_subset, sev_levels_2d)
             U, V = cca.transform(pca_subset, sev_levels_2d)
             score = abs(np.corrcoef(U[:, 0], V[:, 0])[0, 1])
-            
-            if score > best_score:
-                best_score = score
+            if score > best_2d_corr:
+                best_2d_corr = score
                 best_combination = (pc1, pc2)
-                best_cca = cca
+                best_cca_2d = cca
                 best_coords_2d = pca_subset
-                
         except Exception:
             continue
-    
+
     if best_combination is None:
         raise ValueError("Could not find valid PC combination for CCA")
-    
-    return best_combination, best_score, best_cca, best_coords_2d
+
+    return best_combination, full_score, best_cca_2d, best_coords_2d
 
 
 def run_cca_on_pca_from_adata(

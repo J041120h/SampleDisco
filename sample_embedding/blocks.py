@@ -185,7 +185,9 @@ def loo_cmd(
         try:
             pcs = PCA(n_components=nc, random_state=seed).fit_transform(sub)
             out_blocks.append(pcs.astype(np.float32))
-        except Exception:
+        except Exception as exc:
+            print(f"  [CMD] PCA failed for cluster {ki} (shape={sub.shape}, nc={nc}): "
+                  f"{type(exc).__name__}: {exc}; cluster dropped from CMD block")
             continue
     out = (np.concatenate(out_blocks, axis=1) if out_blocks
             else np.zeros((n_units, 0), dtype=np.float32))
@@ -340,8 +342,8 @@ def build_emb_from_blocks(
                 if Zc.shape[0] != n_units:
                     Zc = Zc.T
             except Exception as exc:
-                if verbose:
-                    print(f"  [Harmony] failed ({exc!r}); using raw PCA")
+                print(f"  [Harmony] FAILED ({exc!r}); using raw PCA "
+                      f"— sample embedding will NOT be batch-corrected")
                 Zc = Fp
     else:
         Zc = Fp

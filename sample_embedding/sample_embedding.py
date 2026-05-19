@@ -52,9 +52,8 @@ def _resolve_cmd_emb_key(adata, cluster_emb_key: str,
                           cmd_emb_key: Optional[str]) -> str:
     if cmd_emb_key is not None and cmd_emb_key in adata.obsm:
         return cmd_emb_key
-    candidate = f"{cluster_emb_key}_nosamp"
-    if candidate in adata.obsm:
-        return candidate
+    if "Z_cmd" in adata.obsm:
+        return "Z_cmd"
     return cluster_emb_key
 
 
@@ -136,7 +135,7 @@ def compute_sample_embedding(
     *,
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
-    cluster_emb_key: str = "X_pca_harmony",
+    cluster_emb_key: str = "Z_clust",
     cmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,

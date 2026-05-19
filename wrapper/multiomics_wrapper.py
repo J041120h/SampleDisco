@@ -364,8 +364,8 @@ def multiomics_wrapper(
 
         cell_types_func = cell_types_multiomics
         if use_gpu:
-            from preparation.multi_omics_cell_type_gpu import cell_types_multiomics_linux
-            cell_types_func = cell_types_multiomics_linux
+            from preparation.multi_omics_cell_type_gpu import cell_types_multiomics_gpu
+            cell_types_func = cell_types_multiomics_gpu
 
         current_adata = cell_types_func(
             adata=current_adata,

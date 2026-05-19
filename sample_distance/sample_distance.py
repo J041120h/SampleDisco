@@ -31,7 +31,7 @@ def compute_emd_distances(
     adata: AnnData,
     sample_column: str = 'sample',
     cell_type_column: str = 'cell_type',
-    embedding_key: str = 'X_pca_harmony',
+    embedding_key: str = 'Z_clust',
     n_pcs: int = 20,
     proportions: Optional[pd.DataFrame] = None,
     centroids: Optional[Union[pd.DataFrame, np.ndarray]] = None,
@@ -53,7 +53,7 @@ def compute_emd_distances(
         Column name for cell type annotations.
     embedding_key : str
         Key in adata.obsm for cell embeddings.
-        Common options: 'X_pca_harmony', 'X_pca', 'X_umap'
+        Common options: 'Z_clust', 'X_pca', 'X_umap'
     n_pcs : int
         Number of dimensions to use from embedding.
     proportions : pd.DataFrame, optional
@@ -215,7 +215,7 @@ def emd_distance(
     output_dir: str,
     sample_column: str = 'sample',
     cell_type_column: str = 'cell_type',
-    embedding_key: str = 'X_pca_harmony',
+    embedding_key: str = 'Z_clust',
     n_pcs: int = 20,
     proportions: Optional[pd.DataFrame] = None,
     centroids: Optional[Union[pd.DataFrame, np.ndarray]] = None,
@@ -474,8 +474,8 @@ def _match_samples(dr_data: pd.DataFrame, adata: AnnData) -> pd.DataFrame:
 def _default_cell_embedding_key(adata: AnnData, data_type: str) -> str:
     """Pick the modality-appropriate default cell-level embedding key from adata.obsm.
 
-    RNA → prefer X_pca_harmony, fall back to X_pca.
-    ATAC → prefer X_lsi_harmony, fall back to X_lsi.
+    RNA → prefer Z_clust, fall back to X_pca.
+    ATAC → prefer Z_clust, fall back to X_lsi.
     multiomics → prefer Z_clust (sample-removed; paper's cluster view),
         fall back to X_glue.
     """
@@ -483,9 +483,9 @@ def _default_cell_embedding_key(adata: AnnData, data_type: str) -> str:
     if dt == 'multiomics':
         priority = ['Z_clust', 'X_glue']
     elif dt == 'atac':
-        priority = ['X_lsi_harmony', 'X_lsi']
+        priority = ['Z_clust', 'X_lsi']
     else:
-        priority = ['X_pca_harmony', 'X_pca']
+        priority = ['Z_clust', 'X_pca']
 
     for k in priority:
         if k in adata.obsm:
@@ -670,7 +670,7 @@ def sample_distance(
         Column name for samples.
     embedding_key : str, optional
         Key in obsm for embeddings (EMD only). If None, picked from data_type:
-        RNA→X_pca_harmony, ATAC→X_lsi_harmony, multiomics→Z_clust (else X_glue).
+        RNA→Z_clust, ATAC→Z_clust, multiomics→Z_clust (else X_glue).
     n_pcs : int
         Number of PCs to use (EMD only).
     proportions : pd.DataFrame, optional
