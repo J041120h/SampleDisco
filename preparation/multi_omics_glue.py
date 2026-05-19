@@ -727,13 +727,24 @@ def compute_gene_activity_from_knn(
     use_gpu: bool = True,
     verbose: bool = True,
 ) -> ad.AnnData:
-    # Lazy GPU imports: RAPIDS (cuml/cupy/cupyx) is broken on some nodes
-    # via driver/runtime mismatch; importing at module level would block
-    # GLUE training itself. Surface a clear error only when gene activity
-    # actually runs.
-    import cupy as cp
-    from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-    from cupyx.scipy import sparse as cusparse
+    # Lazy GPU imports: RAPIDS (cuml/cupy/cupyx) can be broken on nodes with
+    # a driver/runtime mismatch. Try to import; on failure transparently fall
+    # back to a CPU implementation (sklearn k-NN + numpy einsum). Importing at
+    # module level would block GLUE training itself on such nodes.
+    gpu_ok = False
+    cp = None
+    cuNearestNeighbors = None
+    cusparse = None
+    if use_gpu:
+        try:
+            import cupy as cp  # noqa: F401
+            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors  # noqa: F401
+            from cupyx.scipy import sparse as cusparse  # noqa: F401
+            gpu_ok = True
+        except Exception as exc:
+            if verbose:
+                print(f"   [gene_activity] GPU stack unavailable ({type(exc).__name__}: {exc}); "
+                      f"falling back to CPU (sklearn k-NN).")
 
     def fix_sparse_matrix_dtype(X, verbose=False):
         if not sparse.issparse(X):
@@ -754,10 +765,14 @@ def compute_gene_activity_from_knn(
         
         return X_fixed
     
-    mempool = cp.get_default_memory_pool()
-    pinned_mempool = cp.get_default_pinned_memory_pool()
-    
-    gpu_mem = cp.cuda.Device().mem_info[0] / 1e9
+    if gpu_ok:
+        mempool = cp.get_default_memory_pool()
+        pinned_mempool = cp.get_default_pinned_memory_pool()
+        gpu_mem = cp.cuda.Device().mem_info[0] / 1e9
+    else:
+        mempool = None
+        pinned_mempool = None
+        gpu_mem = 0.0
     cpu_mem = psutil.virtual_memory().available / 1e9
     
     rna_processed_path = os.path.join(glue_dir, "glue-rna-emb.h5ad")
@@ -858,126 +873,173 @@ def compute_gene_activity_from_knn(
         print(f"   RNA cells: {n_rna_cells}, ATAC cells: {n_atac_cells}, Genes: {n_genes}")
 
     if verbose:
-        print("\n🔍 Finding k-nearest RNA neighbors...")
-    
-    rna_embedding_gpu = cp.asarray(rna_embedding, dtype=cp.float32)
-    atac_embedding_gpu = cp.asarray(atac_embedding, dtype=cp.float32)
-    
-    del rna_embedding, atac_embedding
-    gc.collect()
-    
-    nn = cuNearestNeighbors(
-        n_neighbors=k_neighbors, 
-        metric=metric,
-        algorithm='brute' if n_rna_cells < 50000 else 'auto'
-    )
-    nn.fit(rna_embedding_gpu)
-    distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_gpu)
-    
-    if verbose:
-        print("\n📐 Computing similarity weights...")
-    
-    if metric == 'cosine':
-        similarities = 1 - (distances_gpu / 2)
-    else:
-        similarities = 1 / (1 + distances_gpu)
-    
-    min_sim = cp.min(similarities, axis=1, keepdims=True)
-    max_sim = cp.max(similarities, axis=1, keepdims=True)
-    sim_range = max_sim - min_sim
-    all_equal = sim_range == 0
-    
-    if cp.any(all_equal):
-        weights_gpu = cp.ones_like(similarities, dtype=cp.float32) / k_neighbors
-        if not cp.all(all_equal):
-            similarities = cp.where(all_equal, 0, (similarities - min_sim) / sim_range)
-            similarities = similarities / cp.sum(similarities, axis=1, keepdims=True)
-            weights_gpu = cp.where(all_equal, weights_gpu, similarities)
-    else:
-        similarities = (similarities - min_sim) / sim_range
-        weights_gpu = similarities / cp.sum(similarities, axis=1, keepdims=True)
-    
-    if verbose:
-        print(f"   Weight stats: min={float(cp.min(weights_gpu)):.6f}, max={float(cp.max(weights_gpu)):.6f}")
-    
-    del similarities, distances_gpu
-    
-    estimated_memory_per_cell = (k_neighbors * n_genes * 8) / 1e9
-    optimal_batch_size = int(min(
-        gpu_mem * 0.5 / estimated_memory_per_cell,
-        10000,
-        n_atac_cells
-    ))
-    optimal_batch_size = max(optimal_batch_size, 100)
-    
-    if verbose:
-        print(f"\n🧮 Computing weighted gene activity...")
-        print(f"   Batch size: {optimal_batch_size}")
-    
-    n_batches = (n_atac_cells + optimal_batch_size - 1) // optimal_batch_size
-    gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float64)
+        print(f"\n🔍 Finding k-nearest RNA neighbors ({'GPU/cuML' if gpu_ok else 'CPU/sklearn'})...")
+
     is_sparse_rna = sparse.issparse(rna_X_full)
-    
-    for batch_idx in range(n_batches):
-        start_idx = batch_idx * optimal_batch_size
-        end_idx = min((batch_idx + 1) * optimal_batch_size, n_atac_cells)
-        batch_size_actual = end_idx - start_idx
-        
-        batch_indices_gpu = indices_gpu[start_idx:end_idx]
-        batch_weights_gpu = weights_gpu[start_idx:end_idx]
-        
-        batch_indices_cpu = cp.asnumpy(batch_indices_gpu).flatten()
-        unique_common_indices = np.unique(batch_indices_cpu)
-        unique_raw_indices = common_cells_raw_indices[unique_common_indices]
-        
-        if is_sparse_rna:
-            rna_expr_subset = rna_X_full[unique_raw_indices, :]
-            if sparse.issparse(rna_expr_subset):
-                if rna_expr_subset.nnz / rna_expr_subset.size > 0.1:
-                    rna_expr_subset = rna_expr_subset.toarray()
+    gene_activity_matrix = np.zeros((n_atac_cells, n_genes), dtype=np.float64)
+
+    if gpu_ok:
+        rna_embedding_gpu = cp.asarray(rna_embedding, dtype=cp.float32)
+        atac_embedding_gpu = cp.asarray(atac_embedding, dtype=cp.float32)
+        del rna_embedding, atac_embedding
+        gc.collect()
+
+        nn = cuNearestNeighbors(
+            n_neighbors=k_neighbors,
+            metric=metric,
+            algorithm='brute' if n_rna_cells < 50000 else 'auto'
+        )
+        nn.fit(rna_embedding_gpu)
+        distances_gpu, indices_gpu = nn.kneighbors(atac_embedding_gpu)
+
+        if verbose:
+            print("\n📐 Computing similarity weights (GPU)...")
+        if metric == 'cosine':
+            similarities = 1 - (distances_gpu / 2)
+        else:
+            similarities = 1 / (1 + distances_gpu)
+        min_sim = cp.min(similarities, axis=1, keepdims=True)
+        max_sim = cp.max(similarities, axis=1, keepdims=True)
+        sim_range = max_sim - min_sim
+        all_equal = sim_range == 0
+        if cp.any(all_equal):
+            weights_gpu = cp.ones_like(similarities, dtype=cp.float32) / k_neighbors
+            if not cp.all(all_equal):
+                similarities = cp.where(all_equal, 0, (similarities - min_sim) / sim_range)
+                similarities = similarities / cp.sum(similarities, axis=1, keepdims=True)
+                weights_gpu = cp.where(all_equal, weights_gpu, similarities)
+        else:
+            similarities = (similarities - min_sim) / sim_range
+            weights_gpu = similarities / cp.sum(similarities, axis=1, keepdims=True)
+        if verbose:
+            print(f"   Weight stats: min={float(cp.min(weights_gpu)):.6f}, max={float(cp.max(weights_gpu)):.6f}")
+        del similarities, distances_gpu
+
+        estimated_memory_per_cell = (k_neighbors * n_genes * 8) / 1e9
+        optimal_batch_size = int(min(
+            gpu_mem * 0.5 / estimated_memory_per_cell,
+            10000,
+            n_atac_cells
+        ))
+        optimal_batch_size = max(optimal_batch_size, 100)
+        if verbose:
+            print(f"\n🧮 Computing weighted gene activity (GPU)...")
+            print(f"   Batch size: {optimal_batch_size}")
+        n_batches = (n_atac_cells + optimal_batch_size - 1) // optimal_batch_size
+        for batch_idx in range(n_batches):
+            start_idx = batch_idx * optimal_batch_size
+            end_idx = min((batch_idx + 1) * optimal_batch_size, n_atac_cells)
+            batch_size_actual = end_idx - start_idx
+            batch_indices_gpu = indices_gpu[start_idx:end_idx]
+            batch_weights_gpu = weights_gpu[start_idx:end_idx]
+            batch_indices_cpu = cp.asnumpy(batch_indices_gpu).flatten()
+            unique_common_indices = np.unique(batch_indices_cpu)
+            unique_raw_indices = common_cells_raw_indices[unique_common_indices]
+            if is_sparse_rna:
+                rna_expr_subset = rna_X_full[unique_raw_indices, :]
+                if sparse.issparse(rna_expr_subset):
+                    if rna_expr_subset.nnz / rna_expr_subset.size > 0.1:
+                        rna_expr_subset = rna_expr_subset.toarray()
+                    else:
+                        rna_expr_subset = cusparse.csr_matrix(rna_expr_subset, dtype=cp.float32)
                 else:
-                    rna_expr_subset = cusparse.csr_matrix(rna_expr_subset, dtype=cp.float32)
+                    rna_expr_subset = np.asarray(rna_expr_subset)
             else:
-                rna_expr_subset = np.asarray(rna_expr_subset)
-        else:
-            rna_expr_subset = rna_X_full[unique_raw_indices, :]
-        
-        raw_idx_to_subset_idx = {raw_idx: subset_idx for subset_idx, raw_idx in enumerate(unique_raw_indices)}
-        common_to_subset = np.array([raw_idx_to_subset_idx[common_cells_raw_indices[ci]] for ci in unique_common_indices], dtype=np.int32)
-        
-        if not isinstance(rna_expr_subset, (cp.ndarray, cusparse.csr_matrix)):
-            rna_expr_gpu = cp.asarray(rna_expr_subset, dtype=cp.float32)
-        else:
-            rna_expr_gpu = rna_expr_subset
-        
-        idx_map = cp.zeros(n_rna_cells, dtype=cp.int32) - 1
-        idx_map[unique_common_indices] = cp.asarray(common_to_subset, dtype=cp.int32)
-        mapped_indices_gpu = idx_map[batch_indices_gpu]
-        
-        batch_gene_activity_gpu = cp.zeros((batch_size_actual, n_genes), dtype=cp.float32)
-        
-        for i in range(batch_size_actual):
-            cell_indices = mapped_indices_gpu[i]
-            if isinstance(rna_expr_gpu, cusparse.csr_matrix):
-                neighbor_expr = rna_expr_gpu[cell_indices].toarray()
+                rna_expr_subset = rna_X_full[unique_raw_indices, :]
+            raw_idx_to_subset_idx = {raw_idx: subset_idx for subset_idx, raw_idx in enumerate(unique_raw_indices)}
+            common_to_subset = np.array([raw_idx_to_subset_idx[common_cells_raw_indices[ci]] for ci in unique_common_indices], dtype=np.int32)
+            if not isinstance(rna_expr_subset, (cp.ndarray, cusparse.csr_matrix)):
+                rna_expr_gpu = cp.asarray(rna_expr_subset, dtype=cp.float32)
             else:
-                neighbor_expr = rna_expr_gpu[cell_indices]
-            
-            batch_gene_activity_gpu[i] = cp.einsum('n,ng->g', 
-                                                   batch_weights_gpu[i], 
-                                                   neighbor_expr)
-        
-        gene_activity_matrix[start_idx:end_idx] = cp.asnumpy(batch_gene_activity_gpu).astype(np.float64)
-        
-        del batch_gene_activity_gpu, rna_expr_gpu, mapped_indices_gpu
-        
-        if verbose and ((batch_idx + 1) % max(1, n_batches // 10) == 0 or batch_idx == n_batches - 1):
-            progress = (batch_idx + 1) / n_batches * 100
-            print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
-    
-    del weights_gpu, indices_gpu, rna_embedding_gpu, atac_embedding_gpu
-    mempool.free_all_blocks()
-    pinned_mempool.free_all_blocks()
+                rna_expr_gpu = rna_expr_subset
+            idx_map = cp.zeros(n_rna_cells, dtype=cp.int32) - 1
+            idx_map[unique_common_indices] = cp.asarray(common_to_subset, dtype=cp.int32)
+            mapped_indices_gpu = idx_map[batch_indices_gpu]
+            batch_gene_activity_gpu = cp.zeros((batch_size_actual, n_genes), dtype=cp.float32)
+            for i in range(batch_size_actual):
+                cell_indices = mapped_indices_gpu[i]
+                if isinstance(rna_expr_gpu, cusparse.csr_matrix):
+                    neighbor_expr = rna_expr_gpu[cell_indices].toarray()
+                else:
+                    neighbor_expr = rna_expr_gpu[cell_indices]
+                batch_gene_activity_gpu[i] = cp.einsum('n,ng->g',
+                                                       batch_weights_gpu[i],
+                                                       neighbor_expr)
+            gene_activity_matrix[start_idx:end_idx] = cp.asnumpy(batch_gene_activity_gpu).astype(np.float64)
+            del batch_gene_activity_gpu, rna_expr_gpu, mapped_indices_gpu
+            if verbose and ((batch_idx + 1) % max(1, n_batches // 10) == 0 or batch_idx == n_batches - 1):
+                progress = (batch_idx + 1) / n_batches * 100
+                print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
+        del weights_gpu, indices_gpu, rna_embedding_gpu, atac_embedding_gpu
+        mempool.free_all_blocks()
+        pinned_mempool.free_all_blocks()
+    else:
+        # CPU fallback: sklearn k-NN + numpy einsum
+        from sklearn.neighbors import NearestNeighbors as skNearestNeighbors
+        nn = skNearestNeighbors(
+            n_neighbors=k_neighbors,
+            metric=metric,
+            algorithm='brute' if n_rna_cells < 50000 else 'auto',
+            n_jobs=-1,
+        )
+        nn.fit(np.asarray(rna_embedding, dtype=np.float32))
+        distances, indices = nn.kneighbors(np.asarray(atac_embedding, dtype=np.float32))
+        del rna_embedding, atac_embedding
+        gc.collect()
+
+        if verbose:
+            print("\n📐 Computing similarity weights (CPU)...")
+        if metric == 'cosine':
+            similarities = 1.0 - (distances / 2.0)
+        else:
+            similarities = 1.0 / (1.0 + distances)
+        min_sim = similarities.min(axis=1, keepdims=True)
+        max_sim = similarities.max(axis=1, keepdims=True)
+        sim_range = max_sim - min_sim
+        all_equal = (sim_range == 0)
+        if np.any(all_equal):
+            weights = np.ones_like(similarities, dtype=np.float32) / k_neighbors
+            if not np.all(all_equal):
+                normed = np.where(all_equal, 0.0, (similarities - min_sim) / np.where(sim_range == 0, 1, sim_range))
+                normed = normed / np.where(normed.sum(axis=1, keepdims=True) == 0, 1, normed.sum(axis=1, keepdims=True))
+                weights = np.where(all_equal, weights, normed)
+        else:
+            normed = (similarities - min_sim) / sim_range
+            weights = normed / normed.sum(axis=1, keepdims=True)
+        weights = weights.astype(np.float32)
+        if verbose:
+            print(f"   Weight stats: min={float(weights.min()):.6f}, max={float(weights.max()):.6f}")
+        del similarities, distances
+
+        # Batched weighted aggregation; cap RAM by limiting B*k*n_genes*4 bytes
+        bytes_per_cell = k_neighbors * n_genes * 4
+        cpu_budget_bytes = cpu_mem * 0.25 * 1e9
+        optimal_batch_size = int(min(max(100, cpu_budget_bytes / max(bytes_per_cell, 1)), 5000, n_atac_cells))
+        if verbose:
+            print(f"\n🧮 Computing weighted gene activity (CPU)...")
+            print(f"   Batch size: {optimal_batch_size}")
+        n_batches = (n_atac_cells + optimal_batch_size - 1) // optimal_batch_size
+        for batch_idx in range(n_batches):
+            start_idx = batch_idx * optimal_batch_size
+            end_idx = min((batch_idx + 1) * optimal_batch_size, n_atac_cells)
+            batch_indices = indices[start_idx:end_idx]            # (B, k) into common_cells space
+            batch_weights = weights[start_idx:end_idx]            # (B, k)
+            flat = batch_indices.ravel()
+            unique_common, inverse = np.unique(flat, return_inverse=True)
+            unique_raw = common_cells_raw_indices[unique_common]
+            if is_sparse_rna:
+                rna_expr_subset = rna_X_full[unique_raw, :].toarray().astype(np.float32)
+            else:
+                rna_expr_subset = np.asarray(rna_X_full[unique_raw, :], dtype=np.float32)
+            mapped = inverse.reshape(batch_indices.shape)         # (B, k) into rna_expr_subset rows
+            neighbor_expr = rna_expr_subset[mapped]               # (B, k, n_genes)
+            batch_activity = np.einsum('bk,bkg->bg', batch_weights, neighbor_expr)
+            gene_activity_matrix[start_idx:end_idx] = batch_activity.astype(np.float64)
+            del neighbor_expr, rna_expr_subset, batch_activity
+            if verbose and ((batch_idx + 1) % max(1, n_batches // 10) == 0 or batch_idx == n_batches - 1):
+                progress = (batch_idx + 1) / n_batches * 100
+                print(f"   Progress: {progress:.1f}% ({batch_idx + 1}/{n_batches} batches)")
+        del weights, indices
     
     if verbose:
         print("\n📦 Creating gene activity AnnData...")
@@ -1107,10 +1169,11 @@ def compute_gene_activity_from_knn(
         print(f"   ATAC cells: {(merged_adata.obs['modality'] == 'ATAC').sum()}")
         print(f"   Obs columns: {list(merged_adata.obs.columns)}")
 
-    mempool.free_all_blocks()
-    pinned_mempool.free_all_blocks()
+    if gpu_ok and mempool is not None:
+        mempool.free_all_blocks()
+        pinned_mempool.free_all_blocks()
     gc.collect()
-    
+
     return merged_adata
 
 def _merge_second_glue_embedding_into_primary_h5ads(
