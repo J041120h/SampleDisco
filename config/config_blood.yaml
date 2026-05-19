@@ -27,7 +27,6 @@ rna_output_dir: null  # defaults to {output_dir}/rna
 rna_preprocessing: true
 rna_cell_type_cluster: false
 rna_derive_sample_embedding: true
-rna_cca_based_cell_resolution_selection: false
 rna_sample_distance_calculation: false
 rna_trajectory_analysis: false
 rna_trajectory_dge: false
@@ -67,12 +66,6 @@ rna_existing_cell_types: false
 rna_n_target_cell_clusters: null
 rna_umap: true
 
-# --- Sample Embedding Parameters ---
-rna_sample_hvg_number: 2000
-rna_sample_embedding_dimension: 10
-rna_harmony_for_proportion: true
-rna_preserve_cols_in_sample_embedding: null
-
 # --- Trajectory Analysis Parameters ---
 rna_n_cca_pcs: 10
 rna_trajectory_col: "sev.level"
@@ -83,14 +76,6 @@ rna_cca_pvalue: true
 rna_tscan_origin: null
 rna_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
 rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
-
-# --- CCA-Based Resolution Selection Parameters ---
-rna_cca_compute_corrected_pvalues: true
-rna_cca_coarse_start: 0.1
-rna_cca_coarse_end: 1.0
-rna_cca_coarse_step: 0.1
-rna_cca_fine_range: 0.02
-rna_cca_fine_step: 0.01
 
 # --- Sample Distance Parameters ---
 rna_sample_distance_methods:
@@ -140,7 +125,6 @@ atac_output_dir: null  # defaults to {output_dir}/atac
 atac_preprocessing: false
 atac_cell_type_cluster: false
 atac_derive_sample_embedding: false
-atac_cca_based_cell_resolution_selection: false
 atac_sample_distance_calculation: false
 atac_trajectory_analysis: false
 atac_trajectory_dge: false
@@ -184,12 +168,6 @@ atac_existing_cell_types: false
 atac_n_target_cell_clusters: null
 atac_umap: false
 
-# --- Sample Embedding Parameters ---
-atac_sample_hvg_number: 50000
-atac_sample_embedding_dimension: 30
-atac_harmony_for_proportion: true
-atac_preserve_cols_in_sample_embedding: null
-
 # --- Trajectory Analysis Parameters ---
 atac_n_cca_pcs: 2
 atac_trajectory_col: "sev.level"
@@ -200,14 +178,6 @@ atac_cca_pvalue: false
 atac_tscan_origin: null
 atac_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
 atac_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
-
-# --- CCA-Based Resolution Selection Parameters ---
-atac_cca_compute_corrected_pvalues: true
-atac_cca_coarse_start: 0.1
-atac_cca_coarse_end: 1.0
-atac_cca_coarse_step: 0.1
-atac_cca_fine_range: 0.02
-atac_cca_fine_step: 0.01
 
 # --- Sample Distance Parameters ---
 atac_sample_distance_methods:
@@ -254,8 +224,6 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 # --- Pipeline Control Flags (Preprocessing & Resolution) ---
 multiomics_integration: false
 multiomics_integration_preprocessing: false
-multiomics_dimensionality_reduction: false
-multiomics_find_optimal_resolution: false
 
 # --- Pipeline Control Flags (Downstream) ---
 multiomics_sample_distance_calculation: false
@@ -361,25 +329,8 @@ multiomics_doublet: true
 multiomics_keep_expression: false
 
 # --- Sample Embedding / Dimensionality Reduction Parameters ---
-multiomics_sample_hvg_number: 2000
-multiomics_preserve_cols_for_sample_embedding: null
-multiomics_n_expression_components: 10
-multiomics_n_proportion_components: 10
-multiomics_harmony_for_proportion: true
 
 # --- Optimal Resolution Parameters ---
-multiomics_optimization_target: "rna"
-multiomics_sev_col: "sev.level"
-multiomics_resolution_use_rep: "X_glue"
-multiomics_num_pcs: 20
-multiomics_visualize_cell_types: true
-multiomics_cca_coarse_start: 0.1
-multiomics_cca_coarse_end: 1.0
-multiomics_cca_coarse_step: 0.1
-multiomics_cca_fine_range: 0.05
-multiomics_cca_fine_step: 0.01
-multiomics_compute_corrected_pvalues: false
-multiomics_analyze_modality_alignment: true
 
 # --- Trajectory Analysis Parameters ---
 multiomics_trajectory_col: "sev.level"
@@ -424,8 +375,6 @@ multiomics_plot_cell_type_expression_umap_flag: false
 multiomics_color_col: null
 multiomics_visualization_grouping_column: null
 multiomics_target_modality: "ATAC"
-multiomics_expression_key: "X_DR_expression"
-multiomics_proportion_key: "X_DR_proportion"
 multiomics_figsize:
   - 20
   - 8
