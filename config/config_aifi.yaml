@@ -50,8 +50,16 @@ rna_count_data_path: "/dcs07/hongkai/data/harry/result/human_immune_health/sampl
 rna_output_dir: null                   # → {output_dir}/rna
 
 # --- Pipeline Control Flags ---
-rna_preprocessing: true
-rna_cell_type_cluster: true            # copies AIFI_L1 → obs['cell_type'], builds neighbors
+# The package's preprocess() OOMs at 50 GB SLURM on this atlas (multiple
+# .copy() ops each briefly hold two 24 GB CSR copies). Instead we run a
+# memory-efficient custom_preprocess.py beforehand that writes a file
+# matching the package's expected schema to {rna_output_dir}/preprocess/
+# adata_preprocessed.h5ad, then set rna_preprocessing=false so the
+# wrapper picks it up from disk. Same for rna_cell_type_cluster: we don't
+# need leiden (AIFI_L1 is used as celltype_col directly), so skipping
+# avoids the 1.8 M-cell sc.pp.neighbors call.
+rna_preprocessing: false
+rna_cell_type_cluster: false
 rna_derive_sample_embedding: true
 rna_sample_distance_calculation: false # decide after seeing the embedding
 rna_trajectory_analysis: false         # no trajectory axis in this dataset
