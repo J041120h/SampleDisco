@@ -83,6 +83,37 @@ def _sanitize(name: str) -> str:
 
 
 # =============================================================================
+# Sample-level filter
+#
+# A column is sample-level only if every sample has at most one unique
+# non-null value. Within-sample variation (e.g. per-cell QC like n_genes)
+# disqualifies the column — testing it against per-sample PCs is meaningless.
+# =============================================================================
+
+def _is_sample_level(values: pd.Series, sample_ids: pd.Series) -> bool:
+    df = pd.DataFrame({"_v": values, "_s": sample_ids}).dropna(subset=["_v"])
+    if df.empty:
+        return False
+    return bool(df.groupby("_s")["_v"].nunique(dropna=True).le(1).all())
+
+
+def _filter_sample_level(
+    cols: List[str], obs: pd.DataFrame, sample_col: str
+) -> Tuple[List[str], List[str]]:
+    """Return (kept, dropped). Dropped columns vary within at least one sample."""
+    if sample_col not in obs.columns:
+        return list(cols), []
+    sample_ids = obs[sample_col]
+    kept, dropped = [], []
+    for c in cols:
+        if _is_sample_level(obs[c], sample_ids):
+            kept.append(c)
+        else:
+            dropped.append(c)
+    return kept, dropped
+
+
+# =============================================================================
 # Embedding helpers
 # =============================================================================
 
@@ -549,7 +580,18 @@ def run_dimension_association_analysis(
     continuous_cols = [c for c in dict.fromkeys(continuous_cols) if c in pseudo_adata.obs.columns]
     categorical_cols = [c for c in dict.fromkeys(categorical_cols) if c in pseudo_adata.obs.columns]
 
+    # Restrict to truly sample-level variables: drop columns that vary within
+    # at least one sample (e.g. per-cell QC fields like n_genes / pct_mt).
+    continuous_cols, dropped_cont = _filter_sample_level(continuous_cols, pseudo_adata.obs, sample_col)
+    categorical_cols, dropped_cat = _filter_sample_level(categorical_cols, pseudo_adata.obs, sample_col)
+    dropped_non_sample_level = dropped_cont + dropped_cat
+
     if verbose:
+        if dropped_non_sample_level:
+            print(
+                f"[Association] Dropped {len(dropped_non_sample_level)} non-sample-level "
+                f"variables (vary within at least one sample): {dropped_non_sample_level}"
+            )
         print(f"[Association] Continuous variables ({len(continuous_cols)}): {continuous_cols}")
         print(f"[Association] Categorical variables ({len(categorical_cols)}): {categorical_cols}")
 
@@ -592,5 +634,6 @@ def run_dimension_association_analysis(
     return {
         "continuous_cols": continuous_cols,
         "categorical_cols": categorical_cols,
+        "dropped_non_sample_level": dropped_non_sample_level,
         "results": results,
     }
