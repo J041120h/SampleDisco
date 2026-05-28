@@ -244,6 +244,8 @@ multiomics_dimension_association_analysis: true
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: false        # cached
 multiomics_run_glue_training: false             # cached (both scGLUE runs done; .dill + emb on disk)
+multiomics_run_glue_merge: false                # cached (adata_sample.h5ad on disk)
+multiomics_run_glue_preprocess_per_modality: false  # cached (per-modality h5ads on disk)
 multiomics_cell_type_cluster: false             # cached (cell_type from torch-GPU standalone in adata_sample_celltyped.h5ad)
 multiomics_run_glue_visualization: false
 

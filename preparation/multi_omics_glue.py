@@ -827,9 +827,8 @@ def multiomics_preparation(
     atac_doublet_detection: bool = True,
     atac_tfidf_scale_factor: float = 1e4,
     atac_log_transform: bool = True,
-    use_gpu: bool = True,
     verbose: bool = True,
-    
+
     # Visualization parameters
     plot_columns: Optional[List[str]] = None,
     

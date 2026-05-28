@@ -279,7 +279,7 @@ def multiomics_wrapper(
             atac_doublet_detection=atac_doublet_detection,
             atac_tfidf_scale_factor=atac_tfidf_scale_factor,
             atac_log_transform=atac_log_transform,
-            use_gpu=use_gpu, verbose=multiomics_verbose,
+            verbose=multiomics_verbose,
             plot_columns=plot_columns, output_dir=multiomics_output_dir,
         )
         results['glue'] = glue_result
