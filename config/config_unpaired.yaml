@@ -226,7 +226,6 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 # it cannot serve as the V2 CMD embedding. We re-train scGLUE with
 # treat_sample_as_batch=False (V2 default) below.
 multiomics_integration: true
-multiomics_integration_preprocessing: true      # produces preprocess/adata_preprocessed.h5ad
 # Derive the V2 sample embedding (composition + CMD on the di-embedding pair).
 multiomics_derive_sample_embedding: true        # SE (composition + CMD on di-embedding pair)
 multiomics_autotune_enable: true
@@ -245,7 +244,6 @@ multiomics_dimension_association_analysis: true
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: false        # cached: rna-pp.h5ad + atac-pp.h5ad + guidance.graphml.gz exist
 multiomics_run_glue_training: true              # 1st run cached (auto-skipped by glue_train); 2nd run will run
-multiomics_run_glue_gene_activity: true         # produces preprocess/adata_sample.h5ad
 multiomics_cell_type_cluster: true              # writes cell_type into obs on X_glue_harmony
 multiomics_run_glue_visualization: true
 
@@ -306,8 +304,6 @@ multiomics_glue_array_shuffle_num_workers: 0        # back to scglue default aft
 multiomics_glue_graph_shuffle_num_workers: 0        # back to scglue default after sharding crash with 4
 
 # --- Neighbor/Metric Parameters ---
-multiomics_k_neighbors: 1
-multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 
 # --- Cell Type Clustering Parameters ---
@@ -323,17 +319,10 @@ multiomics_generate_umap_celltype: true
 multiomics_plot_columns: null
 
 # --- Integration Preprocessing Parameters ---
-multiomics_min_cells_sample: 1
-multiomics_min_cell_gene: 10
-multiomics_min_features: 500
-multiomics_pct_mito_cutoff: 20
-multiomics_exclude_genes: null
-multiomics_doublet: true
 
 # Slim integrated h5ad: drop X / layers / varm. Off by default —
 # embedding-only is all SE / cell typing / distance / trajectory needs.
 # Set true to keep expression for downstream differential analysis.
-multiomics_keep_expression: false
 
 # --- Sample Embedding / Dimensionality Reduction Parameters ---
 

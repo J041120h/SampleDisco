@@ -90,22 +90,34 @@ def _gpu_pca(F_np: np.ndarray, n_components: int, seed: int) -> np.ndarray:
 def _gpu_harmonize(
     Fp: np.ndarray,
     unit_ids: List[str],
-    batch_labels: List[str],
+    batch_labels,
     n_units: int,
     seed: int = 42,
     verbose: bool = False,
+    multi_meta_df: Optional[pd.DataFrame] = None,
 ) -> np.ndarray:
     """Sample-level Harmony via `harmony.harmonize(use_gpu=True)`.
 
-    Mirrors the library used by `rna_preprocess_gpu.py` so the dependency
-    surface stays consistent.
+    Two modes:
+      - Single-batch (backward compatible): pass `batch_labels` as a list of
+        per-unit strings. Harmony is called with `batch_key="batch"`.
+      - Multi-covariate: pass `multi_meta_df` (one col per covariate, indexed
+        by unit_ids). Harmony is called with `batch_key=list(meta.columns)`,
+        which is the proper multi-covariate regression.
     """
+    if multi_meta_df is not None and len(multi_meta_df.columns) >= 1:
+        meta = multi_meta_df.copy()
+        meta.index = pd.Index(unit_ids, name="sample")
+        batch_keys = list(meta.columns)
+    else:
+        meta = pd.DataFrame({"batch": batch_labels}, index=pd.Index(unit_ids, name="sample"))
+        batch_keys = "batch"
+
     try:
         from harmony import harmonize
-        meta = pd.DataFrame({"batch": batch_labels}, index=unit_ids)
         Zc = harmonize(
             np.asarray(Fp, dtype=np.float32),
-            meta, batch_key="batch",
+            meta, batch_key=batch_keys,
             max_iter_harmony=30, use_gpu=True,
         )
         return np.asarray(Zc, dtype=np.float32)
@@ -113,9 +125,11 @@ def _gpu_harmonize(
         print(f"  [Harmony GPU] FAILED ({exc!r}); falling back to CPU harmonypy")
         try:
             import harmonypy as hm
-            meta = pd.DataFrame({"batch": batch_labels}, index=unit_ids)
-            nclust = max(2, min(len(set(batch_labels)), n_units // 2))
-            ho = hm.run_harmony(Fp, meta, "batch",
+            if isinstance(batch_keys, list):
+                nclust = max(2, min(meta[batch_keys].nunique().max(), n_units // 2))
+            else:
+                nclust = max(2, min(len(set(meta["batch"])), n_units // 2))
+            ho = hm.run_harmony(Fp, meta, batch_keys,
                                  nclust=nclust,
                                  max_iter_harmony=30,
                                  random_state=seed)
@@ -169,9 +183,14 @@ def compute_sample_embedding(
         print(f"[sample_embedding_gpu] cluster_emb={cluster_emb_key}, "
               f"cmd_emb={cmd_key}")
 
-    primary_batch = batch_col[0] if isinstance(batch_col, (list, tuple)) and batch_col else batch_col
-    if isinstance(primary_batch, list):
-        primary_batch = primary_batch[0] if primary_batch else None
+    # Normalize batch_col -> primary (single, for assemble_units) + multi list (for Harmony multi-cov)
+    if isinstance(batch_col, (list, tuple)):
+        batch_cols_multi = [c for c in batch_col if c]
+    elif batch_col:
+        batch_cols_multi = [batch_col]
+    else:
+        batch_cols_multi = []
+    primary_batch = batch_cols_multi[0] if batch_cols_multi else None
 
     units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_clust = \
         assemble_units(adata, sample_col, cluster_emb_key,
@@ -266,17 +285,34 @@ def compute_sample_embedding(
             f"insufficient data for PCA (shape={F.shape}, requested {pca_components})")
     Fp = _gpu_pca(F, n_pc_full, seed)
 
-    # Sample-level Harmony (GPU harmony.harmonize)
+    # Sample-level Harmony — multi-covariate when >=2 batch_cols given, else legacy
+    from sample_embedding.blocks import build_harmony_meta_df
+    multi_meta_df = (
+        build_harmony_meta_df(adata, unit_cellids, unit_ids, batch_cols_multi)
+        if len(batch_cols_multi) >= 2 else None
+    )
+
     batch_labels, used_composite = composite_batch_labels(unit_groups, unit_batches)
-    if verbose:
-        tag = "composite (group+batch)" if used_composite else "group only"
-        print(f"  [batch correction] {len(set(batch_labels))} groups ({tag})")
-    if len(set(batch_labels)) > 1 and n_units >= 8:
+    if multi_meta_df is not None:
+        per_col = ", ".join([f"{c}={multi_meta_df[c].nunique()}" for c in multi_meta_df.columns])
+        if verbose:
+            print(f"  [batch correction] multi-covariate Harmony: keys={list(multi_meta_df.columns)} ({per_col})")
+        do_harmony = n_units >= 8 and any(multi_meta_df[c].nunique() > 1 for c in multi_meta_df.columns)
+    else:
+        if verbose:
+            tag = "composite (group+batch)" if used_composite else "group only"
+            print(f"  [batch correction] {len(set(batch_labels))} groups ({tag})")
+        do_harmony = len(set(batch_labels)) > 1 and n_units >= 8
+
+    if do_harmony:
         if batch_method == "linear":
-            Zc = regress_out_batch_linear(Fp, batch_labels)
+            collapsed = (multi_meta_df.astype(str).agg("__".join, axis=1).values
+                         if multi_meta_df is not None else batch_labels)
+            Zc = regress_out_batch_linear(Fp, collapsed)
         else:
             Zc = _gpu_harmonize(Fp, unit_ids, batch_labels,
-                                  n_units=n_units, seed=seed, verbose=verbose)
+                                n_units=n_units, seed=seed, verbose=verbose,
+                                multi_meta_df=multi_meta_df)
     else:
         Zc = Fp
 
@@ -301,6 +337,7 @@ def compute_sample_embedding(
         "cmd_emb_key": str(cmd_key),
         "modality_col": str(modality_col) if modality_col else "",
         "batch_col": str(primary_batch) if primary_batch else "",
+        "batch_cols_multi": list(batch_cols_multi),
         "seed": int(seed),
         "backend": "gpu",
     }

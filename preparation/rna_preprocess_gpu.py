@@ -74,12 +74,11 @@ def anndata_cluster(
         print(f"After HVG selection: {n_hvg} flagged / {adata.shape[1]} total genes")
 
     if verbose:
-        print("Moving to GPU for normalization, PCA, and Harmony...")
-    rsc.get.anndata_to_GPU(adata)
-    rsc.pp.normalize_total(adata, target_sum=1e4)
-    rsc.pp.log1p(adata)
-    # PCA on HVGs only — rsc respects `use_highly_variable`.
-    rsc.pp.pca(adata, n_comps=cell_embedding_num_PCs, use_highly_variable=True)
+        print("Normalization, log1p, PCA on CPU (scanpy ARPACK); Harmony on GPU...")
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    sc.tl.pca(adata, n_comps=cell_embedding_num_PCs,
+              svd_solver="arpack", use_highly_variable=True)
 
     # --- Pass 1: sample-removed ---
     if verbose:

@@ -175,10 +175,14 @@ def compute_sample_embedding(
         print(f"[sample_embedding] cluster_emb={cluster_emb_key}, "
               f"cmd_emb={cmd_key}")
 
-    # Single batch col string (we use only the first if a list is passed)
-    primary_batch = batch_col[0] if isinstance(batch_col, (list, tuple)) and batch_col else batch_col
-    if isinstance(primary_batch, list):
-        primary_batch = primary_batch[0] if primary_batch else None
+    # Normalize batch_col -> primary (single str for assemble_units) + multi list (for Harmony multi-cov)
+    if isinstance(batch_col, (list, tuple)):
+        batch_cols_multi = [c for c in batch_col if c]
+    elif batch_col:
+        batch_cols_multi = [batch_col]
+    else:
+        batch_cols_multi = []
+    primary_batch = batch_cols_multi[0] if batch_cols_multi else None
 
     # Build units (one per sample or sample×modality)
     units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_clust = \
@@ -273,12 +277,23 @@ def compute_sample_embedding(
         print(f"[sample_embedding] weights={[round(w, 3) for w in weights]} "
               f"(n_blocks={len(blocks)})")
 
+    # Multi-covariate Harmony meta (only when >=2 batch_cols)
+    from sample_embedding.blocks import build_harmony_meta_df
+    harmony_meta_df = (
+        build_harmony_meta_df(adata, unit_cellids, unit_ids, batch_cols_multi)
+        if len(batch_cols_multi) >= 2 else None
+    )
+    if verbose and harmony_meta_df is not None:
+        print(f"[sample_embedding] multi-covariate Harmony meta: cols={list(harmony_meta_df.columns)}, "
+              f"strata_per_col={[harmony_meta_df[c].nunique() for c in harmony_meta_df.columns]}")
+
     # ---- Final: Frobenius stack + PCA + sample-level Harmony ----
     emb_df = build_emb_from_blocks(
         blocks, weights,
         unit_ids=unit_ids,
         unit_groups=unit_groups,
         unit_batches=unit_batches,
+        harmony_meta_df=harmony_meta_df,
         pca_components=pca_components,
         batch_method=batch_method,
         seed=seed,
@@ -301,6 +316,7 @@ def compute_sample_embedding(
         "cmd_emb_key": str(cmd_key),
         "modality_col": str(modality_col) if modality_col else "",
         "batch_col": str(primary_batch) if primary_batch else "",
+        "batch_cols_multi": list(batch_cols_multi),
         "seed": int(seed),
         "backend": "cpu",
     }

@@ -56,6 +56,25 @@ def _first_batch_col_for_raisin(
     return None
 
 
+def _remap_units_to_modality(mapping, modality: Optional[str]):
+    """Remap a {unit_id: value} dict from sample×modality unit IDs to bare
+    sample IDs for one modality.
+
+    Multiomics SE units are ``"<sample>_RNA"`` / ``"<sample>_ATAC"``; the
+    per-modality DGE adata uses bare ``"<sample>"``. When ``modality`` is set,
+    keep only units with that suffix and strip it. When None, return as-is.
+    """
+    if modality is None or mapping is None:
+        return mapping
+    suffix = f"_{modality}"
+    out = {}
+    for unit, val in dict(mapping).items():
+        unit = str(unit)
+        if unit.endswith(suffix):
+            out[unit[: -len(suffix)]] = val
+    return out
+
+
 # =============================================================================
 # SHARED DOWNSTREAM ANALYSIS
 # =============================================================================
@@ -69,7 +88,19 @@ def downstream_analysis(
     
     # ===== Data references (needed by some steps) =====
     adata_cell=None,
+    # Optional alternative cell-level adata used by trajectory_DGE only
+    # (e.g. the RNA-only preprocessed h5ad in multiomics runs). Other
+    # downstream steps still use adata_cell. None → fall back to adata_cell.
+    adata_cell_for_dge=None,
+    # Optional alternative sample-level adata used by cluster_DGE (RAISIN)
+    # only. None → fall back to adata_sample.
+    adata_sample_for_dge=None,
     adata_sample=None,
+    # Multiomics RNA-only DGE: pseudotime / clustering are computed on
+    # sample×modality units ("<sample>_RNA" / "<sample>_ATAC"), but the DGE
+    # adata uses bare sample IDs. When set (e.g. "RNA"), DGE-bound unit→sample
+    # mappings are filtered to that modality and the suffix is stripped.
+    dge_modality: Optional[str] = None,
     
     # ===== Step control flags =====
     sample_distance_calculation: bool = True,
@@ -262,10 +293,15 @@ def downstream_analysis(
             print("Running trajectory differential gene analysis...")
             from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
 
-            # Build pseudobulk on-the-fly from the cell-level adata.
+            # Build pseudobulk on-the-fly from the cell-level adata. For
+            # RNA-only multiomics DGE, map the sample×modality pseudotime
+            # units onto the bare sample IDs used by the RNA DGE adata.
+            _dge_adata = adata_cell_for_dge or adata_cell or adata_sample
+            _dge_ptime = (_remap_units_to_modality(ptime_sample, dge_modality)
+                          if adata_cell_for_dge is not None else ptime_sample)
             run_trajectory_gam_differential_gene_analysis(
-                adata=adata_cell if adata_cell is not None else adata_sample,
-                pseudotime_source=ptime_sample,
+                adata=_dge_adata,
+                pseudotime_source=_dge_ptime,
                 sample_col=sample_col,
                 celltype_col=dge_pseudobulk_celltype_col or celltype_col,
                 batch_col=dge_pseudobulk_batch_col or batch_col,
@@ -339,13 +375,17 @@ def downstream_analysis(
         from sample_clustering.RAISIN_TEST import run_pairwise_tests
         
         try:
-            if cluster_differential_gene_group_col is not None or expr_results:
+            # RNA-only multiomics RAISIN: clustering keys are sample×modality
+            # units; remap them onto the bare sample IDs of the RNA adata.
+            _raisin_clade = (_remap_units_to_modality(expr_results, dge_modality)
+                             if adata_sample_for_dge is not None else expr_results)
+            if cluster_differential_gene_group_col is not None or _raisin_clade:
                 fit = raisinfit(
-                    adata=adata_sample,
+                    adata=adata_sample_for_dge or adata_sample,
                     sample_col=sample_col,
                     testtype='unpaired',
                     batch_col=_first_batch_col_for_raisin(batch_col),
-                    sample_to_clade=expr_results,
+                    sample_to_clade=_raisin_clade,
                     group_col=cluster_differential_gene_group_col,
                     verbose=verbose,
                     intercept=True,
@@ -704,7 +744,6 @@ def wrapper(
     
     # Pipeline control flags -- preprocessing & resolution
     multiomics_integration: bool = True,
-    multiomics_integration_preprocessing: bool = True,
     # Pipeline control flags -- downstream
     multiomics_sample_distance_calculation: bool = True,
     multiomics_trajectory_analysis: bool = True,
@@ -718,7 +757,8 @@ def wrapper(
     # GLUE sub-pipeline flags
     multiomics_run_glue_preprocessing: bool = True,
     multiomics_run_glue_training: bool = True,
-    multiomics_run_glue_gene_activity: bool = True,
+    multiomics_run_glue_merge: bool = True,                  # build embedding union
+    multiomics_run_glue_preprocess_per_modality: bool = True, # per-mod QC + normalize
     multiomics_cell_type_cluster: bool = True,
     multiomics_run_glue_visualization: bool = True,
     
@@ -778,10 +818,22 @@ def wrapper(
     multiomics_harmonize_xglue_max_iter: int = 50,
     multiomics_run_glue_twice_for_sample_removal: bool = False,
     
-    # Neighbor/metric parameters
-    multiomics_k_neighbors: int = 10,
-    multiomics_use_rep: str = "X_glue",
+    # Cell-typing SNN label-transfer metric (RNA → ATAC).
     multiomics_metric: str = "cosine",
+
+    # ===== Per-modality preprocess QC parameters =====
+    multiomics_rna_min_cells: int = 500,
+    multiomics_rna_min_genes: int = 500,
+    multiomics_rna_pct_mito_cutoff: float = 20.0,
+    multiomics_rna_exclude_genes: Optional[List[str]] = None,
+    multiomics_atac_min_cells: int = 1,
+    multiomics_atac_min_features: int = 2000,
+    multiomics_atac_max_features: int = 15000,
+    multiomics_atac_min_cells_per_sample: int = 1,
+    multiomics_atac_exclude_features: Optional[List[str]] = None,
+    multiomics_atac_doublet_detection: bool = True,
+    multiomics_atac_tfidf_scale_factor: float = 1e4,
+    multiomics_atac_log_transform: bool = True,
     
     # Cell type clustering parameters
     multiomics_existing_cell_types: bool = False,
@@ -793,18 +845,6 @@ def wrapper(
     
     # Visualization parameters
     multiomics_plot_columns: Optional[List[str]] = None,
-    
-    # Integration preprocessing parameters
-    multiomics_min_cells_sample: int = 1,
-    multiomics_min_cell_gene: int = 10,
-    multiomics_min_features: int = 500,
-    multiomics_pct_mito_cutoff: int = 20,
-    multiomics_exclude_genes: Optional[List] = None,
-    multiomics_doublet: bool = True,
-    # Embedding-only output: drop X / layers / varm from the integrated h5ad.
-    # SE, cell typing, distance, trajectory all read only obs + obsm. Set
-    # True when differential analysis (needs X) will run on the same h5ad.
-    multiomics_keep_expression: bool = False,
     
     # Sample embedding parameters (new method)
     multiomics_derive_sample_embedding: bool = True,
@@ -825,6 +865,7 @@ def wrapper(
     multiomics_autotune_scope: str = "alpha_only",
     multiomics_autotune_alpha_bounds: tuple = (0.1, 10.0),
     multiomics_autotune_grouping_col: Optional[str] = None,
+    multiomics_autotune_tune_on_modality: Optional[str] = None,
 
     # Trajectory analysis parameters
     multiomics_trajectory_col: str = "sev.level",
@@ -987,10 +1028,10 @@ def wrapper(
             "glue_integration": False,
             "glue_preprocessing": False,
             "glue_training": False,
-            "glue_gene_activity": False,
+            "glue_merge": False,
+            "glue_preprocess_per_modality": False,
             "glue_cell_types": False,
             "glue_visualization": False,
-            "integration_preprocessing": False,
             "optimal_resolution": False,
             "dimensionality_reduction": False,
             "cca_based_cell_resolution_selection": False,
@@ -1354,7 +1395,6 @@ def wrapper(
                 multiomics_output_dir=multiomics_output_dir,
                 # Pipeline control
                 integration=multiomics_integration,
-                integration_preprocessing=multiomics_integration_preprocessing,
                 derive_sample_embedding=multiomics_derive_sample_embedding,
                 autotune_enable=multiomics_autotune_enable,
                 # Basic parameters
@@ -1374,7 +1414,8 @@ def wrapper(
                 # GLUE flags
                 run_glue_preprocessing=multiomics_run_glue_preprocessing,
                 run_glue_training=multiomics_run_glue_training,
-                run_glue_gene_activity=multiomics_run_glue_gene_activity,
+                run_glue_merge=multiomics_run_glue_merge,
+                run_glue_preprocess_per_modality=multiomics_run_glue_preprocess_per_modality,
                 cell_type_cluster=multiomics_cell_type_cluster,
                 run_glue_visualization=multiomics_run_glue_visualization,
                 # GLUE preprocessing
@@ -1402,10 +1443,21 @@ def wrapper(
                 # V2 cluster-vs-CMD split
                 harmonize_xglue_max_iter=multiomics_harmonize_xglue_max_iter,
                 run_glue_twice_for_sample_removal=multiomics_run_glue_twice_for_sample_removal,
-                # GLUE gene activity
-                k_neighbors=multiomics_k_neighbors,
-                use_rep=multiomics_use_rep,
+                # Cell-typing label-transfer metric
                 metric=multiomics_metric,
+                # Per-modality preprocess QC
+                rna_min_cells=multiomics_rna_min_cells,
+                rna_min_genes=multiomics_rna_min_genes,
+                rna_pct_mito_cutoff=multiomics_rna_pct_mito_cutoff,
+                rna_exclude_genes=multiomics_rna_exclude_genes,
+                atac_min_cells=multiomics_atac_min_cells,
+                atac_min_features=multiomics_atac_min_features,
+                atac_max_features=multiomics_atac_max_features,
+                atac_min_cells_per_sample=multiomics_atac_min_cells_per_sample,
+                atac_exclude_features=multiomics_atac_exclude_features,
+                atac_doublet_detection=multiomics_atac_doublet_detection,
+                atac_tfidf_scale_factor=multiomics_atac_tfidf_scale_factor,
+                atac_log_transform=multiomics_atac_log_transform,
                 # Cell type
                 existing_cell_types=multiomics_existing_cell_types,
                 n_target_clusters=multiomics_n_target_clusters,
@@ -1414,14 +1466,6 @@ def wrapper(
                 markers=multiomics_markers,
                 generate_umap_celltype=multiomics_generate_umap_celltype,
                 plot_columns=multiomics_plot_columns,
-                # Integration preprocessing
-                min_cells_sample=multiomics_min_cells_sample,
-                min_cell_gene=multiomics_min_cell_gene,
-                min_features=multiomics_min_features,
-                pct_mito_cutoff=multiomics_pct_mito_cutoff,
-                exclude_genes=multiomics_exclude_genes,
-                doublet=multiomics_doublet,
-                keep_expression=multiomics_keep_expression,
                 # Sample embedding (new method)
                 sample_embedding_medium_K=multiomics_sample_embedding_medium_K,
                 sample_embedding_fine_K=multiomics_sample_embedding_fine_K,
@@ -1438,6 +1482,7 @@ def wrapper(
                 autotune_scope=multiomics_autotune_scope,
                 autotune_alpha_bounds=multiomics_autotune_alpha_bounds,
                 autotune_grouping_col=multiomics_autotune_grouping_col,
+                autotune_tune_on_modality=multiomics_autotune_tune_on_modality,
                 # Paths for skipping
                 integrated_h5ad_path=multiomics_integrated_h5ad_path,
                 sample_adata_path=multiomics_pseudobulk_h5ad_path,
@@ -1445,19 +1490,28 @@ def wrapper(
             )
             status_flags = multiomics_results['status_flags']
 
+            import scanpy as sc
             multiomics_adata_cell = multiomics_results.get("adata")
             if multiomics_adata_cell is None:
-                import scanpy as sc
-                _cell_paths = []
-                if multiomics_integrated_h5ad_path:
-                    _cell_paths.append(multiomics_integrated_h5ad_path)
-                _cell_paths.append(
-                    os.path.join(multiomics_output_dir, "preprocess", "adata_preprocessed.h5ad")
-                )
-                for _p in _cell_paths:
+                _candidate_paths = [
+                    multiomics_integrated_h5ad_path,
+                    os.path.join(multiomics_output_dir, "preprocess", "adata_sample.h5ad"),
+                ]
+                for _p in _candidate_paths:
                     if _p and os.path.exists(_p):
                         multiomics_adata_cell = sc.read(_p)
                         break
+
+            # DGE / RAISIN need RNA cells with real expression X; the
+            # embedding-only union has X=empty. The per-modality RNA h5ad
+            # (preprocess_rna_for_downstream) supplies cell-level expression
+            # for both trajectory_DGE (builds pseudobulk on the fly) and
+            # RAISIN (accepts single-cell input). Other downstream steps keep
+            # using the union via adata_cell / pseudo_adata.
+            _mo_rna_pre_path = os.path.join(
+                multiomics_output_dir, "preprocess", "adata_rna_preprocessed.h5ad")
+            multiomics_adata_for_dge = (
+                sc.read(_mo_rna_pre_path) if os.path.exists(_mo_rna_pre_path) else None)
 
             from sample_embedding.sample_embedding import build_sample_adata
             _mo_sample_adata = build_sample_adata(
@@ -1474,6 +1528,9 @@ def wrapper(
                 status_flags=status_flags,
                 adata_cell=multiomics_adata_cell,
                 adata_sample=multiomics_adata_cell,
+                adata_cell_for_dge=multiomics_adata_for_dge,    # RNA cell-level w/ real X
+                adata_sample_for_dge=multiomics_adata_for_dge,  # RAISIN: RNA single-cell input
+                dge_modality="RNA",                             # remap SE units → bare RNA sample IDs
                 # Step control
                 sample_distance_calculation=multiomics_sample_distance_calculation,
                 trajectory_analysis=multiomics_trajectory_analysis,
