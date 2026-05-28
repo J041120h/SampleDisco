@@ -256,7 +256,6 @@ multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/test_RNA.h5ad"
 multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
 multiomics_output_dir: null
 multiomics_integration: false
-multiomics_integration_preprocessing: false
 multiomics_sample_distance_calculation: false
 multiomics_trajectory_analysis: false
 multiomics_trajectory_dge: false
@@ -267,7 +266,6 @@ multiomics_visualize_embedding: false
 multiomics_dimension_association_analysis: false
 multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
-multiomics_run_glue_gene_activity: false
 multiomics_cell_type_cluster: false
 multiomics_run_glue_visualization: false
 multiomics_integrated_h5ad_path: null
@@ -306,8 +304,6 @@ multiomics_glue_dataloader_num_workers: 4
 multiomics_glue_dataloader_fetches_per_worker: 8
 multiomics_glue_array_shuffle_num_workers: 4
 multiomics_glue_graph_shuffle_num_workers: 4
-multiomics_k_neighbors: 1
-multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: 10
@@ -316,13 +312,6 @@ multiomics_use_rep_celltype: null
 multiomics_markers: null
 multiomics_generate_umap_celltype: true
 multiomics_plot_columns: null
-multiomics_min_cells_sample: 1
-multiomics_min_cell_gene: 10
-multiomics_min_features: 500
-multiomics_pct_mito_cutoff: 20
-multiomics_exclude_genes: null
-multiomics_doublet: true
-multiomics_keep_expression: false
 multiomics_derive_sample_embedding: false
 multiomics_sample_embedding_medium_K: 120
 multiomics_sample_embedding_fine_K: 300

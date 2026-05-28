@@ -269,6 +269,43 @@ def regress_out_batch_linear(X: np.ndarray, batch_labels) -> np.ndarray:
     return (X - reg.predict(B)).astype(np.float32)
 
 
+def build_harmony_meta_df(
+    adata,
+    unit_cellids: Dict[str, List[str]],
+    unit_ids: List[str],
+    batch_cols: Optional[Sequence[str]],
+) -> Optional[pd.DataFrame]:
+    """Build a per-unit DataFrame for multi-covariate Harmony.
+
+    Each row is a unit (sample), each column a batch covariate, value = majority
+    label across the unit's cells. Returns None when batch_cols is empty / no
+    cols match adata.obs. Used by `compute_sample_embedding` whenever the user
+    passes >=2 batch_cols (proper multi-covariate path); single batch_col goes
+    through the legacy single-key code path unchanged.
+    """
+    if not batch_cols:
+        return None
+    cols = [batch_cols] if isinstance(batch_cols, str) else list(batch_cols)
+    cols = [c for c in cols if c in adata.obs.columns]
+    if not cols:
+        return None
+    cellid_to_batches = {
+        c: dict(zip(
+            adata.obs_names.astype(str).values,
+            adata.obs[c].astype(str).values,
+        )) for c in cols
+    }
+    rows = {c: [] for c in cols}
+    for uid in unit_ids:
+        cids = unit_cellids.get(uid, [])
+        for c in cols:
+            mapper = cellid_to_batches[c]
+            bs = [mapper.get(cid) for cid in cids if cid in mapper]
+            bs = [b for b in bs if b is not None and b != "nan"]
+            rows[c].append(max(set(bs), key=bs.count) if bs else "UNK")
+    return pd.DataFrame(rows, index=unit_ids)
+
+
 def composite_batch_labels(
     unit_groups: List[str],
     unit_batches: Optional[List[str]],
@@ -299,6 +336,7 @@ def build_emb_from_blocks(
     unit_groups: List[str],
     *,
     unit_batches: Optional[List[str]] = None,
+    harmony_meta_df: Optional[pd.DataFrame] = None,
     pca_components: int = 10,
     batch_method: str = "harmony",
     seed: int = 42,
@@ -307,6 +345,11 @@ def build_emb_from_blocks(
     """Frobenius-weighted stack + PCA + (optional) sample-level Harmony.
 
     Returns a pandas DataFrame indexed by `unit_ids`, columns PC1..PC{N}.
+
+    If `harmony_meta_df` is provided (>=1 cols), Harmony is called with
+    `batch_key=list(meta_df.columns)` for true multi-covariate correction.
+    Otherwise falls back to the legacy single-key path using composite labels
+    from (unit_groups, unit_batches).
     """
     from sklearn.decomposition import PCA
 
@@ -318,23 +361,47 @@ def build_emb_from_blocks(
             f"insufficient data for PCA (shape={F.shape}, requested {pca_components})")
     Fp = PCA(n_components=n_pc_full, random_state=seed).fit_transform(F)
 
-    batch_labels, used_composite = composite_batch_labels(unit_groups, unit_batches)
-    if verbose:
-        n_groups = len(set(batch_labels))
-        tag = "composite (group+batch)" if used_composite else "group only"
-        print(f"  [batch correction] {n_groups} groups ({tag})")
+    use_multi = (
+        harmony_meta_df is not None
+        and len(harmony_meta_df.columns) >= 1
+        and len(harmony_meta_df) == n_units
+    )
 
-    n_pca_out = n_pc_full
+    if use_multi:
+        meta = harmony_meta_df.copy()
+        meta.index = pd.Index(unit_ids, name="sample")
+        batch_keys = list(meta.columns)
+        n_groups = int(np.prod([meta[c].nunique() for c in batch_keys]))
+        if verbose:
+            per_col = ", ".join([f"{c}={meta[c].nunique()}" for c in batch_keys])
+            print(f"  [batch correction] multi-covariate Harmony: keys={batch_keys}  ({per_col})")
+        do_harmony = n_units >= 8 and any(meta[c].nunique() > 1 for c in batch_keys)
+    else:
+        batch_labels, used_composite = composite_batch_labels(unit_groups, unit_batches)
+        if verbose:
+            tag = "composite (group+batch)" if used_composite else "group only"
+            print(f"  [batch correction] {len(set(batch_labels))} groups ({tag})")
+        meta = pd.DataFrame({"batch": batch_labels}, index=pd.Index(unit_ids, name="sample"))
+        batch_keys = "batch"
+        do_harmony = len(set(batch_labels)) > 1 and n_units >= 8
 
-    if len(set(batch_labels)) > 1 and n_units >= 8:
+    if do_harmony:
         if batch_method == "linear":
-            Zc = regress_out_batch_linear(Fp, batch_labels)
+            # `linear` regression only supports single-key composite labels
+            if isinstance(batch_keys, list):
+                # collapse to composite for the linear path
+                joint = meta[batch_keys].astype(str).agg("__".join, axis=1).values
+            else:
+                joint = meta["batch"].values
+            Zc = regress_out_batch_linear(Fp, joint)
         else:
             try:
                 import harmonypy as hm
-                meta = pd.DataFrame({"batch": batch_labels}, index=unit_ids)
-                nclust = max(2, min(len(set(batch_labels)), n_units // 2))
-                ho = hm.run_harmony(Fp, meta, "batch",
+                nclust = max(2, min(meta.nunique().max() if isinstance(batch_keys, list)
+                                    else len(set(meta["batch"])),
+                                    n_units // 2))
+                ho = hm.run_harmony(Fp, meta,
+                                    batch_keys,  # str OR list[str]
                                     nclust=nclust,
                                     max_iter_harmony=30,
                                     random_state=seed)

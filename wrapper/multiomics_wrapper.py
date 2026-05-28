@@ -9,7 +9,7 @@ import scanpy as sc
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sample_embedding import compute_sample_embedding
 from preparation.multi_omics_glue import multiomics_preparation
-from preparation.multi_omics_preprocess import integrate_preprocess
+from preparation.multi_omics_merge import propagate_cell_type
 from preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from preparation.multi_omics_batch_correction import (
     harmonize_xglue,
@@ -50,7 +50,6 @@ def multiomics_wrapper(
 
     # ===== Process Control Flags =====
     integration=True,
-    integration_preprocessing=True,
     derive_sample_embedding=True,
     autotune_enable=False,
     # scGLUE removes batch but PRESERVES per-sample variance — its output
@@ -87,7 +86,8 @@ def multiomics_wrapper(
     # ===== GLUE Integration Parameters =====
     run_glue_preprocessing=True,
     run_glue_training=True,
-    run_glue_gene_activity=True,
+    run_glue_merge=True,                  # build embedding-only union AnnData
+    run_glue_preprocess_per_modality=True, # per-modality QC + normalize for DGE
     cell_type_cluster=True,
     run_glue_visualization=True,
 
@@ -129,10 +129,22 @@ def multiomics_wrapper(
     glue_array_shuffle_num_workers: int = 4,
     glue_graph_shuffle_num_workers: int = 4,
 
-    # GLUE gene activity parameters
-    k_neighbors=10,
-    use_rep="X_glue",
+    # Cell-typing SNN label-transfer metric (RNA→ATAC neighbor distance).
     metric="cosine",
+
+    # ===== Per-modality preprocess QC parameters =====
+    rna_min_cells: int = 500,
+    rna_min_genes: int = 500,
+    rna_pct_mito_cutoff: float = 20.0,
+    rna_exclude_genes: Optional[List[str]] = None,
+    atac_min_cells: int = 1,
+    atac_min_features: int = 2000,
+    atac_max_features: int = 15000,
+    atac_min_cells_per_sample: int = 1,
+    atac_exclude_features: Optional[List[str]] = None,
+    atac_doublet_detection: bool = True,
+    atac_tfidf_scale_factor: float = 1e4,
+    atac_log_transform: bool = True,
 
     # GLUE cell type parameters
     existing_cell_types=False,
@@ -146,20 +158,6 @@ def multiomics_wrapper(
 
     # GLUE visualization parameters
     plot_columns=None,
-
-    # ===== Integration Preprocessing Parameters =====
-    min_cells_sample=1,
-    min_cell_gene=10,
-    min_features=500,
-    pct_mito_cutoff=20,
-    exclude_genes=None,
-    doublet=True,
-    # Whether to keep the heavy expression / gene-activity X in the
-    # integrated h5ad (and the in-memory adata downstream). Off by default:
-    # the embedding-only payload (obs + obsm + var) is all SE / cell typing
-    # / clustering / distance / trajectory needs. Set True only when
-    # differential analysis (which reads X) will run on the same h5ad.
-    keep_expression: bool = False,
 
     # ===== Sample Embedding Parameters (new method) =====
     sample_embedding_medium_K: int = 120,
@@ -178,6 +176,7 @@ def multiomics_wrapper(
     autotune_scope: str = "alpha_only",
     autotune_alpha_bounds=(0.1, 10.0),
     autotune_grouping_col: Optional[str] = None,
+    autotune_tune_on_modality: Optional[str] = None,
 
     # ===== Paths for Skipping Steps =====
     integrated_h5ad_path=None,
@@ -200,10 +199,10 @@ def multiomics_wrapper(
         "glue_integration": False,
         "glue_preprocessing": False,
         "glue_training": False,
-        "glue_gene_activity": False,
+        "glue_merge": False,
+        "glue_preprocess_per_modality": False,
         "glue_cell_types": False,
         "glue_visualization": False,
-        "integration_preprocessing": False,
         "harmonize_xglue": False,
         "derive_sample_embedding": False,
         "autotune": False,
@@ -229,11 +228,16 @@ def multiomics_wrapper(
         print(f"Starting multi-modal pipeline with output directory: {multiomics_output_dir}")
         print(f"GPU mode: {'Enabled' if use_gpu else 'Disabled'}")
 
-    # `h5ad_path` is the GLUE-merged intermediate that integrate_preprocess reads;
-    # integrate_preprocess writes `preprocess/adata_preprocessed.h5ad`.
+    # `adata_sample.h5ad` is now the embedding-only union written by
+    # build_embedding_union (preparation/multi_omics_merge.py). It carries
+    # obs (sample, modality, batch, sev.level …) + obsm (X_glue, Z_clust,
+    # Z_cmd) but no expression X — DGE/RAISIN reads the per-modality
+    # preprocessed h5ads instead.
     h5ad_path = (integrated_h5ad_path
                  if integrated_h5ad_path and os.path.exists(integrated_h5ad_path)
                  else f"{multiomics_output_dir}/preprocess/adata_sample.h5ad")
+    rna_pre_path  = f"{multiomics_output_dir}/preprocess/adata_rna_preprocessed.h5ad"
+    atac_pre_path = f"{multiomics_output_dir}/preprocess/adata_atac_preprocessed.h5ad"
 
     current_adata = None
 
@@ -248,7 +252,8 @@ def multiomics_wrapper(
             additional_hvg_file=additional_hvg_file,
             run_preprocessing=run_glue_preprocessing,
             run_training=run_glue_training,
-            run_gene_activity=run_glue_gene_activity,
+            run_merge=run_glue_merge,
+            run_preprocess_per_modality=run_glue_preprocess_per_modality,
             run_visualization=run_glue_visualization,
             ensembl_release=ensembl_release, species=species,
             use_highly_variable=use_highly_variable, n_top_genes=n_top_genes,
@@ -264,7 +269,16 @@ def multiomics_wrapper(
             array_shuffle_num_workers=glue_array_shuffle_num_workers,
             graph_shuffle_num_workers=glue_graph_shuffle_num_workers,
             run_second_glue_for_sample_removal=run_glue_twice_for_sample_removal,
-            k_neighbors=k_neighbors, use_rep=use_rep, metric=metric,
+            rna_min_cells=rna_min_cells, rna_min_genes=rna_min_genes,
+            rna_pct_mito_cutoff=rna_pct_mito_cutoff,
+            rna_exclude_genes=rna_exclude_genes,
+            atac_min_cells=atac_min_cells,
+            atac_min_features=atac_min_features, atac_max_features=atac_max_features,
+            atac_min_cells_per_sample=atac_min_cells_per_sample,
+            atac_exclude_features=atac_exclude_features,
+            atac_doublet_detection=atac_doublet_detection,
+            atac_tfidf_scale_factor=atac_tfidf_scale_factor,
+            atac_log_transform=atac_log_transform,
             use_gpu=use_gpu, verbose=multiomics_verbose,
             plot_columns=plot_columns, output_dir=multiomics_output_dir,
         )
@@ -274,46 +288,25 @@ def multiomics_wrapper(
             status_flags["multiomics"]["glue_preprocessing"] = True
         if run_glue_training:
             status_flags["multiomics"]["glue_training"] = True
-        if run_glue_gene_activity:
-            status_flags["multiomics"]["glue_gene_activity"] = True
+        if run_glue_merge:
+            status_flags["multiomics"]["glue_merge"] = True
+        if run_glue_preprocess_per_modality:
+            status_flags["multiomics"]["glue_preprocess_per_modality"] = True
         if run_glue_visualization:
             status_flags["multiomics"]["glue_visualization"] = True
         if multiomics_verbose:
             print("GLUE integration completed successfully")
 
-    # ==================== STEP 2: INTEGRATION PREPROCESSING ====================
-    if integration_preprocessing:
+    # Load the embedding-only union (built in STEP 1 by build_embedding_union).
+    if os.path.exists(h5ad_path):
+        current_adata = sc.read(h5ad_path)
         if multiomics_verbose:
-            print("Step 2: Running integration preprocessing...")
-        if not status_flags["multiomics"]["glue_integration"] and not os.path.exists(h5ad_path):
-            raise ValueError("GLUE integration required before integration preprocessing.")
-        current_adata = integrate_preprocess(
-            output_dir=multiomics_output_dir, h5ad_path=h5ad_path,
-            sample_column=sample_col, modality_col=modality_col,
-            min_cells_sample=min_cells_sample, min_cell_gene=min_cell_gene,
-            min_features=min_features, pct_mito_cutoff=pct_mito_cutoff,
-            exclude_genes=exclude_genes, doublet=doublet,
-            verbose=multiomics_verbose,
-            rna_sample_meta_file=rna_sample_meta_file,
-            atac_sample_meta_file=atac_sample_meta_file,
-            keep_expression=keep_expression,
-        )
-        results['adata'] = current_adata
-        status_flags["multiomics"]["integration_preprocessing"] = True
-        if multiomics_verbose:
-            print("Integration preprocessing completed successfully")
+            print(f"Loaded embedding union from: {h5ad_path}")
     else:
-        preprocessed_path = f"{multiomics_output_dir}/preprocess/adata_preprocessed.h5ad"
-        if os.path.exists(preprocessed_path):
-            current_adata = sc.read(preprocessed_path)
-            results['adata'] = current_adata
-            status_flags["multiomics"]["integration_preprocessing"] = True
-            if multiomics_verbose:
-                print(f"Loaded preprocessed data from: {preprocessed_path}")
-        else:
-            raise ValueError(
-                "Integration preprocessing required. Set integration_preprocessing=True "
-                "or ensure preprocessed data exists.")
+        raise ValueError(
+            f"Embedding union not found at {h5ad_path}. Set "
+            "run_glue_merge=True or provide integrated_h5ad_path.")
+    results['adata'] = current_adata
 
     # ==================== STEP 2b: PROVIDE Z_clust (paper-aligned cluster view) ===
     # Z_clust (sample-removed cluster / composition embedding) is required
@@ -343,12 +336,9 @@ def multiomics_wrapper(
         if Z_CLUST_KEY in current_adata.obsm:
             status_flags["multiomics"]["harmonize_xglue"] = True
             if save_intermediate:
-                preprocessed_path = (
-                    f"{multiomics_output_dir}/preprocess/adata_preprocessed.h5ad")
-                if os.path.exists(preprocessed_path):
-                    sc.write(preprocessed_path, current_adata)
-                    if multiomics_verbose:
-                        print(f"[xglue-harmony] re-saved {preprocessed_path}")
+                sc.write(h5ad_path, current_adata)
+                if multiomics_verbose:
+                    print(f"[xglue-harmony] re-saved {h5ad_path}")
 
     # ==================== STEP 2c: CELL TYPE CLUSTERING ====================
     # Uses the paper's Z_clust (sample-removed cluster embedding), produced
@@ -389,13 +379,21 @@ def multiomics_wrapper(
         if multiomics_verbose:
             print("Cell type assignment completed successfully")
 
+        # Propagate cell_type labels from the union back onto the per-modality
+        # h5ads so downstream DGE / RAISIN can read them without re-running.
+        if os.path.exists(rna_pre_path) or os.path.exists(atac_pre_path):
+            propagate_cell_type(
+                union_path=h5ad_path,
+                per_modality_paths=[rna_pre_path, atac_pre_path],
+                celltype_col=celltype_col,
+                verbose=multiomics_verbose,
+            )
+
     # ==================== STEP 3: SAMPLE EMBEDDING ====================
     if derive_sample_embedding:
         if multiomics_verbose:
             print("Step 3: Sample embedding (composition + CMD)...")
 
-        if not status_flags["multiomics"]["integration_preprocessing"]:
-            raise ValueError("Integration preprocessing required before sample embedding.")
         if current_adata is None:
             current_adata = ad.read_h5ad(h5ad_path)
             results['adata'] = current_adata
@@ -427,6 +425,7 @@ def multiomics_wrapper(
                 search=autotune_search,
                 scope=autotune_scope,
                 alpha_bounds=autotune_alpha_bounds,
+                tune_on_modality=autotune_tune_on_modality,
                 save=True, verbose=multiomics_verbose,
             )
             status_flags["multiomics"]["autotune"] = True
@@ -452,6 +451,12 @@ def multiomics_wrapper(
                 save=True, verbose=multiomics_verbose,
             )
         status_flags["multiomics"]["derive_sample_embedding"] = True
+        # Persist X_DR_sample (set in-memory by the SE step) into the union so
+        # a resume-from-disk downstream run can read it. The SE step's own
+        # re-save targets the single-omics adata_preprocessed.h5ad, which
+        # does not exist in the multiomics flow.
+        if save_intermediate and "X_DR_sample" in current_adata.uns:
+            sc.write(h5ad_path, current_adata)
     else:
         if current_adata is not None and "X_DR_sample" in current_adata.uns:
             status_flags["multiomics"]["derive_sample_embedding"] = True

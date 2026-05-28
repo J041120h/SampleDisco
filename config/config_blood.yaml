@@ -223,7 +223,6 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 
 # --- Pipeline Control Flags (Preprocessing & Resolution) ---
 multiomics_integration: false
-multiomics_integration_preprocessing: false
 
 # --- Pipeline Control Flags (Downstream) ---
 multiomics_sample_distance_calculation: false
@@ -238,7 +237,6 @@ multiomics_dimension_association_analysis: false
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: true
 multiomics_run_glue_training: true
-multiomics_run_glue_gene_activity: true
 multiomics_cell_type_cluster: true
 multiomics_run_glue_visualization: true
 
@@ -299,8 +297,6 @@ multiomics_glue_array_shuffle_num_workers: 4
 multiomics_glue_graph_shuffle_num_workers: 4
 
 # --- Neighbor/Metric Parameters ---
-multiomics_k_neighbors: 1
-multiomics_use_rep: "X_glue"
 multiomics_metric: "cosine"
 
 # --- Cell Type Clustering Parameters ---
@@ -316,17 +312,10 @@ multiomics_generate_umap_celltype: true
 multiomics_plot_columns: null
 
 # --- Integration Preprocessing Parameters ---
-multiomics_min_cells_sample: 1
-multiomics_min_cell_gene: 10
-multiomics_min_features: 500
-multiomics_pct_mito_cutoff: 20
-multiomics_exclude_genes: null
-multiomics_doublet: true
 
 # Slim integrated h5ad: drop X / layers / varm. Off by default —
 # embedding-only is all SE / cell typing / distance / trajectory needs.
 # Set true to keep expression for downstream differential analysis.
-multiomics_keep_expression: false
 
 # --- Sample Embedding / Dimensionality Reduction Parameters ---
 

@@ -22,11 +22,13 @@ from sklearn.preprocessing import StandardScaler
 META = "/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv"
 
 RUNS = [
-    ("diemb (Mode B: Z_clust + Z_cmd, 2-run scGLUE)",
+    ("diemb_alltune (Mode B: Z_clust + Z_cmd, autotune on RNA+ATAC)",
      "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/sample_embedding"),
-    ("test_RETUNE (Mode A: X_glue + dual-Harmony)",
+    ("diemb_RNAtune (Mode B: Z_clust + Z_cmd, autotune on RNA only)",
+     "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/sample_embedding_tune-on-RNA"),
+    ("test_RETUNE (Mode A: X_glue + dual-Harmony, autotune on RNA+ATAC)",
      "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_RETUNE/sample_embedding"),
-    ("test_celltype-on-harmony (Mode A: X_glue + dual-Harmony)",
+    ("test_celltype-on-harmony (Mode A: X_glue + dual-Harmony, autotune on RNA+ATAC)",
      "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_celltype-on-harmony/sample_embedding"),
 ]
 
@@ -112,17 +114,25 @@ def evaluate_one(emb_path: str, autotune_path: str, meta: pd.DataFrame) -> dict:
     sev   = md_aligned["sev.level"] if "sev.level" in md_aligned else pd.Series(index=emb.index, dtype=float)
     sev_num = pd.to_numeric(sev, errors="coerce")
 
+    rna_idx  = emb.index[modality.values == "RNA"]
+    atac_idx = emb.index[modality.values == "ATAC"]
+
     tune = parse_autotune(autotune_path)
     return {
-        "n_units":        int(emb.shape[0]),
-        "n_pcs":          int(emb.shape[1]),
-        "K_c":            tune["K_c"],
-        "cmd_weight":     tune["cmd_weight"],
-        "proxy_score":    tune["score"],
+        "n_units":            int(emb.shape[0]),
+        "n_RNA":              int(len(rna_idx)),
+        "n_ATAC":             int(len(atac_idx)),
+        "K_c":                tune["K_c"],
+        "cmd_weight":         tune["cmd_weight"],
+        "proxy_score":        tune["score"],
         "mean_PC_R2_batch":   pc_R2_batch(emb, batch),
         "ASW_batch":          asw_label(emb, batch),
         "ASW_modality":       asw_label(emb, modality),
         "CCA_sev.level":      cca_grouping(emb, sev_num),
+        "CCA_sev.level_RNA":  cca_grouping(emb.loc[rna_idx],  sev_num.loc[rna_idx]),
+        "CCA_sev.level_ATAC": cca_grouping(emb.loc[atac_idx], sev_num.loc[atac_idx]),
+        "ASW_batch_RNA":      asw_label(emb.loc[rna_idx],  batch.loc[rna_idx]),
+        "ASW_batch_ATAC":     asw_label(emb.loc[atac_idx], batch.loc[atac_idx]),
     }
 
 

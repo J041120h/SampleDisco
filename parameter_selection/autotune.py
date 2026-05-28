@@ -553,8 +553,17 @@ def run_autotune(
     seed: int = 42,
     save: bool = True,
     verbose: bool = True,
+    tune_on_modality: Optional[str] = None,
 ) -> Dict:
-    """Run autotune and return the best params + final sample-AnnData."""
+    """Run autotune and return the best params + final sample-AnnData.
+
+    ``tune_on_modality`` (e.g. ``"RNA"``) restricts BOTH the bio-preservation
+    and batch-correction proxies to units of that modality during the search,
+    while the final embedding is still built on ALL units. Use this to ask:
+    "what α best tunes the joint embedding for one modality's labels — and
+    how does the other modality fare under that α?". Set to ``None`` (default)
+    to score on every unit (current behaviour).
+    """
     t0 = time.time()
     primary_batch = batch_col[0] if isinstance(batch_col, (list, tuple)) and batch_col else batch_col
     if isinstance(primary_batch, list):
@@ -568,7 +577,31 @@ def run_autotune(
         cmd_dim=cmd_dim, seed=seed, verbose=verbose,
     )
 
-    if not blocks["has_batch"] and not blocks["has_grouping"]:
+    # Scoring mask: when tune_on_modality is set, restrict scoring proxies
+    # to that modality's units (the final embedding is still built on all).
+    score_mask = np.ones(blocks["n_units"], dtype=bool)
+    score_meta = blocks
+    if tune_on_modality is not None:
+        score_mask = np.asarray(blocks["unit_groups"]) == tune_on_modality
+        if score_mask.sum() < 5:
+            raise ValueError(
+                f"tune_on_modality={tune_on_modality!r} leaves only "
+                f"{int(score_mask.sum())} units — too few to score on.")
+        # Only `grouping`, `batch`, and the has_* flags are read by make_scorer.
+        score_meta = dict(blocks)
+        for key in ("grouping", "batch"):
+            v = blocks.get(key)
+            if v is not None and len(v) == len(score_mask):
+                score_meta[key] = np.asarray(v)[score_mask]
+        score_meta["has_batch"] = (score_meta.get("batch") is not None and
+                                    len(set(np.asarray(score_meta["batch"]).tolist())) > 1)
+        score_meta["has_grouping"] = (score_meta.get("grouping") is not None and
+                                       len({x for x in score_meta["grouping"] if pd.notna(x)}) > 1)
+        if verbose:
+            print(f"[autotune] tune_on_modality={tune_on_modality!r}: "
+                  f"scoring on {int(score_mask.sum())}/{blocks['n_units']} units")
+
+    if not score_meta["has_batch"] and not score_meta["has_grouping"]:
         if verbose:
             print("[autotune] no batch and no grouping column → using fixed defaults; "
                   "no search performed.")
@@ -591,14 +624,16 @@ def run_autotune(
                          pca_components=pca_components,
                          batch_method=batch_method,
                          output_dir=output_dir, save=save,
-                         t_start=t0, verbose=verbose)
+                         t_start=t0, verbose=verbose,
+                         tune_on_modality=tune_on_modality,
+                         score_n_units=int(score_mask.sum()))
 
     if scope != "alpha_only":
         raise ValueError(
             f"only scope='alpha_only' is supported in this generalized port "
             f"(got '{scope}')")
 
-    score_fn = make_scorer(scoring, blocks)
+    score_fn = make_scorer(scoring, score_meta)
 
     def objective(alpha: float) -> float:
         weights = derive_weights(blocks["K_c"], blocks["K_med"], blocks["K_fine"],
@@ -612,7 +647,8 @@ def run_autotune(
             pca_components=pca_components, batch_method=batch_method,
             seed=seed, verbose=False,
         )
-        return float(score_fn(emb_df.values))
+        emb_arr = emb_df.values[score_mask] if not score_mask.all() else emb_df.values
+        return float(score_fn(emb_arr))
 
     if search not in SEARCH_FUNCS:
         raise ValueError(f"unknown search '{search}' (choices: {list(SEARCH_FUNCS)})")
@@ -644,7 +680,9 @@ def run_autotune(
                      pca_components=pca_components,
                      batch_method=batch_method,
                      output_dir=output_dir, save=save,
-                     t_start=t0, verbose=verbose)
+                     t_start=t0, verbose=verbose,
+                     tune_on_modality=tune_on_modality,
+                     score_n_units=int(score_mask.sum()))
 
 
 # Proxy-component descriptions for the human-readable report.
@@ -672,7 +710,8 @@ def _active_proxies(scoring: str, has_batch: bool, has_grouping: bool):
 
 def _format_autotune_report(*, best_params, best_score, trace, weights,
                               blocks, search, scoring, scope, alpha_bounds,
-                              pca_components, batch_method, elapsed_s):
+                              pca_components, batch_method, elapsed_s,
+                              tune_on_modality=None, score_n_units=None):
     """Build the human-readable autotune_record.txt content."""
     has_batch = bool(blocks.get("has_batch"))
     has_grouping = bool(blocks.get("has_grouping"))
@@ -696,6 +735,10 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     lines.append(f"  unique groups      : {n_groups}")
     lines.append(f"  has batch column   : {has_batch}")
     lines.append(f"  has grouping col   : {has_grouping}")
+    if tune_on_modality is not None:
+        lines.append(f"  tune_on_modality   : {tune_on_modality}  "
+                      f"(scoring on {score_n_units if score_n_units is not None else '?'}/{n_units} units; "
+                      "final embedding still on all units)")
     lines.append("")
     lines.append("Block setup (inverse-variance weights from K values)")
     lines.append("-" * 68)
@@ -753,7 +796,8 @@ def _finalize(adata, blocks, final_emb, weights, *,
                best_params, best_score, trace,
                search, scoring, scope, alpha_bounds,
                pca_components, batch_method,
-               output_dir, save, t_start, verbose):
+               output_dir, save, t_start, verbose,
+               tune_on_modality=None, score_n_units=None):
     """Write the autotuned embedding into the cell-level adata and persist artifacts."""
     elapsed = time.time() - t_start
     adata.uns["X_DR_sample"] = final_emb.copy()
@@ -775,7 +819,13 @@ def _finalize(adata, blocks, final_emb, weights, *,
     }
 
     if save:
-        out_dir = os.path.join(output_dir, "sample_embedding")
+        # When tuning on a single modality, write to a sibling subdir so the
+        # default sample_embedding.csv from a prior all-modality run isn't
+        # overwritten (e.g. sample_embedding_tune-on-RNA/).
+        subdir = "sample_embedding"
+        if tune_on_modality is not None:
+            subdir = f"sample_embedding_tune-on-{tune_on_modality}"
+        out_dir = os.path.join(output_dir, subdir)
         os.makedirs(out_dir, exist_ok=True)
         emb_csv = os.path.join(out_dir, "sample_embedding.csv")
         final_emb.to_csv(emb_csv)
@@ -795,6 +845,7 @@ def _finalize(adata, blocks, final_emb, weights, *,
             scope=scope, alpha_bounds=alpha_bounds,
             pca_components=pca_components, batch_method=batch_method,
             elapsed_s=elapsed,
+            tune_on_modality=tune_on_modality, score_n_units=score_n_units,
         )
         report_path = os.path.join(out_dir, "autotune_record.txt")
         with open(report_path, "w") as f:
