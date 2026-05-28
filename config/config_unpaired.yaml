@@ -244,7 +244,9 @@ multiomics_dimension_association_analysis: true
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: false        # cached: rna-pp.h5ad + atac-pp.h5ad + guidance.graphml.gz exist
 multiomics_run_glue_training: true              # 1st run cached (auto-skipped by glue_train); 2nd run will run
-multiomics_cell_type_cluster: true              # writes cell_type into obs on X_glue_harmony
+multiomics_run_glue_merge: true                 # build embedding-only union (adata_sample.h5ad)
+multiomics_run_glue_preprocess_per_modality: true  # per-modality QC h5ads for DGE/RAISIN
+multiomics_cell_type_cluster: true              # writes cell_type into obs on Z_clust
 multiomics_run_glue_visualization: true
 
 # --- Resume Paths (for skipping steps; null on fresh runs) ---

@@ -275,6 +275,8 @@ multiomics_dimension_association_analysis: false
 # --- GLUE Sub-Pipeline Flags ---
 multiomics_run_glue_preprocessing: true
 multiomics_run_glue_training: true
+multiomics_run_glue_merge: true                    # build embedding-only union (adata_sample.h5ad)
+multiomics_run_glue_preprocess_per_modality: true  # per-modality QC h5ads for DGE/RAISIN
 multiomics_run_glue_visualization: true
 
 # --- Resume Paths (for skipping steps) ---
