@@ -632,6 +632,42 @@ def raisintest(
         raise
 
 
+def plot_cluster_gene_zscore(group_gene_df, output_path, title=None, max_genes=60):
+    """Cluster x gene z-score heatmap from a (genes x clusters) group-mean matrix.
+
+    Rows = genes (names shown), columns = clusters/groups; values are per-gene
+    z-scores of the group-mean expression (standardised across clusters). Renders
+    as long as >= 1 gene is provided (no significance gating here -- the caller
+    chooses the genes, so it is produced for every cell type).
+    """
+    if group_gene_df is None or group_gene_df.shape[0] == 0:
+        print("plot_cluster_gene_zscore: no genes to plot; skipping.")
+        return
+    df = group_gene_df.iloc[:max_genes]
+    cols = sorted(df.columns, key=str)
+    vals = np.asarray(df.loc[:, cols], dtype=float)
+    z = zscore(vals, axis=1, nan_policy="omit")
+    if z.ndim == 1:
+        z = z[np.newaxis, :]
+    z = np.clip(np.nan_to_num(z, nan=0.0, posinf=0.0, neginf=0.0), -2.5, 2.5)
+    zdf = pd.DataFrame(z, index=df.index, columns=cols)
+
+    fig, ax = plt.subplots(figsize=(max(4, 0.7 * len(cols) + 2),
+                                    max(4, 0.22 * len(zdf) + 1)))
+    fig.patch.set_facecolor("white")
+    sns.heatmap(zdf, cmap="RdBu_r", center=0, xticklabels=True, yticklabels=True,
+                cbar_kws={"label": "z-score (per gene across clusters)", "shrink": 0.5},
+                ax=ax)
+    ax.set_xlabel("Cluster", fontsize=12, weight="bold")
+    ax.set_ylabel(f"Gene (n={len(zdf)})", fontsize=12)
+    ax.set_title(title or "Cluster x gene z-score (group-mean expression)", fontsize=13)
+    ax.tick_params(axis="both", labelsize=7)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"Saved cluster x gene z-score heatmap: {output_path}")
+
+
 def run_pairwise_tests(
     fit,
     output_dir,
@@ -713,6 +749,39 @@ def run_pairwise_tests(
             print(f"Failed {comp_name}: {e}")
     
     # -------------------------------------------------------------------------
+    # Text + CSV summary of the pairwise tests (always written)
+    # -------------------------------------------------------------------------
+    if all_results and output_dir:
+        summary_dir = os.path.join(output_dir, "summary_plots")
+        os.makedirs(summary_dir, exist_ok=True)
+        rows = []
+        for comp, res in all_results.items():
+            sig = res["FDR"] < fdr_threshold
+            fc = res["Foldchange"]
+            rows.append({"comparison": comp, "n_genes": int(len(res)),
+                         "n_sig": int(sig.sum()),
+                         "n_sig_up": int((sig & (fc > 0)).sum()),
+                         "n_sig_down": int((sig & (fc < 0)).sum())})
+        summ = pd.DataFrame(rows)
+        summ.to_csv(os.path.join(summary_dir, "raisin_summary.csv"), index=False)
+        with open(os.path.join(summary_dir, "raisin_summary.txt"), "w") as fh:
+            fh.write(f"RAISIN pairwise summary (FDR < {fdr_threshold})\n")
+            fh.write("=" * 60 + "\n\n" + summ.to_string(index=False) + "\n\n")
+            for comp, res in all_results.items():
+                sig = res[res["FDR"] < fdr_threshold].sort_values("FDR")
+                fh.write(f"--- {comp}: top {min(top_n_genes, len(sig))} of "
+                         f"{len(sig)} significant (FDR<{fdr_threshold}) ---\n")
+                if len(sig) == 0:
+                    fh.write("  (none)\n\n")
+                    continue
+                for gene, r in sig.head(top_n_genes).iterrows():
+                    fh.write(f"  {str(gene):20s} logFC={r['Foldchange']:+.3f}  "
+                             f"FDR={r['FDR']:.2e}\n")
+                fh.write("\n")
+        if verbose:
+            print(f"Wrote RAISIN summary: {os.path.join(summary_dir, 'raisin_summary.txt')}")
+
+    # -------------------------------------------------------------------------
     # Generate Pseudobulk Visualizations
     # -------------------------------------------------------------------------
     if make_summary_plots and all_results and output_dir:
@@ -748,7 +817,31 @@ def run_pairwise_tests(
             print(f"Warning: failed to generate dotplot: {e}")
             traceback.print_exc()
         
-        # 3. CSV of all results
+        # 3. Cluster x gene z-score heatmap (always renders; top genes by FDR,
+        #    up+down, with a fallback to top-by-FDR so empty cell types still
+        #    get a heatmap of their strongest-ranked genes).
+        try:
+            means = fit['mean']
+            means_df = means.copy() if isinstance(means, pd.DataFrame) else pd.DataFrame(means)
+            grp = np.array(fit['group']).astype(str)
+            if means_df.shape[1] == len(grp):
+                pseudobulk = means_df.groupby(grp, axis=1).mean()  # genes x clusters
+                pooled = pd.concat(list(all_results.values()))
+                sig = pooled[pooled['FDR'] < fdr_threshold].sort_values('FDR')
+                genes = list(dict.fromkeys(sig.index.tolist()))
+                if not genes:  # no significant genes -> fall back to top by FDR
+                    genes = list(dict.fromkeys(pooled.sort_values('FDR').index.tolist()))
+                genes = [g for g in genes if g in pseudobulk.index][:top_n_genes]
+                if genes:
+                    plot_cluster_gene_zscore(
+                        pseudobulk.loc[genes],
+                        os.path.join(summary_dir, "cluster_gene_zscore.png"),
+                    )
+        except Exception as e:
+            print(f"Warning: failed to generate cluster_gene_zscore heatmap: {e}")
+            traceback.print_exc()
+
+        # 4. CSV of all results
         combined_results = []
         for comp, res in all_results.items():
             res_copy = res.copy()
