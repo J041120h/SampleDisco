@@ -94,13 +94,18 @@ def run_cca_on_pca_from_adata(
     --------
     tuple: (pca_coords_full, sev_levels, samples, n_components_used)
     """
-    if column not in adata.uns:
-        raise KeyError(f"'{column}' not found in adata.uns. Available keys: {list(adata.uns.keys())}")
-    
+    # The sample embedding is normally in .uns (DataFrame); fall back to .obsm
+    # (ndarray) so callers that only populate .obsm still work.
+    if column in adata.uns:
+        pca_coords = adata.uns[column]
+    elif column in adata.obsm:
+        pca_coords = adata.obsm[column]
+    else:
+        raise KeyError(f"'{column}' not found in adata.uns or adata.obsm. "
+                       f"uns keys: {list(adata.uns.keys())}; obsm keys: {list(adata.obsm.keys())}")
+
     if trajectory_col not in adata.obs.columns:
         raise KeyError(f"'{trajectory_col}' column is missing in adata.obs. Available columns: {list(adata.obs.columns)}")
-
-    pca_coords = adata.uns[column]
     
     if hasattr(pca_coords, 'iloc'):
         pca_coords_array = pca_coords.values
@@ -419,10 +424,11 @@ def CCA_Call(
         output_dir = os.path.join(output_dir, 'CCA')
         os.makedirs(output_dir, exist_ok=True)
 
-    if "X_DR_sample" not in adata.uns:
-        if verbose:
-            print("  CCA: 'X_DR_sample' not in adata.uns; skipping")
-        return (np.nan, np.nan, {}, {})
+    if "X_DR_sample" not in adata.uns and "X_DR_sample" not in adata.obsm:
+        raise KeyError(
+            "CCA_Call: 'X_DR_sample' not found in adata.uns or adata.obsm. "
+            "Run compute_sample_embedding first (it populates both)."
+        )
 
     dr_keys = ["X_DR_sample"]
     paths = {

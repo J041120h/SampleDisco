@@ -208,6 +208,10 @@ def preprocess_rna_for_downstream(
     if verbose:
         print(f"[rna-preprocess] raw shape: {adata.shape}")
 
+    # Input X is raw counts; any pre-existing layers are redundant (the counts
+    # layer is regenerated from X below) — drop them so the QC copies stay lean.
+    adata.layers.clear()
+
     _ensure_sample_column(adata, sample_column, verbose)
     if sample_meta_path is not None and os.path.exists(sample_meta_path):
         adata = merge_sample_metadata(
