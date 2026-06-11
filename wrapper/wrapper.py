@@ -566,11 +566,11 @@ def wrapper(
     # Sample embedding parameters (new method)
     rna_sample_embedding_medium_K: int = 120,
     rna_sample_embedding_fine_K: int = 300,
-    rna_sample_embedding_cmd_dim: int = 8,
+    rna_sample_embedding_rmd_dim: int = 8,
     rna_sample_embedding_use_clr: bool = False,
-    rna_sample_embedding_use_cmd: bool = True,
+    rna_sample_embedding_use_rmd: bool = True,
     rna_sample_embedding_block_weights: Optional[List[float]] = None,
-    rna_sample_embedding_cmd_weight: float = 0.60,
+    rna_sample_embedding_rmd_weight: float = 0.60,
     rna_sample_embedding_pca_components: int = 10,
     rna_sample_embedding_batch_method: str = "harmony",
 
@@ -678,11 +678,11 @@ def wrapper(
     # Sample embedding parameters (new method)
     atac_sample_embedding_medium_K: int = 120,
     atac_sample_embedding_fine_K: int = 300,
-    atac_sample_embedding_cmd_dim: int = 8,
+    atac_sample_embedding_rmd_dim: int = 8,
     atac_sample_embedding_use_clr: bool = False,
-    atac_sample_embedding_use_cmd: bool = True,
+    atac_sample_embedding_use_rmd: bool = True,
     atac_sample_embedding_block_weights: Optional[List[float]] = None,
-    atac_sample_embedding_cmd_weight: float = 0.60,
+    atac_sample_embedding_rmd_weight: float = 0.60,
     atac_sample_embedding_pca_components: int = 10,
     atac_sample_embedding_batch_method: str = "harmony",
 
@@ -807,8 +807,8 @@ def wrapper(
     multiomics_glue_dataloader_fetches_per_worker: int = 8,
     multiomics_glue_array_shuffle_num_workers: int = 4,
     multiomics_glue_graph_shuffle_num_workers: int = 4,
-    # V2 cluster-vs-CMD split. X_glue (from scGLUE) is sample-preserved
-    # → CMD role. The sample-REMOVED cluster role is ALWAYS derived, via
+    # V2 cluster-vs-RMD split. X_glue (from scGLUE) is sample-preserved
+    # → RMD role. The sample-REMOVED cluster role is ALWAYS derived, via
     # one of two paths:
     #   (default)  Harmony post-pass on X_glue → X_glue_harmony.
     #   (opt-in)   Train scGLUE TWICE; the second run (with
@@ -850,11 +850,11 @@ def wrapper(
     multiomics_derive_sample_embedding: bool = True,
     multiomics_sample_embedding_medium_K: int = 120,
     multiomics_sample_embedding_fine_K: int = 300,
-    multiomics_sample_embedding_cmd_dim: int = 8,
+    multiomics_sample_embedding_rmd_dim: int = 8,
     multiomics_sample_embedding_use_clr: bool = False,
-    multiomics_sample_embedding_use_cmd: bool = True,
+    multiomics_sample_embedding_use_rmd: bool = True,
     multiomics_sample_embedding_block_weights: Optional[List[float]] = None,
-    multiomics_sample_embedding_cmd_weight: float = 0.60,
+    multiomics_sample_embedding_rmd_weight: float = 0.60,
     multiomics_sample_embedding_pca_components: int = 10,
     multiomics_sample_embedding_batch_method: str = "harmony",
 
@@ -1130,11 +1130,11 @@ def wrapper(
                 # Sample embedding (new method)
                 sample_embedding_medium_K=rna_sample_embedding_medium_K,
                 sample_embedding_fine_K=rna_sample_embedding_fine_K,
-                sample_embedding_cmd_dim=rna_sample_embedding_cmd_dim,
+                sample_embedding_rmd_dim=rna_sample_embedding_rmd_dim,
                 sample_embedding_use_clr=rna_sample_embedding_use_clr,
-                sample_embedding_use_cmd=rna_sample_embedding_use_cmd,
+                sample_embedding_use_rmd=rna_sample_embedding_use_rmd,
                 sample_embedding_block_weights=rna_sample_embedding_block_weights,
-                sample_embedding_cmd_weight=rna_sample_embedding_cmd_weight,
+                sample_embedding_rmd_weight=rna_sample_embedding_rmd_weight,
                 sample_embedding_pca_components=rna_sample_embedding_pca_components,
                 sample_embedding_batch_method=rna_sample_embedding_batch_method,
                 # Autotune
@@ -1282,11 +1282,11 @@ def wrapper(
                 # Sample embedding (new method)
                 sample_embedding_medium_K=atac_sample_embedding_medium_K,
                 sample_embedding_fine_K=atac_sample_embedding_fine_K,
-                sample_embedding_cmd_dim=atac_sample_embedding_cmd_dim,
+                sample_embedding_rmd_dim=atac_sample_embedding_rmd_dim,
                 sample_embedding_use_clr=atac_sample_embedding_use_clr,
-                sample_embedding_use_cmd=atac_sample_embedding_use_cmd,
+                sample_embedding_use_rmd=atac_sample_embedding_use_rmd,
                 sample_embedding_block_weights=atac_sample_embedding_block_weights,
-                sample_embedding_cmd_weight=atac_sample_embedding_cmd_weight,
+                sample_embedding_rmd_weight=atac_sample_embedding_rmd_weight,
                 sample_embedding_pca_components=atac_sample_embedding_pca_components,
                 sample_embedding_batch_method=atac_sample_embedding_batch_method,
                 # Autotune
@@ -1440,7 +1440,7 @@ def wrapper(
                 glue_dataloader_fetches_per_worker=multiomics_glue_dataloader_fetches_per_worker,
                 glue_array_shuffle_num_workers=multiomics_glue_array_shuffle_num_workers,
                 glue_graph_shuffle_num_workers=multiomics_glue_graph_shuffle_num_workers,
-                # V2 cluster-vs-CMD split
+                # V2 cluster-vs-RMD split
                 harmonize_xglue_max_iter=multiomics_harmonize_xglue_max_iter,
                 run_glue_twice_for_sample_removal=multiomics_run_glue_twice_for_sample_removal,
                 # Cell-typing label-transfer metric
@@ -1469,11 +1469,11 @@ def wrapper(
                 # Sample embedding (new method)
                 sample_embedding_medium_K=multiomics_sample_embedding_medium_K,
                 sample_embedding_fine_K=multiomics_sample_embedding_fine_K,
-                sample_embedding_cmd_dim=multiomics_sample_embedding_cmd_dim,
+                sample_embedding_rmd_dim=multiomics_sample_embedding_rmd_dim,
                 sample_embedding_use_clr=multiomics_sample_embedding_use_clr,
-                sample_embedding_use_cmd=multiomics_sample_embedding_use_cmd,
+                sample_embedding_use_rmd=multiomics_sample_embedding_use_rmd,
                 sample_embedding_block_weights=multiomics_sample_embedding_block_weights,
-                sample_embedding_cmd_weight=multiomics_sample_embedding_cmd_weight,
+                sample_embedding_rmd_weight=multiomics_sample_embedding_rmd_weight,
                 sample_embedding_pca_components=multiomics_sample_embedding_pca_components,
                 sample_embedding_batch_method=multiomics_sample_embedding_batch_method,
                 # Autotune

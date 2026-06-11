@@ -48,8 +48,8 @@ def anndata_cluster(
     Produces TWO cell-level Harmony embeddings on `adata`:
       - obsm['Z_clust']        — Harmony with `cell_level_batch_key_for_harmony`
                                          (typically batch + sample → sample-removed)
-      - obsm['Z_cmd'] — Harmony with `cell_level_batch_key_no_sample`
-                                         (no sample → sample-preserved, used by CMD)
+      - obsm['Z_rmd'] — Harmony with `cell_level_batch_key_no_sample`
+                                         (no sample → sample-preserved, used by RMD)
 
     Keeps all genes in `.X` (post normalize+log1p); HVG selection is recorded as a
     flag in `.var['highly_variable']` but does not subset `.X`. Raw counts are
@@ -88,12 +88,12 @@ def anndata_cluster(
         use_gpu=False,
     )
 
-    # --- Pass 2: sample-preserved (used by CMD displacement) ---
+    # --- Pass 2: sample-preserved (used by RMD displacement) ---
     if cell_level_batch_key_no_sample:
         if verbose:
             print("=== [CPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
-        adata.obsm["Z_cmd"] = harmonize(
+        adata.obsm["Z_rmd"] = harmonize(
             adata.obsm["X_pca"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
@@ -102,12 +102,12 @@ def anndata_cluster(
     else:
         if verbose:
             print("=== [CPU] Harmony pass 2: no extra batch covariate → using raw X_pca ===")
-        adata.obsm["Z_cmd"] = np.asarray(
+        adata.obsm["Z_rmd"] = np.asarray(
             adata.obsm["X_pca"], dtype=np.float32)
 
     if verbose:
         print(f"  Z_clust        shape: {adata.obsm['Z_clust'].shape}")
-        print(f"  Z_cmd shape: {adata.obsm['Z_cmd'].shape}")
+        print(f"  Z_rmd shape: {adata.obsm['Z_rmd'].shape}")
 
     save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
     safe_h5ad_write(adata, save_path)
@@ -161,7 +161,7 @@ def preprocess(
       - `.var['highly_variable']` HVG flag (no subsetting)
       - `.obsm['X_pca']`         PCA on HVG subset
       - `.obsm['Z_clust']`        Harmony pass 1 (sample-removed)
-      - `.obsm['Z_cmd']` Harmony pass 2 (sample-preserved; used by CMD)
+      - `.obsm['Z_rmd']` Harmony pass 2 (sample-preserved; used by RMD)
 
     Returns the AnnData (no separate `adata_sample_diff` is produced).
     """

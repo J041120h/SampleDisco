@@ -1449,59 +1449,59 @@ if __name__ == "__main__":
         {
             "name": "GEDI",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/GEDI/{size}_sample/gedi_sample_embedding.csv",
-                f"/dcs07/hongkai/data/harry/result/GEDI/{size}_sample/trajectory/pseudotime_results.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/GEDI/{size}_sample/gedi_sample_embedding.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/GEDI/{size}_sample/trajectory/pseudotime_results.csv",
             ),
         },
         {
             "name": "Gloscope",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/Gloscope/{size}_sample/knn_divergence_mds_10d.csv",
-                f"/dcs07/hongkai/data/harry/result/Gloscope/{size}_sample/trajectory/pseudotime_results.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/Gloscope/{size}_sample/knn_divergence_mds_10d.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/Gloscope/{size}_sample/trajectory/pseudotime_results.csv",
             ),
         },
         {
             "name": "MFA",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/MFA/{size}_sample/sample_embeddings.csv",
-                f"/dcs07/hongkai/data/harry/result/MFA/{size}_sample/trajectory/pseudotime_results.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MFA/{size}_sample/sample_embeddings.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MFA/{size}_sample/trajectory/pseudotime_results.csv",
             ),
         },
         {
             "name": "pseudobulk",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/naive_pseudobulk/covid_{size}_sample/"
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/naive_pseudobulk/covid_{size}_sample/"
                 f"pseudobulk/pca_embeddings.csv",
-                f"/dcs07/hongkai/data/harry/result/naive_pseudobulk/covid_{size}_sample/"
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/naive_pseudobulk/covid_{size}_sample/"
                 f"pseudobulk/trajectory/pseudotime_results.csv",
             ),
         },
         {
             "name": "pilot",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/pilot/{size}_sample/wasserstein_distance_mds_10d.csv",
-                f"/dcs07/hongkai/data/harry/result/pilot/{size}_sample/pilot_native_pseudotime.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/pilot/{size}_sample/wasserstein_distance_mds_10d.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/pilot/{size}_sample/pilot_native_pseudotime.csv",
             ),
         },
         {
             "name": "QOT",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/QOT/{size}_sample/{size}_qot_distance_matrix_mds_10d.csv",
-                f"/dcs07/hongkai/data/harry/result/QOT/{size}_sample/trajectory/pseudotime_results.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/QOT/{size}_sample/{size}_qot_distance_matrix_mds_10d.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/QOT/{size}_sample/trajectory/pseudotime_results.csv",
             ),
         },
         {
             "name": "scPoli",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/scPoli/{size}_sample/sample_embeddings_full.csv",
-                f"/dcs07/hongkai/data/harry/result/scPoli/{size}_sample/trajectory/pseudotime_results.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/scPoli/{size}_sample/sample_embeddings_full.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/scPoli/{size}_sample/trajectory/pseudotime_results.csv",
             ),
         },
         {
             "name": "MUSTARD",
             "paths": lambda size: (
-                f"/dcs07/hongkai/data/harry/result/MUSTARD/{size}_sample/sample_embedding.csv",
-                f"/dcs07/hongkai/data/harry/result/MUSTARD/{size}_sample/trajectory/pseudotime_results.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MUSTARD/{size}_sample/sample_embedding.csv",
+                f"/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MUSTARD/{size}_sample/trajectory/pseudotime_results.csv",
             ),
         },
     ]

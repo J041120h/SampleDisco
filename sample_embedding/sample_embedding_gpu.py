@@ -28,12 +28,12 @@ from sample_embedding.blocks import (
     composite_batch_labels,
     derive_weights,
     frobenius_stack,
-    loo_cmd,
+    loo_rmd,
     regress_out_batch_linear,
 )
 from sample_embedding.sample_embedding import (
     _aggregate_obs,
-    _resolve_cmd_emb_key,
+    _resolve_rmd_emb_key,
 )
 
 
@@ -150,16 +150,16 @@ def compute_sample_embedding(
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
     cluster_emb_key: str = "Z_clust",
-    cmd_emb_key: Optional[str] = None,
+    rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,
     medium_K: int = 120,
     fine_K: int = 300,
-    cmd_dim_per_cluster: int = 8,
+    rmd_dim_per_cluster: int = 8,
     use_clr: bool = False,
-    use_cmd: bool = True,
+    use_rmd: bool = True,
     block_weights: Optional[List[float]] = None,
-    cmd_weight: float = 0.60,
+    rmd_weight: float = 0.60,
     pca_components: int = 10,
     batch_method: str = "harmony",
     save: bool = True,
@@ -176,12 +176,12 @@ def compute_sample_embedding(
         raise KeyError(
             f"celltype_col '{celltype_col}' not in adata.obs")
 
-    cmd_key = _resolve_cmd_emb_key(adata, cluster_emb_key, cmd_emb_key)
-    if cmd_key not in adata.obsm:
-        raise KeyError(f"cmd_emb_key '{cmd_key}' not in adata.obsm")
+    rmd_key = _resolve_rmd_emb_key(adata, cluster_emb_key, rmd_emb_key)
+    if rmd_key not in adata.obsm:
+        raise KeyError(f"rmd_emb_key '{rmd_key}' not in adata.obsm")
     if verbose:
         print(f"[sample_embedding_gpu] cluster_emb={cluster_emb_key}, "
-              f"cmd_emb={cmd_key}")
+              f"rmd_emb={rmd_key}")
 
     # Normalize batch_col -> primary (single, for assemble_units) + multi list (for Harmony multi-cov)
     if isinstance(batch_col, (list, tuple)):
@@ -245,29 +245,29 @@ def compute_sample_embedding(
 
     blocks = [A1, A2, A3]
 
-    # CMD — keep on CPU (per-cluster PCA on small matrices; not GPU-worth)
-    if use_cmd:
+    # RMD — keep on CPU (per-cluster PCA on small matrices; not GPU-worth)
+    if use_rmd:
         if verbose:
-            print(f"[CMD] LOO displacement on cmd_emb...", flush=True)
-        Z_cmd = np.asarray(adata.obsm[cmd_key], dtype=np.float32)
-        cmd_units = []
+            print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
+        Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
+        rmd_units = []
         for uid, group in zip(unit_ids, unit_groups):
             cids = unit_cellids[uid]
             idxs = [cellid_idx[c] for c in cids if c in cellid_idx]
-            cmd_units.append((uid, group, Z_cmd[idxs]))
+            rmd_units.append((uid, group, Z_rmd[idxs]))
         coarse_label_map = dict(zip(all_cellids, cell_type))
-        CMD = loo_cmd(
-            cmd_units, unit_cellids, coarse_label_map,
-            max_dim_per_cluster=cmd_dim_per_cluster, seed=seed, loo=True,
+        RMD = loo_rmd(
+            rmd_units, unit_cellids, coarse_label_map,
+            max_dim_per_cluster=rmd_dim_per_cluster, seed=seed, loo=True,
             verbose=verbose,
         )
-        if CMD.shape[1] > 0:
-            blocks.append(CMD)
+        if RMD.shape[1] > 0:
+            blocks.append(RMD)
 
     # Weights
     if block_weights is None:
         weights = derive_weights(K_c, K_med, K_fine,
-                                   cmd_weight=cmd_weight,
+                                   rmd_weight=rmd_weight,
                                    n_blocks=len(blocks))
     else:
         if len(block_weights) != len(blocks):
@@ -328,13 +328,13 @@ def compute_sample_embedding(
         "fine_K": int(K_fine),
         "K_c": int(K_c),
         "use_clr": bool(use_clr),
-        "use_cmd": bool(use_cmd),
-        "cmd_weight": float(cmd_weight),
+        "use_rmd": bool(use_rmd),
+        "rmd_weight": float(rmd_weight),
         "block_weights": list(map(float, weights)),
         "pca_components": int(pca_components),
         "batch_method": str(batch_method),
         "cluster_emb_key": str(cluster_emb_key),
-        "cmd_emb_key": str(cmd_key),
+        "rmd_emb_key": str(rmd_key),
         "modality_col": str(modality_col) if modality_col else "",
         "batch_col": str(primary_batch) if primary_batch else "",
         "batch_cols_multi": list(batch_cols_multi),

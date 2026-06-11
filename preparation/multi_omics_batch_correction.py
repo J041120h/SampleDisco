@@ -1,17 +1,17 @@
-"""Harmony post-pass that produces the paper's ``Z_clust`` from ``Z_cmd``.
+"""Harmony post-pass that produces the paper's ``Z_clust`` from ``Z_rmd``.
 
 SampleDisco (Stage 2 of Fig. 1) uses two cell-level views:
 
-  ``Z_cmd``   — sample-PRESERVED; preserves the per-sample variance the
-                CMD displacement block needs.
+  ``Z_rmd``   — sample-PRESERVED; preserves the per-sample variance the
+                RMD displacement block needs.
   ``Z_clust`` — sample-REMOVED; shared cell-state geometry used by cell
                 typing and the A1 / A2 / A3 composition blocks.
 
 scGLUE produces a single embedding (``obsm['X_glue']``) which IS the
-sample-preserved view, so it becomes ``Z_cmd`` once GLUE finishes. The
+sample-preserved view, so it becomes ``Z_rmd`` once GLUE finishes. The
 sample-removed ``Z_clust`` is produced by ONE of two paths:
 
-  (default) Harmony post-pass on ``Z_cmd`` (this module) with the sample
+  (default) Harmony post-pass on ``Z_rmd`` (this module) with the sample
             column (and batch column, if present) as batch_keys.
   (opt-in)  A second scGLUE training run with sample as use_batch,
             merged into the primary h5ads by ``multi_omics_glue.py``.
@@ -19,7 +19,7 @@ sample-removed ``Z_clust`` is produced by ONE of two paths:
             auto-skips.
 
 Either way the result is written to ``obsm['Z_clust']`` and the upstream
-``obsm['X_glue']`` is aliased to ``obsm['Z_cmd']`` so downstream code can
+``obsm['X_glue']`` is aliased to ``obsm['Z_rmd']`` so downstream code can
 read paper-aligned keys uniformly.
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ from anndata import AnnData
 
 
 # Paper-aligned obsm keys (Fig. 1 / Stage 2).
-Z_CMD_KEY   = "Z_cmd"     # sample-PRESERVED → CMD role
+Z_RMD_KEY   = "Z_rmd"     # sample-PRESERVED → RMD role
 Z_CLUST_KEY = "Z_clust"   # sample-REMOVED   → cluster / composition role
 
 # scGLUE's own training output. Kept as a constant for internal callers
@@ -60,7 +60,7 @@ def harmonize_xglue(
     random_state: int = 0,
     verbose: bool = True,
 ) -> AnnData:
-    """Run one Harmony pass on ``adata.obsm[in_key]`` (= Z_cmd / X_glue) to
+    """Run one Harmony pass on ``adata.obsm[in_key]`` (= Z_rmd / X_glue) to
     remove per-sample variance, writing ``adata.obsm[out_key]`` = Z_clust.
 
     ``batch_keys`` defaults to ``[sample_col]``. When ``batch_col`` is
@@ -100,12 +100,12 @@ def harmonize_xglue(
         verbose=verbose,
     )
     adata.obsm[out_key] = np.asarray(X_corr, dtype=np.float32)
-    # Alias the input as Z_cmd (sample-preserved) so downstream sees both
+    # Alias the input as Z_rmd (sample-preserved) so downstream sees both
     # paper-aligned keys regardless of whether the cluster embedding came
     # from this Harmony pass or from a 2-run scGLUE merge.
-    if Z_CMD_KEY != in_key and Z_CMD_KEY not in adata.obsm:
-        adata.obsm[Z_CMD_KEY] = adata.obsm[in_key]
+    if Z_RMD_KEY != in_key and Z_RMD_KEY not in adata.obsm:
+        adata.obsm[Z_RMD_KEY] = adata.obsm[in_key]
     if verbose:
         print(f"[xglue-harmony] {out_key}: done in {time.time() - t0:.1f}s "
-              f"(also aliased obsm[{in_key!r}] → obsm[{Z_CMD_KEY!r}])")
+              f"(also aliased obsm[{in_key!r}] → obsm[{Z_RMD_KEY!r}])")
     return adata

@@ -709,7 +709,7 @@ def run_benchmarks(
 if __name__ == "__main__":
 
     # Base paths - update to the new folder path
-    base_dir = '/dcs07/hongkai/data/harry/result/Benchmark_heart_rna'
+    base_dir = '/dcs07/hongkai/data/harry/result/archived_benchmarks/Benchmark_heart_rna'
     meta_csv_path = "/dcs07/hongkai/data/harry/result/multi_omics_heart/data/multi_omics_heart_sample_meta.csv"
     summary_csv_path = f'{base_dir}/benchmark_summary_heart_rna.csv'
 

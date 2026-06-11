@@ -1,9 +1,9 @@
-"""Compare unpaired_diemb (Mode B: 2-run scGLUE, Z_clust + Z_cmd) against
+"""Compare unpaired_diemb (Mode B: 2-run scGLUE, Z_clust + Z_rmd) against
 unpaired_test (Mode A: X_glue + Harmony post-pass) on the same set of
 sample embedding diagnostics.
 
 Per sample-embedding matrix we compute:
-  - autotune cmd_weight        (from autotune_record.txt)
+  - autotune rmd_weight        (from autotune_record.txt)
   - autotune proxy score       (from autotune_record.txt)
   - mean PC R²(batch)          (per-PC linear R² ~ batch one-hot, averaged)
   - ASW(batch)                 (silhouette on sample embedding by batch)
@@ -22,9 +22,9 @@ from sklearn.preprocessing import StandardScaler
 META = "/dcl01/hongkai/data/data/hjiang/Data/merged_rna_atac_metadata.csv"
 
 RUNS = [
-    ("diemb_alltune (Mode B: Z_clust + Z_cmd, autotune on RNA+ATAC)",
+    ("diemb_alltune (Mode B: Z_clust + Z_rmd, autotune on RNA+ATAC)",
      "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/sample_embedding"),
-    ("diemb_RNAtune (Mode B: Z_clust + Z_cmd, autotune on RNA only)",
+    ("diemb_RNAtune (Mode B: Z_clust + Z_rmd, autotune on RNA only)",
      "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/sample_embedding_tune-on-RNA"),
     ("test_RETUNE (Mode A: X_glue + dual-Harmony, autotune on RNA+ATAC)",
      "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_test/multiomics/sampledisco_tuned_v2_RETUNE/sample_embedding"),
@@ -36,10 +36,10 @@ DROP_FIRST_PC_FOR_R2 = False   # if True, skip PC1 (often dominates total var)
 
 
 def parse_autotune(path: str) -> dict:
-    out = {"cmd_weight": np.nan, "score": np.nan, "K_c": np.nan}
+    out = {"rmd_weight": np.nan, "score": np.nan, "K_c": np.nan}
     if not os.path.exists(path): return out
     txt = open(path).read()
-    m = re.search(r"best cmd_weight\s*:\s*([\d.]+)", txt);  out["cmd_weight"] = float(m.group(1)) if m else np.nan
+    m = re.search(r"best rmd_weight\s*:\s*([\d.]+)", txt);  out["rmd_weight"] = float(m.group(1)) if m else np.nan
     m = re.search(r"best score\s*:\s*([\d.]+)", txt);       out["score"]      = float(m.group(1)) if m else np.nan
     m = re.search(r"K_c\s*\(cell types\)\s*:\s*(\d+)", txt); out["K_c"]       = int(m.group(1))   if m else np.nan
     return out
@@ -123,7 +123,7 @@ def evaluate_one(emb_path: str, autotune_path: str, meta: pd.DataFrame) -> dict:
         "n_RNA":              int(len(rna_idx)),
         "n_ATAC":             int(len(atac_idx)),
         "K_c":                tune["K_c"],
-        "cmd_weight":         tune["cmd_weight"],
+        "rmd_weight":         tune["rmd_weight"],
         "proxy_score":        tune["score"],
         "mean_PC_R2_batch":   pc_R2_batch(emb, batch),
         "ASW_batch":          asw_label(emb, batch),

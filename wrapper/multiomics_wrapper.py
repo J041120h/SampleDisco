@@ -13,17 +13,17 @@ from preparation.multi_omics_merge import propagate_cell_type
 from preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from preparation.multi_omics_batch_correction import (
     harmonize_xglue,
-    Z_CMD_KEY,      # paper "Z_cmd"   — sample-preserved, CMD displacement role
+    Z_RMD_KEY,      # paper "Z_rmd"   — sample-preserved, RMD displacement role
     Z_CLUST_KEY,    # paper "Z_clust" — sample-removed,   cluster / composition role
     XGLUE_KEY,      # internal — scGLUE's native obsm key (fallback only)
 )
 
 
-def _resolve_embedding_keys(adata, cluster_override=None, cmd_override=None):
-    """Return (cluster_emb_key, cmd_emb_key) for the SE / cell typing stack.
+def _resolve_embedding_keys(adata, cluster_override=None, rmd_override=None):
+    """Return (cluster_emb_key, rmd_emb_key) for the SE / cell typing stack.
 
     Paper-aligned (Fig. 1, Stage 2): the cluster role reads ``Z_clust`` and
-    the CMD role reads ``Z_cmd``. Both keys are written into the integrated
+    the RMD role reads ``Z_rmd``. Both keys are written into the integrated
     h5ad by either the Harmony post-pass (Mode A) or the 2-run scGLUE merge
     (Mode B). Falls back to ``X_glue`` only when neither has run (un-
     supported in the current pipeline, but keeps the failure mode honest).
@@ -31,15 +31,15 @@ def _resolve_embedding_keys(adata, cluster_override=None, cmd_override=None):
     cluster = cluster_override or (
         Z_CLUST_KEY if Z_CLUST_KEY in adata.obsm else XGLUE_KEY
     )
-    cmd = cmd_override or (
-        Z_CMD_KEY if Z_CMD_KEY in adata.obsm else XGLUE_KEY
+    rmd = rmd_override or (
+        Z_RMD_KEY if Z_RMD_KEY in adata.obsm else XGLUE_KEY
     )
-    for role, key in (("cluster", cluster), ("cmd", cmd)):
+    for role, key in (("cluster", cluster), ("rmd", rmd)):
         if key not in adata.obsm:
             raise KeyError(
                 f"{role}_emb_key={key!r} not in adata.obsm "
                 f"(available: {list(adata.obsm.keys())})")
-    return cluster, cmd
+    return cluster, rmd
 
 
 def multiomics_wrapper(
@@ -53,7 +53,7 @@ def multiomics_wrapper(
     derive_sample_embedding=True,
     autotune_enable=False,
     # scGLUE removes batch but PRESERVES per-sample variance — its output
-    # X_glue is the CMD displacement embedding. For the cluster /
+    # X_glue is the RMD displacement embedding. For the cluster /
     # composition role we need a SAMPLE-removed variant; the pipeline
     # always provides one via ONE of two paths:
     #
@@ -108,7 +108,7 @@ def multiomics_wrapper(
     consistency_threshold=0.05,
     # V2 default: scGLUE removes the technical batch column (``batch_col``)
     # during training but PRESERVES per-sample variance, so its output
-    # X_glue is suitable as the CMD displacement embedding. Set
+    # X_glue is suitable as the RMD displacement embedding. Set
     # treat_sample_as_batch=True only to force sample removal inside GLUE
     # itself (legacy V1 behavior, or the 2-run secondary pass for the
     # cluster embedding).
@@ -162,11 +162,11 @@ def multiomics_wrapper(
     # ===== Sample Embedding Parameters (new method) =====
     sample_embedding_medium_K: int = 120,
     sample_embedding_fine_K: int = 300,
-    sample_embedding_cmd_dim: int = 8,
+    sample_embedding_rmd_dim: int = 8,
     sample_embedding_use_clr: bool = False,
-    sample_embedding_use_cmd: bool = True,
+    sample_embedding_use_rmd: bool = True,
     sample_embedding_block_weights: Optional[List[float]] = None,
-    sample_embedding_cmd_weight: float = 0.60,
+    sample_embedding_rmd_weight: float = 0.60,
     sample_embedding_pca_components: int = 10,
     sample_embedding_batch_method: str = "harmony",
 
@@ -186,8 +186,8 @@ def multiomics_wrapper(
     status_flags=None,
 ) -> Dict[str, Any]:
     """Multi-omics wrapper: GLUE integration, preprocessing, cell typing, and the
-    new single-key sample embedding (composition + CMD). Multi-omics groups CMD
-    by ``modality_col`` and uses ``X_glue`` as both the cluster and CMD
+    new single-key sample embedding (composition + RMD). Multi-omics groups RMD
+    by ``modality_col`` and uses ``X_glue`` as both the cluster and RMD
     cell-level embedding.
 
     Returns dict with adata, sample_adata, status_flags.
@@ -231,7 +231,7 @@ def multiomics_wrapper(
     # `adata_sample.h5ad` is now the embedding-only union written by
     # build_embedding_union (preparation/multi_omics_merge.py). It carries
     # obs (sample, modality, batch, sev.level …) + obsm (X_glue, Z_clust,
-    # Z_cmd) but no expression X — DGE/RAISIN reads the per-modality
+    # Z_rmd) but no expression X — DGE/RAISIN reads the per-modality
     # preprocessed h5ads instead.
     h5ad_path = (integrated_h5ad_path
                  if integrated_h5ad_path and os.path.exists(integrated_h5ad_path)
@@ -312,7 +312,7 @@ def multiomics_wrapper(
     # Z_clust (sample-removed cluster / composition embedding) is required
     # downstream. Two equivalent providers — STEP 1 may have set it
     # already via the 2-run scGLUE merge; otherwise this step runs a
-    # Harmony pass on Z_cmd (= X_glue) with sample as batch_key.
+    # Harmony pass on Z_rmd (= X_glue) with sample as batch_key.
     if current_adata is None:
         current_adata = ad.read_h5ad(h5ad_path)
     if Z_CLUST_KEY in current_adata.obsm:
@@ -392,7 +392,7 @@ def multiomics_wrapper(
     # ==================== STEP 3: SAMPLE EMBEDDING ====================
     if derive_sample_embedding:
         if multiomics_verbose:
-            print("Step 3: Sample embedding (composition + CMD)...")
+            print("Step 3: Sample embedding (composition + RMD)...")
 
         if current_adata is None:
             current_adata = ad.read_h5ad(h5ad_path)
@@ -403,7 +403,7 @@ def multiomics_wrapper(
                 f"Cell type column '{celltype_col}' not in adata.obs. Run "
                 "cell_type_cluster=True or provide pre-typed input.")
 
-        cluster_emb_key, cmd_emb_key = _resolve_embedding_keys(current_adata)
+        cluster_emb_key, rmd_emb_key = _resolve_embedding_keys(current_adata)
 
         if autotune_enable:
             from parameter_selection.autotune import run_autotune
@@ -412,13 +412,13 @@ def multiomics_wrapper(
                 sample_col=sample_col,
                 celltype_col=celltype_col,
                 cluster_emb_key=cluster_emb_key,
-                cmd_emb_key=cmd_emb_key,
+                rmd_emb_key=rmd_emb_key,
                 modality_col=modality_col,
                 batch_col=batch_col,
                 grouping_col=autotune_grouping_col,
                 medium_K=sample_embedding_medium_K,
                 fine_K=sample_embedding_fine_K,
-                cmd_dim=sample_embedding_cmd_dim,
+                rmd_dim=sample_embedding_rmd_dim,
                 pca_components=sample_embedding_pca_components,
                 batch_method=sample_embedding_batch_method,
                 scoring=autotune_scoring,
@@ -436,16 +436,16 @@ def multiomics_wrapper(
                 sample_col=sample_col,
                 celltype_col=celltype_col,
                 cluster_emb_key=cluster_emb_key,
-                cmd_emb_key=cmd_emb_key,
+                rmd_emb_key=rmd_emb_key,
                 modality_col=modality_col,
                 batch_col=batch_col,
                 medium_K=sample_embedding_medium_K,
                 fine_K=sample_embedding_fine_K,
-                cmd_dim_per_cluster=sample_embedding_cmd_dim,
+                rmd_dim_per_cluster=sample_embedding_rmd_dim,
                 use_clr=sample_embedding_use_clr,
-                use_cmd=sample_embedding_use_cmd,
+                use_rmd=sample_embedding_use_rmd,
                 block_weights=sample_embedding_block_weights,
-                cmd_weight=sample_embedding_cmd_weight,
+                rmd_weight=sample_embedding_rmd_weight,
                 pca_components=sample_embedding_pca_components,
                 batch_method=sample_embedding_batch_method,
                 save=True, verbose=multiomics_verbose,

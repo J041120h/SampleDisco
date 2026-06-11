@@ -69,14 +69,14 @@ rna_existing_cell_types: false
 rna_n_target_cell_clusters: 8
 rna_umap: true
 
-# --- Sample Embedding Parameters (composition + CMD) ---
+# --- Sample Embedding Parameters (composition + RMD) ---
 rna_sample_embedding_medium_K: 120
 rna_sample_embedding_fine_K: 300
-rna_sample_embedding_cmd_dim: 8
+rna_sample_embedding_rmd_dim: 8
 rna_sample_embedding_use_clr: false
-rna_sample_embedding_use_cmd: true
+rna_sample_embedding_use_rmd: true
 rna_sample_embedding_block_weights: null
-rna_sample_embedding_cmd_weight: 0.60
+rna_sample_embedding_rmd_weight: 0.60
 rna_sample_embedding_pca_components: 10
 rna_sample_embedding_batch_method: "harmony"
 
@@ -190,14 +190,14 @@ atac_existing_cell_types: false
 atac_n_target_cell_clusters: 8
 atac_umap: true
 
-# --- Sample Embedding Parameters (composition + CMD) ---
+# --- Sample Embedding Parameters (composition + RMD) ---
 atac_sample_embedding_medium_K: 120
 atac_sample_embedding_fine_K: 300
-atac_sample_embedding_cmd_dim: 8
+atac_sample_embedding_rmd_dim: 8
 atac_sample_embedding_use_clr: false
-atac_sample_embedding_use_cmd: true
+atac_sample_embedding_use_rmd: true
 atac_sample_embedding_block_weights: null
-atac_sample_embedding_cmd_weight: 0.60
+atac_sample_embedding_rmd_weight: 0.60
 atac_sample_embedding_pca_components: 10
 atac_sample_embedding_batch_method: "harmony"
 
@@ -321,7 +321,7 @@ multiomics_compression: "gzip"
 multiomics_consistency_threshold: 0.05
 multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V2 default)
 
-# --- Sample-removed cluster embedding (X_glue from scGLUE is the CMD/sample-preserved emb) ---
+# --- Sample-removed cluster embedding (X_glue from scGLUE is the RMD/sample-preserved emb) ---
 # By default, one Harmony pass on X_glue removes per-sample variance to
 # produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
 # train scGLUE a second time with treat_sample_as_batch=True; that run's
@@ -358,15 +358,15 @@ multiomics_plot_columns: null
 
 # trajectory_dge / cluster_dge both off for multiomics in this test → can drop X
 
-# --- Sample Embedding Parameters (composition + CMD on X_glue) ---
+# --- Sample Embedding Parameters (composition + RMD on X_glue) ---
 multiomics_derive_sample_embedding: true
 multiomics_sample_embedding_medium_K: 120
 multiomics_sample_embedding_fine_K: 300
-multiomics_sample_embedding_cmd_dim: 8
+multiomics_sample_embedding_rmd_dim: 8
 multiomics_sample_embedding_use_clr: false
-multiomics_sample_embedding_use_cmd: true
+multiomics_sample_embedding_use_rmd: true
 multiomics_sample_embedding_block_weights: null
-multiomics_sample_embedding_cmd_weight: 0.60
+multiomics_sample_embedding_rmd_weight: 0.60
 multiomics_sample_embedding_pca_components: 10
 multiomics_sample_embedding_batch_method: "harmony"
 

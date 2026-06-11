@@ -649,7 +649,7 @@ def run_benchmarks(
 if __name__ == "__main__":
     
     # Base paths
-    base_dir = '/dcs07/hongkai/data/harry/result/Benchmark_ENCODE_rna'
+    base_dir = '/dcs07/hongkai/data/harry/result/archived_benchmarks/Benchmark_ENCODE_rna'
     meta_csv_path = "/dcl01/hongkai/data/data/hjiang/Data/paired/sample_metadata_fixed.csv"  # UPDATE THIS PATH
     summary_csv_path = f'{base_dir}/benchmark_summary_ENCODE.csv'
     

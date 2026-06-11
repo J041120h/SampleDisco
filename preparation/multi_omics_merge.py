@@ -5,7 +5,7 @@ Three-AnnData design (see SampleDisco_Draft-4.pdf):
   ① ``build_embedding_union``
         UNION of RNA + ATAC cells, embeddings only (no expression X).
         Carries obs (sample, batch, modality, sev.level, …) + obsm
-        (X_glue, plus Z_clust / Z_cmd when present from the 2-run scGLUE
+        (X_glue, plus Z_clust / Z_rmd when present from the 2-run scGLUE
         merge). This file is what cell typing, sample embedding, autotune,
         distance, trajectory all read.
 
@@ -67,13 +67,13 @@ def build_embedding_union(
     rna_modality_value: str = "RNA",
     atac_modality_value: str = "ATAC",
     modality_col: str = "modality",
-    obsm_keys_to_carry: Sequence[str] = ("X_glue", "Z_clust", "Z_cmd", "X_umap"),
+    obsm_keys_to_carry: Sequence[str] = ("X_glue", "Z_clust", "Z_rmd", "X_umap"),
     verbose: bool = True,
 ) -> ad.AnnData:
     """Build the embedding-only union AnnData from per-modality GLUE outputs.
 
     Reads ``glue-{rna,atac}-emb.h5ad`` (output of glue_train, possibly with
-    Z_clust / Z_cmd merged in via the 2-run scGLUE flow), concatenates cells
+    Z_clust / Z_rmd merged in via the 2-run scGLUE flow), concatenates cells
     on the obs axis, carries obsm embeddings, and stores an empty-column
     placeholder X. Saves to ``output_path`` (typically
     ``<output_dir>/preprocess/adata_sample.h5ad``).

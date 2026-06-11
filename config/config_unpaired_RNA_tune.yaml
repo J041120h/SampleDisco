@@ -226,7 +226,7 @@ multiomics_output_dir: null  # defaults to {output_dir}/multiomics
 # the diemb output_dir; this run replays autotune with
 # multiomics_autotune_tune_on_modality='RNA'.
 multiomics_integration: true
-multiomics_derive_sample_embedding: true        # SE (composition + CMD on di-embedding pair)
+multiomics_derive_sample_embedding: true        # SE (composition + RMD on di-embedding pair)
 multiomics_autotune_enable: true
 multiomics_autotune_grouping_col: "sev.level"
 multiomics_autotune_tune_on_modality: "RNA"     # bio + batch proxies scored on RNA-only units; final SE still includes ATAC
@@ -286,7 +286,7 @@ multiomics_compression: "gzip"
 multiomics_consistency_threshold: 0.05
 multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V2 default)
 
-# --- Sample-removed cluster embedding (X_glue from scGLUE is the CMD/sample-preserved emb) ---
+# --- Sample-removed cluster embedding (X_glue from scGLUE is the RMD/sample-preserved emb) ---
 # By default, one Harmony pass on X_glue removes per-sample variance to
 # produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
 # train scGLUE a second time with treat_sample_as_batch=True; that run's
