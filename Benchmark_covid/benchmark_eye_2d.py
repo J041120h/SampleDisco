@@ -664,10 +664,10 @@ if __name__ == "__main__":
     # =========================
     
     # Input: where to READ embeddings and pseudotime from
-    input_base_dir = '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea'
+    input_base_dir = '/dcs07/hongkai/data/harry/result/archived_benchmarks/Benchmark_eye_rna/lutea'
     
     # Output: where to WRITE 2D benchmark results
-    output_base_dir = '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/lutea_2d'
+    output_base_dir = '/dcs07/hongkai/data/harry/result/archived_benchmarks/Benchmark_eye_rna/lutea_2d'
     
     # Metadata (shared)
     meta_csv_path = '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv'

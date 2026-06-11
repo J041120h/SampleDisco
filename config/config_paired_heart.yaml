@@ -1,7 +1,7 @@
 # =============================================================================
 # MAIN CONFIGURATION
 # =============================================================================
-output_dir: "/dcs07/hongkai/data/harry/result/Benchmark_heart_rna"
+output_dir: "/dcs07/hongkai/data/harry/result/archived_benchmarks/Benchmark_heart_rna"
 
 # Pipeline selection
 run_rna_pipeline: true
@@ -276,7 +276,7 @@ multiomics_compression: "gzip"
 multiomics_consistency_threshold: 0.05
 multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V2 default)
 
-# --- Sample-removed cluster embedding (X_glue from scGLUE is the CMD/sample-preserved emb) ---
+# --- Sample-removed cluster embedding (X_glue from scGLUE is the RMD/sample-preserved emb) ---
 # By default, one Harmony pass on X_glue removes per-sample variance to
 # produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
 # train scGLUE a second time with treat_sample_as_batch=True; that run's

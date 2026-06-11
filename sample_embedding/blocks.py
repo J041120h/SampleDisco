@@ -4,7 +4,7 @@ Backend-agnostic: works with numpy arrays and (if available) cupy arrays.
 Routing is done by checking the input array's module — no explicit `use_gpu`
 flag needed at this layer.
 
-The recipe ports the `wire_singleCMD` / `wire_singleCMD_dualembed` variants
+The recipe ports the `wire_singleRMD` / `wire_singleRMD_dualembed` variants
 (no CLR by default, raw compositions, inverse-variance block weights).
 """
 
@@ -83,7 +83,7 @@ def composition_per_unit(unit_cellids, soft, cellid_idx) -> np.ndarray:
 
 
 def clr_transform(comp: np.ndarray, eps: float = 1e-3) -> np.ndarray:
-    """Aitchison centred-log-ratio. Optional; the singleCMD variant does NOT
+    """Aitchison centred-log-ratio. Optional; the singleRMD variant does NOT
     use this transform, but it is exposed for callers that want to opt in."""
     p = comp + eps
     p = p / p.sum(axis=1, keepdims=True)
@@ -92,10 +92,10 @@ def clr_transform(comp: np.ndarray, eps: float = 1e-3) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------- #
-# Counterfactual displacement (CMD)                                            #
+# Counterfactual displacement (RMD)                                            #
 # --------------------------------------------------------------------------- #
 
-def loo_cmd(
+def loo_rmd(
     units: List[Tuple[str, str, np.ndarray]],
     units_uid_to_cellids: Dict[str, List[str]],
     label_for_cellid: Dict[str, str],
@@ -186,13 +186,13 @@ def loo_cmd(
             pcs = PCA(n_components=nc, random_state=seed).fit_transform(sub)
             out_blocks.append(pcs.astype(np.float32))
         except Exception as exc:
-            print(f"  [CMD] PCA failed for cluster {ki} (shape={sub.shape}, nc={nc}): "
-                  f"{type(exc).__name__}: {exc}; cluster dropped from CMD block")
+            print(f"  [RMD] PCA failed for cluster {ki} (shape={sub.shape}, nc={nc}): "
+                  f"{type(exc).__name__}: {exc}; cluster dropped from RMD block")
             continue
     out = (np.concatenate(out_blocks, axis=1) if out_blocks
             else np.zeros((n_units, 0), dtype=np.float32))
     if verbose:
-        print(f"  [CMD] shape={out.shape}")
+        print(f"  [RMD] shape={out.shape}")
     return out
 
 
@@ -204,22 +204,22 @@ def derive_weights(
     K_c: int,
     K_med: int,
     K_fine: int,
-    cmd_weight: float = 0.60,
+    rmd_weight: float = 0.60,
     n_blocks: int = 4,
 ) -> List[float]:
     """Inverse-variance composition weights.
 
-    Returns [w_A1, w_A2, w_A3, w_CMD] (or [w_A1, w_A2, w_A3] if n_blocks=3,
-    no CMD block).
+    Returns [w_A1, w_A2, w_A3, w_RMD] (or [w_A1, w_A2, w_A3] if n_blocks=3,
+    no RMD block).
 
         w_A1 = √(K_fine / K_c)
         w_A2 = √(K_fine / K_med)
         w_A3 = 1.0
-        w_CMD = cmd_weight  (literal; not scaled)
+        w_RMD = rmd_weight  (literal; not scaled)
 
     When the user changes any of `medium_K`, `fine_K`, or the data's number
     of cell-type labels (`K_c`), composition weights auto-rescale so the
-    relative balance among A1/A2/A3 stays meaningful. The default cmd_weight
+    relative balance among A1/A2/A3 stays meaningful. The default rmd_weight
     (0.60) is taken from the winning variant.
     """
     K_c = max(int(K_c), 2)
@@ -230,7 +230,7 @@ def derive_weights(
     w_A3 = 1.0
     weights = [w_A1, w_A2, w_A3]
     if n_blocks >= 4:
-        weights.append(float(cmd_weight))
+        weights.append(float(rmd_weight))
     return weights
 
 
@@ -385,7 +385,10 @@ def build_emb_from_blocks(
         batch_keys = "batch"
         do_harmony = len(set(batch_labels)) > 1 and n_units >= 8
 
-    if do_harmony:
+    if do_harmony and batch_method == "none":
+        # explicit no-op: skip sample-level batch correction, keep raw PCA
+        Zc = Fp
+    elif do_harmony:
         if batch_method == "linear":
             # `linear` regression only supports single-key composite labels
             if isinstance(batch_keys, list):

@@ -59,11 +59,11 @@ def rna_wrapper(
     # Sample embedding parameters (new method)
     sample_embedding_medium_K: int = 120,
     sample_embedding_fine_K: int = 300,
-    sample_embedding_cmd_dim: int = 8,
+    sample_embedding_rmd_dim: int = 8,
     sample_embedding_use_clr: bool = False,
-    sample_embedding_use_cmd: bool = True,
+    sample_embedding_use_rmd: bool = True,
     sample_embedding_block_weights: Optional[List[float]] = None,
-    sample_embedding_cmd_weight: float = 0.60,
+    sample_embedding_rmd_weight: float = 0.60,
     sample_embedding_pca_components: int = 10,
     sample_embedding_batch_method: str = "harmony",
 
@@ -162,7 +162,7 @@ def rna_wrapper(
 
     # ============================ SAMPLE EMBEDDING =========================
     if derive_sample_embedding:
-        print("Starting sample embedding derivation (composition + CMD)...")
+        print("Starting sample embedding derivation (composition + RMD)...")
         if celltype_col not in adata.obs.columns:
             raise ValueError(
                 f"Cell type column '{celltype_col}' not found in adata.obs. "
@@ -170,7 +170,7 @@ def rna_wrapper(
             )
 
         cluster_emb_key = cell_embedding_column or "Z_clust"
-        cmd_emb_key = "Z_cmd" if "Z_cmd" in adata.obsm else cluster_emb_key
+        rmd_emb_key = "Z_rmd" if "Z_rmd" in adata.obsm else cluster_emb_key
 
         if autotune_enable:
             from parameter_selection.autotune import run_autotune
@@ -179,13 +179,13 @@ def rna_wrapper(
                 sample_col=sample_col,
                 celltype_col=celltype_col,
                 cluster_emb_key=cluster_emb_key,
-                cmd_emb_key=cmd_emb_key,
+                rmd_emb_key=rmd_emb_key,
                 modality_col=None,
                 batch_col=sample_level_batch_col or None,
                 grouping_col=autotune_grouping_col,
                 medium_K=sample_embedding_medium_K,
                 fine_K=sample_embedding_fine_K,
-                cmd_dim=sample_embedding_cmd_dim,
+                rmd_dim=sample_embedding_rmd_dim,
                 pca_components=sample_embedding_pca_components,
                 batch_method=sample_embedding_batch_method,
                 scoring=autotune_scoring,
@@ -202,16 +202,16 @@ def rna_wrapper(
                 sample_col=sample_col,
                 celltype_col=celltype_col,
                 cluster_emb_key=cluster_emb_key,
-                cmd_emb_key=cmd_emb_key,
+                rmd_emb_key=rmd_emb_key,
                 modality_col=None,
                 batch_col=sample_level_batch_col or None,
                 medium_K=sample_embedding_medium_K,
                 fine_K=sample_embedding_fine_K,
-                cmd_dim_per_cluster=sample_embedding_cmd_dim,
+                rmd_dim_per_cluster=sample_embedding_rmd_dim,
                 use_clr=sample_embedding_use_clr,
-                use_cmd=sample_embedding_use_cmd,
+                use_rmd=sample_embedding_use_rmd,
                 block_weights=sample_embedding_block_weights,
-                cmd_weight=sample_embedding_cmd_weight,
+                rmd_weight=sample_embedding_rmd_weight,
                 pca_components=sample_embedding_pca_components,
                 batch_method=sample_embedding_batch_method,
                 save=True, verbose=verbose,

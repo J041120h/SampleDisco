@@ -581,7 +581,7 @@ def run_benchmarks(
 if __name__ == "__main__":
     
     # Base paths
-    base_dir = '/dcs07/hongkai/data/harry/result/Benchmark_eye_rna/retina'
+    base_dir = '/dcs07/hongkai/data/harry/result/archived_benchmarks/Benchmark_eye_rna/retina'
     meta_csv_path = '/dcs07/hongkai/data/harry/result/multi_omics_eye/data/scMultiomics_database.csv'
     summary_csv_path = f'{base_dir}/benchmark_summary_eye_retina.csv'
     

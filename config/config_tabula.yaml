@@ -1,14 +1,14 @@
 # =============================================================================
 # MAIN CONFIGURATION  --  Tabula Sapiens 51-sample RNA run
 # =============================================================================
-# Subset built at: /dcs07/hongkai/data/harry/result/Tabula/subset/
+# Subset built at: /dcs07/hongkai/data/harry/result/archived_benchmarks/Tabula/subset/
 #   417,958 cells x 58,870 genes; 51 samples = donor x organ_tissue;
 #   12 donors, 20 tissues, 167 fine cell_ontology_class types.
 # obs cols already present: sample_id, donor, organ_tissue, compartment,
 #   cell_type (=cell_ontology_class), free_annotation, gender, method,
 #   n_counts_UMIs, n_genes.
 
-output_dir: "/dcs07/hongkai/data/harry/result/Tabula/sampledisco_run"
+output_dir: "/dcs07/hongkai/data/harry/result/archived_benchmarks/Tabula/sampledisco_run"
 
 # Pipeline selection
 run_rna_pipeline: true
@@ -27,7 +27,7 @@ large_data_need_extra_memory: true   # UVM: GPU pool spills to host RAM (200 GB 
 # =============================================================================
 
 # --- Input/Output Paths ---
-rna_count_data_path: "/dcs07/hongkai/data/harry/result/Tabula/subset/TabulaSapiens_55min2donor_raw.h5ad"
+rna_count_data_path: "/dcs07/hongkai/data/harry/result/archived_benchmarks/Tabula/subset/TabulaSapiens_55min2donor_raw.h5ad"
 rna_output_dir: null                # -> {output_dir}/rna
 
 # --- Pipeline Control Flags ---
@@ -47,7 +47,7 @@ rna_visualize_data: false
 rna_dimension_association_analysis: false
 
 # --- Resume Paths (for skipping preprocessing) ---
-rna_adata_cell_path: "/dcs07/hongkai/data/harry/result/Tabula/sampledisco_run/rna/preprocess/adata_preprocessed.h5ad"
+rna_adata_cell_path: "/dcs07/hongkai/data/harry/result/archived_benchmarks/Tabula/sampledisco_run/rna/preprocess/adata_preprocessed.h5ad"
 rna_adata_sample_path: null
 rna_sample_meta_path: null          # sample-level cols are already in adata.obs
 rna_cell_meta_path: null
@@ -76,14 +76,14 @@ rna_existing_cell_types: true       # viz-only rerun: use cached Leiden labels
 rna_n_target_cell_clusters: null
 rna_umap: true                      # needed for cell-type UMAP visualization
 
-# --- Sample Embedding Parameters (composition + CMD) ---
+# --- Sample Embedding Parameters (composition + RMD) ---
 rna_sample_embedding_medium_K: 120
 rna_sample_embedding_fine_K: 300
-rna_sample_embedding_cmd_dim: 8
+rna_sample_embedding_rmd_dim: 8
 rna_sample_embedding_use_clr: false
-rna_sample_embedding_use_cmd: true
+rna_sample_embedding_use_rmd: true
 rna_sample_embedding_block_weights: null   # null -> inverse-variance auto-derive
-rna_sample_embedding_cmd_weight: 0.60
+rna_sample_embedding_rmd_weight: 0.60
 rna_sample_embedding_pca_components: 10
 rna_sample_embedding_batch_method: "harmony"
 
@@ -196,11 +196,11 @@ atac_umap: false
 
 atac_sample_embedding_medium_K: 120
 atac_sample_embedding_fine_K: 300
-atac_sample_embedding_cmd_dim: 8
+atac_sample_embedding_rmd_dim: 8
 atac_sample_embedding_use_clr: false
-atac_sample_embedding_use_cmd: true
+atac_sample_embedding_use_rmd: true
 atac_sample_embedding_block_weights: null
-atac_sample_embedding_cmd_weight: 0.60
+atac_sample_embedding_rmd_weight: 0.60
 atac_sample_embedding_pca_components: 10
 atac_sample_embedding_batch_method: "harmony"
 
@@ -305,7 +305,7 @@ multiomics_compression: "gzip"
 multiomics_consistency_threshold: 0.05
 multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V2 default)
 
-# --- Sample-removed cluster embedding (X_glue from scGLUE is the CMD/sample-preserved emb) ---
+# --- Sample-removed cluster embedding (X_glue from scGLUE is the RMD/sample-preserved emb) ---
 # By default, one Harmony pass on X_glue removes per-sample variance to
 # produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
 # train scGLUE a second time with treat_sample_as_batch=True; that run's
@@ -344,11 +344,11 @@ multiomics_plot_columns: null
 multiomics_derive_sample_embedding: false
 multiomics_sample_embedding_medium_K: 120
 multiomics_sample_embedding_fine_K: 300
-multiomics_sample_embedding_cmd_dim: 8
+multiomics_sample_embedding_rmd_dim: 8
 multiomics_sample_embedding_use_clr: false
-multiomics_sample_embedding_use_cmd: true
+multiomics_sample_embedding_use_rmd: true
 multiomics_sample_embedding_block_weights: null
-multiomics_sample_embedding_cmd_weight: 0.60
+multiomics_sample_embedding_rmd_weight: 0.60
 multiomics_sample_embedding_pca_components: 10
 multiomics_sample_embedding_batch_method: "harmony"
 

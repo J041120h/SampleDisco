@@ -9,10 +9,10 @@
 #   - REQUIRES running with the Claude env (rapids 24.12 stack) + PYTHONNOUSERSITE=1.
 #     See CLAUDE.md "GPU workaround on driver 12.5 nodes" section.
 #
-# Why full re-run with cell-level File_name: round 1's cell-level Z_cmd carries
+# Why full re-run with cell-level File_name: round 1's cell-level Z_rmd carries
 #   41% File_name variance (verified via cell_level_batch_leak.csv). Sample-level
 #   Harmony alone (round 2) couldn't undo that. Re-doing cell-level Harmony with
-#   File_name should clean Z_cmd, then sample-level Harmony will have less work.
+#   File_name should clean Z_rmd, then sample-level Harmony will have less work.
 #
 # Cost: ~30-45 min if GPU stack works; ~2 h fallback to CPU if GPU init fails.
 # =============================================================================
@@ -81,7 +81,7 @@ rna_exclude_genes: null
 rna_num_cell_hvgs: 2000                # matches AIFI / covid / blood / long-covid
 rna_cell_embedding_num_pcs: 20
 rna_num_harmony_iterations: 30
-rna_cell_level_batch_key:              # Pass 2 (sample-preserved Z_cmd) batch keys
+rna_cell_level_batch_key:              # Pass 2 (sample-preserved Z_rmd) batch keys
   - "File_name"                        # Pass 1 (Z_clust) auto-appends sample col
 
 # --- Cell Type Clustering Parameters ---
@@ -91,14 +91,14 @@ rna_existing_cell_types: true          # use Cluster_names directly
 rna_n_target_cell_clusters: null       # keep all 9
 rna_umap: true                         # cell-level UMAP for inspection
 
-# --- Sample Embedding Parameters (composition + CMD) ---
+# --- Sample Embedding Parameters (composition + RMD) ---
 rna_sample_embedding_medium_K: 120
 rna_sample_embedding_fine_K: 300
-rna_sample_embedding_cmd_dim: 8
+rna_sample_embedding_rmd_dim: 8
 rna_sample_embedding_use_clr: false
-rna_sample_embedding_use_cmd: true
+rna_sample_embedding_use_rmd: true
 rna_sample_embedding_block_weights: null   # inverse-variance auto-derive
-rna_sample_embedding_cmd_weight: 0.60
+rna_sample_embedding_rmd_weight: 0.60
 rna_sample_embedding_pca_components: 10
 rna_sample_embedding_batch_method: "harmony"
 
@@ -198,11 +198,11 @@ atac_n_target_cell_clusters: null
 atac_umap: false
 atac_sample_embedding_medium_K: 120
 atac_sample_embedding_fine_K: 300
-atac_sample_embedding_cmd_dim: 8
+atac_sample_embedding_rmd_dim: 8
 atac_sample_embedding_use_clr: false
-atac_sample_embedding_use_cmd: true
+atac_sample_embedding_use_rmd: true
 atac_sample_embedding_block_weights: null
-atac_sample_embedding_cmd_weight: 0.60
+atac_sample_embedding_rmd_weight: 0.60
 atac_sample_embedding_pca_components: 10
 atac_sample_embedding_batch_method: "harmony"
 atac_autotune_enable: false
@@ -310,11 +310,11 @@ multiomics_plot_columns: null
 multiomics_derive_sample_embedding: false
 multiomics_sample_embedding_medium_K: 120
 multiomics_sample_embedding_fine_K: 300
-multiomics_sample_embedding_cmd_dim: 8
+multiomics_sample_embedding_rmd_dim: 8
 multiomics_sample_embedding_use_clr: false
-multiomics_sample_embedding_use_cmd: true
+multiomics_sample_embedding_use_rmd: true
 multiomics_sample_embedding_block_weights: null
-multiomics_sample_embedding_cmd_weight: 0.60
+multiomics_sample_embedding_rmd_weight: 0.60
 multiomics_sample_embedding_pca_components: 10
 multiomics_sample_embedding_batch_method: "harmony"
 multiomics_autotune_enable: false

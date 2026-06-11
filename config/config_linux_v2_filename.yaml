@@ -16,7 +16,7 @@
 #   confounded with biology. So a finer batch key should clean PC1.
 #
 # CAVEAT: this run only redoes SAMPLE-level Harmony with File_name. The
-#   cell-level Z_clust / Z_cmd inherited from round 1 were computed with Batch.
+#   cell-level Z_clust / Z_rmd inherited from round 1 were computed with Batch.
 #   To redo cell-level Harmony with File_name too, set rna_preprocessing=true
 #   (~2-hour cost).
 # =============================================================================
@@ -65,7 +65,7 @@ rna_dimension_association_analysis: true   # post-embedding R^2 of Age vs dims
 
 # --- Resume Paths ---
 # Reuse round 1's preprocessed adata (filter+HVG+PCA+dual Harmony done).
-# Has Z_clust, Z_cmd in obsm and Cluster_names in obs.
+# Has Z_clust, Z_rmd in obsm and Cluster_names in obs.
 rna_adata_cell_path: "/dcs07/hongkai/data/harry/result/health_aging_PBMC/rna/preprocess/adata_preprocessed.h5ad"
 rna_adata_sample_path: null
 rna_sample_meta_path: null
@@ -96,14 +96,14 @@ rna_existing_cell_types: true          # use Cluster_names directly
 rna_n_target_cell_clusters: null       # keep all 9
 rna_umap: true                         # cell-level UMAP for inspection
 
-# --- Sample Embedding Parameters (composition + CMD) ---
+# --- Sample Embedding Parameters (composition + RMD) ---
 rna_sample_embedding_medium_K: 120
 rna_sample_embedding_fine_K: 300
-rna_sample_embedding_cmd_dim: 8
+rna_sample_embedding_rmd_dim: 8
 rna_sample_embedding_use_clr: false
-rna_sample_embedding_use_cmd: true
+rna_sample_embedding_use_rmd: true
 rna_sample_embedding_block_weights: null   # inverse-variance auto-derive
-rna_sample_embedding_cmd_weight: 0.60
+rna_sample_embedding_rmd_weight: 0.60
 rna_sample_embedding_pca_components: 10
 rna_sample_embedding_batch_method: "harmony"
 
@@ -203,11 +203,11 @@ atac_n_target_cell_clusters: null
 atac_umap: false
 atac_sample_embedding_medium_K: 120
 atac_sample_embedding_fine_K: 300
-atac_sample_embedding_cmd_dim: 8
+atac_sample_embedding_rmd_dim: 8
 atac_sample_embedding_use_clr: false
-atac_sample_embedding_use_cmd: true
+atac_sample_embedding_use_rmd: true
 atac_sample_embedding_block_weights: null
-atac_sample_embedding_cmd_weight: 0.60
+atac_sample_embedding_rmd_weight: 0.60
 atac_sample_embedding_pca_components: 10
 atac_sample_embedding_batch_method: "harmony"
 atac_autotune_enable: false
@@ -315,11 +315,11 @@ multiomics_plot_columns: null
 multiomics_derive_sample_embedding: false
 multiomics_sample_embedding_medium_K: 120
 multiomics_sample_embedding_fine_K: 300
-multiomics_sample_embedding_cmd_dim: 8
+multiomics_sample_embedding_rmd_dim: 8
 multiomics_sample_embedding_use_clr: false
-multiomics_sample_embedding_use_cmd: true
+multiomics_sample_embedding_use_rmd: true
 multiomics_sample_embedding_block_weights: null
-multiomics_sample_embedding_cmd_weight: 0.60
+multiomics_sample_embedding_rmd_weight: 0.60
 multiomics_sample_embedding_pca_components: 10
 multiomics_sample_embedding_batch_method: "harmony"
 multiomics_autotune_enable: false

@@ -62,7 +62,7 @@ def anndata_cluster(
       - `.var['highly_variable']`        HVF flag (no subsetting)
       - `.obsm['X_lsi']`                 LSI on HVF subset (drop_first applied if set)
       - `.obsm['Z_clust']`         sample-removed Harmony
-      - `.obsm['Z_cmd']`  sample-preserved Harmony (CMD)
+      - `.obsm['Z_rmd']`  sample-preserved Harmony (RMD)
 
     Writes a single file: `<output_dir>/adata_preprocessed.h5ad`.
     """
@@ -113,7 +113,7 @@ def anndata_cluster(
         if verbose:
             print("=== [CPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
-        adata.obsm["Z_cmd"] = harmonize(
+        adata.obsm["Z_rmd"] = harmonize(
             adata.obsm["X_lsi"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
@@ -122,12 +122,12 @@ def anndata_cluster(
     else:
         if verbose:
             print("=== [CPU] Harmony pass 2: no extra batch covariate → using raw X_lsi ===")
-        adata.obsm["Z_cmd"] = np.asarray(
+        adata.obsm["Z_rmd"] = np.asarray(
             adata.obsm["X_lsi"], dtype=np.float32)
 
     if verbose:
         print(f"  Z_clust        shape: {adata.obsm['Z_clust'].shape}")
-        print(f"  Z_cmd shape: {adata.obsm['Z_cmd'].shape}")
+        print(f"  Z_rmd shape: {adata.obsm['Z_rmd'].shape}")
 
     save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
     safe_h5ad_write(adata, save_path)

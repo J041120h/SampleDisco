@@ -59,21 +59,21 @@ def write_one_csv_per_sample_size(
     ------------------------------------------------------------
     ALL PATHS EXPLICITLY LISTED BELOW (method_to_path_template):
       GEDI:
-        /dcs07/hongkai/data/harry/result/GEDI/{N}_sample/GEDI_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/GEDI/{N}_sample/GEDI_summary.json
       GloScope:
-        /dcs07/hongkai/data/harry/result/Gloscope/{N}_sample/gloscope_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/Gloscope/{N}_sample/gloscope_summary.json
       MFA:
-        /dcs07/hongkai/data/harry/result/MFA/{N}_sample/MFA_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MFA/{N}_sample/MFA_summary.json
       MUSTARD:
-        /dcs07/hongkai/data/harry/result/MUSTARD/{N}_sample/MUSTARD_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MUSTARD/{N}_sample/MUSTARD_summary.json
       naive_pseudobulk:
-        /dcs07/hongkai/data/harry/result/naive_pseudobulk/covid_{N}_sample/naive_pseudobulk_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/naive_pseudobulk/covid_{N}_sample/naive_pseudobulk_summary.json
       pilot:
-        /dcs07/hongkai/data/harry/result/pilot/{N}_sample/pilot_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/pilot/{N}_sample/pilot_summary.json
       QOT:
-        /dcs07/hongkai/data/harry/result/QOT/{N}_sample/QOT_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/QOT/{N}_sample/QOT_summary.json
       scPoli:
-        /dcs07/hongkai/data/harry/result/scPoli/{N}_sample/scPoli_summary.json
+        /dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/scPoli/{N}_sample/scPoli_summary.json
       SampleDisc (NEW STYLE):
         /dcs07/hongkai/data/harry/result/Benchmark_covid/covid_{N}_sample/run_time/sampledisco_summary.json
     ------------------------------------------------------------
@@ -122,20 +122,20 @@ if __name__ == "__main__":
 
     sample_sizes = [25, 50, 100, 200, 279, 400]
 
-    OUTDIR = "/dcs07/hongkai/data/harry/result/run_time_summary"
+    OUTDIR = "/dcs07/hongkai/data/harry/result/Benchmark_covid/run_time_summary"
 
     method_to_path_template = {
         # GEDI
-        "GEDI": "/dcs07/hongkai/data/harry/result/GEDI/{}_sample/GEDI_summary.json",
+        "GEDI": "/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/GEDI/{}_sample/GEDI_summary.json",
 
         # GloScope
-        "Gloscope": "/dcs07/hongkai/data/harry/result/Gloscope/{}_sample/gloscope_summary.json",
+        "Gloscope": "/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/Gloscope/{}_sample/gloscope_summary.json",
 
         # MFA
-        "MFA": "/dcs07/hongkai/data/harry/result/MFA/{}_sample/MFA_summary.json",
+        "MFA": "/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MFA/{}_sample/MFA_summary.json",
 
         # MUSTARD
-        "MUSTARD": "/dcs07/hongkai/data/harry/result/MUSTARD/{}_sample/MUSTARD_summary.json",
+        "MUSTARD": "/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/MUSTARD/{}_sample/MUSTARD_summary.json",
 
         # naive_pseudobulk
         "naive_pseudobulk": (
@@ -144,13 +144,13 @@ if __name__ == "__main__":
         ),
 
         # PILOT
-        "pilot": "/dcs07/hongkai/data/harry/result/pilot/{}_sample/pilot_summary.json",
+        "pilot": "/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/pilot/{}_sample/pilot_summary.json",
 
         # QOT
-        "QOT": "/dcs07/hongkai/data/harry/result/QOT/{}_sample/QOT_summary.json",
+        "QOT": "/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/QOT/{}_sample/QOT_summary.json",
 
         # scPoli
-        "scPoli": "/dcs07/hongkai/data/harry/result/scPoli/{}_sample/scPoli_summary.json",
+        "scPoli": "/dcs07/hongkai/data/harry/result/Benchmark_covid/competing_methods/scPoli/{}_sample/scPoli_summary.json",
 
         # SampleDisc (NEW DIRECTORY STYLE — updated to current SampleDisco run)
         "SD": (

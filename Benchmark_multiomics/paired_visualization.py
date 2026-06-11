@@ -511,7 +511,7 @@ def example_cross_modal_plot():
     #     highlight_line_width=3.0,
     #     show_sample_ids=True,
     #     style='modern',
-    #     output_dir='/dcs07/hongkai/data/harry/result/heart/multiomics/visualization',
+    #     output_dir='/dcs07/hongkai/data/harry/result/multi_omics_heart/heart/multiomics/visualization',
     #     filename_prefix='cross_modal_highlighted',
     #     dpi=300
     # )

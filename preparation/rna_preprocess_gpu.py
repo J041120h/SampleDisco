@@ -30,8 +30,8 @@ def anndata_cluster(
     Produces TWO cell-level Harmony embeddings (one preprocessing pass):
       - obsm['Z_clust']        — Harmony with `cell_level_batch_key_for_harmony`
                                          (typically batch + sample → sample-removed)
-      - obsm['Z_cmd'] — Harmony with `cell_level_batch_key_no_sample`
-                                         (no sample → sample-preserved, used by CMD)
+      - obsm['Z_rmd'] — Harmony with `cell_level_batch_key_no_sample`
+                                         (no sample → sample-preserved, used by RMD)
 
     Keeps all genes in `.X` (post normalize+log1p); HVG selection is recorded as
     `.var['highly_variable']` but does not subset `.X`. Raw counts are preserved
@@ -96,7 +96,7 @@ def anndata_cluster(
         if verbose:
             print("=== [GPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
-        adata.obsm["Z_cmd"] = harmonize(
+        adata.obsm["Z_rmd"] = harmonize(
             adata.obsm["X_pca"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
@@ -105,12 +105,12 @@ def anndata_cluster(
     else:
         if verbose:
             print("=== [GPU] Harmony pass 2: no extra batch covariate → using raw X_pca ===")
-        adata.obsm["Z_cmd"] = np.asarray(
+        adata.obsm["Z_rmd"] = np.asarray(
             adata.obsm["X_pca"], dtype=np.float32)
 
     if verbose:
         print(f"  Z_clust        shape: {adata.obsm['Z_clust'].shape}")
-        print(f"  Z_cmd shape: {adata.obsm['Z_cmd'].shape}")
+        print(f"  Z_rmd shape: {adata.obsm['Z_rmd'].shape}")
 
     rsc.get.anndata_to_CPU(adata)
     save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
@@ -146,7 +146,7 @@ def preprocess_gpu(
       - `.var['highly_variable']` HVG flag
       - `.obsm['X_pca']`         PCA on HVG subset
       - `.obsm['Z_clust']`        sample-removed Harmony
-      - `.obsm['Z_cmd']` sample-preserved Harmony (used by CMD)
+      - `.obsm['Z_rmd']` sample-preserved Harmony (used by RMD)
     """
     set_global_seed(seed=42)
     start_time = time.time()

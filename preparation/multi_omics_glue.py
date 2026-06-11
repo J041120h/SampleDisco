@@ -719,19 +719,19 @@ def _merge_second_glue_embedding_into_primary_h5ads(
     primary_prefix: str,
     secondary_prefix: str,
     z_clust_key: str = "Z_clust",
-    z_cmd_key: str = "Z_cmd",
+    z_rmd_key: str = "Z_rmd",
 ) -> None:
     """Align the primary RNA/ATAC h5ads with paper-named cell-level views.
 
     Writes into each of ``<primary_prefix>-{rna,atac}-emb.h5ad``:
 
-      * ``obsm[z_cmd_key]``   = primary's ``obsm['X_glue']`` aliased
-                                (sample-PRESERVED — CMD displacement role)
+      * ``obsm[z_rmd_key]``   = primary's ``obsm['X_glue']`` aliased
+                                (sample-PRESERVED — RMD displacement role)
       * ``obsm[z_clust_key]`` = secondary's ``obsm['X_glue']`` merged in
                                 (sample-REMOVED — cluster role)
 
     ``obsm['X_glue']`` on the primary is left untouched as the raw scGLUE
-    output. Downstream code reads ``Z_cmd`` / ``Z_clust``.
+    output. Downstream code reads ``Z_rmd`` / ``Z_clust``.
     """
     import os as _os
     for mod in ("rna", "atac"):
@@ -751,10 +751,10 @@ def _merge_second_glue_embedding_into_primary_h5ads(
             raise ValueError(
                 f"primary/secondary cell count mismatch for {mod}: "
                 f"{a_primary.n_obs} vs {a_secondary.n_obs}")
-        a_primary.obsm[z_cmd_key]   = a_primary.obsm["X_glue"]
+        a_primary.obsm[z_rmd_key]   = a_primary.obsm["X_glue"]
         a_primary.obsm[z_clust_key] = a_secondary.obsm["X_glue"]
         a_primary.write(primary, compression="gzip")
-        print(f"  ✓ {mod}: obsm[{z_cmd_key!r}] (from primary X_glue) "
+        print(f"  ✓ {mod}: obsm[{z_rmd_key!r}] (from primary X_glue) "
               f"+ obsm[{z_clust_key!r}] (from {secondary_prefix}) → {primary}")
 
 
@@ -793,7 +793,7 @@ def multiomics_preparation(
     # Batch design for scGLUE.configure_dataset(use_batch=...). With
     # batch_key set + treat_sample_as_batch=False (V2 default), scGLUE
     # removes the named batch column while preserving per-sample variance,
-    # so the primary X_glue is suitable as the CMD embedding.
+    # so the primary X_glue is suitable as the RMD embedding.
     batch_key: Optional[str] = None,
     sample_key: str = "sample",
     # scGLUE training throughput knobs (see glue_train docstring)
@@ -808,7 +808,7 @@ def multiomics_preparation(
     # SECOND time with ``treat_sample_as_batch=True`` (use_batch=sample,
     # which implicitly removes batch too since each sample is in exactly
     # one batch). After training, the merge helper writes both
-    # ``obsm['Z_cmd']`` (primary's X_glue, aliased) and
+    # ``obsm['Z_rmd']`` (primary's X_glue, aliased) and
     # ``obsm['Z_clust']`` (secondary's X_glue) into the primary RNA + ATAC
     # h5ads so downstream code reads paper-aligned keys uniformly.
     run_second_glue_for_sample_removal: bool = False,
@@ -904,7 +904,7 @@ def multiomics_preparation(
         # variance → produces the paper's Z_clust. With sample as use_batch
         # (each sample lives in exactly one batch, so removing sample also
         # removes batch), this is the end-to-end alternative to running a
-        # Harmony post-pass on Z_cmd.
+        # Harmony post-pass on Z_rmd.
         if run_second_glue_for_sample_removal:
             print(f"Running second scGLUE pass for sample removal "
                   f"(treat_sample_as_batch=True) → obsm['Z_clust']")

@@ -1,6 +1,6 @@
 """Sample-embedding hyperparameter autotune.
 
-Bayesian search over the CMD weight (`alpha_only` scope by default) using the
+Bayesian search over the RMD weight (`alpha_only` scope by default) using the
 `multi_metric_proxy` ensemble. Adaptive — the proxy ensemble drops components
 the data can't support:
 
@@ -42,7 +42,7 @@ from sample_embedding.blocks import (
     build_emb_from_blocks,
     composition_per_unit,
     derive_weights,
-    loo_cmd,
+    loo_rmd,
     soft_assign,
 )
 
@@ -51,26 +51,26 @@ DEFAULT_ALPHA_BOUNDS = (0.1, 10.0)
 
 
 # ============================================================ #
-# Pre-compute blocks (composition + CMD) once; sweep weights    #
+# Pre-compute blocks (composition + RMD) once; sweep weights    #
 # ============================================================ #
 def build_blocks(
     adata: AnnData,
     sample_col: str,
     celltype_col: str,
     cluster_emb_key: str,
-    cmd_emb_key: Optional[str] = None,
+    rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[str] = None,
     grouping_col: Optional[str] = None,
     medium_K: int = 120,
     fine_K: int = 300,
-    cmd_dim: int = 8,
+    rmd_dim: int = 8,
     seed: int = 42,
     verbose: bool = True,
 ) -> Dict:
-    """Build composition + CMD blocks once. Returns a dict the inner loop reuses."""
-    cmd_key = cmd_emb_key if cmd_emb_key and cmd_emb_key in adata.obsm else (
-        "Z_cmd" if "Z_cmd" in adata.obsm else cluster_emb_key
+    """Build composition + RMD blocks once. Returns a dict the inner loop reuses."""
+    rmd_key = rmd_emb_key if rmd_emb_key and rmd_emb_key in adata.obsm else (
+        "Z_rmd" if "Z_rmd" in adata.obsm else cluster_emb_key
     )
 
     units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_clust = \
@@ -107,16 +107,16 @@ def build_blocks(
     soft3 = soft_assign(Z_clust, km_fine.cluster_centers_)
     A3 = composition_per_unit(unit_cellids_list, soft3, cellid_idx)
 
-    # CMD
-    Z_cmd = np.asarray(adata.obsm[cmd_key], dtype=np.float32)
-    cmd_units = []
+    # RMD
+    Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
+    rmd_units = []
     for uid, group in zip(unit_ids, unit_groups):
         cids = unit_cellids[uid]
         idxs = [cellid_idx[c] for c in cids if c in cellid_idx]
-        cmd_units.append((uid, group, Z_cmd[idxs]))
+        rmd_units.append((uid, group, Z_rmd[idxs]))
     coarse_label_map = dict(zip(all_cellids, cell_type))
-    CMD = loo_cmd(cmd_units, unit_cellids, coarse_label_map,
-                    max_dim_per_cluster=cmd_dim, seed=seed,
+    RMD = loo_rmd(rmd_units, unit_cellids, coarse_label_map,
+                    max_dim_per_cluster=rmd_dim, seed=seed,
                     loo=True, verbose=False)
 
     # Sample-level metadata for scoring
@@ -147,12 +147,12 @@ def build_blocks(
     ) > 1
 
     return dict(
-        A1=A1, A2=A2, A3=A3, CMD=CMD,
+        A1=A1, A2=A2, A3=A3, RMD=RMD,
         K_c=K_c, K_med=K_med, K_fine=K_fine,
         unit_ids=unit_ids, unit_groups=unit_groups, unit_batches=unit_batches,
         n_units=n_units, grouping=grouping_arr, batch=batch_arr,
         has_batch=has_batch, has_grouping=has_grouping,
-        cluster_emb_key=cluster_emb_key, cmd_emb_key=cmd_key,
+        cluster_emb_key=cluster_emb_key, rmd_emb_key=rmd_key,
     )
 
 
@@ -537,13 +537,13 @@ def run_autotune(
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
     cluster_emb_key: str = "Z_clust",
-    cmd_emb_key: Optional[str] = None,
+    rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,
     grouping_col: Optional[str] = None,
     medium_K: int = 120,
     fine_K: int = 300,
-    cmd_dim: int = 8,
+    rmd_dim: int = 8,
     pca_components: int = 10,
     batch_method: str = "harmony",
     scoring: str = "auto",
@@ -571,10 +571,10 @@ def run_autotune(
 
     blocks = build_blocks(
         adata, sample_col=sample_col, celltype_col=celltype_col,
-        cluster_emb_key=cluster_emb_key, cmd_emb_key=cmd_emb_key,
+        cluster_emb_key=cluster_emb_key, rmd_emb_key=rmd_emb_key,
         modality_col=modality_col, batch_col=primary_batch,
         grouping_col=grouping_col, medium_K=medium_K, fine_K=fine_K,
-        cmd_dim=cmd_dim, seed=seed, verbose=verbose,
+        rmd_dim=rmd_dim, seed=seed, verbose=verbose,
     )
 
     # Scoring mask: when tune_on_modality is set, restrict scoring proxies
@@ -606,9 +606,9 @@ def run_autotune(
             print("[autotune] no batch and no grouping column → using fixed defaults; "
                   "no search performed.")
         weights = derive_weights(blocks["K_c"], blocks["K_med"], blocks["K_fine"],
-                                   cmd_weight=0.60, n_blocks=4)
+                                   rmd_weight=0.60, n_blocks=4)
         final_emb = build_emb_from_blocks(
-            [blocks["A1"], blocks["A2"], blocks["A3"], blocks["CMD"]],
+            [blocks["A1"], blocks["A2"], blocks["A3"], blocks["RMD"]],
             weights,
             unit_ids=blocks["unit_ids"],
             unit_groups=blocks["unit_groups"],
@@ -617,7 +617,7 @@ def run_autotune(
             seed=seed, verbose=verbose,
         )
         return _finalize(adata, blocks, final_emb, weights,
-                         best_params={"cmd_weight": 0.60},
+                         best_params={"rmd_weight": 0.60},
                          best_score=float("nan"),
                          trace=[], search=search, scoring=scoring,
                          scope=scope, alpha_bounds=alpha_bounds,
@@ -637,9 +637,9 @@ def run_autotune(
 
     def objective(alpha: float) -> float:
         weights = derive_weights(blocks["K_c"], blocks["K_med"], blocks["K_fine"],
-                                   cmd_weight=alpha, n_blocks=4)
+                                   rmd_weight=alpha, n_blocks=4)
         emb_df = build_emb_from_blocks(
-            [blocks["A1"], blocks["A2"], blocks["A3"], blocks["CMD"]],
+            [blocks["A1"], blocks["A2"], blocks["A3"], blocks["RMD"]],
             weights,
             unit_ids=blocks["unit_ids"],
             unit_groups=blocks["unit_groups"],
@@ -657,13 +657,13 @@ def run_autotune(
               f"scope={scope}  bounds={alpha_bounds}")
     best_alpha, best_score, trace = SEARCH_FUNCS[search](objective, alpha_bounds)
     if verbose:
-        print(f"[autotune] best cmd_weight={best_alpha:.4f}  score={best_score:.4f}  "
+        print(f"[autotune] best rmd_weight={best_alpha:.4f}  score={best_score:.4f}  "
               f"({len(trace)} evals)")
 
     final_weights = derive_weights(blocks["K_c"], blocks["K_med"], blocks["K_fine"],
-                                     cmd_weight=best_alpha, n_blocks=4)
+                                     rmd_weight=best_alpha, n_blocks=4)
     final_emb = build_emb_from_blocks(
-        [blocks["A1"], blocks["A2"], blocks["A3"], blocks["CMD"]],
+        [blocks["A1"], blocks["A2"], blocks["A3"], blocks["RMD"]],
         final_weights,
         unit_ids=blocks["unit_ids"],
         unit_groups=blocks["unit_groups"],
@@ -673,7 +673,7 @@ def run_autotune(
     )
 
     return _finalize(adata, blocks, final_emb, final_weights,
-                     best_params={"cmd_weight": float(best_alpha)},
+                     best_params={"rmd_weight": float(best_alpha)},
                      best_score=float(best_score),
                      trace=trace, search=search, scoring=scoring,
                      scope=scope, alpha_bounds=alpha_bounds,
@@ -720,7 +720,7 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     proxies = _active_proxies(scoring, has_batch, has_grouping)
 
     lines = []
-    lines.append("Sample-embedding autotune — composition + CMD")
+    lines.append("Sample-embedding autotune — composition + RMD")
     lines.append("=" * 68)
     lines.append("")
     lines.append("Configuration")
@@ -746,7 +746,7 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     lines.append(f"  K_med (k-means)    : {int(blocks['K_med'])}")
     lines.append(f"  K_fine (k-means)   : {int(blocks['K_fine'])}")
     lines.append(f"  cluster_emb_key    : {blocks.get('cluster_emb_key', '?')}")
-    lines.append(f"  cmd_emb_key        : {blocks.get('cmd_emb_key', '?')}")
+    lines.append(f"  rmd_emb_key        : {blocks.get('rmd_emb_key', '?')}")
     lines.append("")
     lines.append("Active scoring proxies (gated by data availability)")
     lines.append("-" * 68)
@@ -769,13 +769,13 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     lines.append(f"  best score        : {best_score:.6f}")
     lines.append(f"  block weights     : "
                   + ", ".join(f"{x:.4f}" for x in weights)
-                  + "  (A1, A2, A3, CMD)")
+                  + "  (A1, A2, A3, RMD)")
     lines.append(f"  total evaluations : {len(trace)}")
     lines.append(f"  wall time         : {elapsed_s:.2f} s")
     lines.append("")
     lines.append(f"Search trace ({len(trace)} evals, top 25 by score)")
     lines.append("-" * 68)
-    lines.append(f"  {'rank':>4s}  {'α (cmd_weight)':>16s}  {'score':>10s}")
+    lines.append(f"  {'rank':>4s}  {'α (rmd_weight)':>16s}  {'score':>10s}")
     sorted_trace = sorted(trace, key=lambda r: r[1], reverse=True)
     for i, (a, s) in enumerate(sorted_trace[:25], 1):
         marker = "  ★ best" if i == 1 else ""
@@ -785,7 +785,7 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     lines.append("")
     lines.append(f"Full chronological trace ({len(trace)} evals)")
     lines.append("-" * 68)
-    lines.append(f"  {'step':>4s}  {'α (cmd_weight)':>16s}  {'score':>10s}")
+    lines.append(f"  {'step':>4s}  {'α (rmd_weight)':>16s}  {'score':>10s}")
     for i, (a, s) in enumerate(trace, 1):
         lines.append(f"  {i:>4d}  {a:>16.6f}  {s:>10.4f}")
     lines.append("")
@@ -812,7 +812,7 @@ def _finalize(adata, blocks, final_emb, weights, *,
         "K_med": int(blocks["K_med"]),
         "K_fine": int(blocks["K_fine"]),
         "cluster_emb_key": str(blocks.get("cluster_emb_key", "")),
-        "cmd_emb_key": str(blocks.get("cmd_emb_key", "")),
+        "rmd_emb_key": str(blocks.get("rmd_emb_key", "")),
         "n_evals": len(trace),
         "autotuned": True,
         "wall_time_s": float(elapsed),
