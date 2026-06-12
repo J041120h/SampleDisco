@@ -255,6 +255,7 @@ def raisinfit(
     filtergenequantile=0.5,
     n_jobs=None,
     verbose=True,
+    seed: int = 42,
 ):
     """
     Python port of RAISIN differential-expression model fitting.
@@ -799,8 +800,8 @@ def raisinfit(
         # -----------------------------------------
         # Construct orthogonal K matrix (R lines 187-198)
         # -----------------------------------------
-        np.random.seed(42)  # For reproducibility
-        K = np.random.normal(size=(n, p))
+        _rng = np.random.default_rng(seed)
+        K = _rng.standard_normal(size=(n, p))
 
         for i in range(p):
             if i == 0:

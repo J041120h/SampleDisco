@@ -73,6 +73,8 @@ def rna_wrapper(
     autotune_scope: str = "alpha_only",
     autotune_alpha_bounds=(0.1, 10.0),
     autotune_grouping_col: Optional[str] = None,
+
+    seed: int = 42,
 ) -> dict:
     """RNA-seq wrapper: preprocessing, cell-typing, single-key sample embedding,
     and optional autotune. Returns dict with adata, sample_adata, status_flags.
@@ -215,6 +217,7 @@ def rna_wrapper(
                 pca_components=sample_embedding_pca_components,
                 batch_method=sample_embedding_batch_method,
                 save=True, verbose=verbose,
+                seed=seed,
             )
         status_flags["rna"]["derive_sample_embedding"] = True
     else:

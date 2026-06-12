@@ -677,7 +677,7 @@ def cca_pvalue_test(
         cca = CCA(n_components=1)
         cca.fit(pca_coords_2d, permuted)
         U, V = cca.transform(pca_coords_2d, permuted)
-        corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+        corr = abs(np.corrcoef(U[:, 0], V[:, 0])[0, 1])
         simulated_scores.append(corr)
     
     simulated_scores = np.array(simulated_scores)

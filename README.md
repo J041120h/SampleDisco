@@ -4,7 +4,7 @@ A cross-omics, cross-condition **sample embedding** tool for single-cell data.
 
 SampleDisco takes a cell-level embedding (from any standard scRNA / scATAC / multi-omics integration method) and lifts it to a **sample-level embedding** that captures both cell-type composition and the per-cell-type state of each sample. Every downstream analysis — sample-to-sample distance, clustering, trajectory inference, phenotype association — then runs on that single shared sample embedding, regardless of modality.
 
-Paper draft: [`/users/hjiang/GenoDistance/SampleDisco_Draft-2.pdf`](../SampleDisco_Draft-2.pdf)
+Paper draft: [`/users/hjiang/GenoDistance/SampleDisco_Draft-11.pdf`](../SampleDisco_Draft-11.pdf)
 
 ---
 
@@ -46,7 +46,7 @@ code/
 │   ├── ATAC_cell_type{,_gpu}.py      # ATAC-specific cell typing variants
 │   ├── multi_omics_glue.py           # scGLUE integration (cross-modality VAE + guidance graph)
 │   ├── multi_omics_batch_correction.py # Harmony post-pass on X_glue → Z_clust
-│   ├── multi_omics_preprocess.py     # post-GLUE QC + slimming
+│   ├── multi_omics_merge.py          # post-GLUE merge + per-modality preprocess/slimming
 │   └── multi_omics_cell_type_{cpu,gpu}.py  # RNA-Leiden + k-NN label transfer to ATAC
 ├── sample_embedding/          # Core method
 │   ├── blocks.py              # composition, CMD, weighting, Frobenius stack, final PCA + Harmony

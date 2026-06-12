@@ -17,9 +17,13 @@ from utils.random_seed import set_global_seed
 from utils.merge_sample_meta import merge_sample_metadata
 
 
-def _run_lsi_on_hvg(adata, n_comps, drop_first):
-    """Run LSI on the HVG subset and write the embedding back to the full adata."""
-    hvg_mask = adata.var["highly_variable"].values
+def _run_lsi_on_hvg(adata, n_comps, drop_first, hvg_col="highly_variable", out_key="X_lsi"):
+    """Run LSI on the HVF subset (hvg_col) and write the embedding to adata.obsm[out_key].
+
+    varm['LSI'] and uns['lsi'] are only written for the canonical out_key='X_lsi'
+    to avoid clobbering the Z_clust basis.
+    """
+    hvg_mask = adata.var[hvg_col].values
     if hvg_mask.sum() < n_comps + 1:
         hvg_mask = np.ones(adata.n_vars, dtype=bool)
     sub = adata[:, hvg_mask].copy()
@@ -28,12 +32,13 @@ def _run_lsi_on_hvg(adata, n_comps, drop_first):
         sub.obsm["X_lsi"] = sub.obsm["X_lsi"][:, 1:]
         sub.varm["LSI"] = sub.varm["LSI"][:, 1:]
         sub.uns["lsi"]["stdev"] = sub.uns["lsi"]["stdev"][1:]
-    adata.obsm["X_lsi"] = sub.obsm["X_lsi"]
-    full_varm = np.zeros((adata.n_vars, sub.varm["LSI"].shape[1]),
-                          dtype=sub.varm["LSI"].dtype)
-    full_varm[np.where(hvg_mask)[0]] = sub.varm["LSI"]
-    adata.varm["LSI"] = full_varm
-    adata.uns["lsi"] = {"stdev": sub.uns["lsi"]["stdev"]}
+    adata.obsm[out_key] = sub.obsm["X_lsi"]
+    if out_key == "X_lsi":
+        full_varm = np.zeros((adata.n_vars, sub.varm["LSI"].shape[1]),
+                              dtype=sub.varm["LSI"].dtype)
+        full_varm[np.where(hvg_mask)[0]] = sub.varm["LSI"]
+        adata.varm["LSI"] = full_varm
+        adata.uns["lsi"] = {"stdev": sub.uns["lsi"]["stdev"]}
 
 
 def anndata_cluster(
@@ -76,21 +81,23 @@ def anndata_cluster(
             print("Applying log1p transformation...")
         sc.pp.log1p(adata)
 
+    # HVF1: sample-aware — for Z_clust (byte-identical to pre-Batch-2).
     if verbose:
-        print("Running HVF selection (flag only, no subset)...")
+        print("Running HVF1 (sample-aware) selection (flag only, no subset)...")
     sc.pp.highly_variable_genes(
         adata, n_top_genes=num_cell_hvfs, flavor="seurat_v3",
         batch_key=sample_column if sample_column in adata.obs.columns else None,
     )
     n_hvf = int(adata.var["highly_variable"].sum())
     if verbose:
-        print(f"After HVF selection: {n_hvf} flagged / {adata.shape[1]} total features")
+        print(f"After HVF1 (sample-aware) selection: {n_hvf} flagged / {adata.shape[1]} total features")
 
     if verbose:
-        print(f"Running LSI with {cell_embedding_num_PCs} components (drop_first={drop_first_lsi})...")
-    _run_lsi_on_hvg(adata, n_comps=cell_embedding_num_PCs, drop_first=drop_first_lsi)
+        print(f"Running LSI (HVF1) with {cell_embedding_num_PCs} components (drop_first={drop_first_lsi})...")
+    _run_lsi_on_hvg(adata, n_comps=cell_embedding_num_PCs, drop_first=drop_first_lsi,
+                    hvg_col="highly_variable", out_key="X_lsi")
 
-    # --- Pass 1: sample-removed ---
+    # --- Pass 1: sample-removed (byte-identical to pre-Batch-2: nothing new ran before this) ---
     if verbose:
         print("=== [GPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
@@ -104,26 +111,44 @@ def anndata_cluster(
     else:
         adata.obsm["Z_clust"] = adata.obsm["X_lsi"].copy()
 
-    # --- Pass 2: sample-preserved ---
+    # RMD basis block — moved here (after Z_clust) so the RNG state consumed by
+    # Z_clust Harmony is byte-identical to pre-Batch-2.  HVF2 runs on the same
+    # TF-IDF+log1p .X as HVF1 (no counts layer for ATAC).
+    adata.var["highly_variable_clust"] = adata.var["highly_variable"].to_numpy().copy()
+    if verbose:
+        print("Running HVF2 (sample-naive) selection...")
+    sc.pp.highly_variable_genes(
+        adata, n_top_genes=num_cell_hvfs, flavor="seurat_v3", batch_key=None,
+    )
+    adata.var["highly_variable_rmd"] = adata.var["highly_variable"].to_numpy().copy()
+    adata.var["highly_variable"] = adata.var["highly_variable_clust"]
+
+    if verbose:
+        print(f"Running LSI (HVF2/rmd) with {cell_embedding_num_PCs} components...")
+    _run_lsi_on_hvg(adata, n_comps=cell_embedding_num_PCs, drop_first=drop_first_lsi,
+                    hvg_col="highly_variable_rmd", out_key="X_lsi_rmd")
+
+    # --- Pass 2: sample-preserved (Z_rmd from X_lsi_rmd) ---
     if cell_level_batch_key_no_sample:
         if verbose:
             print("=== [GPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
         adata.obsm["Z_rmd"] = harmonize(
-            adata.obsm["X_lsi"], adata.obs,
+            adata.obsm["X_lsi_rmd"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
             use_gpu=True,
         )
     else:
         if verbose:
-            print("=== [GPU] Harmony pass 2: no extra batch covariate → using raw X_lsi ===")
+            print("=== [GPU] Harmony pass 2: no extra batch covariate → using raw X_lsi_rmd ===")
         adata.obsm["Z_rmd"] = np.asarray(
-            adata.obsm["X_lsi"], dtype=np.float32)
+            adata.obsm["X_lsi_rmd"], dtype=np.float32)
 
     if verbose:
-        print(f"  Z_clust        shape: {adata.obsm['Z_clust'].shape}")
-        print(f"  Z_rmd shape: {adata.obsm['Z_rmd'].shape}")
+        print(f"  Z_clust   shape: {adata.obsm['Z_clust'].shape}")
+        print(f"  X_lsi_rmd shape: {adata.obsm['X_lsi_rmd'].shape}")
+        print(f"  Z_rmd     shape: {adata.obsm['Z_rmd'].shape}")
 
     save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
     safe_h5ad_write(adata, save_path)
@@ -234,7 +259,7 @@ def preprocess_gpu(
     mu.pp.filter_obs(adata, "n_genes_by_counts",
                      lambda x: (x >= min_features) & (x <= max_features))
     if verbose:
-        print(f"After QC filtering: {adata.shape[0]} cells × {adata.shape[1]} features")
+        print(f"After initial filtering: {adata.shape[0]} cells × {adata.shape[1]} features")
 
     if doublet_detection and adata.n_vars >= 50:
         try:
@@ -246,20 +271,22 @@ def preprocess_gpu(
                 n_doublets = adata.obs["predicted_doublet"].sum()
                 adata = adata[~adata.obs["predicted_doublet"]].copy()
             if verbose:
-                print(f"Removed {n_doublets} doublets")
+                print(f"After doublet removal: {adata.shape[0]} cells (removed {n_doublets} doublets)")
         except (ValueError, RuntimeError) as e:
             if verbose:
                 print(f"Scrublet failed ({e}) — continuing without doublet removal.")
 
-    counts = adata.obs[sample_column].value_counts()
-    adata = adata[counts.loc[adata.obs[sample_column]].values >= min_cells_per_sample].copy()
+    cells_per_sample = adata.obs[sample_column].value_counts()
+    samples_to_keep = cells_per_sample[cells_per_sample >= min_cells_per_sample].index
+    adata = adata[adata.obs[sample_column].isin(samples_to_keep)].copy()
     if verbose:
-        print(f"After sample filtering: {adata.shape[0]} cells")
+        print(f"After sample filtering: {adata.shape[0]} cells × {adata.shape[1]} features")
+        print(f"Samples remaining: {len(samples_to_keep)}")
 
     if exclude_features:
         adata = adata[:, ~adata.var_names.isin(exclude_features)].copy()
         if verbose:
-            print(f"After excluding features: {adata.shape[1]} features remaining")
+            print(f"After feature exclusion: {adata.shape[0]} cells × {adata.shape[1]} features")
 
     adata = anndata_cluster(
         adata=adata, output_dir=output_dir,

@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# OS / editor
+.DS_Store
+
+# Logs & scratch artifacts
+logs/
+*.log
+*.backup
+*.tmp
+
+# Notebooks
+.ipynb_checkpoints/

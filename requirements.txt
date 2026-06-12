@@ -1,0 +1,28 @@
+# SampleDisco core (CPU) dependencies.
+# GPU acceleration is optional and environment/driver-specific: see
+# requirements-gpu.txt and .claude/CLAUDE.md.
+numpy>=1.23
+pandas>=1.5
+scipy>=1.9
+scikit-learn>=1.2
+scikit-misc>=0.3
+statsmodels>=0.13
+patsy>=0.5
+scanpy>=1.11
+anndata>=0.10
+muon>=0.1
+harmony-pytorch>=0.1
+harmonypy>=0.0.9
+scglue>=0.3
+torch>=2.0
+python-igraph>=0.10
+leidenalg>=0.9
+networkx>=3.0
+POT>=0.9
+pygam>=0.9
+numba>=0.57
+matplotlib>=3.6
+seaborn>=0.12
+pyyaml>=6.0
+ruamel.yaml>=0.17
+pybedtools>=0.9

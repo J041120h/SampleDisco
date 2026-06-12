@@ -1,0 +1,16 @@
+# Optional GPU acceleration for SampleDisco (Harmony / normalization / k-means /
+# scGLUE training). These packages are CUDA/driver-specific and are NOT installable
+# on all nodes. DO NOT `pip install -r` this blindly.
+#
+# See .claude/CLAUDE.md for the full story:
+#   - the rapids 25.8 stack lives in ~/.local (user-local) and needs driver >= CUDA 12.6
+#   - on driver-12.5 nodes use the `Claude` conda env (rapids 24.12) with PYTHONNOUSERSITE=1
+#   - exact working pins are recorded in
+#     .claude/_backup/local_pip_state_2026-05-20_pre_cupy_downgrade.txt
+#
+# Representative packages (install into a CUDA-matched environment):
+rapids-singlecell
+cupy-cuda12x
+cuml-cu12
+cudf-cu12
+rmm-cu12

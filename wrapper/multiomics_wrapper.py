@@ -28,9 +28,20 @@ def _resolve_embedding_keys(adata, cluster_override=None, rmd_override=None):
     (Mode B). Falls back to ``X_glue`` only when neither has run (un-
     supported in the current pipeline, but keeps the failure mode honest).
     """
-    cluster = cluster_override or (
-        Z_CLUST_KEY if Z_CLUST_KEY in adata.obsm else XGLUE_KEY
-    )
+    # Cluster role MUST use the sample-removed Z_clust; falling back to
+    # X_glue (sample-preserved) here would silently leak per-sample variance
+    # into the composition blocks.
+    if cluster_override:
+        cluster = cluster_override
+    elif Z_CLUST_KEY in adata.obsm:
+        cluster = Z_CLUST_KEY
+    else:
+        raise KeyError(
+            f"Cluster embedding key {Z_CLUST_KEY!r} not found in adata.obsm "
+            f"(available: {list(adata.obsm.keys())}). "
+            "The sample-removed cluster embedding is required for the composition "
+            "blocks. Run harmonize_xglue or set run_glue_twice_for_sample_removal=True."
+        )
     rmd = rmd_override or (
         Z_RMD_KEY if Z_RMD_KEY in adata.obsm else XGLUE_KEY
     )
@@ -96,6 +107,8 @@ def multiomics_wrapper(
     species="homo_sapiens",
     use_highly_variable=True,
     n_top_genes=2000,
+    n_top_peaks=50000,
+    atac_min_cells_floor=10,
     n_pca_comps=50,
     n_lsi_comps=50,
     lsi_n_iter=15,
@@ -257,6 +270,7 @@ def multiomics_wrapper(
             run_visualization=run_glue_visualization,
             ensembl_release=ensembl_release, species=species,
             use_highly_variable=use_highly_variable, n_top_genes=n_top_genes,
+            n_top_peaks=n_top_peaks, atac_min_cells_floor=atac_min_cells_floor,
             n_pca_comps=n_pca_comps, n_lsi_comps=n_lsi_comps, gtf_by=gtf_by,
             flavor=flavor, generate_umap=generate_umap,
             rna_sample_column=rna_sample_column, atac_sample_column=atac_sample_column,

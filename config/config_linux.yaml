@@ -47,7 +47,7 @@ large_data_need_extra_memory: true
 
 # --- Input/Output Paths ---
 rna_count_data_path: "/dcs07/hongkai/data/harry/result/health_aging_PBMC/data/benchmark_ready/pbmc_benchmark_ready.h5ad"
-rna_output_dir: null                   # -> {output_dir}/rna
+rna_output_dir:                        # -> {output_dir}/rna
 
 # --- Pipeline Control Flags ---
 # Per user: try the package's standard preprocess (Option A). 745 GB RAM on
@@ -66,34 +66,34 @@ rna_visualize_data: false              # cell-level UMAP comes from cell_types s
 rna_dimension_association_analysis: true   # post-embedding R^2 of Age vs dims
 
 # --- Resume Paths ---
-rna_adata_cell_path: null
-rna_adata_sample_path: null
-rna_sample_meta_path: null             # all metadata already in obs
-rna_cell_meta_path: null
-rna_pseudo_adata_path: null
+rna_adata_cell_path:
+rna_adata_sample_path:
+rna_sample_meta_path:                  # all metadata already in obs
+rna_cell_meta_path:
+rna_pseudo_adata_path:
 
 # --- Common Column Names ---
 rna_sample_col: "Tube_id"              # 317 visits (paper's sample unit)
 rna_sample_level_batch_col:
-  - "Batch"                            # 14 sequencing batches (AS044-AS062)
+- "Batch"                              # 14 sequencing batches (AS044-AS062)
 rna_celltype_col: "Cluster_names"      # 9 broad PBMC types
 
 # --- Preprocessing Parameters ---
 rna_min_cells: 500                     # gene present in >=500 cells (500/1.92M = 0.026%)
 rna_min_genes: 500                     # cell with >=500 detected genes
 rna_pct_mito_cutoff: 20.0
-rna_exclude_genes: null
+rna_exclude_genes:
 rna_num_cell_hvgs: 2000                # matches AIFI / covid / blood / long-covid
 rna_cell_embedding_num_pcs: 20
 rna_num_harmony_iterations: 30
 rna_cell_level_batch_key:              # Pass 2 (sample-preserved Z_rmd) batch keys
-  - "Batch"                            # Pass 1 (Z_clust) auto-appends sample col
+- "Batch"                              # Pass 1 (Z_clust) auto-appends sample col
 
 # --- Cell Type Clustering Parameters ---
 rna_leiden_cluster_resolution: 0.8     # unused (existing_cell_types=true)
-rna_cell_embedding_column: null        # -> "Z_clust"
+rna_cell_embedding_column:             # -> "Z_clust"
 rna_existing_cell_types: true          # use Cluster_names directly
-rna_n_target_cell_clusters: null       # keep all 9
+rna_n_target_cell_clusters:            # keep all 9
 rna_umap: true                         # cell-level UMAP for inspection
 
 # --- Sample Embedding Parameters (composition + RMD) ---
@@ -102,7 +102,7 @@ rna_sample_embedding_fine_K: 300
 rna_sample_embedding_rmd_dim: 8
 rna_sample_embedding_use_clr: false
 rna_sample_embedding_use_rmd: true
-rna_sample_embedding_block_weights: null   # inverse-variance auto-derive
+rna_sample_embedding_block_weights:        # inverse-variance auto-derive
 rna_sample_embedding_rmd_weight: 0.60
 rna_sample_embedding_pca_components: 10
 rna_sample_embedding_batch_method: "harmony"
@@ -113,57 +113,57 @@ rna_autotune_search: "bayesian"
 rna_autotune_scoring: "auto"
 rna_autotune_scope: "alpha_only"
 rna_autotune_alpha_bounds: [0.1, 10.0]
-rna_autotune_grouping_col: null
+rna_autotune_grouping_col:
 
 # --- Trajectory Analysis Parameters (unused) ---
 rna_n_cca_pcs: 10
 rna_trajectory_col: "Age"
 rna_trajectory_supervised: false
 rna_trajectory_visualization_label:
-  - "Age"
+- "Age"
 rna_cca_pvalue: false
-rna_tscan_origin: null
-rna_tscan_n_clusters: null
+rna_tscan_origin:
+rna_tscan_n_clusters:
 rna_tscan_pseudotime_mode: "rank"
 
 # --- Sample Distance Parameters (unused) ---
 rna_sample_distance_methods:
-  - "cosine"
-  - "correlation"
+- "cosine"
+- "correlation"
 rna_grouping_columns:
-  - "Age_group"
-rna_summary_sample_csv_path: null
+- "Age_group"
+rna_summary_sample_csv_path:
 
 # --- Trajectory DGE Parameters (unused) ---
 rna_fdr_threshold: 0.05
 rna_effect_size_threshold: 1.0
 rna_top_n_genes: 100
-rna_trajectory_diff_gene_covariate: null
+rna_trajectory_diff_gene_covariate:
 rna_num_splines: 5
 rna_spline_order: 3
-rna_visualization_gene_list: null
+rna_visualization_gene_list:
 
 # --- Sample Clustering Parameters (unused) ---
 rna_cluster_number: 5                  # would map to Age_group A-E if used
 rna_cluster_differential_gene_group_col: "Age_group"
 
 # --- Visualization Parameters (unused) ---
-rna_age_bin_size: null
+rna_age_bin_size:
 rna_age_column: "Age"
 rna_plot_dendrogram_flag: true
 rna_plot_cell_type_proportions_pca_flag: true
 rna_plot_cell_type_expression_umap_flag: true
 
 # --- Dimension Association Analysis Parameters ---
-rna_association_continuous_cols: null  # auto-classified from obs
-rna_association_categorical_cols: null
+rna_association_continuous_cols:       # auto-classified from obs
+rna_association_categorical_cols:
 rna_association_n_permutations: 999
 
 # =============================================================================
 # ATAC PIPELINE PARAMETERS  (disabled - schema-completeness only)
 # =============================================================================
 atac_count_data_path: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
-atac_output_dir: null
+atac_output_dir:
 atac_preprocessing: false
 atac_cell_type_cluster: false
 atac_derive_sample_embedding: false
@@ -175,21 +175,21 @@ atac_proportion_test: false
 atac_cluster_dge: false
 atac_visualize_data: false
 atac_dimension_association_analysis: false
-atac_adata_cell_path: null
-atac_adata_sample_path: null
-atac_sample_meta_path: null
-atac_cell_meta_path: null
-atac_pseudo_adata_path: null
+atac_adata_cell_path:
+atac_adata_sample_path:
+atac_sample_meta_path:
+atac_cell_meta_path:
+atac_pseudo_adata_path:
 atac_sample_col: "sample"
-atac_sample_level_batch_col: null
+atac_sample_level_batch_col:
 atac_celltype_col: "cell_type"
-atac_cell_embedding_column: null
+atac_cell_embedding_column:
 atac_min_cells: 1
 atac_min_features: 2000
 atac_max_features: 15000
 atac_min_cells_per_sample: 1
-atac_exclude_features: null
-atac_cell_level_batch_key: null
+atac_exclude_features:
+atac_cell_level_batch_key:
 atac_doublet_detection: true
 atac_num_cell_hvfs: 50000
 atac_cell_embedding_num_pcs: 50
@@ -199,14 +199,14 @@ atac_log_transform: true
 atac_drop_first_lsi: true
 atac_leiden_cluster_resolution: 0.8
 atac_existing_cell_types: false
-atac_n_target_cell_clusters: null
+atac_n_target_cell_clusters:
 atac_umap: false
 atac_sample_embedding_medium_K: 120
 atac_sample_embedding_fine_K: 300
 atac_sample_embedding_rmd_dim: 8
 atac_sample_embedding_use_clr: false
 atac_sample_embedding_use_rmd: true
-atac_sample_embedding_block_weights: null
+atac_sample_embedding_block_weights:
 atac_sample_embedding_rmd_weight: 0.60
 atac_sample_embedding_pca_components: 10
 atac_sample_embedding_batch_method: "harmony"
@@ -215,38 +215,38 @@ atac_autotune_search: "bayesian"
 atac_autotune_scoring: "auto"
 atac_autotune_scope: "alpha_only"
 atac_autotune_alpha_bounds: [0.1, 10.0]
-atac_autotune_grouping_col: null
+atac_autotune_grouping_col:
 atac_n_cca_pcs: 2
 atac_trajectory_col: "sev.level"
 atac_trajectory_supervised: true
 atac_trajectory_visualization_label:
-  - "sev.level"
+- "sev.level"
 atac_cca_pvalue: false
-atac_tscan_origin: null
-atac_tscan_n_clusters: null
+atac_tscan_origin:
+atac_tscan_n_clusters:
 atac_tscan_pseudotime_mode: "rank"
 atac_sample_distance_methods:
-  - "cosine"
-  - "correlation"
+- "cosine"
+- "correlation"
 atac_grouping_columns:
-  - "sev.level"
-atac_summary_sample_csv_path: null
+- "sev.level"
+atac_summary_sample_csv_path:
 atac_fdr_threshold: 0.05
 atac_effect_size_threshold: 1.0
 atac_top_n_genes: 100
-atac_trajectory_diff_gene_covariate: null
+atac_trajectory_diff_gene_covariate:
 atac_num_splines: 5
 atac_spline_order: 3
-atac_visualization_gene_list: null
+atac_visualization_gene_list:
 atac_cluster_number: 4
 atac_cluster_differential_gene_group_col: "sev.level"
-atac_age_bin_size: null
+atac_age_bin_size:
 atac_age_column: "age"
 atac_plot_dendrogram_flag: true
 atac_plot_cell_type_proportions_pca_flag: false
 atac_plot_cell_type_expression_umap_flag: false
-atac_association_continuous_cols: null
-atac_association_categorical_cols: null
+atac_association_continuous_cols:
+atac_association_categorical_cols:
 atac_association_n_permutations: 999
 
 # =============================================================================
@@ -254,7 +254,7 @@ atac_association_n_permutations: 999
 # =============================================================================
 multiomics_rna_file: "/dcl01/hongkai/data/data/hjiang/Data/test_RNA.h5ad"
 multiomics_atac_file: "/dcl01/hongkai/data/data/hjiang/Data/test_ATAC.h5ad"
-multiomics_output_dir: null
+multiomics_output_dir:
 multiomics_integration: false
 multiomics_sample_distance_calculation: false
 multiomics_trajectory_analysis: false
@@ -268,15 +268,15 @@ multiomics_run_glue_preprocessing: false
 multiomics_run_glue_training: false
 multiomics_cell_type_cluster: false
 multiomics_run_glue_visualization: false
-multiomics_integrated_h5ad_path: null
-multiomics_pseudobulk_h5ad_path: null
-multiomics_rna_sample_meta_file: null
-multiomics_atac_sample_meta_file: null
-multiomics_additional_hvg_file: null
+multiomics_integrated_h5ad_path:
+multiomics_pseudobulk_h5ad_path:
+multiomics_rna_sample_meta_file:
+multiomics_atac_sample_meta_file:
+multiomics_additional_hvg_file:
 multiomics_rna_sample_column: "sample"
 multiomics_atac_sample_column: "sample"
 multiomics_sample_col: "sample"
-multiomics_batch_col: null
+multiomics_batch_col:
 multiomics_celltype_col: "cell_type"
 multiomics_modality_col: "modality"
 multiomics_verbose: true
@@ -299,7 +299,7 @@ multiomics_harmonize_xglue_max_iter: 50
 multiomics_run_glue_twice_for_sample_removal: false
 multiomics_save_prefix: "glue"
 multiomics_glue_data_batch_size: 1024
-multiomics_glue_max_epochs: null
+multiomics_glue_max_epochs:
 multiomics_glue_dataloader_num_workers: 4
 multiomics_glue_dataloader_fetches_per_worker: 8
 multiomics_glue_array_shuffle_num_workers: 4
@@ -308,17 +308,17 @@ multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: 10
 multiomics_cluster_resolution: 0.8
-multiomics_use_rep_celltype: null
-multiomics_markers: null
+multiomics_use_rep_celltype:
+multiomics_markers:
 multiomics_generate_umap_celltype: true
-multiomics_plot_columns: null
+multiomics_plot_columns:
 multiomics_derive_sample_embedding: false
 multiomics_sample_embedding_medium_K: 120
 multiomics_sample_embedding_fine_K: 300
 multiomics_sample_embedding_rmd_dim: 8
 multiomics_sample_embedding_use_clr: false
 multiomics_sample_embedding_use_rmd: true
-multiomics_sample_embedding_block_weights: null
+multiomics_sample_embedding_block_weights:
 multiomics_sample_embedding_rmd_weight: 0.60
 multiomics_sample_embedding_pca_components: 10
 multiomics_sample_embedding_batch_method: "harmony"
@@ -327,48 +327,67 @@ multiomics_autotune_search: "bayesian"
 multiomics_autotune_scoring: "auto"
 multiomics_autotune_scope: "alpha_only"
 multiomics_autotune_alpha_bounds: [0.1, 10.0]
-multiomics_autotune_grouping_col: null
+multiomics_autotune_grouping_col:
 multiomics_trajectory_col: "sev.level"
 multiomics_trajectory_supervised: false
 multiomics_trajectory_visualization_label:
-  - "sev.level"
+- "sev.level"
 multiomics_n_cca_pcs: 2
 multiomics_cca_pvalue: false
-multiomics_tscan_origin: null
-multiomics_tscan_n_clusters: null
+multiomics_tscan_origin:
+multiomics_tscan_n_clusters:
 multiomics_tscan_pseudotime_mode: "rank"
 multiomics_sample_distance_methods:
-  - "cosine"
-  - "correlation"
+- "cosine"
+- "correlation"
 multiomics_grouping_columns:
-  - "sev.level"
-multiomics_summary_sample_csv_path: null
+- "sev.level"
+multiomics_summary_sample_csv_path:
 multiomics_fdr_threshold: 0.05
 multiomics_effect_size_threshold: 1.0
 multiomics_top_n_genes: 100
-multiomics_trajectory_diff_gene_covariate: null
+multiomics_trajectory_diff_gene_covariate:
 multiomics_num_splines: 5
 multiomics_spline_order: 3
-multiomics_visualization_gene_list: null
+multiomics_visualization_gene_list:
 multiomics_cluster_number: 4
-multiomics_cluster_differential_gene_group_col: null
-multiomics_age_bin_size: null
+multiomics_cluster_differential_gene_group_col:
+multiomics_age_bin_size:
 multiomics_age_column: "age"
 multiomics_plot_dendrogram_flag: true
 multiomics_plot_cell_type_proportions_pca_flag: false
 multiomics_plot_cell_type_expression_umap_flag: false
-multiomics_color_col: null
-multiomics_visualization_grouping_column: null
+multiomics_color_col:
+multiomics_visualization_grouping_column:
 multiomics_target_modality: "ATAC"
 multiomics_sample_embedding_key: "X_DR_sample"
 multiomics_figsize:
-  - 20
-  - 8
+- 20
+- 8
 multiomics_point_size: 60
 multiomics_alpha: 0.8
 multiomics_colormap: "viridis"
 multiomics_show_sample_names: false
-multiomics_force_data_type: null
-multiomics_association_continuous_cols: null
-multiomics_association_categorical_cols: null
+multiomics_force_data_type:
+multiomics_association_continuous_cols:
+multiomics_association_categorical_cols:
 multiomics_association_n_permutations: 999
+continue_on_error: false
+multiomics_atac_doublet_detection: true
+multiomics_atac_exclude_features:
+multiomics_atac_log_transform: true
+multiomics_atac_max_features: 15000
+multiomics_atac_min_cells: 1
+multiomics_atac_min_cells_per_sample: 1
+multiomics_atac_min_features: 2000
+multiomics_atac_tfidf_scale_factor: 10000.0
+multiomics_autotune_tune_on_modality:
+multiomics_rna_exclude_genes:
+multiomics_rna_min_cells: 500
+multiomics_rna_min_genes: 500
+multiomics_rna_pct_mito_cutoff: 20.0
+multiomics_run_glue_merge: true
+multiomics_run_glue_preprocess_per_modality: true
+random_state: 42
+multiomics_atac_min_cells_floor: 10
+multiomics_n_top_peaks: 50000

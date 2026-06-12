@@ -1,5 +1,6 @@
 import argparse
 import sys
+import traceback
 import yaml
 import os
 import inspect
@@ -63,6 +64,7 @@ def main():
             wrapper(**config)
         except Exception as e:
             print(f"Error: {e}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
             sys.exit(1)
 
 if __name__ == "__main__":

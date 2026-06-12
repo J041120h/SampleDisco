@@ -67,7 +67,7 @@ def create_categorical_colormap(unique_values, colormap='tab20'):
         colors = plt.cm.tab20(np.linspace(0, 1, n_categories))
     else:
         # For many categories, use a continuous colormap
-        base_cmap = plt.cm.get_cmap(colormap)
+        base_cmap = plt.get_cmap(colormap)
         colors = base_cmap(np.linspace(0, 1, n_categories))
     
     # Create mapping from value to color
@@ -82,11 +82,11 @@ def create_quantitative_colormap(values, colormap='viridis'):
     unique_values = sorted(set(values))
     
     if len(unique_values) == 1:
-        base_cmap = plt.cm.get_cmap(colormap)
+        base_cmap = plt.get_cmap(colormap)
         return {unique_values[0]: base_cmap(0.5)}
     
     min_val, max_val = min(unique_values), max(unique_values)
-    base_cmap = plt.cm.get_cmap(colormap)
+    base_cmap = plt.get_cmap(colormap)
     
     color_map = {}
     for val in unique_values:
@@ -490,7 +490,7 @@ def plot_embedding_colored_by_column(adata, embedding_key, color_col, ax,
         # Categorical coloring
         # Get colormap
         if isinstance(categorical_cmap, str):
-            cmap = plt.cm.get_cmap(categorical_cmap)
+            cmap = plt.get_cmap(categorical_cmap)
         else:
             cmap = categorical_cmap
         
@@ -574,7 +574,7 @@ def plot_multimodal_embedding(adata, modality_col, color_col, target_modality, e
                                 cmap=colormap, edgecolors='white', linewidths=0.5)
     else:
         # Categorical
-        cmap = plt.cm.get_cmap('tab10')
+        cmap = plt.get_cmap('tab10')
         try:
             sorted_values = sorted(unique_values)
         except TypeError:

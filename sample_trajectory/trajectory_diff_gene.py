@@ -987,6 +987,10 @@ def run_trajectory_gam_differential_gene_analysis(
     group_col: Optional[str] = None,
     n_clusters: int = 3,
     top_n_genes_for_curves: int = 20,
+    # anchor_col: numeric obs column used to orient pseudotime so that
+    # "UP" always means increasing with the biological axis (e.g. sev.level).
+    # When provided, pseudotime is flipped if corr(pseudotime, anchor) < 0.
+    anchor_col: Optional[str] = None,
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
@@ -1070,6 +1074,32 @@ def run_trajectory_gam_differential_gene_analysis(
         pseudotime_col=pseudotime_col,
         verbose=verbose
     )
+
+    # Orient pseudotime so that it increases with the anchor column (if given).
+    # This makes UP/DOWN labels stable across runs regardless of TSCAN's origin.
+    if anchor_col is not None and anchor_col in pseudobulk_adata.obs.columns:
+        anchor = pseudobulk_adata.obs[anchor_col]
+        shared = [s for s in ptime_dict if s in anchor.index]
+        if shared:
+            pt_vals = np.array([ptime_dict[s] for s in shared], dtype=float)
+            anc_vals = anchor.loc[shared].values.astype(float)
+            valid = np.isfinite(pt_vals) & np.isfinite(anc_vals)
+            if valid.sum() >= 2:
+                corr = np.corrcoef(pt_vals[valid], anc_vals[valid])[0, 1]
+                if np.isfinite(corr) and corr < 0:
+                    max_pt = max(ptime_dict.values())
+                    ptime_dict = {s: max_pt - v for s, v in ptime_dict.items()}
+                    if verbose:
+                        print(f"  → Flipped pseudotime to align with anchor '{anchor_col}' "
+                              f"(corr before flip: {corr:.3f})")
+    elif anchor_col is not None:
+        import warnings
+        warnings.warn(
+            f"anchor_col '{anchor_col}' not found in pseudobulk_adata.obs; "
+            "pseudotime orientation is not anchored.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
     # 2. Prepare GAM inputs
     if verbose:

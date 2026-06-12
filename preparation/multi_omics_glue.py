@@ -57,6 +57,30 @@ from utils.safe_save import safe_h5ad_write
 from utils.merge_sample_meta import merge_sample_metadata
 from visualization.multi_omics_visualization import glue_visualize
 
+def _peak_hvf_with_retries(adata_sub: ad.AnnData, n_top: int) -> pd.Index:
+    """seurat_v3 HVG on raw-count ATAC subset with LOESS span retries.
+
+    Mirrors rna_preprocess_cpu._hvg_with_retries — tries spans [0.3, 0.5,
+    0.8, 1.0] and catches the reciprocal-condition-number LOESS failure.
+    Returns the index of selected peak names (n_top or fewer).
+    """
+    spans = [0.3, 0.5, 0.8, 1.0]
+    last_err = None
+    for span in spans:
+        try:
+            sc.pp.highly_variable_genes(
+                adata_sub, n_top_genes=n_top, flavor="seurat_v3", span=span,
+            )
+            return adata_sub.var_names[adata_sub.var["highly_variable"]]
+        except ValueError as exc:
+            arg = exc.args[0] if exc.args else ""
+            msg = arg.decode("utf-8", "ignore") if isinstance(arg, bytes) else str(arg)
+            if "reciprocal condition number" not in msg:
+                raise
+            last_err = exc
+    raise last_err if last_err else RuntimeError("Peak HVF selection failed")
+
+
 def glue_preprocess_pipeline(
     rna_file: str,
     atac_file: str,
@@ -68,6 +92,8 @@ def glue_preprocess_pipeline(
     output_dir: str = "./",
     use_highly_variable: bool = True,
     n_top_genes: int = 2000,
+    n_top_peaks: int = 50000,
+    atac_min_cells_floor: int = 10,
     n_pca_comps: int = 100,
     n_lsi_comps: int = 100,
     gtf_by: str = "gene_name",
@@ -273,21 +299,35 @@ def glue_preprocess_pipeline(
     # Process based on feature selection strategy
     if use_highly_variable:
         print(f"   Computing feature statistics for peak selection")
-        # Calculate peak statistics for highly variable selection
         peak_counts = np.array(atac.X.sum(axis=0)).flatten()
         peak_cells = np.array((atac.X > 0).sum(axis=0)).flatten()
-        
-        # Select top peaks based on coverage
-        n_top_peaks = min(50000, atac.n_vars)  # Default to top 50k peaks or all if less
-        top_peak_indices = np.argsort(peak_counts)[-n_top_peaks:]
-        
-        # Mark highly variable peaks
-        atac.var['highly_variable'] = False
-        atac.var.iloc[top_peak_indices, atac.var.columns.get_loc('highly_variable')] = True
         atac.var['n_cells'] = peak_cells
         atac.var['n_counts'] = peak_counts
-        
-        print(f"   Selected {n_top_peaks} highly accessible peaks")
+
+        # This highly_variable flag drives BOTH the LSI basis (scglue.data.lsi at line ~300
+        # auto-uses it) AND the scGLUE training subgraph (~line 630). Switching
+        # coverage->variability improves both consistently.
+        effective_floor = max(atac_min_cells_floor, int(np.ceil(0.001 * atac.n_obs)))
+        passes_floor = peak_cells >= effective_floor
+        n_eligible = int(passes_floor.sum())
+
+        atac.var['highly_variable'] = False
+
+        if n_eligible <= n_lsi_comps:
+            # Degenerate: too few peaks pass floor — use all floor-passing peaks.
+            selected_names = atac.var_names[passes_floor] if n_eligible > 0 else atac.var_names
+        else:
+            n_top = max(1, min(n_top_peaks, n_eligible))
+            # seurat_v3 needs raw counts — atac.X is raw at this point (loaded at
+            # ~line 141; lsi at ~line 300 does its own internal TF-IDF without
+            # mutating .X).
+            adata_sub = atac[:, passes_floor].copy()
+            selected_names = _peak_hvf_with_retries(adata_sub, n_top)
+
+        atac.var.loc[selected_names, 'highly_variable'] = True
+        print(f"   Selected {int(atac.var['highly_variable'].sum())} VARIABLE peaks "
+              f"(floor: open in >= {effective_floor} cells; "
+              f"{n_eligible} eligible of {atac.n_vars})")
     else:
         print(f"   Using all {atac.n_vars} peaks")
         # Mark all peaks as highly variable for compatibility
@@ -778,6 +818,8 @@ def multiomics_preparation(
     species: str = "homo_sapiens",
     use_highly_variable: bool = True,
     n_top_genes: int = 2000,
+    n_top_peaks: int = 50000,
+    atac_min_cells_floor: int = 10,
     n_pca_comps: int = 50,
     n_lsi_comps: int = 50,
     gtf_by: str = "gene_name",
@@ -868,6 +910,8 @@ def multiomics_preparation(
             output_dir=glue_output_dir,
             use_highly_variable=use_highly_variable,
             n_top_genes=n_top_genes,
+            n_top_peaks=n_top_peaks,
+            atac_min_cells_floor=atac_min_cells_floor,
             n_pca_comps=n_pca_comps,
             n_lsi_comps=n_lsi_comps,
             gtf_by=gtf_by,

@@ -39,7 +39,6 @@ def cell_types_gpu(
     if _recursion_depth == 0:
         from utils.random_seed import set_global_seed
         set_global_seed(seed=42)
-        rsc.get.anndata_to_GPU(adata)
 
     if cell_embedding_column is None:
         cell_embedding_column = "Z_clust"
@@ -67,6 +66,7 @@ def cell_types_gpu(
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
+            rsc.get.anndata_to_GPU(adata)
             if is_atac:
                 rsc.pp.neighbors(adata, use_rep=cell_embedding_column, metric="cosine", random_state=42)
             else:
@@ -79,6 +79,7 @@ def cell_types_gpu(
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types] Building neighborhood graph...")
+            rsc.get.anndata_to_GPU(adata)
             if is_atac:
                 rsc.pp.neighbors(adata, use_rep=cell_embedding_column, metric="cosine", random_state=42)
             else:

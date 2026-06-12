@@ -116,7 +116,8 @@ def downstream_analysis(
     # ===== General settings =====
     use_gpu: bool = False,
     verbose: bool = True,
-    
+    random_state: int = 42,
+
     # ===== Common column names =====
     sample_col: str = 'sample',
     batch_col: Optional[Union[str, List[str]]] = None,
@@ -316,6 +317,9 @@ def downstream_analysis(
                 spline_order=spline_order,
                 output_dir=trajectory_diff_gene_output_dir,
                 visualization_gene_list=visualization_gene_list,
+                # Orient pseudotime to increase with the biological axis so
+                # UP/DOWN labels are stable across runs.
+                anchor_col=trajectory_col if not trajectory_supervised else None,
                 verbose=verbose,
             )
 
@@ -390,6 +394,7 @@ def downstream_analysis(
                     verbose=verbose,
                     intercept=True,
                     n_jobs=-1,
+                    seed=random_state,
                 )
                 run_pairwise_tests(
                     fit=fit,
@@ -397,6 +402,7 @@ def downstream_analysis(
                     fdrmethod='fdr_bh',
                     fdr_threshold=0.05,
                     verbose=True,
+                    random_state=random_state,
                 )
             else:
                 print("No sample clustering results available. Skipping RAISIN analysis.")
@@ -514,6 +520,14 @@ def wrapper(
     verbose: bool = True,
     save_intermediate: bool = True,
     large_data_need_extra_memory: bool = False,
+    # continue_on_error=False: re-raise per-pipeline exceptions so callers
+    # see a nonzero exit. Set True only for batch jobs where partial results
+    # from a failed modality are still wanted.
+    continue_on_error: bool = False,
+    # TODO: unify random_state across Harmony (currently 0), k-means
+    # (currently 0), and cell-typing (currently seed=42) once a re-baseline
+    # run is approved.  For now this seeds sample_embedding + RAISIN only.
+    random_state: int = 42,
     
     # ==========================================================================
     # RNA PIPELINE PARAMETERS
@@ -787,6 +801,8 @@ def wrapper(
     multiomics_species: str = "homo_sapiens",
     multiomics_use_highly_variable: bool = True,
     multiomics_n_top_genes: int = 2000,
+    multiomics_n_top_peaks: int = 50000,
+    multiomics_atac_min_cells_floor: int = 10,
     multiomics_n_pca_comps: int = 50,
     multiomics_n_lsi_comps: int = 50,
     multiomics_lsi_n_iter: int = 15,
@@ -1143,9 +1159,10 @@ def wrapper(
                 autotune_scope=rna_autotune_scope,
                 autotune_alpha_bounds=rna_autotune_alpha_bounds,
                 autotune_grouping_col=rna_autotune_grouping_col,
+                seed=random_state,
             )
             status_flags = rna_results['status_flags']
-            
+
             # Build the in-memory sample-level AnnData from the cell-level adata
             # (its .uns['X_DR_sample'] was populated by compute_sample_embedding).
             from sample_embedding.sample_embedding import build_sample_adata
@@ -1171,6 +1188,7 @@ def wrapper(
                 # General
                 use_gpu=gpu_available,
                 verbose=verbose,
+                random_state=random_state,
                 # Column names
                 sample_col=rna_sample_col,
                 batch_col=rna_slb_list or None,
@@ -1218,11 +1236,12 @@ def wrapper(
             print("\nRNA pipeline completed successfully!")
             
         except Exception as e:
-            print(f"\nRNA pipeline failed: {e}")
+            import traceback as _tb
+            print(f"\nRNA pipeline failed: {e}", file=sys.stderr)
+            print(_tb.format_exc(), file=sys.stderr)
             results['rna_error'] = str(e)
-            if verbose:
-                import traceback
-                traceback.print_exc()
+            if not continue_on_error:
+                raise
 
     # ==================== ATAC PIPELINE ====================
     if run_atac_pipeline:
@@ -1295,6 +1314,7 @@ def wrapper(
                 autotune_scope=atac_autotune_scope,
                 autotune_alpha_bounds=atac_autotune_alpha_bounds,
                 autotune_grouping_col=atac_autotune_grouping_col,
+                seed=random_state,
             )
             status_flags = atac_results['status_flags']
             
@@ -1321,6 +1341,7 @@ def wrapper(
                 # General
                 use_gpu=gpu_available,
                 verbose=verbose,
+                random_state=random_state,
                 # Column names
                 sample_col=atac_sample_col,
                 batch_col=atac_slb_list or None,
@@ -1368,11 +1389,12 @@ def wrapper(
             print("\nATAC pipeline completed successfully!")
             
         except Exception as e:
-            print(f"\nATAC pipeline failed: {e}")
+            import traceback as _tb
+            print(f"\nATAC pipeline failed: {e}", file=sys.stderr)
+            print(_tb.format_exc(), file=sys.stderr)
             results['atac_error'] = str(e)
-            if verbose:
-                import traceback
-                traceback.print_exc()
+            if not continue_on_error:
+                raise
 
     # ==================== MULTIOMICS PIPELINE ====================
     if run_multiomics_pipeline:
@@ -1423,6 +1445,8 @@ def wrapper(
                 species=multiomics_species,
                 use_highly_variable=multiomics_use_highly_variable,
                 n_top_genes=multiomics_n_top_genes,
+                n_top_peaks=multiomics_n_top_peaks,
+                atac_min_cells_floor=multiomics_atac_min_cells_floor,
                 n_pca_comps=multiomics_n_pca_comps,
                 n_lsi_comps=multiomics_n_lsi_comps,
                 lsi_n_iter=multiomics_lsi_n_iter,
@@ -1543,6 +1567,7 @@ def wrapper(
                 # General
                 use_gpu=multiomics_use_gpu and gpu_available,
                 verbose=multiomics_verbose,
+                random_state=random_state,
                 # Column names
                 sample_col=multiomics_sample_col,
                 batch_col=multiomics_batch_col,
@@ -1602,16 +1627,25 @@ def wrapper(
             print("\nMultiomics pipeline completed successfully!")
             
         except Exception as e:
-            print(f"\nMultiomics pipeline failed: {e}")
+            import traceback as _tb
+            print(f"\nMultiomics pipeline failed: {e}", file=sys.stderr)
+            print(_tb.format_exc(), file=sys.stderr)
             results['multiomics_error'] = str(e)
-            if verbose:
-                import traceback
-                traceback.print_exc()
+            if not continue_on_error:
+                raise
     
     # Final summary
     elapsed_time = time.time() - start_time
     print(f"\nTotal execution time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-    
+
+    error_keys = [k for k in ('rna_error', 'atac_error', 'multiomics_error') if k in results]
+    if error_keys:
+        print(
+            f"\nWARNING: {len(error_keys)} pipeline(s) failed "
+            f"(continue_on_error=True): {error_keys}",
+            file=sys.stderr,
+        )
+
     return results
 
 
