@@ -286,7 +286,6 @@ def downstream_analysis(
 
         sf["trajectory_analysis"] = True
 
-        # Store pseudotime in obs so prediction/association modules can use it
         _store_pseudotime_in_obs(pseudo_adata, ptime_sample, "pseudotime_sample")
 
         # ==================== TRAJECTORY DGE ====================
@@ -326,7 +325,6 @@ def downstream_analysis(
             sf["trajectory_dge"] = True
             print("Trajectory differential gene analysis completed!")
 
-    # Clean up summary file if exists
     if os.path.exists(summary_sample_csv_path):
         os.remove(summary_sample_csv_path)
 
@@ -970,11 +968,7 @@ def wrapper(
         Dictionary containing results from all executed pipelines.
     """
     start_time = time.time()
-    
-    # Create output directory
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    
-    # Check system capabilities
     is_linux = platform.system() == "Linux"
     gpu_available = is_linux and use_gpu
     
@@ -985,7 +979,7 @@ def wrapper(
         'gpu_available': gpu_available
     }
     
-    # Initialize GPU if available; fall back to CPU on any import or runtime error
+    # Initialize RMM pool; fall back to CPU on any CUDA import or runtime error.
     if gpu_available:
         try:
             import rmm
@@ -1002,7 +996,6 @@ def wrapper(
             gpu_available = False
             system_info['gpu_available'] = False
     
-    # Install GPU dependencies if needed
     if gpu_available and initialization:
         try:
             print("Installing GPU dependencies...")
@@ -1018,7 +1011,6 @@ def wrapper(
             gpu_available = False
             system_info['gpu_available'] = False
     
-    # Initialize status tracking
     status_file_path = os.path.join(output_dir, "sys_log", "main_process_status.json")
     os.makedirs(os.path.dirname(status_file_path), exist_ok=True)
     
@@ -1064,7 +1056,6 @@ def wrapper(
         "system_info": system_info
     }
     
-    # Load or initialize status
     if os.path.exists(status_file_path) and not initialization:
         try:
             with open(status_file_path, 'r') as f:

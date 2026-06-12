@@ -34,7 +34,10 @@ def cell_types_multiomics_gpu(
     verbose=True,
     generate_plots=True,
 ):
+    """GPU variant of cell_types_multiomics (rapids_singlecell Leiden + cuML kNN).
 
+    use_rep should be Z_clust (sample-REMOVED); wrapper resolves automatically.
+    """
     if verbose:
         print("\n" + "="*60)
         print("Cell Type Assignment for Multi-omics Data")

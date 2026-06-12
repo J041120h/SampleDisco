@@ -15,46 +15,32 @@ def subset_h5ad_by_batch_samples(
     csv_batch_col: str = "batch",
     ad_sample_col: str = "sample",
 ) -> Tuple[str, int, int]:
-    """
-    Subset an .h5ad dataset to only cells originating from samples whose `csv_batch_col == batch_name`
-    (default "Su"), preserving all other information. Saves the subset to `out_path`.
+    """Subset an h5ad to cells from samples where ``csv_batch_col == batch_name``.
 
     Parameters
     ----------
     csv_path : str
-        Path to the CSV file containing at least the columns [csv_sample_col, csv_batch_col].
+        CSV with at least [csv_sample_col, csv_batch_col].
     h5ad_path : str
-        Path to the input .h5ad file to be subsetted.
+        Input h5ad.
     out_path : str
-        Path to save the subset .h5ad file.
-    batch_name : str, optional
-        The batch name to filter samples by (default: "Su").
-    csv_sample_col : str, optional
-        Column in the CSV containing sample IDs (default: "sample").
-    csv_batch_col : str, optional
-        Column in the CSV containing batch labels (default: "batch").
-    ad_sample_col : str, optional
-        Column in `adata.obs` that contains the sample ID for each cell (default: "sample").
+        Destination for the subset h5ad.
+    batch_name : str
+        Batch label to keep (default "Su").
+    csv_sample_col, csv_batch_col : str
+        Column names in the CSV.
+    ad_sample_col : str
+        Column in ``adata.obs`` carrying the sample ID.
 
     Returns
     -------
-    (out_path, n_cells, n_vars) : Tuple[str, int, int]
-        The path written, number of cells retained, and number of variables.
-
-    Raises
-    ------
-    FileNotFoundError
-        If csv_path or h5ad_path do not exist.
-    ValueError
-        If required columns are missing, or no matching samples/cells are found.
+    (out_path, n_cells_retained, n_vars)
     """
-    # --- Basic checks ---
     if not os.path.isfile(csv_path):
         raise FileNotFoundError(f"CSV not found: {csv_path}")
     if not os.path.isfile(h5ad_path):
         raise FileNotFoundError(f"H5AD not found: {h5ad_path}")
 
-    # --- Load CSV and validate columns ---
     meta = pd.read_csv(csv_path)
     for col in (csv_sample_col, csv_batch_col):
         if col not in meta.columns:
@@ -63,7 +49,6 @@ def subset_h5ad_by_batch_samples(
                 f"Available columns: {list(meta.columns)}"
             )
 
-    # --- Collect sample IDs from the desired batch ---
     su_samples: Sequence[str] = (
         meta.loc[meta[csv_batch_col].astype(str) == str(batch_name), csv_sample_col]
         .astype(str)
@@ -76,25 +61,20 @@ def subset_h5ad_by_batch_samples(
             f"No samples found in CSV where {csv_batch_col} == '{batch_name}'."
         )
 
-    # --- Read the AnnData object ---
     adata = ad.read_h5ad(h5ad_path)
 
-    # --- Ensure the AnnData has the required sample column ---
     if ad_sample_col not in adata.obs.columns:
-        # Provide a helpful hint if there are similarly named columns
         similar = [c for c in adata.obs.columns if "sample" in c.lower()]
         hint = f" Similar columns in adata.obs: {similar}" if similar else ""
         raise ValueError(
             f"AnnData obs missing required column '{ad_sample_col}'.{hint}"
         )
 
-    # --- Build mask for cells whose sample is in the desired set ---
     cell_samples = adata.obs[ad_sample_col].astype(str)
     mask = cell_samples.isin(su_samples)
 
     n_keep = int(mask.sum())
     if n_keep == 0:
-        # Give a concise diagnostic about overlap
         n_unique_adata_samples = int(cell_samples.nunique())
         raise ValueError(
             "No cells matched. "
@@ -103,10 +83,8 @@ def subset_h5ad_by_batch_samples(
             f"in obs['{ad_sample_col}']. Check that sample IDs align."
         )
 
-    # --- Subset and save ---
     adata_sub = adata[mask].copy()
-    # (Optional) annotate provenance
-    adata_sub.uns = dict(adata_sub.uns)  # ensure it's a plain dict
+    adata_sub.uns = dict(adata_sub.uns)  # ensure it's a plain dict before adding keys
     adata_sub.uns["subset_by_batch"] = {
         "csv_path": csv_path,
         "h5ad_path": h5ad_path,

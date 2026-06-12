@@ -18,7 +18,6 @@ def _preprocessing(
     age_column,
     verbose
 ):
-    # 1. Create output sub-directory
     output_dir = os.path.join(output_dir, "visualization")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -83,10 +82,7 @@ def visualization(
     plot_cell_type_proportions_pca_flag=False,
     plot_cell_type_expression_umap_flag=False,
 ):
-    """
-    Main function to handle all steps. Sub-functions are called conditionally based on flags.
-    """
-    # 1. Preprocessing
+    """Dispatch to sub-visualizations based on flags; preprocessing runs only when grouping_columns is set."""
     if grouping_columns:
         output_dir = _preprocessing(
             pseudobulk_anndata,
@@ -97,7 +93,6 @@ def visualization(
             verbose
         )
 
-    # 2. Dendrogram
     if plot_dendrogram_flag:
         plot_dendrogram(AnnData_cell, output_dir, verbose=verbose)
 

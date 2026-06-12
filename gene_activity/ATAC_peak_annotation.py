@@ -14,7 +14,6 @@ from tqdm import tqdm
 
 warnings.filterwarnings("ignore")
 
-# ─────────────────────────── helper functions ─────────────────────────
 def parse_peak(peak_str):
     """Parse a 'chr-start-end' style peak string into tuple(chrom, start, end)."""
     parts = peak_str.split("-")
@@ -67,7 +66,7 @@ def process_chromosome_batch(args):
                 )
                 in_gene_body = False
 
-            # Use interval overlap for gene body and promoter detection
+            # prefer interval overlap over center-point check for gene body and promoter
             in_gene_body_overlap = intervals_overlap(
                 peak["start"], peak["end"], 
                 gene["gene_start"], gene["gene_end"]
@@ -95,8 +94,8 @@ def process_chromosome_batch(args):
                 {
                     "peak": peak["peak"],
                     "peak_idx": peak["peak_idx"],
-                    "gene_id": gene["gene_id"],        # Primary identifier
-                    "gene_name": gene["gene_name"],    # For readability
+                    "gene_id": gene["gene_id"],
+                    "gene_name": gene["gene_name"],
                     "distance_to_tss": dist_to_tss,
                     "distance_to_gene": dist_to_gene,
                     "in_promoter": in_promoter_overlap,
@@ -114,7 +113,6 @@ def process_chromosome_batch(args):
     return overlaps
 
 
-# ─────────────────────── main annotation function ──────────────────────
 def annotate_atac_peaks_parallel(
     atac_file_path,
     *,
@@ -138,7 +136,6 @@ def annotate_atac_peaks_parallel(
     The *output_dir* argument specifies where all result files are written.
     """
 
-    # ── I/O set-up ──────────────────────────────────────────────────────
     output_dir = os.path.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
@@ -148,11 +145,9 @@ def annotate_atac_peaks_parallel(
     print(f"Starting parallel ATAC peak annotation with {n_threads} threads…")
     print(f"• Output directory : {output_dir}")
 
-    # ── load ATAC matrix ───────────────────────────────────────────────
     print("Loading ATAC data…")
     adata = ad.read_h5ad(atac_file_path)
 
-    # mean & sum accessibility
     print("Calculating peak statistics…")
     if hasattr(adata.X, "toarray"):  # sparse
         peak_means = np.asarray(adata.X.mean(axis=0)).ravel()
@@ -164,7 +159,6 @@ def annotate_atac_peaks_parallel(
     valid_peaks = peak_means >= min_peak_accessibility
     print(f"Filtering peaks: {valid_peaks.sum()}/{len(valid_peaks)} pass accessibility threshold")
 
-    # ── gene annotations ───────────────────────────────────────────────
     print("Loading gene annotations…")
     ensembl = pyensembl.EnsemblRelease(release=ensembl_release, species="homo_sapiens")
     try:
@@ -183,9 +177,7 @@ def annotate_atac_peaks_parallel(
         try:
             tss = gene.start if gene.strand == "+" else gene.end
 
-            # define window ---------------------------------------------------
             if use_gene_bounds:
-                # gene body ± extensions
                 if gene.strand == "+":
                     window_start = max(0, gene.start - extend_upstream)
                     window_end = gene.end + extend_downstream
@@ -193,7 +185,6 @@ def annotate_atac_peaks_parallel(
                     window_start = max(0, gene.start - extend_downstream)
                     window_end = gene.end + extend_upstream
             else:
-                # TSS-centred window
                 window_start = max(0, tss - extend_upstream)
                 window_end = tss + extend_downstream
 
@@ -207,8 +198,8 @@ def annotate_atac_peaks_parallel(
 
             gene_windows.append(
                 {
-                    "gene_id": gene.gene_id,           # Primary identifier
-                    "gene_name": gene.gene_name,       # For readability
+                    "gene_id": gene.gene_id,
+                    "gene_name": gene.gene_name,
                     "chromosome": gene.contig.replace("chr", ""),
                     "tss": tss,
                     "gene_start": gene.start,
@@ -225,7 +216,6 @@ def annotate_atac_peaks_parallel(
 
     genes_df = pd.DataFrame(gene_windows)
 
-    # ── parse peaks ────────────────────────────────────────────────────
     print("Parsing peak coordinates…")
     peaks_data = []
     for i, peak_name in enumerate(tqdm(adata.var_names, desc="Parsing peaks")):
@@ -252,7 +242,6 @@ def annotate_atac_peaks_parallel(
     peaks_df = pd.DataFrame(peaks_data)
     print(f"Parsed {len(peaks_df)} valid peaks")
 
-    # ── batching by chromosome ─────────────────────────────────────────
     peaks_by_chr = peaks_df.groupby("chromosome")
     genes_by_chr = genes_df.groupby("chromosome")
 
@@ -276,7 +265,6 @@ def annotate_atac_peaks_parallel(
         }
         chromosome_batches.append((chrom, peaks_chr, genes_chr, params))
 
-    # ── parallel processing ────────────────────────────────────────────
     print(f"Processing {len(chromosome_batches)} chromosomes in parallel…")
     with mp.Pool(n_threads) as pool:
         results = list(
@@ -287,7 +275,6 @@ def annotate_atac_peaks_parallel(
             )
         )
 
-    # ── combine & normalise weights ────────────────────────────────────
     print("Combining results…")
     annotation_df = pd.DataFrame([x for batch in results for x in batch])
     print(f"Found {len(annotation_df)} peak-gene associations")
@@ -300,33 +287,31 @@ def annotate_atac_peaks_parallel(
         if total > 0:
             annotation_df.loc[mask, "combined_weight"] = weights / total
 
-    # ── build peak-level summary dict ──────────────────────────────────
     print("Creating annotation dictionary…")
     peak_annotation = {}
     for peak_name, grp in tqdm(annotation_df.groupby("peak"), desc="Building annotations"):
         sorted_grp = grp.sort_values("combined_weight", ascending=False)
         peak_annotation[peak_name] = {
-            "gene_ids": sorted_grp["gene_id"].tolist(),      # Primary list (unique IDs)
-            "gene_names": sorted_grp["gene_name"].tolist(),  # For readability
+            "gene_ids": sorted_grp["gene_id"].tolist(),
+            "gene_names": sorted_grp["gene_name"].tolist(),
             "distances": sorted_grp["distance_to_tss"].tolist(),
             "weights": sorted_grp["combined_weight"].tolist(),
             "tss_weights": sorted_grp["tss_weight"].tolist(),
             "in_promoter": sorted_grp["in_promoter"].tolist(),
             "in_gene_body": sorted_grp["in_gene_body"].tolist(),
-            "best_gene_id": sorted_grp.iloc[0]["gene_id"],      # Primary best gene
-            "best_gene_name": sorted_grp.iloc[0]["gene_name"],  # For readability
+            "best_gene_id": sorted_grp.iloc[0]["gene_id"],
+            "best_gene_name": sorted_grp.iloc[0]["gene_name"],
             "best_weight": float(sorted_grp.iloc[0]["combined_weight"]),
         }
 
-    # ── summary stats ──────────────────────────────────────────────────
     stats = {
         "total_peaks": len(peaks_df),
         "annotated_peaks": len(peak_annotation),
         "coverage_percent": 100 * len(peak_annotation) / len(peaks_df),
         "mean_genes_per_peak": annotation_df.groupby("peak").size().mean(),
-        "mean_peaks_per_gene": annotation_df.groupby("gene_id").size().mean(),  # Use gene_id
+        "mean_peaks_per_gene": annotation_df.groupby("gene_id").size().mean(),
         "total_associations": len(annotation_df),
-        "n_unique_genes": annotation_df["gene_id"].nunique(),  # Use gene_id
+        "n_unique_genes": annotation_df["gene_id"].nunique(),
     }
 
     parameters = {
@@ -341,43 +326,37 @@ def annotate_atac_peaks_parallel(
         "min_peak_accessibility": min_peak_accessibility,
     }
 
-    # ── write outputs ──────────────────────────────────────────────────
     print("\nSaving results…")
     output_files = {}
 
     def _path(fname):
         return os.path.join(output_dir, fname)
 
-    # 1) full annotation table
     annotation_file = _path(f"{output_prefix}_full_annotations.parquet")
     annotation_df.to_parquet(annotation_file, index=False)
     output_files["annotation_df"] = annotation_file
     print(f"  • Full annotations : {annotation_file}")
 
-    # 2) peak-to-gene mapping (pickle)
     peak2gene_file = _path(f"{output_prefix}_peak2gene.pkl")
     with open(peak2gene_file, "wb") as f:
         pickle.dump(peak_annotation, f)
     output_files["peak2gene"] = peak2gene_file
     print(f"  • Peak-to-gene map  : {peak2gene_file}")
 
-    # 3) stats
     stats_file = _path(f"{output_prefix}_stats.json")
     with open(stats_file, "w") as f:
         json.dump(stats, f, indent=2)
     output_files["stats"] = stats_file
     print(f"  • Statistics       : {stats_file}")
 
-    # 4) parameters
     params_file = _path(f"{output_prefix}_parameters.json")
     with open(params_file, "w") as f:
         json.dump(parameters, f, indent=2)
     output_files["parameters"] = params_file
     print(f"  • Parameters       : {params_file}")
 
-    # 5) per-gene summary CSV (now indexed by gene_id)
     gene_summary = (
-        annotation_df.groupby(["gene_id", "gene_name"]).agg(  # Group by both for completeness
+        annotation_df.groupby(["gene_id", "gene_name"]).agg(
             n_peaks=("peak", "count"),
             n_promoter_peaks=("in_promoter", "sum"),
             n_gene_body_peaks=("in_gene_body", "sum"),
@@ -390,7 +369,6 @@ def annotate_atac_peaks_parallel(
     output_files["gene_summary"] = gene_summary_file
     print(f"  • Gene summary     : {gene_summary_file}")
 
-    # ── console summary ────────────────────────────────────────────────
     print("\n=== Annotation Summary ===")
     print(f"Total peaks processed            : {stats['total_peaks']:,}")
     print(
@@ -405,7 +383,6 @@ def annotate_atac_peaks_parallel(
     return output_files
 
 
-# ────────────────────── convenience reload helper ─────────────────────
 def load_annotations(*, output_prefix="atac_annotation", output_dir="."):
     """
     Reload results produced by `annotate_atac_peaks_parallel`.
@@ -445,9 +422,7 @@ def load_annotations(*, output_prefix="atac_annotation", output_dir="."):
     }
 
 
-# ────────────────────────────── CLI demo ──────────────────────────────
 if __name__ == "__main__":
-    # Example usage
     atac_path = "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
     results = annotate_atac_peaks_parallel(
         atac_path,

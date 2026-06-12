@@ -9,11 +9,10 @@ import scipy.spatial.distance as ssd
 from sample_clustering.cluster_helper import *
 
 def loadDistanceMatrix(filePath):
-    """Load symmetrical distance matrix from CSV."""
+    """Load a distance matrix CSV; mirrors upper triangle to lower to enforce symmetry."""
     df = pd.read_csv(filePath, index_col=0)
     df.replace("-", np.nan, inplace=True)
     matrix = df.to_numpy(dtype=float)
-    # Fill lower triangle from upper triangle to ensure symmetry
     iUpper = np.triu_indices_from(matrix, 1)
     matrix[(iUpper[1], iUpper[0])] = matrix[iUpper]
     return matrix, df.columns.tolist()
@@ -51,49 +50,35 @@ def upgmaTree(distanceMatrix, labels, title, ax):
     return linkageToPhylo(linkageMatrix, labels)
 
 def UPGMA(inputFilePath, generalOutputDir, custom_tree_name=None):
-    """
-    Process a single CSV file using UPGMA and output Nexus tree + visualization.
-    
-    Parameters:
-        inputFilePath (str): Path to distance matrix CSV file
-        generalOutputDir (str): Output folder to store .nex and .png files
-        custom_tree_name (str, optional): Custom name for the output tree file (without extension)
-    """
+    """Build a UPGMA tree from a distance-matrix CSV and write .nex + .png."""
     if not os.path.exists(inputFilePath):
         print(f"Input file '{inputFilePath}' not found.")
         return
-        
+
     os.makedirs(generalOutputDir, exist_ok=True)
-    
-    # Use custom tree name if provided, otherwise use the base filename
     baseName = custom_tree_name if custom_tree_name else os.path.splitext(os.path.basename(inputFilePath))[0]
     outputTreePath = os.path.join(generalOutputDir, f"{baseName}.nex")
     outputImagePath = os.path.join(generalOutputDir, f"{baseName}.png")
-    
+
     print(f"\nProcessing file: {inputFilePath} with tree name '{baseName}'")
-    
-    # Load distance matrix
+
     matrix, labels = loadDistanceMatrix(inputFilePath)
-    
-    # Create matplotlib figure
+
     fig, ax = plt.subplots(figsize=(8, len(labels) * 0.3 + 2))
     tree = upgmaTree(matrix, labels, f"UPGMA Tree: {baseName}", ax)
-    
-    # Save tree image
+
     fig.tight_layout()
     fig.savefig(outputImagePath)
     plt.close(fig)
     print(f" - Saved tree visualization to '{outputImagePath}'.")
-    
-    # Save Newick tree in Nexus format
+
     Phylo.write([tree], outputTreePath, "nexus")
     print(f" - Saved UPGMA tree to '{outputTreePath}' in Nexus format.")
-    
-    # Recompute distance matrix from tree (for optional consistency visualization)
+
+    # Recompute patristic distances from the fitted tree and re-render with visualizeTree
+    # for a consistent dendrogram style shared with NN and HRA/HRC.
     distanceMatrix, reorderedLabels = calculate_distance_matrix_from_tree(tree)
     condensedDist = ssd.squareform(distanceMatrix)
     linkageMatrix = linkage(condensedDist, method="complete")
-    
-    # Optional: consistent formatting using utils
     visualizeTree(linkageMatrix, outputImagePath, "UPGMA", reorderedLabels)
     print(f" - Final linkage-based visualization completed for '{baseName}'.")

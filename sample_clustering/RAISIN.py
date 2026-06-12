@@ -1,11 +1,8 @@
 """
-RAISIN Fitting - Python port of R RAISIN package
+RAISIN model fitting — Python port of R RAISIN package (Ji, Hou, Ji).
 
-This module fits the RAISIN model and estimates the cell-level and sample-level variance.
-The output will be used by raisintest function to generate p-values and FDRs.
-
-Author: Original R code by Zhicheng Ji, Wenpin Hou, Hongkai Ji
-Python port maintains compatibility with R implementation.
+Estimates cell-level (omega2) and sample-level (sigma2) variance components.
+Output dict is consumed by raisintest to produce p-values and FDRs.
 """
 
 import numpy as np
@@ -20,31 +17,25 @@ import traceback
 from joblib import Parallel, delayed
 
 
-# ---------------------------------------------------------------------
-#  Trigamma utilities (matching R's trigamma and trigammaInverse)
-# ---------------------------------------------------------------------
 def trigamma(x):
-    """Wrapper around scipy.special.polygamma(1, x) - matches R's trigamma."""
+    """scipy.special.polygamma(1, x) — matches R's trigamma."""
     return polygamma(1, x)
 
 
 def trigamma_inverse(x):
     """
-    Inverse of trigamma via Newton iterations.
-    Matches R's limma::trigammaInverse.
+    Inverse of trigamma via Newton-Raphson (matches R's limma::trigammaInverse).
     """
     if x <= 0:
         raise ValueError("trigamma_inverse requires x > 0")
 
-    # Starting guess based on asymptotic approximation
     if x >= 1e7:
         return 1.0 / np.sqrt(x)
 
     if x < 1e-6:
         return 1.0 / x
 
-    # Newton-Raphson iteration
-    y = 0.5 + 1.0 / x  # starting guess
+    y = 0.5 + 1.0 / x  # asymptotic starting guess
 
     for _ in range(50):
         tri_y = trigamma(y)
@@ -53,7 +44,7 @@ def trigamma_inverse(x):
 
         # Keep positive
         if y_new <= 0:
-            y_new = y / 2.0
+            y_new = y / 2.0  # keep positive
 
         if abs(y_new - y) < 1e-8 * y:
             break
@@ -62,19 +53,15 @@ def trigamma_inverse(x):
     return y
 
 
-# ---------------------------------------------------------------------
-#  Laguerre–Gauss quadrature (matching R's statmod::gauss.quad)
-# ---------------------------------------------------------------------
 def gauss_quad_laguerre(n=1000):
     """
-    Gauss-Laguerre quadrature rule.
-    Matches R's statmod::gauss.quad(n, "laguerre").
+    Gauss-Laguerre quadrature rule (matches R's statmod::gauss.quad(n, "laguerre")).
 
-    Returns nodes and weights for integrating f(x)*exp(-x) from 0 to infinity.
+    Returns nodes and weights for integrating f(x)*exp(-x) over [0, ∞).
+    Falls back to smaller n if the full size overflows.
     """
     from numpy.polynomial.laguerre import laggauss
 
-    # Try with requested number of points, fall back if overflow
     for n_try in [n, 500, 200, 100, 50]:
         try:
             with warnings.catch_warnings():
@@ -84,13 +71,9 @@ def gauss_quad_laguerre(n=1000):
         except (RuntimeWarning, ValueError, OverflowError):
             continue
 
-    # Final fallback
     return laggauss(50)
 
 
-# ---------------------------------------------------------------------
-#  Design matrix construction helpers
-# ---------------------------------------------------------------------
 def model_matrix_no_intercept(factor_series):
     """
     Create design matrix without intercept (like R's model.matrix(~.-1, ...)).
@@ -105,58 +88,40 @@ def model_matrix_with_intercept(factor_series):
     Create design matrix with intercept (like R's model.matrix(~., ...)).
     Returns intercept + dummy-coded matrix (drops first level for identifiability).
     """
-    # For categorical: intercept + k-1 dummies
     if factor_series.dtype == "object" or isinstance(factor_series.iloc[0], str):
         dummies = pd.get_dummies(factor_series, drop_first=False)
         X = np.column_stack([np.ones(len(factor_series)), dummies.values])
         col_names = ["(Intercept)"] + list(dummies.columns)
     else:
-        # For continuous: intercept + the variable itself
         X = np.column_stack([np.ones(len(factor_series)), factor_series.values])
         col_names = ["(Intercept)", "feature"]
     return X, col_names
 
-# ---------------------------------------------------------------------
-#  QR-based rank reduction (matching R's qr()$pivot logic)
-# ---------------------------------------------------------------------
 def qr_rank_reduce(X):
     """
-    Reduce matrix to full column rank using QR decomposition.
+    Reduce X to full column rank via pivoted QR.
     Matches R's: X[, qr(X)$pivot[seq_len(qr(X)$rank)]]
     """
     from scipy.linalg import qr as scipy_qr
-    
-    # Use pivoted QR to select linearly independent columns
+
     Q, R, P = scipy_qr(X, pivoting=True)
     
     # Determine numerical rank
     tol = max(X.shape) * np.finfo(float).eps * np.abs(R).max()
     rank = np.sum(np.abs(np.diag(R[: min(X.shape), :])) > tol)
-    
-    # Select first 'rank' pivoted columns
     selected_cols = P[:rank]
     return X[:, selected_cols]
 
-# ---------------------------------------------------------------------
-#  Cholesky-based inverse (matching R's chol2inv(chol(...)))
-# ---------------------------------------------------------------------
 def chol2inv(X):
-    """
-    Compute inverse using Cholesky decomposition.
-    Matches R's chol2inv(chol(X)).
-    """
+    """Cholesky-based inverse (matches R's chol2inv(chol(X))); falls back to pinv."""
     try:
         L = np.linalg.cholesky(X)
         L_inv = np.linalg.inv(L)
         return L_inv.T @ L_inv
     except np.linalg.LinAlgError:
-        # Fallback to pseudoinverse for singular matrices
         return np.linalg.pinv(X)
 
 
-# ---------------------------------------------------------------------
-#  ComBat batch correction
-# ---------------------------------------------------------------------
 def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, verbose=True):
     """
     Apply ComBat batch correction to expression data.
@@ -191,7 +156,6 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
         print(f"\n===== Applying ComBat batch correction =====")
         print(f"Batch variable: {batch_col}")
 
-    # Get expression matrix
     if adata.raw is not None and adata.raw.X is not None:
         expr = adata.raw.X.toarray() if hasattr(adata.raw.X, "toarray") else np.array(adata.raw.X)
         gene_names = adata.raw.var_names
@@ -199,33 +163,28 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
         expr = adata.X.toarray() if hasattr(adata.X, "toarray") else np.array(adata.X)
         gene_names = adata.var_names
 
-    # Create expression dataframe (genes x cells for pycombat)
+    # pycombat expects genes × cells
     expr_df = pd.DataFrame(expr.T, columns=adata.obs_names, index=gene_names)
 
-    # Get batch information
     batch = adata.obs[batch_col].values
 
-    # NOTE: pyComBat expects `mod` to be a *list* (or list of lists), not a NumPy array
+    # pyComBat requires `mod` as a list, not a NumPy array.
     mod = []
     if group_col is not None and group_col in adata.obs.columns:
         if verbose:
             print(f"Preserving biological effects from: {group_col}")
-        # Single covariate: pass one list of values (length = n_samples)
         covariate_values = list(adata.obs[group_col].astype(str))
         mod = covariate_values
 
 
-    # Apply ComBat
     if verbose:
         print("Running ComBat correction...")
 
     corrected_expr = pycombat(expr_df, batch=batch, mod=mod)
 
-    # Create new AnnData with corrected expression
     adata_corrected = adata.copy()
     adata_corrected.X = corrected_expr.T.values
 
-    # Store original data in layers
     if adata.raw is not None:
         adata_corrected.layers["original_raw"] = adata.raw.X.copy()
     else:
@@ -238,9 +197,6 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
     return adata_corrected
 
 
-# ---------------------------------------------------------------------
-#  Main RAISIN function
-# ---------------------------------------------------------------------
 def raisinfit(
     adata,
     sample_col,
@@ -323,19 +279,16 @@ def raisinfit(
     if verbose:
         print(f"Available columns in adata.obs: {list(adata.obs.columns)}")
 
-    # Validate sample_col
     if sample_col not in adata.obs.columns:
         raise KeyError(
             f"Column '{sample_col}' not found in adata.obs. "
             f"Available: {list(adata.obs.columns)}"
         )
 
-    # Priority rule:
-    # If group_col is provided and exists in obs, use it and ignore sample_to_clade.
     use_group_col = (group_col is not None) and (group_col in adata.obs.columns)
     use_sample_to_clade = (not use_group_col) and (sample_to_clade is not None)
 
-    # Normalize "empty dict" to effectively None to avoid downstream errors
+    # Treat empty dict the same as None to avoid downstream errors.
     if use_sample_to_clade and isinstance(sample_to_clade, dict) and len(sample_to_clade) == 0:
         sample_to_clade = None
         use_sample_to_clade = False
@@ -345,9 +298,6 @@ def raisinfit(
             f"Note: group_col='{group_col}' provided; sample_to_clade is ignored (not needed)."
         )
 
-    # -----------------------------------------------------------------
-    #  Apply ComBat batch correction if requested (and not custom design)
-    # -----------------------------------------------------------------
     batch_corrected = False
     if batch_col is not None and testtype != "custom":
         if batch_col not in adata.obs.columns:
@@ -359,25 +309,18 @@ def raisinfit(
         if verbose:
             print(f"\nBatch correction requested using column: {batch_col}")
 
-        # Determine biological grouping to preserve
         preserve_group = None
 
-        # If group_col is provided, use it directly for biological covariate
         if use_group_col:
             preserve_group = group_col
             if verbose:
                 print(f"Preserving biological effects from group_col: {group_col}")
 
-        # If sample_to_clade is provided but no valid group_col, create temporary column
         elif use_sample_to_clade and sample_to_clade is not None:
-            # Create sample-level mapping for biological groups
             sample_to_group_map = {str(k): v for k, v in sample_to_clade.items()}
-            
-            # Map each cell to its biological group via sample
             sample_ids = adata.obs[sample_col].astype(str)
             bio_groups = sample_ids.map(sample_to_group_map)
             
-            # Check if mapping was successful
             if bio_groups.isna().any():
                 unmapped = sample_ids[bio_groups.isna()].unique()
                 if verbose:
@@ -388,7 +331,6 @@ def raisinfit(
             if verbose:
                 print(f"Preserving biological effects from sample_to_clade mapping")
 
-        # Apply ComBat
         adata = apply_combat_correction(
             adata,
             batch_col=batch_col,
@@ -398,7 +340,6 @@ def raisinfit(
         )
         batch_corrected = True
 
-        # Clean up temporary column if created
         if preserve_group == "_combat_preserve_group":
             adata.obs.drop(columns=["_combat_preserve_group"], inplace=True)
 
@@ -410,9 +351,6 @@ def raisinfit(
                 f"Please apply batch correction manually if needed."
             )
 
-    # -----------------------------------------------------------------
-    #  Expression matrix (genes x cells)
-    # -----------------------------------------------------------------
     if adata.raw is not None and adata.raw.X is not None:
         expr = adata.raw.X.toarray() if hasattr(adata.raw.X, "toarray") else np.array(adata.raw.X)
         gene_names = np.array(adata.raw.var_names)
@@ -424,32 +362,20 @@ def raisinfit(
         if verbose:
             print("Using counts from adata.X")
 
-    # Transpose to genes x cells (R convention)
-    expr = expr.T
-
-    # Sample IDs per cell
+    expr = expr.T  # genes × cells (R convention)
     sample = np.array(adata.obs[sample_col].values)
 
-    # -----------------------------------------------------------------
-    #  Remove duplicated genes (matching R line 47-51)
-    # -----------------------------------------------------------------
     if len(gene_names) != len(set(gene_names)):
         if verbose:
             print("Removing duplicated gene names")
         _, keep_idx = np.unique(gene_names, return_index=True)
-        keep_idx = np.sort(keep_idx)  # Preserve original order
+        keep_idx = np.sort(keep_idx)  # preserve original gene order
         expr = expr[keep_idx, :]
         gene_names = gene_names[keep_idx]
 
-    # -----------------------------------------------------------------
-    #  Build design matrices based on testtype
-    # -----------------------------------------------------------------
     failgroup = []
 
     if testtype == "custom":
-        # -----------------------------------------
-        # Custom design (R lines 85-90)
-        # -----------------------------------------
         if custom_design is None:
             raise ValueError("custom_design dict required for testtype='custom'")
 
@@ -466,20 +392,11 @@ def raisinfit(
             print("Using custom design matrices")
 
     else:
-        # -----------------------------------------
-        # Build design from adata metadata
-        # -----------------------------------------
-
-        # Get unique samples
         unique_samples = np.unique(sample)
 
-        # Determine feature values for each sample
         if use_group_col:
-            # Use group_col from adata.obs (preferred if provided)
-            # Since batch is sample-level, we can simplify: just pick any cell from each sample
             sample_to_group = {}
             for s in unique_samples:
-                # Get first cell from this sample
                 first_cell_idx = np.where(sample == s)[0][0]
                 sample_to_group[s] = adata.obs.iloc[first_cell_idx][group_col]
             
@@ -494,7 +411,6 @@ def raisinfit(
 
                 sample_to_individual = {}
                 for s in unique_samples:
-                    # Get first cell from this sample
                     first_cell_idx = np.where(sample == s)[0][0]
                     sample_to_individual[s] = adata.obs.iloc[first_cell_idx][individual_col]
                 
@@ -506,12 +422,10 @@ def raisinfit(
                 print(f"Using group_col='{group_col}' for grouping")
 
         elif use_sample_to_clade and sample_to_clade is not None:
-            # Use explicit mapping
             sample_to_clade_str = {str(k): v for k, v in sample_to_clade.items()}
             if len(sample_to_clade_str) == 0:
                 raise ValueError("sample_to_clade was provided but is empty.")
 
-            # Convert all sample names to strings for consistent comparison
             unique_samples_str = [str(s) for s in unique_samples]
 
             common_samples = [
@@ -532,13 +446,11 @@ def raisinfit(
 
             common_samples = np.array(common_samples)
 
-            # Filter to only samples in mapping
             valid_mask = np.isin(sample, common_samples)
             expr = expr[:, valid_mask]
             sample = sample[valid_mask]
             unique_samples = common_samples
 
-            # Get feature values using string keys
             feature_values = np.array([sample_to_clade_str[str(s)] for s in unique_samples])
             individual_values = None
 
@@ -546,7 +458,6 @@ def raisinfit(
                 print(f"Using sample_to_clade mapping for {len(unique_samples)} samples")
 
         else:
-            # If group_col was specified but doesn't exist, fail fast with a clearer error
             if group_col is not None and group_col not in adata.obs.columns:
                 raise KeyError(
                     f"group_col '{group_col}' not found in adata.obs. "
@@ -557,24 +468,20 @@ def raisinfit(
         sample_names = unique_samples
         n_samples = len(sample_names)
 
-        # -----------------------------------------
-        # Build Z matrix based on testtype (R lines 55-78)
-        # -----------------------------------------
         if testtype == "unpaired":
-            # Z: identity matrix for samples (R lines 56-58)
+            # Z: identity (one random effect per sample)
             Z = np.eye(n_samples)
             Z_colnames = list(sample_names)
             # group: feature value for each sample
             group = np.array([str(f) for f in feature_values])
 
         elif testtype == "continuous":
-            # Z: identity matrix, all in same variance group (R lines 60-62)
+            # All samples share a single variance group (R lines 60–62)
             Z = np.eye(n_samples)
             Z_colnames = list(sample_names)
             group = np.array(["group"] * n_samples)
 
         elif testtype == "paired":
-            # Check if we have enough pairs (R lines 63-77)
             if individual_values is None:
                 raise ValueError("individual_col required for paired test")
 
@@ -584,29 +491,23 @@ def raisinfit(
             if n_pairs < 2:
                 if verbose:
                     print("Less than two pairs detected. Switching to unpaired test.")
-                # Fall back to unpaired (R lines 66-68)
                 Z = np.eye(n_samples)
                 Z_colnames = list(sample_names)
                 group = np.array([str(f) for f in feature_values])
             else:
-                # Paired design (R lines 69-77)
-                # Z1: individual effects
+                # Paired design: Z1 = individual effects, Z2 = within-pair difference (R lines 69–77)
                 unique_individuals = np.unique(individual_values)
                 Z1 = np.zeros((n_samples, len(unique_individuals)))
                 for i, ind in enumerate(unique_individuals):
                     Z1[individual_values == ind, i] = 1
 
-                # Z2: diagonal for the larger group (difference component)
                 feature_counts = pd.Series(feature_values).value_counts()
                 larger_group = feature_counts.idxmax()
                 Z2_mask = feature_values == larger_group
                 Z2 = np.eye(n_samples)[:, Z2_mask]
 
-                # Combine Z matrices
                 Z = np.hstack([Z1, Z2])
                 Z_colnames = list(unique_individuals) + [f"diff_{i}" for i in range(Z2.shape[1])]
-
-                # Group labels
                 group = np.array(["individual"] * Z1.shape[1] + ["difference"] * Z2.shape[1])
 
                 if verbose:
@@ -615,11 +516,7 @@ def raisinfit(
         else:
             raise ValueError(f"Unknown testtype: {testtype}")
 
-        # -----------------------------------------
-        # Build X matrix (R lines 80-84)
-        # -----------------------------------------
         if testtype == "continuous":
-            # Continuous: intercept + continuous feature
             if intercept:
                 X = np.column_stack([np.ones(n_samples), feature_values.astype(float)])
                 X_colnames = ["(Intercept)", "feature"]
@@ -627,20 +524,19 @@ def raisinfit(
                 X = feature_values.astype(float).reshape(-1, 1)
                 X_colnames = ["feature"]
         else:
-            # Categorical: dummy coding
             feature_df = pd.DataFrame({"feature": feature_values})
             if intercept:
-                # With intercept: include all levels (R's model.matrix(~., ...))
+                # model.matrix(~., ...) — intercept + all levels
                 dummies = pd.get_dummies(feature_df["feature"], drop_first=False)
                 X = np.column_stack([np.ones(n_samples), dummies.values])
                 X_colnames = ["(Intercept)"] + list(dummies.columns)
             else:
-                # No intercept: all levels (R's model.matrix(~.-1, ...))
+                # model.matrix(~.-1, ...) — no intercept, all levels
                 dummies = pd.get_dummies(feature_df["feature"], drop_first=True)
                 X = dummies.values
                 X_colnames = list(dummies.columns)
 
-    G = expr.shape[0]  # Number of genes
+    G = expr.shape[0]
 
     if verbose:
         print(f"Expression matrix: {G} genes x {expr.shape[1]} cells")
@@ -648,18 +544,12 @@ def raisinfit(
         print(f"Random effects Z: {Z.shape[0]} samples x {Z.shape[1]} effects")
         print(f"Unique variance groups: {np.unique(group)}")
 
-    # -----------------------------------------------------------------
-    #  Compute per-sample means (R lines 93-95)
-    # -----------------------------------------------------------------
     means = np.zeros((G, len(sample_names)))
     for i, s in enumerate(sample_names):
         mask = sample == s
         if mask.any():
             means[:, i] = np.mean(expr[:, mask], axis=1)
 
-    # -----------------------------------------------------------------
-    #  Gene filtering (R lines 98-103)
-    # -----------------------------------------------------------------
     if filtergene:
         m = np.quantile(means, filtergenequantile)
         gene_keep = np.any(means > m, axis=1)
@@ -670,9 +560,6 @@ def raisinfit(
         if verbose:
             print(f"After gene filtering: {G} genes retained")
 
-    # -----------------------------------------------------------------
-    #  Gauss-Laguerre quadrature (R lines 107-111)
-    # -----------------------------------------------------------------
     node, weight = gauss_quad_laguerre(1000)
     pos_mask = weight > 0
     node = node[pos_mask]
@@ -680,9 +567,7 @@ def raisinfit(
     log_node = np.log(node)
     log_weight = np.log(weight)
 
-    # -----------------------------------------------------------------
-    #  Estimate cell-level variance w (R lines 122-146)
-    # -----------------------------------------------------------------
+    # Estimate cell-level variance w per gene per sample (R lines 122–146).
     w = np.zeros((G, len(sample_names)))
 
     for i, s in enumerate(sample_names):
@@ -691,10 +576,8 @@ def raisinfit(
 
         if n_cells > 1:
             d = n_cells - 1
-            # Sample variance: s2 = (mean(x^2) - mean(x)^2) * (n/(n-1))
             s2 = (np.mean(expr[:, sampid] ** 2, axis=1) - means[:, i] ** 2) * ((d + 1) / d)
 
-            # Variance of log(s2) for positive values
             s2_pos = s2[s2 > 0]
             if len(s2_pos) > 1:
                 stat = np.var(np.log(s2_pos), ddof=1) - trigamma(d / 2)
@@ -704,10 +587,10 @@ def raisinfit(
                     phi = np.exp(np.mean(np.log(s2_pos)) - digamma(d / 2) + digamma(theta)) * d / 2
 
                     if theta + d / 2 > 1:
-                        # Closed form (R line 132)
+                        # Closed-form inverse-gamma mean (R line 132)
                         w[:, i] = (d * s2 / 2 + phi) / (theta + d / 2 - 1)
                     else:
-                        # Numerical integration (R lines 134-139)
+                        # Numerical integration via Gauss-Laguerre (R lines 134–139)
                         alpha = theta + d / 2
                         for g in range(G):
                             if s2[g] > 0:
@@ -717,64 +600,51 @@ def raisinfit(
                             else:
                                 w[g, i] = 0
                 else:
-                    # stat <= 0: use geometric mean (R line 141)
+                    # stat ≤ 0: no excess variance; use geometric mean (R line 141)
                     w[:, i] = np.exp(np.mean(np.log(s2_pos)))
             else:
                 w[:, i] = np.nan
         else:
             w[:, i] = np.nan
 
-    # -----------------------------------------------------------------
-    #  Fill missing w using nearest neighbor (R lines 148-161)
-    # -----------------------------------------------------------------
+    # Fill missing w (singleton / no-variance samples) by nearest neighbor in X (R lines 148–161).
     nan_cols = np.where(np.all(np.isnan(w), axis=0))[0]
     ok_cols = np.array([i for i in range(w.shape[1]) if i not in nan_cols])
 
     if len(nan_cols) > 0 and len(ok_cols) > 0:
-        # Distance matrix based on X
         X_dist = squareform(pdist(X))
 
         for i in nan_cols:
             if len(ok_cols) == 1:
                 w[:, i] = w[:, ok_cols[0]]
             else:
-                # Find nearest neighbor(s) with minimum distance
                 dists = X_dist[i, ok_cols]
                 min_dist = dists.min()
                 nearest = ok_cols[dists == min_dist]
                 w[:, i] = np.mean(w[:, nearest], axis=1)
 
-    # -----------------------------------------------------------------
-    #  Normalize w by cell count (R lines 162-165)
-    # -----------------------------------------------------------------
+    # Normalize by cell count so w is per-cell variance (R lines 162–165).
     n_per_sample = np.array([np.sum(sample == s) for s in sample_names])
     w = w / n_per_sample
 
-    # Clear expression matrix to save memory
-    del expr
+    del expr  # free memory before parallel sigma2 estimation
 
-    # -----------------------------------------------------------------
-    #  Initialize sigma2 matrix (R lines 271-272)
-    # -----------------------------------------------------------------
     unique_groups = np.unique(group)
     sigma2 = np.zeros((G, len(unique_groups)))
     sigma2_df = pd.DataFrame(sigma2, columns=unique_groups, index=range(G))
 
-    # -----------------------------------------------------------------
-    #  sigma2 estimation function (R lines 170-268)
-    # -----------------------------------------------------------------
     def sigma2_func(current_group, control_groups, done_groups):
         nonlocal failgroup
 
-        # Xl = cbind(X, Z[, group %in% controlgroup]) (R line 171)
+        # Xl = cbind(X, Z[, group %in% controlgroup])  (R line 171)
         ctrl_mask = np.isin(group, control_groups)
         Xl = np.hstack([X, Z[:, ctrl_mask]]) if ctrl_mask.any() else X.copy()
 
-        # Zl = Z[, group == currentgroup] (R line 172)
+        # Zl = Z[, group == currentgroup]  (R line 172)
         curr_mask = group == current_group
         Zl = Z[:, curr_mask]
 
-        # lid: rows with any random effect in current or control groups (R lines 173-174)
+        # lid = samples with any effect in current or control groups  (R lines 173–174)
         involved_mask = np.isin(group, [current_group] + list(control_groups))
         lid = np.where(Z[:, involved_mask].sum(axis=1) > 0)[0]
 
@@ -786,8 +656,7 @@ def raisinfit(
         Xl = Xl[lid, :]
         Zl = Zl[lid, :]
 
-        # Make Xl full rank (R line 178)
-        Xl = qr_rank_reduce(Xl)
+        Xl = qr_rank_reduce(Xl)  # (R line 178)
 
         n = len(lid)
         p = n - Xl.shape[1]
@@ -797,9 +666,7 @@ def raisinfit(
             warnings.warn(f"Unable to estimate variance for group {current_group}, setting to 0.")
             return np.zeros(G)
 
-        # -----------------------------------------
-        # Construct orthogonal K matrix (R lines 187-198)
-        # -----------------------------------------
+        # Construct orthogonal K matrix in null(Xl) (R lines 187–198)
         _rng = np.random.default_rng(seed)
         K = _rng.standard_normal(size=(n, p))
 
@@ -813,23 +680,20 @@ def raisinfit(
             btb_inv = chol2inv(btb)
             K[:, i] = K[:, i] - b @ btb_inv @ b.T @ K[:, i]
 
-        # Normalize columns
         K = K / np.sqrt(np.sum(K**2, axis=0, keepdims=True))
-        K = K.T  # Now K is (p x n)
+        K = K.T  # K is now (p × n)
 
-        # -----------------------------------------
-        # Compute statistics (R lines 200-211)
-        # -----------------------------------------
-        means_lid = means[:, lid]  # (G x n)
-        pl = (K @ means_lid.T).T  # (G x p)
+        # Projected statistics (R lines 200–211)
+        means_lid = means[:, lid]  # (G × n)
+        pl = (K @ means_lid.T).T  # (G × p)
 
         qlm = K @ Zl @ Zl.T @ K.T
         ql = np.diag(qlm)  # (p,)
 
-        w_lid = w[:, lid]  # (G x n)
-        rl = w_lid @ (K**2).T  # (G x p)
+        w_lid = w[:, lid]  # (G × n)
+        rl = w_lid @ (K**2).T  # (G × p)
 
-        # Add contribution from already-estimated groups (R lines 206-211)
+        # Add already-estimated group contributions to rl (R lines 206–211)
         for sg in done_groups:
             sg_mask = group == sg
             Z_sg = Z[lid][:, sg_mask]
@@ -838,9 +702,7 @@ def raisinfit(
             for g in range(G):
                 rl[g, :] += sigma2_df.loc[g, sg] * np.diag(KZmat)
 
-        # -----------------------------------------
-        # Estimate hyperparameters (R lines 213-216)
-        # -----------------------------------------
+        # Method-of-moments hyperparameter estimates (R lines 213–216)
         pl2 = pl**2
 
         M_term = (pl2 - rl) / ql
@@ -860,9 +722,6 @@ def raisinfit(
         if verbose:
             print(f"  alpha={alpha_hyper:.4f}, gamma={gamma_hyper:.4f}")
 
-        # -----------------------------------------
-        # Check for valid hyperparameters (R lines 219-229)
-        # -----------------------------------------
         if np.isnan(alpha_hyper) or np.isnan(gamma_hyper) or alpha_hyper <= 0 or gamma_hyper <= 0:
             if verbose:
                 print("  Invalid hyperparameters. Proceeding without variance pooling.")
@@ -887,10 +746,8 @@ def raisinfit(
                 est = [process_gene_simple(g) for g in range(G)]
             return np.array(est)
 
-        # -----------------------------------------
-        # EB estimation (R lines 230-267)
-        # -----------------------------------------
-        tK = K.T  # (n x p)
+        # EB estimation via Gauss-Laguerre integration over sigma2 prior (R lines 230–267)
+        tK = K.T  # (n × p)
 
         def process_gene(g):
             tmpx = np.outer(pl[g, :], pl[g, :])
@@ -949,9 +806,7 @@ def raisinfit(
 
         return np.array(est)
 
-    # -----------------------------------------------------------------
-    #  Iterate through groups (R lines 273-283)
-    # -----------------------------------------------------------------
+    # Estimate sigma2 group by group in decreasing order of Z-column count (R lines 273–283).
     control_groups = list(unique_groups)
     done_groups = []
 
@@ -966,9 +821,6 @@ def raisinfit(
         control_groups.remove(ug)
         done_groups.append(ug)
 
-    # -----------------------------------------------------------------
-    #  Assemble output (R line 284)
-    # -----------------------------------------------------------------
     result = {
         "mean": pd.DataFrame(means, index=gene_names, columns=sample_names),
         "sigma2": sigma2_df,

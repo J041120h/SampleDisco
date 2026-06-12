@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 """
-GPU-Accelerated Peak-to-Gene Activity Matrix Generator with Consistent Filtering
-
-This version uses CuPy for GPU acceleration of matrix operations.
-Key optimizations:
-- GPU-based sparse matrix operations
-- Batch processing on GPU
-- Minimized CPU-GPU memory transfers
-- Parallel GPU streams for concurrent operations
+GPU-accelerated peak-to-gene activity matrix generator.
+Falls back to CPU multiprocessing when CuPy is unavailable.
 """
 
 import os
@@ -41,7 +35,6 @@ def process_gene_batch_gpu(args):
     """GPU-accelerated worker function to process a batch of genes."""
     gene_batch, gene2peaks_weighted, peak_to_idx, X_gpu, aggregation_method, decay_params, device_id = args
     
-    # Set GPU device for this worker
     cp.cuda.Device(device_id).use()
     
     n_cells = X_gpu.shape[0]
@@ -85,24 +78,20 @@ def process_gene_batch_gpu(args):
                     n_gene_body += 1
         
         if len(peak_indices) > 0:
-            # Convert to GPU arrays
             peak_indices_gpu = cp.array(peak_indices, dtype=cp.int32)
             weights_gpu = cp.array(weights, dtype=cp.float32)
-            
-            # Get peak counts on GPU
+
             peak_counts = X_gpu[:, peak_indices_gpu]
-            
+
             if aggregation_method == 'weighted_sum':
-                # ArchR-style weighted sum on GPU
                 if hasattr(peak_counts, 'multiply'):  # sparse
                     gene_activity_values = peak_counts.multiply(weights_gpu).sum(axis=1)
                     if hasattr(gene_activity_values, 'toarray'):
                         gene_activity_values = gene_activity_values.toarray().flatten()
                 else:  # dense
                     gene_activity_values = (peak_counts * weights_gpu).sum(axis=1)
-                    
+
             elif aggregation_method == 'weighted_mean':
-                # Weighted mean on GPU
                 if hasattr(peak_counts, 'multiply'):  # sparse
                     weighted_counts = peak_counts.multiply(weights_gpu).sum(axis=1)
                     if hasattr(weighted_counts, 'toarray'):
@@ -110,9 +99,8 @@ def process_gene_batch_gpu(args):
                 else:  # dense
                     weighted_counts = (peak_counts * weights_gpu).sum(axis=1)
                 gene_activity_values = weighted_counts / weights_gpu.sum()
-                
+
             elif aggregation_method == 'max_weighted':
-                # Maximum weighted peak on GPU
                 if hasattr(peak_counts, 'multiply'):  # sparse
                     weighted_counts = peak_counts.multiply(weights_gpu)
                     gene_activity_values = weighted_counts.max(axis=1)
@@ -121,7 +109,7 @@ def process_gene_batch_gpu(args):
                 else:  # dense
                     weighted_counts = peak_counts * weights_gpu
                     gene_activity_values = weighted_counts.max(axis=1)
-                    
+
             else:  # 'sum' - simple sum without weights
                 gene_activity_values = peak_counts.sum(axis=1)
                 if hasattr(gene_activity_values, 'toarray'):
@@ -129,7 +117,6 @@ def process_gene_batch_gpu(args):
             
             batch_activity[:, gene_idx] = gene_activity_values.flatten()
         
-        # Get gene name for this gene_id
         gene_name = "Unknown"
         for peak_info in peak_data:
             if 'gene_name' in peak_info:
@@ -146,7 +133,6 @@ def process_gene_batch_gpu(args):
             'n_gene_body_peaks': n_gene_body
         })
     
-    # Convert back to CPU sparse matrix
     batch_activity_cpu = cp.asnumpy(batch_activity)
     return csr_matrix(batch_activity_cpu), batch_stats
 
@@ -210,7 +196,6 @@ def peak_to_gene_activity_weighted_gpu(
         Gene activity matrix saved to output_dir/gene_activity_weighted_gpu.h5ad
     """
     
-    # Check GPU availability
     if use_gpu and not GPU_AVAILABLE:
         print("GPU requested but CuPy not available. Falling back to CPU.")
         use_gpu = False
@@ -228,7 +213,6 @@ def peak_to_gene_activity_weighted_gpu(
                     props = cp.cuda.runtime.getDeviceProperties(i)
                     print(f"  GPU {i}: {props['name'].decode()} ({props['totalGlobalMem'] / 1e9:.1f} GB)")
     
-    # Setup
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -242,7 +226,6 @@ def peak_to_gene_activity_weighted_gpu(
         print(f"Normalization: {normalize_by}")
         print(f"Min peak accessibility: {min_peak_accessibility}")
     
-    # Load annotation results
     if isinstance(annotation_results, (str, Path)):
         with open(annotation_results, 'rb') as f:
             peak2gene = pickle.load(f)
@@ -251,19 +234,16 @@ def peak_to_gene_activity_weighted_gpu(
     else:
         peak2gene = annotation_results
     
-    # Get count matrix
     if layer is not None:
         X = atac.layers[layer]
     else:
         X = atac.X
-    
-    # Convert to sparse if needed
+
     if not issparse(X):
         X = csr_matrix(X)
     else:
         X = X.tocsr()
     
-    # Apply peak filtering
     if min_peak_accessibility is not None and min_peak_accessibility > 0:
         peak_means = np.asarray(X.mean(axis=0)).ravel()
         valid_peak_mask = peak_means >= min_peak_accessibility
@@ -274,11 +254,9 @@ def peak_to_gene_activity_weighted_gpu(
     else:
         valid_peak_names = list(atac.var_names)
     
-    # Create peak name to index mapping
-    peak_to_idx = {peak: i for i, peak in enumerate(atac.var_names) 
+    peak_to_idx = {peak: i for i, peak in enumerate(atac.var_names)
                    if peak in valid_peak_names}
-    
-    # Build gene-to-peaks mapping
+
     gene2peaks_weighted = defaultdict(list)
     peak_stats = {
         'total_annotated': 0,
@@ -291,7 +269,6 @@ def peak_to_gene_activity_weighted_gpu(
         'not_in_atac_data': 0
     }
     
-    # Process annotations (same as CPU version)
     for peak, annotation in peak2gene.items():
         peak_stats['total_annotated'] += 1
         
@@ -349,7 +326,6 @@ def peak_to_gene_activity_weighted_gpu(
         if peak_used:
             peak_stats['used_after_filtering'] += 1
     
-    # Get valid gene IDs
     gene_ids = sorted(list(gene2peaks_weighted.keys()))
     gene_ids = [g for g in gene_ids if g and str(g).strip() and str(g).lower() != 'nan']
     n_genes = len(gene_ids)
@@ -360,22 +336,18 @@ def peak_to_gene_activity_weighted_gpu(
         print(f"Using {len(valid_peak_names):,} accessibility-filtered peaks")
     
     if use_gpu:
-        # GPU processing
         if gpu_batch_size is None:
-            # Estimate batch size based on GPU memory
+            # 25% of GPU memory, assuming ~100 peaks per gene
             gpu_mem = cp.cuda.runtime.getDeviceProperties(0)['totalGlobalMem']
-            # Conservative estimate: use 25% of GPU memory
-            estimated_batch_size = int((gpu_mem * 0.25) / (n_cells * 8 * 100))  # assume ~100 peaks per gene
+            estimated_batch_size = int((gpu_mem * 0.25) / (n_cells * 8 * 100))
             gpu_batch_size = max(50, min(500, estimated_batch_size))
         
         if verbose:
             print(f"GPU batch size: {gpu_batch_size} genes per batch")
         
-        # Transfer matrix to GPU once
         if verbose:
             print("Transferring data to GPU...")
-        
-        # For multi-GPU, we'll distribute the matrix
+
         X_gpu_list = []
         for gpu_id in range(min(n_gpu_workers, n_gpus)):
             with cp.cuda.Device(gpu_id):
@@ -385,10 +357,8 @@ def peak_to_gene_activity_weighted_gpu(
                     X_gpu = cp.array(X)
                 X_gpu_list.append(X_gpu)
         
-        # Prepare gene batches
         gene_batches = [gene_ids[i:i + gpu_batch_size] for i in range(0, n_genes, gpu_batch_size)]
-        
-        # Distribute batches across GPUs
+
         process_args = []
         for i, batch in enumerate(gene_batches):
             gpu_id = i % min(n_gpu_workers, n_gpus)
@@ -396,11 +366,9 @@ def peak_to_gene_activity_weighted_gpu(
                    aggregation_method, {'sigma': 50000}, gpu_id)
             process_args.append(args)
         
-        # Process batches
         if verbose:
             print(f"Processing {len(gene_batches)} gene batches on GPU...")
-        
-        # Use multiprocessing for multi-GPU
+
         if n_gpu_workers > 1 and n_gpus > 1:
             with mp.Pool(n_gpu_workers) as pool:
                 results = list(tqdm(
@@ -410,18 +378,15 @@ def peak_to_gene_activity_weighted_gpu(
                     disable=not verbose
                 ))
         else:
-            # Single GPU processing
             results = []
             for args in tqdm(process_args, desc="GPU processing", disable=not verbose):
                 results.append(process_gene_batch_gpu(args))
         
-        # Clear GPU memory
         for X_gpu in X_gpu_list:
             del X_gpu
         cp.get_default_memory_pool().free_all_blocks()
         
     else:
-        # CPU fallback (original implementation)
         from peak_to_gene_activity_weighted import process_gene_batch
         
         batch_size = max(1, n_genes // (n_gpu_workers * 4))
@@ -440,26 +405,22 @@ def peak_to_gene_activity_weighted_gpu(
                 disable=not verbose
             ))
     
-    # Combine results
     if verbose:
         print("Combining results...")
-    
+
     activity_matrices = [r[0] for r in results]
     gene_stats_lists = [r[1] for r in results]
-    
-    # Stack horizontally
+
     gene_activity = activity_matrices[0]
     for mat in activity_matrices[1:]:
         gene_activity = csr_matrix(np.hstack([gene_activity.toarray(), mat.toarray()]))
-    
-    # Combine gene statistics
+
     all_gene_stats = []
     for stats_list in gene_stats_lists:
         all_gene_stats.extend(stats_list)
     
     gene_stats_df = pd.DataFrame(all_gene_stats).set_index('gene_id')
     
-    # Apply normalization (can be GPU accelerated too)
     if normalize_by != 'none' and use_gpu:
         if verbose:
             print(f"Applying {normalize_by} normalization on GPU...")
@@ -487,7 +448,6 @@ def peak_to_gene_activity_weighted_gpu(
             cp.get_default_memory_pool().free_all_blocks()
     
     elif normalize_by != 'none':
-        # CPU normalization
         if normalize_by == 'n_peaks':
             for i, gene_id in enumerate(gene_ids):
                 n_peaks = gene_stats_df.loc[gene_id, 'n_peaks']
@@ -509,7 +469,6 @@ def peak_to_gene_activity_weighted_gpu(
             print("Applying log1p transformation...")
         gene_activity = csr_matrix(np.log1p(gene_activity.toarray()))
     
-    # Create AnnData object
     adata_gene = ad.AnnData(
         X=gene_activity,
         obs=atac.obs.copy(),
@@ -522,12 +481,10 @@ def peak_to_gene_activity_weighted_gpu(
     if 'gene_name' not in adata_gene.var.columns:
         adata_gene.var['gene_name'] = adata_gene.var.index
     
-    # Copy metadata
     for key in ['sample_name', 'genome', 'species']:
         if key in atac.uns:
             adata_gene.uns[key] = atac.uns[key]
     
-    # Add processing metadata
     adata_gene.uns['gene_activity_params'] = {
         'method': 'gpu_accelerated_weighted_aggregation' if use_gpu else 'weighted_aggregation',
         'aggregation': aggregation_method,
@@ -545,7 +502,6 @@ def peak_to_gene_activity_weighted_gpu(
         'identifier_type': 'gene_id'
     }
     
-    # Save results
     suffix = '_gpu' if use_gpu else ''
     output_path = output_dir / f'gene_activity_weighted{suffix}.h5ad'
     adata_gene.write(output_path)
@@ -569,14 +525,11 @@ def peak_to_gene_activity_weighted_gpu(
     
     return adata_gene
 
-# Example usage
 if __name__ == "__main__":
-    # Load data
     atac = ad.read_h5ad("/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad")
     with open("/dcs07/hongkai/data/harry/result/gene_activity/atac_annotation_peak2gene.pkl", "rb") as f:
         annotation_results = pickle.load(f)
     
-    # Run GPU-accelerated version
     adata_gene = peak_to_gene_activity_weighted_gpu(
         atac=atac,
         annotation_results=annotation_results,
@@ -586,9 +539,9 @@ if __name__ == "__main__":
         weight_threshold=0.01,
         min_peak_accessibility=0.01,
         normalize_by='total_weight',
-        use_gpu=True,  # Enable GPU
-        n_gpu_workers=4,  # Use 4 GPU workers
-        log_transform = False,
-        gpu_batch_size=200,  # Process 200 genes per batch
-        verbose=True
+        use_gpu=True,
+        n_gpu_workers=4,
+        log_transform=False,
+        gpu_batch_size=200,
+        verbose=True,
     )

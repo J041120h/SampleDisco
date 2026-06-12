@@ -1,14 +1,8 @@
-"""Strip an AnnData down to its embedding-only payload.
+"""Drop the expression payload from an integrated AnnData.
 
-The SampleDisco pipeline only needs ``obs`` (cell metadata) and ``obsm``
-(cell-level embeddings) downstream of GLUE — sample-embedding, cell typing,
-clustering, distance, and trajectory all read those exclusively. The heavy
-expression / gene-activity ``X`` matrix dominates h5ad file size (typically
-10× to 100× larger than obs+obsm) and is only required when running
-differential analysis. ``slim_adata_drop_expression`` replaces ``X`` with
-an all-zero sparse matrix of the same shape, drops ``layers`` / ``varm`` /
-``varp``, and leaves ``obs`` / ``obsm`` / ``obsp`` / ``var`` untouched so
-downstream code that introspects sample metadata or var names keeps working.
+After GLUE, downstream modules only read ``obs`` and ``obsm``; ``X`` and
+associated layers dominate file size (10–100×). Keeping ``var`` intact
+lets code that inspects gene/peak names keep working.
 """
 from __future__ import annotations
 

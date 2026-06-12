@@ -74,28 +74,16 @@ def run_cca_on_pca_from_adata(
     verbose: bool = False
 ):
     """
-    Run CCA analysis on PCA coordinates from AnnData object.
-    Now returns full PCA coordinates and lets visualization function handle PC selection.
-    
-    Parameters:
-    -----------
-    adata : AnnData
-        Annotated data object
-    column : str
-        Key in adata.uns containing PCA coordinates
-    trajectory_col : str
-        Column name in adata.obs containing trajectory levels
-    n_components : int
-        Number of PC components to use (default: 2)
-    verbose : bool
-        Whether to print detailed information
-        
+    Extract PCA coordinates and trajectory labels from AnnData for CCA.
+
+    The sample embedding is normally in .uns (DataFrame); falls back to .obsm
+    (ndarray) so callers that only populate .obsm still work.
+
     Returns:
-    --------
-    tuple: (pca_coords_full, sev_levels, samples, n_components_used)
+        (pca_coords_subset, sev_levels, samples, n_components_used)
+        pca_coords_subset: shape (n_samples, n_components)
+        sev_levels: float array, NaNs imputed with mean
     """
-    # The sample embedding is normally in .uns (DataFrame); fall back to .obsm
-    # (ndarray) so callers that only populate .obsm still work.
     if column in adata.uns:
         pca_coords = adata.uns[column]
     elif column in adata.obsm:
@@ -106,35 +94,35 @@ def run_cca_on_pca_from_adata(
 
     if trajectory_col not in adata.obs.columns:
         raise KeyError(f"'{trajectory_col}' column is missing in adata.obs. Available columns: {list(adata.obs.columns)}")
-    
+
     if hasattr(pca_coords, 'iloc'):
         pca_coords_array = pca_coords.values
     else:
         pca_coords_array = pca_coords
-    
+
     available_components = pca_coords_array.shape[1]
     if available_components < n_components:
         if verbose:
             print(f"Warning: Only {available_components} components available, using all of them.")
         n_components = available_components
-    
+
     if n_components < 2:
         raise ValueError("Need at least 2 PC components for CCA analysis.")
-    
+
     pca_coords_subset = pca_coords_array[:, :n_components]
-    
+
     sev_levels = pd.to_numeric(adata.obs[trajectory_col], errors='coerce').values
     missing = np.isnan(sev_levels).sum()
     if missing > 0:
         if verbose:
             print(f"Warning: {missing} sample(s) missing trajectory level. Imputing with mean.")
         sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
-    
+
     if len(sev_levels) != pca_coords_subset.shape[0]:
         raise ValueError(f"Mismatch between PCA rows ({pca_coords_subset.shape[0]}) and severity levels ({len(sev_levels)}).")
 
     samples = adata.obs.index.values
-    
+
     return pca_coords_subset, sev_levels, samples, n_components
 
 
@@ -349,28 +337,22 @@ def plot_cca_on_2d_pca(
 
 
 def assign_pseudotime_from_cca(
-    pca_coords_2d: np.ndarray, 
-    cca: CCA, 
+    pca_coords_2d: np.ndarray,
+    cca: CCA,
     sample_labels: np.ndarray,
     scale_to_unit: bool = True
 ) -> dict:
     """
-    Assign pseudotime values based on CCA projection.
-    
+    Project samples onto the CCA direction and return pseudotime values.
+
     Parameters:
-    -----------
-    pca_coords_2d : np.ndarray
-        2D PCA coordinates
-    cca : CCA
-        Fitted CCA model
-    sample_labels : np.ndarray
-        Sample identifiers
-    scale_to_unit : bool
-        Whether to scale pseudotime to [0, 1] range
-        
+        pca_coords_2d: shape (n_samples, 2)
+        cca: fitted CCA model; x_weights_[:, 0] is the projection direction
+        sample_labels: sample identifiers (len n_samples)
+        scale_to_unit: if True, rescale projections to [0, 1]
+
     Returns:
-    --------
-    dict: Mapping from sample labels to pseudotime values
+        dict mapping str(sample_label) -> pseudotime float
     """
     direction = cca.x_weights_[:, 0]
     raw_projection = pca_coords_2d @ direction
@@ -397,28 +379,21 @@ def CCA_Call(
     show_sample_labels: bool = False
 ):
     """
-    Main function to run CCA analysis with PC selection integrated into visualization.
-    
+    Run CCA trajectory analysis on the sample embedding in adata.uns['X_DR_sample'].
+
     Parameters:
-    -----------
-    adata : AnnData
-        Annotated data object
-    output_dir : str
-        Directory to save output files
-    trajectory_col : str
-        Column name for trajectory levels
-    n_components : int
-        Number of PC components to use (default: 2)
-    auto_select_best_2pc : bool
-        If True, automatically select best 2-PC combination for visualization
-    verbose : bool
-        Whether to print detailed information
-    show_sample_labels : bool
-        Whether to show sample labels on plots
-        
+        adata: AnnData with 'X_DR_sample' in uns or obsm
+        output_dir: directory to save plots and pseudotime CSVs (CCA/ subdirectory)
+        trajectory_col: obs column with numeric trajectory labels (e.g. severity)
+        n_components: number of PCs to use
+        auto_select_best_2pc: if True, search all C(n,2) pairs for visualization
+        verbose: print progress
+        show_sample_labels: annotate scatter points with sample IDs
+
     Returns:
-    --------
-    tuple: (proportion_score, expression_score, proportion_pseudotime, expression_pseudotime)
+        (proportion_score, expression_score, proportion_pseudotime, expression_pseudotime)
+        Both score slots and both pseudotime slots collapse to the same X_DR_sample result
+        (4-tuple preserved for back-compat with the wrapper).
     """
     if output_dir:
         output_dir = os.path.join(output_dir, 'CCA')
@@ -501,8 +476,7 @@ def CCA_Call(
             else:
                 print(f"  {data_type}: Failed")
 
-    # CCA_Call still returns a 4-tuple shape for back-compat with the wrapper;
-    # in the single-key pipeline the two slots collapse to the same sample DR.
+    # 4-tuple for back-compat with the wrapper; both slots hold the same X_DR_sample result.
     score = results.get("X_DR_sample", np.nan)
     ptime = sample_dicts.get("X_DR_sample", {})
     return (score, score, ptime, ptime)

@@ -27,44 +27,17 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
     pseudobulk_adata: AnnData = None,
     grouping_columns: list = None
 ) -> pd.DataFrame:
+    """Compute pairwise Jensen-Shannon distances between samples on cell-type proportions.
+
+    Uses scipy.spatial.distance.jensenshannon (base-2 entropy). Normalizes the
+    matrix to [0, 1]. Returns a symmetric distance DataFrame (samples × samples).
     """
-    Calculate distances between samples based on the proportions of each cell type using Jensen-Shannon Divergence.
-
-    This function computes the Jensen-Shannon Divergence between each pair of samples by considering the distribution of cell types within each sample.
-
-    Parameters:
-    ----------
-    adata : AnnData
-        The integrated single-cell dataset obtained from the previous analysis.
-    output_dir : str
-        Directory to save the output files.
-    cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
-    sample_column : str, optional
-        Column name in `adata.obs` that contains the sample information (default: 'sample').
-    summary_csv_path : str, optional
-        Path to save the summary CSV file.
-    pseudobulk_adata : AnnData, optional
-        Pseudobulk AnnData object where observations are samples (not cells). 
-        If provided, this will be used for sample metadata in distanceCheck.
-    grouping_columns : list, optional
-        List of columns for grouping analysis.
-
-    Returns:
-    -------
-    sample_distance_matrix : pandas.DataFrame
-        A symmetric matrix of distances between samples.
-    """
-
-    # Create standardized output directory structure: proportion_DR_distance
     proportion_output_dir = os.path.join(output_dir, 'proportion_DR_distance')
     os.makedirs(proportion_output_dir, exist_ok=True)
 
-    # 1. Compute cell type proportions in each sample
     samples = adata.obs[sample_column].unique()
     cell_types = adata.obs[cell_type_column].unique()
 
-    # Create a DataFrame to hold proportions
     proportions = pd.DataFrame(0, index=samples, columns=cell_types, dtype=np.float64)
 
     for sample in samples:
@@ -73,13 +46,8 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
         counts = sample_data[cell_type_column].value_counts()
         proportions.loc[sample, counts.index] = counts.values / total_cells
 
-    # Save proportions (equivalent to coordinates in vector distance)
     proportions.to_csv(os.path.join(proportion_output_dir, 'proportion_DR_coordinates.csv'))
 
-    # Note: Jensen-Shannon divergence works directly with probability distributions,
-    # so no additional normalization is needed beyond the proportion calculation
-
-    # 2. Compute Jensen-Shannon Divergence between each pair of samples
     num_samples = len(samples)
     sample_distance_matrix = pd.DataFrame(0, index=samples, columns=samples, dtype=np.float64)
 
@@ -89,20 +57,16 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
                 hist_i = proportions.loc[sample_i].values
                 hist_j = proportions.loc[sample_j].values
 
-                # Compute Jensen-Shannon Divergence
                 js_divergence = jensenshannon(hist_i, hist_j, base=2)
                 sample_distance_matrix.loc[sample_i, sample_j] = js_divergence
                 sample_distance_matrix.loc[sample_j, sample_i] = js_divergence
 
-    # Normalize to [0, 1]
-    if sample_distance_matrix.max().max() > 0:  # Avoid division by zero
+    if sample_distance_matrix.max().max() > 0:
         sample_distance_matrix = sample_distance_matrix / sample_distance_matrix.max().max()
 
-    # Save the distance matrix with standardized naming
     distance_matrix_path = os.path.join(proportion_output_dir, 'distance_matrix_proportion_DR.csv')
     sample_distance_matrix.to_csv(distance_matrix_path)
-    
-    # Perform distance check using the improved distanceCheck function
+
     try:
         score = distanceCheck(
             distance_df=sample_distance_matrix,
@@ -119,11 +83,9 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
 
     print(f"Sample distance proportion matrix saved to {distance_matrix_path}")
 
-    # Save the cell type distribution map
     plot_cell_type_abundances(proportions, proportion_output_dir)
     print(f"Cell type distribution in Sample saved to {proportion_output_dir}")
 
-    # Generate visualizations with standardized naming
     try:
         heatmap_path = os.path.join(proportion_output_dir, 'sample_distance_proportion_DR_heatmap.pdf')
         visualizeDistanceMatrix(sample_distance_matrix, heatmap_path)
@@ -142,36 +104,14 @@ def jensen_shannon_distance(
     pseudobulk_adata: AnnData = None,
     grouping_columns: list = None
 ) -> pd.DataFrame:
+    """Compute Jensen-Shannon proportion distances and save statistics summary.
+
+    Delegates to `calculate_sample_distances_cell_proportion_jensenshannon`,
+    then writes distance_statistics_summary_jensen_shannon.csv under output_dir.
+    Returns the symmetric distance DataFrame.
     """
-    Calculate combined distances between samples based on cell type proportions using Jensen-Shannon Divergence.
-
-    Parameters:
-    ----------
-    adata : AnnData
-        The integrated single-cell dataset obtained from the previous analysis.
-    output_dir : str
-        Directory to save the output files. Should already include method name (jensen_shannon).
-    summary_csv_path : str
-        Path to save the summary CSV file.
-    cell_type_column : str, optional
-        Column name in `adata.obs` that contains the cell type assignments (default: 'cell_type').
-    sample_column : str, optional
-        Column name in `adata.obs` that contains the sample information (default: 'sample').
-    pseudobulk_adata : AnnData, optional
-        Pseudobulk AnnData object where observations are samples (not cells).
-    grouping_columns : list, optional
-        List of columns for grouping analysis.
-
-    Returns:
-    -------
-    proportion_matrix : pd.DataFrame
-        A symmetric matrix of Jensen-Shannon distances between samples.
-    """
-
-    # Check if output directory exists and create if necessary
     os.makedirs(output_dir, exist_ok=True)
 
-    # Calculate the proportion distance matrix using Jensen-Shannon divergence
     proportion_matrix = calculate_sample_distances_cell_proportion_jensenshannon(
         adata=adata,
         output_dir=output_dir,
@@ -182,7 +122,6 @@ def jensen_shannon_distance(
         grouping_columns=grouping_columns
     )
 
-    # Create basic statistics summary (matching vector distance structure)
     try:
         dist_values = proportion_matrix.values[np.triu_indices_from(proportion_matrix.values, k=1)]
         summary_stats = {
@@ -193,7 +132,6 @@ def jensen_shannon_distance(
             "proportion_DR_median": np.median(dist_values)
         }
         
-        # Save basic statistics summary
         stats_file = os.path.join(output_dir, 'distance_statistics_summary_jensen_shannon.csv')
         stats_df = pd.DataFrame([summary_stats])
         stats_df.to_csv(stats_file)

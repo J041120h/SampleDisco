@@ -37,18 +37,16 @@ def filter_modality_imbalanced_clusters(
     """
     
     modality_1, modality_2 = modality_values
-    
-    # Calculate expected proportions from overall data
+
     total_mod1 = (adata.obs[modality_column] == modality_1).sum()
     total_mod2 = (adata.obs[modality_column] == modality_2).sum()
     total_cells = total_mod1 + total_mod2
-    
+
     expected_prop_mod1 = total_mod1 / total_cells
     expected_prop_mod2 = total_mod2 / total_cells
-    
-    # Find imbalanced clusters
+
     imbalanced_clusters = []
-    
+
     for cluster in adata.obs[cluster_column].unique():
         cluster_mask = adata.obs[cluster_column] == cluster
         cluster_cells = cluster_mask.sum()
@@ -64,8 +62,7 @@ def filter_modality_imbalanced_clusters(
         
         if min(ratio_mod1, ratio_mod2) < min_proportion_of_expected:
             imbalanced_clusters.append(cluster)
-    
-    # Filter
+
     if imbalanced_clusters:
         cells_before = adata.n_obs
         adata_filtered = adata[~adata.obs[cluster_column].isin(imbalanced_clusters)].copy()

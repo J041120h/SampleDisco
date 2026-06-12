@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
 """
-Trajectory Differential Gene Visualization Module
-=================================================
+Visualization functions for GAM-based trajectory differential gene analysis,
+following Lamian paper style (Hou et al., Nature Communications 2023).
 
-Comprehensive visualization functions for GAM-based trajectory differential gene analysis,
-following the visualization patterns from the Lamian paper (Hou et al., Nature Communications 2023).
-
-Key visualization types:
-1. TDE/XDE Heatmaps - Gene expression patterns along pseudotime
-2. Gene Expression Curves - Sample-level and group-level fitted curves
-3. Cell Density Plots - Pseudotemporal density patterns
-4. Cluster Pattern Summaries - Averaged patterns by gene cluster
-5. Volcano and MA Plots - Statistical summary visualizations
-6. Multi-panel Gene Profiles - Detailed per-gene visualizations
+Provides: TDE/XDE heatmaps, gene expression curves (sample- and group-level),
+cell density plots, cluster pattern summaries, volcano plots, and multi-panel profiles.
 """
 
 import os
@@ -48,20 +40,16 @@ def get_lamian_colormap(name: str = 'expression') -> LinearSegmentedColormap:
         'cluster' - categorical for clusters
     """
     if name == 'expression':
-        # Blue-white-red diverging colormap
-        colors = ['#2166AC', '#4393C3', '#92C5DE', '#D1E5F0', 
+        colors = ['#2166AC', '#4393C3', '#92C5DE', '#D1E5F0',
                   '#F7F7F7', '#FDDBC7', '#F4A582', '#D6604D', '#B2182B']
         return LinearSegmentedColormap.from_list('lamian_expr', colors)
     elif name == 'difference':
-        # Purple-white-orange for differences
         colors = ['#5E3C99', '#B2ABD2', '#F7F7F7', '#FDB863', '#E66101']
         return LinearSegmentedColormap.from_list('lamian_diff', colors)
     elif name == 'pseudotime':
-        # Custom gradient similar to Lamian
         colors = ['#440154', '#3B528B', '#21918C', '#5DC863', '#FDE725']
         return LinearSegmentedColormap.from_list('lamian_ptime', colors)
     elif name == 'mean_shift':
-        # Green-white-purple for mean shifts
         colors = ['#1B7837', '#7FBF7B', '#F7F7F7', '#AF8DC3', '#762A83']
         return LinearSegmentedColormap.from_list('lamian_mean', colors)
     else:
@@ -86,7 +74,7 @@ def plot_tde_heatmap(
     results: pd.DataFrame,
     pseudotime: np.ndarray,
     gam_models: Optional[Dict] = None,
-    n_clusters: int = 3,  # Default to 3 as discussed
+    n_clusters: int = 3,
     cluster_method: str = 'kmeans',
     figsize: Tuple[int, int] = (14, 10),
     show_gene_labels: bool = False,
@@ -138,14 +126,11 @@ def plot_tde_heatmap(
             raw_vals = Y[gene].iloc[sort_idx].values
             fitted_data.append(raw_vals)
 
-    expr_matrix = np.array(fitted_data) # (n_genes, n_samples)
-    
-    # Z-score normalize
+    expr_matrix = np.array(fitted_data)  # (n_genes, n_samples)
     means = expr_matrix.mean(axis=1, keepdims=True)
     stds = expr_matrix.std(axis=1, keepdims=True) + 1e-10
     expr_zscore = (expr_matrix - means) / stds
-    
-    # --- 3. Cluster Genes ---
+
     if cluster_method == 'kmeans':
         n_clusters = min(n_clusters, len(available_genes))
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
@@ -159,23 +144,17 @@ def plot_tde_heatmap(
     else:
         cluster_labels = np.zeros(len(available_genes), dtype=int)
     
-    # --- 4. WATERFALL SORTING (Cluster -> Peak Time) ---
-    # Calculate the index of peak expression for every gene
     peak_indices = np.argmax(expr_zscore, axis=1)
-    
-    # lexsort sorts by the last key passed first.
-    # We want: Primary = Cluster, Secondary = Peak Time
+    # lexsort: last key = primary sort key → cluster first, then peak time
     sort_keys = np.lexsort((peak_indices, cluster_labels))
     
     genes_sorted = [available_genes[i] for i in sort_keys]
     cluster_labels_sorted = cluster_labels[sort_keys]
     expr_for_plot = expr_zscore[sort_keys]
     
-    # --- 5. Plotting ---
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(1, 3, width_ratios=[0.03, 1, 0.05], wspace=0.02)
-    
-    # Cluster Bar
+
     ax_cluster = fig.add_subplot(gs[0])
     cluster_colors = get_cluster_colors(n_clusters)
     cluster_cmap = LinearSegmentedColormap.from_list('clusters', cluster_colors)
@@ -184,27 +163,19 @@ def plot_tde_heatmap(
     ax_cluster.set_xticks([])
     ax_cluster.set_yticks([])
     ax_cluster.set_ylabel('Genes (Clustered & Peak-Sorted)', fontsize=10)
-    
-    # Heatmap
     ax_heat = fig.add_subplot(gs[1])
     cmap = get_lamian_colormap('expression')
     
     im = ax_heat.imshow(expr_for_plot, aspect='auto', cmap=cmap, vmin=-2.5, vmax=2.5, interpolation='nearest')
     ax_heat.set_xlabel('Pseudotime', fontsize=11)
     ax_heat.set_yticks([])
-    
-    # Pseudotime Bar
     divider_top = ax_heat.inset_axes([0, 1.01, 1, 0.03])
     ptime_norm = (ptime_sorted - ptime_sorted.min()) / (ptime_sorted.max() - ptime_sorted.min() + 1e-10)
     divider_top.imshow(ptime_norm.reshape(1, -1), aspect='auto', cmap=get_lamian_colormap('pseudotime'))
     divider_top.set_xticks([])
     divider_top.set_yticks([])
-    
-    # Colorbar
     ax_cbar = fig.add_subplot(gs[2])
     plt.colorbar(im, cax=ax_cbar, label='Z-score (Fitted)')
-    
-    # Add Cluster Labels
     unique_clusters = np.unique(cluster_labels_sorted)
     for c in unique_clusters:
         mask = cluster_labels_sorted == c
@@ -258,7 +229,6 @@ def plot_tde_heatmap(
         sig_genes = results['gene'].tolist()
 
     if top_n_genes and len(sig_genes) > top_n_genes:
-        # Prioritize by Effect Size
         if 'effect_size' in results.columns:
             sig_genes = results[results['fdr'] < 0.05].nlargest(top_n_genes, 'effect_size')['gene'].tolist()
         else:
@@ -287,14 +257,11 @@ def plot_tde_heatmap(
             raw_vals = Y[gene].iloc[sort_idx].values
             fitted_data.append(raw_vals)
 
-    expr_matrix = np.array(fitted_data) # (n_genes, n_samples)
-    
-    # Z-score normalize
+    expr_matrix = np.array(fitted_data)  # (n_genes, n_samples)
     means = expr_matrix.mean(axis=1, keepdims=True)
     stds = expr_matrix.std(axis=1, keepdims=True) + 1e-10
     expr_zscore = (expr_matrix - means) / stds
-    
-    # --- 3. Initial Clustering ---
+
     if cluster_method == 'kmeans':
         n_clusters = min(n_clusters, len(available_genes))
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
@@ -308,8 +275,7 @@ def plot_tde_heatmap(
     else:
         initial_labels = np.zeros(len(available_genes), dtype=int)
     
-    # --- 4. REORDER CLUSTERS BY TIME (The Fix) ---
-    # We want Cluster 0 to be the "Earliest Peaking" and Cluster N to be "Latest Peaking"
+    # Reorder clusters temporally: cluster 0 = earliest peaking, cluster N = latest
     cluster_peak_times = []
     unique_labels = np.unique(initial_labels)
     
@@ -317,40 +283,27 @@ def plot_tde_heatmap(
         # Get all genes in this cluster
         mask = initial_labels == label
         if mask.sum() == 0:
-            cluster_peak_times.append(99999) # Should not happen
+            cluster_peak_times.append(99999)
             continue
-            
-        # Calculate the average expression profile for this cluster
         avg_profile = expr_zscore[mask].mean(axis=0)
-        # Find index of max expression
         peak_idx = np.argmax(avg_profile)
         cluster_peak_times.append(peak_idx)
         
-    # Determine new mapping: sorted by peak time
-    # e.g. if peaks are at [100, 10, 50], argsort gives [1, 2, 0]
-    # So old label 1 becomes new label 0, old 2 becomes 1, old 0 becomes 2.
+    # e.g. peaks at [100, 10, 50] → argsort [1,2,0] → old label 1 becomes new 0, etc.
     sorted_order = np.argsort(cluster_peak_times)
     map_old_to_new = {old: new for new, old in enumerate(sorted_order)}
-    
-    # Apply mapping
     cluster_labels = np.array([map_old_to_new[l] for l in initial_labels])
-    
-    # --- 5. WATERFALL SORT (Within Cluster) ---
-    # Determine peak for every single gene
+
     gene_peak_indices = np.argmax(expr_zscore, axis=1)
-    
-    # Sort primarily by Cluster Label (0->1->2), secondarily by Peak Time
+    # lexsort: cluster first (primary), then peak time (secondary)
     sort_keys = np.lexsort((gene_peak_indices, cluster_labels))
     
     genes_sorted = [available_genes[i] for i in sort_keys]
     cluster_labels_sorted = cluster_labels[sort_keys]
     expr_for_plot = expr_zscore[sort_keys]
     
-    # --- 6. Plotting ---
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(1, 3, width_ratios=[0.03, 1, 0.05], wspace=0.02)
-    
-    # Cluster Bar
     ax_cluster = fig.add_subplot(gs[0])
     cluster_colors = get_cluster_colors(n_clusters)
     cluster_cmap = LinearSegmentedColormap.from_list('clusters', cluster_colors)
@@ -359,28 +312,18 @@ def plot_tde_heatmap(
     ax_cluster.set_xticks([])
     ax_cluster.set_yticks([])
     ax_cluster.set_ylabel('Genes (Sorted by Pseudotime)', fontsize=10)
-    
-    # Heatmap
     ax_heat = fig.add_subplot(gs[1])
     cmap = get_lamian_colormap('expression')
-    
     im = ax_heat.imshow(expr_for_plot, aspect='auto', cmap=cmap, vmin=-2.5, vmax=2.5, interpolation='nearest')
     ax_heat.set_xlabel('Pseudotime (Early $\\to$ Late)', fontsize=11)
     ax_heat.set_yticks([])
-    
-    # Pseudotime Bar
     divider_top = ax_heat.inset_axes([0, 1.01, 1, 0.03])
     ptime_norm = (ptime_sorted - ptime_sorted.min()) / (ptime_sorted.max() - ptime_sorted.min() + 1e-10)
     divider_top.imshow(ptime_norm.reshape(1, -1), aspect='auto', cmap=get_lamian_colormap('pseudotime'))
     divider_top.set_xticks([])
     divider_top.set_yticks([])
-    
-    # Colorbar
     ax_cbar = fig.add_subplot(gs[2])
     plt.colorbar(im, cax=ax_cbar, label='Z-score (Fitted)')
-    
-    # Add Cluster Labels
-    # Since we reordered, Cluster 0 is now definitely the "Top" (Earliest) block
     for c in range(n_clusters):
         mask = cluster_labels_sorted == c
         indices = np.where(mask)[0]
@@ -473,46 +416,35 @@ def plot_gene_expression_curves(
     title: str = "Gene Expression Along Pseudotime",
     output_path: Optional[str] = None,
     verbose: bool = False,
-    color_scheme: str = 'blue'  # NEW: 'blue' for genes, 'red' for peaks
+    color_scheme: str = 'blue'  # 'blue' for genes, 'red' for peaks
 ) -> plt.Figure:
     """
     Plot gene expression curves along pseudotime using GAM fitted models.
-    
-    UPDATED: Added color_scheme parameter to differentiate genes (blue) from peaks (red).
-    
+
     Parameters
     ----------
     genes : list
-        List of gene names to plot
     Y : pd.DataFrame
         Expression matrix (samples x genes)
     X : pd.DataFrame
-        Design matrix with 'pseudotime' column (may have additional columns for viz)
+        Design matrix; must contain 'pseudotime' column
     gam_models : dict, optional
-        Dictionary of fitted GAM models per gene {gene_name: LinearGAM}
+        {gene_name: fitted LinearGAM}
     results : pd.DataFrame, optional
         Results with statistics to annotate
     group_col : str, optional
-        Column for grouping samples
+        Column for grouping samples by condition
     n_cols : int
-        Number of columns in subplot grid
     figsize_per_gene : tuple
-        Size per subplot (width, height)
     show_samples : bool
-        Whether to show individual sample points
     show_gam_fit : bool
-        Whether to show GAM fitted curves
     n_curve_points : int
-        Number of points for smooth curve rendering
     title : str
-        Overall figure title
     output_path : str, optional
-        Path to save figure
     verbose : bool
-        Print progress messages
     color_scheme : str
         'blue' for genes (default), 'red' for peaks
-        
+
     Returns
     -------
     fig : matplotlib.Figure
@@ -555,28 +487,24 @@ def plot_gene_expression_curves(
                     break
                 except:
                     gam_n_features = 1
-    
+
     if verbose and gam_models:
         print(f"[VIZ] GAM models provided: {len(gam_models)} models")
         print(f"[VIZ] Inferred GAM feature count: {gam_n_features}")
-    
-    # Color scheme setup - UPDATED
+
     if color_scheme == 'red':
-        # For peaks
-        base_color = "#B2182B"  # Red
-        scatter_color = "#D6604D"  # Light red
-        line_color = "#67001F"  # Dark red
-        group1_color = "#FDB863"  # Orange-red
-        group2_color = "#B2182B"  # Red
-    else:  # 'blue' for genes (default)
-        # For genes
-        base_color = "#2166AC"  # Blue
-        scatter_color = "#4393C3"  # Light blue
-        line_color = "#053061"  # Dark blue
-        group1_color = "#92C5DE"  # Light blue
-        group2_color = "#2166AC"  # Blue
-    
-    # Group color setup
+        base_color = "#B2182B"
+        scatter_color = "#D6604D"
+        line_color = "#67001F"
+        group1_color = "#FDB863"
+        group2_color = "#B2182B"
+    else:
+        base_color = "#2166AC"
+        scatter_color = "#4393C3"
+        line_color = "#053061"
+        group1_color = "#92C5DE"
+        group2_color = "#2166AC"
+
     if group_col and group_col in X.columns:
         groups = sorted(X[group_col].unique())
         if len(groups) >= 2:
@@ -597,7 +525,6 @@ def plot_gene_expression_curves(
         
         expr_full = Y[gene].values
         
-        # Mask for samples where gene is present
         nonzero_mask = (expr_full != 0.0) & np.isfinite(expr_full) & np.isfinite(ptime_full)
         n_nonzero = nonzero_mask.sum()
         
@@ -616,12 +543,9 @@ def plot_gene_expression_curves(
         
         ptime = ptime_full[nonzero_mask]
         expr = expr_full[nonzero_mask]
-        
-        # Check if we have a GAM model for this gene
         has_gam = gam_models is not None and gene in gam_models
         
         if groups and group_col:
-            # Plot by group
             group_vals_full = X[group_col].values
             group_vals = group_vals_full[nonzero_mask]
             
@@ -634,7 +558,6 @@ def plot_gene_expression_curves(
                 yg = expr[mask_g]
                 color = group_colors.get(g, "gray")
                 
-                # Show sample points
                 if show_samples:
                     ax.scatter(
                         xg, yg,
@@ -643,7 +566,6 @@ def plot_gene_expression_curves(
                         label=str(g)
                     )
                 
-                # Show GAM fit if available
                 if show_gam_fit and has_gam and mask_g.sum() > 3:
                     try:
                         gam = gam_models[gene]
@@ -668,13 +590,11 @@ def plot_gene_expression_curves(
                 elif show_gam_fit and not has_gam and mask_g.sum() > 10:
                     _plot_fallback_smooth(ax, xg, yg, color)
             
-            # Add legend
             handles, labels = ax.get_legend_handles_labels()
             if handles:
                 ax.legend(loc="best", fontsize=7, framealpha=0.8)
         
         else:
-            # Single-group case
             if show_samples:
                 ax.scatter(
                     ptime, expr,
@@ -682,7 +602,6 @@ def plot_gene_expression_curves(
                     edgecolors='none'
                 )
             
-            # Show GAM fit if available
             if show_gam_fit and has_gam and len(expr) > 3:
                 try:
                     gam = gam_models[gene]
@@ -707,7 +626,6 @@ def plot_gene_expression_curves(
             elif show_gam_fit and not has_gam and len(expr) > 10:
                 _plot_fallback_smooth(ax, ptime, expr, line_color)
         
-        # Add statistics annotation
         if results is not None and "gene" in results.columns and gene in results["gene"].values:
             gene_stats = results.loc[results["gene"] == gene].iloc[0]
             fdr = gene_stats.get("fdr", np.nan)
@@ -735,7 +653,6 @@ def plot_gene_expression_curves(
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
     
-    # Hide unused subplots
     for idx in range(n_genes, n_rows * n_cols):
         row, col = divmod(idx, n_cols)
         axes[row, col].axis("off")
@@ -764,12 +681,10 @@ def plot_sample_level_curves(
     title: Optional[str] = None,
     output_path: Optional[str] = None,
     verbose: bool = False,
-    color_scheme: str = 'blue'  # NEW: 'blue' for genes, 'red' for peaks
+    color_scheme: str = 'blue'  # 'blue' for genes, 'red' for peaks
 ) -> plt.Figure:
     """
-    Plot sample-level expression curves with GAM fits.
-    
-    UPDATED: Added color_scheme parameter to differentiate genes (blue) from peaks (red).
+    Plot per-sample expression curves (left) and group-level GAM fits (right).
     """
     if gene not in Y.columns:
         if verbose:
@@ -785,16 +700,13 @@ def plot_sample_level_curves(
     expr = Y[gene].values
     samples = X[sample_col].unique() if sample_col in X.columns else ['all']
     
-    # Color scheme setup - UPDATED
     if color_scheme == 'red':
-        # For peaks
         base_color = "#B2182B"
         scatter_color = "#D6604D"
         line_color = "#67001F"
         group1_color = "#FDB863"
         group2_color = "#B2182B"
-    else:  # 'blue' for genes (default)
-        # For genes
+    else:
         base_color = "#2166AC"
         scatter_color = "#4393C3"
         line_color = "#053061"
@@ -812,7 +724,6 @@ def plot_sample_level_curves(
         groups = None
         group_colors = {}
     
-    # Left panel: Sample-level patterns
     ax1 = axes[0]
     for sample in samples:
         if sample_col in X.columns:
@@ -826,12 +737,9 @@ def plot_sample_level_curves(
         if len(sample_ptime) < 2:
             continue
         
-        # Sort and smooth
         sort_idx = np.argsort(sample_ptime)
         x_sorted = sample_ptime[sort_idx]
         y_sorted = sample_expr[sort_idx]
-        
-        # Bin and smooth
         if len(x_sorted) > 3:
             bins = np.linspace(x_sorted.min(), x_sorted.max(), min(n_bins + 1, len(x_sorted)))
             bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -848,8 +756,6 @@ def plot_sample_level_curves(
             plot_x, plot_y = bin_centers, binned
         else:
             plot_x, plot_y = x_sorted, y_sorted
-        
-        # Get color
         if groups and group_col in X.columns:
             sample_group = X.loc[X[sample_col] == sample, group_col].iloc[0] if sample_col in X.columns else None
             color = group_colors.get(sample_group, 'gray')
@@ -869,9 +775,7 @@ def plot_sample_level_curves(
             ax1.plot([], [], color=group_colors.get(g, 'gray'), linewidth=2, label=str(g))
         ax1.legend(loc='best', fontsize=9)
     
-    # Right panel: Group-level GAM fits
     ax2 = axes[1]
-    
     nonzero_mask = (expr != 0.0) & np.isfinite(expr) & np.isfinite(ptime)
     
     if groups and gam_model is not None:
@@ -1046,11 +950,8 @@ def plot_cell_density(
         else:
             sample_ptime = ptime
         
-        # Calculate density
         counts, _ = np.histogram(sample_ptime, bins=bins)
         density = counts / (counts.sum() + 1e-10)
-        
-        # Get color
         if groups and group_col in X.columns:
             sample_group = X.loc[X[sample_col] == sample, group_col].iloc[0] if sample_col in X.columns else None
             color = group_colors.get(sample_group, 'gray')
@@ -1061,7 +962,6 @@ def plot_cell_density(
         
         ax.plot(bin_centers, density, color=color, alpha=alpha, linewidth=1.5)
     
-    # Add legend for groups
     if groups:
         for g in groups:
             ax.plot([], [], color=group_colors.get(g, 'gray'), linewidth=2, label=str(g))
@@ -1140,12 +1040,10 @@ def plot_cluster_patterns(
     sort_idx = np.argsort(ptime)
     ptime_sorted = ptime[sort_idx]
     
-    # Bin pseudotime
     n_bins = 50
     bins = np.linspace(ptime.min(), ptime.max(), n_bins + 1)
     bin_centers = (bins[:-1] + bins[1:]) / 2
     
-    # Setup figure
     n_cols = 1 + n_example_genes
     fig, axes = plt.subplots(n_clusters, n_cols, figsize=figsize, squeeze=False)
     
@@ -1166,9 +1064,7 @@ def plot_cluster_patterns(
         if len(available_cluster_genes) == 0:
             continue
         
-        # Cluster average pattern
         ax_avg = axes[c_idx, 0]
-        
         cluster_expr = Y[available_cluster_genes].iloc[sort_idx]
         
         if groups:
@@ -1176,7 +1072,6 @@ def plot_cluster_patterns(
                 g_mask = X[group_col].values[sort_idx] == g
                 g_expr = cluster_expr.iloc[g_mask].mean(axis=1)
                 
-                # Bin and smooth
                 binned = np.zeros(n_bins)
                 g_ptime = ptime_sorted[g_mask]
                 for i in range(n_bins):
@@ -1186,7 +1081,6 @@ def plot_cluster_patterns(
                     else:
                         binned[i] = np.nan
                 
-                # Interpolate NaNs
                 binned = pd.Series(binned).interpolate(limit_direction='both').values
                 
                 ax_avg.plot(bin_centers, binned, color=group_colors.get(g, 'gray'), 
@@ -1206,7 +1100,6 @@ def plot_cluster_patterns(
         ax_avg.set_xlabel('Pseudotime', fontsize=9)
         ax_avg.tick_params(labelsize=8)
         
-        # Example genes
         example_genes = available_cluster_genes[:n_example_genes]
         for g_idx, gene in enumerate(example_genes):
             ax_gene = axes[c_idx, 1 + g_idx]
@@ -1224,7 +1117,6 @@ def plot_cluster_patterns(
             ax_gene.set_xlabel('Pseudotime', fontsize=8)
             ax_gene.tick_params(labelsize=7)
         
-        # Hide empty gene subplots
         for g_idx in range(len(example_genes), n_example_genes):
             axes[c_idx, 1 + g_idx].axis('off')
     
@@ -1295,32 +1187,21 @@ def plot_volcano(
     
     fig, ax = plt.subplots(figsize=figsize)
     
-    # Calculate -log10(FDR)
     log_pval = -np.log10(results[pval_col].clip(lower=1e-300))
     effect = results[effect_col].values
     
-    # Categorize points
     sig_mask = results[pval_col] < fdr_threshold
     effect_mask = np.abs(effect) > effect_threshold
-    
-    # Non-significant
     ns_mask = ~sig_mask
     ax.scatter(effect[ns_mask], log_pval[ns_mask], c='lightgray', alpha=0.5, s=20, label='NS')
-    
-    # Significant but low effect
     sig_low_mask = sig_mask & ~effect_mask
     ax.scatter(effect[sig_low_mask], log_pval[sig_low_mask], c='steelblue', alpha=0.6, s=30, label='Sig (low effect)')
-    
-    # Significant and high effect
     sig_high_mask = sig_mask & effect_mask
     ax.scatter(effect[sig_high_mask], log_pval[sig_high_mask], c='crimson', alpha=0.8, s=50, label='Sig (high effect)')
-    
-    # Add threshold lines
     ax.axhline(-np.log10(fdr_threshold), color='gray', linestyle='--', linewidth=1, alpha=0.7)
     ax.axvline(effect_threshold, color='gray', linestyle='--', linewidth=1, alpha=0.7)
     ax.axvline(-effect_threshold, color='gray', linestyle='--', linewidth=1, alpha=0.7)
     
-    # Label highlighted genes
     if highlight_genes:
         for gene in highlight_genes:
             if gene in results[gene_col].values:
@@ -1330,7 +1211,6 @@ def plot_volcano(
                 ax.annotate(gene, (x, y), fontsize=8, ha='center', va='bottom',
                            xytext=(0, 5), textcoords='offset points')
     
-    # Label top genes
     top_genes = results[sig_high_mask].nsmallest(10, pval_col)
     for _, row in top_genes.iterrows():
         x = row[effect_col]
@@ -1393,7 +1273,6 @@ def plot_results_summary(
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(2, 2, hspace=0.3, wspace=0.3)
     
-    # FDR distribution
     ax1 = fig.add_subplot(gs[0, 0])
     fdr_vals = results['fdr'].clip(upper=1).values
     ax1.hist(fdr_vals, bins=50, color='steelblue', alpha=0.7, edgecolor='white')
@@ -1408,7 +1287,6 @@ def plot_results_summary(
             transform=ax1.transAxes, ha='right', va='top', fontsize=10,
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
-    # Effect size distribution (if available)
     ax2 = fig.add_subplot(gs[0, 1])
     if 'effect_size' in results.columns:
         effect_vals = results['effect_size'].dropna().values
@@ -1417,7 +1295,6 @@ def plot_results_summary(
         ax2.set_ylabel('Count', fontsize=11)
         ax2.set_title('Effect Size Distribution', fontsize=12, fontweight='bold')
     else:
-        # Deviance explained
         if 'dev_exp' in results.columns:
             dev_vals = results['dev_exp'].dropna().values
             ax2.hist(dev_vals, bins=50, color='coral', alpha=0.7, edgecolor='white')
@@ -1425,7 +1302,6 @@ def plot_results_summary(
             ax2.set_ylabel('Count', fontsize=11)
             ax2.set_title('Model Fit (Deviance Explained)', fontsize=12, fontweight='bold')
     
-    # P-value vs effect/deviance scatter
     ax3 = fig.add_subplot(gs[1, 0])
     log_fdr = -np.log10(results['fdr'].clip(lower=1e-300))
     
@@ -1446,7 +1322,6 @@ def plot_results_summary(
     ax3.set_ylabel('-log10(FDR)', fontsize=11)
     ax3.set_title(f'{x_label} vs Significance', fontsize=12, fontweight='bold')
     
-    # Top genes bar plot
     ax4 = fig.add_subplot(gs[1, 1])
     top_genes = results.nsmallest(15, 'fdr')
     
@@ -1494,28 +1369,15 @@ def _get_top_genes_by_effect_size(
     list
         List of top gene names sorted by effect size (descending)
     """
-    # Filter to significant genes
     sig_results = results[results['fdr'] < fdr_threshold].copy()
-    
     if len(sig_results) == 0:
-        # Fallback to smallest FDR if no significant genes
         return results.nsmallest(min(n_genes, len(results)), 'fdr')['gene'].tolist()
-    
-    # Check if effect_size column exists and has valid values
     if 'effect_size' not in sig_results.columns:
-        # Fallback to FDR-based selection
         return sig_results.nsmallest(min(n_genes, len(sig_results)), 'fdr')['gene'].tolist()
-    
-    # Filter out NaN effect sizes
     sig_with_effect = sig_results[sig_results['effect_size'].notna()].copy()
-    
     if len(sig_with_effect) == 0:
-        # Fallback to FDR-based selection
         return sig_results.nsmallest(min(n_genes, len(sig_results)), 'fdr')['gene'].tolist()
-    
-    # Sort by effect size (descending) and get top n genes
     top_genes = sig_with_effect.nlargest(min(n_genes, len(sig_with_effect)), 'effect_size')['gene'].tolist()
-    
     return top_genes
 
 
@@ -1533,13 +1395,7 @@ def generate_all_visualizations(
     verbose: bool = True
 ):
     """
-    Generate Lamian-style visualizations with proper GAM model passing.
-    
-    UPDATED: Now selects top genes by effect size (among those meeting FDR threshold)
-    instead of by smallest FDR.
-    
-    This is the improved version that correctly passes gam_models to the
-    plot_gene_expression_curves function.
+    Generate Lamian-style visualizations; top genes selected by effect size (not smallest FDR).
     """
     import os
     import importlib.util
@@ -1550,15 +1406,11 @@ def generate_all_visualizations(
     if verbose:
         print("[DEBUG] Step 5/5: Generating Lamian-style visualizations...")
     
-    # Create visualization directory
     viz_dir = os.path.join(output_dir, "visualizations")
     os.makedirs(viz_dir, exist_ok=True)
-    
-    # Prepare X with additional columns for visualization
+
     X_viz = X.copy()
     X_viz['sample'] = X_viz.index
-    
-    # Add group column if specified and available in adata
     if group_col and group_col in pseudobulk_adata.obs.columns:
         group_info = pseudobulk_adata.obs.loc[X_viz.index, group_col]
         X_viz[group_col] = group_info.values
@@ -1567,8 +1419,7 @@ def generate_all_visualizations(
             print(f"[DEBUG] Added group column '{group_col}' with groups: {list(groups)}")
     
     pseudotime = X['pseudotime'].values
-    
-    # 5.1 Results Summary
+
     if verbose:
         print("[VIZ] Creating results summary...")
     try:
@@ -1585,7 +1436,6 @@ def generate_all_visualizations(
         if verbose:
             print(f"[VIZ] Warning: Could not create results summary: {e}")
     
-    # 5.2 TDE Heatmap
     if verbose:
         print("[VIZ] Creating TDE heatmap...")
     cluster_info = {}
@@ -1604,7 +1454,6 @@ def generate_all_visualizations(
         if verbose:
             print(f"[VIZ] Warning: Could not create TDE heatmap: {e}")
     
-    # 5.3 XDE Heatmap (if group column provided)
     if group_col and group_col in X_viz.columns:
         if verbose:
             print("[VIZ] Creating XDE heatmap...")
@@ -1623,7 +1472,6 @@ def generate_all_visualizations(
             if verbose:
                 print(f"[VIZ] Warning: Could not create XDE heatmap: {e}")
     
-    # 5.4 Volcano Plot (if effect size available)
     if 'effect_size' in results.columns:
         if verbose:
             print("[VIZ] Creating volcano plot...")
@@ -1641,11 +1489,9 @@ def generate_all_visualizations(
             if verbose:
                 print(f"[VIZ] Warning: Could not create volcano plot: {e}")
     
-    # 5.5 Gene Expression Curves - UPDATED: Use effect size for top gene selection
     if verbose:
         print("[VIZ] Creating gene expression curves with GAM fits...")
     try:
-        # CHANGED: Use effect size to select top genes instead of FDR
         top_genes_for_plot = _get_top_genes_by_effect_size(
             results, 
             n_genes=top_n_genes_for_curves, 
@@ -1657,12 +1503,11 @@ def generate_all_visualizations(
                 print(f"[VIZ] Plotting {len(top_genes_for_plot)} genes (selected by effect size, FDR < {fdr_threshold})")
                 print(f"[VIZ] GAM models available: {len(gam_models)}")
             
-            # THIS IS THE KEY FIX - pass gam_models parameter
             fig = plot_gene_expression_curves(
                 genes=top_genes_for_plot,
                 Y=Y,
                 X=X_viz,
-                gam_models=gam_models,  # <-- KEY: Pass the GAM models!
+                gam_models=gam_models,
                 results=results,
                 group_col=group_col,
                 title="Top Differential Genes Along Pseudotime (by Effect Size)",
@@ -1677,7 +1522,6 @@ def generate_all_visualizations(
             import traceback
             traceback.print_exc()
     
-    # 5.6 Cell/Sample Density Plot
     if verbose:
         print("[VIZ] Creating sample density plot...")
     try:
@@ -1693,7 +1537,6 @@ def generate_all_visualizations(
         if verbose:
             print(f"[VIZ] Warning: Could not create density plot: {e}")
     
-    # 5.7 Cluster Patterns (if cluster info available)
     if cluster_info and len(cluster_info.get('genes', [])) > 0:
         if verbose:
             print("[VIZ] Creating cluster pattern summary...")
@@ -1711,11 +1554,9 @@ def generate_all_visualizations(
             if verbose:
                 print(f"[VIZ] Warning: Could not create cluster patterns: {e}")
     
-    # 5.8 Sample-level curves for top gene - UPDATED: Use effect size for top gene selection
     if verbose:
         print("[VIZ] Creating sample-level expression curves...")
     try:
-        # CHANGED: Get top gene by effect size instead of smallest FDR
         top_gene_list = _get_top_genes_by_effect_size(results, n_genes=1, fdr_threshold=fdr_threshold)
         top_gene = top_gene_list[0] if top_gene_list else None
         
@@ -1726,7 +1567,7 @@ def generate_all_visualizations(
                 gene=top_gene,
                 Y=Y,
                 X=X_viz,
-                gam_model=gam_models[top_gene],  # <-- KEY: Pass the specific GAM model!
+                gam_model=gam_models[top_gene],
                 sample_col='sample',
                 group_col=group_col,
                 title=f"Sample-Level Expression: {top_gene} (Top by Effect Size)",

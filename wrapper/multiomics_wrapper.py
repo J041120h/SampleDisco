@@ -199,9 +199,10 @@ def multiomics_wrapper(
     status_flags=None,
 ) -> Dict[str, Any]:
     """Multi-omics wrapper: GLUE integration, preprocessing, cell typing, and the
-    new single-key sample embedding (composition + RMD). Multi-omics groups RMD
-    by ``modality_col`` and uses ``X_glue`` as both the cluster and RMD
-    cell-level embedding.
+    new single-key sample embedding (composition + RMD). The cluster / composition
+    role uses ``Z_clust`` (sample-removed, from Harmony post-pass or 2-run GLUE);
+    the RMD displacement role uses ``Z_rmd`` (= ``X_glue``, sample-preserved).
+    Multi-omics groups RMD blocks by ``modality_col``.
 
     Returns dict with adata, sample_adata, status_flags.
     """

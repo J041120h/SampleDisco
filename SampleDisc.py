@@ -46,7 +46,6 @@ def main():
             print("Error: In 'simple' mode, -c and -o must be provided.", file=sys.stderr)
             sys.exit(1)
 
-        # Call wrapper with or without sample_meta_data
         if args.sample_meta_data:
             wrapper(args.count_data, args.sample_meta_data, args.output_directory)
         else:

@@ -16,14 +16,12 @@ def inspect_column(series: pd.Series, n_examples: int = 5) -> None:
     print(f"      unique: {n_unique}")
 
     if pd.api.types.is_categorical_dtype(series) or pd.api.types.is_object_dtype(series):
-        # Categorical/string: show value counts
         vc = series.value_counts(dropna=False).head(n_examples)
         print(f"      top values:")
         for val, cnt in vc.items():
             pct = 100 * cnt / n_total
             print(f"        '{val}': {cnt} ({pct:.1f}%)")
     elif pd.api.types.is_numeric_dtype(series):
-        # Numeric: show stats and examples
         print(f"      min: {series.min():.6g}, max: {series.max():.6g}, mean: {series.mean():.6g}")
         examples = series.dropna().unique()[:n_examples]
         print(f"      example values: {list(examples)}")
@@ -31,7 +29,6 @@ def inspect_column(series: pd.Series, n_examples: int = 5) -> None:
         vc = series.value_counts(dropna=False)
         print(f"      value counts: {dict(vc)}")
     else:
-        # Fallback: just show some examples
         examples = series.dropna().unique()[:n_examples]
         print(f"      example values: {list(examples)}")
 
@@ -51,8 +48,7 @@ def _print_sparsity_info(mat, label: str = ".X") -> None:
         if issparse(mat):
             nnz = mat.nnz
         else:
-            # convert to array view for count_nonzero, but avoid a full copy if possible
-            arr = np.asarray(mat)
+            arr = np.asarray(mat)  # view when possible, avoids a full copy
             nnz = int(np.count_nonzero(arr))
 
         density = nnz / total
@@ -145,32 +141,23 @@ def summarize_h5ad(
     unique_column_where: str = "auto",   # "auto" | "obs" | "var"
     unique_max_values: int | None = 200  # set None to print all
 ):
-    """
-    Summarize an AnnData .h5ad file by printing examples of cell names, obs, var,
-    and inspecting .X (dtype, NaN/Inf, integer-like vs fractional, min/max, example values,
-    and sparsity).
-    Also prints sample values from any additional layers if present, and previews obsm/varm.
+    """Print a structured summary of an h5ad file.
 
-    NEW:
-    ----
-    User can optionally specify `print_unique_column` and all unique values of that column
-    (from obs or var) will be printed.
+    Covers: shape, obs/var columns, .X dtype/sparsity/NaN/range, layers,
+    obsm/varm previews, and optionally all unique values for one column.
 
     Parameters
     ----------
     h5ad_path : str
-        Path to the .h5ad file.
     n_examples : int
-        Number of example rows to show for matrices and dataframes.
+        Rows shown for matrices and dataframes.
     n_col_examples : int
-        Number of example values to show per metadata column.
+        Top values shown per obs/var column.
     print_unique_column : str or None
-        If provided, print all unique values for this column (in obs/var).
+        If given, print every unique value in this obs or var column.
     unique_column_where : {"auto","obs","var"}
-        Where to look for `print_unique_column`.
     unique_max_values : int or None
-        Guardrail to prevent printing an enormous number of uniques.
-        Set to None to print all unique values regardless of count.
+        Refuse to print if unique count exceeds this (set None to print all).
     """
     try:
         print(f"🔍 Loading AnnData from: {h5ad_path}")
@@ -184,7 +171,6 @@ def summarize_h5ad(
         print(f"  - obsm keys: {list(adata.obsm.keys()) if hasattr(adata, 'obsm') else 'None'}")
         print(f"  - varm keys: {list(adata.varm.keys()) if hasattr(adata, 'varm') else 'None'}")
 
-        # NEW: print unique values for a requested column (obs/var)
         _maybe_print_unique_values(
             adata=adata,
             column=print_unique_column,
@@ -192,7 +178,6 @@ def summarize_h5ad(
             max_unique=unique_max_values,
         )
 
-        # 🔎 Inspect .X
         print("\n🔎 Inspecting .X matrix:")
         X = adata.X
 
@@ -278,7 +263,6 @@ def summarize_h5ad(
             X_sub = np.asarray(X[:n_rows, :n_cols])
         print(X_sub)
 
-        # 🔁 Inspect any additional layers
         if hasattr(adata, "layers") and len(adata.layers.keys()) > 0:
             print("\n📚 Inspecting additional layers:")
             for layer_name in adata.layers.keys():

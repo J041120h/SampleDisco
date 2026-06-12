@@ -22,13 +22,11 @@ def find_sample_grouping(
     if sample_column not in adata.obs.columns:
         raise KeyError(f"[ERROR] '{sample_column}' column is missing in adata.obs. Cannot group by sample.")
 
-    # Normalize sample column in adata to lowercase for matching
+    # Lowercase both sides so sample ID casing mismatches don't cause missed joins.
     adata.obs[sample_column] = adata.obs[sample_column].astype(str).str.lower()
-    # Create lowercase version of samples for matching, but keep original mapping
-    sample_map = {s.lower(): s for s in samples}
+    sample_map = {s.lower(): s for s in samples}  # maps lowercased → original for output keys
     samples_lower = list(sample_map.keys())
 
-    # Validate that all grouping columns exist in adata.obs
     for col in grouping_columns:
         if col not in adata.obs.columns:
             raise KeyError(f"[ERROR] Grouping column '{col}' is missing in adata.obs.")
@@ -72,7 +70,6 @@ def find_sample_grouping(
                 if len(values) == 0:
                     return None if preserve_numeric else f"{column}_NoData"
                 avg_val = values.mean()
-                # Return raw numeric value or formatted string
                 return avg_val if preserve_numeric else f"{column}_{avg_val:.2f}"
             else:
                 if len(values) == 0:
@@ -81,10 +78,10 @@ def find_sample_grouping(
                 if len(modes) == 0:
                     return None if preserve_numeric else f"{column}_NoMode"
                 mode_val = modes.iloc[0]
-                # Return raw categorical value or formatted string
                 return mode_val if preserve_numeric else f"{column}_{mode_val}"
 
-    # Determine if we should preserve raw values (single column) or create labels (multiple columns)
+    # Single column: return raw value so the caller sees the original dtype.
+    # Multiple columns: combine into a string label.
     preserve_raw_values = len(grouping_columns) == 1
 
     for sample_lower in samples_lower:
@@ -100,12 +97,10 @@ def find_sample_grouping(
         sample_df = adata.obs.loc[mask, grouping_columns]
         
         if preserve_raw_values:
-            # Single column: return raw value to preserve data type
             col = grouping_columns[0]
             raw_value = get_column_value_for_sample(col, sample_df, preserve_numeric=True)
             groups[original_sample] = raw_value
         else:
-            # Multiple columns: create combined label
             col_values = []
             for col in grouping_columns:
                 col_val = get_column_value_for_sample(col, sample_df, preserve_numeric=False)

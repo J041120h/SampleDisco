@@ -1,15 +1,6 @@
 """
-Cell Type Proportion Testing - Python port of R RAISIN package
-
-This module performs statistical testing for cell type proportions.
-Tests if the proportions of cell types are differential across groups.
-
-The key difference from simple OLS is the use of empirical Bayes moderation
-similar to limma's eBayes, which provides more robust variance estimates
-for small sample sizes.
-
-Author: Original R code by Zhicheng Ji, Wenpin Hou, Hongkai Ji
-Python port maintains compatibility with R implementation.
+Cell-type proportion testing with limma-style eBayes moderation on CLR-transformed
+proportions. Python port of the R RAISIN package (Ji, Hou, Ji).
 """
 
 import os
@@ -26,10 +17,6 @@ import warnings
 import traceback
 
 
-# ---------------------------------------------------------------------
-#  limma-like eBayes functions
-# ---------------------------------------------------------------------
-
 def trigamma(x):
     """Trigamma function (second derivative of log-gamma)."""
     return polygamma(1, x)
@@ -37,13 +24,9 @@ def trigamma(x):
 
 def fit_f_dist(s2, df):
     """
-    Fit an F-distribution to sample variances.
+    Fit an F-distribution to sample variances (limma's fitFDist, Smyth 2004).
 
-    This matches limma's fitFDist function which estimates:
-    - scale (s0^2): prior variance
-    - df2 (d0): prior degrees of freedom
-
-    Uses the method from Smyth (2004) Stat. Appl. Genet. Mol. Biol.
+    Returns (scale=s0^2, df2=d0): prior variance and prior degrees of freedom.
     """
     s2 = np.array(s2)
     if np.isscalar(df):
@@ -96,10 +79,7 @@ def fit_f_dist(s2, df):
 
 
 def squeeze_var(var, df, robust=False):
-    """
-    Squeeze sample variances toward a common value using empirical Bayes.
-    Matches limma's squeezeVar function.
-    """
+    """Squeeze sample variances toward a common prior (limma's squeezeVar)."""
     var = np.array(var)
     var_prior, df_prior = fit_f_dist(var, df)
 
@@ -122,10 +102,7 @@ def squeeze_var(var, df, robust=False):
 
 
 def ebayes_test(Y, X, coef=1):
-    """
-    Perform limma-style empirical Bayes moderated t-test.
-    Mimics limma's lmFit + eBayes + topTable workflow.
-    """
+    """Limma-style moderated t-test (lmFit + eBayes + topTable) for features × samples."""
     Y = np.array(Y)
     X = np.array(X)
 
@@ -169,10 +146,6 @@ def ebayes_test(Y, X, coef=1):
     return pd.DataFrame({"logFC": logFC, "t": t_stat, "P.Value": pval, "adj.P.Val": adj_pval})
 
 
-# ---------------------------------------------------------------------
-#  Main proportion test function (matching raisinfit interface)
-# ---------------------------------------------------------------------
-
 def proportion_test(
     adata,
     sample_col,
@@ -213,55 +186,43 @@ def proportion_test(
         Currently unused (kept for API compatibility).
     """
 
-    # Significance level used for visualization and summary
     significance_level = 0.01
 
-    # Validate that at least one source of grouping is provided
     if group_col is None and sample_to_clade is None:
         raise ValueError("Either group_col or sample_to_clade must be provided")
 
-    # If both are provided, prefer group_col and ignore sample_to_clade
     if group_col is not None and sample_to_clade is not None:
         warnings.warn(
             "Both sample_to_clade and group_col provided. "
             "Using group_col and ignoring sample_to_clade."
         )
 
-    # Validate columns
     if sample_col not in adata.obs.columns:
         raise KeyError(f"sample_col '{sample_col}' not found in adata.obs")
 
     if celltype_col not in adata.obs.columns:
         raise KeyError(f"celltype_col '{celltype_col}' not found in adata.obs")
 
-    # If group_col is provided, it must exist in adata.obs
     if group_col is not None and group_col not in adata.obs.columns:
         raise KeyError(f"group_col '{group_col}' not found in adata.obs")
 
-    # Get sample and celltype info
     samples = np.array(adata.obs[sample_col].values)
     celltypes = np.array(adata.obs[celltype_col].values)
     unique_samples = np.unique(samples)
 
-    # -----------------------------------------------------------------
-    # Build sample → group mapping
-    # -----------------------------------------------------------------
     if group_col is not None:
-        # Use group_col from adata.obs (preferred when available)
         sample_groups = {}
         for s in unique_samples:
             mask = samples == s
             vals = adata.obs.loc[mask, group_col].values
-            # For safety, take the most common value among cells of the same sample
+            # Take the modal value; handles any cell-level noise in a sample-level column.
             most_common = pd.Series(vals).value_counts().idxmax()
             sample_groups[s] = most_common
     else:
-        # Fall back to sample_to_clade mapping
         common_samples = [s for s in unique_samples if s in sample_to_clade]
         if len(common_samples) == 0:
             raise ValueError("No samples in data match keys in sample_to_clade")
 
-        # Restrict samples and celltypes to those present in mapping
         sample_mask = np.isin(samples, common_samples)
         samples = samples[sample_mask]
         celltypes = celltypes[sample_mask]
@@ -269,16 +230,12 @@ def proportion_test(
 
         sample_groups = {s: sample_to_clade[s] for s in unique_samples}
 
-    # -----------------------------------------------------------------
-    # Calculate cell type proportions per sample
-    # -----------------------------------------------------------------
     ct_sample_counts = pd.crosstab(celltypes, samples)
     ct_sample_counts = ct_sample_counts.reindex(columns=unique_samples, fill_value=0)
 
     prop = ct_sample_counts.values.astype(float)
     prop = prop / prop.sum(axis=0, keepdims=True)
 
-    # Handle boundary values
     min_nonzero = prop[prop > 0].min() if (prop > 0).any() else 1e-10
     prop = np.clip(prop, min_nonzero, 1 - min_nonzero)
 
@@ -289,7 +246,6 @@ def proportion_test(
 
     prop_clr_df = pd.DataFrame(prop_clr, index=ct_sample_counts.index, columns=unique_samples)
 
-    # Get unique groups
     unique_groups = sorted(set(sample_groups.values()))
 
     if len(unique_groups) < 2:
@@ -298,13 +254,10 @@ def proportion_test(
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
 
-    # -----------------------------------------------------------------
-    # Perform pairwise comparisons
-    # -----------------------------------------------------------------
     all_results = {}
 
-    # Collect raw p-values from all pairs first, then apply BH-FDR globally
-    # across all (pair, celltype) tests rather than per-pair.
+    # Collect raw p-values from all pairs first; BH-FDR applied globally
+    # across all (pair, celltype) hypotheses rather than per-pair.
     pair_results: List[Tuple[str, pd.DataFrame]] = []
     for group1, group2 in itertools.combinations(unique_groups, 2):
         samples_g1 = [s for s in unique_samples if sample_groups[s] == group1]
@@ -342,9 +295,6 @@ def proportion_test(
             output_path = os.path.join(output_dir, f"proportion_test_{comparison_name}.csv")
             df_result.to_csv(output_path, index=False)
 
-    # -----------------------------------------------------------------
-    # Generate visualizations
-    # -----------------------------------------------------------------
     if output_dir is not None:
         _proportion_test_visualization(
             prop_df=pd.DataFrame(prop, index=ct_sample_counts.index, columns=unique_samples),
@@ -354,9 +304,6 @@ def proportion_test(
             significance_level=significance_level,
         )
 
-        # -----------------------------------------------------------------
-        # Write summary TXT of significant findings
-        # -----------------------------------------------------------------
         summary_path = os.path.join(output_dir, "proportion_test_significant_summary.txt")
         lines = []
         lines.append(f"Significant cell type proportion differences (FDR < {significance_level})")
@@ -387,26 +334,15 @@ def proportion_test(
 
 def _compute_celltype_uniform_significance_order(results, celltypes, significance_level=0.05):
     """
-    Compute cell type ordering based on uniform significance across comparisons.
-    
-    Cell types are ranked by how consistently significant they are across all
-    pairwise comparisons. The ranking considers:
-    1. Number of comparisons where the cell type is significant (primary)
-    2. Mean -log10(FDR) across all comparisons (secondary, for tie-breaking)
-    
-    Parameters
-    ----------
-    results : dict
-        Dictionary of comparison results {comparison_name: DataFrame}
-    celltypes : array-like
-        List of all cell types to order
-    significance_level : float
-        FDR threshold for significance
-        
+    Order cell types by consistency of significance across pairwise comparisons.
+
+    Primary key: fraction of comparisons significant; secondary: mean -log10(FDR);
+    tertiary: low variance of the significance indicator (i.e. uniformly sig or not).
+
     Returns
     -------
     list
-        Cell types ordered from most uniformly significant to least
+        Cell types from most to least uniformly significant.
     """
     celltypes = list(celltypes)
     comp_names = list(results.keys())
@@ -415,7 +351,6 @@ def _compute_celltype_uniform_significance_order(results, celltypes, significanc
     if n_comparisons == 0:
         return celltypes
     
-    # Build a matrix: cell types × comparisons with -log10(FDR) values
     fdr_matrix = pd.DataFrame(index=celltypes, columns=comp_names, dtype=float)
     sig_matrix = pd.DataFrame(index=celltypes, columns=comp_names, dtype=float)
     
@@ -431,31 +366,22 @@ def _compute_celltype_uniform_significance_order(results, celltypes, significanc
                 fdr_matrix.loc[ct, comp] = 1.0  # Not tested = not significant
                 sig_matrix.loc[ct, comp] = 0.0
     
-    # Compute uniformity scores
-    # Primary: fraction of comparisons where significant
     sig_count = sig_matrix.sum(axis=1)
     sig_fraction = sig_count / n_comparisons
-    
-    # Secondary: mean -log10(FDR) for tie-breaking (higher = more significant overall)
-    # Clip FDR to avoid log(0)
+
     fdr_clipped = fdr_matrix.clip(lower=1e-300)
     mean_neg_log_fdr = (-np.log10(fdr_clipped)).mean(axis=1)
-    
-    # Tertiary: variance of significance across comparisons (lower = more uniform)
-    # We want cell types that are significant in ALL or NONE comparisons to rank
-    # higher than those significant in only some (for uniformity)
+
     sig_variance = sig_matrix.var(axis=1, ddof=0)
-    # Invert so lower variance = higher score
+    # Lower variance → more uniform (sig in all or none); invert so higher = better.
     uniformity_score = 1.0 - sig_variance
-    
-    # Create ranking DataFrame
+
     ranking_df = pd.DataFrame({
         "sig_fraction": sig_fraction,
         "mean_neg_log_fdr": mean_neg_log_fdr,
         "uniformity_score": uniformity_score,
     }, index=celltypes)
     
-    # Sort by: sig_fraction (desc), uniformity_score (desc), mean_neg_log_fdr (desc)
     ranking_df = ranking_df.sort_values(
         by=["sig_fraction", "uniformity_score", "mean_neg_log_fdr"],
         ascending=[False, False, False]
@@ -465,22 +391,7 @@ def _compute_celltype_uniform_significance_order(results, celltypes, significanc
 
 
 def _normalize_per_column(df):
-    """
-    Normalize each column (cell type) to 0-1 range independently.
-    
-    This allows visualization of relative differences within each cell type
-    across groups, regardless of the absolute scale.
-    
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Matrix with groups as rows and cell types as columns
-        
-    Returns
-    -------
-    pd.DataFrame
-        Column-wise normalized matrix (each column scaled to 0-1)
-    """
+    """Scale each column independently to [0, 1]; constant columns map to 0.5."""
     result = df.copy().astype(float)
     for col in result.columns:
         col_data = result[col]
@@ -489,7 +400,6 @@ def _normalize_per_column(df):
         if col_max > col_min:
             result[col] = (col_data - col_min) / (col_max - col_min)
         else:
-            # Constant column - set to 0.5 (middle of scale)
             result[col] = 0.5
     return result
 
@@ -498,32 +408,20 @@ def _proportion_test_visualization(
     prop_df, output_dir, sample_groups, results, significance_level=0.05, verbose=False
 ):
     """
-    Internal function to generate visualizations.
-
-    - Heatmap: group-averaged cell type proportions (Groups × Cell Types)
-    - Boxplots: per-sample proportions for top significant cell types per comparison
-
-    IMPROVEMENTS (without changing upstream stats or outputs):
-    1) Keep the original mean-proportion heatmap filename, but use a robust vmax so
-       low-abundance cell types are visually separable.
-    2) Add two additional heatmaps:
-       - CLR(mean proportion): matches the testing scale more closely
-       - per-celltype z-score across groups: highlights relative shifts per cell type
-    3) Add an optional significance overlay heatmap (FDR<alpha) for quick interpretation.
-    4) For CLR and z-score heatmaps, order cell types by uniform significance across groups.
-    5) Use per-column (per cell type) normalization so nuances within each cell type are visible.
+    Generate proportion-test visualizations:
+      (A) Mean-proportion heatmap (robust vmax so low-abundance types are visible).
+      (B) CLR-scale heatmap, ordered by uniform significance, per-celltype normalized.
+      (C) Per-celltype z-score heatmap (same ordering and normalization).
+      (D) Significance-presence matrix across all pairwise tests.
+      Boxplots for top significant cell types per comparison.
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
     from matplotlib.colors import Normalize
     from matplotlib.cm import ScalarMappable
 
-    # Set a clean, journal-like style
     sns.set(style="whitegrid", context="talk")
 
-    # -------------------------------------------------------------
-    # Group-averaged matrix: Cell Types (rows) × Groups (cols) -> transpose for plotting
-    # -------------------------------------------------------------
     group_labels = sorted(set(sample_groups.values()))
     group_prop = pd.DataFrame(index=prop_df.index, columns=group_labels, dtype=float)
 
@@ -534,25 +432,15 @@ def _proportion_test_visualization(
         else:
             group_prop[g] = prop_df[samples_g].mean(axis=1)
 
-    # Drop groups with all NaNs just in case
     group_prop = group_prop.dropna(axis=1, how="all")
 
-    # -------------------------------------------------------------
-    # Compute cell type ordering based on uniform significance
-    # -------------------------------------------------------------
     celltype_order = _compute_celltype_uniform_significance_order(
         results, prop_df.index, significance_level
     )
 
-    # -------------------------------------------------------------
-    # (A) Original heatmap (same filename), but with robust scaling
-    #     so near-zero differences become visible.
-    #     NOTE: This heatmap keeps original ordering (not reordered by significance)
-    # -------------------------------------------------------------
     plot_mat = group_prop.T  # Groups × Cell Types
 
-    # Robust vmax: avoids CD14/CD4 dominating the color range
-    # (still a single global scale; we just choose a better upper bound)
+    # Robust vmax (98th percentile) prevents dominant cell types from washing out the scale.
     finite_vals = plot_mat.to_numpy().ravel()
     finite_vals = finite_vals[np.isfinite(finite_vals)]
     if finite_vals.size == 0:
@@ -584,23 +472,15 @@ def _proportion_test_visualization(
     plt.savefig(heatmap_path, dpi=300)
     plt.close()
 
-    # -------------------------------------------------------------
-    # (B) CLR-scale heatmap of group-averaged proportions
-    #     (matches the testing scale).
-    #     Cell types ordered by uniform significance across groups.
-    #     Per-column normalization to show nuances within each cell type.
-    # -------------------------------------------------------------
-    # Reorder columns (cell types) by uniform significance
+    # (B) CLR-scale heatmap ordered by uniform significance, per-celltype normalized.
     plot_mat_ordered = plot_mat[[ct for ct in celltype_order if ct in plot_mat.columns]]
 
     eps = 1e-6
     clipped = np.clip(plot_mat_ordered.values, eps, 1 - eps)
     log_clipped = np.log(clipped)
-    # CLR: subtract per-row (per-group) geometric mean across cell types
     clr_values = log_clipped - log_clipped.mean(axis=1, keepdims=True)
     clr_mat = pd.DataFrame(clr_values, index=plot_mat_ordered.index, columns=plot_mat_ordered.columns)
 
-    # Normalize per column (per cell type) to 0-1 range
     clr_mat_normalized = _normalize_per_column(clr_mat)
 
     plt.figure(figsize=(12, 8))
@@ -624,21 +504,13 @@ def _proportion_test_visualization(
     plt.savefig(os.path.join(output_dir, "proportion_heatmap_group_by_celltype_clr.png"), dpi=300)
     plt.close()
 
-    # -------------------------------------------------------------
-    # (C) Per-celltype z-score across groups (row-wise on Groups × Cell Types)
-    #     Highlights relative changes within each cell type.
-    #     Cell types ordered by uniform significance across groups.
-    #     This is already per-column normalized by definition of z-score.
-    # -------------------------------------------------------------
+    # (C) Per-celltype z-score across groups (same cell-type ordering).
     z = plot_mat_ordered.copy().astype(float)
-    # z-score per column (cell type) across groups
     col_mean = z.mean(axis=0)
     col_std = z.std(axis=0, ddof=0).replace(0, np.nan)
     z = (z - col_mean) / col_std
     z = z.replace([np.inf, -np.inf], np.nan)
 
-    # For z-scores, we use a symmetric color scale centered at 0
-    # But normalize to show the range within each column
     z_normalized = _normalize_per_column(z)
 
     plt.figure(figsize=(12, 8))
@@ -662,11 +534,7 @@ def _proportion_test_visualization(
     plt.savefig(os.path.join(output_dir, "proportion_heatmap_group_by_celltype_zscore.png"), dpi=300)
     plt.close()
 
-    # -------------------------------------------------------------
-    # (D) Optional: significance presence matrix across all pairwise tests
-    #     (cell type × comparison), 1 if significant else 0.
-    #     Cell types ordered by uniform significance.
-    # -------------------------------------------------------------
+    # (D) Significance-presence matrix: cell type × comparison, 1=significant.
     try:
         comp_names = sorted(results.keys())
         if len(comp_names) > 0:
@@ -676,7 +544,6 @@ def _proportion_test_visualization(
             for comp in comp_names:
                 df = results[comp]
                 sig = df.set_index("celltype")["FDR"] < significance_level
-                # align
                 sig_mat[comp] = sig.reindex(sig_mat.index).fillna(False).astype(float)
 
             plt.figure(figsize=(max(10, 0.7 * len(comp_names) + 6), 8))
@@ -700,13 +567,9 @@ def _proportion_test_visualization(
             plt.savefig(os.path.join(output_dir, "proportion_significance_matrix.png"), dpi=300)
             plt.close()
     except Exception:
-        # keep plotting robust: do not fail the pipeline because of this extra plot
         pass
 
-    # -------------------------------------------------------------
-    # Boxplots for significant cell types (per comparison)
-    # -------------------------------------------------------------
-    top_n_per_comp = 6  # limit to top N cell types per comparison for clarity
+    top_n_per_comp = 6
 
     for comp_name, result_df in results.items():
         sig_df = result_df.loc[result_df["FDR"] < significance_level]
@@ -731,12 +594,10 @@ def _proportion_test_visualization(
         for cell_type in sig_celltypes:
             if cell_type not in prop_df.index:
                 continue
-            # group1 samples
             for s in samples_g1:
                 long_records.append(
                     {"celltype": str(cell_type), "Proportion": prop_df.loc[cell_type, s], "Group": group1}
                 )
-            # group2 samples
             for s in samples_g2:
                 long_records.append(
                     {"celltype": str(cell_type), "Proportion": prop_df.loc[cell_type, s], "Group": group2}

@@ -45,7 +45,7 @@ def soft_assign(Z, anchors, sigma: Optional[float] = None):
     """Gaussian-RBF soft assignment of cells to k-means anchors.
 
     Returns an (n_cells, n_anchors) matrix of probabilities.
-    Works with numpy or cupy.
+    Works with numpy or cupy (dispatches via _xp).
     """
     xp = _xp(Z)
     # Pairwise distances via the (a-b)^2 = a^2 + b^2 - 2ab expansion
@@ -68,9 +68,8 @@ def soft_assign(Z, anchors, sigma: Optional[float] = None):
 def composition_per_unit(unit_cellids, soft, cellid_idx) -> np.ndarray:
     """Per-unit composition: mean of `soft` rows over each unit's cells.
 
-    `soft` may be a cupy or numpy array; the output is always numpy
-    (the per-unit composition matrix is small enough that downstream
-    handling is simpler on the CPU).
+    `soft` may be cupy or numpy; output is always numpy (small matrix,
+    CPU-side downstream handling).
     """
     soft_np = _to_numpy(soft)
     K = soft_np.shape[1]
@@ -278,10 +277,9 @@ def build_harmony_meta_df(
     """Build a per-unit DataFrame for multi-covariate Harmony.
 
     Each row is a unit (sample), each column a batch covariate, value = majority
-    label across the unit's cells. Returns None when batch_cols is empty / no
-    cols match adata.obs. Used by `compute_sample_embedding` whenever the user
-    passes >=2 batch_cols (proper multi-covariate path); single batch_col goes
-    through the legacy single-key code path unchanged.
+    label across the unit's cells. Returns None when batch_cols is empty or no
+    cols match adata.obs. Used when >=2 batch_cols are passed; single batch_col
+    goes through the legacy single-key code path.
     """
     if not batch_cols:
         return None
@@ -312,11 +310,8 @@ def composite_batch_labels(
 ) -> Tuple[List[str], bool]:
     """Build per-unit composite-batch labels for Harmony.
 
-    Strategy:
-      - If batches are not provided or map 1:1 to units (each unit is in its
-        own batch), return group-only labels.
-      - Otherwise return composite labels `f"{group}__{batch}"`.
-
+    Returns group-only labels when batches are absent or map 1:1 to units;
+    otherwise returns `f"{group}__{batch}"` composite labels.
     Returns (labels, used_composite_bool).
     """
     if unit_batches is None or len(unit_batches) != len(unit_groups):
@@ -484,7 +479,7 @@ def assemble_units(
                 unit_groups.append(m)
         unit_batches = _per_unit_batch(adata, unit_cellids_d, batch_col)
     else:
-        # Single-omics — group by batch (if provided) else fall back
+        # Single-omics — group label = majority batch; falls back to "single"
         if batch_col is not None and batch_col in adata.obs.columns:
             batch_arr = adata.obs[batch_col].astype(str).values
         else:
@@ -506,7 +501,7 @@ def assemble_units(
             unit_cellids_d[uid] = cids
             unit_ids.append(uid)
             unit_groups.append(grp)
-        unit_batches = None  # batch is already the group label
+        unit_batches = None  # single-omics: batch IS the group; no separate list needed
 
     return units, unit_cellids_d, unit_ids, unit_groups, unit_batches, list(cell_ids), Z
 

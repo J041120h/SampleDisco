@@ -5,6 +5,7 @@ import numpy as np
 
 
 def _convert_value_to_string(val):
+    """Coerce a single category/obs value to a clean string, normalising NAs and integer-floats."""
     if pd.isna(val):
         return 'Unknown'
     elif isinstance(val, (bool, np.bool_)):
@@ -18,13 +19,15 @@ def _convert_value_to_string(val):
 
 
 def _clean_na_strings(series):
+    """Replace common NA string representations with 'Unknown'."""
     return series.replace(['None', 'nan', 'NaN', 'NULL', '', '<NA>'], 'Unknown')
 
 
 def _make_categories_unique(categories):
+    """Deduplicate category labels by appending a counter suffix to repeated names."""
     if len(categories) == len(set(categories)):
         return categories
-    
+
     seen = {}
     unique_categories = []
     for cat in categories:
@@ -38,6 +41,16 @@ def _make_categories_unique(categories):
 
 
 def clean_obs_for_saving(adata):
+    """Normalise every obs column so h5ad serialisation succeeds.
+
+    h5py rejects mixed-type or non-string Categorical dtype arrays. This
+    function converts all obs columns to a safe form:
+    - Categorical columns: categories coerced to string, duplicates disambiguated.
+    - Object (string) columns: cast to Categorical with NA strings replaced.
+    - Bool columns: cast to string Categorical.
+    - Low-cardinality numeric columns (< 20 distinct values): cast to string Categorical.
+    - Other numeric columns: NaN filled with -1.
+    """
     obs_copy = adata.obs.copy()
     
     for col in obs_copy.columns:
@@ -80,6 +93,7 @@ def clean_obs_for_saving(adata):
 
 
 def ensure_cpu_arrays(adata):
+    """Move any GPU-backed arrays (cupy) in adata to CPU via `.get()`. In-place."""
     if hasattr(adata.X, 'get'):
         adata.X = adata.X.get()
     
@@ -93,6 +107,11 @@ def ensure_cpu_arrays(adata):
 
 
 def safe_h5ad_write(adata, filepath):
+    """Write adata to h5ad after GPU→CPU transfer and obs cleaning.
+
+    On failure, prints per-column diagnostics (non-string categories) and
+    re-raises so the caller can decide how to proceed.
+    """
     try:
         adata_copy = adata.copy()
         adata_copy = ensure_cpu_arrays(adata_copy)
