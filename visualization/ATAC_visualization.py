@@ -28,12 +28,12 @@ def create_quantitative_colormap(values, colormap='viridis'):
     
     if len(unique_values) == 1:
         # Single value case
-        base_cmap = plt.cm.get_cmap(colormap)
+        base_cmap = plt.get_cmap(colormap)
         return {unique_values[0]: base_cmap(0.5)}
     
     # Map values proportionally to 0-1 range
     min_val, max_val = min(unique_values), max(unique_values)
-    base_cmap = plt.cm.get_cmap(colormap)
+    base_cmap = plt.get_cmap(colormap)
     
     color_map = {}
     for val in unique_values:

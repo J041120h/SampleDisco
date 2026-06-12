@@ -8,6 +8,7 @@ Computes distances between samples using various methods:
 """
 
 import os
+import warnings
 import numpy as np
 import pandas as pd
 from anndata import AnnData
@@ -438,12 +439,17 @@ def _match_samples(dr_data: pd.DataFrame, adata: AnnData) -> pd.DataFrame:
     """Match DR sample names with AnnData sample names."""
     dr_samples = set(dr_data.index)
     adata_samples = set(adata.obs.index)
-    
-    # Check exact matches first
-    exact_matches = dr_samples.intersection(adata_samples)
-    
+
+    # Exact match — preserve dr_data.index order; warn on drops.
+    exact_matches = [s for s in dr_data.index if s in adata_samples]
     if len(exact_matches) > 0:
-        return dr_data.loc[list(exact_matches)].copy()
+        dropped = [s for s in dr_data.index if s not in adata_samples]
+        if dropped:
+            warnings.warn(
+                f"_match_samples: dropped {len(dropped)} DR sample(s) absent from adata: "
+                f"{dropped[:5]}{'...' if len(dropped) > 5 else ''}"
+            )
+        return dr_data.loc[exact_matches].copy()
     
     # Try case-insensitive matching
     dr_lower = {name.lower(): name for name in dr_samples}

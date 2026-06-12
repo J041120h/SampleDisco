@@ -185,7 +185,7 @@ def plot_cca_on_2d_pca(
         cca_model = CCA(n_components=1)
         cca_model.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca_model.transform(pca_coords_2d, sev_levels_2d)
-        cca_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+        cca_score = abs(np.corrcoef(U[:, 0], V[:, 0])[0, 1])
 
     else:
         pc_indices_used = (0, 1)
@@ -195,7 +195,7 @@ def plot_cca_on_2d_pca(
         cca_model = CCA(n_components=1)
         cca_model.fit(pca_coords_2d, sev_levels_2d)
         U, V = cca_model.transform(pca_coords_2d, sev_levels_2d)
-        cca_score = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
+        cca_score = abs(np.corrcoef(U[:, 0], V[:, 0])[0, 1])
 
     fig, ax = plt.subplots(figsize=(10, 8))
 

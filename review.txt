@@ -1,0 +1,662 @@
+==============================================================================
+ SampleDisco — Code & Method Review + Improvement Plan
+==============================================================================
+ Reviewer : Claude (senior research-software engineer)
+ Date     : 2026-06-11  (revised after author discussion)
+ Reviewed : paper SampleDisco_Draft-11.pdf (pp.1-15, Fig 1-5); code/ (wrapper,
+            preparation, sample_embedding, parameter_selection, sample_distance,
+            sample_association, sample_clustering, sample_trajectory, visualization,
+            utils, config, SampleDisc.py); CLAUDE.md, PIPELINE_STATE.md, README.md
+
+ Tags     : [verified] = I read the exact lines.   [audit] = from a focused subsystem
+            review; high-confidence, confirm the precise line before editing.
+ Scope    : code/claude/ is SCRATCH (Claude-generated temp files), NOT part of the
+            package — it is excluded from this review and from any code improvement.
+            It is the drop zone for my own one-off scripts (config migration, tests).
+ Rule     : fixes edit the existing package files in place; new throwaway scripts go in
+            code/claude/ . Never overwrite test_REFERENCE or any result dir.
+
+
+------------------------------------------------------------------------------
+ CONTENTS
+------------------------------------------------------------------------------
+   1. Verdict
+   2. Top fixes at a glance
+   3. The plan, by priority   (P0 integrity -> P3 process)
+   4. Detail by subsystem
+   5. Reproducibility checklist for the paper
+   6. Note on the autotune feature (design intent)
+
+
+==============================================================================
+ 1. VERDICT
+==============================================================================
+The method is sound and the core code is clean. The central idea — separate
+compositional change (composition blocks on the SAMPLE-REMOVED view Z_clust) from
+cell-state change (RMD displacement on the SAMPLE-PRESERVED view Z_rmd) — is
+principled, and the code enforces that separation where it matters (cell typing runs
+on Z_clust in every path I checked). The signature failure mode (batch leaking into
+the sample embedding) is actively defended.
+
+The issues are not in the idea. They are, in order of importance:
+
+   A. REPRODUCIBILITY / PATH-DEPENDENCE  -> the same input can give different results
+      depending on CPU-vs-GPU node, and several stochastic steps are unseeded.
+      This is the one that can affect numbers in the paper.
+
+   B. SILENT FAILURE / USABILITY  -> crashed pipelines exit 0; the documented
+      quick-start command is rejected by config validation; a pandas-2 crash in
+      RAISIN is swallowed.
+
+   C. MAINTAINABILITY / HYGIENE  -> 250-parameter wrapper, no .gitignore, broken
+      requirements file, a memory-bomb util, doc drift.
+
+The autotune / parameter-tuning behavior is NOT in this list. After discussion it is
+confirmed to be an intentional semi-supervised feature, and the paper keeps its
+benchmark comparisons fair by using the untuned default — see Section 6.
+
+Strengths to preserve: blocks.py (clean, backend-agnostic math); the Z_clust/Z_rmd
+discipline; the fairness-conscious benchmark design (untuned default + the corrections
+already in figure/error_check/); the broad downstream suite; strong internal docs.
+
+
+==============================================================================
+ 2. TOP FIXES AT A GLANCE
+==============================================================================
+ #     What                                            Where (file:line)        Tag
+ ----  ----------------------------------------------  -----------------------  --------
+ P0-1  CPU and GPU preprocessing not equivalent        rna/atac_preprocess_*    verified
+ P0-2  TSCAN origin unseeded -> pseudotime flips        TSCAN.py:838             verified
+ P0-3  RAISIN: pandas-2 crash (swallowed) + unseeded    RAISIN_TEST.py:239,562   verified
+ P0-4  Crashed pipeline exits 0 (failure swallowed)     SampleDisc.py:61 +wrap   verified
+ P0-5  Multiomics key fallback leaks Z_rmd into comp.   multiomics_wrapper.py:31 verified
+ ----  ----------------------------------------------  -----------------------  --------
+ P1-1  Update ALL configs to match the wrapper          config/*.yaml (20)       verified
+ P1-2  Seeds not threaded through RNA/ATAC embedding    rna/atac_wrapper.py      audit
+ P1-3  CCA score returned is cherry-picked 2-PC vs null  CCA.py:171,348           audit
+ P1-4  Duplicate/divergent EMD + nondeterministic match  sample_distance/EMD.py   audit
+ P1-5  Coverage-based ATAC peak pick; sample-aware HVG   multi_omics_glue.py:277  audit
+ P1-6  Silent data corruption: merge_meta / safe_save    utils/{merge,safe_save}  audit
+ P1-7  No output-overwrite protection (rmtree on init)   wrapper.py:~1064         audit
+ ----  ----------------------------------------------  -----------------------  --------
+ P2-*  250-param wrapper; .gitignore; requirements;     (see Section 3)          mixed
+       packaging; deprecated APIs; doc drift
+ P3-*  Smoke/parity/leakage tests + config drift guard  -> code/claude/          plan
+
+
+==============================================================================
+ 3. THE PLAN, BY PRIORITY
+==============================================================================
+
+ ----------------------------------------------------------------------------
+ P0 — Integrity / reproducibility. Close before generating further paper results.
+ ----------------------------------------------------------------------------
+
+ P0-1  Make CPU and GPU preprocessing numerically equivalent.            [verified]
+   Where  preparation/rna_preprocess_cpu.py:249-257 does a per-sample min_cells filter
+          AND a final filter_genes(min_cells=0.001*n_obs); rna_preprocess_gpu.py:225-245
+          does NEITHER (and drops percent_top=None in calculate_qc_metrics).
+          Same class of gap in atac_preprocess_cpu vs _gpu [audit]; and CPU cell-typing
+          Leiden uses flavor="igraph", directed=False while GPU uses bare rsc.tl.leiden
+          -> different communities [audit].
+   Why    Which node ran the job silently changes the gene/sample set -> the cell types
+          -> composition -> X_DR_sample -> every downstream number.
+   Fix    Extract ONE shared QC/filter/HVG/cluster routine that both paths call; the
+          only allowed difference is the compute backend. Add a parity test (P3).
+          Until parity holds, pin all reported numbers to ONE path and record which.
+
+ P0-2  Seed TSCAN origin selection.                                      [verified]
+   Where  sample_trajectory/TSCAN.py:838  origin = random.choice(ends)  (`random`
+          imported but never seeded). trajectory_diff_gene.py:753-754 inherits the sign.
+   Why    The origin decides whether main_path is reversed -> pseudotime DIRECTION
+          flips run-to-run -> every trajectory-DGE UP/DOWN label and Fig 5 sign can
+          invert.
+   Fix    Choose the origin deterministically (e.g. endpoint with the smaller mean of
+          the trajectory label), or seed `random`. Anchor DGE direction to an external
+          variable (corr with sev.level), not raw pseudotime sign.
+
+ P0-3  Fix RAISIN: pandas-2 crash + unseeded permutation.                [verified]
+   Where  sample_clustering/RAISIN_TEST.py:239,828  means_df.groupby(groups, axis=1)
+          -> TypeError on pandas>=2 (axis=1 removed), caught by a try/except that only
+          prints a warning, so the heatmaps silently never render.
+          RAISIN_TEST.py:562  np.random.permutation(...) unseeded -> p-values/FDR not
+          reproducible.  RAISIN.py:802  np.random.seed(42) mutates the GLOBAL RNG.
+   Fix    means_df.T.groupby(groups).mean().T ; thread a seed and use a local
+          np.random.default_rng(seed).permutation ; replace the global seed with a
+          local default_rng.
+
+ P0-4  Stop silent pipeline failure (crashed run must not exit 0).       [verified]
+   Where  SampleDisc.py:61-66 outer try/except prints str(e), drops the traceback;
+          wrapper.py per-pipeline try/except stash results['*_error'] and CONTINUE
+          [audit ~1220,1370,1604].
+   Why    A consumer (or the experiment-runner) reading exit code / summary treats a
+          crashed pipeline as complete — dangerous for benchmarking.
+   Fix    Re-raise after logging, or exit nonzero when any *_error is present; print
+          traceback.format_exc() at top level; make "continue on error" opt-in (False).
+
+ P0-5  Make the multiomics cluster-role key fallback a hard error.       [verified]
+   Where  wrapper/multiomics_wrapper.py:31-33  the cluster (composition) role falls back
+          to X_glue (the SAMPLE-PRESERVED view) when Z_clust is absent; it only raises
+          if the key is wholly missing. The docstring itself calls this "unsupported".
+   Why    On a partial/broken run this routes sample-preserved signal into the
+          composition blocks — the exact leakage the method prevents — silently.
+   Fix    The RMD-role fallback to X_glue is fine; the CLUSTER-role one is not. Require
+          Z_clust for the cluster role; raise a clear error otherwise.
+
+
+ ----------------------------------------------------------------------------
+ P1 — Important correctness / usability.
+ ----------------------------------------------------------------------------
+
+ P1-1  Update ALL configs to match the wrapper signature.               [verified]
+   Decision (per author): keep validate_config STRICT (it is a good fail-fast guard
+   that keeps configs and the wrapper in lockstep and forces explicit params). Fix the
+   drift by bringing the configs up to date, not by relaxing the check.
+   Today  0 of 20 configs pass; even config.yaml (the README quick-start) is rejected
+          for missing ~13 keys (SampleDisc.py:31-38 requires exact set-equality).
+   Plan   1. code/claude/build_config_schema.py — dump key->default from
+             inspect.signature(wrapper) to config/_schema.yaml (the source of truth).
+          2. code/claude/migrate_configs.py — ruamel.yaml (comment-preserving): for each
+             config, add every missing key with its wrapper default near the matching
+             rna_/atac_/multiomics_ block, and remove/rename stale keys; dump in place.
+          3. Hand-review the 4 pre-V2 configs (benchmark_ENCODE, blood, paired_eye,
+             paired_heart — missing 60+ keys each) so the added defaults match intent.
+          4. code/claude/test_config_drift.py — assert set(cfg) == set(schema) for all
+             configs (the drift guard). Run it before any release.
+          Do NOT auto-run any benchmark config; migration only edits the YAML text.
+
+ P1-2  Thread a real seed through RNA/ATAC embedding + clustering.        [audit]
+   Where  rna_wrapper / atac_wrapper accept no seed; wrapper.py:~342 hardcodes
+          cluster(random_state=0); compute_sample_embedding called with no seed;
+          preprocess harmonize() uses its default random_state=0 (not the global 42).
+          Multiomics threads 42, single-omics does not.
+   Fix    Add a top-level random_state and thread preprocess -> cell_types ->
+          compute_sample_embedding; replace the literal 0/42.
+
+ P1-3  Return the unbiased full-PC CCA score to the wrapper.             [audit]
+   Where  sample_trajectory/CCA.py — the auto path abs()-wraps (CCA.py:38) but the score
+          handed to the wrapper / p-value test is the cherry-picked 2-PC max-|corr|
+          (~171,348,465), tested against an abs-valued permutation null (CCA_test.py).
+          The two non-auto branches return a SIGNED score, breaking the one-sided test.
+   Fix    Return full_score (all-PC statistic) to the wrapper; abs() the score in all
+          three branches so the null comparison is valid.
+
+ P1-4  Resolve duplicate/divergent EMD + nondeterministic sample matching. [audit]
+   Where  sample_distance/sample_distance.py:30 and EMD.py:12 are two EMD
+          implementations with DIFFERENT proportion-orientation logic -> can transpose
+          the matrix differently. _match_samples (~443) uses set.intersection then
+          .loc[list(set)] -> nondeterministic row/col order in saved CSVs; dropped
+          samples not warned.
+   Fix    Keep one EMD (confirm before deleting the other); centralize _get_proportions;
+          add a shape/orientation assert; preserve dr_data.index order; warn on drops.
+
+ P1-5  Reconsider sample-aware HVG and coverage-based ATAC peak selection. [audit]
+   Where  rna_preprocess_cpu.py:~22 (and gpu/atac) run HVG with batch_key=sample, and
+          that one HVG set feeds BOTH Z_clust and Z_rmd (scGLUE HVG uses no batch_key —
+          inconsistent). multi_omics_glue.py:~277-290 selects ATAC peaks by total
+          coverage (depth/batch-confounded), not variability, and that set drives the
+          guidance graph + training.
+   Fix    Make the three HVG paths deliberate/consistent; select ATAC peaks by
+          dispersion (normalize depth first), not raw coverage sum.
+
+ P1-6  Harden metadata merge + safe_save (silent corruption risks).      [audit]
+   Where  utils/merge_sample_meta.py:~73 left-join can match 0 rows, fill NaN, and
+          return successfully (only prints "0 rows matched"). utils/safe_save.py:~63-68
+          coerces numeric obs with <20 unique values to categorical STRINGS (breaks
+          numeric sev.level/age on reload); :95-101 sc.write is not atomic.
+   Fix    merge_sample_meta: raise (or require allow_partial) on 0/low match; normalize
+          keys before join. safe_save: never stringify numeric columns; write .tmp then
+          os.replace.
+
+ P1-7  Add output-overwrite protection.                                  [audit]
+   Where  wrapper.py:~1064-1072 shutil.rmtree of result dirs when initialization=True
+          (default), only printing.
+   Fix    Refuse unless overwrite=True, or write into a run-id/timestamped subdir; dump
+          the resolved config + resolved embedding keys to sys_log/ for provenance.
+
+
+ ----------------------------------------------------------------------------
+ P2 — Maintainability / hygiene / packaging.
+ ----------------------------------------------------------------------------
+
+ P2-1  Collapse the 250-parameter wrapper.                               [audit]
+   wrapper.py flat-lists every rna_/atac_/multiomics_ param then re-maps each by hand
+   (~1100 lines of forwarding). Move per-modality params into nested YAML dicts
+   (rna:{}, atac:{}, multiomics:{}) and **-splat into the sub-wrappers; extract one
+   _run_one_pipeline(modality, cfg) for the 3 near-identical downstream blocks.
+   (Note: this interacts with P1-1 — decide the nesting BEFORE the config migration so
+   you migrate once. If you prefer to keep the flat schema for now, do P1-1 as-is and
+   defer this.)
+
+ P2-2  Repo hygiene.                                                     [verified/audit]
+   Add .gitignore (__pycache__/, *.pyc, .DS_Store, logs/, *.log, *.backup) and untrack
+   the 86 .pyc + 4 .DS_Store + log file. Remove scratch/dead code: utils/consumer.py
+   (an intentional OOM memory-bomb living in a shared package — remove first), code/1.py,
+   code/1.txt, archive/ (5 superseded modules), Kmeans_cluster.py legacy path.
+   >> Every deletion will be restated for your explicit confirmation before removal.
+
+ P2-3  Fix dependencies + add packaging.                                 [audit]
+   requirement.txt is misnamed (README says requirements.txt) and ~90 of its entries are
+   non-installable local conda artifacts (@ file:///...). Split into requirements-core
+   (CPU, pinned, PyPI) + requirements-gpu (rapids/CUDA, pointing to the CLAUDE.md install
+   procedure); strip @ file:// lines. Add a minimal pyproject.toml so the package is
+   installable and imports don't depend on cwd=code/.
+
+ P2-4  Replace removed/deprecated API calls.                             [audit]
+   plt.cm.get_cmap (visualization_helper.py:~284) removed in MPL>=3.9; pandas
+   groupby(axis=1) (RAISIN, P0-3); Kmeans_cluster.py relies on the old n_init default.
+   Pin a known-good (matplotlib, pandas, scipy, sklearn) set and modernize.
+
+ P2-5  Doc drift.                                                        [verified]
+   README.md and PIPELINE_STATE.md point to SampleDisco_Draft-2.pdf (actual: Draft-11).
+   Docs reference preparation/multi_omics_preprocess.py which does not exist (logic is in
+   multi_omics_merge.py + multi_omics_glue.py). README says requirements.txt. Update.
+
+
+ ----------------------------------------------------------------------------
+ P3 — Validation: REGRESSION against test_REFERENCE (all scripts in code/claude/).
+ ----------------------------------------------------------------------------
+ Strategy (per author): do NOT reproduce paper figures. Re-run the tutorial pipeline
+ and check it still works + matches the reference run.
+   Baseline   /dcs07/hongkai/data/harry/result/test_REFERENCE  (rna/ atac/ multiomics/,
+              each: preprocess -> sample_embedding -> CCA -> Sample_distance ->
+              sample_cluster -> association -> visualization; multiomics also
+              integration/glue/ = the scGLUE output).
+   Start data /dcl01/hongkai/data/data/hjiang/Data/tutorial_test_data/{test_RNA,test_ATAC}.h5ad
+   Config     config/config_linux.yaml  (confirm via reproducibility-guard).
+   Output     a NEW dir, e.g. .../result/test_REGRESSION_<date>/ — NEVER overwrite
+              test_REFERENCE.
+   Speed-ups  - Skip the scGLUE rerun (expensive) if scGLUE code is unchanged: reuse
+                multiomics/integration/glue/ from test_REFERENCE.
+              - Reuse preprocessed h5ads for any stage whose code I did not touch.
+              - sbatch one job per modality (rna / atac / multiomics) in parallel.
+   Compare    - Pipeline runs to completion and (after P0-4) exits 0 only on success.
+              - Outputs match the reference where behavior is unchanged.
+              - Where a determinism fix changes RNG (P0-2/P0-3/P1-2), document the
+                EXPECTED diff (e.g. pseudotime now sign-stable) rather than asserting
+                byte-equality.
+
+ P3-1  code/claude/run_regression_<modality>.sbatch + a small launcher — re-run each
+       modality from the reused intermediates into test_REGRESSION_<date>/.
+ P3-2  code/claude/compare_to_reference.py — diff key artifacts (X_DR_sample CSV,
+       Sample_distance matrices, CCA score, association CSV) vs test_REFERENCE, with a
+       tolerance + an allowlist of expected-different files.
+ P3-3  code/claude/test_config_drift.py — see P1-1 step 4 (assert configs == schema).
+ P3-4  (optional, later) code/claude/test_cpu_gpu_parity.py — guards P0-1 once the
+       shared preprocess routine lands.
+
+
+==============================================================================
+ 4. DETAIL BY SUBSYSTEM
+==============================================================================
+ Format: [sev] title — file:line — note.   sev in {CRIT, HIGH, MED, LOW, PASS}.
+
+ sample_embedding/  (read directly)
+   [PASS] blocks.py math is correct and clean (soft assignment, LOO displacement,
+          inverse-variance weights, Frobenius stack). Minor: document the std<1e-8
+          per-cluster PCA drop (blocks.py:180) and the rel-count reweighting (:173-175).
+   [MED ] sample_embedding.py accepts an s==uid unit-id fallback; if an unsuffixed id is
+          ever produced, the multiomics RNA-only DGE remap can silently empty pseudotime.
+          Assert a non-empty unit intersection.
+
+ wrapper/
+   [HIGH] silent failure / exit 0 (P0-4); 250-param wrapper (P2-1); unseeded seeds (P1-2).
+   [MED ] cluster_DGE/proportion_test run whenever expr_results is truthy (~354,382) —
+          can run condition-style DGE on data-driven clusters with no biological
+          grouping; log which grouping drove it.
+   [MED ] sample_adata_path accepted but unused in rna/atac wrappers (~35) — a resume
+          config value is silently ignored.
+   [LOW ] runtime auto-pip-install of rapids (~990) mutates the env nonreproducibly;
+          atac_trajectory_supervised defaults True while RNA/MO default False;
+          simple-mode passes args positionally into a kwargs-first wrapper -> broken
+          (SampleDisc.py:50-52).
+
+ preparation/
+   [HIGH] CPU/GPU non-equivalence (P0-1, verified RNA); coverage-based ATAC peak pick +
+          sample-aware HVG (P1-5).
+   [MED ] cell_types_multiomics default use_rep="X_glue" (sample-PRESERVED) — correct
+          only because the wrapper overrides it; default to Z_clust and fail if absent.
+          ATAC seurat_v3 HVG runs on TF-IDF+log1p, not counts.
+   [PASS] scGLUE batch design + dual Z_clust/Z_rmd derivation are leakage-correct; cell
+          typing runs on the sample-removed view everywhere checked.
+
+ parameter_selection/ + sample_distance/ + sample_association/
+   [HIGH] duplicate/divergent EMD + nondeterministic matching (P1-4).
+   [MED ] association permutation null holds the (tuned) embedding fixed; grouping_arr
+          str+nan can misclassify a numeric col as categorical (CCA->PC-R2 switch).
+   [LOW ] distanceCheck ratio has no significance test / can be inf.
+   [note] autotune in-sample proxies + hand-calibrated SCORING_BOUNDS — reclassified as
+          tool-quality, see Section 6 (NOT an integrity issue).
+
+ sample_clustering/ + sample_trajectory/ + visualization/
+   [CRIT] TSCAN unseeded origin (P0-2); RAISIN pandas-2 + unseeded permutation (P0-3).
+   [HIGH] RAISIN global np.random.seed(42) side effect; CCA returns cherry-picked 2-PC
+          score vs abs null (P1-3); GAM per-gene nonzero masking fits n below the spline
+          d.o.f. chosen for the full cohort -> inflated effect sizes; plot_dendrogram
+          uses X_glue (sample-PRESERVED) for the multiomics branch where Z_clust is wanted.
+   [MED ] CCA imputes missing trajectory levels with the mean; proportion_test
+          data-dependent boundary clip (use a fixed pseudocount); viz regex-scrapes the
+          first number from a grouping label for color (wrong on labels like COVID_19).
+   [LOW ] dead legacy clustering paths; module-level warnings.filterwarnings('ignore')
+          hides real limma/batch warnings.
+
+ utils/ + config/ + repo
+   [CRIT] validate_config rejects all 20 configs incl. README quick-start (P1-1).
+   [HIGH] no .gitignore (P2-2); requirement.txt broken (P2-3); merge_sample_meta silent
+          0% match (P1-6); tf_idf IDF comment says "document frequency" but the code uses
+          counts.sum(axis=0) (tf_idf.py:101-102,219) — wrong for non-binary ATAC.
+   [MED ] safe_save numeric->categorical + non-atomic write (P1-6); consumer.py
+          memory-bomb (P2-2); no packaging (P2-3); random_seed.py seeds cupy only inside
+          a torch.cuda guard (unseeded cupy on the CPU-rapids fallback nodes).
+   [LOW ] limma.py no rank/collinearity guard; unify_optimal one-shot .backup never
+          refreshed.
+
+
+==============================================================================
+ 5. REPRODUCIBILITY CHECKLIST FOR THE PAPER
+==============================================================================
+ These are reproducibility (not integrity) checks — they decide whether a reported
+ number is stable, given the P0 fixes.
+
+   [ ] All reported numbers came from the SAME compute path (CPU or GPU). Given P0-1,
+       mixed-path results are not directly comparable. Record the path in provenance.
+   [ ] Fig 5 trajectory UP/DOWN gene/TF directions are stable to the TSCAN origin
+       (P0-2) — anchored to severity, not a random pseudotime sign.
+   [ ] RAISIN-derived DEGs (Fig 5C, the top genes, the 24/28 directional concordance)
+       regenerate identically with a SEEDED permutation null (P0-3).
+   [ ] (one-line confirm, not a problem) §2.5 "with parameter tuning ... top 1 of all
+       three categories (Supplementary Table 3)" is presented as a SUPERVISED result,
+       clearly separate from the fair untuned comparison in Fig 3/4. See Section 6.
+
+
+==============================================================================
+ 6. NOTE ON THE AUTOTUNE FEATURE (design intent — confirmed with author)
+==============================================================================
+ Autotune is an INTENTIONAL semi-supervised feature, not a leak. The user supplies the
+ real labels and the tuner refines the embedding (e.g. the RMD weight / resolution) to
+ surface that biological axis. Tuning on all labeled samples — with NO train/test split
+ — is the intended behavior, analogous to supervised dimensionality reduction. There is
+ no claim of held-out generalization, so an in-sample objective is appropriate.
+
+ The paper keeps its benchmark comparisons fair by reporting the UNTUNED default
+ configuration (paper §2.3: "without using evaluation labels for parameter tuning, so
+ that comparisons against unsupervised baselines remained fair"). The tuned result is
+ not used in the head-to-head comparisons. This is the right call and resolves the
+ fairness concern.
+
+ Therefore the earlier "circular evaluation" item is WITHDRAWN. Only light, optional
+ tool-quality suggestions remain (none are blockers):
+
+   - Document the semantics in the tool/docs and in the autotune output, so a downstream
+     user does not read a TUNED association p-value as an unbiased discovery test.
+   - Record tuned-vs-untuned (and the tuned alpha + target) in the sample-embedding /
+     association output for provenance.
+   - Optional robustness: at small n the in-sample proxies can pick a degenerate alpha;
+     a light sanity bound or the existing CV-kNN proxy could make the choice steadier.
+     Quality-of-tuner only, not correctness.
+
+ One-line confirm for the paper: ensure Supplementary Table 3 (§2.5, the tuned top-1
+ ranking) is labeled as a supervised "with tuning you can focus further" analysis,
+ distinct from the untuned fair comparison — so a reader can't mistake it for the
+ benchmark result.
+==============================================================================
+
+
+==============================================================================
+ 7. BATCH-1 IMPLEMENTATION STATUS + REGRESSION RESULT  (2026-06-11)
+==============================================================================
+ Implemented via the agent chain (method-planner -> bio-validator -> pipeline-engineer
+ -> code-reviewer -> debugger-tester -> experiment-runner -> bio-validator).
+
+ DONE:
+   P0-2 TSCAN deterministic origin + anchored DGE direction      (TSCAN.py, trajectory_diff_gene.py)
+   P0-3 RAISIN pandas-2 groupby fix + seeded RNG                 (RAISIN_TEST.py, RAISIN.py)
+   P0-4 no silent pipeline failure (traceback + re-raise)        (SampleDisc.py, wrapper.py)
+   P0-5 multiomics cluster-role key fallback -> hard error        (multiomics_wrapper.py)
+   P1-2 seed plumbing (reference-preserving defaults)            (wrapper.py, rna/atac_wrapper.py)
+   P1-1 config migration: all 10 configs -> 299-key schema; drift guard green.
+   Smoke suite 19/19 PASS (code/claude/smoke_batch1.py). A real bug in the first TSCAN
+   edit (integer index vs string cluster keys) was caught by code-reviewer + debugger-
+   tester and fixed before the run.
+
+ REGRESSION (job 32795901, CPU, COMPLETED exit 0, 33 min):
+   Re-ran config.yaml on tutorial data into test_REGRESSION_2026-06-11 (NEW dir; reused
+   the scGLUE TRAINING checkpoints by symlink; regenerated Z_clust/Z_rmd fresh). Compared
+   vs test_REFERENCE (a 2026-05-18 run on OLDER code, pre Z_cmd->Z_rmd rename).
+   - Pipeline ran end-to-end on all 3 modalities -> validates P0-4, P0-5, P1-1 live.
+   - Sample sets IDENTICAL (8 RNA / 8 ATAC / 16 MO units).
+   - Embedding concordance (sign/rotation/order-invariant):
+       multiomics  pairwise-dist corr 0.997, Procrustes 0.0045, top PCs |corr|=1.0
+       atac        corr 0.954, kmeans ARI 1.0
+       rna         corr 0.706 (lower PCs drift), pseudotime |spearman| 0.976
+   - RNA cell typing on the IDENTICAL 29,988 cells diverged: cell_type ARI 0.594.
+
+ VERDICT (airtight isolation, no A/B run needed):
+   `git diff HEAD` shows Batch-1 touched 9 files; preparation/ and sample_embedding/
+   have ZERO files changed. The cell-embedding derivation, cell typing, and SE math are
+   therefore UNTOUCHED by Batch-1 -> the RNA/ATAC cell-typing + SE differences CANNOT be
+   Batch-1; they are library/version drift since 2026-05-18. The multiomics 0.997
+   reproduction (scGLUE training frozen) shows the SE is behavior-preserving and robust
+   to cell-type RELABELING given a fixed cell embedding. Precise claim:
+     "Batch-1 runs end-to-end and is behavior-preserving for the sample-embedding stage
+      given a fixed cell embedding (multiomics 0.997). RNA/ATAC differences vs the
+      reference are upstream Harmony/Leiden drift under library evolution since the
+      reference was built, not Batch-1." (NOT an unqualified "bit-identical".)
+
+ NEW PRE-EXISTING FINDING (not Batch-1; reinforces P0-1 / P1-2):
+   RNA cell typing is NOT reproducible across code/library versions (ARI 0.594 on
+   identical, fully-seeded cells). Seeds ARE set (set_global_seed(42), Leiden
+   random_state=42) but do not pin Harmony(harmony-pytorch/torch) + Leiden(igraph/
+   leidenalg) across library versions/threads. -> elevate to the P0-1/P1-2 work.
+   B' control result: current code run TWICE is fully deterministic (RNA cell-type
+   ARI=1.0, SE concordance=1.0). So the ARI 0.594 vs the reference is CROSS-VERSION
+   drift (old code/libs), not intra-version randomness, and not Batch-1. Mitigation is
+   simply pinning library versions; intra-version reproducibility already holds.
+
+ NOT YET DONE (next batches): P0-1 CPU/GPU parity, P2-* hygiene
+ (incl. the P2-2 deletions awaiting explicit confirmation).
+==============================================================================
+
+
+==============================================================================
+ 8. BATCH-2 IMPLEMENTATION STATUS  (2026-06-11)
+==============================================================================
+ Implemented via the agent chain (method-planner -> bio-validator -> pipeline-engineer
+ -> code-reviewer -> debugger-tester -> experiment-runner). User decisions: keep
+ validate_config strict; z-rmd HVG = OPTION A (surgical, composition held fixed).
+
+ DONE:
+   P1-3 CCA sign-consistency: abs() at CCA.py:188,198 AND the ACTIVE null CCA_test.py:680
+        (the abs-null at :93 is a different function). Default path unchanged; null now
+        matches the abs observed -> coherent one-sided test.
+   P1-4 deterministic sample matching: sample_distance.py::_match_samples preserves
+        dr_data.index order + warns on drops (fixes the regression "index mismatch").
+   P1-5a z-rmd HVG, OPTION A (sample-naive basis for Z_rmd ONLY): added a SECOND
+        sample-naive HVG->PCA (RNA) / HVG->LSI (ATAC) feeding Z_rmd; Z_clust/X_pca/X_lsi/
+        cell typing/composition kept BYTE-IDENTICAL. New obsm: X_pca_rmd (RNA),
+        X_lsi_rmd (ATAC). Applied to all 4 cpu/gpu files with identical logic (parity).
+        Biology: seurat_v3 batch_key=sample acts as lightweight batch correction and
+        suppresses between-sample state -> wrong for the RMD/displacement view (both
+        agents confirmed; scanpy docs cited).
+   EMD.py (dead, imported nowhere) QUARANTINED to code/_deprecated/EMD.py (not deleted).
+
+ DEFERRED: P1-5b scGLUE ATAC peak selection by coverage->variability (changes scGLUE
+   input -> mandatory retrain; defer to a later batch). ATAC LSI (muon) run-to-run
+   non-determinism noted (pre-existing; future "fix LSI v0 seed" item).
+
+ GATE (all passed): code-reviewer NO blocking issues + empirically verified X_pca/X_lsi/
+   Z_clust byte-identical (max abs diff 0.0); debugger-tester smoke 28/28 PASS
+   (code/claude/smoke_batch2.py). bio-validator conditional-GO: requires a LEAKAGE GATE.
+
+ LEAKAGE GATE (bio-validator, mandatory): after the change, R^2(batch/cohort) on the top
+   PCs of X_DR_sample must NOT increase (dropping the HVG's lightweight batch correction
+   shifts batch control onto Harmony, and z-rmd's Harmony excludes sample). Probe:
+   code/claude/leakage_probe.py. Control = the Batch-1 regression output
+   (test_REGRESSION_2026-06-11 = current code minus Batch-2). Expectation: composition
+   MATCHES, RNA/ATAC state (Z_rmd->RMD block) DIFFERS intentionally, multiomics MATCHES.
+
+ REGRESSION (job 32804204 -> test_REGRESSION_2026-06-11_batch2, CPU): COMPLETED.
+   The regression CAUGHT A REAL BUG: X_pca/X_lsi byte-identical to B1 (max diff 0.0,
+   HVG clust Jaccard 1.0) — the Option-A math is right — BUT Z_clust drifted (RNA cell-
+   type ARI 0.90, ATAC 0.31). Root cause: the new sample-naive HVG2 ran BEFORE the
+   Z_clust Harmony pass and shifted the global RNG state that Harmony's init consumes
+   (Harmony is deterministic given an identical upstream sequence -> B-vs-B' was ARI 1.0).
+   FIX: moved the entire rmd-basis block (HVG2 + X_pca_rmd/X_lsi_rmd + Z_rmd) to AFTER
+   the Z_clust Harmony pass in all 4 preprocessing files; RNA HVG2 now reads
+   layer='counts' (since .X is normalized by then). Pre-Z_clust sequence is now byte-
+   identical to pre-Batch-2 -> Z_clust must be byte-identical. (Leakage signal from the
+   first run: RNA batch R^2 0.119->0.058 down, sev.level ~flat -- promising, but re-
+   measure after the fix since the embeddings change.)
+   RE-RUN: job 32804529 -> test_REGRESSION_2026-06-11_batch2_fixed (CPU, scGLUE reused).
+   Acceptance: RNA/ATAC cell-type ARI vs B1 == 1.0 (composition restored), RNA/ATAC state
+   (Z_rmd->X_DR_sample) changes intentionally, multiomics matches B1, leakage gate holds.
+
+ P1-5b (ATAC peak selection coverage->variability): IMPLEMENTED (seurat_v3 + scaled
+   min-cells floor; new params multiomics_n_top_peaks/atac_min_cells_floor; schema now
+   301 keys; drift green). Validated by method-planner + bio-validator + code-review +
+   smoke. Needs its OWN scGLUE-RETRAIN regression (no checkpoint reuse) to validate the
+   integration gates -- queued after batch2_fixed is confirmed. bio-validator gates:
+   batch R^2 + per-sample-depth R^2 must not rise; integration_consistency >= 0.05;
+   fraction of selected peaks reachable from an RNA HVG in the guidance graph.
+==============================================================================
+
+
+==============================================================================
+ 9. P2 HYGIENE + P0-1 DESIGN STATUS  (2026-06-12, overnight)
+==============================================================================
+ P2 DONE (no regression needed):
+   - .gitignore created; untracked 86 *.pyc + 4 .DS_Store (now 0 tracked).
+   - requirement.txt (broken pip-freeze, ~90 @file:// artifacts) QUARANTINED to
+     _deprecated/; replaced by requirements.txt (core, pinned ranges) + requirements-gpu.txt.
+   - pyproject.toml added (metadata + deps; full editable-install needs a src/ layout
+     refactor -> noted as P2-3 follow-up).
+   - Doc drift fixed: README + PIPELINE_STATE Draft-2 -> Draft-11; README
+     multi_omics_preprocess.py -> multi_omics_merge.py (the file that actually exists).
+   - Deprecated API: plt.cm.get_cmap -> plt.get_cmap (8 sites, 3 viz files; removed in
+     mpl 3.11). (RAISIN pandas-2 groupby already fixed in Batch-1 P0-3.)
+   - Dead code QUARANTINED (move, not delete) to _deprecated/: consumer.py (OOM bomb),
+     Kmeans_cluster.py (legacy), EMD.py (Batch-2). All verified imported nowhere.
+   - LEFT ALONE: 1.py / 1.txt (referenced by figure5 concordance work -> not scratch);
+     archive/ (already an archive). P2-1 (250-param wrapper collapse) DEFERRED -- large
+     risky refactor; strict-config migration already solved the immediate problem.
+
+ P0-1 (CPU/GPU parity) -- DESIGNED (method-planner), implementation pending:
+   Verified divergences: GPU RNA preprocess skips the per-sample min_cells filter + the
+   final filter_genes(0.001*n_obs) + percent_top; GPU ATAC omits the final filter_genes
+   and swaps exclude/sample-filter order; GPU Leiden uses cuGraph (rsc.tl.leiden, no
+   flavor) which CANNOT match CPU igraph Leiden; GPU multiomics ATAC label-transfer uses
+   cuML KNN vs CPU sklearn.
+   Fix: extract shared QC/filter helpers (preparation/_preprocess_common.py) called by
+   BOTH cpu/gpu (filtering identical by construction; CPU = pure extract-method, byte-
+   identical, no re-baseline); run CPU neighbors+igraph Leiden in BOTH paths; force
+   multiomics ATAC label-transfer KNN to CPU (parity over speed). GPU UMAP stays (cosmetic).
+   Validation: code-structural equivalence + Tier-A CPU smoke + CPU-unchanged diff vs the
+   batch2_fixed output. GPU NUMERIC check (Tier B) DEFERRED + flagged -- no reliable
+   autonomous GPU path tonight (no GPU sbatch precedent; rapids driver-12.5 constraints).
+
+ P0-1 IMPLEMENTED (overnight): new preparation/_preprocess_common.py (rna_qc_filter,
+   atac_qc_filter = verbatim CPU lifts); cpu+gpu RNA/ATAC preprocess route through them;
+   GPU cell typing -> CPU sc.pp.neighbors + sc.tl.leiden(flavor='igraph') + sklearn KNN
+   (no cuGraph/cuML in live path); GPU UMAP kept (cosmetic). GATE: code-reviewer NO
+   blocking; debugger-tester smoke 6/6 PASS (helpers reproduce CPU seq, no rsc.leiden in
+   live path). Dead ATAC_cell_type{,_gpu}.py (residual rsc) quarantined to _deprecated/.
+   ACCEPTANCE: CPU-unchanged run (job 32804631) must reproduce batch2_fixed RNA/ATAC
+   byte-for-byte (var_names/obs_names/Z_clust/cell_type). GPU numeric parity = deferred.
+
+==============================================================================
+ OVERNIGHT EXECUTION STATUS (2026-06-12 ~00:45) -- jobs in flight
+==============================================================================
+ DONE + VALIDATED: Batch 1 (P0-2/3/4/5, P1-1/2); Batch 2 (P1-3/4, P1-5a Option A +
+   Z_clust RNG fix -> composition ARI 1.0); P2 hygiene (gitignore, requirements split,
+   pyproject, doc drift, deprecated API, dead-code quarantine).
+ RUNNING (pollers armed, will auto-gate on completion):
+   - job 32804631  P0-1 CPU-unchanged check  -> gate = byte-identical to batch2_fixed.
+   - job 32804601  P1-5b scGLUE RETRAIN (fresh, new variability peaks) -> gate =
+     integration_consistency >= 0.05, batch/depth R2 not risen, peaks reachable from RNA HVG.
+ DEFERRED (flagged, not done tonight): P0-1 GPU NUMERIC validation (needs GPU node +
+   Claude env; no autonomous path); P2-1 250-param wrapper collapse (large/risky, optional);
+   P1-3 minor CCA_test null asymmetry note; full requirements pinning + src/ layout (P2-3).
+
+ --- P0-1 UPDATE (the CPU-unchanged gate caught a real subtlety) ---
+ First P0-1 attempt routed the CPU path through the shared helper. Gate FAILED: filtering
+ byte-identical (X_pca/X_lsi max|d|=0, var/obs identical) BUT Z_clust drifted (RNA ARI 0.90,
+ ATAC 0.31). Root cause is a NEW, important finding:
+   harmony-pytorch harmonize() is NOT fully deterministic / re-seedable. Direct test on a
+   fixed X_pca: two set_global_seed(42)-then-harmonize calls differ by max|d|=9.08;
+   perturbing torch RNG changes nothing (max|d|=0); set_global_seed+harmonize does NOT
+   reproduce the pipeline's stored Z_clust (9.04). The pipeline's FIRST harmonize call in a
+   fresh process IS reproducible given an identical preceding op-sequence (baseline cmp-158
+   == batch2_fixed cmp-176, Z_clust max|d|=0 across nodes), so harmonize amplifies any tiny
+   change to the preceding sequence. Routing CPU through the helper (extra import/call-order)
+   was enough to perturb it.
+ FIX: P0-1 is now GPU-ONLY. CPU preprocess files REVERTED to inline filtering (verbatim helper
+   body, no _preprocess_common import) -> CPU byte-identical to pre-P0-1 by construction. The
+   helper + GPU calls + CPU-Leiden/sklearn-KNN parity edits stay. Re-validating: job 32804695
+   (cpucheck2) must reproduce batch2_fixed RNA/ATAC byte-for-byte.
+ NEW REVIEW ITEM (record): harmonize() calls in all 4 preprocess files pass NO random_state
+   and harmony-pytorch is not fully reproducible -> Z_clust/Z_rmd (hence cell types) are
+   fragile to upstream op-order. This is a real reproducibility risk (P1-2/P0-1 family).
+   Mitigations to consider: pass random_state to harmonize; pin torch threads + deterministic
+   mode around it; or run Leiden on a more stable embedding. Needs a deliberate re-baseline.
+
+ --- P1-5b RETRAIN GATE RESULT (job 32804601, fresh scGLUE, COMPLETED 69 min) ---
+   Variability selection ran: "Selected 50000 VARIABLE peaks (floor open in >= 30 cells;
+   228094 eligible of 230356)". scGLUE integration consistency Min 0.142 / Mean 0.214
+   (threshold 0.05) -> PASS. Multiomics X_DR_sample leakage/signal (old coverage vs new
+   variability peaks): batch R2 0.438->0.406 (DROP, good); sev.level 0.416->0.430 (held);
+   modality 0.042->0.023 (good). BUT depth proxies ROSE: nCount_ATAC 0.127->0.162,
+   nFeature_ATAC 0.094->0.162, mitochondrial 0.149->0.231.
+   VERDICT: primary goal achieved (genuine variability selection; batch/coverage confound
+   reduced; integration strong; biology held), BUT the depth-confound that bio-validator
+   predicted for seurat_v3-on-raw-counts IS visible. CAVEAT: 16 units (8+8) -> R2 very noisy;
+   bio-validator said to validate depth on a REAL multi-cohort set (ENCODE/heart), not the
+   tutorial -> the depth rise is SUGGESTIVE, not conclusive.
+   RECOMMENDED REFINEMENT (next): switch peak selection to TF-IDF-normalized variance
+   (bio-validator Option a) to de-confound depth, then validate on ENCODE/heart. The current
+   seurat_v3+floor implementation is a defensible improvement over coverage; the TF-IDF
+   refinement + real-data depth check is the documented follow-up.
+
+ --- P0-1 OUTCOME: REVERTED + DEFERRED (could not be safely completed autonomously) ---
+ The CPU-unchanged gate (twice) proved P0-1 destabilizes Z_clust. RNA Z_clust matrix across
+ runs (aligned by cell, max|d| / cell-type ARI):
+   baseline vs rna_B2 (identical code):   0 / 1.0000   |  baseline vs batch2_fix:  0 / 1.0000
+   rna_B2 vs batch2_fix:                  0 / 1.0000   <- pre-P0-1: 3 runs/nodes BYTE-IDENTICAL
+   baseline vs cpucheck1 (P0-1 helper):   7.10 / 0.90  |  baseline vs cpucheck2 (P0-1 inline): 11.34 / 0.77
+   cpucheck1 vs cpucheck2:                9.32 / 0.77   <- P0-1 variants disagree even with each other
+ CONCLUSION: pre-P0-1 is perfectly reproducible; ANY P0-1 variant destabilizes harmony-pytorch's
+ Z_clust (the filter LOGIC is correct -- X_pca/var/obs byte-identical -- but P0-1's import/process
+ -state changes perturb harmonize, which is fragile to it). P0-1 cannot be merged as-is.
+ ACTION: FULLY REVERTED all P0-1 edits -> codebase back to the validated Batch-2 state
+ (_preprocess_common quarantined; rna/atac_preprocess_gpu + cell_type_gpu + multi_omics_cell_type_gpu
+ back to rsc/cuML; ATAC_cell_type{,_gpu}.py restored). Post-revert validation: job 32804733 must
+ reproduce batch2_fixed byte-for-byte.
+ P0-1 PREREQUISITE (before any retry): fix harmony-pytorch reproducibility FIRST -- pass
+ random_state to harmonize in all 4 preprocess files AND pin torch/OMP thread count (or
+ torch.use_deterministic_algorithms) around the harmonize calls, so Z_clust is invariant to
+ import/op-order. Then the CPU/GPU parity refactor can be done without destabilizing CPU, and
+ validated on a real GPU node (Claude env). This is the single most important reproducibility
+ fix surfaced by the whole effort -- elevate it.
+
+ *** CORRECTION (post-revert validation, job 32804733) ***
+ cpucheck3 with P0-1 FULLY REVERTED STILL differs from batch2_fixed (RNA Z_clust max|d|=9.27,
+ ARI 0.55; ran on compute-127 vs the references' 158/176). So the instability is NOT P0-1-
+ specific -- it is harmony-pytorch nondeterminism that ANY import-graph or node-thread change
+ exposes (P1-5b + P2 are present in cpucheck3 too). The runs that agreed byte-identically
+ (baseline cmp-158 == batch2_fixed cmp-176) likely shared an effective torch CPU thread/core
+ config. Both runs still partition into 8 sensible cell types -- it's a reproducibility issue,
+ not a correctness one.
+
+ >>> TOP FINDING (elevate above P0-1): harmony-pytorch harmonize() is NOT reproducible. It does
+     not respect set_global_seed (two seeded calls on a fixed X_pca differ by max|d|=9), and
+     torch CPU thread-order non-associativity makes Z_clust vary across nodes/threads/imports.
+     Z_clust -> Leiden cell types -> composition blocks are downstream, so this destabilizes the
+     COMPOSITION half of the sample embedding across runs. FIX (re-baselines all results -> needs
+     sign-off): pass random_state to harmonize() in all 4 preprocess files AND pin threads
+     (torch.set_num_threads(1)+OMP_NUM_THREADS=1, or torch.use_deterministic_algorithms(True))
+     around the harmonize calls; then verify two different-node runs give identical Z_clust.
+ The "byte-identical Z_clust" gate is UNACHIEVABLE until this lands -- it measures harmonize
+ nondeterminism, not code correctness. Functional correctness of Batch 1/2/P1-5b/P2 stands
+ (smoke tests + logic review + the ARI=1.0 Batch-2 check, which was on byte-identical-code runs).
+ P0-1 stays REVERTED + deferred: redo the CPU/GPU parity AFTER harmonize is pinned, validate on
+ a real GPU node.
+==============================================================================

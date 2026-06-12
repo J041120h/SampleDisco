@@ -835,9 +835,29 @@ def TSCAN(
     main_path = find_principal_path(mst, sample_cluster, verbose=verbose)
     ends = [main_path[0], main_path[-1]]
     if origin is None:
-        origin = random.choice(ends)
+        # Deterministic: if a numeric trajectory-label column is available,
+        # pick the endpoint whose member samples have the SMALLER mean label
+        # value (i.e. the "early" end of the biological gradient); otherwise
+        # fall back to min(ends) for stable reproducibility.
+        _anchor_col = next(
+            (c for c in (grouping_columns or [])
+             if c in AnnData_sample.obs.columns
+             and pd.api.types.is_numeric_dtype(AnnData_sample.obs[c])),
+            None,
+        )
+        if _anchor_col is not None:
+            _cluster_list = sorted(sample_cluster.keys())
+            def _mean_label(cluster_idx):
+                members = sample_cluster.get(_cluster_list[cluster_idx], [])
+                vals = AnnData_sample.obs.loc[
+                    AnnData_sample.obs.index.intersection(members), _anchor_col
+                ].dropna()
+                return vals.mean() if len(vals) > 0 else float("inf")
+            origin = min(ends, key=_mean_label)
+        else:
+            origin = min(ends)
         if verbose:
-            print(f"Using random endpoint as origin: cluster_{origin + 1}")
+            print(f"Using deterministic endpoint as origin: cluster_{origin + 1}")
     elif origin not in ends:
         raise ValueError(f"Provided origin {origin} is not an endpoint. Available endpoints: {ends}")
 

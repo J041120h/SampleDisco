@@ -64,20 +64,20 @@ def anndata_cluster(
     if "counts" not in adata.layers:
         adata.layers["counts"] = adata.X.copy()
 
-    # HVG selection on raw counts (Seurat v3 wants counts) — flag only, no subset.
+    # HVG1: sample-aware (Seurat v3 on raw counts) — flag only, no subset.
     _hvg_with_retries(adata, n_top_genes=num_cell_hvgs, sample_column=sample_column)
     n_hvg = int(adata.var["highly_variable"].sum())
     if verbose:
-        print(f"After HVG selection: {n_hvg} flagged / {adata.shape[1]} total genes")
+        print(f"After HVG1 (sample-aware) selection: {n_hvg} flagged / {adata.shape[1]} total genes")
 
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
 
-    # PCA on HVG subset only, then write embedding back to the full-gene adata.
+    # PCA on HVG1 (sample-aware) subset — identical to pre-Batch-2 recipe.
     sc.tl.pca(adata, n_comps=cell_embedding_num_PCs, svd_solver="arpack",
               use_highly_variable=True)
 
-    # --- Pass 1: sample-removed (matches original recipe) ---
+    # --- Pass 1: sample-removed (byte-identical to pre-Batch-2: nothing new ran before this) ---
     if verbose:
         print("=== [CPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
@@ -88,26 +88,56 @@ def anndata_cluster(
         use_gpu=False,
     )
 
+    # RMD basis block — moved here (after Z_clust) so the RNG state consumed by
+    # Z_clust Harmony is byte-identical to pre-Batch-2.  HVG2 runs on the counts
+    # layer because .X is now normalized.
+    adata.var["highly_variable_clust"] = adata.var["highly_variable"].to_numpy().copy()
+    hvg_spans = [0.3, 0.5, 0.8, 1.0]
+    last_err = None
+    for span in hvg_spans:
+        try:
+            sc.pp.highly_variable_genes(
+                adata, n_top_genes=num_cell_hvgs, flavor="seurat_v3",
+                layer="counts", batch_key=None, span=span,
+            )
+            break
+        except ValueError as exc:
+            arg = exc.args[0] if exc.args else ""
+            msg = arg.decode("utf-8", "ignore") if isinstance(arg, bytes) else str(arg)
+            if "reciprocal condition number" not in msg:
+                raise
+            last_err = exc
+    else:
+        raise last_err
+    adata.var["highly_variable_rmd"] = adata.var["highly_variable"].to_numpy().copy()
+    adata.var["highly_variable"] = adata.var["highly_variable_clust"]
+
+    sub = adata[:, adata.var["highly_variable_rmd"].to_numpy()].copy()
+    sc.tl.pca(sub, n_comps=cell_embedding_num_PCs, svd_solver="arpack",
+              use_highly_variable=False)
+    adata.obsm["X_pca_rmd"] = sub.obsm["X_pca"]
+
     # --- Pass 2: sample-preserved (used by RMD displacement) ---
     if cell_level_batch_key_no_sample:
         if verbose:
             print("=== [CPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
         adata.obsm["Z_rmd"] = harmonize(
-            adata.obsm["X_pca"], adata.obs,
+            adata.obsm["X_pca_rmd"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
             use_gpu=False,
         )
     else:
         if verbose:
-            print("=== [CPU] Harmony pass 2: no extra batch covariate → using raw X_pca ===")
+            print("=== [CPU] Harmony pass 2: no extra batch covariate → using raw X_pca_rmd ===")
         adata.obsm["Z_rmd"] = np.asarray(
-            adata.obsm["X_pca"], dtype=np.float32)
+            adata.obsm["X_pca_rmd"], dtype=np.float32)
 
     if verbose:
-        print(f"  Z_clust        shape: {adata.obsm['Z_clust'].shape}")
-        print(f"  Z_rmd shape: {adata.obsm['Z_rmd'].shape}")
+        print(f"  Z_clust   shape: {adata.obsm['Z_clust'].shape}")
+        print(f"  X_pca_rmd shape: {adata.obsm['X_pca_rmd'].shape}")
+        print(f"  Z_rmd     shape: {adata.obsm['Z_rmd'].shape}")
 
     save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
     safe_h5ad_write(adata, save_path)
@@ -235,7 +265,7 @@ def preprocess(
     mito_gene_mask = adata.var_names.str.startswith(("MT-", "mt-"))
     adata.var["mt"] = mito_gene_mask
     sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], percent_top=None,
-                                 log1p=False, inplace=True)
+                                log1p=False, inplace=True)
     adata = adata[adata.obs["pct_counts_mt"] < pct_mito_cutoff].copy()
     if verbose:
         print(f"After mitochondrial filtering: {adata.shape[0]} cells × {adata.shape[1]} genes")

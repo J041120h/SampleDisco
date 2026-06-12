@@ -1,0 +1,20 @@
+# Minimal packaging metadata for SampleDisco.
+# NOTE: the package currently runs via cwd-relative imports
+# (`cd code && python SampleDisc.py -m complex --config ...`). A full editable
+# install (`pip install -e .`) would need a src/ layout refactor — tracked as
+# review item P2-3. This file pins project metadata + core dependencies so the
+# dependency set is declared in one place.
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sampledisco"
+version = "0.1.0"
+description = "Cross-omics, cross-condition sample embedding for single-cell data (RNA + ATAC)"
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }

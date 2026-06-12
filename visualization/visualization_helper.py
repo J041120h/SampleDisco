@@ -281,7 +281,7 @@ def plot_clusters_by_cluster(
     
     # Color map for clusters
     n_clusters = len(unique_clusters)
-    cmap = plt.cm.get_cmap("tab20", n_clusters)
+    cmap = plt.get_cmap("tab20", n_clusters)
     cluster_to_color = {cluster: cmap(i) for i, cluster in enumerate(unique_clusters)}
 
     # Plot samples colored by cluster

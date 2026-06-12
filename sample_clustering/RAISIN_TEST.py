@@ -236,7 +236,7 @@ def plot_pseudobulk_heatmap(
     
     # Group samples by cluster and take the mean
     # Result: Columns = Clusters, Rows = Genes
-    pseudobulk = means_df.groupby(groups, axis=1).mean()
+    pseudobulk = means_df.T.groupby(groups).mean().T
 
     # --- 2. Identify and Group Marker Genes ---
     cluster_markers = {g: [] for g in pseudobulk.columns}
@@ -480,6 +480,7 @@ def raisintest(
     make_ma_plot: bool = False,
     top_n_label: int = 10,
     verbose: bool = True,
+    random_state: int = 42,
 ):
     """
     Statistical testing for RAISIN model.
@@ -557,9 +558,10 @@ def raisintest(
         # Permutations
         if verbose:
             print(f"Running {n_permutations} permutations...")
+        rng = np.random.default_rng(random_state)
         simu_stat = []
         for _ in range(n_permutations):
-            perm_idx = np.random.permutation(X.shape[0])
+            perm_idx = rng.permutation(X.shape[0])
             perX = X[perm_idx, :]
             perm_k = contrast @ np.linalg.pinv(perX.T @ perX) @ perX.T
             perm_var = (
@@ -570,7 +572,7 @@ def raisintest(
                 p_s = (means @ perm_k) / np.sqrt(perm_var)
             p_s = p_s[np.isfinite(p_s)]
             if len(p_s) > 1000:
-                p_s = np.random.choice(p_s, 1000, replace=False)
+                p_s = rng.choice(p_s, 1000, replace=False)
             simu_stat.extend(p_s)
 
         # P-values
@@ -678,7 +680,8 @@ def run_pairwise_tests(
     fdr_threshold=0.05,
     top_n_genes: int = 50,
     make_summary_plots: bool = True,
-    verbose=True
+    verbose=True,
+    random_state: int = 42,
 ):
     """
     Runs pairwise comparisons and generates comprehensive visualizations.
@@ -741,7 +744,8 @@ def run_pairwise_tests(
                 output_dir=sub_dir,
                 fdr_threshold=fdr_threshold,
                 make_volcano=True,
-                verbose=False
+                verbose=False,
+                random_state=random_state,
             )
             results_summary[comp_name] = np.sum(res['FDR'] < fdr_threshold)
             all_results[comp_name] = res
@@ -825,7 +829,7 @@ def run_pairwise_tests(
             means_df = means.copy() if isinstance(means, pd.DataFrame) else pd.DataFrame(means)
             grp = np.array(fit['group']).astype(str)
             if means_df.shape[1] == len(grp):
-                pseudobulk = means_df.groupby(grp, axis=1).mean()  # genes x clusters
+                pseudobulk = means_df.T.groupby(grp).mean().T  # genes x clusters
                 pooled = pd.concat(list(all_results.values()))
                 sig = pooled[pooled['FDR'] < fdr_threshold].sort_values('FDR')
                 genes = list(dict.fromkeys(sig.index.tolist()))

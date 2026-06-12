@@ -34,66 +34,56 @@ def cell_types_multiomics_gpu(
     verbose=True,
     generate_plots=True,
 ):
-    
+
     if verbose:
         print("\n" + "="*60)
         print("Cell Type Assignment for Multi-omics Data")
         print("="*60)
-    
+
     from utils.random_seed import set_global_seed
     set_global_seed(seed=42)
-    
+
     if modality_column not in adata.obs.columns:
         raise ValueError(f"Modality column '{modality_column}' not found in adata.obs")
-    
+
     if use_rep not in adata.obsm:
         raise ValueError(f"Representation '{use_rep}' not found in adata.obsm")
-    
+
     rna_mask = adata.obs[modality_column] == rna_modality_value
     atac_mask = adata.obs[modality_column] == atac_modality_value
-    
+
     n_rna = rna_mask.sum()
     n_atac = atac_mask.sum()
-    
+
     if verbose:
         print(f"\nData composition:")
         print(f"  RNA cells: {n_rna}")
         print(f"  ATAC cells: {n_atac}")
         print(f"  Total cells: {adata.n_obs}")
-    
+
     if n_rna == 0:
         raise ValueError("No RNA cells found in the data")
-    
+
     if n_atac == 0:
         raise ValueError("No ATAC cells found in the data")
-    
+
     embedding = adata.obsm[use_rep]
     if hasattr(embedding, 'get'):
         embedding = embedding.get()
-    
+
     if num_PCs is not None and embedding.shape[1] > num_PCs:
         embedding = embedding[:, :num_PCs]
         if verbose:
             print(f"\nUsing first {num_PCs} components from {use_rep}")
-    
+
     if verbose:
         print(f"\n--- Step 1: Clustering RNA cells ---")
         print(f"  Resolution: {cluster_resolution}")
 
-    # Build a minimal AnnData with only the embedding — avoids moving the full
-    # X matrix to GPU (Leiden only reads obsm[use_rep]).
-    rna_indices = adata.obs.index[rna_mask]
-    rna_embedding_np = embedding[rna_mask.values] if hasattr(rna_mask, 'values') else embedding[rna_mask]
-    rna_adata = ad.AnnData(
-        X=sparse.csr_matrix((n_rna, 1), dtype=np.float32),
-        obs=pd.DataFrame(index=rna_indices),
-        obsm={use_rep: np.ascontiguousarray(rna_embedding_np, dtype=np.float32)},
-    )
-
-    rsc.get.anndata_to_GPU(rna_adata)
-
+    rna_adata = adata[rna_mask].copy()
     if verbose:
         print("  Building neighborhood graph for RNA cells...")
+    rsc.get.anndata_to_GPU(rna_adata)
     rsc.pp.neighbors(rna_adata, use_rep=use_rep, n_pcs=num_PCs, random_state=42)
 
     if verbose:
@@ -104,6 +94,7 @@ def cell_types_multiomics_gpu(
         key_added=cell_type_column,
         random_state=42,
     )
+    rsc.get.anndata_to_CPU(rna_adata)
 
     rna_adata.obs[cell_type_column] = (
         (rna_adata.obs[cell_type_column].astype(int) + 1).astype(str).astype("category")
@@ -113,136 +104,126 @@ def cell_types_multiomics_gpu(
     if verbose:
         print(f"  Found {n_clusters} clusters in RNA cells")
 
-    rsc.get.anndata_to_CPU(rna_adata)
-
     rna_cell_types = rna_adata.obs[cell_type_column].copy()
 
     del rna_adata
-    import cupy as _cp
-    _cp.get_default_memory_pool().free_all_blocks()
-    
+
     if verbose:
         print(f"\n--- Step 2: Transferring labels to ATAC cells ---")
         print(f"  Using k={k_neighbors} nearest neighbors with Jaccard-weighted SNN")
         print(f"  Metric: {transfer_metric}")
-    
-    rna_embedding = embedding[rna_mask]
-    atac_embedding = embedding[atac_mask]
-    
-    import cupy as cp
-    import cupyx.scipy.sparse as cp_sparse
-    from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-    
-    rna_embedding_gpu = cp.asarray(rna_embedding, dtype=cp.float32)
-    atac_embedding_gpu = cp.asarray(atac_embedding, dtype=cp.float32)
-    
+
+    rna_embedding = np.ascontiguousarray(embedding[rna_mask], dtype=np.float32)
+    atac_embedding = np.ascontiguousarray(embedding[atac_mask], dtype=np.float32)
+
     if verbose:
-        print("  Building k-NN graphs...")
-    
-    rna_nn = cuNearestNeighbors(
-        n_neighbors=k_neighbors,
-        metric=transfer_metric,
-        algorithm='brute' if n_rna < 50000 else 'auto'
-    )
-    rna_nn.fit(rna_embedding_gpu)
-    
-    atac_nn = cuNearestNeighbors(
-        n_neighbors=k_neighbors,
-        metric=transfer_metric,
-        algorithm='brute' if n_atac < 50000 else 'auto'
-    )
-    atac_nn.fit(atac_embedding_gpu)
-    
-    rna_rna_dist, rna_rna_idx = rna_nn.kneighbors(rna_embedding_gpu)
-    rna_atac_dist, rna_atac_idx = atac_nn.kneighbors(rna_embedding_gpu)
-    atac_rna_dist, atac_rna_idx = rna_nn.kneighbors(atac_embedding_gpu)
-    atac_atac_dist, atac_atac_idx = atac_nn.kneighbors(atac_embedding_gpu)
-    
+        print("  Building k-NN graphs (cuML)...")
+
+    from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+    rna_nn = cuNearestNeighbors(n_neighbors=k_neighbors, metric=transfer_metric)
+    rna_nn.fit(rna_embedding)
+
+    atac_nn = cuNearestNeighbors(n_neighbors=k_neighbors, metric=transfer_metric)
+    atac_nn.fit(atac_embedding)
+
+    _, rna_rna_idx = rna_nn.kneighbors(rna_embedding)
+    _, rna_atac_idx = atac_nn.kneighbors(rna_embedding)
+    _, atac_rna_idx = rna_nn.kneighbors(atac_embedding)
+    _, atac_atac_idx = atac_nn.kneighbors(atac_embedding)
+
+    # Convert cupy arrays to numpy for scipy sparse construction.
+    if hasattr(rna_rna_idx, 'get'):
+        rna_rna_idx = rna_rna_idx.get()
+    if hasattr(rna_atac_idx, 'get'):
+        rna_atac_idx = rna_atac_idx.get()
+    if hasattr(atac_rna_idx, 'get'):
+        atac_rna_idx = atac_rna_idx.get()
+    if hasattr(atac_atac_idx, 'get'):
+        atac_atac_idx = atac_atac_idx.get()
+
     if verbose:
         print("  Computing Jaccard-weighted adjacency matrices...")
-    
-    def knn_to_sparse_gpu(indices, n_samples, n_features):
-        row_idx = cp.repeat(cp.arange(n_samples), k_neighbors)
+
+    def knn_to_sparse(indices, n_samples, n_features):
+        row_idx = np.repeat(np.arange(n_samples), k_neighbors)
         col_idx = indices.ravel()
-        data = cp.ones(n_samples * k_neighbors, dtype=cp.float32)
-        return cp_sparse.csr_matrix(
-            (data, (row_idx, col_idx)), 
-            shape=(n_samples, n_features)
-        )
-    
-    xx = knn_to_sparse_gpu(rna_rna_idx, n_rna, n_rna)
-    xy = knn_to_sparse_gpu(rna_atac_idx, n_rna, n_atac)
-    yx = knn_to_sparse_gpu(atac_rna_idx, n_atac, n_rna)
-    yy = knn_to_sparse_gpu(atac_atac_idx, n_atac, n_atac)
-    
+        data = np.ones(n_samples * k_neighbors, dtype=np.float32)
+        return sparse.csr_matrix((data, (row_idx, col_idx)), shape=(n_samples, n_features))
+
+    xx = knn_to_sparse(rna_rna_idx, n_rna, n_rna)
+    xy = knn_to_sparse(rna_atac_idx, n_rna, n_atac)
+    yx = knn_to_sparse(atac_rna_idx, n_atac, n_rna)
+    yy = knn_to_sparse(atac_atac_idx, n_atac, n_atac)
+
     jaccard = (xx @ yx.T) + (xy @ yy.T)
-    
     jaccard.data /= (4 * k_neighbors - jaccard.data)
-    
-    row_sums = cp.array(jaccard.sum(axis=0)).ravel()
+
+    row_sums = np.asarray(jaccard.sum(axis=0)).ravel()
     row_sums[row_sums == 0] = 1
     normalized_jaccard = jaccard.multiply(1.0 / row_sums)
-    
+
     if verbose:
         print("  Computing label predictions...")
-    
-    del xx, xy, yx, yy, rna_rna_dist, rna_rna_idx, rna_atac_dist, rna_atac_idx
-    del atac_rna_dist, atac_rna_idx, atac_atac_dist, atac_atac_idx
-    
-    normalized_jaccard_cpu = normalized_jaccard.get()
-    
-    del jaccard, normalized_jaccard, rna_embedding_gpu, atac_embedding_gpu
-    cp.get_default_memory_pool().free_all_blocks()
-    
-    from sklearn.preprocessing import OneHotEncoder
-    onehot = OneHotEncoder(sparse_output=True)
-    rna_labels_onehot = onehot.fit_transform(rna_cell_types.values.reshape(-1, 1))
-    
-    atac_scores = normalized_jaccard_cpu.T @ rna_labels_onehot
-    
-    atac_pred_idx = atac_scores.argmax(axis=1).A1
-    atac_pred_labels = onehot.categories_[0][atac_pred_idx]
-    atac_confidence = atac_scores.max(axis=1).toarray().ravel()
-    
+
+    categories = rna_cell_types.cat.categories
+    cat_to_idx = {c: i for i, c in enumerate(categories)}
+    rna_label_idx = np.array([cat_to_idx[c] for c in rna_cell_types], dtype=np.int32)
+    n_cats = len(categories)
+
+    rna_labels_onehot = sparse.csr_matrix(
+        (np.ones(n_rna, dtype=np.float32),
+         (np.arange(n_rna), rna_label_idx)),
+        shape=(n_rna, n_cats),
+    )
+    atac_scores = normalized_jaccard.T @ rna_labels_onehot
+
+    atac_pred_idx = np.asarray(atac_scores.argmax(axis=1)).ravel()
+    atac_pred_labels = np.array(categories)[atac_pred_idx]
+
+    if sparse.issparse(atac_scores):
+        atac_confidence_values = atac_scores.max(axis=1).toarray().ravel()
+    else:
+        atac_confidence_values = np.asarray(atac_scores.max(axis=1)).ravel()
+
     atac_cell_types = pd.Series(
         atac_pred_labels,
         index=adata.obs.index[atac_mask],
         dtype=rna_cell_types.dtype
     )
     atac_confidence = pd.Series(
-        atac_confidence,
+        atac_confidence_values,
         index=adata.obs.index[atac_mask]
     )
-    
+
     if verbose:
         mean_confidence = np.mean(atac_confidence)
         print(f"  Label transfer complete")
         print(f"  Mean transfer confidence: {mean_confidence:.3f}")
-    
+
     if verbose:
         print(f"\n--- Step 3: Combining cell type assignments ---")
-    
+
     adata.obs[cell_type_column] = pd.NA
-    
+
     adata.obs.loc[rna_mask, cell_type_column] = rna_cell_types.values
-    
+
     adata.obs.loc[atac_mask, cell_type_column] = atac_cell_types.values
-    
+
     adata.obs[cell_type_column] = adata.obs[cell_type_column].astype("category")
-    
+
     if verbose:
         print(f"  Cell type assignments complete")
         print(f"\n  Cell type distribution:")
         for ct in sorted(adata.obs[cell_type_column].unique()):
-            n_rna_ct = ((adata.obs[modality_column] == rna_modality_value) & 
+            n_rna_ct = ((adata.obs[modality_column] == rna_modality_value) &
                         (adata.obs[cell_type_column] == ct)).sum()
-            n_atac_ct = ((adata.obs[modality_column] == atac_modality_value) & 
+            n_atac_ct = ((adata.obs[modality_column] == atac_modality_value) &
                          (adata.obs[cell_type_column] == ct)).sum()
             print(f"    Cluster {ct}: RNA={n_rna_ct}, ATAC={n_atac_ct}")
-    
+
     if verbose:
         print(f"\n--- Step 4: Filtering modality-imbalanced clusters ---")
-    
+
     adata = filter_modality_imbalanced_clusters(
         adata=adata,
         modality_column=modality_column,
@@ -250,7 +231,7 @@ def cell_types_multiomics_gpu(
         min_proportion_of_expected=0.05,
         verbose=verbose
     )
-    
+
     if compute_umap:
         if verbose:
             print(f"\n--- Step 5: Computing UMAP ---")
@@ -277,35 +258,35 @@ def cell_types_multiomics_gpu(
         del umap_adata
         import cupy as _cp
         _cp.get_default_memory_pool().free_all_blocks()
-    
+
     adata = ensure_cpu_arrays(adata)
-    
+
     if output_dir:
         if verbose:
             print(f"\n--- Step 6: Saving cell type information ---")
-        
+
         output_dir = os.path.join(output_dir, "preprocess")
         os.makedirs(output_dir, exist_ok=True)
-        
+
         cell_info_df = pd.DataFrame({
             'cell_id': adata.obs.index,
             'modality': adata.obs[modality_column],
             'cell_type': adata.obs[cell_type_column]
         })
-        
+
         csv_path = os.path.join(output_dir, "cell_type.csv")
         cell_info_df.to_csv(csv_path, index=False)
-        
+
         if verbose:
             print(f"  Saved cell type assignments to: {csv_path}")
-    
+
     if generate_plots and output_dir:
         if verbose:
             print(f"\n--- Step 7: Generating visualizations ---")
-        
+
         vis_dir = os.path.join(output_dir, "visualization")
         os.makedirs(vis_dir, exist_ok=True)
-        
+
         _generate_multiomics_celltype_plots(
             adata=adata,
             output_dir=vis_dir,
@@ -315,23 +296,23 @@ def cell_types_multiomics_gpu(
             atac_modality_value=atac_modality_value,
             verbose=verbose
         )
-    
+
     if save and output_dir and not defined_output_path:
         out_pre = os.path.join(output_dir, "preprocess")
         os.makedirs(out_pre, exist_ok=True)
         save_path = os.path.join(out_pre, "adata_preprocessed.h5ad")
         print(f"Saving integrated data to: {save_path}")
         safe_h5ad_write(adata, save_path)
-    
+
     if defined_output_path:
         safe_h5ad_write(adata, defined_output_path)
         print(f"Saving integrated data to: {defined_output_path}")
-    
+
     if verbose:
         print("\n" + "="*60)
         print("Cell type assignment complete!")
         print("="*60 + "\n")
-    
+
     return adata
 
 
@@ -344,16 +325,16 @@ def _generate_multiomics_celltype_plots(
     atac_modality_value="ATAC",
     verbose=True
 ):
-    
+
     sc.settings.set_figure_params(dpi=80, facecolor='white', figsize=(8, 6))
     plt.rcParams['figure.max_open_warning'] = 50
-    
+
     has_umap = 'X_umap' in adata.obsm
-    
+
     if has_umap:
         if verbose:
             print("  Generating cell type UMAP...")
-        
+
         plt.figure(figsize=(12, 8))
         sc.pl.umap(adata, color=cell_type_column,
                    title="Cell Types (RNA clustering + ATAC transfer)",
@@ -361,11 +342,11 @@ def _generate_multiomics_celltype_plots(
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "umap_cell_type.png"), dpi=300, bbox_inches='tight')
         plt.close()
-    
+
     if has_umap:
         if verbose:
             print("  Generating modality UMAP...")
-        
+
         plt.figure(figsize=(12, 8))
         sc.pl.umap(adata, color=modality_column,
                    title="Modality Distribution",
@@ -373,96 +354,96 @@ def _generate_multiomics_celltype_plots(
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "umap_modality.png"), dpi=300, bbox_inches='tight')
         plt.close()
-    
+
     if has_umap:
         if verbose:
             print("  Generating split modality UMAPs...")
-        
+
         fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-        
+
         rna_mask = adata.obs[modality_column] == rna_modality_value
         rna_adata = adata[rna_mask]
-        
+
         ax = axes[0]
         umap_coords = rna_adata.obsm['X_umap']
         cell_types = rna_adata.obs[cell_type_column].astype('category')
-        
+
         for i, ct in enumerate(sorted(cell_types.cat.categories)):
             mask = cell_types == ct
-            ax.scatter(umap_coords[mask, 0], umap_coords[mask, 1], 
+            ax.scatter(umap_coords[mask, 0], umap_coords[mask, 1],
                       label=ct, s=10, alpha=0.6)
-        
+
         ax.set_title(f"RNA Cells (n={rna_mask.sum()})", fontsize=14)
         ax.set_xlabel("UMAP1")
         ax.set_ylabel("UMAP2")
         ax.legend(title="Cell Type", bbox_to_anchor=(1.05, 1), loc='upper left', markerscale=2)
-        
+
         atac_mask = adata.obs[modality_column] == atac_modality_value
         atac_adata = adata[atac_mask]
-        
+
         ax = axes[1]
         umap_coords = atac_adata.obsm['X_umap']
         cell_types = atac_adata.obs[cell_type_column].astype('category')
-        
+
         for i, ct in enumerate(sorted(cell_types.cat.categories)):
             mask = cell_types == ct
-            ax.scatter(umap_coords[mask, 0], umap_coords[mask, 1], 
+            ax.scatter(umap_coords[mask, 0], umap_coords[mask, 1],
                       label=ct, s=10, alpha=0.6)
-        
+
         ax.set_title(f"ATAC Cells (n={atac_mask.sum()})", fontsize=14)
         ax.set_xlabel("UMAP1")
         ax.set_ylabel("UMAP2")
         ax.legend(title="Cell Type", bbox_to_anchor=(1.05, 1), loc='upper left', markerscale=2)
-        
+
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "umap_split_by_modality.png"), dpi=300, bbox_inches='tight')
         plt.close()
-    
+
     if 'label_transfer_confidence' in adata.obs.columns:
         if verbose:
             print("  Generating label transfer confidence plot...")
-        
+
         atac_mask = adata.obs[modality_column] == atac_modality_value
         confidence = adata.obs.loc[atac_mask, 'label_transfer_confidence'].dropna()
-        
+
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-        
+
         axes[0].hist(confidence, bins=50, edgecolor='black', alpha=0.7)
-        axes[0].axvline(x=confidence.mean(), color='red', linestyle='--', 
+        axes[0].axvline(x=confidence.mean(), color='red', linestyle='--',
                        label=f'Mean: {confidence.mean():.3f}')
         axes[0].set_xlabel("Transfer Confidence")
         axes[0].set_ylabel("Number of Cells")
         axes[0].set_title("Label Transfer Confidence Distribution")
         axes[0].legend()
-        
+
         atac_adata = adata[atac_mask]
         conf_by_ct = pd.DataFrame({
             'confidence': atac_adata.obs['label_transfer_confidence'],
             'cell_type': atac_adata.obs[cell_type_column]
         })
-        
+
         conf_by_ct.boxplot(column='confidence', by='cell_type', ax=axes[1])
         axes[1].set_xlabel("Cell Type")
         axes[1].set_ylabel("Transfer Confidence")
         axes[1].set_title("Transfer Confidence by Cell Type")
         plt.suptitle('')
-        
+
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "label_transfer_confidence.png"), dpi=300, bbox_inches='tight')
         plt.close()
-    
+
     if verbose:
         print("  Generating cell type composition heatmap...")
-    
+
     crosstab = pd.crosstab(
         adata.obs[cell_type_column],
         adata.obs[modality_column]
     )
-    
+
     crosstab_props = crosstab.div(crosstab.sum(axis=1), axis=0) * 100
-    
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-    
+
     sns.heatmap(
         crosstab,
         annot=True,
@@ -474,7 +455,7 @@ def _generate_multiomics_celltype_plots(
     ax1.set_title('Cell Count Distribution', fontsize=14)
     ax1.set_xlabel('Modality')
     ax1.set_ylabel('Cell Type')
-    
+
     sns.heatmap(
         crosstab_props,
         annot=True,
@@ -486,14 +467,14 @@ def _generate_multiomics_celltype_plots(
     ax2.set_title('Modality Distribution within Each Cell Type (%)', fontsize=14)
     ax2.set_xlabel('Modality')
     ax2.set_ylabel('Cell Type')
-    
+
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "celltype_modality_heatmap.png"), dpi=300, bbox_inches='tight')
     plt.close()
-    
+
     csv_path = os.path.join(output_dir, "celltype_modality_distribution.csv")
     crosstab.to_csv(csv_path)
-    
+
     if verbose:
         print(f"  Saved distribution table to: {csv_path}")
         print("  Visualizations complete!")
