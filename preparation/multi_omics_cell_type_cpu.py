@@ -35,6 +35,12 @@ def cell_types_multiomics(
     verbose=True,
     generate_plots=True,
 ):
+    """Cluster RNA cells with Leiden, then transfer labels to ATAC via Jaccard-weighted SNN.
+
+    use_rep should be the sample-REMOVED embedding (Z_clust) — the wrapper resolves
+    this automatically via _resolve_embedding_keys; the default 'X_glue' is a
+    fallback when Z_clust is absent.  Writes obs[cell_type_column] on the union adata.
+    """
     if verbose:
         print("\n" + "=" * 60)
         print("Cell Type Assignment for Multi-omics Data")

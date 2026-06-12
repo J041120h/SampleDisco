@@ -81,7 +81,7 @@ def anndata_cluster(
             print("Applying log1p transformation...")
         sc.pp.log1p(adata)
 
-    # HVF1: sample-aware — for Z_clust (byte-identical to pre-Batch-2).
+    # HVF1: sample-aware (batch_key=sample) — flag only, no subset.
     if verbose:
         print("Running HVF1 (sample-aware) selection (flag only, no subset)...")
     sc.pp.highly_variable_genes(
@@ -97,7 +97,7 @@ def anndata_cluster(
     _run_lsi_on_hvg(adata, n_comps=cell_embedding_num_PCs, drop_first=drop_first_lsi,
                     hvg_col="highly_variable", out_key="X_lsi")
 
-    # --- Pass 1: sample-removed (byte-identical to pre-Batch-2: nothing new ran before this) ---
+    # --- Pass 1: sample-removed (batch_key includes sample → removes per-sample variance) ---
     if verbose:
         print("=== [CPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
@@ -111,9 +111,9 @@ def anndata_cluster(
     else:
         adata.obsm["Z_clust"] = adata.obsm["X_lsi"].copy()
 
-    # RMD basis block — moved here (after Z_clust) so the RNG state consumed by
-    # Z_clust Harmony is byte-identical to pre-Batch-2.  HVF2 runs on the same
-    # TF-IDF+log1p .X as HVF1 (no counts layer for ATAC).
+    # HVF2 for RMD basis: sample-naive (batch_key=None). ATAC has no raw-counts
+    # layer post TF-IDF, so HVF2 runs on the same TF-IDF+log1p .X as HVF1.
+    # Placed after Z_clust Harmony to preserve RNG ordering.
     adata.var["highly_variable_clust"] = adata.var["highly_variable"].to_numpy().copy()
     if verbose:
         print("Running HVF2 (sample-naive) selection...")
@@ -128,7 +128,7 @@ def anndata_cluster(
     _run_lsi_on_hvg(adata, n_comps=cell_embedding_num_PCs, drop_first=drop_first_lsi,
                     hvg_col="highly_variable_rmd", out_key="X_lsi_rmd")
 
-    # --- Pass 2: sample-preserved (Z_rmd from X_lsi_rmd) ---
+    # --- Pass 2: sample-preserved (batch_key excludes sample → Z_rmd for RMD block) ---
     if cell_level_batch_key_no_sample:
         if verbose:
             print("=== [CPU] Harmony pass 2: NO sample (sample-preserved) ===")

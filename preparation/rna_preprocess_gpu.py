@@ -47,7 +47,7 @@ def anndata_cluster(
     if "counts" not in adata.layers:
         adata.layers["counts"] = adata.X.copy()
 
-    # HVG1: sample-aware — same span-retry loop as before.
+    # HVG1: sample-aware (batch_key=sample) — flag only, no subset.
     if verbose:
         print("Running HVG1 (sample-aware) selection on CPU (Seurat v3)...")
     hvg_spans = [0.3, 0.5, 0.8, 1.0]
@@ -78,11 +78,10 @@ def anndata_cluster(
         print("Normalization, log1p, PCA on CPU (scanpy ARPACK); Harmony on GPU...")
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
-    # PCA on HVG1 (sample-aware) — identical to pre-Batch-2 recipe.
     sc.tl.pca(adata, n_comps=cell_embedding_num_PCs,
               svd_solver="arpack", use_highly_variable=True)
 
-    # --- Pass 1: sample-removed (byte-identical to pre-Batch-2: nothing new ran before this) ---
+    # --- Pass 1: sample-removed (batch_key includes sample → removes per-sample variance) ---
     if verbose:
         print("=== [GPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
@@ -93,9 +92,9 @@ def anndata_cluster(
         use_gpu=True,
     )
 
-    # RMD basis block — moved here (after Z_clust) so the RNG state consumed by
-    # Z_clust Harmony is byte-identical to pre-Batch-2.  HVG2 runs on the counts
-    # layer because .X is now normalized.
+    # HVG2 for RMD basis: sample-naive (batch_key=None) so HVGs reflect intrinsic
+    # gene variability without sample-group bias. Runs on counts layer because .X
+    # is now normalized.  Placed after Z_clust Harmony to preserve RNG ordering.
     if verbose:
         print("Running HVG2 (sample-naive) selection on CPU (Seurat v3, layer='counts')...")
     adata.var["highly_variable_clust"] = adata.var["highly_variable"].to_numpy().copy()
@@ -128,7 +127,7 @@ def anndata_cluster(
               use_highly_variable=False)
     adata.obsm["X_pca_rmd"] = sub.obsm["X_pca"]
 
-    # --- Pass 2: sample-preserved ---
+    # --- Pass 2: sample-preserved (batch_key excludes sample → Z_rmd for RMD block) ---
     if cell_level_batch_key_no_sample:
         if verbose:
             print("=== [GPU] Harmony pass 2: NO sample (sample-preserved) ===")
@@ -228,11 +227,11 @@ def preprocess_gpu(
         else:
             flattened_cell_level_batch_key.append(str(var))
 
-    # Pass 1 (sample-removed): include sample.
+    # Z_clust (sample-removed): sample column included so Harmony removes it.
     cell_level_batch_key_for_harmony = flattened_cell_level_batch_key.copy()
     if sample_column not in cell_level_batch_key_for_harmony:
         cell_level_batch_key_for_harmony.append(sample_column)
-    # Pass 2 (sample-preserved): exclude sample.
+    # Z_rmd (sample-preserved): sample column excluded.
     cell_level_batch_key_no_sample = [
         k for k in flattened_cell_level_batch_key if k != sample_column
     ]

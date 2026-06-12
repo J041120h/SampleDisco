@@ -83,8 +83,7 @@ def cluster_samples_gmm(
     n_samples = X.shape[0]
 
     if n_clusters is None:
-        # Cap at n_samples // 2 so every cluster has at least 2 samples
-        max_k = min(max_clusters, max(2, n_samples // 2))
+        max_k = min(max_clusters, max(2, n_samples // 2))  # every cluster needs ≥2 samples
         best_bic = np.inf
         best_k = 2
         n_successful_fits = 0
@@ -121,7 +120,6 @@ def cluster_samples_gmm(
         if verbose:
             print(f"  Optimal clusters by BIC: {n_clusters}")
 
-    # Fit final GMM; use multiple restarts, pick best log-likelihood
     best_gmm = None
     best_ll = -np.inf
     for _ in range(10):
@@ -150,13 +148,10 @@ def cluster_samples_gmm(
         )
 
     cluster_labels = best_gmm.predict(X)
-    
-    # Build sample_cluster dictionary
     cluster_dict = defaultdict(list)
     for sample, cluster_idx in zip(pca_data.index, cluster_labels):
         cluster_name = f"cluster_{cluster_idx + 1}"
         cluster_dict[cluster_name].append(str(sample))
-    
     sample_cluster = dict(cluster_dict)
     
     if verbose:
@@ -197,7 +192,6 @@ def cluster_samples_by_pca(
         - Dictionary mapping cluster names to sample lists
         - PCA DataFrame
     """
-    # 1. Retrieve PCA DataFrame
     if column not in adata.uns:
         raise KeyError(f"No PCA data found in adata.uns['{column}'].")
     pca_data = adata.uns[column]
@@ -205,29 +199,24 @@ def cluster_samples_by_pca(
     if not isinstance(pca_data, pd.DataFrame):
         raise TypeError(f"Expected a DataFrame in adata.uns['{column}'], but got {type(pca_data)}.")
     
-    # Enhanced sample alignment
     if not pca_data.index.equals(adata.obs.index):
         common_samples = pca_data.index.intersection(adata.obs.index)
         
         if len(common_samples) == 0:
-            # Try normalized comparison
+            # Fall back to case/whitespace-insensitive matching
             pca_normalized = pd.Index([str(s).strip().lower() for s in pca_data.index])
             obs_normalized = pd.Index([str(s).strip().lower() for s in adata.obs.index])
             
-            # Create mapping from normalized to original
             pca_norm_to_orig = dict(zip(pca_normalized, pca_data.index))
             obs_norm_to_orig = dict(zip(obs_normalized, adata.obs.index))
             
             common_normalized = pca_normalized.intersection(obs_normalized)
             
             if len(common_normalized) > 0:
-                # Map back to original sample names
                 common_pca_orig = [pca_norm_to_orig[norm] for norm in common_normalized]
                 common_obs_orig = [obs_norm_to_orig[norm] for norm in common_normalized]
-                
-                # Reindex PCA data to match obs
                 pca_data = pca_data.loc[common_pca_orig]
-                pca_data.index = common_obs_orig  # Use obs naming convention
+                pca_data.index = common_obs_orig  # align to obs naming convention
             else:
                 raise ValueError("No common samples found between PCA data and adata.obs")
         else:
@@ -238,7 +227,6 @@ def cluster_samples_by_pca(
     if n_clusters is not None and n_clusters > n_samples:
         raise ValueError(f"n_clusters={n_clusters} cannot exceed n_samples={n_samples}.")
 
-    # 2. GMM clustering with BIC
     sample_cluster, _ = cluster_samples_gmm(
         pca_data,
         n_clusters=n_clusters,
@@ -397,7 +385,6 @@ def project_samples_onto_edges(
     """
     cluster_list = sorted(sample_cluster.keys())
 
-    # Precompute centroids
     cluster_centroids = {}
     for clust in cluster_list:
         available_samples = [s for s in sample_cluster[clust] if s in pca_data.index]
@@ -425,7 +412,6 @@ def project_samples_onto_edges(
     M = len(path_cluster_names)
     sample_projections = {}
 
-    # Determine if path follows actual MST edges
     use_mst_adjacency = mst_adjacency is not None
     
     for i, cluster_name in enumerate(path_cluster_names):
@@ -442,11 +428,9 @@ def project_samples_onto_edges(
                 }
             continue
 
-        # Determine which neighboring clusters to consider for partitioning
-        # Changed: match R TSCAN's connectcluid logic
         if use_mst_adjacency:
-            # When path follows MST edges, use ALL MST-adjacent clusters
-            # R code: connectcluid <- as.numeric(names(which(adjmat[currentcluid,] == 1)))
+            # Use ALL MST-adjacent clusters (not just path prev/next) to match R TSCAN's
+            # connectcluid logic: adjmat[currentcluid,] == 1
             cluster_idx_in_mst = main_path[i]
             mst_neighbors_idx = list(np.where(mst_adjacency[cluster_idx_in_mst] > 0)[0])
             mst_neighbor_names = [cluster_list[idx] for idx in mst_neighbors_idx]
@@ -456,7 +440,6 @@ def project_samples_onto_edges(
         Ei = cluster_centroids[cluster_name]
 
         if i == 0:
-            # First cluster: all cells assigned to edge (C1, C2)
             next_cluster = path_cluster_names[i + 1]
             Ej = cluster_centroids[next_cluster]
             
@@ -476,9 +459,8 @@ def project_samples_onto_edges(
                             "edge_index": 1
                         }
                     else:
-                        # Still include but project onto (C1, C2) - these cells
-                        # may belong to a branch. For the main path, include them
-                        # with their projection value so ordering is complete.
+                        # Cell is closer to a branch neighbor; still project onto
+                        # (C1, C2) so the main-path ordering remains complete.
                         val = _projection(Ek, Ei, Ej)
                         sample_projections[s] = {
                             "cluster": cluster_name,
@@ -500,7 +482,6 @@ def project_samples_onto_edges(
                     }
 
         elif i == M - 1:
-            # Last cluster: all cells assigned to edge (C_{M-1}, C_M)
             prev_cluster = path_cluster_names[i - 1]
             Eprev = cluster_centroids[prev_cluster]
             
@@ -540,18 +521,12 @@ def project_samples_onto_edges(
                     }
 
         else:
-            # Intermediate clusters: partition cells between prev and next edges
             prev_cluster = path_cluster_names[i - 1]
             next_cluster = path_cluster_names[i + 1]
             Eprev = cluster_centroids[prev_cluster]
             Enext = cluster_centroids[next_cluster]
 
             if use_mst_adjacency:
-                # Changed: use ALL MST neighbors for partitioning, matching R code
-                # R: connectcluid <- as.numeric(names(which(adjmat[currentcluid,] == 1)))
-                # R: cludist <- sapply(connectcluid, function(x) { rowSums(sweep(...)) })
-                # R: mindistid <- apply(cludist,1,which.min)
-                # R: edgecell <- names(which(mindistid == which(connectcluid == nextcluid)))
                 for s in samples_in_cluster:
                     Ek = pca_data.loc[s].values
                     dists = {nb: np.sum((Ek - cluster_centroids[nb])**2) for nb in mst_neighbor_names}
@@ -576,14 +551,10 @@ def project_samples_onto_edges(
                             "edge_index": 1
                         }
                     else:
-                        # Cell is closest to a branch neighbor — exclude from
-                        # this path's ordering (they belong to a different branch).
-                        # Changed: R TSCAN excludes these cells from the current
-                        # path when divide=T (default). They will appear in their
-                        # respective branch's ordering instead.
+                        # Cell is closest to a branch neighbor; excluded here —
+                        # it appears in the branch ordering instead (R divide=T default).
                         pass
             else:
-                # Fallback: only consider prev and next (original behavior)
                 for s in samples_in_cluster:
                     Ek = pca_data.loc[s].values
                     dist2prev = np.sum((Ek - Eprev)**2)
@@ -678,13 +649,12 @@ def compute_pseudotime(
         return {ordered_samples[0]: 0.0}
     
     if mode == "rank":
-        # R TSCAN default: Pseudotime = 1:length(TSCANorder)
-        # Normalize to [0, 1] for consistency
+        # R TSCAN default: 1:length(TSCANorder), normalized to [0,1]
         n = len(ordered_samples)
         return {s: i / (n - 1) for i, s in enumerate(ordered_samples)}
     
     elif mode == "distance":
-        # Cumulative distance-based pseudotime (from R code's commented section)
+        # Cumulative Euclidean distance in PCA space, normalized to [0,1]
         cumulative = [0.0]
         for i in range(1, len(ordered_samples)):
             prev_coord = pca_data.loc[ordered_samples[i - 1]].values
@@ -805,7 +775,6 @@ def TSCAN(
     tscan_output_path = os.path.join(output_dir, "TSCAN")
     os.makedirs(tscan_output_path, exist_ok=True)
 
-    # Safe version of column name for filenames
     safe_column = str(column).replace(os.sep, "_")
 
     if verbose:
@@ -815,7 +784,6 @@ def TSCAN(
         print(f"  N clusters: {'auto (BIC)' if n_clusters is None else n_clusters}")
         print(f"  Embedding key: {column}")
 
-    # 1. Cluster samples by PCA using GMM with BIC
     sample_cluster, pca_df = cluster_samples_by_pca(
         AnnData_sample,
         column=column,
@@ -824,21 +792,15 @@ def TSCAN(
         verbose=verbose
     )
 
-    # 2. MST on cluster centroids
     pairwise_dists = Cluster_distance(pca_df, sample_cluster, metric="euclidean", verbose=verbose)
     mst = construct_MST(pairwise_dists, verbose=verbose)
+    mst_adjacency = mst + mst.T  # symmetrize; used for branch-point partitioning
 
-    # Changed: symmetrize and store MST adjacency for use in projection
-    mst_adjacency = mst + mst.T
-
-    # 3. Find main path and determine origin
     main_path = find_principal_path(mst, sample_cluster, verbose=verbose)
     ends = [main_path[0], main_path[-1]]
     if origin is None:
-        # Deterministic: if a numeric trajectory-label column is available,
-        # pick the endpoint whose member samples have the SMALLER mean label
-        # value (i.e. the "early" end of the biological gradient); otherwise
-        # fall back to min(ends) for stable reproducibility.
+        # Pick the endpoint with the smaller mean value in a numeric grouping
+        # column (i.e. the "early" end); fall back to min(ends) for reproducibility.
         _anchor_col = next(
             (c for c in (grouping_columns or [])
              if c in AnnData_sample.obs.columns
@@ -861,16 +823,12 @@ def TSCAN(
     elif origin not in ends:
         raise ValueError(f"Provided origin {origin} is not an endpoint. Available endpoints: {ends}")
 
-    # Ensure main_path starts from origin
     if main_path[0] != origin:
         main_path = main_path[::-1]
 
-    # Build graph for branching analysis
     G = nx.from_numpy_array(mst_adjacency)
     branching_paths = find_branching_paths(G, origin, main_path, sample_cluster, verbose=verbose)
 
-    # 4. Project + order samples along main path
-    # Changed: pass mst_adjacency for proper cell partitioning at branch points
     sample_projections = project_samples_onto_edges(
         pca_data=pca_df,
         sample_cluster=sample_cluster,
@@ -880,7 +838,6 @@ def TSCAN(
     )
     ordered_samples = order_samples_along_paths(sample_projections, main_path=main_path, verbose=verbose)
 
-    # 5. Handle branching paths
     sample_projections_branching_paths = {}
     ordered_samples_branching_paths = {}
     for index, path in enumerate(branching_paths):
@@ -896,25 +853,17 @@ def TSCAN(
         sample_projections_branching_paths[index] = sp
         ordered_samples_branching_paths[index] = os_ordered
 
-    # 6. Compute pseudotime
-    # Changed: use dedicated compute_pseudotime function with mode support
     pseudo_main = compute_pseudotime(ordered_samples, pca_df, mode=pseudotime_mode)
-
-    # Branching paths pseudotime
     pseudo_branches = {}
     for branch_idx, os_ordered in ordered_samples_branching_paths.items():
         pseudo_branches[branch_idx] = compute_pseudotime(os_ordered, pca_df, mode=pseudotime_mode)
 
-    # 7. Add pseudotime to AnnData object
-    # Main path pseudotime
     main_pseudotime = np.full(AnnData_sample.n_obs, np.nan)
     for i, sample_id in enumerate(AnnData_sample.obs.index):
         if str(sample_id) in pseudo_main:
             main_pseudotime[i] = pseudo_main[str(sample_id)]
     
     AnnData_sample.obs['tscan_pseudotime_main'] = main_pseudotime
-    
-    # Cluster assignments
     cluster_assignment = np.full(AnnData_sample.n_obs, 'unassigned', dtype=object)
     for cluster_name, sample_list in sample_cluster.items():
         for sample_id in sample_list:
@@ -933,7 +882,6 @@ def TSCAN(
     
     AnnData_sample.obs['tscan_cluster'] = cluster_assignment
 
-    # 8. Visualization
     try:
         plot_clusters_by_cluster(
             adata=AnnData_sample,
@@ -984,11 +932,8 @@ def TSCAN(
             if verbose:
                 print(f"Warning: Grouping plot failed - {e}")
 
-    # 9. Save pseudotime data to a single CSV file
     try:
         pseudotime_data = []
-        
-        # Main path samples
         for sample_id, pseudotime_val in pseudo_main.items():
             pseudotime_data.append({
                 'sample_id': sample_id,
@@ -997,8 +942,6 @@ def TSCAN(
                 'pseudotime': pseudotime_val,
                 'cluster': sample_projections[sample_id]['cluster'] if sample_id in sample_projections else 'unknown'
             })
-        
-        # Branching path samples
         for branch_idx, branch_pseudo in pseudo_branches.items():
             for sample_id, pseudotime_val in branch_pseudo.items():
                 pseudotime_data.append({
@@ -1025,7 +968,6 @@ def TSCAN(
         if verbose:
             print(f"Warning: Failed to save pseudotime CSV file - {e}")
 
-    # 10. Prepare final results
     results = {
         "main_path": main_path,
         "origin": origin,

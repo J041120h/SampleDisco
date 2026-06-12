@@ -102,7 +102,7 @@ def _build_sample_pseudobulk(
         elif len(batch_cols) == 1:
             batch_col_to_use = batch_cols[0]
         else:
-            # Combine multiple batch columns into a synthetic one.
+            # Multiple batch cols: combine into a synthetic interaction column.
             adata.obs["__pb_batch__"] = adata.obs[batch_cols].astype(str).agg("|".join, axis=1)
             batch_col_to_use = "__pb_batch__"
     else:
@@ -113,7 +113,6 @@ def _build_sample_pseudobulk(
     n_samples = len(samples_sorted)
     n_genes = adata.n_vars
 
-    # --- Aggregate cells → (sample × celltype) means via sparse outer product
     if celltype_col is None or celltype_col not in adata.obs.columns:
         # No celltype split — simple per-sample mean of all cells.
         sample_arr = adata.obs[sample_col].astype(str).values
@@ -136,7 +135,6 @@ def _build_sample_pseudobulk(
             summed = np.asarray(summed.todense())
         mean_X = (summed / cells_per_sample[:, None]).astype(np.float32)
         pb_obs = pd.DataFrame(index=pd.Index(samples_sorted, name=sample_col))
-        # Carry over sample-level metadata
         sample_to_meta = adata.obs.drop_duplicates(subset=[sample_col]).set_index(
             adata.obs[sample_col].drop_duplicates().values)
         sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
@@ -144,7 +142,6 @@ def _build_sample_pseudobulk(
         out = ad.AnnData(X=mean_X, obs=pb_obs, var=adata.var.copy())
         return out
 
-    # --- Per (sample × celltype) aggregation ---
     cell_types_sorted = sorted(adata.obs[celltype_col].astype(str).unique())
     if verbose:
         print(f"[pseudobulk] {len(samples_sorted)} samples × {len(cell_types_sorted)} cell types")
@@ -180,25 +177,21 @@ def _build_sample_pseudobulk(
             summed = np.asarray(summed.todense())
         ct_pb = (summed / cells_per_safe[:, None]).astype(np.float32)
 
-        # Build temporary per-celltype AnnData for batch correction + HVG
         temp = sc.AnnData(
             X=ct_pb.copy(),
             obs=pb_obs.copy(),
             var=adata.var.copy(),
         )
-        # Drop genes with all-zero pseudobulk (filter_genes complains otherwise)
         gene_keep = np.asarray((ct_pb != 0).any(axis=0)).flatten()
         if gene_keep.sum() == 0:
             continue
         temp = temp[:, gene_keep].copy()
 
-        # Optional Limma batch correction within this cell type.
         if batch_col_to_use is not None and batch_col_to_use in temp.obs.columns:
             nb = temp.obs[batch_col_to_use].nunique(dropna=True)
             if nb >= 2:
                 _attempt_limma(temp, batch_col_to_use, preserve_cols, verbose=verbose)
 
-        # Replace NaN/Inf
         if issparse(temp.X):
             mask = np.isnan(temp.X.data) | np.isinf(temp.X.data)
             if mask.any():
@@ -207,7 +200,6 @@ def _build_sample_pseudobulk(
         else:
             np.nan_to_num(temp.X, copy=False)
 
-        # Optional first-round HVG (per cell type) for noise reduction.
         if n_features_per_celltype is not None and 0 < n_features_per_celltype < temp.n_vars:
             try:
                 sc.pp.highly_variable_genes(
@@ -221,7 +213,6 @@ def _build_sample_pseudobulk(
 
         if temp.n_vars == 0:
             continue
-        # Convert to dense for the final concatenation.
         block = temp.X.toarray() if issparse(temp.X) else np.asarray(temp.X)
         feature_blocks.append(block.astype(np.float32))
         feature_names.extend(f"{celltype} - {g}" for g in temp.var_names)
@@ -237,14 +228,10 @@ def _build_sample_pseudobulk(
     return out
 
 def _read_pseudotime_table(obj: Union[str, pd.DataFrame, Dict]) -> pd.DataFrame:
-    """
-    Coerce `obj` into a pandas DataFrame.
-    """
-    # Direct DataFrame
+    """Coerce a pseudotime source (DataFrame, dict, or file path) into a DataFrame."""
     if isinstance(obj, pd.DataFrame):
         return obj.copy()
 
-    # Dict-like input
     if isinstance(obj, dict):
         if "pseudotime_df" in obj and isinstance(obj["pseudotime_df"], pd.DataFrame):
             return obj["pseudotime_df"].copy()
@@ -266,7 +253,6 @@ def _read_pseudotime_table(obj: Union[str, pd.DataFrame, Dict]) -> pd.DataFrame:
                 "  - be a simple mapping {sample_id: pseudotime_value}."
             )
 
-    # String → treat as path
     if isinstance(obj, str):
         if not os.path.exists(obj):
             raise FileNotFoundError(f"Pseudotime file not found: {obj}")
@@ -316,20 +302,17 @@ def load_sample_pseudotime(
     if df.shape[0] == 0:
         raise ValueError("Pseudotime table is empty.")
 
-    # Infer pseudotime column
     ptime_colname = _infer_col(
         df,
         candidates=[pseudotime_col, "pseudotime", "ptime", "p_time", "pt"],
         contains=["pseudo", "ptime"]
     )
-    # Infer sample column (or fallback to index)
     sample_colname = _infer_col(
         df,
         candidates=[sample_col, "sample", "sample_id", "sampleid", "obs", "obs_names"],
         contains=["sample"]
     )
 
-    # If no pseudotime col but exactly 2 cols, assume col1=sample, col2=pseudotime
     if ptime_colname is None:
         if df.shape[1] == 2:
             sample_colname = df.columns[0]
@@ -340,7 +323,6 @@ def load_sample_pseudotime(
                 "Expected a column like 'pseudotime'/'ptime', or a 2-column table."
             )
 
-    # If no sample col, try using index
     if sample_colname is None:
         if not isinstance(df.index, pd.RangeIndex):
             tmp = df.copy()
@@ -364,7 +346,6 @@ def load_sample_pseudotime(
         if dropped > 0:
             print(f"  → Dropped {dropped} rows with invalid/missing pseudotime")
 
-    # Deduplicate samples (keep first)
     if tmp[sample_colname].duplicated().any():
         ndup = tmp[sample_colname].duplicated().sum()
         if verbose:
@@ -373,7 +354,6 @@ def load_sample_pseudotime(
 
     ptime_dict = dict(zip(tmp[sample_colname], tmp[ptime_colname].astype(float)))
 
-    # Align to pseudobulk samples (obs_names)
     pb_samples = set(pseudobulk_adata.obs_names.astype(str))
     aligned = {str(s): float(t) for s, t in ptime_dict.items() if str(s) in pb_samples}
 
@@ -547,27 +527,21 @@ def fit_gam_models_for_genes(
     verbose: bool = False
 ) -> Tuple[pd.DataFrame, Dict[str, LinearGAM]]:
     """
-    Fit GAM models for genes with spline parameter adjustment.
+    Fit per-gene LinearGAM models with adaptive spline parameters.
 
-    IMPORTANT (Option B):
-    For each gene, we only use samples where that gene is present
-    (Y[gene] != 0) for fitting and testing.
+    Per-gene masking (Option B): each gene is fitted only on the samples where
+    that gene is non-zero, so structural zeros don't bias the spline toward zero.
     """
-    # helper for ensuring everything is dense numpy array
     def _to_dense_2d(mat) -> np.ndarray:
         if isinstance(mat, pd.DataFrame):
-            # If sparse dataframe
             if hasattr(mat, "sparse"):
                 try:
                     mat = mat.sparse.to_dense()
                 except Exception:
                     pass
             mat = mat.to_numpy()
-
-        # Double check for sparse matrix type
         if issparse(mat):
             mat = mat.toarray()
-
         return np.asarray(mat, dtype=np.float64, order="C")
 
     n_samples = X.shape[0]
@@ -584,7 +558,6 @@ def fit_gam_models_for_genes(
     X_dense = _to_dense_2d(X)
     Y_dense = _to_dense_2d(Y)
 
-    # finite rows in X (same for all genes)
     finite_rows = np.isfinite(X_dense).all(axis=1)
 
     try:
@@ -629,7 +602,7 @@ def fit_gam_models_for_genes(
 
         y_raw = Y_dense[:, col_idx]
 
-        # Mask: finite in X, finite in y, AND gene present (non-zero)
+        # Per-gene mask: finite X + finite y + gene non-zero (Option B per-gene masking)
         base_mask = finite_rows & np.isfinite(y_raw)
         nonzero_mask = y_raw != 0.0
         mask = base_mask & nonzero_mask
@@ -645,13 +618,11 @@ def fit_gam_models_for_genes(
         X_fit = X_dense[mask]
         y_fit = y_raw[mask]
 
-        # require enough samples relative to spline parameters
-        min_needed = adj_order + adj_n_splines + 2
+        min_needed = adj_order + adj_n_splines + 2  # minimum identifiable samples for this spline
         if y_fit.size < min_needed:
             skip_counts["too_few_samples"] += 1
             continue
 
-        # variance check on the non-zero subset
         if np.var(y_fit) < 1e-10:
             skip_counts["low_variance"] += 1
             continue
@@ -702,24 +673,22 @@ def calculate_effect_size_and_direction(
     verbose: bool = False
 ) -> pd.DataFrame:
     """
-    Calculate effect sizes AND regulation direction for genes.
+    Compute effect size and regulation direction for each gene's GAM fit.
 
-    Direction is determined by correlation between pseudotime and GAM predictions.
-    - Positive correlation → "UP" (upregulated along trajectory)
-    - Negative correlation → "DOWN" (downregulated along trajectory)
+    Effect size: (max_pred - min_pred) / residual_std — the fitted dynamic range
+    relative to noise. Direction: "UP" if corr(pseudotime, y_pred) > 0, else "DOWN".
+    Both are computed on the non-zero subset used for fitting (Option B masking).
     """
     effect_sizes = []
     error_count = 0
 
-    # precompute dense X and finite mask once
     X_values = X.values if isinstance(X, pd.DataFrame) else np.asarray(X)
     finite_X_rows = np.isfinite(X_values).all(axis=1)
-    
-    # Get pseudotime column index
+
     try:
         pt_idx = list(X.columns).index("pseudotime")
     except ValueError:
-        pt_idx = 0  # Fallback to first column if "pseudotime" not found
+        pt_idx = 0
 
     for gene in genes:
         if gene not in gam_models or gene not in Y.columns:
@@ -740,16 +709,14 @@ def calculate_effect_size_and_direction(
 
             y_pred = gam.predict(X_used)
 
-            # Calculate effect size
             residuals = y_true - y_pred
             df_e = max(1, len(y_true) - gam.statistics_["edof"])
             rss = np.sum(residuals ** 2)
 
             if rss > 0 and df_e > 0:
                 es = (np.max(y_pred) - np.min(y_pred)) / np.sqrt(rss / df_e)
-                
-                # Calculate direction via correlation
-                pt_values = X_used[:, pt_idx]  # pseudotime values
+
+                pt_values = X_used[:, pt_idx]
                 correlation = np.corrcoef(pt_values, y_pred)[0, 1]
                 direction = "UP" if correlation > 0 else "DOWN"
                 
@@ -1051,7 +1018,6 @@ def run_trajectory_gam_differential_gene_analysis(
         print("TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS")
         print("="*70)
 
-    # 0. Build per-sample pseudobulk from the cell-level AnnData on the fly.
     if verbose:
         print("\n[0/5] Building per-sample pseudobulk from cell-level adata...")
     pseudobulk_adata = _build_sample_pseudobulk(
@@ -1064,7 +1030,6 @@ def run_trajectory_gam_differential_gene_analysis(
         verbose=verbose,
     )
 
-    # 1. Load pseudotime
     if verbose:
         print("\n[1/5] Loading pseudotime...")
     ptime_dict = load_sample_pseudotime(
@@ -1075,8 +1040,9 @@ def run_trajectory_gam_differential_gene_analysis(
         verbose=verbose
     )
 
-    # Orient pseudotime so that it increases with the anchor column (if given).
-    # This makes UP/DOWN labels stable across runs regardless of TSCAN's origin.
+    # Flip pseudotime if negatively correlated with anchor_col so that UP/DOWN
+    # labels always reflect increasing biological gradient, independent of which
+    # MST endpoint TSCAN chose as origin.
     if anchor_col is not None and anchor_col in pseudobulk_adata.obs.columns:
         anchor = pseudobulk_adata.obs[anchor_col]
         shared = [s for s in ptime_dict if s in anchor.index]
@@ -1101,7 +1067,6 @@ def run_trajectory_gam_differential_gene_analysis(
             stacklevel=2,
         )
 
-    # 2. Prepare GAM inputs
     if verbose:
         print("\n[2/5] Preparing GAM input matrices...")
     X, Y, gene_names = prepare_gam_input_data_improved(
@@ -1112,7 +1077,6 @@ def run_trajectory_gam_differential_gene_analysis(
         verbose=verbose
     )
 
-    # 3. Fit GAMs
     if verbose:
         print(f"\n[3/5] Fitting GAM models for {len(gene_names)} genes...")
     stat_results, gam_models = fit_gam_models_for_genes(
@@ -1135,7 +1099,6 @@ def run_trajectory_gam_differential_gene_analysis(
     if verbose:
         print(f"  → Found {len(sig_genes)} significant genes (FDR < {fdr_threshold})")
 
-    # 4. Effect size & regulation direction
     if verbose:
         print("\n[4/5] Calculating effect sizes and regulation directions...")
     effect_sizes = calculate_effect_size_and_direction(
@@ -1152,7 +1115,6 @@ def run_trajectory_gam_differential_gene_analysis(
         verbose=verbose
     )
 
-    # Save to disk
     save_results(
         results_df=results,
         output_dir=output_dir,
@@ -1162,7 +1124,6 @@ def run_trajectory_gam_differential_gene_analysis(
         verbose=verbose
     )
 
-    # Text summary
     if verbose:
         print("\n" + "="*70)
     summarize_results(
@@ -1173,7 +1134,6 @@ def run_trajectory_gam_differential_gene_analysis(
         fdr_threshold=fdr_threshold
     )
 
-    # Optional gene visualizations (legacy)
     if visualization_gene_list and len(gam_models) > 0:
         if verbose:
             print("\nGenerating gene-level visualizations...")

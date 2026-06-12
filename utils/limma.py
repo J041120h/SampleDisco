@@ -24,7 +24,7 @@ def limma(
         return s if s.startswith("~") else "~ " + s
 
     keep_f = _ensure_formula(covariate_formula) if covariate_formula else "1"
-    Z_df = patsy.dmatrix(keep_f, pheno, return_type="dataframe")  # KEEP
+    Z_df = patsy.dmatrix(keep_f, pheno, return_type="dataframe")  # KEEP design matrix
     Z = np.asarray(Z_df, dtype=float)
 
     X = None
@@ -33,7 +33,8 @@ def limma(
         X_df = patsy.dmatrix(rem_f, pheno, return_type="dataframe")
         rem_cols = [c for c in X_df.columns if "Intercept" not in c]
         if rem_cols:
-            X = np.asarray(X_df[rem_cols], dtype=float)  # REMOVE (no intercept)
+            # Drop intercept: it's already in Z; having it in X too is collinear.
+            X = np.asarray(X_df[rem_cols], dtype=float)
 
     if verbose:
         print(f"[limma] Y={Y.shape}")
@@ -43,7 +44,7 @@ def limma(
     if X is None or X.shape[1] == 0:
         return Y.copy()
 
-    # Fit full model: Y ≈ [Z, X] @ B
+    # Full model Y ≈ [Z | X] @ B; subtract only the nuisance (X) contribution.
     W = np.hstack([Z, X])
     B, *_ = np.linalg.lstsq(W, Y, rcond=rcond)
 

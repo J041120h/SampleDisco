@@ -52,7 +52,7 @@ def _gpu_kmeans_soft(Z_np: np.ndarray, K: int, seed: int):
         km.fit(Z_gpu)
         centers = cp.asarray(km.cluster_centers_)
     except Exception:
-        # Fallback: sklearn k-means, run on CPU
+        # cuml unavailable: sklearn k-means on CPU, then move data to GPU for soft-assign
         from sklearn.cluster import MiniBatchKMeans
         km = MiniBatchKMeans(n_clusters=K, random_state=seed,
                               batch_size=4096, n_init=5, max_iter=200).fit(Z_np)
@@ -183,7 +183,7 @@ def compute_sample_embedding(
         print(f"[sample_embedding_gpu] cluster_emb={cluster_emb_key}, "
               f"rmd_emb={rmd_key}")
 
-    # Normalize batch_col -> primary (single, for assemble_units) + multi list (for Harmony multi-cov)
+    # primary_batch: first col → assemble_units (group labelling); batch_cols_multi → Harmony multi-cov
     if isinstance(batch_col, (list, tuple)):
         batch_cols_multi = [c for c in batch_col if c]
     elif batch_col:
@@ -209,7 +209,7 @@ def compute_sample_embedding(
     if K_c < 2:
         raise ValueError(f"need ≥2 cell types, got {K_c}")
 
-    # A1
+    # ---- A1: coarse cell-type composition (one-hot, mean per unit) ----------
     L1 = {ct: i for i, ct in enumerate(unique_cts)}
     soft1 = np.zeros((Z_clust.shape[0], K_c), dtype=np.float32)
     for i, ct in enumerate(cell_type):
@@ -221,7 +221,7 @@ def compute_sample_embedding(
     if verbose:
         print(f"[A1] shape={A1.shape}")
 
-    # A2 — GPU k-means
+    # ---- A2: soft k-means at K_med (GPU) ----
     K_med = min(medium_K, max(2, Z_clust.shape[0] // 200))
     if verbose:
         print(f"[A2] GPU MiniBatchKMeans K={K_med}...", flush=True)
@@ -232,7 +232,7 @@ def compute_sample_embedding(
     if verbose:
         print(f"[A2] shape={A2.shape}")
 
-    # A3 — GPU k-means at K_fine
+    # ---- A3: soft k-means at K_fine (GPU) ----
     K_fine = min(fine_K, max(2, Z_clust.shape[0] // 100))
     if verbose:
         print(f"[A3] GPU MiniBatchKMeans K={K_fine}...", flush=True)
@@ -245,7 +245,7 @@ def compute_sample_embedding(
 
     blocks = [A1, A2, A3]
 
-    # RMD — keep on CPU (per-cluster PCA on small matrices; not GPU-worth)
+    # ---- RMD: per-(group, coarse cluster) LOO displacement — CPU (per-cluster PCA is small) ----
     if use_rmd:
         if verbose:
             print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
@@ -264,7 +264,7 @@ def compute_sample_embedding(
         if RMD.shape[1] > 0:
             blocks.append(RMD)
 
-    # Weights
+    # ---- Weights (auto-scaled by K_c/K_med/K_fine when not overridden) ----
     if block_weights is None:
         weights = derive_weights(K_c, K_med, K_fine,
                                    rmd_weight=rmd_weight,
@@ -277,7 +277,7 @@ def compute_sample_embedding(
     if verbose:
         print(f"[sample_embedding_gpu] weights={[round(w, 3) for w in weights]}")
 
-    # Frobenius stack + GPU PCA
+    # ---- Final: Frobenius stack + GPU PCA + sample-level Harmony ----
     F = frobenius_stack(blocks, weights)
     n_pc_full = min(pca_components, F.shape[0] - 1, F.shape[1])
     if n_pc_full < 1:

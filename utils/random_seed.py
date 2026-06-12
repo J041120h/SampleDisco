@@ -4,6 +4,7 @@ import numpy as np
 
 
 def set_global_seed(seed: int = 42):
+    """Set all relevant RNG seeds for reproducible runs (Python, NumPy, PyTorch, cupy, scanpy)."""
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -17,7 +18,7 @@ def set_global_seed(seed: int = 42):
             torch.cuda.manual_seed_all(seed)
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
-            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'  # required for deterministic CUDA ops
             torch.use_deterministic_algorithms(True, warn_only=True)
             try:
                 import cupy as cp

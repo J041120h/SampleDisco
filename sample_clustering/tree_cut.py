@@ -5,18 +5,17 @@ from collections import Counter
 def cut_tree_by_group_count(tree_path, desired_groups, format='nexus', verbose=False, tol=0):
     """
     Cut a phylogenetic tree into approximately `desired_groups` clades with ≥2 samples each.
-    Singleton clades (with only 1 sample) are ignored.
+    Singleton clades are excluded from the returned mapping.
 
     Parameters:
         tree_path (str): Path to the tree file.
-        desired_groups (int): Number of valid clades (groups with ≥2 samples).
-        format (str): Tree file format. Default is 'nexus'.
-        verbose (bool): Print intermediate results if True.
-        max_iter (int): Max number of iterations for binary search on resolution.
-        tol (int): Allowed deviation from desired number of groups.
+        desired_groups (int): Target number of valid clades (each with ≥2 samples).
+        format (str): Tree file format (default 'nexus').
+        verbose (bool): Print resolution/group counts at each iteration.
+        tol (int): Allowed deviation from desired_groups (0 = exact match).
 
     Returns:
-        dict: sample_to_clade mapping (only for samples in valid clades).
+        dict: {sample_name -> clade_id} for samples in valid clades only.
     """
     tree = Phylo.read(tree_path, format)
 
@@ -47,13 +46,11 @@ def cut_tree_by_group_count(tree_path, desired_groups, format='nexus', verbose=F
 
         traverse(tree.root)
 
-        # Assign unassigned leaves to singleton clades
         for leaf in tree.get_terminals():
             if leaf.name not in sample_to_clade:
                 sample_to_clade[leaf.name] = clade_id
                 clade_id += 1
 
-        # Filter to clades with ≥2 samples
         counts = Counter(sample_to_clade.values())
         valid_clades = {cid for cid, cnt in counts.items() if cnt >= 2}
         valid_mapping = {
@@ -62,13 +59,11 @@ def cut_tree_by_group_count(tree_path, desired_groups, format='nexus', verbose=F
         }
         return valid_mapping
 
-    # Validate desired group count
     all_samples = [leaf.name for leaf in Phylo.read(tree_path, format).get_terminals()]
     max_groups = len(all_samples) // 2
     if desired_groups < 2 or desired_groups > max_groups:
         raise ValueError(f"desired_groups must be between 2 and {max_groups} (got {desired_groups})")
 
-    # Binary search on resolution
     low, high = 0.0, 1.0
     best_result = {}
     for _ in range(100):

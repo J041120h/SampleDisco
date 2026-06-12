@@ -9,7 +9,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 def load_data(h5ad_path: str, meta_csv_path: str) -> Tuple[ad.AnnData, pd.DataFrame]:
-    """Load h5ad file and metadata CSV."""
+    """Load the h5ad and its companion metadata CSV."""
     print(f"Loading h5ad file from: {h5ad_path}")
     adata = sc.read_h5ad(h5ad_path)
     
@@ -19,17 +19,10 @@ def load_data(h5ad_path: str, meta_csv_path: str) -> Tuple[ad.AnnData, pd.DataFr
     return adata, meta_df
 
 def analyze_original_distribution(adata: ad.AnnData, meta_df: pd.DataFrame, summary_lines: List[str]) -> Dict:
-    """Analyze the original distribution of samples by severity level and batch."""
-    # Get unique samples from adata
+    """Return severity and batch distributions restricted to samples present in adata."""
     samples_in_adata = adata.obs['sample'].unique()
-    
-    # Filter metadata to only include samples in adata
     meta_filtered = meta_df[meta_df['sample'].isin(samples_in_adata)].copy()
-    
-    # Count distribution
     sev_dist = meta_filtered['sev.level'].value_counts(normalize=True).to_dict()
-    
-    # Check if batch column exists
     batch_dist = None
     if 'batch' in meta_filtered.columns:
         batch_dist = meta_filtered['batch'].value_counts(normalize=True).to_dict()
@@ -84,12 +77,10 @@ def stratified_sample(meta_df: pd.DataFrame, n_samples: int,
         List of selected sample IDs
     """
     has_batch = 'batch' in meta_df.columns
-    
-    # Initial stratified sampling by severity level
+
     sev_groups = meta_df.groupby('sev.level')
     selected_samples = []
-    
-    # Calculate how many samples to take from each severity level
+
     for sev_level, proportion in target_dist.items():
         if sev_level not in sev_groups.groups:
             continue
@@ -104,11 +95,10 @@ def stratified_sample(meta_df: pd.DataFrame, n_samples: int,
                                       replace=False)
             selected_samples.extend(sampled)
     
-    # If no batch column, just adjust to target size and return
     if not has_batch:
         return _adjust_sample_size(meta_df, selected_samples, n_samples)
-    
-    # Enforce batch constraint: each included batch must have >= min_batch_samples
+
+    # Each included batch must have >= min_batch_samples samples.
     selected_samples = _enforce_batch_constraint(
         meta_df, selected_samples, n_samples, min_batch_samples
     )
@@ -119,19 +109,14 @@ def _enforce_batch_constraint(meta_df: pd.DataFrame,
                               selected_samples: List[str],
                               n_samples: int,
                               min_batch_samples: int) -> List[str]:
-    """
-    Enforce the minimum batch samples constraint.
-    If a batch has fewer than min_batch_samples, either complete it or remove it entirely.
-    """
+    """Iteratively fix batches with fewer than min_batch_samples: complete or drop them."""
     selected_set = set(selected_samples)
-    
+
     max_iterations = 50
     for iteration in range(max_iterations):
-        # Get current batch counts
         meta_selected = meta_df[meta_df['sample'].isin(selected_set)]
         batch_counts = meta_selected['batch'].value_counts()
-        
-        # Find batches violating constraint (1 to min_batch_samples-1 samples)
+
         violating_batches = batch_counts[
             (batch_counts > 0) & (batch_counts < min_batch_samples)
         ].index.tolist()
@@ -142,25 +127,22 @@ def _enforce_batch_constraint(meta_df: pd.DataFrame,
         for batch in violating_batches:
             current_count = batch_counts[batch]
             needed = min_batch_samples - current_count
-            
-            # Find available samples from this batch not yet selected
             available_from_batch = meta_df[
-                (meta_df['batch'] == batch) & 
+                (meta_df['batch'] == batch) &
                 (~meta_df['sample'].isin(selected_set))
             ]['sample'].tolist()
-            
+
             if len(available_from_batch) >= needed:
-                # Can complete this batch - add more samples from it
                 to_add = np.random.choice(available_from_batch, size=needed, replace=False)
                 selected_set.update(to_add)
             else:
-                # Cannot complete this batch - remove all its samples
+                # Can't meet the minimum — drop this batch entirely.
                 samples_to_remove = meta_df[
-                    (meta_df['batch'] == batch) & 
+                    (meta_df['batch'] == batch) &
                     (meta_df['sample'].isin(selected_set))
                 ]['sample'].tolist()
                 selected_set -= set(samples_to_remove)
-    
+
     selected_samples = list(selected_set)
     
     # Adjust to target n_samples while respecting batch constraint
@@ -179,71 +161,61 @@ def _trim_with_batch_constraint(meta_df: pd.DataFrame,
                                 selected_samples: List[str],
                                 n_samples: int,
                                 min_batch_samples: int) -> List[str]:
-    """
-    Remove samples to reach target size while maintaining batch constraint.
-    Only removes samples from batches that would still have >= min_batch_samples after removal.
-    """
+    """Remove samples one at a time until target size, only from batches with slack."""
     selected_set = set(selected_samples)
-    
+
     while len(selected_set) > n_samples:
         meta_selected = meta_df[meta_df['sample'].isin(selected_set)]
         batch_counts = meta_selected['batch'].value_counts()
-        
-        # Find batches with more than min_batch_samples (safe to remove from)
+
+        # Only remove from batches that would still satisfy the minimum after removal.
         removable_batches = batch_counts[batch_counts > min_batch_samples].index.tolist()
-        
+
         if not removable_batches:
-            # Cannot remove more without violating constraint
             break
-        
-        # Get samples from removable batches
+
         removable_samples = meta_df[
             (meta_df['batch'].isin(removable_batches)) &
             (meta_df['sample'].isin(selected_set))
         ]['sample'].tolist()
-        
+
         if not removable_samples:
             break
-        
-        # Remove one random sample
+
         to_remove = np.random.choice(removable_samples, size=1)[0]
         selected_set.remove(to_remove)
-    
+
     return list(selected_set)
 
 def _fill_with_batch_constraint(meta_df: pd.DataFrame,
                                 selected_samples: List[str],
                                 n_samples: int,
                                 min_batch_samples: int) -> List[str]:
-    """
-    Add samples to reach target size while maintaining batch constraint.
-    Prioritizes adding to existing batches, then adds new batches with >= min_batch_samples.
+    """Add samples to reach target size, preferring existing batches over new ones.
+
+    A new batch is only introduced if it can immediately contribute >= min_batch_samples.
     """
     selected_set = set(selected_samples)
-    
+
     while len(selected_set) < n_samples:
         meta_selected = meta_df[meta_df['sample'].isin(selected_set)]
         current_batches = meta_selected['batch'].unique() if len(meta_selected) > 0 else []
-        
-        # First priority: add samples from already-included batches
+
         available_from_current = meta_df[
             (meta_df['batch'].isin(current_batches)) &
             (~meta_df['sample'].isin(selected_set))
         ]['sample'].tolist()
-        
+
         if available_from_current:
             to_add = np.random.choice(available_from_current, size=1)[0]
             selected_set.add(to_add)
             continue
-        
-        # Second priority: add a new batch (must add at least min_batch_samples)
+
         remaining_needed = n_samples - len(selected_set)
-        
-        # Find batches not yet included that have enough samples
+
         all_batches = meta_df['batch'].unique()
         new_batches = [b for b in all_batches if b not in current_batches]
-        
-        # Check which new batches have enough available samples
+
         eligible_new_batches = []
         for batch in new_batches:
             available = meta_df[
@@ -254,12 +226,10 @@ def _fill_with_batch_constraint(meta_df: pd.DataFrame,
                 eligible_new_batches.append((batch, available))
         
         if eligible_new_batches and remaining_needed >= min_batch_samples:
-            # Add min_batch_samples from a random eligible batch
             batch, available = eligible_new_batches[np.random.randint(len(eligible_new_batches))]
             to_add = np.random.choice(available, size=min_batch_samples, replace=False)
             selected_set.update(to_add)
         else:
-            # Cannot add more samples while respecting constraint
             break
     
     return list(selected_set)
@@ -283,7 +253,7 @@ def _adjust_sample_size(meta_df: pd.DataFrame,
     return selected_samples
 
 def subsample_adata(adata: ad.AnnData, selected_samples: List[str]) -> ad.AnnData:
-    """Subsample adata to only include cells from selected samples."""
+    """Return a copy of adata containing only cells from selected_samples."""
     mask = adata.obs['sample'].isin(selected_samples)
     adata_sub = adata[mask].copy()
     return adata_sub
@@ -325,34 +295,26 @@ def record_subsample_stats(adata_sub: ad.AnnData, meta_sub: pd.DataFrame,
             prop = count / len(meta_sub)
             summary_lines.append(f"  {batch}: {count} samples ({prop*100:.1f}%)")
 
-def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None, 
+def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None,
          sample_sizes: List[int] = [25, 50, 100, 200], seed: int = 42,
          min_batch_samples: int = 3):
-    """
-    Main function to perform subsampling.
-    
-    Parameters:
-    -----------
+    """Stratified-subsample an h5ad at multiple sample sizes and write each to disk.
+
+    Parameters
+    ----------
     h5ad_path : str
-        Path to the input h5ad file
     meta_csv_path : str
-        Path to the metadata CSV file
-    output_dir : str
-        Directory to save output files (default: same as input h5ad)
-    sample_sizes : List[int]
-        List of sample sizes to create
+    output_dir : str, optional
+        Defaults to the directory of h5ad_path.
+    sample_sizes : list of int
     seed : int
-        Random seed for reproducibility
     min_batch_samples : int
-        Minimum samples per batch if batch is included (default: 3)
+        Minimum samples per batch when a batch column is present.
     """
-    # Set random seed for reproducibility
     np.random.seed(seed)
-    
-    # Initialize summary lines
+
     summary_lines = []
-    
-    # Add header information
+
     summary_lines.append("="*60)
     summary_lines.append("H5AD SUBSAMPLING SUMMARY REPORT")
     summary_lines.append("="*60)
@@ -365,23 +327,18 @@ def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None,
     
     print("Starting subsampling process...")
     print(f"Batch constraint: minimum {min_batch_samples} samples per batch")
-    
-    # Load data
+
     adata, meta_df = load_data(h5ad_path, meta_csv_path)
-    
-    # Ensure required columns exist
+
     if 'sample' not in meta_df.columns:
         raise ValueError("Metadata CSV must contain a 'sample' column")
-    
     if 'sev.level' not in meta_df.columns:
         raise ValueError("Metadata CSV must contain a 'sev.level' column")
-    
-    # Analyze original distribution
+
     dist_info = analyze_original_distribution(adata, meta_df, summary_lines)
     original_sev_dist = dist_info['sev_dist']
     meta_filtered = dist_info['meta_filtered']
-    
-    # Set output directory
+
     if output_dir is None:
         output_dir = Path(h5ad_path).parent
     else:
@@ -398,7 +355,6 @@ def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None,
         summary_lines.append(f"Creating subsample with {n_samples} samples...")
         summary_lines.append(f"{'*'*60}")
         
-        # Check if we have enough samples
         if n_samples > len(meta_filtered):
             warning_msg = f"WARNING: Requested {n_samples} samples but only {len(meta_filtered)} available."
             summary_lines.append(warning_msg)
@@ -407,7 +363,6 @@ def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None,
         else:
             n_samples_actual = n_samples
         
-        # Perform stratified sampling with batch constraint
         selected_samples = stratified_sample(
             meta_filtered, n_samples_actual, original_sev_dist,
             min_batch_samples=min_batch_samples
@@ -419,25 +374,19 @@ def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None,
             summary_lines.append(note_msg)
             print(f"  {note_msg}")
         
-        # Subsample adata
         adata_sub = subsample_adata(adata, selected_samples)
-        
-        # Get metadata for selected samples
         meta_sub = meta_filtered[meta_filtered['sample'].isin(selected_samples)]
-        
-        # Generate output filename (use actual count in filename)
+
         input_stem = Path(h5ad_path).stem
         output_filename = f"{input_stem}_subsample_{len(selected_samples)}samples.h5ad"
         output_path = output_dir / output_filename
-        
-        # Save subsampled data
+
         summary_lines.append(f"Saving to: {output_path}")
         print(f"  Saving {len(selected_samples)} samples ({adata_sub.n_obs} cells) to: {output_filename}")
         adata_sub.write_h5ad(output_path)
-        
-        # Record statistics
-        record_subsample_stats(adata_sub, meta_sub, n_samples, output_path, summary_lines, 
-                              min_batch_samples=min_batch_samples)
+
+        record_subsample_stats(adata_sub, meta_sub, n_samples, output_path, summary_lines,
+                               min_batch_samples=min_batch_samples)
     
     summary_lines.append(f"\n{'='*60}")
     summary_lines.append("SUBSAMPLING COMPLETE!")

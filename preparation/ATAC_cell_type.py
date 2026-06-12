@@ -12,32 +12,25 @@ from utils.safe_save import safe_h5ad_write  # Importing the new safe save metho
 def clean_obs_for_saving(adata, verbose=True):
     """
     Clean adata.obs to prevent string conversion errors during H5AD saving.
-    Simplified version that handles all common data types efficiently.
-    
+
     Parameters
     ----------
     adata : AnnData
-        AnnData object to clean
     verbose : bool
-        Whether to print cleaning operations
-        
+
     Returns
     -------
     adata : AnnData
-        Cleaned AnnData object
     """
     if verbose:
         print("[clean_obs_for_saving] Cleaning observation metadata for H5AD compatibility...")
-    
-    # Create a copy of obs to avoid modifying during iteration
+
     obs_copy = adata.obs.copy()
     
     for col in obs_copy.columns:
         col_data = obs_copy[col].copy()
         
-        # Handle categorical columns
         if pd.api.types.is_categorical_dtype(col_data):
-            # Convert categories to strings
             new_categories = []
             for cat in col_data.cat.categories:
                 if pd.isna(cat):
@@ -52,7 +45,6 @@ def clean_obs_for_saving(adata, verbose=True):
                     new_cat = str(cat)
                 new_categories.append(new_cat)
             
-            # Handle duplicates if any
             if len(new_categories) != len(set(new_categories)):
                 seen = {}
                 final_categories = []
@@ -65,7 +57,6 @@ def clean_obs_for_saving(adata, verbose=True):
                         final_categories.append(cat)
                 new_categories = final_categories
             
-            # Map values to new categories
             mapping = dict(zip(col_data.cat.categories, new_categories))
             col_values = col_data.to_numpy()
             new_values = [mapping.get(val, 'Unknown') if not pd.isna(val) else 'Unknown' 
@@ -73,7 +64,6 @@ def clean_obs_for_saving(adata, verbose=True):
             
             col_data = pd.Categorical(new_values, categories=new_categories)
         
-        # Handle object columns
         elif col_data.dtype == 'object':
             new_values = []
             for val in col_data:
@@ -93,40 +83,33 @@ def clean_obs_for_saving(adata, verbose=True):
             col_data = col_data.replace(['None', 'nan', 'NaN', 'NULL', '', '<NA>'], 'Unknown')
             col_data = pd.Categorical(col_data)
         
-        # Handle boolean columns
         elif col_data.dtype in ['bool', np.bool_]:
             new_values = ['True' if val else 'False' if not pd.isna(val) else 'Unknown' 
                          for val in col_data]
             col_data = pd.Categorical(new_values)
         
-        # Handle numeric columns that might be categorical
         elif pd.api.types.is_numeric_dtype(col_data):
             n_unique = col_data.nunique()
-            if n_unique < 20 and n_unique > 0:  # Likely categorical
+            if n_unique < 20 and n_unique > 0:  # heuristic: treat low-cardinality numerics as categorical
                 if col_data.isna().any():
                     col_data = col_data.fillna(-999)
                 col_data = col_data.astype(str).replace(['-999', '-999.0'], 'Unknown')
                 col_data = pd.Categorical(col_data)
             else:
-                # Keep as numeric but handle NaN
                 if col_data.isna().any():
                     col_data = col_data.fillna(-1)
         
         else:
-            # Any other dtype - convert to string categorical
             col_data = col_data.astype(str).fillna('Unknown')
             col_data = col_data.replace(['None', 'nan', 'NaN', 'NULL', '', '<NA>'], 'Unknown')
             col_data = pd.Categorical(col_data)
         
-        # Update the column
         obs_copy[col] = col_data
-    
-    # Replace the entire obs dataframe
+
     adata.obs = obs_copy
     
     if verbose:
         print("[clean_obs_for_saving] Cleaning completed successfully")
-        # Quick summary of categorical columns
         cat_cols = [col for col in adata.obs.columns if pd.api.types.is_categorical_dtype(adata.obs[col])]
         print(f"[clean_obs_for_saving] {len(cat_cols)} categorical columns processed")
     
@@ -134,32 +117,21 @@ def clean_obs_for_saving(adata, verbose=True):
 
 def safe_h5ad_write(adata, filepath, verbose=True):
     """
-    Safely write AnnData object to H5AD format with proper error handling.
-    Simplified version without extensive debugging.
-    
+    Write AnnData to H5AD, cleaning obs metadata first.
+
     Parameters
     ----------
     adata : AnnData
-        AnnData object to save
     filepath : str
-        Path to save the file
     verbose : bool
-        Whether to print progress messages
     """
     try:
         if verbose:
             print(f"[safe_h5ad_write] Preparing to save to: {filepath}")
         
-        # Create a copy to avoid modifying the original
         adata_copy = adata.copy()
-        
-        # Clean observation metadata
         adata_copy = clean_obs_for_saving(adata_copy, verbose=verbose)
-        
-        # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        
-        # Write the file
         if verbose:
             print(f"[safe_h5ad_write] Writing H5AD file...")
         
@@ -172,12 +144,9 @@ def safe_h5ad_write(adata, filepath, verbose=True):
         if verbose:
             print(f"[safe_h5ad_write] Error saving H5AD file: {str(e)}")
             
-            # Provide basic diagnostic information
             print("\n=== DIAGNOSTIC INFORMATION ===")
             print(f"Error type: {type(e).__name__}")
             print(f"adata.obs shape: {adata.obs.shape}")
-            
-            # Check for non-string categories
             print("\nChecking for non-string categories:")
             for col in adata.obs.columns:
                 if pd.api.types.is_categorical_dtype(adata.obs[col]):
@@ -196,47 +165,39 @@ def standardize_cell_type_column(adata, verbose=True):
     Only performs necessary conversions without redundancy.
     """
     if 'cell_type' not in adata.obs.columns:
-        # This shouldn't happen in your workflow, but safety check
         adata.obs['cell_type'] = '1'
         if verbose:
             print("[standardize] Created missing cell_type column with default value '1'")
     
     current_dtype = adata.obs['cell_type'].dtype
-    
-    # Case 1: Integer types (from Leiden clustering) - most common
+
+    # Leiden outputs 0-based integers; convert to 1-based strings.
     if pd.api.types.is_integer_dtype(current_dtype):
-        # Convert 0-based to 1-based and then to string
         adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype(str)
         if verbose:
             print("[standardize] Converted integer clusters to 1-based string format")
     
-    # Case 2: Already string or object type
     elif current_dtype == 'object' or pd.api.types.is_string_dtype(current_dtype):
-        # Ensure consistent string format (handles NaN, mixed types)
         adata.obs['cell_type'] = adata.obs['cell_type'].astype(str)
         if verbose:
             print("[standardize] Ensured consistent string format")
     
-    # Case 3: Already categorical but need to check base type
     elif pd.api.types.is_categorical_dtype(current_dtype):
         if pd.api.types.is_integer_dtype(adata.obs['cell_type'].cat.categories.dtype):
-            # Categorical with integer categories (convert to 1-based strings)
+            # cat.codes are 0-based; shift to 1-based
             adata.obs['cell_type'] = (adata.obs['cell_type'].cat.codes + 1).astype(str)
             if verbose:
                 print("[standardize] Converted categorical integer to 1-based string format")
         else:
-            # Already categorical with string categories - just ensure string type
             adata.obs['cell_type'] = adata.obs['cell_type'].astype(str)
             if verbose:
                 print("[standardize] Converted categorical to string format")
     
-    # Case 4: Any other data type (shouldn't happen, but safety)
     else:
         adata.obs['cell_type'] = adata.obs['cell_type'].astype(str)
         if verbose:
             print(f"[standardize] Converted {current_dtype} to string format")
     
-    # Final step: Convert to categorical for memory efficiency
     adata.obs['cell_type'] = adata.obs['cell_type'].astype('category')
     
     if verbose:
@@ -304,29 +265,20 @@ def cell_types_atac(
     from utils.random_seed import set_global_seed
     set_global_seed(seed = 42)
     
-    # Track recursion depth for debugging and preventing infinite loops
     if _recursion_depth > 10:
         raise RuntimeError(f"Maximum recursion depth exceeded. Could not achieve {n_target_clusters} clusters.")
 
-    # ============================================================================
-    # EXISTING CELL TYPE ANNOTATION PROCESSING
-    # ============================================================================
     if cell_column in adata.obs.columns and existing_cell_types:
         if verbose and _recursion_depth == 0:
             print("[cell_types_atac] Found existing cell type annotation.")
         
-        # Standardize cell type column
         adata.obs['cell_type'] = adata.obs[cell_column].astype(str)
 
-        # Count current number of unique cell types
         current_n_types = adata.obs['cell_type'].nunique()
         if verbose:
-            prefix = "  " * _recursion_depth  # Indent for recursion levels
+            prefix = "  " * _recursion_depth
             print(f"{prefix}[cell_types_atac] Current number of cell types: {current_n_types}")
 
-        # ========================================================================
-        # CONDITIONAL DENDROGRAM CONSTRUCTION AND AGGREGATION
-        # ========================================================================
         apply_dendrogram = (
             n_target_clusters is not None and 
             current_n_types > n_target_clusters
@@ -337,8 +289,6 @@ def cell_types_atac(
                 prefix = "  " * _recursion_depth
                 print(f"{prefix}[cell_types_atac] Aggregating {current_n_types} cell types into {n_target_clusters} clusters using dendrogram.")
                 print(f"{prefix}[cell_types_atac] Using dimension reduction ({use_rep}) for dendrogram construction...")
-            
-            # Apply dendrogram clustering using dimension reduction
             adata = cell_type_dendrogram_atac(
                 adata=adata,
                 n_clusters=n_target_clusters,
@@ -361,36 +311,27 @@ def cell_types_atac(
                     prefix = "  " * _recursion_depth
                     print(f"{prefix}[cell_types_atac] Current cell types ({current_n_types}) <= target clusters ({n_target_clusters}). Using as-is.")
 
-        # Build neighborhood graph for existing annotations (only on first call)
+        # Build neighborhood graph (only on first call; ATAC uses diffusion maps, not PCA)
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types_atac] Building neighborhood graph...")
-            # For ATAC data, we don't use n_pcs parameter since we're using diffusion maps
             sc.pp.neighbors(adata, use_rep=use_rep, metric='cosine')
 
-    # ============================================================================
-    # DE NOVO CLUSTERING (NO EXISTING ANNOTATIONS) - RECURSIVE STRATEGY
-    # ============================================================================
     else:
         if verbose and _recursion_depth == 0:
             print(f"[cell_types_atac] No cell type annotation found. Performing clustering at resolution {cluster_resolution}.")
 
-        # Build neighborhood graph (only on first call)
+        # Build neighborhood graph (only on first call; ATAC uses diffusion maps, not PCA)
         if _recursion_depth == 0:
             if verbose:
                 print("[cell_types_atac] Building neighborhood graph...")
-            # For ATAC data, we don't use n_pcs parameter since we're using diffusion maps
             sc.pp.neighbors(adata, use_rep=use_rep)
 
-        # ========================================================================
-        # ADAPTIVE CLUSTERING WITH RECURSION
-        # ========================================================================
         if n_target_clusters is not None:
             if verbose:
                 prefix = "  " * _recursion_depth
                 print(f"{prefix}[cell_types_atac] Target: {n_target_clusters} clusters. Trying resolution: {cluster_resolution:.1f}")
             
-            # Perform Leiden clustering with current resolution
             sc.tl.leiden(
                 adata,
                 resolution=cluster_resolution,
@@ -401,15 +342,11 @@ def cell_types_atac(
                 
             )
             
-            # Convert cluster labels to 1-based indexing as strings
             adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype(str).astype('category')
             num_clusters = adata.obs['cell_type'].nunique()
-            
             if verbose:
                 prefix = "  " * _recursion_depth
                 print(f"{prefix}[cell_types_atac] Leiden clustering produced {num_clusters} clusters.")
-            
-            # Decision logic: recurse or aggregate
             if num_clusters >= n_target_clusters:
                 if num_clusters == n_target_clusters:
                     if verbose:
@@ -417,28 +354,25 @@ def cell_types_atac(
                 else:
                     if verbose:
                         print(f"{prefix}[cell_types_atac] Got {num_clusters} clusters (>= target). Recursing with existing_cell_types=True...")
-                    
-                    # RECURSIVE CALL: Now treat current clustering as "existing" and aggregate
                     adata = cell_types_atac(
                         adata=adata,
                         cell_column='cell_type',
                         existing_cell_types=True,
                         n_target_clusters=n_target_clusters,
-                        umap=False,  # Don't compute UMAP in recursion
-                        Save=False,  # Don't save in recursion
+                        umap=False,
+                        Save=False,
                         output_dir=None,
                         method=method,
                         metric=metric,
                         distance_mode=distance_mode,
                         use_rep=use_rep,
                         num_DMs=num_DMs,
-                        generate_plots=False,  # Don't generate plots in recursion
+                        generate_plots=False,
                         _recursion_depth=_recursion_depth + 1,
                         verbose=verbose
                     )
-            
+
             else:  # num_clusters < n_target_clusters
-                # Need more clusters - increase resolution and try again
                 new_resolution = cluster_resolution + resolution_step
                 
                 if new_resolution > max_resolution:
@@ -447,15 +381,13 @@ def cell_types_atac(
                 else:
                     if verbose:
                         print(f"{prefix}[cell_types_atac] Need more clusters. Increasing resolution to {new_resolution:.1f}...")
-                    
-                    # RECURSIVE CALL: Try higher resolution
                     return cell_types_atac(
                         adata=adata,
                         cell_column=cell_column,
                         existing_cell_types=False,
                         n_target_clusters=n_target_clusters,
-                        umap=False,  # Don't compute UMAP in recursion
-                        Save=False,  # Don't save in recursion
+                        umap=False,
+                        Save=False,
                         output_dir=None,
                         cluster_resolution=new_resolution,
                         use_rep=use_rep,
@@ -466,13 +398,12 @@ def cell_types_atac(
                         num_DMs=num_DMs,
                         max_resolution=max_resolution,
                         resolution_step=resolution_step,
-                        generate_plots=False,  # Don't generate plots in recursion
+                        generate_plots=False,
                         _recursion_depth=_recursion_depth + 1,
                         verbose=verbose
                     )
         
         else:
-            # No target specified - standard clustering
             if verbose:
                 prefix = "  " * _recursion_depth
                 print(f"{prefix}[cell_types_atac] No target clusters specified. Using standard Leiden clustering (resolution={cluster_resolution})...")
@@ -486,20 +417,16 @@ def cell_types_atac(
                 key_added='cell_type'
             )
 
-            # Convert cluster labels to 1-based indexing as strings
             adata.obs['cell_type'] = (adata.obs['cell_type'].astype(int) + 1).astype(str).astype('category')
             num_clusters = adata.obs['cell_type'].nunique()
-            
             if verbose:
                 print(f"[cell_types_atac] Found {num_clusters} clusters after Leiden clustering.")
 
     if _recursion_depth == 0:
-        # Apply peak mapping if provided and appropriate
         final_cluster_count = adata.obs['cell_type'].nunique()
         if peaks is not None and len(peaks) == final_cluster_count:
             if verbose:
                 print(f"[cell_types_atac] Applying custom peak names to {final_cluster_count} clusters...")
-            # Create mapping for string cluster labels
             peak_dict = {str(i): peaks[i - 1] for i in range(1, len(peaks) + 1)}
             adata.obs['cell_type'] = adata.obs['cell_type'].map(peak_dict)
         elif peaks is not None:
@@ -509,7 +436,6 @@ def cell_types_atac(
         if verbose:
             print("[cell_types_atac] Finished assigning cell types.")
         
-        # Compute UMAP if requested
         if umap:
             if verbose:
                 print("[cell_types_atac] Computing UMAP...")
@@ -518,19 +444,15 @@ def cell_types_atac(
         if generate_plots and output_dir and 'X_umap' in adata.obsm:
             if verbose:
                 print("[cell_types_atac] Generating UMAP plots...")
-            
-            # Ensure plots directory exists
             output_dir = os.path.join(output_dir, 'preprocess')
             os.makedirs(output_dir, exist_ok=True)
             
-            # Plot 1: UMAP colored by cell type
             sc.pl.umap(adata, color=cell_type_key, legend_loc="on data", show=False)
             plt.savefig(os.path.join(output_dir, f"umap_{cell_type_key}.png"), dpi=plot_dpi)
             plt.close()
             if verbose:
                 print(f"[cell_types_atac] Saved UMAP plot colored by {cell_type_key}")
             
-            # Plot 2: UMAP colored by cell type and n_genes_by_counts (if available)
             if 'n_genes_by_counts' in adata.obs.columns:
                 sc.pl.umap(adata, color=[cell_type_key, "n_genes_by_counts"], 
                           legend_loc="on data", show=False)
@@ -539,7 +461,6 @@ def cell_types_atac(
                 if verbose:
                     print("[cell_types_atac] Saved UMAP plot with n_genes_by_counts")
             
-            # Plot 3: UMAP colored by batch keys (if provided)
             if batch_key:
                 batch_keys = batch_key if isinstance(batch_key, list) else [batch_key]
                 for key in batch_keys:
@@ -557,18 +478,13 @@ def cell_types_atac(
             if verbose:
                 print("[cell_types_atac] Warning: Cannot generate plots - UMAP coordinates not found. Set umap=True to compute UMAP first.")
         
-        # Standardize cell type column before saving
         standardize_cell_type_column(adata, verbose=verbose)
-        
-        # Save results if requested - USING SAFE SAVING METHOD
+
         if Save and output_dir:
             os.makedirs(output_dir, exist_ok=True)
             save_path = os.path.join(output_dir, 'adata_sample.h5ad')
-            
-            # Use safe saving method
             safe_h5ad_write(adata, save_path, verbose=verbose)
         
-        # Report total execution time
         if verbose:
             end_time = time.time()
             elapsed_time = end_time - start_time

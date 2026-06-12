@@ -110,10 +110,9 @@ def _aggregate_obs(adata, sample_col: str, modality_col: Optional[str],
     else:
         agg = pd.DataFrame(index=grouped.size().index)
 
-    # Map back to unit_ids (handling both "_{modality}" suffixed and unsuffixed cases)
+    # Reassemble rows in unit_ids order; unit ids may or may not carry a "_{modality}" suffix
     rows = []
     for uid in unit_ids:
-        # Try direct (sample, modality) lookup using suffix-stripping
         match = None
         for (s, m), row in agg.iterrows():
             candidate = f"{s}_{m}" if m else s
@@ -122,7 +121,6 @@ def _aggregate_obs(adata, sample_col: str, modality_col: Optional[str],
                 if candidate == uid:
                     break
         if match is None:
-            # Fall back to empty row (preserves index alignment)
             match = pd.Series({c: np.nan for c in agg.columns})
         rows.append(match)
     out = pd.DataFrame(rows, index=pd.Index(unit_ids, name="sample"))
@@ -175,7 +173,7 @@ def compute_sample_embedding(
         print(f"[sample_embedding] cluster_emb={cluster_emb_key}, "
               f"rmd_emb={rmd_key}")
 
-    # Normalize batch_col -> primary (single str for assemble_units) + multi list (for Harmony multi-cov)
+    # primary_batch: first col → assemble_units (group labelling); batch_cols_multi → Harmony multi-cov
     if isinstance(batch_col, (list, tuple)):
         batch_cols_multi = [c for c in batch_col if c]
     elif batch_col:
@@ -184,7 +182,6 @@ def compute_sample_embedding(
         batch_cols_multi = []
     primary_batch = batch_cols_multi[0] if batch_cols_multi else None
 
-    # Build units (one per sample or sample×modality)
     units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_clust = \
         assemble_units(adata, sample_col, cluster_emb_key,
                        modality_col=modality_col, batch_col=primary_batch)
@@ -247,7 +244,7 @@ def compute_sample_embedding(
     if use_rmd:
         if verbose:
             print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
-        # Build per-unit cells from the rmd_emb (might differ from cluster_emb)
+        # rmd_key may differ from cluster_emb_key (sample-preserved vs sample-removed)
         Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
         rmd_units = []
         for uid, group in zip(unit_ids, unit_groups):
@@ -263,7 +260,7 @@ def compute_sample_embedding(
         if RMD.shape[1] > 0:
             blocks.append(RMD)
 
-    # ---- Weights ----
+    # ---- Weights (auto-scaled by K_c/K_med/K_fine when not overridden) ----
     if block_weights is None:
         weights = derive_weights(K_c, K_med, K_fine,
                                    rmd_weight=rmd_weight,
@@ -277,7 +274,7 @@ def compute_sample_embedding(
         print(f"[sample_embedding] weights={[round(w, 3) for w in weights]} "
               f"(n_blocks={len(blocks)})")
 
-    # Multi-covariate Harmony meta (only when >=2 batch_cols)
+    # Multi-covariate Harmony: build per-unit metadata only when >=2 batch_cols given
     from sample_embedding.blocks import build_harmony_meta_df
     harmony_meta_df = (
         build_harmony_meta_df(adata, unit_cellids, unit_ids, batch_cols_multi)
@@ -300,7 +297,7 @@ def compute_sample_embedding(
         verbose=verbose,
     )
 
-    # ---- Write the sample embedding back to the cell-level adata ----
+    # Write result to cell-level adata so downstream modules find it in .uns['X_DR_sample']
     adata.uns["X_DR_sample"] = emb_df.copy()
     adata.uns["sample_embedding_params"] = {
         "medium_K": int(K_med),
@@ -327,8 +324,7 @@ def compute_sample_embedding(
         emb_csv = os.path.join(out_dir, "sample_embedding.csv")
         emb_df.to_csv(emb_csv)
 
-        # Re-save the cell-level adata_preprocessed.h5ad now that we have added
-        # X_DR_sample to its .uns. Look for it at the canonical preprocess path.
+        # Re-save adata_preprocessed.h5ad so .uns['X_DR_sample'] persists across sessions.
         preprocessed_h5 = os.path.join(output_dir, "preprocess", "adata_preprocessed.h5ad")
         if os.path.exists(preprocessed_h5):
             try:

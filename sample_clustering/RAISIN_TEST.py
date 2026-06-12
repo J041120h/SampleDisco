@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 """
-RAISIN Testing - Python port of R RAISIN package
+RAISIN statistical testing — Python port of R RAISIN package (Ji, Hou, Ji).
 
-This module performs statistical testing for the RAISIN model.
-Tests if a coefficient or combination of coefficients in the fixed effects
-design matrix is 0, generating corresponding p-values and FDRs.
-
-Author: Original R code by Zhicheng Ji, Wenpin Hou, Hongkai Ji
-Python port maintains compatibility with R implementation.
-
-Enhanced with pseudobulk/cluster-averaged visualizations (Seurat-style).
+Tests whether a fixed-effect contrast is zero, using permutation-calibrated
+p-values. Enhanced with pseudobulk/cluster-averaged Seurat-style visualizations.
 """
 
 import os
@@ -26,9 +20,6 @@ from itertools import combinations
 import matplotlib.patches as mpatches
 from adjustText import adjust_text
 
-# ============================================================================
-# PLOTTING AESTHETICS
-# ============================================================================
 plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 plt.rcParams['svg.fonttype'] = 'none'
@@ -39,12 +30,8 @@ plt.rcParams['figure.facecolor'] = 'white'
 plt.rcParams['axes.grid'] = False
 
 sns.set_context("paper")
-sns.set_style("white")  # clean, no grid
+sns.set_style("white")
 
-
-# ============================================================================
-# NEW VISUALIZATION FUNCTIONS
-# ============================================================================
 
 def plot_journal_volcano(
     result,
@@ -78,17 +65,15 @@ def plot_journal_volcano(
     """
     df = result.copy()
     df['nlog10'] = -np.log10(df['FDR'] + 1e-300)
-    
+
     fig, ax = plt.subplots(figsize=(4, 4))
     fig.patch.set_facecolor('white')
     ax.set_facecolor('white')
     ax.grid(False)
 
-    # significance masks
     is_sig = df['FDR'] < fdr_threshold
     is_up = df['Foldchange'] > 0
-    
-    # non-significant
+
     ax.scatter(
         df.loc[~is_sig, 'Foldchange'],
         df.loc[~is_sig, 'nlog10'],
@@ -98,8 +83,7 @@ def plot_journal_volcano(
         linewidth=0,
         rasterized=True,
     )
-    
-    # significant up
+
     ax.scatter(
         df.loc[is_sig & is_up, 'Foldchange'],
         df.loc[is_sig & is_up, 'nlog10'],
@@ -109,8 +93,7 @@ def plot_journal_volcano(
         linewidth=0,
         rasterized=True,
     )
-    
-    # significant down
+
     ax.scatter(
         df.loc[is_sig & ~is_up, 'Foldchange'],
         df.loc[is_sig & ~is_up, 'nlog10'],
@@ -120,8 +103,7 @@ def plot_journal_volcano(
         linewidth=0,
         rasterized=True,
     )
-    
-    # Guidelines
+
     ax.axhline(
         -np.log10(fdr_threshold),
         linestyle='--',
@@ -137,17 +119,14 @@ def plot_journal_volcano(
         alpha=0.5,
     )
     
-    # Label top genes with NUMBERS + legend if requested
     if label_genes and top_n_genes > 0:
-        # pick top genes among significant ones by smallest FDR
         sig_df = df[is_sig].sort_values('FDR')
         sig_df = sig_df.head(top_n_genes)
         
         texts = []
         labeled_genes = []
-        
+
         for idx, (gene, row) in enumerate(sig_df.iterrows(), start=1):
-            # numeric label on the plot
             t = ax.text(
                 row['Foldchange'],
                 row['nlog10'],
@@ -159,16 +138,14 @@ def plot_journal_volcano(
             )
             texts.append(t)
             labeled_genes.append((idx, gene))
-        
-        # avoid overlaps between numeric labels
+
         if texts:
             adjust_text(
                 texts,
                 ax=ax,
                 arrowprops=dict(arrowstyle='-', color='gray', lw=0.5)
             )
-        
-        # legend on the right: number -> gene name
+
         if labeled_genes:
             legend_handles = [
                 mpatches.Patch(color='none', label=f"{i}: {g}")
@@ -188,8 +165,7 @@ def plot_journal_volcano(
     ax.set_title(title, fontsize=10, weight='bold')
     ax.set_xlabel("Log Fold Change", fontsize=9)
     ax.set_ylabel("-log10(FDR)", fontsize=9)
-    
-    # Style axes - black spines, smaller tick labels, no grid
+
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_color('black')
@@ -210,15 +186,12 @@ def plot_pseudobulk_heatmap(
     figsize=(8, 10)
 ):
     """
-    Generates a standard "DoHeatmap" style visualization.
+    "DoHeatmap"-style pseudobulk heatmap.
 
-    1. Aggregates expression to pseudobulk (Cluster Means).
-    2. Identifies marker genes for each cluster from the DE results.
-    3. Plots Z-scored expression with genes grouped by cluster.
+    Averages fit['mean'] (gene × sample) to gene × group, selects the top
+    upregulated marker genes per cluster from DE results, and plots row-wise
+    z-scored expression.
     """
-
-    # --- 1. Compute Pseudobulk (Average Expression per Group) ---
-    # fit['mean'] is typically Gene x Sample. We need Gene x Group.
     means = fit['mean']
     if isinstance(means, pd.DataFrame):
         means_df = means.copy()
@@ -227,22 +200,17 @@ def plot_pseudobulk_heatmap(
 
     groups = np.array(fit['group']).astype(str)
 
-    # sanity check: groups length should match number of samples (columns)
     if means_df.shape[1] != len(groups):
         raise ValueError(
             f"Mismatch between means columns ({means_df.shape[1]}) "
             f"and group labels ({len(groups)})."
         )
     
-    # Group samples by cluster and take the mean
-    # Result: Columns = Clusters, Rows = Genes
-    pseudobulk = means_df.T.groupby(groups).mean().T
+    pseudobulk = means_df.T.groupby(groups).mean().T  # genes × clusters
 
-    # --- 2. Identify and Group Marker Genes ---
     cluster_markers = {g: [] for g in pseudobulk.columns}
 
     for comp_name, res in all_results.items():
-        # comp_name is like "Cluster1_vs_Cluster2"
         parts = comp_name.split('_vs_')
         if len(parts) != 2:
             continue
@@ -253,28 +221,22 @@ def plot_pseudobulk_heatmap(
 
         if sig_up.empty:
             continue
-        
-        # We only care about the top N strongest markers
+
         top_genes = sig_up.nlargest(top_n_per_cluster, 'Foldchange').index.tolist()
         
         if pos_grp in cluster_markers:
             cluster_markers[pos_grp].extend(top_genes)
 
-    # Dedup and assign genes to their "primary" cluster
     final_gene_list = []
     gene_cluster_labels = []
     seen_genes = set()
-    
-    # Sort clusters naturally
-    sorted_clusters = sorted(map(str, pseudobulk.columns))
 
-    # ensure columns are in sorted order as strings
+    sorted_clusters = sorted(map(str, pseudobulk.columns))
     pseudobulk = pseudobulk.loc[:, sorted_clusters]
 
     for cluster in sorted_clusters:
         candidates = cluster_markers.get(cluster, [])
         for gene in candidates:
-            # Only keep genes that actually exist in pseudobulk
             if gene not in seen_genes and gene in pseudobulk.index:
                 final_gene_list.append(gene)
                 gene_cluster_labels.append(cluster)
@@ -284,40 +246,31 @@ def plot_pseudobulk_heatmap(
         print("Warning: No significant markers found to plot. Skipping pseudobulk heatmap.")
         return
 
-    # --- 3. Prepare Heatmap Matrix ---
-    # Subset pseudobulk matrix to marker genes
     plot_matrix = pseudobulk.loc[final_gene_list, sorted_clusters]
 
-    # Convert to float64 NumPy array explicitly to avoid object dtypes
     plot_values = np.asarray(plot_matrix, dtype=float)
 
-    # Z-score row-wise (standardize gene expression across clusters)
-    # axis=1 → per gene
+    # Row-wise z-score (per gene across clusters)
     z_matrix_values = zscore(plot_values, axis=1, nan_policy='omit')
 
-    # If only one gene, zscore may return 1D array; ensure 2D
-    if z_matrix_values.ndim == 1:
+    if z_matrix_values.ndim == 1:  # single-gene edge case
         z_matrix_values = z_matrix_values[np.newaxis, :]
 
-    # Handle NaNs/inf if variance is 0, etc.
     z_matrix_values = np.nan_to_num(
         z_matrix_values,
         nan=0.0,
         posinf=0.0,
         neginf=0.0
     )
-    
-    # Clip outliers for visualization (standard practice is -2.5 to 2.5)
+
     z_matrix_values = np.clip(z_matrix_values, -2.5, 2.5)
 
-    # Convert back to DataFrame for plotting
     z_matrix = pd.DataFrame(
         z_matrix_values,
         index=plot_matrix.index,
         columns=plot_matrix.columns
     )
 
-    # --- 4. Plotting ---
     fig, ax = plt.subplots(figsize=figsize)
     fig.patch.set_facecolor('white')
     ax.set_facecolor('white')
@@ -328,19 +281,17 @@ def plot_pseudobulk_heatmap(
         cmap="RdBu_r",
         center=0,
         xticklabels=True,
-        yticklabels=False,  # hide gene names
+        yticklabels=False,
         cbar_kws={"label": "Z-score Expr", "shrink": 0.5},
         ax=ax
     )
     
-    # Add grouping lines for genes by cluster
     current_cluster = gene_cluster_labels[0]
     for i, cluster in enumerate(gene_cluster_labels):
         if cluster != current_cluster:
             ax.hlines(i, *ax.get_xlim(), colors='white', linewidth=1)
             current_cluster = cluster
     
-    # Style axes - black spines, smaller tick labels
     ax.spines['top'].set_color('black')
     ax.spines['right'].set_color('black')
     ax.spines['left'].set_color('black')
@@ -364,11 +315,9 @@ def plot_journal_dotplot(
     top_n=10,
     figsize=None
 ):
-    """
-    Creates a Seurat-style Dot Plot.
-    """
+    """Seurat-style dot plot: dot size = -log10(FDR), color = log fold change."""
     plot_data = []
-    
+
     target_genes = set()
     for comp, df in all_results.items():
         sig = df[df['FDR'] < fdr_threshold]
@@ -386,7 +335,6 @@ def plot_journal_dotplot(
             continue
         subset = df.loc[available].copy()
         subset['Gene'] = subset.index
-        # Clean comparison name for display
         clean_name = comp.replace('_vs_Rest', '')
         subset['Comparison'] = clean_name
         
@@ -405,13 +353,12 @@ def plot_journal_dotplot(
             len(final_df['Comparison'].unique()) * 0.8 + 2,
             len(target_genes) * 0.25 + 2
         )
-        
+
     fig, ax = plt.subplots(figsize=figsize)
     fig.patch.set_facecolor('white')
     ax.set_facecolor('white')
     ax.grid(False)
     
-    # Mapping
     comparisons = sorted(final_df['Comparison'].unique())
     genes = sorted(final_df['Gene'].unique())
     x_map = {c: i for i, c in enumerate(comparisons)}
@@ -439,7 +386,7 @@ def plot_journal_dotplot(
     ax.spines['left'].set_color('black')
     ax.spines['bottom'].set_color('black')
     ax.tick_params(axis='both', which='major', labelsize=7, colors='black')
-    
+
     cbar = plt.colorbar(sc, ax=ax, shrink=0.5)
     cbar.set_label("Log Fold Change", fontsize=9)
     cbar.ax.tick_params(labelsize=6)
@@ -463,10 +410,6 @@ def plot_journal_dotplot(
     plt.close()
 
 
-# ============================================================================
-# CORE TESTING FUNCTIONS
-# ============================================================================
-
 def raisintest(
     fit,
     coef: int = 2,
@@ -483,10 +426,10 @@ def raisintest(
     random_state: int = 42,
 ):
     """
-    Statistical testing for RAISIN model.
+    Compute gene-level test statistics and permutation-calibrated p-values for a
+    contrast of fixed-effect coefficients, then write optional volcano and DE outputs.
     """
     try:
-        # Extract Data
         X = fit['X']
         if isinstance(X, pd.DataFrame):
             X = X.values.astype(np.float64)
@@ -514,7 +457,6 @@ def raisintest(
             sigma2_columns = list(range(sigma2_values.shape[1]))
         omega2 = np.array(fit['omega2'], dtype=np.float64)
 
-        # Filtering
         if min_samples is not None:
             sample_counts = np.sum(means > 0, axis=1)
             mask = sample_counts >= min_samples
@@ -524,7 +466,6 @@ def raisintest(
             omega2 = omega2[mask, :]
         G = means.shape[0]
 
-        # Contrast
         if contrast is None:
             contrast = np.zeros(X.shape[1])
             if coef < 1 or coef > X.shape[1]:
@@ -535,7 +476,6 @@ def raisintest(
             contrast = np.array(contrast, dtype=np.float64)
             contrast_label = "custom_contrast"
 
-        # Statistics
         XTX = X.T @ X
         XTX_inv = np.linalg.pinv(XTX)
         k = contrast @ XTX_inv @ X.T
@@ -555,7 +495,6 @@ def raisintest(
             stat = b / np.sqrt(random_var + fixed_var)
         stat = np.where(np.isfinite(stat), stat, 0)
 
-        # Permutations
         if verbose:
             print(f"Running {n_permutations} permutations...")
         rng = np.random.default_rng(random_state)
@@ -575,7 +514,6 @@ def raisintest(
                 p_s = rng.choice(p_s, 1000, replace=False)
             simu_stat.extend(p_s)
 
-        # P-values
         simu_stat = np.array(simu_stat)
         if len(simu_stat) == 0:
             pval = 2 * stats.norm.sf(np.abs(stat))
@@ -608,18 +546,16 @@ def raisintest(
             os.makedirs(output_dir, exist_ok=True)
             res.to_csv(os.path.join(output_dir, "raisin_results.csv"))
             if make_volcano:
-                # Version 1: Without gene labels
                 plot_journal_volcano(
-                    res, 
-                    title=f"Contrast: {contrast_label}", 
+                    res,
+                    title=f"Contrast: {contrast_label}",
                     output_path=os.path.join(output_dir, "volcano.png"),
                     fdr_threshold=fdr_threshold,
                     label_genes=False
                 )
-                # Version 2: With numeric gene labels + legend (5 genes)
                 plot_journal_volcano(
-                    res, 
-                    title=f"Contrast: {contrast_label}", 
+                    res,
+                    title=f"Contrast: {contrast_label}",
                     output_path=os.path.join(output_dir, "volcano_labeled.png"),
                     fdr_threshold=fdr_threshold,
                     label_genes=True,
@@ -684,9 +620,12 @@ def run_pairwise_tests(
     random_state: int = 42,
 ):
     """
-    Runs pairwise comparisons and generates comprehensive visualizations.
+    Run all pairwise (or vs-control) RAISIN tests and generate summary visualizations.
+
+    If control_group is given, tests every other group against it. Otherwise
+    all pairs are tested. Writes per-comparison volcano plots, a CSV/TXT summary,
+    a pseudobulk heatmap, a dot plot, and a cluster×gene z-score heatmap.
     """
-    
     X = fit['X']
     if isinstance(X, pd.DataFrame):
         x_cols = list(X.columns)
@@ -697,7 +636,7 @@ def run_pairwise_tests(
     available_groups = np.unique(fit['group'])
     if groups_to_compare is None:
         groups_to_compare = available_groups
-    
+
     pairs = []
     if control_group is not None:
         control_group_str = str(control_group)
@@ -752,9 +691,6 @@ def run_pairwise_tests(
         except Exception as e:
             print(f"Failed {comp_name}: {e}")
     
-    # -------------------------------------------------------------------------
-    # Text + CSV summary of the pairwise tests (always written)
-    # -------------------------------------------------------------------------
     if all_results and output_dir:
         summary_dir = os.path.join(output_dir, "summary_plots")
         os.makedirs(summary_dir, exist_ok=True)
@@ -785,16 +721,12 @@ def run_pairwise_tests(
         if verbose:
             print(f"Wrote RAISIN summary: {os.path.join(summary_dir, 'raisin_summary.txt')}")
 
-    # -------------------------------------------------------------------------
-    # Generate Pseudobulk Visualizations
-    # -------------------------------------------------------------------------
     if make_summary_plots and all_results and output_dir:
         summary_dir = os.path.join(output_dir, "summary_plots")
         os.makedirs(summary_dir, exist_ok=True)
         
         print("\nGenerating Visualizations...")
-        
-        # 1. Pseudobulk Heatmap (Standard "DoHeatmap" style)
+
         heatmap_path = os.path.join(summary_dir, "pseudobulk_heatmap.png")
         try:
             plot_pseudobulk_heatmap(
@@ -807,8 +739,7 @@ def run_pairwise_tests(
         except Exception as e:
             print(f"Warning: failed to generate pseudobulk heatmap: {e}")
             traceback.print_exc()
-        
-        # 2. Dot Plot
+
         dotplot_path = os.path.join(summary_dir, "summary_dotplot.png")
         try:
             plot_journal_dotplot(
@@ -820,20 +751,18 @@ def run_pairwise_tests(
         except Exception as e:
             print(f"Warning: failed to generate dotplot: {e}")
             traceback.print_exc()
-        
-        # 3. Cluster x gene z-score heatmap (always renders; top genes by FDR,
-        #    up+down, with a fallback to top-by-FDR so empty cell types still
-        #    get a heatmap of their strongest-ranked genes).
+
+        # Cluster×gene z-score heatmap; falls back to top-ranked genes when none are significant.
         try:
             means = fit['mean']
             means_df = means.copy() if isinstance(means, pd.DataFrame) else pd.DataFrame(means)
             grp = np.array(fit['group']).astype(str)
             if means_df.shape[1] == len(grp):
-                pseudobulk = means_df.T.groupby(grp).mean().T  # genes x clusters
+                pseudobulk = means_df.T.groupby(grp).mean().T  # genes × clusters
                 pooled = pd.concat(list(all_results.values()))
                 sig = pooled[pooled['FDR'] < fdr_threshold].sort_values('FDR')
                 genes = list(dict.fromkeys(sig.index.tolist()))
-                if not genes:  # no significant genes -> fall back to top by FDR
+                if not genes:
                     genes = list(dict.fromkeys(pooled.sort_values('FDR').index.tolist()))
                 genes = [g for g in genes if g in pseudobulk.index][:top_n_genes]
                 if genes:
@@ -845,7 +774,6 @@ def run_pairwise_tests(
             print(f"Warning: failed to generate cluster_gene_zscore heatmap: {e}")
             traceback.print_exc()
 
-        # 4. CSV of all results
         combined_results = []
         for comp, res in all_results.items():
             res_copy = res.copy()

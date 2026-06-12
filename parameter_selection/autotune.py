@@ -83,7 +83,7 @@ def build_blocks(
     unique_cts = sorted(set(cell_type))
     K_c = len(unique_cts)
 
-    # A1
+    # A1: hard cell-type-label composition (one-hot, no clustering)
     L1 = {ct: i for i, ct in enumerate(unique_cts)}
     soft1 = np.zeros((Z_clust.shape[0], K_c), dtype=np.float32)
     for i, ct in enumerate(cell_type):
@@ -234,6 +234,7 @@ def _pc_r2_categorical(emb, target):
 
 
 def _ilisi_norm(emb, labels, k=15):
+    """Normalised iLISI: mean k-NN inverse Simpson index divided by n_labels. Range [0, 1]; higher = better batch mixing."""
     e = np.asarray(emb)
     labs = np.array([str(l) for l in labels])
     n = e.shape[0]
@@ -252,6 +253,7 @@ def _ilisi_norm(emb, labels, k=15):
 
 
 def _asw_safe(emb, labels):
+    """Silhouette score guarded against single-member groups; returns 0 on failure."""
     e = np.asarray(emb)
     labs = np.array([str(l) for l in labels])
     if len(set(labs)) < 2 or e.shape[0] < 4:
@@ -303,6 +305,7 @@ def _sps_continuous(emb, target, q=4):
 
 
 def _cv_knn_neg_mae(emb, target, k=3, n_splits=5):
+    """Negative normalised MAE of k-NN regression on ``target``. Higher (less negative) = better label prediction."""
     e = np.asarray(emb)
     t = np.asarray(target, dtype=float)
     keep = ~np.isnan(t)
@@ -325,6 +328,7 @@ def _cv_knn_neg_mae(emb, target, k=3, n_splits=5):
 
 
 def _pseudotime_spearman(emb, target):
+    """|Spearman(PC1(emb), target)|; measures pseudotime alignment of the embedding's leading axis."""
     e = np.asarray(emb)
     t = np.asarray(target, dtype=float)
     keep = ~np.isnan(t)
@@ -438,6 +442,7 @@ def make_scorer(name: str, meta: Dict, lam: float = 0.5) -> Callable[[np.ndarray
 # Search strategies                                              #
 # ============================================================ #
 def search_grid(objective: Callable, alpha_grid: List[float]):
+    """Exhaustive grid search over ``alpha_grid``. Returns (best_alpha, best_score, trace)."""
     trace = []
     best = None
     for a in alpha_grid:
@@ -449,6 +454,7 @@ def search_grid(objective: Callable, alpha_grid: List[float]):
 
 
 def search_golden(objective: Callable, bounds=(0.1, 10.0), max_iter=12):
+    """Golden-section search for a unimodal objective over ``bounds``. Returns (best_alpha, best_score, trace)."""
     phi = (1 + math.sqrt(5)) / 2
     a, b = bounds
     resphi = 2 - phi
@@ -477,6 +483,7 @@ def search_golden(objective: Callable, bounds=(0.1, 10.0), max_iter=12):
 
 
 def _gp_ei(gp, X_grid, y_best, xi=0.01):
+    """Expected Improvement acquisition over ``X_grid`` given fitted GP and current best ``y_best``."""
     mu, sigma = gp.predict(X_grid, return_std=True)
     with np.errstate(divide="warn"):
         imp = mu - y_best - xi
@@ -488,6 +495,9 @@ def _gp_ei(gp, X_grid, y_best, xi=0.01):
 
 def search_bayesian(objective: Callable, bounds=(0.1, 10.0),
                      n_init=5, n_iter=10, seed=42):
+    """GP-EI Bayesian optimisation over a 1-D ``bounds`` interval.
+    Seeds with ``n_init`` equally-spaced evaluations, then acquires via Expected Improvement.
+    Returns (best_alpha, best_score, trace)."""
     rng = np.random.default_rng(seed)
     lo, hi = bounds
     X_init = np.linspace(lo, hi, n_init).reshape(-1, 1)
