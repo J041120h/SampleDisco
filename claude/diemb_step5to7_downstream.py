@@ -20,11 +20,11 @@ import pandas as pd
 import scanpy as sc
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from sample_clustering.RAISIN import raisinfit
-from sample_clustering.RAISIN_TEST import run_pairwise_tests
-from sample_clustering.proportion_test import proportion_test
-from sample_trajectory.CCA import CCA_Call
-from sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
+from sampledisco.sample_clustering.RAISIN import raisinfit
+from sampledisco.sample_clustering.RAISIN_TEST import run_pairwise_tests
+from sampledisco.sample_clustering.proportion_test import proportion_test
+from sampledisco.sample_trajectory.CCA import CCA_Call
+from sampledisco.sample_trajectory.trajectory_diff_gene import run_trajectory_gam_differential_gene_analysis
 
 BASE = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics"
 OUT = f"{BASE}/sample_embedding_tune-on-RNA/cluster_severity_deg"

@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
 import scanpy as sc
-from sample_trajectory.trajectory_diff_gene import _build_sample_pseudobulk
+from sampledisco.sample_trajectory.trajectory_diff_gene import _build_sample_pseudobulk
 
 RNA = ("/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/"
        "preprocess/adata_rna_preprocessed.h5ad")

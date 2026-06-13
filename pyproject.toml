@@ -1,9 +1,8 @@
-# Minimal packaging metadata for SampleDisco.
-# NOTE: the package currently runs via cwd-relative imports
-# (`cd code && python SampleDisc.py -m complex --config ...`). A full editable
-# install (`pip install -e .`) would need a src/ layout refactor — tracked as
-# review item P2-3. This file pins project metadata + core dependencies so the
-# dependency set is declared in one place.
+# Packaging metadata for SampleDisco.
+# Installable as a normal package (src/ layout): `pip install -e .` exposes the
+# `sampledisco` import and the `sampledisco` console command from anywhere — no
+# more `cd code && python SampleDisc.py`. Core deps are declared in
+# requirements.txt; optional GPU acceleration is in requirements-gpu.txt.
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
@@ -15,6 +14,12 @@ description = "Cross-omics, cross-condition sample embedding for single-cell dat
 readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["dependencies"]
+
+[project.scripts]
+sampledisco = "sampledisco.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

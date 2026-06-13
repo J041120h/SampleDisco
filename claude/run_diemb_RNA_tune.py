@@ -10,7 +10,7 @@ the all-modality run intact.
 from __future__ import annotations
 import sys, yaml, inspect
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from wrapper.wrapper import wrapper
+from sampledisco.wrapper.wrapper import wrapper
 
 CFG = "/users/hjiang/GenoDistance/code/config/config_unpaired_RNA_tune.yaml"
 

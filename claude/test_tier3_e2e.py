@@ -14,7 +14,7 @@ Reference outputs are backed up at /dcs07/.../result/test_REFERENCE/.
 from __future__ import annotations
 import sys, yaml, inspect, time, os
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from wrapper.wrapper import wrapper
+from sampledisco.wrapper.wrapper import wrapper
 
 CFG = "/users/hjiang/GenoDistance/code/config/config.yaml"
 cfg = yaml.safe_load(open(CFG))

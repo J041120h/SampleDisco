@@ -21,7 +21,7 @@ import scanpy as sc
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
 sys.path.insert(0, "/users/hjiang/GenoDistance/code/Benchmark_covid")
 
-from sample_embedding.blocks import (
+from sampledisco.sample_embedding.blocks import (
     assemble_units, composition_per_unit, soft_assign, loo_rmd,
     derive_weights, build_emb_from_blocks,
 )

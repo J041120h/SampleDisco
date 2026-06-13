@@ -25,8 +25,8 @@ sys.path.insert(0, os.path.join(CODE_DIR, "Benchmark_covid"))
 import pandas as pd
 import scanpy as sc
 
-from sample_trajectory.CCA import CCA_Call
-from sample_embedding.sample_embedding import build_sample_adata
+from sampledisco.sample_trajectory.CCA import CCA_Call
+from sampledisco.sample_embedding.sample_embedding import build_sample_adata
 
 # Paths — mirror run_sampledisco_benchmarks.py but flip tuned→default + new summary
 COVID_BENCH_ROOT   = "/dcs07/hongkai/data/harry/result/Benchmark_covid"

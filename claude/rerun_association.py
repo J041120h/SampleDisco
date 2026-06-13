@@ -17,8 +17,8 @@ sys.path.insert(0, "/users/hjiang/GenoDistance/code")
 import anndata as ad
 import pandas as pd
 
-from sample_embedding.sample_embedding import build_sample_adata
-from sample_association.association import run_dimension_association_analysis
+from sampledisco.sample_embedding.sample_embedding import build_sample_adata
+from sampledisco.sample_association.association import run_dimension_association_analysis
 
 CELL_H5AD = "/dcs07/hongkai/data/harry/result/health_aging_PBMC/round1_batch/preprocess/adata_preprocessed.h5ad"
 

@@ -13,7 +13,7 @@ sys.path.insert(0, "/users/hjiang/GenoDistance/code")
 import numpy as np, pandas as pd, scanpy as sc
 from scipy import sparse
 
-from preparation.multi_omics_merge import (
+from sampledisco.preparation.multi_omics_merge import (
     build_embedding_union,
     preprocess_rna_for_downstream,
     preprocess_atac_for_downstream,

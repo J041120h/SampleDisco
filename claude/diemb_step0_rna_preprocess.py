@@ -8,7 +8,7 @@ input. hongkai env (no cuml needed).
 """
 import sys
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from preparation.multi_omics_merge import preprocess_rna_for_downstream
+from sampledisco.preparation.multi_omics_merge import preprocess_rna_for_downstream
 
 BASE = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics"
 preprocess_rna_for_downstream(

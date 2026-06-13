@@ -21,7 +21,7 @@ import pandas as pd
 import scanpy as sc
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from sample_clustering.RAISIN_TEST import plot_cluster_gene_zscore
+from sampledisco.sample_clustering.RAISIN_TEST import plot_cluster_gene_zscore
 
 BASE = ("/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics/"
         "sample_embedding_tune-on-RNA/cluster_severity_deg")

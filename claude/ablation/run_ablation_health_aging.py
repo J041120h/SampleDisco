@@ -13,7 +13,7 @@ import pandas as pd
 import anndata as ad
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from sample_embedding.blocks import (
+from sampledisco.sample_embedding.blocks import (
     assemble_units, composition_per_unit, soft_assign, loo_rmd,
     derive_weights, build_emb_from_blocks,
 )
