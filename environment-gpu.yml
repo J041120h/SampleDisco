@@ -1,0 +1,85 @@
+# SampleDisco — GPU environment (validated build, 2026-06-13) = CPU env + RAPIDS.
+#
+#   conda env create -f environment-gpu.yml
+#   conda activate sampledisco-gpu
+#   pip install rapids-singlecell==0.13.1 --no-deps   # rapids-singlecell is pip-only
+#   pip install -e . --no-deps                        # add the sampledisco package
+#
+# RAPIDS 24.12 (CUDA-12 line) from the rapidsai channel — coexists with the SAME
+# code-validated science pins as the CPU env (numpy 2.0.2 / scanpy 1.11.4 /
+# anndata 0.10.9 / numba 0.60), plus torch 2.5.1+cu121 and scGLUE 0.3.2 from pip.
+#
+# DRIVER NOTE: 24.12 is pinned (not 25.x) on purpose. The cluster's GPU nodes run
+# driver 555.42.06 (CUDA 12.5); rapids 25.04+'s compiled libs need a newer driver
+# (>= CUDA 12.6) and fail at import with `cudaErrorInsufficientDriver` on these
+# nodes (verified on an A100 node). rapids 24.12 is built for CUDA 12.0-12.5 and
+# runs on the 12.5 driver. On nodes with driver >= CUDA 12.6 you may bump to 25.x.
+# scGLUE MUST come from pip, never bioconda (its recipe caps numpy<1.22).
+name: sampledisco-gpu
+channels:
+  - rapidsai
+  - conda-forge
+  - bioconda
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.10
+
+  # --- RAPIDS 24.12 core (rapidsai channel, CUDA-12, driver-12.5 safe) ---
+  - cuml=24.12
+  - cudf=24.12
+  - rmm=24.12
+  - cuvs=24.12
+  - cupy=13
+  - cuda-version=12.5
+
+  # --- code-sensitive pins (identical to the CPU env) ---
+  - numpy=2.0.2
+  - scanpy=1.11.4
+  - anndata=0.10.9
+  - scikit-learn=1.6.1
+  - numba=0.60
+
+  # --- core scientific / single-cell stack ---
+  - pandas
+  - scipy
+  - scikit-misc
+  - statsmodels
+  - patsy
+  - mudata
+  - muon
+  - harmonypy
+  - python-igraph
+  - leidenalg
+  - networkx
+  - umap-learn
+  - pynndescent
+  - pot
+  - pygam
+  - matplotlib
+  - seaborn
+  - pyyaml
+
+  # --- genomics I/O + system binary ---
+  - bedtools
+  - htslib
+  - pybedtools
+  - pysam
+  - pyensembl
+
+  # --- rapids-singlecell pure-Python deps (it's pip --no-deps below) ---
+  - docrep
+  - scikit-image
+
+  - pip
+  - pip:
+      # torch CUDA-12.1 wheel (coexists with cupy/cuml on the CUDA-12 ABI)
+      - --extra-index-url https://download.pytorch.org/whl/cu121
+      - torch==2.5.1+cu121
+      # pip-only deps (scGLUE must be pip, not bioconda):
+      - scglue==0.3.2
+      - harmony-pytorch==0.1.8
+      - combat==0.3.3
+      - adjustText==1.3.0
+      # NOTE: rapids-singlecell==0.13.1 is installed as a post-create step with
+      # --no-deps (above) so it does not re-pull the rapids stack from PyPI.

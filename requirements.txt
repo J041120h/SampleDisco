@@ -26,3 +26,11 @@ seaborn>=0.12
 pyyaml>=6.0
 ruamel.yaml>=0.17
 pybedtools>=0.9
+
+# multi-omics gene annotation (scGLUE path, imported at module top)
+pyensembl>=2.3
+# cluster-DGE (RAISIN) — both on the live downstream path
+combat>=0.3
+adjustText>=1.0
+# NOTE: scGLUE must be installed from PyPI (`pip install scglue`), NOT bioconda —
+# the bioconda recipe caps numpy<1.22 and breaks the rest of the stack.

@@ -1,0 +1,67 @@
+# SampleDisco — CPU environment (validated build, 2026-06-13).
+#
+#   conda env create -f environment-cpu.yml
+#   conda activate sampledisco-cpu
+#   pip install -e . --no-deps          # add the sampledisco package itself
+#
+# This is the exact spec that built and passed the import/coexistence smoke test
+# (numpy 2.0.2 + scGLUE 0.3.2 + scanpy 1.11.4 + anndata 0.10.9, torch CPU).
+# scGLUE MUST come from pip, never `conda install -c bioconda scglue` (the bioconda
+# recipe caps numpy<1.22 and breaks the rest of the stack). GPU acceleration is a
+# separate env: see environment-gpu.yml.
+name: sampledisco-cpu
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+
+  # --- code-sensitive pins (validated against the pipeline) ---
+  - numpy=2.0.2
+  - scanpy=1.11.4
+  - anndata=0.10.9
+  - scikit-learn=1.6.1
+  - numba=0.60
+
+  # --- core scientific / single-cell stack (conda-forge) ---
+  - pandas
+  - scipy
+  - scikit-misc
+  - statsmodels
+  - patsy
+  - mudata
+  - muon
+  - harmonypy
+  - python-igraph
+  - leidenalg
+  - networkx
+  - umap-learn
+  - pynndescent
+  - pot            # POT (optimal transport, EMD distance)
+  - pygam
+  - matplotlib
+  - seaborn
+  - pyyaml
+
+  # --- genomics I/O + system binary (bioconda) ---
+  - bedtools       # system binary required by pybedtools / scGLUE
+  - htslib
+  - pybedtools
+  - pysam
+  - pyensembl      # multi-omics gene annotation
+
+  - pip
+  - pip:
+      # torch CPU wheel (the +cpu local tag lives only on the torch index)
+      - --extra-index-url https://download.pytorch.org/whl/cpu
+      - torch==2.5.1+cpu
+      # pip-only deps (not on the channels in a coexisting pin):
+      - scglue==0.3.2          # multi-omics integrator — PYPI ONLY, not bioconda
+      - harmony-pytorch==0.1.8 # distinct from harmonypy
+      - combat==0.3.3          # RAISIN ComBat batch correction
+      - adjustText==1.3.0      # RAISIN_TEST volcano labels
+
+# Optional: phylogenetic-tree clustering island (orphan, not on the live wrapper
+# path). Only if you need NN/UPGMA/consensus tree methods:
+#   pip install biopython==1.85 scikit-bio==0.6.3 dendropy==5.0.8
