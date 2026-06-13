@@ -13,7 +13,7 @@ import pandas as pd
 import scanpy as sc
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from utils.safe_save import safe_h5ad_write
+from sampledisco.utils.safe_save import safe_h5ad_write
 
 BASE = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics"
 UNION = f"{BASE}/preprocess/adata_sample.h5ad"

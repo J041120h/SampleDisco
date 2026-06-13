@@ -22,8 +22,8 @@ import anndata as ad
 import numpy as np
 import pandas as pd
 
-from sample_clustering.RAISIN import raisinfit
-from sample_clustering.RAISIN_TEST import run_pairwise_tests
+from sampledisco.sample_clustering.RAISIN import raisinfit
+from sampledisco.sample_clustering.RAISIN_TEST import run_pairwise_tests
 
 EMB_CSV = "/dcs07/hongkai/data/harry/result/health_aging_PBMC/round6_multicov_batch_age/sample_embedding/sample_embedding/sample_embedding.csv"
 CELL_H5AD = "/dcs07/hongkai/data/harry/result/health_aging_PBMC/round1_batch/preprocess/adata_preprocessed.h5ad"

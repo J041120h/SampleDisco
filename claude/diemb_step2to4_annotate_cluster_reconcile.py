@@ -30,9 +30,9 @@ import anndata as ad
 import scanpy as sc
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
-from sample_clustering.cluster import cluster
-from sample_clustering.cluster_severity_reconcile import reconcile_clusters_to_label
-from utils.safe_save import safe_h5ad_write
+from sampledisco.sample_clustering.cluster import cluster
+from sampledisco.sample_clustering.cluster_severity_reconcile import reconcile_clusters_to_label
+from sampledisco.utils.safe_save import safe_h5ad_write
 
 BASE = "/dcs07/hongkai/data/harry/result/multi_omics_unpaired_diemb/multiomics"
 OUT = f"{BASE}/sample_embedding_tune-on-RNA/cluster_severity_deg"
