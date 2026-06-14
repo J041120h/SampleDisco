@@ -37,11 +37,6 @@ Repository = "https://github.com/J041120h/GenoDistance"
 [project.scripts]
 sampledisco = "sampledisco.cli:main"
 
-[project.optional-dependencies]
-# Phylogenetic-tree sample clustering (NN / UPGMA / consensus). Off the default
-# wrapper path, so its heavy deps are optional: pip install -e '.[trees]'
-trees = ["biopython>=1.80", "scikit-bio>=0.5", "dendropy>=4.5"]
-
 [tool.setuptools.packages.find]
 where = ["src"]
 
