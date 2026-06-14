@@ -122,24 +122,16 @@ def _gpu_harmonize(
         )
         return np.asarray(Zc, dtype=np.float32)
     except Exception as exc:
-        print(f"  [Harmony GPU] FAILED ({exc!r}); falling back to CPU harmonypy")
+        print(f"  [Harmony GPU] FAILED ({exc!r}); falling back to linear "
+              f"regression (too few samples for Harmony)")
         try:
-            import harmonypy as hm
-            if isinstance(batch_keys, list):
-                nclust = max(2, min(meta[batch_keys].nunique().max(), n_units // 2))
-            else:
-                nclust = max(2, min(len(set(meta["batch"])), n_units // 2))
-            ho = hm.run_harmony(Fp, meta, batch_keys,
-                                 nclust=nclust,
-                                 max_iter_harmony=30,
-                                 random_state=seed)
-            Zc = ho.Z_corr
-            if Zc.shape[0] != n_units:
-                Zc = Zc.T
-            return np.asarray(Zc, dtype=np.float32)
+            collapsed = (multi_meta_df.astype(str).agg("__".join, axis=1).values
+                         if multi_meta_df is not None else batch_labels)
+            return np.asarray(regress_out_batch_linear(Fp, collapsed),
+                              dtype=np.float32)
         except Exception as exc2:
-            print(f"  [Harmony CPU fallback] FAILED ({exc2!r}); returning raw PCA "
-                  f"— sample embedding will NOT be batch-corrected")
+            print(f"  [Linear-regression fallback] FAILED ({exc2!r}); returning raw "
+                  f"PCA — sample embedding will NOT be batch-corrected")
             return np.asarray(Fp, dtype=np.float32)
 
 

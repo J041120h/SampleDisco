@@ -43,6 +43,7 @@ dependencies:
   - matplotlib
   - seaborn
   - pyyaml
+  - psutil
 
   # --- genomics I/O + system binary (bioconda) ---
   - bedtools       # system binary required by pybedtools / scGLUE
