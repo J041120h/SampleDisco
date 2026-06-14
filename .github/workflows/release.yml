@@ -1,0 +1,42 @@
+name: Publish to PyPI
+
+# Publishes to PyPI when you push a version tag, e.g.:
+#   # bump version in pyproject.toml to 0.1.1, commit, then:
+#   git tag v0.1.1 && git push origin v0.1.1
+#
+# Auth uses PyPI Trusted Publishing (OIDC) — no API token stored anywhere.
+# One-time setup on PyPI: project 'sampledisco' -> Settings -> Publishing ->
+# "Add a new publisher": GitHub, owner J041120h, repo GenoDistance,
+# workflow "release.yml". (Until then, the publish step will fail auth.)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write        # required for Trusted Publishing
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Check tag matches pyproject version
+        run: |
+          VER=$(grep -m1 '^version' pyproject.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "pyproject version=$VER  tag=$TAG"
+          test "$VER" = "$TAG" || { echo "::error::tag v$TAG does not match version $VER"; exit 1; }
+
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
