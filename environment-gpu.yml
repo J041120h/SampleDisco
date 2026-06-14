@@ -28,6 +28,7 @@ dependencies:
   # --- RAPIDS 24.12 core (rapidsai channel, CUDA-12, driver-12.5 safe) ---
   - cuml=24.12
   - cudf=24.12
+  - cugraph=24.12      # required by rapids-singlecell's GPU Leiden clustering
   - rmm=24.12
   - cuvs=24.12
   - cupy=13
@@ -59,6 +60,7 @@ dependencies:
   - matplotlib
   - seaborn
   - pyyaml
+  - psutil
 
   # --- genomics I/O + system binary ---
   - bedtools

@@ -13,7 +13,26 @@ version = "0.1.0"
 description = "Cross-omics, cross-condition sample embedding for single-cell data (RNA + ATAC)"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Harry Jiang", email = "hjiang55@jh.edu" },
+    { name = "Hongkai Ji" },
+]
+keywords = ["single-cell", "sample-embedding", "multi-omics", "scRNA-seq", "scATAC-seq", "bioinformatics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
 dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/J041120h/GenoDistance"
+Documentation = "https://j041120h.github.io/SampleDisco_tutorial/"
+Repository = "https://github.com/J041120h/GenoDistance"
 
 [project.scripts]
 sampledisco = "sampledisco.cli:main"

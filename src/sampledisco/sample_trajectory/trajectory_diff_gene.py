@@ -129,7 +129,8 @@ def _build_sample_pseudobulk(
         )
         cells_per_sample = np.array(indicator.sum(axis=1)).flatten()
         cells_per_sample[cells_per_sample == 0] = 1
-        X = adata.X.tocsr() if issparse(adata.X) else adata.X
+        _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
+        X = _X.tocsr() if issparse(_X) else _X
         summed = indicator @ (X[valid] if not valid.all() else X)
         if issparse(summed):
             summed = np.asarray(summed.todense())
@@ -152,7 +153,8 @@ def _build_sample_pseudobulk(
     sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
     pb_obs = pb_obs.join(sample_to_meta, how="left")
 
-    X_full = adata.X.tocsr() if issparse(adata.X) else adata.X
+    _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
+    X_full = _X.tocsr() if issparse(_X) else _X
 
     feature_blocks = []
     feature_names = []

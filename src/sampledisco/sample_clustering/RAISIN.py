@@ -157,10 +157,12 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
         print(f"Batch variable: {batch_col}")
 
     if adata.raw is not None and adata.raw.X is not None:
-        expr = adata.raw.X.toarray() if hasattr(adata.raw.X, "toarray") else np.array(adata.raw.X)
+        _rawX = adata.raw.X.get() if hasattr(adata.raw.X, "get") else adata.raw.X
+        expr = _rawX.toarray() if hasattr(_rawX, "toarray") else np.array(_rawX)
         gene_names = adata.raw.var_names
     else:
-        expr = adata.X.toarray() if hasattr(adata.X, "toarray") else np.array(adata.X)
+        _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
+        expr = _X.toarray() if hasattr(_X, "toarray") else np.array(_X)
         gene_names = adata.var_names
 
     # pycombat expects genes × cells
@@ -352,12 +354,14 @@ def raisinfit(
             )
 
     if adata.raw is not None and adata.raw.X is not None:
-        expr = adata.raw.X.toarray() if hasattr(adata.raw.X, "toarray") else np.array(adata.raw.X)
+        _rawX = adata.raw.X.get() if hasattr(adata.raw.X, "get") else adata.raw.X
+        expr = _rawX.toarray() if hasattr(_rawX, "toarray") else np.array(_rawX)
         gene_names = np.array(adata.raw.var_names)
         if verbose:
             print("Using raw counts from adata.raw.X")
     else:
-        expr = adata.X.toarray() if hasattr(adata.X, "toarray") else np.array(adata.X)
+        _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
+        expr = _X.toarray() if hasattr(_X, "toarray") else np.array(_X)
         gene_names = np.array(adata.var_names)
         if verbose:
             print("Using counts from adata.X")

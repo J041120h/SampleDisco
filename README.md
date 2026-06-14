@@ -128,8 +128,51 @@ For multi-omics, the pipeline takes two separate h5ads (RNA + ATAC) and integrat
 
 ## Installation
 
+SampleDisco is **one package**. The CPU install is pip-only; **GPU acceleration is
+activated simply by installing the GPU libraries separately** — the same package
+detects and uses them at runtime. There is no separate "GPU build" of SampleDisco.
+
+### 1. Core install (CPU)
+
 ```bash
-pip install -r requirements.txt
+pip install sampledisco          # once published — or `pip install -e .` from a clone
 ```
 
-GPU acceleration (Harmony, scanpy normalization, scGLUE training, sample embedding) requires `cupy` + `cuml` + `rapids-singlecell` and a recent CUDA driver. When the driver is too old or the libraries are missing, the pipeline auto-falls back to CPU equivalents (`harmonypy`, scikit-learn k-means, PyTorch CPU) — set `use_gpu: false` in the config to skip the GPU probe.
+### 2. System prerequisite — bedtools
+
+scGLUE (the multi-omics integrator) calls the `bedtools` binary, which pip cannot
+provide:
+
+```bash
+conda install -c bioconda bedtools
+```
+
+### 3. GPU acceleration (optional, install yourself)
+
+The GPU functions (RAPIDS-accelerated normalization, Harmony, k-means / PCA, Leiden,
+scGLUE training) turn on **only when the RAPIDS stack is present** in your
+environment. RAPIDS is CUDA-driver-specific and conda-only, so you install it
+separately, matching your driver (the pins below target a CUDA-12.5 driver such as
+the cluster's GPU nodes):
+
+```bash
+conda install -c rapidsai -c conda-forge -c nvidia \
+    cuml=24.12 cudf=24.12 cugraph=24.12 rmm=24.12 cuvs=24.12 cupy=13 cuda-version=12.5
+pip install rapids-singlecell==0.13.1 --no-deps
+```
+
+Then set `use_gpu: true` in your config. **You do not reinstall SampleDisco** — once
+those packages are importable the GPU paths activate automatically; if they are
+missing or the driver is too old, SampleDisco falls back to CPU equivalents
+(`harmonypy` / linear regression, scikit-learn k-means, PyTorch CPU).
+
+### One-command environments (recommended)
+
+For a fully reproducible environment (including bedtools), use the provided conda
+files instead of the manual steps above — see `INSTALL.md` for the driver/version
+notes:
+
+```bash
+conda env create -f environment-cpu.yml      # CPU
+conda env create -f environment-gpu.yml      # GPU (RAPIDS 24.12)
+```
