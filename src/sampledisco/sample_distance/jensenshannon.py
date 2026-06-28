@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from anndata import AnnData
 import warnings
+from typing import Optional
 from scipy.sparse import issparse
 from scipy.spatial.distance import jensenshannon 
 from anndata._core.aligned_df import ImplicitModificationWarning
@@ -22,7 +23,7 @@ def calculate_sample_distances_cell_proportion_jensenshannon(
     output_dir: str,
     cell_type_column: str = 'cell_type',
     sample_column: str = 'sample',
-    summary_csv_path: str = "/users/harry/desktop/GenoDistance/result/summary.csv",
+    summary_csv_path: Optional[str] = None,
     pseudobulk_adata: AnnData = None,
     grouping_columns: list = None
 ) -> pd.DataFrame:
