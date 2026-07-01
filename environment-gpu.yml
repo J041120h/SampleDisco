@@ -49,7 +49,7 @@ dependencies:
   - patsy
   - mudata
   - muon
-  - harmonypy
+  - harmonypy<0.0.10   # pure-NumPy release (matches the package pin; GPU accel via RAPIDS)
   - python-igraph
   - leidenalg
   - networkx

@@ -56,7 +56,7 @@ def cell_types_atac_gpu(
     Save=False,
     output_dir=None,
     cluster_resolution=0.8,
-    use_rep='X_DM_harmony',
+    use_rep='Z_clust',
     peaks=None, 
     method='average', 
     metric='euclidean', 
@@ -284,7 +284,7 @@ def cell_type_dendrogram_atac_gpu(
     method='average',
     metric='euclidean',
     distance_mode='centroid',
-    use_rep='X_DM_harmony',
+    use_rep='Z_clust',
     num_DMs=20,
     verbose=True
 ):

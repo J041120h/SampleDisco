@@ -86,8 +86,12 @@ def rna_wrapper(
         raise ValueError("Required: rna_count_data_path and rna_output_dir")
 
     if use_gpu:
-        from sampledisco.preparation.rna_preprocess_gpu import preprocess_gpu
-        from sampledisco.preparation.cell_type_gpu import cell_types_gpu
+        try:
+            from sampledisco.preparation.rna_preprocess_gpu import preprocess_gpu
+            from sampledisco.preparation.cell_type_gpu import cell_types_gpu
+        except ImportError as e:
+            print(f"Warning: GPU modules unavailable ({e}). Falling back to CPU.")
+            use_gpu = False
 
     cell_level_batch_key = cell_level_batch_key or []
     sample_level_batch_col = sample_level_batch_col or []

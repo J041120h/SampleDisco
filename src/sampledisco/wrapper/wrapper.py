@@ -984,6 +984,11 @@ def wrapper(
         try:
             import rmm
             import cupy as cp
+            # Validate the FULL GPU stack up front (not just rmm/cupy): the GPU
+            # code paths hard-import rapids_singlecell, so probe it here. Any
+            # incomplete GPU install (missing rapids_singlecell / cuml / docrep /
+            # scikit-image) then falls back cleanly to CPU instead of crashing.
+            import rapids_singlecell  # noqa: F401
             from rmm.allocators.cupy import rmm_cupy_allocator
 
             rmm.reinitialize(
@@ -996,21 +1001,10 @@ def wrapper(
             gpu_available = False
             system_info['gpu_available'] = False
     
-    if gpu_available and initialization:
-        try:
-            print("Installing GPU dependencies...")
-            subprocess.check_call([
-                sys.executable, "-m", "pip", "install",
-                "rapids-singlecell[rapids12]",
-                "--extra-index-url=https://pypi.nvidia.com"
-            ])
-            print("GPU dependencies installed successfully.")
-        except Exception as e:
-            print(f"Warning: Failed to install GPU dependencies: {e}")
-            print("Continuing without GPU acceleration.")
-            gpu_available = False
-            system_info['gpu_available'] = False
-    
+    # NOTE: SampleDisco never installs packages at runtime. GPU acceleration must
+    # be provided by the environment (see the docs' RAPIDS install); if the GPU
+    # stack is missing/incomplete the guard above already falls back to CPU.
+
     status_file_path = os.path.join(output_dir, "sys_log", "main_process_status.json")
     os.makedirs(os.path.dirname(status_file_path), exist_ok=True)
     
