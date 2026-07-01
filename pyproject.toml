@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sampledisco"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cross-omics, cross-condition sample embedding for single-cell data (RNA + ATAC)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,6 +36,15 @@ Repository = "https://github.com/J041120h/GenoDistance"
 
 [project.scripts]
 sampledisco = "sampledisco.cli:main"
+
+[project.optional-dependencies]
+# Deep-learning stack for multi-omics (scGLUE) and the faster torch-based
+# Harmony. Not needed for CPU single-omics, which uses harmonypy.
+multiomics = [
+    "torch>=2.0",
+    "scglue>=0.3",
+    "harmony-pytorch>=0.1",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

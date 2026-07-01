@@ -3,7 +3,7 @@ import time
 import numpy as np
 import pandas as pd
 import scanpy as sc
-from harmony import harmonize
+from sampledisco.utils.harmony_compat import harmonize_embedding
 from scipy.sparse import issparse
 
 from sampledisco.utils.safe_save import safe_h5ad_write
@@ -79,7 +79,7 @@ def anndata_cluster(
     if verbose:
         print("=== [CPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
-    adata.obsm["Z_clust"] = harmonize(
+    adata.obsm["Z_clust"] = harmonize_embedding(
         adata.obsm["X_pca"], adata.obs,
         batch_key=cell_level_batch_key_for_harmony,
         max_iter_harmony=num_harmony_iterations,
@@ -120,7 +120,7 @@ def anndata_cluster(
         if verbose:
             print("=== [CPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
-        adata.obsm["Z_rmd"] = harmonize(
+        adata.obsm["Z_rmd"] = harmonize_embedding(
             adata.obsm["X_pca_rmd"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,
