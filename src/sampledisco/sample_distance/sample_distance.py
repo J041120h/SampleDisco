@@ -372,6 +372,21 @@ def _match_samples(dr_data: pd.DataFrame, adata: AnnData) -> pd.DataFrame:
         dr_filtered.index = [sample_mapping[name] for name in dr_filtered.index]
         return dr_filtered
     
+    # Fallback: `adata` may be cell-level (obs index = cell barcodes). Match the
+    # DR sample names against the per-cell 'sample' column instead. This makes the
+    # vector-metric distances work on either a sample-level or a cell-level adata.
+    if 'sample' in adata.obs.columns:
+        obs_samples = set(adata.obs['sample'].astype(str))
+        col_matches = [s for s in dr_data.index if str(s) in obs_samples]
+        if col_matches:
+            dropped = [s for s in dr_data.index if str(s) not in obs_samples]
+            if dropped:
+                warnings.warn(
+                    f"_match_samples: dropped {len(dropped)} DR sample(s) absent from "
+                    f"adata.obs['sample']: {dropped[:5]}{'...' if len(dropped) > 5 else ''}"
+                )
+            return dr_data.loc[col_matches].copy()
+
     raise ValueError(
         f"No matching samples found. "
         f"DR samples: {sorted(list(dr_samples))[:5]}, "

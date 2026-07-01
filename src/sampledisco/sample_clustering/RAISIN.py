@@ -11,6 +11,7 @@ import scanpy as sc
 from scipy import stats
 from scipy.special import digamma, gamma, polygamma
 from scipy.spatial.distance import pdist, squareform
+import os
 import warnings
 from multiprocessing import cpu_count
 import traceback
@@ -274,7 +275,13 @@ def raisinfit(
     #  Setup
     # -----------------------------------------------------------------
     if n_jobs in (None, -1):
-        n_jobs = cpu_count()
+        # Respect the CPU-affinity/cgroup mask (SLURM, containers, cgroups) rather
+        # than the node-wide core count — the latter over-subscribes on shared
+        # nodes and multiplies peak memory (ComBat), causing OOM kills.
+        try:
+            n_jobs = len(os.sched_getaffinity(0))
+        except AttributeError:  # sched_getaffinity is Linux-only
+            n_jobs = cpu_count()
     if verbose:
         print(f"Using {n_jobs} CPU cores")
 

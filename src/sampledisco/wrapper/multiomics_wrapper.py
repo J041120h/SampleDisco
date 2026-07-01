@@ -368,8 +368,12 @@ def multiomics_wrapper(
 
         cell_types_func = cell_types_multiomics
         if use_gpu:
-            from sampledisco.preparation.multi_omics_cell_type_gpu import cell_types_multiomics_gpu
-            cell_types_func = cell_types_multiomics_gpu
+            try:
+                from sampledisco.preparation.multi_omics_cell_type_gpu import cell_types_multiomics_gpu
+                cell_types_func = cell_types_multiomics_gpu
+            except ImportError as e:
+                print(f"Warning: GPU cell-typing unavailable ({e}). Falling back to CPU.")
+                use_gpu = False
 
         current_adata = cell_types_func(
             adata=current_adata,

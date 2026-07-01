@@ -214,7 +214,7 @@ def cell_types_atac(
     Save=False,
     output_dir=None,
     cluster_resolution=0.8,
-    use_rep='X_DM_harmony',
+    use_rep='Z_clust',
     peaks=None, 
     method='average', 
     metric='euclidean', 
@@ -234,7 +234,7 @@ def cell_types_atac(
     Assigns cell types based on existing annotations or performs Leiden clustering if no annotation exists.
     Uses recursive strategy to adaptively find optimal clustering resolution when target clusters specified.
     
-    ATAC VERSION: Uses dimension reduction (X_DM_harmony) for dendrogram construction and differential peaks.
+    ATAC VERSION: Uses dimension reduction (Z_clust) for dendrogram construction and differential peaks.
 
     Parameters:
     - adata: AnnData object
@@ -245,7 +245,7 @@ def cell_types_atac(
     - Save: Boolean, whether to save the output
     - output_dir: Directory to save the output if Save=True
     - cluster_resolution: Starting resolution for Leiden clustering
-    - use_rep: Representation to use for neighborhood graph (default: 'X_DM_harmony')
+    - use_rep: Representation to use for neighborhood graph (default: 'Z_clust')
     - peaks: List of peak names for mapping numeric IDs to names
     - method, metric, distance_mode: Parameters for hierarchical clustering
     - num_DMs: Number of diffusion map components for neighborhood graph

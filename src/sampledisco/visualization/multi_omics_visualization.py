@@ -88,9 +88,13 @@ def get_embedding_data(adata, embedding_key):
     else:
         raise ValueError(f"Embedding key '{embedding_key}' not found in adata.obsm or adata.uns")
 
+    # Coerce to a NumPy array — adata.uns['X_DR_sample'] is a pandas DataFrame and
+    # callers use ndarray tuple indexing (embedding[mask, 0]), which fails on a DataFrame.
+    embedding = np.asarray(embedding.values if hasattr(embedding, "values") else embedding)
+
     if embedding.ndim == 1:
         raise ValueError(f"Embedding '{embedding_key}' is 1D, expected 2D")
-    
+
     return embedding
 
 def plot_multimodal_embedding(adata, modality_col, color_col, target_modality,
@@ -342,6 +346,17 @@ def plot_embedding_colored_by_column(adata, embedding_key, color_col, ax,
     """
     embedding = get_embedding_data(adata, embedding_key)
     color_values = adata.obs[color_col].values
+
+    # Guard: a cell-level adata (per-cell obs) cannot color a unit/sample-level
+    # embedding (they differ in length). Plot uncolored rather than crash — the
+    # colored per-unit views are produced by the downstream visualization step.
+    if len(color_values) != embedding.shape[0]:
+        if verbose:
+            print(f"  [viz] '{color_col}' has {len(color_values)} cell-level values but the "
+                  f"embedding has {embedding.shape[0]} units — plotting uncolored.")
+        ax.scatter(embedding[:, 0], embedding[:, 1], s=point_size, alpha=alpha,
+                   c='steelblue', edgecolors='white', linewidths=0.5)
+        return ax, 'none', []
 
     if force_data_type is not None:
         if force_data_type not in ['numerical', 'categorical']:

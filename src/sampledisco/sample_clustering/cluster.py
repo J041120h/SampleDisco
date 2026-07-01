@@ -84,10 +84,19 @@ def cluster(
         plt.close()
         print(f"[INFO] Saved plot: {save_path}")
 
-    if "X_DR_sample" not in pseudobulk_adata.obsm_keys():
-        raise KeyError("'X_DR_sample' not found in pseudobulk_adata.obsm.")
+    # Read the sample embedding from .uns (where compute_sample_embedding writes it,
+    # as a DataFrame) first, then fall back to .obsm (ndarray). Other downstream
+    # modules read .uns, so accept both for consistency.
     dr_key = "X_DR_sample"
-    X = pseudobulk_adata.obsm[dr_key]
+    if dr_key in pseudobulk_adata.uns:
+        _emb = pseudobulk_adata.uns[dr_key]
+        X = np.asarray(_emb.values if hasattr(_emb, "values") else _emb)
+    elif dr_key in pseudobulk_adata.obsm_keys():
+        X = np.asarray(pseudobulk_adata.obsm[dr_key])
+    else:
+        raise KeyError(
+            f"'{dr_key}' not found in pseudobulk_adata.uns or .obsm — "
+            "run compute_sample_embedding first.")
     print(f"[INFO] Running K-means on '{dr_key}', shape={X.shape}")
     kmeans = KMeans(n_clusters=number_of_clusters, random_state=random_state,
                      n_init="auto")
