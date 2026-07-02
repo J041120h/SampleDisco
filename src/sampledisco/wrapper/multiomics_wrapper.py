@@ -7,7 +7,6 @@ import anndata as ad
 import scanpy as sc
 
 from sampledisco.sample_embedding import compute_sample_embedding
-from sampledisco.preparation.multi_omics_glue import multiomics_preparation
 from sampledisco.preparation.multi_omics_merge import propagate_cell_type
 from sampledisco.preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from sampledisco.preparation.multi_omics_batch_correction import (
@@ -256,6 +255,10 @@ def multiomics_wrapper(
 
     # ==================== STEP 1: GLUE INTEGRATION ====================
     if integration:
+        # Import scGLUE only when actually integrating. Users who skip GLUE
+        # (resume from a pre-integrated file, or integrated elsewhere) can then
+        # run the multi-omics pipeline without installing scGLUE / torch.
+        from sampledisco.preparation.multi_omics_glue import multiomics_preparation
         if multiomics_verbose:
             print("Step 1: Running GLUE integration...")
         glue_result = multiomics_preparation(
