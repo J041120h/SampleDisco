@@ -38,11 +38,25 @@ def compute_sample_embedding(
     verbose: bool = True,
     seed: int = 42,
 ) -> AnnData:
-    """Dispatch to CPU or GPU implementation."""
+    """Dispatch to CPU or GPU implementation.
+
+    ``use_gpu=True`` on a machine without the RAPIDS stack (e.g. macOS, or any
+    CPU-only box) falls back cleanly to the CPU implementation instead of
+    crashing on the import.
+    """
     if use_gpu:
-        from sampledisco.sample_embedding.sample_embedding_gpu import (
-            compute_sample_embedding as _impl,
-        )
+        try:
+            from sampledisco.sample_embedding.sample_embedding_gpu import (
+                compute_sample_embedding as _impl,
+            )
+        except ImportError as e:
+            print(
+                f"[sampledisco] GPU sample embedding unavailable ({e}); "
+                "falling back to the CPU implementation."
+            )
+            from sampledisco.sample_embedding.sample_embedding import (
+                compute_sample_embedding as _impl,
+            )
     else:
         from sampledisco.sample_embedding.sample_embedding import (
             compute_sample_embedding as _impl,

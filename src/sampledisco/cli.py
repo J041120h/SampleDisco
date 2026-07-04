@@ -1,33 +1,38 @@
 import argparse
+import inspect
+import os
 import sys
 import traceback
+from importlib.resources import files
+
 import yaml
-import os
-import inspect
-from sampledisco.wrapper.wrapper import wrapper
+
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run the data processing wrapper.")
-
-    parser.add_argument("-m", "--mode", type=str, required=True, choices=["simple", "complex"],
-                        help="Run mode. Choose 'simple' or 'complex'.")
-
-    # Simple mode args
-    parser.add_argument("-c", "--count_data", type=str, help="Path to count data file")
-    parser.add_argument("-s", "--sample_meta_data", type=str, help="(Optional) Path to sample metadata file")
-    parser.add_argument("-o", "--output_directory", type=str, help="Path to output directory")
-
-    # Complex mode args
-    parser.add_argument("--config", type=str, help="Path to YAML config file")
-
+    parser = argparse.ArgumentParser(
+        description="SampleDisco — cross-omics sample embedding for single-cell data.",
+    )
+    parser.add_argument(
+        "-m", "--mode", type=str, default="complex", choices=["complex"],
+        help="Run mode (only 'complex' is supported; kept for backward compatibility).",
+    )
+    parser.add_argument(
+        "--config", type=str, help="Path to the YAML config file.",
+    )
+    parser.add_argument(
+        "--init-config", nargs="?", const="config.yaml", metavar="PATH", dest="init_config",
+        help="Write a ready-to-edit config template to PATH (default: ./config.yaml) and exit.",
+    )
     return parser.parse_args()
+
 
 def load_config(config_path):
     if not os.path.exists(config_path):
         print(f"Error: Config file '{config_path}' does not exist.", file=sys.stderr)
         sys.exit(1)
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         return yaml.safe_load(f)
+
 
 def validate_config(config, func):
     valid_params = inspect.signature(func).parameters
@@ -38,33 +43,49 @@ def validate_config(config, func):
         if key not in config:
             raise ValueError(f"Missing required parameter in config: '{key}'")
 
+
+def write_template(dest):
+    if os.path.exists(dest):
+        print(f"Error: '{dest}' already exists; refusing to overwrite.", file=sys.stderr)
+        sys.exit(1)
+    template = (files("sampledisco") / "config" / "config_demo.yaml").read_text()
+    with open(dest, "w") as f:
+        f.write(template)
+    print(
+        f"Wrote a starter config to '{dest}'.\n"
+        f"Edit the data paths / options, then run:\n"
+        f"  sampledisco -m complex --config {dest}"
+    )
+
+
 def main():
     args = parse_args()
 
-    if args.mode == "simple":
-        if not args.count_data or not args.output_directory:
-            print("Error: In 'simple' mode, -c and -o must be provided.", file=sys.stderr)
-            sys.exit(1)
+    if args.init_config is not None:
+        write_template(args.init_config)
+        return
 
-        if args.sample_meta_data:
-            wrapper(args.count_data, args.sample_meta_data, args.output_directory)
-        else:
-            wrapper(args.count_data, output_directory=args.output_directory)
+    if not args.config:
+        print(
+            "Error: --config is required. Use `sampledisco --init-config` to create a "
+            "starter config first.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
-    elif args.mode == "complex":
-        if not args.config:
-            print("Error: In 'complex' mode, --config must be provided.", file=sys.stderr)
-            sys.exit(1)
+    # Imported here (not at module top) so `--init-config` / `--help` stay instant
+    # and don't pull in the heavy scanpy / torch stack.
+    from sampledisco.wrapper.wrapper import wrapper
 
-        config = load_config(args.config)
+    config = load_config(args.config)
+    try:
+        validate_config(config, wrapper)
+        wrapper(**config)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        sys.exit(1)
 
-        try:
-            validate_config(config, wrapper)
-            wrapper(**config)
-        except Exception as e:
-            print(f"Error: {e}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-            sys.exit(1)
 
 if __name__ == "__main__":
     main()

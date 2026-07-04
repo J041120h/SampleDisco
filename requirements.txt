@@ -1,11 +1,13 @@
 # SampleDisco core (CPU) dependencies — no PyTorch.
-# The deep-learning stack (torch, scglue, harmony-pytorch) is the optional
-# `multiomics` extra in pyproject.toml: `pip install sampledisco[multiomics]`.
-# GPU acceleration is separate/driver-specific: see requirements-gpu.txt.
+# The deep-learning stack (torch, scglue, harmony-pytorch) and RAPIDS GPU
+# acceleration are NOT installed here — they're OS/driver-specific and you
+# install them yourself (see the Installation page). SampleDisco falls back to
+# the CPU path when they are absent.
 numpy>=1.23
 pandas>=1.5
 scipy>=1.9
 scikit-learn>=1.2
+scikit-image>=0.19   # scrublet-based ATAC doublet detection (doublet_detection=True)
 scikit-misc>=0.3
 statsmodels>=0.13
 patsy>=0.5
@@ -30,6 +32,6 @@ pyensembl>=2.3
 # cluster-DGE (RAISIN) — both on the live downstream path
 combat>=0.3
 adjustText>=1.0
-# NOTE: scGLUE (multi-omics) lives in the `multiomics` extra, not here. Install
-# it from PyPI (`pip install sampledisco[multiomics]`), never `conda install -c
+# NOTE: scGLUE (only for training GLUE from scratch) is NOT a dependency here —
+# install it yourself from PyPI (`pip install scglue`), never `conda install -c
 # bioconda scglue` — the bioconda recipe caps numpy<1.22 and breaks the stack.

@@ -1,0 +1,463 @@
+# =============================================================================
+# SampleDisco — DEMO CONFIG (Zenodo tutorial data)
+# =============================================================================
+# Ready-to-run config for the demo datasets published at
+#   https://doi.org/10.5281/zenodo.20988712   (concept DOI — always resolves to the latest version)
+# Quick start (run from a folder that contains ./data/test_RNA.h5ad and
+# ./data/test_ATAC.h5ad — see the "Demo data" tutorial page):
+#   sampledisco -m complex --config config_demo.yaml
+# Metadata (sample, batch, sev.level) is embedded in each .h5ad .obs, so no
+# sample-metadata CSV is required. All keys below are required and validated
+# exactly against wrapper(); edit values, do not remove keys.
+# =============================================================================
+
+
+# =============================================================================
+# MAIN CONFIGURATION
+# =============================================================================
+output_dir: "./sampledisco_demo_output"
+
+run_rna_pipeline: true
+run_atac_pipeline: true
+run_multiomics_pipeline: false   # set true to run multi-omics; pre-wired to skip scGLUE training (see multiomics_integration below)
+
+# General settings
+use_gpu: false   # set true to use the RAPIDS GPU paths if installed; auto-falls back to CPU otherwise
+initialization: false
+verbose: true
+save_intermediate: true
+large_data_need_extra_memory: false
+
+# =============================================================================
+# RNA PIPELINE PARAMETERS
+# =============================================================================
+
+# --- Input/Output Paths ---
+rna_count_data_path: "./data/test_RNA.h5ad"
+rna_output_dir:       # defaults to {output_dir}/rna
+
+# --- Pipeline Control Flags --- TEST: all on
+rna_preprocessing: true
+rna_cell_type_cluster: true
+rna_derive_sample_embedding: true
+rna_sample_distance_calculation: true
+rna_trajectory_analysis: true
+rna_trajectory_dge: true
+rna_sample_cluster: true
+rna_proportion_test: true
+rna_cluster_dge: false   # RAISIN cluster-DGE is memory-heavy (multithreaded ComBat scales with #cores); off by default so the demo finishes on modest machines. Set true if you have ample RAM.
+rna_visualize_data: true
+rna_dimension_association_analysis: true
+
+# --- Resume Paths (for skipping preprocessing) ---
+rna_adata_cell_path:
+rna_adata_sample_path:
+rna_sample_meta_path:
+rna_cell_meta_path:
+rna_pseudo_adata_path:
+
+# --- Common Column Names ---
+rna_sample_col: "sample"
+rna_sample_level_batch_col: "batch"
+rna_celltype_col: "cell_type"
+
+# --- Preprocessing Parameters ---
+rna_min_cells: 100
+rna_min_genes: 200
+rna_pct_mito_cutoff: 20.0
+rna_exclude_genes:
+rna_num_cell_hvgs: 2000
+rna_cell_embedding_num_pcs: 20
+rna_num_harmony_iterations: 20
+rna_cell_level_batch_key:
+- "batch"
+
+# --- Cell Type Clustering Parameters ---
+rna_leiden_cluster_resolution: 0.8
+rna_cell_embedding_column:
+rna_existing_cell_types: false
+rna_n_target_cell_clusters: 8
+rna_umap: true
+
+# --- Sample Embedding Parameters (composition + RMD) ---
+rna_sample_embedding_medium_K: 120
+rna_sample_embedding_fine_K: 300
+rna_sample_embedding_rmd_dim: 8
+rna_sample_embedding_use_clr: false
+rna_sample_embedding_use_rmd: true
+rna_sample_embedding_block_weights:
+rna_sample_embedding_rmd_weight: 0.60
+rna_sample_embedding_pca_components: 10
+rna_sample_embedding_batch_method: "harmony"
+
+# --- Autotune Parameters ---
+rna_autotune_enable: false
+rna_autotune_search: "bayesian"
+rna_autotune_scoring: "auto"
+rna_autotune_scope: "alpha_only"
+rna_autotune_alpha_bounds: [0.1, 10.0]
+rna_autotune_grouping_col:
+
+# --- Trajectory Analysis Parameters ---
+rna_n_cca_pcs: 5
+rna_trajectory_col: "sev.level"
+rna_trajectory_supervised: true
+rna_trajectory_visualization_label:
+- "sev.level"
+rna_cca_pvalue: false
+rna_tscan_origin:
+rna_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
+rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+
+# --- Sample Distance Parameters ---
+rna_sample_distance_methods:
+- "cosine"
+- "correlation"
+rna_grouping_columns:
+- "sev.level"
+rna_summary_sample_csv_path:
+
+# --- Trajectory Differential Gene Analysis Parameters ---
+rna_fdr_threshold: 0.05
+rna_effect_size_threshold: 1.0
+rna_top_n_genes: 100
+rna_trajectory_diff_gene_covariate:
+rna_num_splines: 5
+rna_spline_order: 2
+rna_visualization_gene_list:
+
+# --- Sample Clustering Parameters ---
+rna_cluster_number: 3
+rna_cluster_differential_gene_group_col: "sev.level"
+
+# --- Visualization Parameters ---
+rna_age_bin_size:
+rna_age_column: "age"
+rna_plot_dendrogram_flag: true
+rna_plot_cell_type_proportions_pca_flag: true
+rna_plot_cell_type_expression_umap_flag: true
+
+# --- Dimension Association Analysis Parameters ---
+# Toggle via rna_dimension_association_analysis in the Pipeline Control Flags section.
+# If the *_cols lists are null, all sample-level obs columns are auto-classified
+# into continuous / categorical and tested.
+rna_association_continuous_cols:
+rna_association_categorical_cols:
+rna_association_n_permutations: 99
+
+# =============================================================================
+# ATAC PIPELINE PARAMETERS
+# =============================================================================
+
+# --- Input/Output Paths ---
+atac_count_data_path: "./data/test_ATAC.h5ad"
+atac_output_dir:       # defaults to {output_dir}/atac
+
+# --- Pipeline Control Flags --- TEST: all on
+atac_preprocessing: true
+atac_cell_type_cluster: true
+atac_derive_sample_embedding: true
+atac_sample_distance_calculation: true
+atac_trajectory_analysis: true
+atac_trajectory_dge: false   # 8 samples × 4 splines: GAM cannot fit (too_few_samples for every gene)
+atac_sample_cluster: true
+atac_proportion_test: true
+atac_cluster_dge: false      # disabled: 29K cells × 230K peaks × 48 cores RAISIN OOM-kills on CPU
+atac_visualize_data: true
+atac_dimension_association_analysis: true
+
+# --- Resume Paths (for skipping preprocessing) ---
+atac_adata_cell_path:
+atac_adata_sample_path:
+atac_sample_meta_path:
+atac_cell_meta_path:
+atac_pseudo_adata_path:
+
+# --- Common Column Names ---
+atac_sample_col: "sample"
+atac_sample_level_batch_col:
+atac_celltype_col: "cell_type"
+atac_cell_embedding_column:
+
+# --- ATAC-Specific Preprocessing Parameters (tuned for small test data) ---
+atac_min_cells: 10
+atac_min_features: 200
+atac_max_features: 50000
+atac_min_cells_per_sample: 50
+atac_exclude_features:
+atac_cell_level_batch_key:
+atac_doublet_detection: false
+atac_num_cell_hvfs: 10000
+atac_cell_embedding_num_pcs: 30
+atac_num_harmony_iterations: 20
+atac_tfidf_scale_factor: 10000.0
+atac_log_transform: true
+atac_drop_first_lsi: true
+
+# --- Cell Type Clustering Parameters ---
+atac_leiden_cluster_resolution: 0.8
+atac_existing_cell_types: false
+atac_n_target_cell_clusters: 8
+atac_umap: true
+
+# --- Sample Embedding Parameters (composition + RMD) ---
+atac_sample_embedding_medium_K: 120
+atac_sample_embedding_fine_K: 300
+atac_sample_embedding_rmd_dim: 8
+atac_sample_embedding_use_clr: false
+atac_sample_embedding_use_rmd: true
+atac_sample_embedding_block_weights:
+atac_sample_embedding_rmd_weight: 0.60
+atac_sample_embedding_pca_components: 10
+atac_sample_embedding_batch_method: "harmony"
+
+# --- Autotune Parameters ---
+atac_autotune_enable: false
+atac_autotune_search: "bayesian"
+atac_autotune_scoring: "auto"
+atac_autotune_scope: "alpha_only"
+atac_autotune_alpha_bounds: [0.1, 10.0]
+atac_autotune_grouping_col:
+
+# --- Trajectory Analysis Parameters ---
+atac_n_cca_pcs: 5
+atac_trajectory_col: "sev.level"
+atac_trajectory_supervised: true
+atac_trajectory_visualization_label:
+- "sev.level"
+atac_cca_pvalue: false
+atac_tscan_origin:
+atac_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
+atac_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+
+# --- Sample Distance Parameters ---
+atac_sample_distance_methods:
+- "cosine"
+- "correlation"
+atac_grouping_columns:
+- "sev.level"
+atac_summary_sample_csv_path:
+
+# --- Trajectory Differential Gene Analysis Parameters ---
+atac_fdr_threshold: 0.05
+atac_effect_size_threshold: 1.0
+atac_top_n_genes: 100
+atac_trajectory_diff_gene_covariate:
+atac_num_splines: 5
+atac_spline_order: 3
+atac_visualization_gene_list:
+
+# --- Sample Clustering Parameters ---
+atac_cluster_number: 3
+atac_cluster_differential_gene_group_col: "sev.level"
+
+# --- Visualization Parameters ---
+atac_age_bin_size:
+atac_age_column: "age"
+atac_plot_dendrogram_flag: true
+atac_plot_cell_type_proportions_pca_flag: false
+atac_plot_cell_type_expression_umap_flag: false
+
+# --- Dimension Association Analysis Parameters ---
+atac_association_continuous_cols:
+atac_association_categorical_cols:
+atac_association_n_permutations: 99
+
+# =============================================================================
+# MULTIOMICS PIPELINE PARAMETERS
+# =============================================================================
+
+# --- Input/Output Paths ---
+multiomics_rna_file: "./data/test_RNA.h5ad"
+multiomics_atac_file: "./data/test_ATAC.h5ad"
+multiomics_output_dir:       # defaults to {output_dir}/multiomics
+
+# --- Pipeline Control Flags (Preprocessing) ---
+multiomics_integration: false   # false -> SKIP scGLUE training, load the pre-integrated file below. Set true to train from scratch (needs bedtools) + set the resume path to null.
+
+# --- Pipeline Control Flags (Downstream) --- TEST: all on
+multiomics_sample_distance_calculation: true
+multiomics_trajectory_analysis: true
+multiomics_trajectory_dge: false   # 16 (sample, modality) units: GAM cannot fit on small test
+multiomics_sample_cluster: true
+multiomics_proportion_test: true
+multiomics_cluster_dge: false      # disabled: same RAISIN OOM risk as ATAC (large peak matrix)
+multiomics_visualize_embedding: true
+multiomics_dimension_association_analysis: true
+
+# --- GLUE Sub-Pipeline Flags ---
+multiomics_run_glue_preprocessing: true
+multiomics_run_glue_training: true
+multiomics_run_glue_merge: true                    # build embedding-only union (adata_sample.h5ad)
+multiomics_run_glue_preprocess_per_modality: true  # per-modality QC h5ads for DGE/RAISIN
+multiomics_cell_type_cluster: true
+multiomics_run_glue_visualization: true
+
+# --- Resume Paths (for skipping steps) ---
+multiomics_integrated_h5ad_path: "./data/test_multiomics_integrated.h5ad"   # scGLUE-integrated object from Zenodo; used when multiomics_integration: false (skips training)
+multiomics_pseudobulk_h5ad_path:
+multiomics_rna_sample_meta_file:
+multiomics_atac_sample_meta_file:
+multiomics_additional_hvg_file:
+
+# --- Common Column Names ---
+multiomics_rna_sample_column: "sample"
+multiomics_atac_sample_column: "sample"
+multiomics_sample_col: "sample"
+multiomics_batch_col:
+multiomics_celltype_col: "cell_type"
+multiomics_modality_col: "modality"
+
+# --- General Multiomics Settings ---
+multiomics_verbose: true
+multiomics_use_gpu: true
+multiomics_random_state: 42
+
+# --- GLUE Preprocessing Parameters ---
+multiomics_ensembl_release: 98
+multiomics_species: "homo_sapiens"
+multiomics_use_highly_variable: true
+multiomics_n_top_genes: 2000
+multiomics_n_pca_comps: 50
+multiomics_n_lsi_comps: 50
+multiomics_lsi_n_iter: 15
+multiomics_gtf_by: "gene_name"
+multiomics_flavor: "seurat_v3"
+multiomics_generate_umap: false
+multiomics_compression: "gzip"
+
+# --- GLUE Training Parameters ---
+multiomics_consistency_threshold: 0.05
+multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V2 default)
+
+# --- Sample-removed cluster embedding (X_glue from scGLUE is the RMD/sample-preserved emb) ---
+# By default, one Harmony pass on X_glue removes per-sample variance to
+# produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
+# train scGLUE a second time with treat_sample_as_batch=True; that run's
+# embedding is merged in as X_glue_harmony and the Harmony pass auto-skips.
+multiomics_harmonize_xglue_max_iter: 30
+multiomics_run_glue_twice_for_sample_removal: false
+multiomics_save_prefix: "glue"
+
+# scGLUE throughput knobs (test run: use scGLUE defaults; single-process loader to avoid
+# empty-batch race that triggers "0x1992 vs 50x256" matmul shape error on CPU)
+multiomics_glue_data_batch_size: 128
+multiomics_glue_max_epochs: 50
+multiomics_glue_dataloader_num_workers: 0
+multiomics_glue_dataloader_fetches_per_worker: 1
+multiomics_glue_array_shuffle_num_workers: 0
+multiomics_glue_graph_shuffle_num_workers: 0
+
+# --- Neighbor/Metric Parameters ---
+multiomics_metric: "cosine"
+
+# --- Cell Type Clustering Parameters ---
+multiomics_existing_cell_types: false
+multiomics_n_target_clusters: 8
+multiomics_cluster_resolution: 0.8
+# null → auto-resolve to X_glue_harmony (sample-removed) if present, else X_glue
+multiomics_use_rep_celltype:
+multiomics_markers:
+multiomics_generate_umap_celltype: true
+
+# --- GLUE Visualization Parameters ---
+multiomics_plot_columns:
+
+# --- Integration Preprocessing Parameters ---
+
+# trajectory_dge / cluster_dge both off for multiomics in this test → can drop X
+
+# --- Sample Embedding Parameters (composition + RMD on X_glue) ---
+multiomics_derive_sample_embedding: true
+multiomics_sample_embedding_medium_K: 120
+multiomics_sample_embedding_fine_K: 300
+multiomics_sample_embedding_rmd_dim: 8
+multiomics_sample_embedding_use_clr: false
+multiomics_sample_embedding_use_rmd: true
+multiomics_sample_embedding_block_weights:
+multiomics_sample_embedding_rmd_weight: 0.60
+multiomics_sample_embedding_pca_components: 10
+multiomics_sample_embedding_batch_method: "harmony"
+
+# --- Autotune Parameters ---
+multiomics_autotune_enable: false
+multiomics_autotune_search: "bayesian"
+multiomics_autotune_scoring: "auto"
+multiomics_autotune_scope: "alpha_only"
+multiomics_autotune_alpha_bounds: [0.1, 10.0]
+multiomics_autotune_grouping_col:
+
+# --- Trajectory Analysis Parameters ---
+multiomics_trajectory_col: "sev.level"
+multiomics_trajectory_supervised: true
+multiomics_trajectory_visualization_label:
+- "sev.level"
+multiomics_n_cca_pcs: 5
+multiomics_cca_pvalue: false
+multiomics_tscan_origin:
+multiomics_tscan_n_clusters:       # int; null lets TSCAN auto-select via BIC (2-20)
+multiomics_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+
+# --- Sample Distance Parameters ---
+multiomics_sample_distance_methods:
+- "cosine"
+- "correlation"
+multiomics_grouping_columns:
+- "sev.level"
+multiomics_summary_sample_csv_path:
+
+# --- Trajectory Differential Gene Analysis Parameters ---
+multiomics_fdr_threshold: 0.05
+multiomics_effect_size_threshold: 1.0
+multiomics_top_n_genes: 100
+multiomics_trajectory_diff_gene_covariate:
+multiomics_num_splines: 5
+multiomics_spline_order: 3
+multiomics_visualization_gene_list:
+
+# --- Sample Clustering Parameters ---
+multiomics_cluster_number: 3
+multiomics_cluster_differential_gene_group_col: "sev.level"
+
+# --- Visualization Parameters (General) ---
+multiomics_age_bin_size:
+multiomics_age_column: "age"
+multiomics_plot_dendrogram_flag: true
+multiomics_plot_cell_type_proportions_pca_flag: false
+multiomics_plot_cell_type_expression_umap_flag: false
+
+# --- Embedding Visualization Parameters ---
+multiomics_color_col:
+multiomics_visualization_grouping_column:
+multiomics_target_modality: "ATAC"
+multiomics_sample_embedding_key: "X_DR_sample"
+multiomics_figsize:
+- 20
+- 8
+multiomics_point_size: 60
+multiomics_alpha: 0.8
+multiomics_colormap: "viridis"
+multiomics_show_sample_names: false
+multiomics_force_data_type:
+
+# --- Dimension Association Analysis Parameters ---
+multiomics_association_continuous_cols:
+multiomics_association_categorical_cols:
+multiomics_association_n_permutations: 99
+continue_on_error: false
+multiomics_atac_doublet_detection: true
+multiomics_atac_exclude_features:
+multiomics_atac_log_transform: true
+multiomics_atac_max_features: 15000
+multiomics_atac_min_cells: 1
+multiomics_atac_min_cells_per_sample: 1
+multiomics_atac_min_features: 2000
+multiomics_atac_tfidf_scale_factor: 10000.0
+multiomics_autotune_tune_on_modality:
+multiomics_rna_exclude_genes:
+multiomics_rna_min_cells: 500
+multiomics_rna_min_genes: 500
+multiomics_rna_pct_mito_cutoff: 20.0
+random_state: 42
+multiomics_atac_min_cells_floor: 10
+multiomics_n_top_peaks: 50000
