@@ -11,7 +11,12 @@ The CLI entry point is ``sampledisco --config <yaml>`` (see ``sampledisco.cli``)
 """
 from __future__ import annotations
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("sampledisco")
+except PackageNotFoundError:  # running from a source tree that isn't installed
+    __version__ = "0.0.0+unknown"
 
 __all__ = ["wrapper", "compute_sample_embedding"]
 
