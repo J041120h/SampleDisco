@@ -5,8 +5,13 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import rapids_singlecell as rsc
-from harmony import harmonize
 from scipy.sparse import issparse
+
+# Graceful Harmony backend: harmony-pytorch (GPU) when present, else CPU harmonypy.
+# Imported here (not `from harmony import harmonize`) so this GPU module still
+# imports — and the rest of the pipeline still runs on GPU — when harmony-pytorch
+# is not installed.
+from sampledisco.utils.harmony_compat import harmonize_embedding
 
 from sampledisco.utils.safe_save import safe_h5ad_write
 from sampledisco.utils.random_seed import set_global_seed
@@ -84,7 +89,7 @@ def anndata_cluster(
     if verbose:
         print("=== [GPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
-    adata.obsm["Z_clust"] = harmonize(
+    adata.obsm["Z_clust"] = harmonize_embedding(
         adata.obsm["X_pca"], adata.obs,
         batch_key=cell_level_batch_key_for_harmony,
         max_iter_harmony=num_harmony_iterations,
@@ -131,7 +136,7 @@ def anndata_cluster(
         if verbose:
             print("=== [GPU] Harmony pass 2: NO sample (sample-preserved) ===")
             print("  batch keys:", ", ".join(cell_level_batch_key_no_sample))
-        adata.obsm["Z_rmd"] = harmonize(
+        adata.obsm["Z_rmd"] = harmonize_embedding(
             adata.obsm["X_pca_rmd"], adata.obs,
             batch_key=cell_level_batch_key_no_sample,
             max_iter_harmony=num_harmony_iterations,

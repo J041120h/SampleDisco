@@ -90,7 +90,12 @@ def rna_wrapper(
             from sampledisco.preparation.rna_preprocess_gpu import preprocess_gpu
             from sampledisco.preparation.cell_type_gpu import cell_types_gpu
         except ImportError as e:
-            print(f"Warning: GPU modules unavailable ({e}). Falling back to CPU.")
+            print(
+                "[sampledisco] WARNING: GPU acceleration DISABLED — running on CPU. "
+                f"The RAPIDS GPU modules could not be imported ({e}). Install the "
+                "RAPIDS stack (cupy/cuml/rapids-singlecell) to enable it; see the "
+                "installation guide."
+            )
             use_gpu = False
 
     cell_level_batch_key = cell_level_batch_key or []
