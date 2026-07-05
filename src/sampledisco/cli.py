@@ -80,10 +80,20 @@ def main():
     config = load_config(args.config)
     try:
         validate_config(config, wrapper)
-        wrapper(**config)
+        results = wrapper(**config)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
+        sys.exit(1)
+
+    # With continue_on_error=True the wrapper stores per-pipeline failures and
+    # returns instead of raising; surface them as a non-zero exit so a partial
+    # run is never mistaken for success.
+    error_keys = [k for k in ("rna_error", "atac_error", "multiomics_error")
+                  if isinstance(results, dict) and k in results]
+    if error_keys:
+        print(f"Error: {len(error_keys)} pipeline(s) failed: {', '.join(error_keys)}",
+              file=sys.stderr)
         sys.exit(1)
 
 
