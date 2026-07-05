@@ -5,7 +5,7 @@
 #   https://doi.org/10.5281/zenodo.20988712   (concept DOI — always resolves to the latest version)
 # Quick start (run from a folder that contains ./data/test_RNA.h5ad and
 # ./data/test_ATAC.h5ad — see the "Demo data" tutorial page):
-#   sampledisco -m complex --config config_demo.yaml
+#   sampledisco -m complex --config <this-file>.yaml
 # Metadata (sample, batch, sev.level) is embedded in each .h5ad .obs, so no
 # sample-metadata CSV is required. All keys below are required and validated
 # exactly against wrapper(); edit values, do not remove keys.
