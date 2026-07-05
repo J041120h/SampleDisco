@@ -2,9 +2,10 @@
 
 Same API as `sample_embedding.compute_sample_embedding`, but the hot
 primitives (k-means, RBF soft-assign, final-stack PCA) run on the GPU via
-`cuml` / `cupy` / `rapids_singlecell`. Sample-level Harmony uses the
-`harmony` package with `use_gpu=True` (the same one the preprocessing
-modules use) when available, falling back to CPU `harmonypy` otherwise.
+`cuml` / `cupy` / `rapids_singlecell`. The sample-level Harmony step runs on
+the CPU via `harmonypy` — identical to `sample_embedding.py` — because that
+matrix is tiny (n_units x PCs) and a GPU Harmony gives no speedup; using the
+same implementation keeps the GPU and CPU sample embeddings consistent.
 
 The recipe is identical to `sample_embedding.py` — only the array backend
 for the heavy intermediate computations changes.
@@ -96,14 +97,21 @@ def _gpu_harmonize(
     verbose: bool = False,
     multi_meta_df: Optional[pd.DataFrame] = None,
 ) -> np.ndarray:
-    """Sample-level Harmony via `harmony.harmonize(use_gpu=True)`.
+    """Sample-level batch correction via `harmonypy` — the SAME implementation
+    the CPU path uses (`blocks.build_emb_from_blocks`).
+
+    The input is the sample-level matrix (n_units x PCs), which is tiny, so a GPU
+    Harmony gives no speedup here; running the identical `harmonypy` correction
+    instead keeps the GPU and CPU sample embeddings consistent. (harmony-pytorch's
+    `harmonize` defaults n_clusters to int(N/30) = 0 for small sample counts and
+    crashes, which previously forced a silent fall back to a *different* estimator
+    on GPU while CPU ran real Harmony.)
 
     Two modes:
-      - Single-batch (backward compatible): pass `batch_labels` as a list of
-        per-unit strings. Harmony is called with `batch_key="batch"`.
-      - Multi-covariate: pass `multi_meta_df` (one col per covariate, indexed
-        by unit_ids). Harmony is called with `batch_key=list(meta.columns)`,
-        which is the proper multi-covariate regression.
+      - Single-batch (backward compatible): `batch_labels` is a list of per-unit
+        strings; Harmony runs with `batch_key="batch"`.
+      - Multi-covariate: `multi_meta_df` (one col per covariate, indexed by
+        unit_ids); Harmony runs with `batch_key=list(meta.columns)`.
     """
     if multi_meta_df is not None and len(multi_meta_df.columns) >= 1:
         meta = multi_meta_df.copy()
@@ -114,25 +122,23 @@ def _gpu_harmonize(
         batch_keys = "batch"
 
     try:
-        from harmony import harmonize
-        Zc = harmonize(
-            np.asarray(Fp, dtype=np.float32),
-            meta, batch_key=batch_keys,
-            max_iter_harmony=30, use_gpu=True,
-        )
+        import harmonypy as hm
+        nclust = max(2, min(meta.nunique().max() if isinstance(batch_keys, list)
+                            else len(set(meta["batch"])),
+                            n_units // 2))
+        ho = hm.run_harmony(np.asarray(Fp, dtype=np.float32), meta,
+                            batch_keys,  # str OR list[str]
+                            nclust=nclust,
+                            max_iter_harmony=30,
+                            random_state=seed)
+        Zc = ho.Z_corr
+        if Zc.shape[0] != n_units:
+            Zc = Zc.T
         return np.asarray(Zc, dtype=np.float32)
     except Exception as exc:
-        print(f"  [Harmony GPU] FAILED ({exc!r}); falling back to linear "
-              f"regression (too few samples for Harmony)")
-        try:
-            collapsed = (multi_meta_df.astype(str).agg("__".join, axis=1).values
-                         if multi_meta_df is not None else batch_labels)
-            return np.asarray(regress_out_batch_linear(Fp, collapsed),
-                              dtype=np.float32)
-        except Exception as exc2:
-            print(f"  [Linear-regression fallback] FAILED ({exc2!r}); returning raw "
-                  f"PCA — sample embedding will NOT be batch-corrected")
-            return np.asarray(Fp, dtype=np.float32)
+        print(f"  [Harmony] FAILED ({exc!r}); using raw PCA "
+              f"— sample embedding will NOT be batch-corrected")
+        return np.asarray(Fp, dtype=np.float32)
 
 
 def compute_sample_embedding(
