@@ -1078,7 +1078,6 @@ def run_trajectory_gam_differential_gene_analysis(
                         print(f"  → Flipped pseudotime to align with anchor '{anchor_col}' "
                               f"(corr before flip: {corr:.3f})")
     elif anchor_col is not None:
-        import warnings
         warnings.warn(
             f"anchor_col '{anchor_col}' not found in pseudobulk_adata.obs; "
             "pseudotime orientation is not anchored.",
