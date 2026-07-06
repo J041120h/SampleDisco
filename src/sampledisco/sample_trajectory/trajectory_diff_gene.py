@@ -526,6 +526,7 @@ def fit_gam_models_for_genes(
     num_splines: int = 5,
     spline_order: int = 3,
     fdr_threshold: float = 0.05,
+    n_jobs: int = 1,
     verbose: bool = False
 ) -> Tuple[pd.DataFrame, Dict[str, LinearGAM]]:
     """
@@ -533,6 +534,11 @@ def fit_gam_models_for_genes(
 
     Per-gene masking (Option B): each gene is fitted only on the samples where
     that gene is non-zero, so structural zeros don't bias the spline toward zero.
+
+    ``n_jobs`` only distributes the (independent) per-gene fits — each gene's GAM
+    is deterministic, so results are identical to the serial path. ``n_jobs=1``
+    (default) keeps the exact serial behavior; ``-1``/``None`` uses the CPU
+    affinity mask.
     """
     def _to_dense_2d(mat) -> np.ndarray:
         if isinstance(mat, pd.DataFrame):
@@ -593,53 +599,63 @@ def fit_gam_models_for_genes(
         "nonfinite_rows": 0,
     }
 
-    for k, gene in enumerate(gene_names):
-        if verbose and (k + 1) % 500 == 0:
-            print(f"  → Processing gene {k + 1}/{total}...")
+    min_needed = adj_order + adj_n_splines + 2  # minimum identifiable samples for this spline
 
+    def _fit_one_gene(gene):
+        """Fit one gene; returns ('ok', gene, pval, dev, gam) or ('skip', reason)."""
         col_idx = gene_to_col.get(gene, None)
         if col_idx is None or col_idx >= Y_dense.shape[1]:
-            skip_counts["no_column"] += 1
-            continue
+            return ("skip", "no_column")
 
         y_raw = Y_dense[:, col_idx]
 
         # Per-gene mask: finite X + finite y + gene non-zero (Option B per-gene masking)
         base_mask = finite_rows & np.isfinite(y_raw)
-        nonzero_mask = y_raw != 0.0
-        mask = base_mask & nonzero_mask
+        mask = base_mask & (y_raw != 0.0)
 
         if mask.sum() == 0:
-            skip_counts["no_nonzero_samples"] += 1
-            continue
-
+            return ("skip", "no_nonzero_samples")
         if base_mask.sum() == 0:
-            skip_counts["nonfinite_rows"] += 1
-            continue
+            return ("skip", "nonfinite_rows")
 
         X_fit = X_dense[mask]
         y_fit = y_raw[mask]
 
-        min_needed = adj_order + adj_n_splines + 2  # minimum identifiable samples for this spline
         if y_fit.size < min_needed:
-            skip_counts["too_few_samples"] += 1
-            continue
-
+            return ("skip", "too_few_samples")
         if np.var(y_fit) < 1e-10:
-            skip_counts["low_variance"] += 1
-            continue
+            return ("skip", "low_variance")
 
         try:
             gam = LinearGAM(terms).fit(X_fit, y_fit)
             pval = gam.statistics_["p_values"][spline_idx]
             dev = gam.statistics_["pseudo_r2"]["explained_deviance"]
             if np.isfinite(pval) and np.isfinite(dev):
-                results.append((gene, pval, dev))
-                gam_models[gene] = gam
-                good += 1
+                return ("ok", gene, pval, dev, gam)
+            return ("skip", "fit_error")
         except Exception:
-            skip_counts["fit_error"] += 1
-            continue
+            return ("skip", "fit_error")
+
+    if n_jobs in (None, -1) or n_jobs > 1:
+        if n_jobs in (None, -1):
+            try:
+                n_jobs = len(os.sched_getaffinity(0))
+            except AttributeError:
+                n_jobs = os.cpu_count() or 1
+    if n_jobs and n_jobs > 1:
+        from joblib import Parallel, delayed
+        outcomes = Parallel(n_jobs=n_jobs)(delayed(_fit_one_gene)(g) for g in gene_names)
+    else:
+        outcomes = [_fit_one_gene(g) for g in gene_names]
+
+    for oc in outcomes:
+        if oc[0] == "ok":
+            _, gene, pval, dev, gam = oc
+            results.append((gene, pval, dev))
+            gam_models[gene] = gam
+            good += 1
+        else:
+            skip_counts[oc[1]] += 1
 
     if verbose:
         print(f"  → Successfully fitted {good}/{total} genes")
@@ -944,11 +960,12 @@ def run_trajectory_gam_differential_gene_analysis(
     columns_to_preserve: Optional[Union[str, List[str]]] = None,
     pseudotime_col: str = "pseudotime",
     covariate_columns: Optional[List[str]] = None,
-    fdr_threshold: float = 0.01,
+    fdr_threshold: float = 0.05,
     effect_size_threshold: float = 1.0,
     top_n_genes: int = 100,
     num_splines: int = 5,
     spline_order: int = 3,
+    n_jobs: int = -1,
     output_dir: str = "trajectory_diff_gene_results_single",
     visualization_gene_list: Optional[List[str]] = None,
     # New visualization parameters
@@ -1089,6 +1106,7 @@ def run_trajectory_gam_differential_gene_analysis(
         num_splines=num_splines,
         spline_order=spline_order,
         fdr_threshold=fdr_threshold,
+        n_jobs=n_jobs,
         verbose=verbose
     )
 
@@ -1100,6 +1118,20 @@ def run_trajectory_gam_differential_gene_analysis(
     sig_genes = stat_results[stat_results["fdr"] < fdr_threshold]["gene"].tolist()
     if verbose:
         print(f"  → Found {len(sig_genes)} significant genes (FDR < {fdr_threshold})")
+
+    # Small-N guard: a spline GAM has almost no power below ~12 samples, so an
+    # empty result there reflects sample size, not necessarily a biological null.
+    n_samples_used = int(X.shape[0])
+    if len(sig_genes) == 0 and n_samples_used < 12:
+        warnings.warn(
+            f"[trajectory_diff_gene] 0 genes significant at FDR<{fdr_threshold} with "
+            f"only {n_samples_used} samples. A spline GAM is underpowered below ~12 "
+            f"samples — this empty result reflects sample size, not necessarily a "
+            f"biological null. Consider more samples, fewer covariates, or a simpler "
+            f"trend test.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
     if verbose:
         print("\n[4/5] Calculating effect sizes and regulation directions...")

@@ -657,16 +657,16 @@ def run_pairwise_tests(
         if verbose:
             print(f"Testing: {comp_name}")
         
-        idx_g1 = -1
-        idx_g2 = -1
-        for i, col in enumerate(x_cols):
-            if str(g1) in str(col):
-                idx_g1 = i
-            if str(g2) in str(col):
-                idx_g2 = i
-            
+        # Exact match group -> design column (substring matching is ambiguous,
+        # e.g. group "1" spuriously matches "10"/"(Intercept)", and fails when
+        # the columns are unnamed integers).
+        col_lookup = {str(c): i for i, c in enumerate(x_cols)}
+        idx_g1 = col_lookup.get(str(g1), -1)
+        idx_g2 = col_lookup.get(str(g2), -1)
+
         if idx_g1 == -1 or idx_g2 == -1:
-            print(f"Skipping {comp_name}: Columns not found in design matrix.")
+            print(f"Skipping {comp_name}: groups {g1!r}/{g2!r} not found in "
+                  f"design columns {[str(c) for c in x_cols]}.")
             continue
 
         contrast = np.zeros(len(x_cols))

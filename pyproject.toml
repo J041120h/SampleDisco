@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sampledisco"
-version = "0.1.10"
+version = "0.1.11"
 description = "Cross-omics, cross-condition sample embedding for single-cell data (RNA + ATAC)"
 readme = "README.md"
 requires-python = ">=3.10"

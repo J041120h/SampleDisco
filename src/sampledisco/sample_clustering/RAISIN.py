@@ -212,6 +212,7 @@ def raisinfit(
     intercept=True,
     filtergene=False,
     filtergenequantile=0.5,
+    max_features=None,
     n_jobs=None,
     verbose=True,
     seed: int = 42,
@@ -399,6 +400,10 @@ def raisinfit(
         else:
             sample_names = np.array(list(range(X.shape[0])))
 
+        X_colnames = (list(custom_design["X"].columns)
+                      if hasattr(custom_design["X"], "columns")
+                      else [f"coef_{i}" for i in range(X.shape[1])])
+
         if verbose:
             print("Using custom design matrices")
 
@@ -570,6 +575,21 @@ def raisinfit(
         G = expr.shape[0]
         if verbose:
             print(f"After gene filtering: {G} genes retained")
+
+    # Optional memory cap for very wide matrices (e.g. ATAC's ~230k peaks): keep
+    # the top-`max_features` most variable features. Off by default (None) so the
+    # tested gene set — and therefore the statistics — are unchanged unless the
+    # caller opts in. NOTE: when set, FDR is computed over the retained features.
+    if max_features is not None and G > max_features:
+        gene_var = np.var(means, axis=1)
+        top_idx = np.sort(np.argsort(gene_var)[::-1][:max_features])
+        expr = expr[top_idx, :]
+        means = means[top_idx, :]
+        gene_names = gene_names[top_idx]
+        G = expr.shape[0]
+        if verbose:
+            print(f"[RAISIN] max_features={max_features}: kept the top-{G} most "
+                  f"variable features to bound memory.")
 
     node, weight = gauss_quad_laguerre(1000)
     pos_mask = weight > 0
@@ -836,7 +856,10 @@ def raisinfit(
         "mean": pd.DataFrame(means, index=gene_names, columns=sample_names),
         "sigma2": sigma2_df,
         "omega2": pd.DataFrame(w, index=gene_names, columns=sample_names),
-        "X": pd.DataFrame(X, index=sample_names),
+        # Keep the design-matrix column names so downstream tests can map a group
+        # to its coefficient column. Without these, run_pairwise_tests can't find
+        # the contrast columns and silently skips every comparison.
+        "X": pd.DataFrame(X, index=sample_names, columns=X_colnames),
         "Z": pd.DataFrame(Z, index=sample_names),
         "group": group,
         "failgroup": failgroup,
