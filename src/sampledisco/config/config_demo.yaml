@@ -59,7 +59,7 @@ rna_pseudo_adata_path:
 # --- Common Column Names ---
 rna_sample_col: "sample"
 rna_sample_level_batch_col: "batch"
-rna_celltype_col: "cell_type"
+rna_celltype_col: "cell_type"   # where de-novo cluster labels are written (existing_cell_types:false). The demo .h5ad's precomputed labels are in 'celltype' — set this to "celltype" only if you flip existing_cell_types:true.
 
 # --- Preprocessing Parameters ---
 rna_min_cells: 100

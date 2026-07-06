@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import shutil
+import logging
 import platform
 import subprocess
 from pathlib import Path
@@ -12,6 +13,12 @@ import pandas as pd
 
 from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
+
+# Quiet noisy third-party INFO logs (fontTools glyph subsetting during PDF export,
+# matplotlib's font cache) that otherwise bury real progress lines during a run.
+# Runs only when the pipeline is imported, not on `sampledisco --init-config`.
+for _noisy in ("fontTools", "fontTools.subset", "matplotlib.font_manager"):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
 
 
 def _coerce_sample_level_batch_col_list(value: Optional[Any]) -> List[str]:
@@ -997,7 +1004,13 @@ def wrapper(
             )
             cp.cuda.set_allocator(rmm_cupy_allocator)
         except Exception as e:
-            print(f"Warning: GPU initialization failed ({type(e).__name__}: {e}). Falling back to CPU.")
+            print(
+                "[sampledisco] WARNING: GPU acceleration DISABLED — running on CPU. "
+                f"The RAPIDS stack failed to initialize ({type(e).__name__}: {e}). "
+                "Verify with `python -c \"import cuml, cupy, rapids_singlecell\"`; see "
+                "the installation guide. (This run's backend is recorded as "
+                "gpu_available in sys_log/main_process_status.json.)"
+            )
             gpu_available = False
             system_info['gpu_available'] = False
     
