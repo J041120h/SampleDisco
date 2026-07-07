@@ -523,22 +523,30 @@ def cca_pvalue_test(
     output_directory: str,
     num_simulations: int = 1000,
     trajectory_col: str = "sev.level",
+    n_pcs: int = 2,
+    random_state: int = 0,
     verbose: bool = True
 ):
     """
-    Permutation p-value test for a CCA correlation on 2D coordinates.
+    Permutation p-value test for a CCA correlation on n_pcs-dimensional coordinates.
 
     Shuffles trajectory labels to build a null distribution of |corr|,
     then computes the fraction of null scores >= input_correlation.
     abs() is used because CCA canonical correlation is sign-invariant.
+    Samples with a missing (NaN) trajectory value are dropped, mirroring the
+    mask used in run_cca_on_pca_from_adata, so the null and the observed
+    statistic are computed on the same samples.
 
     Parameters:
         pseudo_adata: AnnData where obs are samples; uns[column] holds coordinates
-        column: key in uns for coordinate matrix (uses first 2 columns)
+        column: key in uns for coordinate matrix (uses first n_pcs columns)
         input_correlation: observed CCA score to test
         output_directory: directory to write plot and result text (CCA_test/ subdirectory)
         num_simulations: number of label permutations
         trajectory_col: obs column with trajectory labels
+        n_pcs: number of coordinate columns to use for the null; must match the
+            number of PCs (n_cca_pcs) used to compute input_correlation
+        random_state: seed for the permutation RNG
         verbose: print runtime
 
     Returns:
@@ -555,31 +563,46 @@ def cca_pvalue_test(
     if pca_coords.shape[1] < 2:
         raise ValueError("Coordinates must have at least 2 components for 2D analysis.")
 
-    pca_coords_2d = pca_coords.iloc[:, :2].values if hasattr(pca_coords, "iloc") else pca_coords[:, :2]
+    # Match the observed CCA (CCA.py), which clamps n_components to the number of
+    # available columns; clamp identically here instead of silently defaulting to 2,
+    # so the null is built on the SAME #PCs (n_cca_pcs) as the observed statistic.
+    if n_pcs > pca_coords.shape[1]:
+        if verbose:
+            print(f"Warning: requested n_pcs={n_pcs} but only {pca_coords.shape[1]} "
+                  f"available; using all (matches the observed CCA statistic).")
+        n_pcs = pca_coords.shape[1]
+    pca_coords_nd = (pca_coords.iloc[:, :n_pcs].values if hasattr(pca_coords, "iloc")
+                      else pca_coords[:, :n_pcs])
 
     if trajectory_col not in pseudo_adata.obs.columns:
         raise KeyError(f"pseudo_adata.obs must have a '{trajectory_col}' column.")
 
-    sev_levels = pseudo_adata.obs[trajectory_col]
+    # Coerce to numeric exactly like the observed CCA (CCA.py:115): non-numeric
+    # trajectory values become NaN and are dropped on BOTH sides, so the null and
+    # the observed statistic are computed on the identical sample set.
+    sev_levels_numerical = pd.to_numeric(
+        pseudo_adata.obs[trajectory_col], errors="coerce").values.astype(float)
+    keep_mask = ~np.isnan(sev_levels_numerical)
 
-    if is_categorical_dtype(sev_levels):
-        sev_levels_numerical = sev_levels.cat.codes.values
-    elif sev_levels.dtype == 'object':
-        sev_levels_numerical = sev_levels.astype('category').cat.codes.values
-    else:
-        sev_levels_numerical = sev_levels.values
-
-    if len(sev_levels_numerical) != pca_coords_2d.shape[0]:
+    if len(sev_levels_numerical) != pca_coords_nd.shape[0]:
         raise ValueError("Mismatch between number of coordinate rows and number of samples.")
 
-    sev_levels_2d = sev_levels_numerical.reshape(-1, 1)
+    n_missing = int((~keep_mask).sum())
+    if n_missing > 0:
+        if verbose:
+            print(f"Warning: dropping {n_missing} sample(s) missing trajectory level "
+                  f"(n={int(keep_mask.sum())} used).")
+        sev_levels_numerical = sev_levels_numerical[keep_mask]
+        pca_coords_nd = pca_coords_nd[keep_mask]
+
+    rng = np.random.default_rng(random_state)
 
     simulated_scores = []
     for i in range(num_simulations):
-        permuted = np.random.permutation(sev_levels_numerical).reshape(-1, 1)
+        permuted = rng.permutation(sev_levels_numerical).reshape(-1, 1)
         cca = CCA(n_components=1)
-        cca.fit(pca_coords_2d, permuted)
-        U, V = cca.transform(pca_coords_2d, permuted)
+        cca.fit(pca_coords_nd, permuted)
+        U, V = cca.transform(pca_coords_nd, permuted)
         # abs() because CCA canonical correlation is sign-invariant
         corr = abs(np.corrcoef(U[:, 0], V[:, 0])[0, 1])
         simulated_scores.append(corr)
@@ -602,6 +625,7 @@ def cca_pvalue_test(
     with open(os.path.join(output_directory, f"cca_pvalue_result_{column}.txt"), "w") as f:
         f.write(f"Observed correlation: {input_correlation}\n")
         f.write(f"P-value: {p_value}\n")
+        f.write(f"N samples used: {len(sev_levels_numerical)}\n")
 
     print(f"P-value for observed correlation {input_correlation}: {p_value}")
 

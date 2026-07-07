@@ -312,19 +312,3 @@ def quick_gene_overview(adata, title="Gene Data Overview"):
         print(f"  Method: {conv_info.get('method', 'unknown')}")
         print(f"  Ensembl release: {conv_info.get('ensembl_release', 'unknown')}")
         print(f"  Mapping rate: {conv_info.get('mapping_rate', 0):.2%}")
-
-
-if __name__ == "__main__":
-    rna_path = "/dcl01/hongkai/data/data/hjiang/Data/paired/rna/heart.h5ad"
-
-    adata_converted = convert_rna_to_gene_ids(
-        adata_path=rna_path,
-        ensembl_release=98,
-        species="homo_sapiens",
-        handle_duplicates='first',
-        min_mapping_rate=0.7,
-        output_path="/dcs07/hongkai/data/harry/result/gene_activity/signac_outputs/heart/rna_corrected.h5ad",
-        verbose=True
-    )
-
-    quick_gene_overview(adata_converted, "Converted RNA Data")

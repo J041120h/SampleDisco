@@ -136,8 +136,6 @@ def _build_sample_pseudobulk(
             summed = np.asarray(summed.todense())
         mean_X = (summed / cells_per_sample[:, None]).astype(np.float32)
         pb_obs = pd.DataFrame(index=pd.Index(samples_sorted, name=sample_col))
-        sample_to_meta = adata.obs.drop_duplicates(subset=[sample_col]).set_index(
-            adata.obs[sample_col].drop_duplicates().values)
         sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
         pb_obs = pb_obs.join(sample_to_meta, how="left")
         out = ad.AnnData(X=mean_X, obs=pb_obs, var=adata.var.copy())
@@ -572,6 +570,9 @@ def fit_gam_models_for_genes(
         spline_idx = list(X.columns).index(spline_term)
     except ValueError:
         raise ValueError(f"spline_term '{spline_term}' not found in X.columns: {list(X.columns)}")
+    # p_values below is indexed positionally (gam.statistics_["p_values"][spline_idx]),
+    # which is only correct when pseudotime is the first column of X.
+    assert spline_idx == 0, f"spline_term '{spline_term}' must be X's first column, got index {spline_idx}"
 
     terms = s(spline_idx, n_splines=adj_n_splines, spline_order=adj_order)
     for j in range(X_dense.shape[1]):
@@ -675,9 +676,13 @@ def fit_gam_models_for_genes(
         _, fdrs, _, _ = multipletests(res_df["pval"], method="fdr_bh")
         res_df["fdr"] = fdrs
         res_df["significant"] = res_df["fdr"] < fdr_threshold
-    except Exception:
-        if verbose:
-            print(f"  → FDR correction failed; using raw p-values")
+    except Exception as exc:
+        warnings.warn(
+            f"[trajectory_diff_gene] FDR correction (fdr_bh) failed: "
+            f"{type(exc).__name__}: {exc}. Falling back to raw p-values for the 'fdr' column.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         res_df["fdr"] = res_df["pval"]
         res_df["significant"] = res_df["fdr"] < fdr_threshold
 
@@ -1112,7 +1117,22 @@ def run_trajectory_gam_differential_gene_analysis(
     if len(stat_results) == 0:
         if verbose:
             print("\n⚠ Warning: No genes were successfully analyzed")
-        return pd.DataFrame()
+        save_results(
+            results_df=stat_results,
+            output_dir=output_dir,
+            fdr_threshold=fdr_threshold,
+            effect_size_threshold=effect_size_threshold,
+            top_n_genes=top_n_genes,
+            verbose=verbose
+        )
+        summarize_results(
+            results=stat_results,
+            top_n=min(20, len(stat_results)),
+            output_file=os.path.join(output_dir, "differential_gene_result.txt"),
+            verbose=verbose,
+            fdr_threshold=fdr_threshold
+        )
+        return stat_results
 
     sig_genes = stat_results[stat_results["fdr"] < fdr_threshold]["gene"].tolist()
     if verbose:

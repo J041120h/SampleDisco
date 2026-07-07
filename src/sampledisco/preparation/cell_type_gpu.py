@@ -44,123 +44,144 @@ def cell_types_gpu(
         cell_embedding_column = "Z_clust"
     is_atac = "X_lsi" in adata.obsm
 
-    if cell_type_column in adata.obs.columns and existing_cell_types:
-        if verbose and _recursion_depth == 0:
-            print("[cell_types] Found existing cell type annotation.")
+    try:
+        if cell_type_column in adata.obs.columns and existing_cell_types:
+            if verbose and _recursion_depth == 0:
+                print("[cell_types] Found existing cell type annotation.")
 
-        adata.obs["cell_type"] = adata.obs[cell_type_column].astype(str)
-        current_n_types = adata.obs["cell_type"].nunique()
-
-        if verbose:
-            print(f"{indent}[cell_types] Current number of cell types: {current_n_types}")
-
-        if n_target_clusters is not None and current_n_types > n_target_clusters:
-            if verbose:
-                print(f"{indent}[cell_types] Aggregating {current_n_types} → {n_target_clusters} using dendrogram")
-
-            adata = cell_type_dendrogram_gpu(
-                adata=adata, n_clusters=n_target_clusters, groupby="cell_type",
-                cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs, is_atac=is_atac,
-            )
-
-        if _recursion_depth == 0:
-            if verbose:
-                print("[cell_types] Building neighborhood graph...")
-            rsc.get.anndata_to_GPU(adata)
-            if is_atac:
-                rsc.pp.neighbors(adata, use_rep=cell_embedding_column, metric="cosine", random_state=42)
-            else:
-                rsc.pp.neighbors(adata, use_rep=cell_embedding_column, n_pcs=cell_embedding_num_PCs, random_state=42)
-
-    else:
-        if verbose and _recursion_depth == 0:
-            print("[cell_types] No cell type annotation found. Performing clustering.")
-
-        if _recursion_depth == 0:
-            if verbose:
-                print("[cell_types] Building neighborhood graph...")
-            rsc.get.anndata_to_GPU(adata)
-            if is_atac:
-                rsc.pp.neighbors(adata, use_rep=cell_embedding_column, metric="cosine", random_state=42)
-            else:
-                rsc.pp.neighbors(adata, use_rep=cell_embedding_column, n_pcs=cell_embedding_num_PCs, random_state=42)
-
-        if n_target_clusters is not None:
-            if verbose:
-                print(f"{indent}[cell_types] Target={n_target_clusters}, resolution={leiden_cluster_resolution:.2f}")
-
-            rsc.tl.leiden(adata, resolution=leiden_cluster_resolution, key_added="cell_type", random_state=42)
-            adata.obs["cell_type"] = (adata.obs["cell_type"].astype(int) + 1).astype(str).astype("category")
-            num_clusters_found = adata.obs["cell_type"].nunique()
+            adata.obs["cell_type"] = adata.obs[cell_type_column].astype(str)
+            current_n_types = adata.obs["cell_type"].nunique()
 
             if verbose:
-                print(f"{indent}[cell_types] Found {num_clusters_found} clusters")
+                print(f"{indent}[cell_types] Current number of cell types: {current_n_types}")
 
-            if num_clusters_found >= n_target_clusters:
-                if num_clusters_found > n_target_clusters and verbose:
-                    print(f"{indent}[cell_types] Over-shot target; recursing with dendrogram aggregation")
+            if n_target_clusters is not None and current_n_types > n_target_clusters:
+                if verbose:
+                    print(f"{indent}[cell_types] Aggregating {current_n_types} → {n_target_clusters} using dendrogram")
 
-                return cell_types_gpu(
-                    anndata_cell=adata, cell_type_column="cell_type",
-                    existing_cell_types=True, n_target_clusters=n_target_clusters, umap=False, save=False,
-                    cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs,
-                    verbose=verbose, umap_plots=False, _recursion_depth=_recursion_depth + 1,
+                adata = cell_type_dendrogram_gpu(
+                    adata=adata, n_clusters=n_target_clusters, groupby="cell_type",
+                    cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs, is_atac=is_atac,
                 )
 
-            new_resolution = leiden_cluster_resolution + RESOLUTION_STEP
-            if new_resolution <= MAX_RESOLUTION:
-                return cell_types_gpu(
-                    anndata_cell=adata, cell_type_column=cell_type_column,
-                    existing_cell_types=False, n_target_clusters=n_target_clusters, umap=False, save=False,
-                    leiden_cluster_resolution=new_resolution, cell_embedding_column=cell_embedding_column,
-                    cell_embedding_num_PCs=cell_embedding_num_PCs, verbose=verbose, umap_plots=False,
-                    _recursion_depth=_recursion_depth + 1,
-                )
+            if _recursion_depth == 0:
+                if verbose:
+                    print("[cell_types] Building neighborhood graph...")
+                rsc.get.anndata_to_GPU(adata)
+                if is_atac:
+                    rsc.pp.neighbors(adata, use_rep=cell_embedding_column, metric="cosine", random_state=42)
+                else:
+                    rsc.pp.neighbors(adata, use_rep=cell_embedding_column, n_pcs=cell_embedding_num_PCs, random_state=42)
 
         else:
+            if verbose and _recursion_depth == 0:
+                print("[cell_types] No cell type annotation found. Performing clustering.")
+
+            if _recursion_depth == 0:
+                if verbose:
+                    print("[cell_types] Building neighborhood graph...")
+                rsc.get.anndata_to_GPU(adata)
+                if is_atac:
+                    rsc.pp.neighbors(adata, use_rep=cell_embedding_column, metric="cosine", random_state=42)
+                else:
+                    rsc.pp.neighbors(adata, use_rep=cell_embedding_column, n_pcs=cell_embedding_num_PCs, random_state=42)
+
+            if n_target_clusters is not None:
+                if verbose:
+                    print(f"{indent}[cell_types] Target={n_target_clusters}, resolution={leiden_cluster_resolution:.2f}")
+
+                rsc.tl.leiden(adata, resolution=leiden_cluster_resolution, key_added="cell_type", random_state=42)
+                adata.obs["cell_type"] = (adata.obs["cell_type"].astype(int) + 1).astype(str).astype("category")
+                num_clusters_found = adata.obs["cell_type"].nunique()
+
+                if verbose:
+                    print(f"{indent}[cell_types] Found {num_clusters_found} clusters")
+
+                if num_clusters_found >= n_target_clusters:
+                    if num_clusters_found > n_target_clusters and verbose:
+                        print(f"{indent}[cell_types] Over-shot target; recursing with dendrogram aggregation")
+
+                    return cell_types_gpu(
+                        anndata_cell=adata, cell_type_column="cell_type",
+                        existing_cell_types=True, n_target_clusters=n_target_clusters, umap=False, save=False,
+                        cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs,
+                        verbose=verbose, umap_plots=False, _recursion_depth=_recursion_depth + 1,
+                    )
+
+                new_resolution = leiden_cluster_resolution + RESOLUTION_STEP
+                if new_resolution <= MAX_RESOLUTION:
+                    return cell_types_gpu(
+                        anndata_cell=adata, cell_type_column=cell_type_column,
+                        existing_cell_types=False, n_target_clusters=n_target_clusters, umap=False, save=False,
+                        leiden_cluster_resolution=new_resolution, cell_embedding_column=cell_embedding_column,
+                        cell_embedding_num_PCs=cell_embedding_num_PCs, verbose=verbose, umap_plots=False,
+                        _recursion_depth=_recursion_depth + 1,
+                    )
+
+            else:
+                if verbose:
+                    print(f"{indent}[cell_types] Standard Leiden (resolution={leiden_cluster_resolution})")
+
+                rsc.tl.leiden(adata, resolution=leiden_cluster_resolution, key_added="cell_type", random_state=42)
+                adata.obs["cell_type"] = (adata.obs["cell_type"].astype(int) + 1).astype(str).astype("category")
+
+        if _recursion_depth == 0:
             if verbose:
-                print(f"{indent}[cell_types] Standard Leiden (resolution={leiden_cluster_resolution})")
+                print("[cell_types] Finished assigning cell types.")
 
-            rsc.tl.leiden(adata, resolution=leiden_cluster_resolution, key_added="cell_type", random_state=42)
-            adata.obs["cell_type"] = (adata.obs["cell_type"].astype(int) + 1).astype(str).astype("category")
+            if umap:
+                if verbose:
+                    print("[cell_types] Computing UMAP...")
+                rsc.tl.umap(adata, min_dist=0.5)
 
-    if _recursion_depth == 0:
-        if verbose:
-            print("[cell_types] Finished assigning cell types.")
-
-        if umap:
             if verbose:
-                print("[cell_types] Computing UMAP...")
-            rsc.tl.umap(adata, min_dist=0.5)
+                print("[cell_types] Converting GPU arrays to CPU...")
+            rsc.get.anndata_to_CPU(adata)
+            adata = ensure_cpu_arrays(adata)
 
-        if verbose:
-            print("[cell_types] Converting GPU arrays to CPU...")
+            if umap_plots and umap and output_dir:
+                if verbose:
+                    print("[cell_types] Generating UMAP plots...")
+                generate_umap_visualizations(adata=adata, output_dir=output_dir, groupby="cell_type", figsize=(12, 8), point_size=20, dpi=300, palette="tab20", verbose=verbose)
+
+            if output_dir:
+                preprocess_output_dir = os.path.join(output_dir, "preprocess")
+                os.makedirs(preprocess_output_dir, exist_ok=True)
+                celltype_df = pd.DataFrame({"cell_id": adata.obs.index, "cell_type": adata.obs["cell_type"].astype(str)})
+                csv_path = os.path.join(preprocess_output_dir, "cell_type.csv")
+                celltype_df.to_csv(csv_path, index=False)
+                if verbose:
+                    print(f"[cell_types] Saved cell type CSV to {csv_path}")
+
+            if save and output_dir:
+                preprocess_output_dir = os.path.join(output_dir, "preprocess")
+                os.makedirs(preprocess_output_dir, exist_ok=True)
+                cell_save_path = defined_output_path or os.path.join(preprocess_output_dir, "adata_preprocessed.h5ad")
+                safe_h5ad_write(adata, cell_save_path)
+                if verbose:
+                    print(f"[cell_types] Saved {cell_save_path}")
+
+        return adata
+
+    except Exception as e:
+        print(f"{indent}[cell_types] WARNING: GPU cell-typing failed ({e}); falling back to CPU implementation.")
         rsc.get.anndata_to_CPU(adata)
-        adata = ensure_cpu_arrays(adata)
-
-        if umap_plots and umap and output_dir:
-            if verbose:
-                print("[cell_types] Generating UMAP plots...")
-            generate_umap_visualizations(adata=adata, output_dir=output_dir, groupby="cell_type", figsize=(12, 8), point_size=20, dpi=300, palette="tab20", verbose=verbose)
-
-        if output_dir:
-            preprocess_output_dir = os.path.join(output_dir, "preprocess")
-            os.makedirs(preprocess_output_dir, exist_ok=True)
-            celltype_df = pd.DataFrame({"cell_id": adata.obs.index, "cell_type": adata.obs["cell_type"].astype(str)})
-            csv_path = os.path.join(preprocess_output_dir, "cell_type.csv")
-            celltype_df.to_csv(csv_path, index=False)
-            if verbose:
-                print(f"[cell_types] Saved cell type CSV to {csv_path}")
-
-        if save and output_dir:
-            preprocess_output_dir = os.path.join(output_dir, "preprocess")
-            os.makedirs(preprocess_output_dir, exist_ok=True)
-            cell_save_path = defined_output_path or os.path.join(preprocess_output_dir, "adata_preprocessed.h5ad")
-            safe_h5ad_write(adata, cell_save_path)
-            if verbose:
-                print(f"[cell_types] Saved {cell_save_path}")
-
-    return adata
+        from sampledisco.preparation.cell_type_cpu import cell_types
+        return cell_types(
+            anndata_cell=adata,
+            cell_type_column=cell_type_column,
+            existing_cell_types=existing_cell_types,
+            n_target_clusters=n_target_clusters,
+            umap=umap,
+            save=save,
+            output_dir=output_dir,
+            defined_output_path=defined_output_path,
+            leiden_cluster_resolution=leiden_cluster_resolution,
+            cell_embedding_column=cell_embedding_column,
+            cell_embedding_num_PCs=cell_embedding_num_PCs,
+            verbose=verbose,
+            umap_plots=umap_plots,
+        )
 
 
 def cell_type_dendrogram_gpu(adata, n_clusters, groupby="cell_type", cell_embedding_column="Z_clust", cell_embedding_num_PCs=20, is_atac=False):

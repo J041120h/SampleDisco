@@ -43,5 +43,6 @@ def harmonize_embedding(
 
     Z = harmonize(
         X, obs, batch_key=keys, max_iter_harmony=max_iter_harmony, use_gpu=use_gpu,
+        random_state=seed,
     )
     return np.asarray(Z, dtype=np.float32)

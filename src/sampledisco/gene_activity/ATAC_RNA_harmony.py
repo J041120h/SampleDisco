@@ -1085,23 +1085,3 @@ def compare_integration_methods(adata_harmony, adata_combat, output_dir,
     else:
         print(f"\n→ ComBat shows better integration (score: {combat_score:.3f} vs {harmony_score:.3f})")
 
-# Example usage:
-if __name__ == "__main__":
-    # Load your data
-    adata_rna = sc.read("/dcl01/hongkai/data/data/hjiang/Test/gene_activity/rna_gene_id.h5ad")
-    adata_activity = sc.read("/dcl01/hongkai/data/data/hjiang/Test/gene_activity/gene_activity_weighted_gpu.h5ad")
-    
-    # Run the enhanced pipeline with zero-aware quantile matching as default
-    adata_harmony, adata_combat = combined_integration_analysis(
-        adata_rna,
-        adata_activity,
-        unified_batch_key='sample',
-        rna_cell_meta_path=None,
-        activity_cell_meta_path=None,
-        output_dir="/dcl01/hongkai/data/data/hjiang/Test/gene_activity/",
-        align_distributions=True,  # Enable alignment (default True)
-        alignment_method='zero_aware_quantile',  # New default method
-        leiden_resolution=0.8,  # Adjust for more/fewer clusters
-        run_combat=True,  # Set to True to also run ComBat
-        verbose=True
-    )

@@ -12,7 +12,8 @@ def distanceCheck(
     output_dir: str,
     adata: AnnData = None,
     grouping_columns: List[str] = ['sev.level'],
-    summary_csv_path: Optional[str] = None
+    summary_csv_path: Optional[str] = None,
+    allow_prefix_fallback: bool = False
 ) -> float:
     """
     Calculate in-group vs. between-group distances based on sample grouping.
@@ -33,6 +34,10 @@ def distanceCheck(
         Column names in `adata.obs` for grouping samples
     summary_csv_path : str or None
         Path to summary CSV file
+    allow_prefix_fallback : bool
+        If True, fall back to grouping samples by their first two characters
+        when no valid grouping column is found. Off by default; when off,
+        a missing/invalid grouping raises a ValueError.
 
     Returns
     -------
@@ -42,7 +47,7 @@ def distanceCheck(
     samples = distance_df.index.tolist()
     os.makedirs(output_dir, exist_ok=True)
 
-    groups = _get_sample_groups(samples, adata, grouping_columns)
+    groups = _get_sample_groups(samples, adata, grouping_columns, allow_prefix_fallback)
     in_group, between_group = _compute_distances(samples, distance_df, groups)
 
     avg_in = np.mean(in_group) if in_group else np.nan
@@ -55,21 +60,29 @@ def distanceCheck(
     return score
 
 
-def _get_sample_groups(samples: List[str], adata: AnnData, grouping_columns: List[str]) -> dict:
-    """Determine sample groupings from AnnData or fallback to prefix-based grouping."""
+def _get_sample_groups(samples: List[str], adata: AnnData, grouping_columns: List[str],
+                        allow_prefix_fallback: bool = False) -> dict:
+    """Determine sample groupings from AnnData. Raises if no valid grouping column is
+    found, unless `allow_prefix_fallback` explicitly opts into prefix-based grouping."""
     if adata is None or not hasattr(adata, 'obs') or adata.obs.empty:
-        print("Warning: No adata provided or adata.obs is empty, using fallback grouping")
-        return {sample: sample[:2] for sample in samples}
+        if allow_prefix_fallback:
+            print("Warning: No adata provided or adata.obs is empty, using fallback grouping")
+            return {sample: sample[:2] for sample in samples}
+        raise ValueError("No adata provided or adata.obs is empty; cannot determine sample groups")
 
     available_samples = [s for s in samples if s in adata.obs.index]
     if not available_samples:
-        print("Warning: No samples from distance matrix found in adata.obs, using fallback grouping")
-        return {sample: sample[:2] for sample in samples}
+        if allow_prefix_fallback:
+            print("Warning: No samples from distance matrix found in adata.obs, using fallback grouping")
+            return {sample: sample[:2] for sample in samples}
+        raise ValueError("No samples from distance matrix found in adata.obs; cannot determine sample groups")
 
     grouping_column = next((col for col in grouping_columns if col in adata.obs.columns), None)
     if grouping_column is None:
-        print(f"Warning: None of the grouping columns {grouping_columns} found in adata.obs")
-        return {sample: sample[:2] for sample in samples}
+        if allow_prefix_fallback:
+            print(f"Warning: None of the grouping columns {grouping_columns} found in adata.obs, using fallback grouping")
+            return {sample: sample[:2] for sample in samples}
+        raise ValueError(f"None of the grouping columns {grouping_columns} found in adata.obs")
 
     groups = {s: str(adata.obs.loc[s, grouping_column]) for s in available_samples}
     for sample in samples:
@@ -97,7 +110,7 @@ def _compute_distances(samples: List[str], distance_df: pd.DataFrame, groups: di
 def _calculate_score(avg_in: float, avg_between: float) -> float:
     """Calculate the distance score."""
     if np.isnan(avg_in) or avg_in == 0:
-        return np.nan if np.isnan(avg_between) else np.inf
+        return np.nan
     return avg_between / avg_in
 
 

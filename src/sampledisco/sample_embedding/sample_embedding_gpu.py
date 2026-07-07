@@ -136,9 +136,16 @@ def _gpu_harmonize(
             Zc = Zc.T
         return np.asarray(Zc, dtype=np.float32)
     except Exception as exc:
-        print(f"  [Harmony] FAILED ({exc!r}); using raw PCA "
-              f"— sample embedding will NOT be batch-corrected")
-        return np.asarray(Fp, dtype=np.float32)
+        print(f"  [Harmony] FAILED ({exc!r}); trying linear batch regression "
+              f"before falling back to raw PCA")
+        try:
+            collapsed = (meta[batch_keys].astype(str).agg("__".join, axis=1).values
+                         if isinstance(batch_keys, list) else meta["batch"].values)
+            return np.asarray(regress_out_batch_linear(Fp, collapsed), dtype=np.float32)
+        except Exception as exc2:
+            print(f"  [Harmony] linear regression fallback FAILED ({exc2!r}); using raw PCA "
+                  f"— sample embedding will NOT be batch-corrected")
+            return np.asarray(Fp, dtype=np.float32)
 
 
 def compute_sample_embedding(
@@ -302,7 +309,10 @@ def compute_sample_embedding(
             print(f"  [batch correction] {len(set(batch_labels))} groups ({tag})")
         do_harmony = len(set(batch_labels)) > 1 and n_units >= 8
 
-    if do_harmony:
+    if do_harmony and batch_method == "none":
+        # explicit no-op: skip sample-level batch correction, keep raw PCA
+        Zc = Fp
+    elif do_harmony:
         if batch_method == "linear":
             collapsed = (multi_meta_df.astype(str).agg("__".join, axis=1).values
                          if multi_meta_df is not None else batch_labels)

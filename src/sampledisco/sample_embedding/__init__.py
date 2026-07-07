@@ -86,7 +86,7 @@ def compute_sample_embedding(
                 compute_sample_embedding as _impl,
             )
             return _impl(adata, output_dir, **kwargs)
-        except (ImportError, ModuleNotFoundError) as e:
+        except Exception as e:
             print(
                 f"[sampledisco] GPU sample embedding unavailable ({e}); "
                 "falling back to the CPU implementation."

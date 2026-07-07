@@ -651,6 +651,7 @@ def run_pairwise_tests(
 
     results_summary = {}
     all_results = {}
+    failed_comparisons = {}
 
     for g1, g2 in pairs:
         comp_name = f"{g1}_vs_{g2}"
@@ -664,16 +665,23 @@ def run_pairwise_tests(
         idx_g1 = col_lookup.get(str(g1), -1)
         idx_g2 = col_lookup.get(str(g2), -1)
 
+        sub_dir = os.path.join(output_dir, comp_name)
+
         if idx_g1 == -1 or idx_g2 == -1:
-            print(f"Skipping {comp_name}: groups {g1!r}/{g2!r} not found in "
-                  f"design columns {[str(c) for c in x_cols]}.")
+            reason = (f"groups {g1!r}/{g2!r} not found in design columns "
+                      f"{[str(c) for c in x_cols]}")
+            print(f"Skipping {comp_name}: {reason}.")
+            failed_comparisons[comp_name] = f"skipped: {reason}"
+            if output_dir:
+                os.makedirs(sub_dir, exist_ok=True)
+                with open(os.path.join(sub_dir, "FAILED"), "w") as fh:
+                    fh.write(f"skipped: {reason}\n")
             continue
 
         contrast = np.zeros(len(x_cols))
         contrast[idx_g1] = 1
         contrast[idx_g2] = -1
-        
-        sub_dir = os.path.join(output_dir, comp_name)
+
         try:
             res = raisintest(
                 fit,
@@ -690,18 +698,26 @@ def run_pairwise_tests(
             all_results[comp_name] = res
         except Exception as e:
             print(f"Failed {comp_name}: {e}")
-    
-    if all_results and output_dir:
+            failed_comparisons[comp_name] = f"failed: {e}"
+            if output_dir:
+                os.makedirs(sub_dir, exist_ok=True)
+                with open(os.path.join(sub_dir, "FAILED"), "w") as fh:
+                    fh.write(f"failed: {e}\n")
+
+    if output_dir and (all_results or failed_comparisons):
         summary_dir = os.path.join(output_dir, "summary_plots")
         os.makedirs(summary_dir, exist_ok=True)
         rows = []
         for comp, res in all_results.items():
             sig = res["FDR"] < fdr_threshold
             fc = res["Foldchange"]
-            rows.append({"comparison": comp, "n_genes": int(len(res)),
+            rows.append({"comparison": comp, "status": "ok", "n_genes": int(len(res)),
                          "n_sig": int(sig.sum()),
                          "n_sig_up": int((sig & (fc > 0)).sum()),
                          "n_sig_down": int((sig & (fc < 0)).sum())})
+        for comp, reason in failed_comparisons.items():
+            rows.append({"comparison": comp, "status": reason, "n_genes": None,
+                         "n_sig": None, "n_sig_up": None, "n_sig_down": None})
         summ = pd.DataFrame(rows)
         summ.to_csv(os.path.join(summary_dir, "raisin_summary.csv"), index=False)
         with open(os.path.join(summary_dir, "raisin_summary.txt"), "w") as fh:
@@ -717,6 +733,11 @@ def run_pairwise_tests(
                 for gene, r in sig.head(top_n_genes).iterrows():
                     fh.write(f"  {str(gene):20s} logFC={r['Foldchange']:+.3f}  "
                              f"FDR={r['FDR']:.2e}\n")
+                fh.write("\n")
+            if failed_comparisons:
+                fh.write(f"Failed/skipped comparisons ({len(failed_comparisons)}):\n")
+                for comp, reason in failed_comparisons.items():
+                    fh.write(f"  {comp}: {reason}\n")
                 fh.write("\n")
         if verbose:
             print(f"Wrote RAISIN summary: {os.path.join(summary_dir, 'raisin_summary.txt')}")

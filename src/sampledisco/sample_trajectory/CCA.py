@@ -81,8 +81,9 @@ def run_cca_on_pca_from_adata(
 
     Returns:
         (pca_coords_subset, sev_levels, samples, n_components_used)
-        pca_coords_subset: shape (n_samples, n_components)
-        sev_levels: float array, NaNs imputed with mean
+        pca_coords_subset: shape (n_samples, n_components); n_samples is reduced
+            if any samples had a NaN trajectory value
+        sev_levels: float array, samples with NaN trajectory dropped
     """
     if column in adata.uns:
         pca_coords = adata.uns[column]
@@ -112,16 +113,20 @@ def run_cca_on_pca_from_adata(
     pca_coords_subset = pca_coords_array[:, :n_components]
 
     sev_levels = pd.to_numeric(adata.obs[trajectory_col], errors='coerce').values
-    missing = np.isnan(sev_levels).sum()
-    if missing > 0:
-        if verbose:
-            print(f"Warning: {missing} sample(s) missing trajectory level. Imputing with mean.")
-        sev_levels[np.isnan(sev_levels)] = np.nanmean(sev_levels)
+    keep_mask = ~np.isnan(sev_levels)
+    missing = int((~keep_mask).sum())
 
     if len(sev_levels) != pca_coords_subset.shape[0]:
         raise ValueError(f"Mismatch between PCA rows ({pca_coords_subset.shape[0]}) and severity levels ({len(sev_levels)}).")
 
     samples = adata.obs.index.values
+
+    if missing > 0:
+        if verbose:
+            print(f"Warning: dropping {missing} sample(s) missing trajectory level (n={int(keep_mask.sum())} used).")
+        sev_levels = sev_levels[keep_mask]
+        pca_coords_subset = pca_coords_subset[keep_mask]
+        samples = samples[keep_mask]
 
     return pca_coords_subset, sev_levels, samples, n_components
 

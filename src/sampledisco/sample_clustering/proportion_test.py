@@ -120,10 +120,12 @@ def ebayes_test(Y, X, coef=1):
 
     df_residual = n_samples - X.shape[1]
 
-    if df_residual > 0:
-        sigma2 = np.sum(residuals**2, axis=0) / df_residual
-    else:
-        sigma2 = np.ones(n_features)
+    if df_residual <= 0:
+        raise ValueError(
+            f"df_residual={df_residual} <= 0; caller must guard against degenerate groups "
+            "before calling ebayes_test"
+        )
+    sigma2 = np.sum(residuals**2, axis=0) / df_residual
 
     var_coef = XTX_inv[coef, coef]
 
@@ -259,9 +261,24 @@ def proportion_test(
     # Collect raw p-values from all pairs first; BH-FDR applied globally
     # across all (pair, celltype) hypotheses rather than per-pair.
     pair_results: List[Tuple[str, pd.DataFrame]] = []
+    skipped_comparisons: List[str] = []
     for group1, group2 in itertools.combinations(unique_groups, 2):
         samples_g1 = [s for s in unique_samples if sample_groups[s] == group1]
         samples_g2 = [s for s in unique_samples if sample_groups[s] == group2]
+
+        # Guard against degenerate groups: need >=2 samples per group and
+        # >=1 residual df (2 model params: intercept + group), else eBayes
+        # variance falls back to a meaningless value and poisons the pooled FDR.
+        df_residual = len(samples_g1) + len(samples_g2) - 2
+        if len(samples_g1) < 2 or len(samples_g2) < 2 or df_residual < 1:
+            comparison_name = f"{group1}_vs_{group2}"
+            warnings.warn(
+                f"Skipping proportion test for {comparison_name}: degenerate group sizes "
+                f"(n_{group1}={len(samples_g1)}, n_{group2}={len(samples_g2)}, "
+                f"df_residual={df_residual})"
+            )
+            skipped_comparisons.append(comparison_name)
+            continue
 
         selected_samples = samples_g1 + samples_g2
         selected_prop_clr = prop_clr_df[selected_samples]
@@ -282,18 +299,19 @@ def proportion_test(
         )
         pair_results.append((f"{group1}_vs_{group2}", df_result))
 
-    all_pvals = np.concatenate([df["p_value"].values for _, df in pair_results])
-    _, all_fdr, _, _ = multipletests(all_pvals, method="fdr_bh")
-    offset = 0
-    for comparison_name, df_result in pair_results:
-        n = len(df_result)
-        df_result["FDR"] = all_fdr[offset:offset + n]
-        offset += n
-        df_result = df_result.sort_values("FDR")
-        all_results[comparison_name] = df_result
-        if output_dir is not None:
-            output_path = os.path.join(output_dir, f"proportion_test_{comparison_name}.csv")
-            df_result.to_csv(output_path, index=False)
+    if pair_results:
+        all_pvals = np.concatenate([df["p_value"].values for _, df in pair_results])
+        _, all_fdr, _, _ = multipletests(all_pvals, method="fdr_bh")
+        offset = 0
+        for comparison_name, df_result in pair_results:
+            n = len(df_result)
+            df_result["FDR"] = all_fdr[offset:offset + n]
+            offset += n
+            df_result = df_result.sort_values("FDR")
+            all_results[comparison_name] = df_result
+            if output_dir is not None:
+                output_path = os.path.join(output_dir, f"proportion_test_{comparison_name}.csv")
+                df_result.to_csv(output_path, index=False)
 
     if output_dir is not None:
         _proportion_test_visualization(
@@ -308,6 +326,12 @@ def proportion_test(
         lines = []
         lines.append(f"Significant cell type proportion differences (FDR < {significance_level})")
         lines.append("")
+
+        if skipped_comparisons:
+            lines.append("Skipped comparisons (degenerate group sizes, not included in pooled FDR):")
+            for comp_name in skipped_comparisons:
+                lines.append(f"  {comp_name}")
+            lines.append("")
 
         for comp_name in sorted(all_results.keys()):
             df = all_results[comp_name]

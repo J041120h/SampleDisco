@@ -100,6 +100,10 @@ def _get_proportions(
     """Return cell type proportions matrix (n_samples × n_cell_types).
 
     Priority: caller-supplied DataFrame > adata.uns['cell_proportions'] > computed from adata.obs.
+
+    Canonical orientation for both `proportions` and `adata.uns['cell_proportions']`
+    is samples × cell_types (rows=samples, columns=cell_types); no orientation
+    guessing is performed.
     """
     n_samples = len(samples)
     n_cell_types = len(cell_types)
@@ -110,10 +114,12 @@ def _get_proportions(
         ).values
     elif 'cell_proportions' in adata.uns:
         prop_df = adata.uns['cell_proportions']
-        # Handle both orientations: rows may be cell_types or samples
-        if set(prop_df.index).intersection(set(cell_types)):
-            if len(set(prop_df.index).intersection(set(cell_types))) > len(set(prop_df.index).intersection(set(samples))):
-                prop_df = prop_df.T  # Transpose to (samples × cell_types)
+        if prop_df.shape[0] != n_samples:
+            raise ValueError(
+                "adata.uns['cell_proportions'] must be oriented samples x cell_types "
+                f"(rows=samples, columns=cell_types); expected {n_samples} rows "
+                f"(one per sample) but got shape {prop_df.shape}."
+            )
         prop_matrix = prop_df.reindex(
             index=samples, columns=cell_types, fill_value=0
         ).values

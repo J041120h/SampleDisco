@@ -265,6 +265,8 @@ def raisinfit(
         - 'Z': random effects design matrix
         - 'group': variance component grouping
         - 'failgroup': groups where variance estimation failed
+        - 'eb_fallback': per-group list of genes whose EB variance estimate was
+          non-finite and was set to 1.0 (matching R raisinfit: `est[is.na] <- 1`)
         - 'sample_names': ordered sample names
         - 'batch_corrected': boolean indicating if ComBat was applied
     """
@@ -386,6 +388,7 @@ def raisinfit(
         gene_names = gene_names[keep_idx]
 
     failgroup = []
+    eb_fallback = {}
 
     if testtype == "custom":
         if custom_design is None:
@@ -665,7 +668,7 @@ def raisinfit(
     sigma2_df = pd.DataFrame(sigma2, columns=unique_groups, index=range(G))
 
     def sigma2_func(current_group, control_groups, done_groups):
-        nonlocal failgroup
+        nonlocal failgroup, eb_fallback
 
         # Xl = cbind(X, Z[, group %in% controlgroup])  (R line 171)
         ctrl_mask = np.isin(group, control_groups)
@@ -772,13 +775,16 @@ def raisinfit(
                     return 0.0
 
             if n_jobs > 1:
-                est = Parallel(n_jobs=n_jobs)(delayed(process_gene_simple)(g) for g in range(G))
+                est = Parallel(n_jobs=n_jobs, prefer="threads")(
+                    delayed(process_gene_simple)(g) for g in range(G)
+                )
             else:
                 est = [process_gene_simple(g) for g in range(G)]
             return np.array(est)
 
         # EB estimation via Gauss-Laguerre integration over sigma2 prior (R lines 230–267)
         tK = K.T  # (n × p)
+        fallback_genes = []
 
         def process_gene(g):
             tmpx = np.outer(pl[g, :], pl[g, :])
@@ -826,23 +832,38 @@ def raisinfit(
                 est_val = np.sum(np.exp(tmp + log_node - mv)) / np.sum(np.exp(tmp - mv))
 
             if np.isnan(est_val):
+                # Match the reference R implementation exactly
+                # (raisinfit.R: `est[is.na(est)] <- 1`): substitute 1.0.
                 est_val = 1.0
+                fallback_genes.append(gene_names[g])
 
             return est_val
 
         if n_jobs > 1:
-            est = Parallel(n_jobs=n_jobs)(delayed(process_gene)(g) for g in range(G))
+            est = Parallel(n_jobs=n_jobs, prefer="threads")(
+                delayed(process_gene)(g) for g in range(G)
+            )
         else:
             est = [process_gene(g) for g in range(G)]
 
+        if fallback_genes:
+            eb_fallback[current_group] = fallback_genes
+
         return np.array(est)
 
-    # Estimate sigma2 group by group in decreasing order of Z-column count (R lines 273–283).
-    control_groups = list(unique_groups)
+    # Estimate sigma2 group by group in decreasing order of Z-column count
+    # (R raisinfit.R:271-283). CRITICAL: R iterates `names(sort(npara, decreasing=T))`
+    # where the tie order is R's `unique(group)` = FIRST-APPEARANCE order. Because
+    # the estimation is sequential — each group's `rl` is corrected by the sigma2 of
+    # already-done groups — the order changes the sigma2 estimates. np.unique sorts
+    # (flipping the tie order) and gives systematically different sigma2; use pandas'
+    # first-appearance unique so the tie-break matches R exactly.
+    group_order = list(pd.unique(group))
+    control_groups = list(group_order)
     done_groups = []
 
-    n_para = {ug: np.sum(Z[:, group == ug] != 0) for ug in unique_groups}
-    sorted_groups = sorted(unique_groups, key=lambda u: n_para[u], reverse=True)
+    n_para = {ug: int(np.sum(Z[:, group == ug] != 0)) for ug in group_order}
+    sorted_groups = sorted(group_order, key=lambda u: n_para[u], reverse=True)
 
     for ug in sorted_groups:
         if verbose:
@@ -863,6 +884,7 @@ def raisinfit(
         "Z": pd.DataFrame(Z, index=sample_names),
         "group": group,
         "failgroup": failgroup,
+        "eb_fallback": eb_fallback,
         "sample_names": sample_names,
         "batch_corrected": batch_corrected,
     }
@@ -873,5 +895,8 @@ def raisinfit(
             print("Note: ComBat batch correction was applied")
         if failgroup:
             print(f"Warning: Variance estimation failed for groups: {failgroup}")
+        if eb_fallback:
+            n_fallback = sum(len(v) for v in eb_fallback.values())
+            print(f"Warning: EB variance fell back to method-of-moments for {n_fallback} gene(s)")
 
     return result

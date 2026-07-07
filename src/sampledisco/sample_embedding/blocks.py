@@ -11,6 +11,7 @@ The recipe ports the `wire_singleRMD` / `wire_singleRMD_dualembed` variants
 from __future__ import annotations
 
 import math
+import sys
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -300,7 +301,7 @@ def build_harmony_meta_df(
             mapper = cellid_to_batches[c]
             bs = [mapper.get(cid) for cid in cids if cid in mapper]
             bs = [b for b in bs if b is not None and b != "nan"]
-            rows[c].append(max(set(bs), key=bs.count) if bs else "UNK")
+            rows[c].append(max(sorted(set(bs)), key=bs.count) if bs else "UNK")
     return pd.DataFrame(rows, index=unit_ids)
 
 
@@ -393,6 +394,10 @@ def build_emb_from_blocks(
                 joint = meta["batch"].values
             Zc = regress_out_batch_linear(Fp, joint)
         else:
+            if isinstance(batch_keys, list):
+                joint = meta[batch_keys].astype(str).agg("__".join, axis=1).values
+            else:
+                joint = meta["batch"].values
             try:
                 import harmonypy as hm
                 nclust = max(2, min(meta.nunique().max() if isinstance(batch_keys, list)
@@ -407,9 +412,17 @@ def build_emb_from_blocks(
                 if Zc.shape[0] != n_units:
                     Zc = Zc.T
             except Exception as exc:
-                print(f"  [Harmony] FAILED ({exc!r}); using raw PCA "
-                      f"— sample embedding will NOT be batch-corrected")
-                Zc = Fp
+                print(f"  [Harmony] FAILED ({exc!r}); falling back to linear "
+                      f"regression batch removal", file=sys.stderr)
+                try:
+                    Zc = regress_out_batch_linear(Fp, joint)
+                    print("  [Harmony fallback] linear regression succeeded",
+                          file=sys.stderr)
+                except Exception as exc2:
+                    print(f"  [Harmony fallback] linear regression FAILED ({exc2!r}); "
+                          f"using raw PCA — sample embedding will NOT be batch-corrected",
+                          file=sys.stderr)
+                    Zc = Fp
     else:
         Zc = Fp
 
@@ -494,7 +507,7 @@ def assemble_units(
                 continue
             # Majority batch for the sample
             sample_batches = batch_arr[mask]
-            grp = max(set(sample_batches), key=list(sample_batches).count)
+            grp = max(sorted(set(sample_batches)), key=list(sample_batches).count)
             uid = s_uniq
             cids = cell_ids[mask].tolist()
             units.append((uid, grp, Z[mask]))
@@ -524,5 +537,5 @@ def _per_unit_batch(
         if not bs:
             out.append("UNK")
         else:
-            out.append(max(set(bs), key=bs.count))
+            out.append(max(sorted(set(bs)), key=bs.count))
     return out

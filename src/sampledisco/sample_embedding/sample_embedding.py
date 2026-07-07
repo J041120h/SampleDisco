@@ -110,16 +110,25 @@ def _aggregate_obs(adata, sample_col: str, modality_col: Optional[str],
     else:
         agg = pd.DataFrame(index=grouped.size().index)
 
-    # Reassemble rows in unit_ids order; unit ids may or may not carry a "_{modality}" suffix
+    # Recompute the unit id for each (sample, modality) group with the exact
+    # same recipe assemble_units (blocks.py) uses, so the join back to
+    # `unit_ids` is exact rather than a suffix-matching guess.
+    uid_to_row = {}
+    for (s, m), row in agg.iterrows():
+        if m:
+            bio = s
+            for suf in (f"_{m}", f"_{m.lower()}"):
+                if bio.endswith(suf):
+                    bio = bio[: -len(suf)]
+                    break
+            uid = bio if bio.endswith(f"_{m}") else f"{bio}_{m}"
+        else:
+            uid = s
+        uid_to_row[uid] = row
+
     rows = []
     for uid in unit_ids:
-        match = None
-        for (s, m), row in agg.iterrows():
-            candidate = f"{s}_{m}" if m else s
-            if candidate == uid or (m and s == uid) or s == uid:
-                match = row
-                if candidate == uid:
-                    break
+        match = uid_to_row.get(uid)
         if match is None:
             match = pd.Series({c: np.nan for c in agg.columns})
         rows.append(match)
@@ -152,8 +161,12 @@ def compute_sample_embedding(
 ) -> AnnData:
     """Compute sample-level embedding (singleRMD recipe).
 
-    Returns a sample-level AnnData with `.uns['X_DR_sample']` (DataFrame,
-    samples × pca_components) and `.obsm['X_DR_sample']` (ndarray).
+    Mutates and returns the cell-level `adata` in place: the sample-level
+    embedding is written to `adata.uns['X_DR_sample']` (DataFrame, samples ×
+    pca_components) and `adata.uns['sample_embedding_params']` (dict). This
+    (cell-level) adata has no `.obsm['X_DR_sample']` — use
+    `build_sample_adata` to materialize a per-sample AnnData that carries the
+    embedding as `.obsm['X_DR_sample']`.
     """
     start_time = time.time() if verbose else None
 
