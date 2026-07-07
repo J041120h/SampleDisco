@@ -30,6 +30,8 @@ from typing import List, Optional
 import numpy as np
 from anndata import AnnData
 
+from sampledisco.utils.harmony_compat import harmonize_embedding
+
 
 # Paper-aligned obsm keys (Fig. 1 / Stage 2).
 Z_RMD_KEY   = "Z_rmd"     # sample-PRESERVED → RMD role
@@ -83,21 +85,18 @@ def harmonize_xglue(
         [batch_col, sample_col] if _has_signal(adata, batch_col) else [sample_col]
     )
 
-    from harmony import harmonize
-
     n_cells, n_dims = adata.obsm[in_key].shape
     if verbose:
         print(f"[xglue-harmony] {out_key}: {n_cells:,} × {n_dims} dims, "
               f"batch_keys={batch_keys}, gpu={use_gpu}, max_iter={max_iter}")
     t0 = time.time()
-    X_corr = harmonize(
+    X_corr = harmonize_embedding(
         np.asarray(adata.obsm[in_key], dtype=np.float32),
         adata.obs,
-        batch_key=batch_keys if len(batch_keys) > 1 else batch_keys[0],
+        batch_key=batch_keys,
         max_iter_harmony=max_iter,
         use_gpu=use_gpu,
-        random_state=random_state,
-        verbose=verbose,
+        seed=random_state,
     )
     adata.obsm[out_key] = np.asarray(X_corr, dtype=np.float32)
     # Alias the input as Z_rmd (sample-preserved) so downstream sees both

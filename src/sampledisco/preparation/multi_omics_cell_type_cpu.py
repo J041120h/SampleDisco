@@ -172,17 +172,23 @@ def cell_types_multiomics(
     atac_scores = normalized_jaccard.T @ rna_labels_onehot
 
     atac_pred_idx = np.asarray(atac_scores.argmax(axis=1)).ravel()
-    atac_pred_labels = onehot.categories_[0][atac_pred_idx]
+    atac_pred_labels = onehot.categories_[0][atac_pred_idx].astype(object)
 
     if sparse.issparse(atac_scores):
         atac_confidence_values = atac_scores.max(axis=1).toarray().ravel()
     else:
         atac_confidence_values = np.asarray(atac_scores.max(axis=1)).ravel()
 
+    # A zero-confidence row means the ATAC cell had no Jaccard-SNN overlap with
+    # any RNA cell (all-zero row, common at small k_neighbors); argmax would
+    # silently assign category[0], so mark these explicitly instead.
+    unassigned_mask = atac_confidence_values == 0
+    n_unassigned = int(unassigned_mask.sum())
+    atac_pred_labels[unassigned_mask] = 'unassigned'
+
     atac_cell_types = pd.Series(
         atac_pred_labels,
-        index=adata.obs.index[atac_mask],
-        dtype=rna_cell_types.dtype
+        index=adata.obs.index[atac_mask]
     )
     atac_confidence = pd.Series(
         atac_confidence_values,
@@ -193,6 +199,8 @@ def cell_types_multiomics(
         mean_confidence = np.mean(atac_confidence)
         print(f"  Label transfer complete")
         print(f"  Mean transfer confidence: {mean_confidence:.3f}")
+        if n_unassigned > 0:
+            print(f"  {n_unassigned} ATAC cells had zero-confidence label transfer; marked 'unassigned'")
 
     if verbose:
         print(f"\n--- Step 3: Combining cell type assignments ---")
@@ -201,6 +209,7 @@ def cell_types_multiomics(
     adata.obs.loc[rna_mask, cell_type_column] = rna_cell_types.values
     adata.obs.loc[atac_mask, cell_type_column] = atac_cell_types.values
     adata.obs[cell_type_column] = adata.obs[cell_type_column].astype("category")
+    adata.obs.loc[atac_mask, 'label_transfer_confidence'] = atac_confidence.values
 
     if verbose:
         print(f"  Cell type assignments complete")

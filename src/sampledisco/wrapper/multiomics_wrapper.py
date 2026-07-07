@@ -313,6 +313,14 @@ def multiomics_wrapper(
             status_flags["multiomics"]["glue_visualization"] = True
         if multiomics_verbose:
             print("GLUE integration completed successfully")
+    else:
+        print(
+            "WARNING: integration=False — per-modality preprocessed h5ads "
+            f"({rna_pre_path}, {atac_pre_path}) will NOT be (re)generated. "
+            "propagate_cell_type and downstream DGE/RAISIN steps that depend "
+            "on these files will be silently skipped unless they already "
+            "exist on disk at those paths."
+        )
 
     # Load the embedding-only union (built in STEP 1 by build_embedding_union).
     if os.path.exists(h5ad_path):

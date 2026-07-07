@@ -2,6 +2,7 @@
 import os
 import sys
 import gc
+import json
 import time
 import shutil as _shutil
 from pathlib import Path
@@ -554,10 +555,15 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
                                                        is implicitly removed too)
 
     Skip-if-output-exists: if the final ``<save_prefix>.dill`` and both
-    ``<save_prefix>-{rna,atac}-emb.h5ad`` already exist in ``output_dir``,
-    this function returns early without retraining. This lets the V2 dual
-    scGLUE pass (primary + sample-removal) resume across kill/restart
-    boundaries without redoing the run whose artifacts are already saved.
+    ``<save_prefix>-{rna,atac}-emb.h5ad`` already exist in ``output_dir``
+    *and* the saved ``<save_prefix>.design.json`` (batch design + key
+    training knobs) matches the current call's arguments, this function
+    returns early without retraining. This lets the V2 dual scGLUE pass
+    (primary + sample-removal) resume across kill/restart boundaries
+    without redoing the run whose artifacts are already saved. A design
+    mismatch (e.g. ``treat_sample_as_batch`` or ``batch_key`` changed)
+    forces a retrain so stale artifacts are never reused under the wrong
+    design.
 
     The combined-column path lets the optional second scGLUE run yield a
     truly batch- *and* sample-removed cluster embedding when both keys are
@@ -611,13 +617,31 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     model_path    = os.path.join(output_dir, f"{save_prefix}.dill")
     rna_emb_path  = os.path.join(output_dir, f"{save_prefix}-rna-emb.h5ad")
     atac_emb_path = os.path.join(output_dir, f"{save_prefix}-atac-emb.h5ad")
+    design_path   = os.path.join(output_dir, f"{save_prefix}.design.json")
+    design = {
+        "treat_sample_as_batch": treat_sample_as_batch,
+        "batch_key": batch_key,
+        "sample_key": sample_key,
+        "use_highly_variable": use_highly_variable,
+        "max_epochs": max_epochs,
+        "data_batch_size": data_batch_size,
+    }
     if all(os.path.exists(p) for p in (model_path, rna_emb_path, atac_emb_path)):
-        print(f"\n\n\n⏭️  Skipping glue_train(save_prefix={save_prefix!r}): "
-              f"all final artifacts already exist in {output_dir}.")
-        print(f"      {os.path.basename(model_path)}")
-        print(f"      {os.path.basename(rna_emb_path)}")
-        print(f"      {os.path.basename(atac_emb_path)}\n\n\n")
-        return
+        prev_design = None
+        if os.path.exists(design_path):
+            with open(design_path) as f:
+                prev_design = json.load(f)
+        if prev_design == design:
+            print(f"\n\n\n⏭️  Skipping glue_train(save_prefix={save_prefix!r}): "
+                  f"all final artifacts already exist in {output_dir} with matching design.")
+            print(f"      {os.path.basename(model_path)}")
+            print(f"      {os.path.basename(rna_emb_path)}")
+            print(f"      {os.path.basename(atac_emb_path)}\n\n\n")
+            return
+        print(f"\n\n\n⚠️  glue_train(save_prefix={save_prefix!r}): final artifacts exist in "
+              f"{output_dir} but batch design does not match — retraining.\n"
+              f"      previous: {prev_design}\n"
+              f"      current:  {design}\n\n\n")
 
     print("\n\n\n🚀 Starting GLUE training pipeline...\n\n\n")
     print(f"   Feature mode: {'Highly Variable Only' if use_highly_variable else 'All Features'}")
@@ -726,6 +750,8 @@ def glue_train(preprocess_output_dir, output_dir="glue_output",
     rna.write(rna_emb_path, compression="gzip")
     atac.write(atac_emb_path, compression="gzip")
     nx.write_graphml(guidance_hvf, guidance_hvf_path)
+    with open(design_path, "w") as f:
+        json.dump(design, f, indent=2)
     # NOTE: do NOT delete rna-pp.h5ad / atac-pp.h5ad — the optional second
     # scGLUE pass (sample-removal run, V2 architecture) re-reads them.
     # They are small relative to the X_glue embeddings and only matter

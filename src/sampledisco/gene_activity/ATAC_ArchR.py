@@ -717,29 +717,3 @@ def create_gene_activity_archR(
         print(f"Gene activity matrix saved to: {output_path}")
     
     return gene_activity
-
-
-if __name__ == "__main__":
-    print("Starting ArchR Gene Activity Analysis...")
-    
-    gene_activity = create_gene_activity_archR(
-        atac_adata="/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad",
-        output_dir="/dcs07/hongkai/data/harry/result/gene_activity/ATAC_ArchR",
-        species="homo_sapiens",
-        release=98,
-        protein_coding_only=True,
-        min_peak_accessibility=0.003,
-        min_cells=1,
-        min_counts_per_peak=1,
-        min_genes=1_500,
-        max_genes=5_000,
-        min_counts_per_cell=1_500,
-        max_counts_per_cell=None,
-        max_pct_mt=None,
-        n_threads=8,
-        verbose=True,
-        gene_window=1_000,
-        scale_max=5.0,
-        decay_distance=5_000,
-    )
-    

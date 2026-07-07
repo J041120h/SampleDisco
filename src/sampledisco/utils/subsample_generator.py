@@ -401,18 +401,3 @@ def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None,
     print(f"\nSubsampling complete! Created {len(sample_sizes)} files.")
     print(f"Summary report saved to: {summary_path}")
 
-# Example usage
-if __name__ == "__main__":
-    # Configure paths
-    h5ad_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data.h5ad"
-    meta_csv_path = "/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv"
-    
-    # Run subsampling
-    main(
-        h5ad_path=h5ad_path,
-        meta_csv_path=meta_csv_path,
-        output_dir='/dcl01/hongkai/data/data/hjiang/Data/covid_data/Benchmark',
-        sample_sizes=[25, 50, 100],  # Create 4 subsampled files
-        seed=42,  # For reproducibility
-        min_batch_samples=3  # Minimum samples per batch
-    )

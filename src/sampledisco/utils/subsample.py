@@ -103,15 +103,3 @@ def subset_h5ad_by_batch_samples(
     adata_sub.write(out_path)
 
     return out_path, int(adata_sub.n_obs), int(adata_sub.n_vars)
-
-if __name__ == "__main__":
-    out, n_cells, n_vars = subset_h5ad_by_batch_samples(
-        csv_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/sample_data.csv",
-        h5ad_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data.h5ad",
-        out_path="/dcl01/hongkai/data/data/hjiang/Data/covid_data/count_data_Su_subset.h5ad",
-        batch_name="Su",
-        csv_sample_col="sample",
-        csv_batch_col="batch",
-        ad_sample_col="sample",
-    )
-    print(f"Subset written to: {out} (n_cells={n_cells}, n_vars={n_vars})")

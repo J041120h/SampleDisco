@@ -21,7 +21,8 @@ def parse_args():
     )
     parser.add_argument(
         "--init-config", nargs="?", const="config.yaml", metavar="PATH", dest="init_config",
-        help="Write a ready-to-edit config template to PATH (default: ./config.yaml) and exit.",
+        help="Write the demo config (tuned for the Zenodo demo dataset) to PATH "
+             "(default: ./config.yaml) and exit.",
     )
     return parser.parse_args()
 
@@ -52,9 +53,16 @@ def write_template(dest):
     with open(dest, "w") as f:
         f.write(template)
     print(
-        f"Wrote a starter config to '{dest}'.\n"
+        f"Wrote the demo config to '{dest}'.\n"
         f"Edit the data paths / options, then run:\n"
         f"  sampledisco -m complex --config {dest}"
+    )
+    print(
+        f"WARNING: '{dest}' is the config used for the Zenodo demo dataset — its QC "
+        f"thresholds and trajectory/grouping columns (e.g. 'sev.level', "
+        f"'*_supervised: true') are tuned for that demo data, not yours. Review and "
+        f"adjust every field before running on your own data.",
+        file=sys.stderr,
     )
 
 

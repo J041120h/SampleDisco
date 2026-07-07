@@ -20,6 +20,8 @@ from .atac_wrapper import atac_wrapper
 for _noisy in ("fontTools", "fontTools.subset", "matplotlib.font_manager"):
     logging.getLogger(_noisy).setLevel(logging.WARNING)
 
+logger = logging.getLogger("sampledisco")
+
 
 def _coerce_sample_level_batch_col_list(value: Optional[Any]) -> List[str]:
     """Normalize YAML string or list into a list of obs column names."""
@@ -276,6 +278,7 @@ def downstream_analysis(
                     input_correlation=cca_score_a if cca_score_a is not None else cca_score_b,
                     output_directory=output_dir,
                     trajectory_col=trajectory_col,
+                    n_pcs=n_cca_pcs,  # null must use the SAME #PCs as the observed statistic
                     verbose=verbose,
                 )
         else:
@@ -495,13 +498,12 @@ def downstream_analysis(
                 sample_col=sample_col,
                 verbose=verbose,
             )
+            sf["dimension_association_analysis"] = True
+            print(f"Dimension association analysis completed: {assoc_output_dir}")
         except Exception as e:
             print(f"[Association] Warning: analysis failed: {e}")
             if verbose:
                 import traceback; traceback.print_exc()
-
-        sf["dimension_association_analysis"] = True
-        print(f"Dimension association analysis completed: {assoc_output_dir}")
 
     print(f"{modality.upper()} downstream analysis completed!")
     return {'pseudo_adata': pseudo_adata, 'status_flags': status_flags}
@@ -1004,8 +1006,8 @@ def wrapper(
             )
             cp.cuda.set_allocator(rmm_cupy_allocator)
         except Exception as e:
-            print(
-                "[sampledisco] WARNING: GPU acceleration DISABLED — running on CPU. "
+            logger.warning(
+                "GPU acceleration DISABLED — running on CPU. "
                 f"The RAPIDS stack failed to initialize ({type(e).__name__}: {e}). "
                 "Verify with `python -c \"import cuml, cupy, rapids_singlecell\"`; see "
                 "the installation guide. (This run's backend is recorded as "

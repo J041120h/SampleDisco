@@ -60,12 +60,13 @@ def cluster(
 
         sns.set_style("whitegrid")
         fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-        n_clusters = len(np.unique(labels))
-        colors = sns.color_palette("husl", n_clusters)
+        unique_labels = sorted(np.unique(labels))
+        colors = sns.color_palette("husl", len(unique_labels))
+        color_map = {label: colors[i] for i, label in enumerate(unique_labels)}
 
-        for cluster_id in np.unique(labels):
+        for cluster_id in unique_labels:
             mask = labels == cluster_id
-            ax.scatter(X[mask, 0], X[mask, 1], c=[colors[cluster_id]],
+            ax.scatter(X[mask, 0], X[mask, 1], c=[color_map[cluster_id]],
                        s=80, alpha=0.7, edgecolors='white', linewidth=1.5,
                        label=f'Cluster {cluster_id}')
 

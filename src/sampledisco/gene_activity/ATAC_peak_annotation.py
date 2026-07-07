@@ -420,22 +420,3 @@ def load_annotations(*, output_prefix="atac_annotation", output_dir="."):
         "parameters": parameters,
         "gene_summary": gene_summary,
     }
-
-
-if __name__ == "__main__":
-    atac_path = "/dcl01/hongkai/data/data/hjiang/Data/paired/atac/placenta.h5ad"
-    results = annotate_atac_peaks_parallel(
-        atac_path,
-        ensembl_release=98,
-        extend_upstream=100_000,
-        extend_downstream=100_000,
-        promoter_weight_factor=5.0,
-        distance_weight_sigma=50_000,
-        min_peak_accessibility=0.01,
-        output_prefix="atac_annotation",
-        output_dir="/dcs07/hongkai/data/harry/result/gene_activity",
-    )
-
-    print("\nOutput files:")
-    for k, v in results.items():
-        print(f"  {k:<15} : {v}")
