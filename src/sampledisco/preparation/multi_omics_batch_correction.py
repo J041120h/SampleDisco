@@ -1,15 +1,15 @@
-"""Harmony post-pass that produces the paper's ``Z_clust`` from ``Z_rmd``.
+"""Harmony post-pass that produces the paper's ``Z_comp`` from ``Z_rmd``.
 
 SampleDisco (Stage 2 of Fig. 1) uses two cell-level views:
 
   ``Z_rmd``   — sample-PRESERVED; preserves the per-sample variance the
                 RMD displacement block needs.
-  ``Z_clust`` — sample-REMOVED; shared cell-state geometry used by cell
+  ``Z_comp`` — sample-REMOVED; shared cell-state geometry used by cell
                 typing and the A1 / A2 / A3 composition blocks.
 
 scGLUE produces a single embedding (``obsm['X_glue']``) which IS the
 sample-preserved view, so it becomes ``Z_rmd`` once GLUE finishes. The
-sample-removed ``Z_clust`` is produced by ONE of two paths:
+sample-removed ``Z_comp`` is produced by ONE of two paths:
 
   (default) Harmony post-pass on ``Z_rmd`` (this module) with the sample
             column (and batch column, if present) as batch_keys.
@@ -18,7 +18,7 @@ sample-removed ``Z_clust`` is produced by ONE of two paths:
             When the 2-run output is present, the Harmony post-pass
             auto-skips.
 
-Either way the result is written to ``obsm['Z_clust']`` and the upstream
+Either way the result is written to ``obsm['Z_comp']`` and the upstream
 ``obsm['X_glue']`` is aliased to ``obsm['Z_rmd']`` so downstream code can
 read paper-aligned keys uniformly.
 """
@@ -31,16 +31,21 @@ import numpy as np
 from anndata import AnnData
 
 from sampledisco.utils.harmony_compat import harmonize_embedding
+from sampledisco.utils.embedding_keys import (
+    COMP_KEY,
+    LEGACY_COMP_KEY,
+    RMD_KEY,
+    WRITE_LEGACY_ALIAS,
+    XGLUE_KEY,
+)
 
 
 # Paper-aligned obsm keys (Fig. 1 / Stage 2).
-Z_RMD_KEY   = "Z_rmd"     # sample-PRESERVED → RMD role
-Z_CLUST_KEY = "Z_clust"   # sample-REMOVED   → cluster / composition role
+Z_RMD_KEY  = RMD_KEY    # sample-PRESERVED → RMD role
+Z_COMP_KEY = COMP_KEY   # sample-REMOVED   → composition / cluster role
 
-# scGLUE's own training output. Kept as a constant for internal callers
-# (glue_train, the merge helper) that interface directly with scGLUE.
-# Downstream pipelines should use the Z_* keys above.
-XGLUE_KEY = "X_glue"
+# Deprecated 0.2.0 name for Z_COMP_KEY; removed in 1.0.
+Z_CLUST_KEY = LEGACY_COMP_KEY
 
 
 def _has_signal(adata: AnnData, col: Optional[str]) -> bool:
@@ -56,14 +61,14 @@ def harmonize_xglue(
     sample_col: str,
     batch_col: Optional[str] = None,
     in_key: str = XGLUE_KEY,
-    out_key: str = Z_CLUST_KEY,
+    out_key: str = Z_COMP_KEY,
     use_gpu: bool = False,
     max_iter: int = 50,
     random_state: int = 0,
     verbose: bool = True,
 ) -> AnnData:
     """Run one Harmony pass on ``adata.obsm[in_key]`` (= Z_rmd / X_glue) to
-    remove per-sample variance, writing ``adata.obsm[out_key]`` = Z_clust.
+    remove per-sample variance, writing ``adata.obsm[out_key]`` = Z_comp.
 
     ``batch_keys`` defaults to ``[sample_col]``. When ``batch_col`` is
     present with ≥ 2 levels, it is added (belt-and-suspenders against any
@@ -99,6 +104,8 @@ def harmonize_xglue(
         seed=random_state,
     )
     adata.obsm[out_key] = np.asarray(X_corr, dtype=np.float32)
+    if WRITE_LEGACY_ALIAS and out_key == Z_COMP_KEY:
+        adata.obsm[LEGACY_COMP_KEY] = adata.obsm[out_key]
     # Alias the input as Z_rmd (sample-preserved) so downstream sees both
     # paper-aligned keys regardless of whether the cluster embedding came
     # from this Harmony pass or from a 2-run scGLUE merge.

@@ -600,7 +600,7 @@ def wrapper(
     rna_autotune_search: str = "bayesian",
     rna_autotune_scoring: str = "auto",
     rna_autotune_scope: str = "alpha_only",
-    rna_autotune_alpha_bounds: tuple = (0.1, 10.0),
+    rna_autotune_alpha_bounds: tuple = (0.1, 100.0),
     rna_autotune_grouping_col: Optional[str] = None,
 
     # Trajectory analysis parameters
@@ -712,7 +712,7 @@ def wrapper(
     atac_autotune_search: str = "bayesian",
     atac_autotune_scoring: str = "auto",
     atac_autotune_scope: str = "alpha_only",
-    atac_autotune_alpha_bounds: tuple = (0.1, 10.0),
+    atac_autotune_alpha_bounds: tuple = (0.1, 100.0),
     atac_autotune_grouping_col: Optional[str] = None,
 
     
@@ -833,11 +833,11 @@ def wrapper(
     # V2 cluster-vs-RMD split. X_glue (from scGLUE) is sample-preserved
     # → RMD role. The sample-REMOVED cluster role is ALWAYS derived, via
     # one of two paths:
-    #   (default)  Harmony post-pass on X_glue → X_glue_harmony.
+    #   (default)  Harmony post-pass on X_glue → Z_comp.
     #   (opt-in)   Train scGLUE TWICE; the second run (with
-    #              treat_sample_as_batch=True) yields X_glue_harmony
-    #              end-to-end. When enabled the Harmony post-pass
-    #              auto-skips because X_glue_harmony already exists.
+    #              treat_sample_as_batch=True) yields Z_comp end-to-end.
+    #              When enabled the Harmony post-pass auto-skips because
+    #              Z_comp already exists.
     multiomics_harmonize_xglue_max_iter: int = 50,
     multiomics_run_glue_twice_for_sample_removal: bool = False,
     
@@ -886,7 +886,7 @@ def wrapper(
     multiomics_autotune_search: str = "bayesian",
     multiomics_autotune_scoring: str = "auto",
     multiomics_autotune_scope: str = "alpha_only",
-    multiomics_autotune_alpha_bounds: tuple = (0.1, 10.0),
+    multiomics_autotune_alpha_bounds: tuple = (0.1, 100.0),
     multiomics_autotune_grouping_col: Optional[str] = None,
     multiomics_autotune_tune_on_modality: Optional[str] = None,
 

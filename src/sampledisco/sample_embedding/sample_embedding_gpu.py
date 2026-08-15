@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import time
+import warnings
 from typing import List, Optional, Union
 
 import numpy as np
@@ -36,6 +37,7 @@ from sampledisco.sample_embedding.sample_embedding import (
     _aggregate_obs,
     _resolve_rmd_emb_key,
 )
+from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
 
 
 def _gpu_kmeans_soft(Z_np: np.ndarray, K: int, seed: int):
@@ -154,7 +156,7 @@ def compute_sample_embedding(
     *,
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
-    cluster_emb_key: str = "Z_clust",
+    comp_emb_key: Optional[str] = None,
     rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,
@@ -170,23 +172,28 @@ def compute_sample_embedding(
     save: bool = True,
     verbose: bool = True,
     seed: int = 42,
+    cluster_emb_key: Optional[str] = None,
 ) -> AnnData:
     """GPU compute_sample_embedding — see CPU version for full docstring."""
     start_time = time.time() if verbose else None
 
-    if cluster_emb_key not in adata.obsm:
-        raise KeyError(
-            f"cluster_emb_key '{cluster_emb_key}' not in adata.obsm")
+    if cluster_emb_key is not None:
+        warnings.warn("cluster_emb_key= is deprecated and will be removed in 1.0; "
+                      "use comp_emb_key=.", FutureWarning, stacklevel=2)
+        if comp_emb_key is None:
+            comp_emb_key = cluster_emb_key
+
+    comp_key = resolve_comp_key(adata, comp_emb_key,
+                                context="compute_sample_embedding_gpu")
     if celltype_col not in adata.obs.columns:
         raise KeyError(
             f"celltype_col '{celltype_col}' not in adata.obs")
 
-    rmd_key = _resolve_rmd_emb_key(adata, cluster_emb_key, rmd_emb_key)
-    if rmd_key not in adata.obsm:
-        raise KeyError(f"rmd_emb_key '{rmd_key}' not in adata.obsm")
+    rmd_key = resolve_rmd_key(adata, rmd_emb_key, comp_key=comp_key,
+                              required=use_rmd,
+                              context="compute_sample_embedding_gpu")
     if verbose:
-        print(f"[sample_embedding_gpu] cluster_emb={cluster_emb_key}, "
-              f"rmd_emb={rmd_key}")
+        print(f"[sample_embedding_gpu] comp_emb={comp_key}, rmd_emb={rmd_key}")
 
     # primary_batch: first col → assemble_units (group labelling); batch_cols_multi → Harmony multi-cov
     if isinstance(batch_col, (list, tuple)):
@@ -197,8 +204,8 @@ def compute_sample_embedding(
         batch_cols_multi = []
     primary_batch = batch_cols_multi[0] if batch_cols_multi else None
 
-    units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_clust = \
-        assemble_units(adata, sample_col, cluster_emb_key,
+    units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_comp = \
+        assemble_units(adata, sample_col, comp_key,
                        modality_col=modality_col, batch_col=primary_batch)
     n_units = len(units)
     if n_units < 2:
@@ -206,7 +213,7 @@ def compute_sample_embedding(
     cellid_idx = {cid: i for i, cid in enumerate(all_cellids)}
     if verbose:
         print(f"[sample_embedding_gpu] {n_units} units; "
-              f"{Z_clust.shape[0]} cells; cluster_emb dim={Z_clust.shape[1]}")
+              f"{Z_comp.shape[0]} cells; comp_emb dim={Z_comp.shape[1]}")
 
     cell_type = adata.obs[celltype_col].astype(str).values
     unique_cts = sorted(set(cell_type))
@@ -216,7 +223,7 @@ def compute_sample_embedding(
 
     # ---- A1: coarse cell-type composition (one-hot, mean per unit) ----------
     L1 = {ct: i for i, ct in enumerate(unique_cts)}
-    soft1 = np.zeros((Z_clust.shape[0], K_c), dtype=np.float32)
+    soft1 = np.zeros((Z_comp.shape[0], K_c), dtype=np.float32)
     for i, ct in enumerate(cell_type):
         soft1[i, L1[ct]] = 1.0
     unit_cellids_list = [unit_cellids[uid] for uid in unit_ids]
@@ -227,10 +234,10 @@ def compute_sample_embedding(
         print(f"[A1] shape={A1.shape}")
 
     # ---- A2: soft k-means at K_med (GPU) ----
-    K_med = min(medium_K, max(2, Z_clust.shape[0] // 200))
+    K_med = min(medium_K, max(2, Z_comp.shape[0] // 200))
     if verbose:
         print(f"[A2] GPU MiniBatchKMeans K={K_med}...", flush=True)
-    soft2 = _gpu_kmeans_soft(Z_clust, K_med, seed)
+    soft2 = _gpu_kmeans_soft(Z_comp, K_med, seed)
     A2 = composition_per_unit(unit_cellids_list, soft2, cellid_idx)
     if use_clr:
         A2 = clr_transform(A2)
@@ -238,10 +245,10 @@ def compute_sample_embedding(
         print(f"[A2] shape={A2.shape}")
 
     # ---- A3: soft k-means at K_fine (GPU) ----
-    K_fine = min(fine_K, max(2, Z_clust.shape[0] // 100))
+    K_fine = min(fine_K, max(2, Z_comp.shape[0] // 100))
     if verbose:
         print(f"[A3] GPU MiniBatchKMeans K={K_fine}...", flush=True)
-    soft3 = _gpu_kmeans_soft(Z_clust, K_fine, seed + 1)
+    soft3 = _gpu_kmeans_soft(Z_comp, K_fine, seed + 1)
     A3 = composition_per_unit(unit_cellids_list, soft3, cellid_idx)
     if use_clr:
         A3 = clr_transform(A3)
@@ -341,8 +348,10 @@ def compute_sample_embedding(
         "block_weights": list(map(float, weights)),
         "pca_components": int(pca_components),
         "batch_method": str(batch_method),
-        "cluster_emb_key": str(cluster_emb_key),
+        "comp_emb_key": str(comp_key),
         "rmd_emb_key": str(rmd_key),
+        # Deprecated 0.2.0 spelling, kept for readers of this dict; removed in 1.0.
+        "cluster_emb_key": str(comp_key),
         "modality_col": str(modality_col) if modality_col else "",
         "batch_col": str(primary_batch) if primary_batch else "",
         "batch_cols_multi": list(batch_cols_multi),

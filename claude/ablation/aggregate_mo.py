@@ -11,9 +11,11 @@ import os
 import numpy as np
 import pandas as pd
 
-ROOT = "/dcs07/hongkai/data/harry/result/ablation/multiomics"
-VARIANTS = ["proportion_only", "rmd_only", "no_batch_removal",
-            "linear_regression", "original"]
+ABL = os.environ.get("ABL_DIR", "/dcs07/hongkai/data/harry/result/ablation")
+ROOT = os.path.join(ABL, "multiomics")
+VARIANTS = os.environ.get(
+    "ABL_VARIANTS",
+    "proportion_only,rmd_only,no_batch_removal,linear_regression,original").split(",")
 DATASETS = ["ENCODE", "heart", "retina", "lutea"]
 DESCENDING = {"paired_partner_rank"}
 PRESERVATION = ["tissue_preservation_score", "disease_state_preservation_score",

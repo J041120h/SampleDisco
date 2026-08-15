@@ -7,6 +7,7 @@ from scipy.cluster.hierarchy import fcluster
 import rapids_singlecell as rsc
 
 from sampledisco.visualization.visualization_helper import generate_umap_visualizations
+from sampledisco.utils.embedding_keys import resolve_comp_key
 from sampledisco.utils.safe_save import safe_h5ad_write, ensure_cpu_arrays
 
 
@@ -40,8 +41,8 @@ def cell_types_gpu(
         from sampledisco.utils.random_seed import set_global_seed
         set_global_seed(seed=42)
 
-    if cell_embedding_column is None:
-        cell_embedding_column = "Z_clust"
+    cell_embedding_column = resolve_comp_key(adata, cell_embedding_column,
+                                             context="cell_types_gpu")
     is_atac = "X_lsi" in adata.obsm
 
     try:
@@ -184,13 +185,13 @@ def cell_types_gpu(
         )
 
 
-def cell_type_dendrogram_gpu(adata, n_clusters, groupby="cell_type", cell_embedding_column="Z_clust", cell_embedding_num_PCs=20, is_atac=False):
+def cell_type_dendrogram_gpu(adata, n_clusters, groupby="cell_type", cell_embedding_column=None, cell_embedding_num_PCs=20, is_atac=False):
     if n_clusters < 1:
         raise ValueError("n_clusters must be >= 1")
     if groupby not in adata.obs:
         raise ValueError(f"{groupby} not found in adata.obs")
-    if cell_embedding_column not in adata.obsm:
-        raise ValueError(f"{cell_embedding_column} not found in adata.obsm")
+    cell_embedding_column = resolve_comp_key(adata, cell_embedding_column,
+                                             context="cell_type_dendrogram_gpu")
 
     obsm_data = adata.obsm[cell_embedding_column]
     if hasattr(obsm_data, "get"):

@@ -566,8 +566,8 @@ def run_dimension_association_analysis(
         figures/proportion_top_associations.pdf
 
     Args:
-        pseudo_adata: AnnData with ``X_DR_expression`` / ``X_DR_proportion``
-            in ``.uns`` or ``.obsm`` and per-sample metadata in ``.obs``.
+        pseudo_adata: AnnData with ``X_DR_sample`` in ``.uns`` or ``.obsm``
+            and per-sample metadata in ``.obs``.
         output_dir: root directory for outputs; created if missing.
         continuous_cols / categorical_cols: optional overrides for variable
             classification. If both are None, auto-classification is used.

@@ -27,7 +27,7 @@ def compute_sample_embedding(
     use_gpu: bool = False,
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
-    cluster_emb_key: str = "Z_clust",
+    comp_emb_key: Optional[str] = None,
     rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,
@@ -43,6 +43,7 @@ def compute_sample_embedding(
     save: bool = True,
     verbose: bool = True,
     seed: int = 42,
+    cluster_emb_key: Optional[str] = None,
 ) -> AnnData:
     """Dispatch to the CPU or GPU implementation.
 
@@ -55,6 +56,7 @@ def compute_sample_embedding(
     kwargs = dict(
         sample_col=sample_col,
         celltype_col=celltype_col,
+        comp_emb_key=comp_emb_key,
         cluster_emb_key=cluster_emb_key,
         rmd_emb_key=rmd_emb_key,
         modality_col=modality_col,

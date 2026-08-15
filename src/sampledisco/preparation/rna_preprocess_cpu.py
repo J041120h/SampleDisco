@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 from sampledisco.utils.harmony_compat import harmonize_embedding
+from sampledisco.utils.embedding_keys import COMP_KEY, LEGACY_COMP_KEY, write_comp_key
 from scipy.sparse import issparse
 
 from sampledisco.utils.safe_save import safe_h5ad_write
@@ -46,7 +47,7 @@ def anndata_cluster(
     """Process AnnData for clustering — dual-Harmony, single saved file.
 
     Produces TWO cell-level Harmony embeddings on `adata`:
-      - obsm['Z_clust']        — Harmony with `cell_level_batch_key_for_harmony`
+      - obsm['Z_comp']        — Harmony with `cell_level_batch_key_for_harmony`
                                          (typically batch + sample → sample-removed)
       - obsm['Z_rmd'] — Harmony with `cell_level_batch_key_no_sample`
                                          (no sample → sample-preserved, used by RMD)
@@ -79,16 +80,16 @@ def anndata_cluster(
     if verbose:
         print("=== [CPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
-    adata.obsm["Z_clust"] = harmonize_embedding(
+    write_comp_key(adata, harmonize_embedding(
         adata.obsm["X_pca"], adata.obs,
         batch_key=cell_level_batch_key_for_harmony,
         max_iter_harmony=num_harmony_iterations,
         use_gpu=False,
-    )
+    ))
 
     # HVG2 for RMD basis: sample-naive (batch_key=None) so HVGs reflect intrinsic
     # gene variability without sample-group bias. Runs on counts layer because .X
-    # is now normalized.  Placed after Z_clust Harmony to preserve RNG ordering.
+    # is now normalized.  Placed after Z_comp Harmony to preserve RNG ordering.
     adata.var["highly_variable_clust"] = adata.var["highly_variable"].to_numpy().copy()
     hvg_spans = [0.3, 0.5, 0.8, 1.0]
     last_err = None
@@ -133,7 +134,9 @@ def anndata_cluster(
             adata.obsm["X_pca_rmd"], dtype=np.float32)
 
     if verbose:
-        print(f"  Z_clust   shape: {adata.obsm['Z_clust'].shape}")
+        print(f"  Z_comp    shape: {adata.obsm[COMP_KEY].shape}")
+        if LEGACY_COMP_KEY in adata.obsm:
+            print(f"  (legacy alias obsm['{LEGACY_COMP_KEY}'] also written; removed in 1.0)")
         print(f"  X_pca_rmd shape: {adata.obsm['X_pca_rmd'].shape}")
         print(f"  Z_rmd     shape: {adata.obsm['Z_rmd'].shape}")
 
@@ -188,7 +191,7 @@ def preprocess(
       - `.layers['counts']` original raw counts
       - `.var['highly_variable']` HVG flag (no subsetting)
       - `.obsm['X_pca']`         PCA on HVG subset
-      - `.obsm['Z_clust']`        Harmony pass 1 (sample-removed)
+      - `.obsm['Z_comp']`        Harmony pass 1 (sample-removed)
       - `.obsm['Z_rmd']` Harmony pass 2 (sample-preserved; used by RMD)
 
     Returns the AnnData (no separate `adata_sample_diff` is produced).
@@ -224,7 +227,7 @@ def preprocess(
         )
 
     flattened_cell_level_batch_key = _flatten_to_strings(cell_level_batch_key or [])
-    # Z_clust (sample-removed): sample column included so Harmony removes it.
+    # Z_comp (sample-removed): sample column included so Harmony removes it.
     cell_level_batch_key_for_harmony = flattened_cell_level_batch_key.copy()
     if sample_column not in cell_level_batch_key_for_harmony:
         cell_level_batch_key_for_harmony.append(sample_column)

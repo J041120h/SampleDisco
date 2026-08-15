@@ -12,6 +12,7 @@ from scipy.sparse import issparse
 # imports — and the rest of the pipeline still runs on GPU — when harmony-pytorch
 # is not installed.
 from sampledisco.utils.harmony_compat import harmonize_embedding
+from sampledisco.utils.embedding_keys import COMP_KEY, LEGACY_COMP_KEY, write_comp_key
 
 from sampledisco.utils.safe_save import safe_h5ad_write
 from sampledisco.utils.random_seed import set_global_seed
@@ -32,7 +33,7 @@ def anndata_cluster(
     """GPU dual-Harmony preprocessing — single saved file.
 
     Produces TWO cell-level Harmony embeddings (one preprocessing pass):
-      - obsm['Z_clust']        — Harmony with `cell_level_batch_key_for_harmony`
+      - obsm['Z_comp']        — Harmony with `cell_level_batch_key_for_harmony`
                                          (typically batch + sample → sample-removed)
       - obsm['Z_rmd'] — Harmony with `cell_level_batch_key_no_sample`
                                          (no sample → sample-preserved, used by RMD)
@@ -89,16 +90,16 @@ def anndata_cluster(
     if verbose:
         print("=== [GPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
-    adata.obsm["Z_clust"] = harmonize_embedding(
+    write_comp_key(adata, harmonize_embedding(
         adata.obsm["X_pca"], adata.obs,
         batch_key=cell_level_batch_key_for_harmony,
         max_iter_harmony=num_harmony_iterations,
         use_gpu=True,
-    )
+    ))
 
     # HVG2 for RMD basis: sample-naive (batch_key=None) so HVGs reflect intrinsic
     # gene variability without sample-group bias. Runs on counts layer because .X
-    # is now normalized.  Placed after Z_clust Harmony to preserve RNG ordering.
+    # is now normalized.  Placed after Z_comp Harmony to preserve RNG ordering.
     if verbose:
         print("Running HVG2 (sample-naive) selection on CPU (Seurat v3, layer='counts')...")
     adata.var["highly_variable_clust"] = adata.var["highly_variable"].to_numpy().copy()
@@ -149,7 +150,9 @@ def anndata_cluster(
             adata.obsm["X_pca_rmd"], dtype=np.float32)
 
     if verbose:
-        print(f"  Z_clust   shape: {adata.obsm['Z_clust'].shape}")
+        print(f"  Z_comp    shape: {adata.obsm[COMP_KEY].shape}")
+        if LEGACY_COMP_KEY in adata.obsm:
+            print(f"  (legacy alias obsm['{LEGACY_COMP_KEY}'] also written; removed in 1.0)")
         print(f"  X_pca_rmd shape: {adata.obsm['X_pca_rmd'].shape}")
         print(f"  Z_rmd     shape: {adata.obsm['Z_rmd'].shape}")
 
@@ -186,7 +189,7 @@ def preprocess_gpu(
       - `.layers['counts']` raw counts
       - `.var['highly_variable']` HVG flag
       - `.obsm['X_pca']`         PCA on HVG subset
-      - `.obsm['Z_clust']`        sample-removed Harmony
+      - `.obsm['Z_comp']`        sample-removed Harmony
       - `.obsm['Z_rmd']` sample-preserved Harmony (used by RMD)
     """
     set_global_seed(seed=42)
@@ -231,7 +234,7 @@ def preprocess_gpu(
         else:
             flattened_cell_level_batch_key.append(str(var))
 
-    # Z_clust (sample-removed): sample column included so Harmony removes it.
+    # Z_comp (sample-removed): sample column included so Harmony removes it.
     cell_level_batch_key_for_harmony = flattened_cell_level_batch_key.copy()
     if sample_column not in cell_level_batch_key_for_harmony:
         cell_level_batch_key_for_harmony.append(sample_column)

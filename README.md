@@ -14,15 +14,15 @@ For each modality (RNA, ATAC, or integrated multi-omics) the pipeline produces t
 
 | Key | Role | Source |
 |---|---|---|
-| **`Z_clust`** | sample-removed embedding — used for clustering and composition blocks | Harmony (single-omics) / Harmony post-pass on scGLUE (multi-omics) |
-| **`Z_cmd`**  | sample-preserved embedding — used for the counterfactual displacement (CMD) block | second Harmony pass (single-omics) / scGLUE primary output (multi-omics) |
+| **`Z_comp`** | sample-removed embedding — used for cell typing and the composition blocks | Harmony (single-omics) / Harmony post-pass on scGLUE (multi-omics) |
+| **`Z_rmd`**  | sample-preserved embedding — used for the reference-relative mean displacement (RMD) block | second Harmony pass (single-omics) / scGLUE primary output (multi-omics) |
 
 It then assembles **four blocks** per sample (or per sample × modality for multi-omics):
 
 1. **A1** — one-hot cell-type composition
 2. **A2** — soft k-means composition at K_med (≈120)
 3. **A3** — soft k-means composition at K_fine (≈300)
-4. **CMD** — leave-one-out cell-type-resolved displacement on `Z_cmd`
+4. **RMD** — leave-one-out cell-type-resolved displacement on `Z_rmd`
 
 The four blocks are inverse-variance weighted, Frobenius-stacked, PCA-reduced to 10 dimensions, and Harmony-corrected at sample level. The result is stored as `adata.uns['X_DR_sample']` and feeds every downstream module.
 
@@ -40,20 +40,20 @@ code/
 │   ├── atac_wrapper.py
 │   └── multiomics_wrapper.py
 ├── preparation/               # Preprocessing
-│   ├── rna_preprocess_{cpu,gpu}.py   # QC → HVG → PCA → dual Harmony → Z_clust + Z_cmd
-│   ├── atac_preprocess_{cpu,gpu}.py  # QC → TF-IDF → HVF → LSI → dual Harmony → Z_clust + Z_cmd
-│   ├── cell_type_{cpu,gpu}.py        # Leiden clustering on Z_clust (RNA or ATAC)
+│   ├── rna_preprocess_{cpu,gpu}.py   # QC → HVG → PCA → dual Harmony → Z_comp + Z_rmd
+│   ├── atac_preprocess_{cpu,gpu}.py  # QC → TF-IDF → HVF → LSI → dual Harmony → Z_comp + Z_rmd
+│   ├── cell_type_{cpu,gpu}.py        # Leiden clustering on Z_comp (RNA or ATAC)
 │   ├── ATAC_cell_type{,_gpu}.py      # ATAC-specific cell typing variants
 │   ├── multi_omics_glue.py           # scGLUE integration (cross-modality VAE + guidance graph)
-│   ├── multi_omics_batch_correction.py # Harmony post-pass on X_glue → Z_clust
+│   ├── multi_omics_batch_correction.py # Harmony post-pass on X_glue → Z_comp
 │   ├── multi_omics_merge.py          # post-GLUE merge + per-modality preprocess/slimming
 │   └── multi_omics_cell_type_{cpu,gpu}.py  # RNA-Leiden + k-NN label transfer to ATAC
 ├── sample_embedding/          # Core method
-│   ├── blocks.py              # composition, CMD, weighting, Frobenius stack, final PCA + Harmony
+│   ├── blocks.py              # composition, RMD, weighting, Frobenius stack, final PCA + Harmony
 │   ├── sample_embedding.py    # CPU pipeline
 │   └── sample_embedding_gpu.py # GPU pipeline (cuML + cupy)
 ├── parameter_selection/
-│   └── autotune.py            # Bayesian GP sweep over CMD α; adaptive proxy ensemble
+│   └── autotune.py            # Bayesian GP sweep over RMD α; adaptive proxy ensemble
 ├── sample_distance/           # Pairwise sample distances (DR / EMD / chi-square / JS)
 ├── sample_clustering/         # Hierarchical (HRA / HRC / NN / UPGMA / consensus), K-means, proportion test, RAISIN
 ├── sample_trajectory/         # CCA (supervised) and TSCAN (unsupervised) + GAM-based trajectory DGE
@@ -118,7 +118,7 @@ For multi-omics, the pipeline takes two separate h5ads (RNA + ATAC) and integrat
 ├── atac/   (parallel structure)
 ├── multiomics/
 │   ├── integration/glue/{rna-pp,atac-pp,guidance.graphml.gz}
-│   ├── preprocess/adata_sample.h5ad           # post-GLUE merged adata with Z_clust + Z_cmd
+│   ├── preprocess/adata_sample.h5ad           # post-GLUE merged adata with Z_comp + Z_rmd
 │   ├── sample_embedding/sample_embedding.csv
 │   └── (same downstream subdirs as single-omics)
 └── sys_log/main_process_status.json           # which stages completed

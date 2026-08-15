@@ -14,6 +14,7 @@ from sklearn.preprocessing import OneHotEncoder
 import sys
 from sampledisco.utils.safe_save import safe_h5ad_write, ensure_cpu_arrays
 from sampledisco.utils.imbalance_cell_type_handler import filter_modality_imbalanced_clusters
+from sampledisco.utils.embedding_keys import XGLUE_KEY, resolve_comp_key
 
 
 def cell_types_multiomics(
@@ -23,7 +24,7 @@ def cell_types_multiomics(
     atac_modality_value="ATAC",
     cell_type_column="cell_type",
     cluster_resolution=0.8,
-    use_rep="X_glue",
+    use_rep=None,
     num_PCs=50,
     k_neighbors=15,
     transfer_metric="cosine",
@@ -36,9 +37,9 @@ def cell_types_multiomics(
 ):
     """Cluster RNA cells with Leiden, then transfer labels to ATAC via Jaccard-weighted SNN.
 
-    use_rep should be the sample-REMOVED embedding (Z_clust) — the wrapper resolves
-    this automatically via _resolve_embedding_keys; the default 'X_glue' is a
-    fallback when Z_clust is absent.  Writes obs[cell_type_column] on the union adata.
+    use_rep is the sample-REMOVED embedding (Z_comp); ``None`` auto-resolves it
+    from .obsm (legacy names accepted). Writes obs[cell_type_column] on the
+    union adata.
     """
     if verbose:
         print("\n" + "=" * 60)
@@ -51,8 +52,8 @@ def cell_types_multiomics(
     if modality_column not in adata.obs.columns:
         raise ValueError(f"Modality column '{modality_column}' not found in adata.obs")
 
-    if use_rep not in adata.obsm:
-        raise ValueError(f"Representation '{use_rep}' not found in adata.obsm")
+    use_rep = resolve_comp_key(adata, use_rep, fallbacks=(XGLUE_KEY,),
+                               context="cell_types_multiomics")
 
     rna_mask = adata.obs[modality_column] == rna_modality_value
     atac_mask = adata.obs[modality_column] == atac_modality_value

@@ -9,9 +9,10 @@ import os
 import numpy as np
 import pandas as pd
 
-ABL = "/dcs07/hongkai/data/harry/result/ablation"
-VARIANTS = ["proportion_only", "rmd_only", "no_batch_removal",
-            "linear_regression", "original"]
+ABL = os.environ.get("ABL_DIR", "/dcs07/hongkai/data/harry/result/ablation")
+VARIANTS = os.environ.get(
+    "ABL_VARIANTS",
+    "proportion_only,rmd_only,no_batch_removal,linear_regression,original").split(",")
 
 
 def main():

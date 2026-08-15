@@ -19,6 +19,7 @@ from typing import Optional, List, Dict, Tuple, Union
 import sys
 from sampledisco.visualization.visualization_helper import visualizeDistanceMatrix
 from sampledisco.sample_distance.distance_test import distanceCheck
+from sampledisco.utils.embedding_keys import resolve_comp_key
 from .ChiSquare import chi_square_distance
 from .jensenshannon import jensen_shannon_distance
 
@@ -31,7 +32,7 @@ def compute_emd_distances(
     adata: AnnData,
     sample_column: str = 'sample',
     cell_type_column: str = 'cell_type',
-    embedding_key: str = 'Z_clust',
+    embedding_key: Optional[str] = None,
     n_pcs: int = 20,
     proportions: Optional[pd.DataFrame] = None,
     centroids: Optional[Union[pd.DataFrame, np.ndarray]] = None,
@@ -50,6 +51,9 @@ def compute_emd_distances(
     except ImportError:
         raise ImportError("POT library required for EMD. Install with: pip install POT")
     
+    embedding_key = resolve_comp_key(
+        adata, embedding_key, fallbacks=('X_glue', 'X_lsi', 'X_pca'),
+        context="sample_distance")
     samples = adata.obs[sample_column].unique()
     cell_types = adata.obs[cell_type_column].unique()
     n_samples = len(samples)
@@ -191,7 +195,7 @@ def emd_distance(
     output_dir: str,
     sample_column: str = 'sample',
     cell_type_column: str = 'cell_type',
-    embedding_key: str = 'Z_clust',
+    embedding_key: Optional[str] = None,
     n_pcs: int = 20,
     proportions: Optional[pd.DataFrame] = None,
     centroids: Optional[Union[pd.DataFrame, np.ndarray]] = None,
@@ -207,6 +211,9 @@ def emd_distance(
     emd_output_dir = os.path.join(output_dir, 'EMD_distance')
     os.makedirs(emd_output_dir, exist_ok=True)
 
+    embedding_key = resolve_comp_key(
+        adata, embedding_key, fallbacks=('X_glue', 'X_lsi', 'X_pca'),
+        context="sample_distance")
     print(f"Computing EMD distances...")
     print(f"  Sample column: {sample_column}")
     print(f"  Cell type column: {cell_type_column}")
@@ -407,26 +414,19 @@ def _match_samples(dr_data: pd.DataFrame, adata: AnnData) -> pd.DataFrame:
 def _default_cell_embedding_key(adata: AnnData, data_type: str) -> str:
     """Pick the modality-appropriate default cell-level embedding key from adata.obsm.
 
-    RNA → prefer Z_clust, fall back to X_pca.
-    ATAC → prefer Z_clust, fall back to X_lsi.
-    multiomics → prefer Z_clust (sample-removed; paper's cluster view),
-        fall back to X_glue.
+    Prefers the sample-removed composition view (Z_comp, legacy names
+    accepted), falling back to the modality's raw basis: X_glue for
+    multiomics, X_lsi for ATAC, X_pca for RNA.
     """
     dt = data_type.lower()
     if dt == 'multiomics':
-        priority = ['Z_clust', 'X_glue']
+        fallbacks = ('X_glue',)
     elif dt == 'atac':
-        priority = ['Z_clust', 'X_lsi']
+        fallbacks = ('X_lsi',)
     else:
-        priority = ['Z_clust', 'X_pca']
-
-    for k in priority:
-        if k in adata.obsm:
-            return k
-    raise KeyError(
-        f"No expected cell-level embedding found in adata.obsm for data_type='{data_type}'. "
-        f"Tried {priority}. Available keys: {list(adata.obsm.keys())}"
-    )
+        fallbacks = ('X_pca',)
+    return resolve_comp_key(adata, None, fallbacks=fallbacks,
+                            context="sample_distance")
 
 
 def get_best_sample_dr_key(adata: AnnData, data_type: str = 'ATAC') -> Optional[str]:
@@ -551,7 +551,7 @@ def sample_distance(
 
     - VALID_PDIST_METRICS: operate on adata.uns['X_DR_sample'] via pdist.
     - 'EMD': earth mover's distance on cell-type proportions; requires cell_adata.
-      embedding_key defaults to Z_clust (or X_glue for multiomics) when None.
+      embedding_key defaults to Z_comp (or X_glue for multiomics) when None.
     - 'chi_square' / 'jensen_shannon': proportion-based; require cell_adata;
       save internally and return None.
 

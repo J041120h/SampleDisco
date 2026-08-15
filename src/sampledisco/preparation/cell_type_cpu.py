@@ -7,6 +7,7 @@ from scipy.cluster.hierarchy import fcluster
 import scanpy as sc
 
 from sampledisco.visualization.visualization_helper import generate_umap_visualizations
+from sampledisco.utils.embedding_keys import resolve_comp_key
 
 
 def cell_types(
@@ -39,8 +40,8 @@ def cell_types(
         from sampledisco.utils.random_seed import set_global_seed
         set_global_seed(seed=42)
 
-    if cell_embedding_column is None:
-        cell_embedding_column = "Z_clust"
+    cell_embedding_column = resolve_comp_key(adata, cell_embedding_column,
+                                             context="cell_types")
     is_atac = "X_lsi" in adata.obsm
 
     if cell_type_column in adata.obs.columns and existing_cell_types:
@@ -155,13 +156,13 @@ def cell_types(
     return adata
 
 
-def cell_type_dendrogram(adata, n_clusters, groupby="cell_type", cell_embedding_column="Z_clust", cell_embedding_num_PCs=20, is_atac=False):
+def cell_type_dendrogram(adata, n_clusters, groupby="cell_type", cell_embedding_column=None, cell_embedding_num_PCs=20, is_atac=False):
     if n_clusters < 1:
         raise ValueError("n_clusters must be >= 1")
     if groupby not in adata.obs:
         raise ValueError(f"{groupby} not found in adata.obs")
-    if cell_embedding_column not in adata.obsm:
-        raise ValueError(f"{cell_embedding_column} not found in adata.obsm")
+    cell_embedding_column = resolve_comp_key(adata, cell_embedding_column,
+                                             context="cell_type_dendrogram")
 
     embedding_data = adata.obsm[cell_embedding_column]
     if not is_atac and cell_embedding_num_PCs is not None and cell_embedding_num_PCs < embedding_data.shape[1]:

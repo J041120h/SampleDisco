@@ -20,6 +20,7 @@ from __future__ import annotations
 import math
 import os
 import time
+import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -45,9 +46,17 @@ from sampledisco.sample_embedding.blocks import (
     loo_rmd,
     soft_assign,
 )
+from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
 
 
-DEFAULT_ALPHA_BOUNDS = (0.1, 10.0)
+# Only the ceiling moved (10.0 -> 100.0). Datasets whose signal lives in the RMD
+# block were being truncated by the old ceiling: a dense sweep puts the optimum
+# at alpha = 16 on the 1M-scBloodNL stimulation time-course, and several saved
+# runs (covid ATAC, covid 279, unpaired paper) had returned alpha pinned at 10.0.
+# The floor stays at 0.1: no dataset has ever optimised against it, and on a
+# composition-dominated cohort the objective is flat below ~1.5, so a lower floor
+# only lets alpha drift down until the RMD block is numerically absent.
+DEFAULT_ALPHA_BOUNDS = (0.1, 100.0)
 
 
 # ============================================================ #
@@ -57,7 +66,7 @@ def build_blocks(
     adata: AnnData,
     sample_col: str,
     celltype_col: str,
-    cluster_emb_key: str,
+    comp_emb_key: Optional[str] = None,
     rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[str] = None,
@@ -69,12 +78,12 @@ def build_blocks(
     verbose: bool = True,
 ) -> Dict:
     """Build composition + RMD blocks once. Returns a dict the inner loop reuses."""
-    rmd_key = rmd_emb_key if rmd_emb_key and rmd_emb_key in adata.obsm else (
-        "Z_rmd" if "Z_rmd" in adata.obsm else cluster_emb_key
-    )
+    comp_key = resolve_comp_key(adata, comp_emb_key, context="autotune")
+    rmd_key = resolve_rmd_key(adata, rmd_emb_key, comp_key=comp_key,
+                              context="autotune")
 
-    units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_clust = \
-        assemble_units(adata, sample_col, cluster_emb_key,
+    units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_comp = \
+        assemble_units(adata, sample_col, comp_key,
                        modality_col=modality_col, batch_col=batch_col)
     n_units = len(units)
     cellid_idx = {cid: i for i, cid in enumerate(all_cellids)}
@@ -85,26 +94,26 @@ def build_blocks(
 
     # A1: hard cell-type-label composition (one-hot, no clustering)
     L1 = {ct: i for i, ct in enumerate(unique_cts)}
-    soft1 = np.zeros((Z_clust.shape[0], K_c), dtype=np.float32)
+    soft1 = np.zeros((Z_comp.shape[0], K_c), dtype=np.float32)
     for i, ct in enumerate(cell_type):
         soft1[i, L1[ct]] = 1.0
     unit_cellids_list = [unit_cellids[uid] for uid in unit_ids]
     A1 = composition_per_unit(unit_cellids_list, soft1, cellid_idx)
 
-    K_med = min(medium_K, max(2, Z_clust.shape[0] // 200))
+    K_med = min(medium_K, max(2, Z_comp.shape[0] // 200))
     if verbose:
         print(f"[autotune.build_blocks] K-means K={K_med}...")
     km_med = MiniBatchKMeans(n_clusters=K_med, random_state=seed,
-                              batch_size=4096, n_init=5, max_iter=200).fit(Z_clust)
-    soft2 = soft_assign(Z_clust, km_med.cluster_centers_)
+                              batch_size=4096, n_init=5, max_iter=200).fit(Z_comp)
+    soft2 = soft_assign(Z_comp, km_med.cluster_centers_)
     A2 = composition_per_unit(unit_cellids_list, soft2, cellid_idx)
 
-    K_fine = min(fine_K, max(2, Z_clust.shape[0] // 100))
+    K_fine = min(fine_K, max(2, Z_comp.shape[0] // 100))
     if verbose:
         print(f"[autotune.build_blocks] K-means K={K_fine}...")
     km_fine = MiniBatchKMeans(n_clusters=K_fine, random_state=seed + 1,
-                                batch_size=4096, n_init=5, max_iter=200).fit(Z_clust)
-    soft3 = soft_assign(Z_clust, km_fine.cluster_centers_)
+                                batch_size=4096, n_init=5, max_iter=200).fit(Z_comp)
+    soft3 = soft_assign(Z_comp, km_fine.cluster_centers_)
     A3 = composition_per_unit(unit_cellids_list, soft3, cellid_idx)
 
     # RMD
@@ -152,7 +161,7 @@ def build_blocks(
         unit_ids=unit_ids, unit_groups=unit_groups, unit_batches=unit_batches,
         n_units=n_units, grouping=grouping_arr, batch=batch_arr,
         has_batch=has_batch, has_grouping=has_grouping,
-        cluster_emb_key=cluster_emb_key, rmd_emb_key=rmd_key,
+        comp_emb_key=comp_key, rmd_emb_key=rmd_key,
     )
 
 
@@ -441,8 +450,29 @@ def make_scorer(name: str, meta: Dict, lam: float = 0.5) -> Callable[[np.ndarray
 # ============================================================ #
 # Search strategies                                              #
 # ============================================================ #
-def search_grid(objective: Callable, alpha_grid: List[float]):
-    """Exhaustive grid search over ``alpha_grid``. Returns (best_alpha, best_score, trace)."""
+def _log10_bounds(bounds: Tuple[float, float]) -> Tuple[float, float]:
+    """Map an alpha interval to log10 space, guarding against a non-positive low end."""
+    lo, hi = float(bounds[0]), float(bounds[1])
+    if hi <= 0:
+        raise ValueError(f"alpha_bounds upper limit must be positive, got {hi}")
+    lo = max(lo, hi * 1e-6)
+    return math.log10(lo), math.log10(hi)
+
+
+def search_grid(objective: Callable, alpha_grid: Optional[List[float]] = None,
+                bounds: Optional[Tuple[float, float]] = None, n: int = 15):
+    """Exhaustive grid search. Returns (best_alpha, best_score, trace).
+
+    With ``alpha_grid`` the caller's points are used verbatim. Otherwise a
+    log-spaced grid of ``n`` points is built from ``bounds`` — alpha is a scale
+    parameter, so equal spacing in log10 gives each order of magnitude the same
+    number of probes.
+    """
+    if alpha_grid is None:
+        if bounds is None:
+            raise ValueError("search_grid needs alpha_grid or bounds")
+        t_lo, t_hi = _log10_bounds(bounds)
+        alpha_grid = [float(10.0 ** t) for t in np.linspace(t_lo, t_hi, n)]
     trace = []
     best = None
     for a in alpha_grid:
@@ -453,31 +483,34 @@ def search_grid(objective: Callable, alpha_grid: List[float]):
     return best[0], best[1], trace
 
 
-def search_golden(objective: Callable, bounds=(0.1, 10.0), max_iter=12):
-    """Golden-section search for a unimodal objective over ``bounds``. Returns (best_alpha, best_score, trace)."""
+def search_golden(objective: Callable, bounds=DEFAULT_ALPHA_BOUNDS, max_iter=12):
+    """Golden-section search over log10(alpha) for a unimodal objective.
+
+    Returns (best_alpha, best_score, trace); the trace is in alpha, not log10.
+    """
     phi = (1 + math.sqrt(5)) / 2
-    a, b = bounds
+    a, b = _log10_bounds(bounds)
     resphi = 2 - phi
     x1 = a + resphi * (b - a)
     x2 = b - resphi * (b - a)
-    f1 = objective(x1)
-    f2 = objective(x2)
-    trace = [(x1, f1), (x2, f2)]
+    f1 = objective(10.0 ** x1)
+    f2 = objective(10.0 ** x2)
+    trace = [(10.0 ** x1, f1), (10.0 ** x2, f2)]
     for _ in range(max_iter):
         if f1 > f2:
             b = x2
             x2 = x1
             f2 = f1
             x1 = a + resphi * (b - a)
-            f1 = objective(x1)
-            trace.append((x1, f1))
+            f1 = objective(10.0 ** x1)
+            trace.append((10.0 ** x1, f1))
         else:
             a = x1
             x1 = x2
             f1 = f2
             x2 = b - resphi * (b - a)
-            f2 = objective(x2)
-            trace.append((x2, f2))
+            f2 = objective(10.0 ** x2)
+            trace.append((10.0 ** x2, f2))
     best = max(trace, key=lambda x: x[1])
     return best[0], best[1], trace
 
@@ -493,45 +526,53 @@ def _gp_ei(gp, X_grid, y_best, xi=0.01):
     return ei
 
 
-def search_bayesian(objective: Callable, bounds=(0.1, 10.0),
+def search_bayesian(objective: Callable, bounds=DEFAULT_ALPHA_BOUNDS,
                      n_init=5, n_iter=10, seed=42):
-    """GP-EI Bayesian optimisation over a 1-D ``bounds`` interval.
-    Seeds with ``n_init`` equally-spaced evaluations, then acquires via Expected Improvement.
-    Returns (best_alpha, best_score, trace)."""
+    """GP-EI Bayesian optimisation over log10(alpha).
+
+    Seeds with ``n_init`` log-spaced evaluations, then acquires via Expected
+    Improvement on a log-spaced grid. Returns (best_alpha, best_score, trace),
+    with the trace reported in alpha rather than log10.
+
+    The search runs in log space because alpha is a scale parameter: seeding
+    linearly over, say, [0.01, 1000] would place the first five probes at
+    0.01/250/500/750/1000 and never examine the sub-unit region where the
+    composition-dominated datasets have their optimum.
+    """
     rng = np.random.default_rng(seed)
-    lo, hi = bounds
-    X_init = np.linspace(lo, hi, n_init).reshape(-1, 1)
+    t_lo, t_hi = _log10_bounds(bounds)
     trace = []
-    for x in X_init:
-        s = objective(float(x[0]))
-        trace.append((float(x[0]), s))
-    X = np.array([[a] for a, _ in trace])
+    for t in np.linspace(t_lo, t_hi, n_init):
+        a = float(10.0 ** t)
+        trace.append((a, objective(a)))
+    X = np.array([[math.log10(a)] for a, _ in trace])
     y = np.array([s for _, s in trace])
     kernel = (ConstantKernel(1.0, (1e-3, 1e3))
               * Matern(length_scale=1.0, length_scale_bounds=(1e-2, 1e2), nu=2.5)
               + WhiteKernel(noise_level=1e-3, noise_level_bounds=(1e-5, 1e-1)))
-    grid = np.linspace(lo, hi, 500).reshape(-1, 1)
+    grid = np.linspace(t_lo, t_hi, 500).reshape(-1, 1)
     for _ in range(n_iter):
         try:
             gp = GaussianProcessRegressor(kernel=kernel, normalize_y=True,
                                             n_restarts_optimizer=2,
                                             random_state=seed).fit(X, y)
             ei = _gp_ei(gp, grid, y.max())
-            x_next = float(grid[int(np.argmax(ei))][0])
+            t_next = float(grid[int(np.argmax(ei))][0])
         except Exception:
-            x_next = float(rng.uniform(lo, hi))
-        if any(abs(x_next - x) < 1e-3 for x, _ in trace):
-            x_next = float(rng.uniform(lo, hi))
-        s = objective(x_next)
-        trace.append((x_next, s))
-        X = np.vstack([X, [[x_next]]])
+            t_next = float(rng.uniform(t_lo, t_hi))
+        if any(abs(t_next - math.log10(a)) < 1e-3 for a, _ in trace):
+            t_next = float(rng.uniform(t_lo, t_hi))
+        a_next = float(10.0 ** t_next)
+        s = objective(a_next)
+        trace.append((a_next, s))
+        X = np.vstack([X, [[t_next]]])
         y = np.append(y, s)
     best = max(trace, key=lambda x: x[1])
     return best[0], best[1], trace
 
 
 SEARCH_FUNCS = {
-    "grid":            lambda obj, b: search_grid(obj, [0.1, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0]),
+    "grid":            lambda obj, b: search_grid(obj, bounds=b, n=15),
     "golden_section":  lambda obj, b: search_golden(obj, bounds=b, max_iter=12),
     "bayesian":        lambda obj, b: search_bayesian(obj, bounds=b, n_init=5, n_iter=10),
 }
@@ -546,7 +587,7 @@ def run_autotune(
     *,
     sample_col: str = "sample",
     celltype_col: str = "cell_type",
-    cluster_emb_key: str = "Z_clust",
+    comp_emb_key: Optional[str] = None,
     rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
     batch_col: Optional[Union[str, List[str]]] = None,
@@ -564,6 +605,7 @@ def run_autotune(
     save: bool = True,
     verbose: bool = True,
     tune_on_modality: Optional[str] = None,
+    cluster_emb_key: Optional[str] = None,
 ) -> Dict:
     """Run autotune and return the best params + final sample-AnnData.
 
@@ -574,6 +616,12 @@ def run_autotune(
     how does the other modality fare under that α?". Set to ``None`` (default)
     to score on every unit (current behaviour).
     """
+    if cluster_emb_key is not None:
+        warnings.warn("cluster_emb_key= is deprecated and will be removed in 1.0; "
+                      "use comp_emb_key=.", FutureWarning, stacklevel=2)
+        if comp_emb_key is None:
+            comp_emb_key = cluster_emb_key
+
     t0 = time.time()
     primary_batch = batch_col[0] if isinstance(batch_col, (list, tuple)) and batch_col else batch_col
     if isinstance(primary_batch, list):
@@ -581,7 +629,7 @@ def run_autotune(
 
     blocks = build_blocks(
         adata, sample_col=sample_col, celltype_col=celltype_col,
-        cluster_emb_key=cluster_emb_key, rmd_emb_key=rmd_emb_key,
+        comp_emb_key=comp_emb_key, rmd_emb_key=rmd_emb_key,
         modality_col=modality_col, batch_col=primary_batch,
         grouping_col=grouping_col, medium_K=medium_K, fine_K=fine_K,
         rmd_dim=rmd_dim, seed=seed, verbose=verbose,
@@ -755,7 +803,7 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     lines.append(f"  K_c   (cell types) : {int(blocks['K_c'])}")
     lines.append(f"  K_med (k-means)    : {int(blocks['K_med'])}")
     lines.append(f"  K_fine (k-means)   : {int(blocks['K_fine'])}")
-    lines.append(f"  cluster_emb_key    : {blocks.get('cluster_emb_key', '?')}")
+    lines.append(f"  comp_emb_key       : {blocks.get('comp_emb_key', '?')}")
     lines.append(f"  rmd_emb_key        : {blocks.get('rmd_emb_key', '?')}")
     lines.append("")
     lines.append("Active scoring proxies (gated by data availability)")
@@ -782,6 +830,20 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
                   + "  (A1, A2, A3, RMD)")
     lines.append(f"  total evaluations : {len(trace)}")
     lines.append(f"  wall time         : {elapsed_s:.2f} s")
+    # A flat objective makes the single winning α arbitrary within the plateau;
+    # report the plateau so the number is not read as more precise than it is.
+    near = [a for a, s in trace
+            if best_score == best_score and s >= best_score - 0.01 * abs(best_score)]
+    if len(near) > 1:
+        lines.append(f"  α within 1% of best: [{min(near):g}, {max(near):g}]  "
+                     f"({len(near)}/{len(trace)} evaluations) — the objective is "
+                     f"flat over this range")
+    alpha_best = best_params.get("rmd_weight")
+    if alpha_best is not None and any(
+            abs(alpha_best - b) <= 1e-9 * max(1.0, abs(b)) for b in alpha_bounds):
+        lines.append(f"  NOTE: α equals a search bound; the optimum may lie outside "
+                     f"[{alpha_bounds[0]:g}, {alpha_bounds[1]:g}] — widen "
+                     f"alpha_bounds and re-run.")
     lines.append("")
     lines.append(f"Search trace ({len(trace)} evals, top 25 by score)")
     lines.append("-" * 68)
@@ -821,7 +883,9 @@ def _finalize(adata, blocks, final_emb, weights, *,
         "K_c": int(blocks["K_c"]),
         "K_med": int(blocks["K_med"]),
         "K_fine": int(blocks["K_fine"]),
-        "cluster_emb_key": str(blocks.get("cluster_emb_key", "")),
+        "comp_emb_key": str(blocks.get("comp_emb_key", "")),
+        # Deprecated 0.2.0 spelling; removed in 1.0.
+        "cluster_emb_key": str(blocks.get("comp_emb_key", "")),
         "rmd_emb_key": str(blocks.get("rmd_emb_key", "")),
         "n_evals": len(trace),
         "autotuned": True,

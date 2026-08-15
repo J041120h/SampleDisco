@@ -5,6 +5,7 @@ import gc
 import json
 import time
 import shutil as _shutil
+import warnings
 from pathlib import Path
 from typing import Optional, Tuple, List
 from itertools import chain
@@ -56,6 +57,9 @@ import psutil
 # Local/project
 from sampledisco.utils.safe_save import safe_h5ad_write
 from sampledisco.utils.merge_sample_meta import merge_sample_metadata
+from sampledisco.utils.embedding_keys import (
+    COMP_KEY, LEGACY_COMP_KEY, RMD_KEY, WRITE_LEGACY_ALIAS,
+)
 from sampledisco.visualization.multi_omics_visualization import glue_visualize
 
 def _peak_hvf_with_retries(adata_sub: ad.AnnData, n_top: int) -> pd.Index:
@@ -784,21 +788,26 @@ def _merge_second_glue_embedding_into_primary_h5ads(
     glue_dir: str,
     primary_prefix: str,
     secondary_prefix: str,
-    z_clust_key: str = "Z_clust",
-    z_rmd_key: str = "Z_rmd",
+    z_comp_key: str = COMP_KEY,
+    z_rmd_key: str = RMD_KEY,
+    z_clust_key: Optional[str] = None,
 ) -> None:
     """Align the primary RNA/ATAC h5ads with paper-named cell-level views.
 
     Writes into each of ``<primary_prefix>-{rna,atac}-emb.h5ad``:
 
-      * ``obsm[z_rmd_key]``   = primary's ``obsm['X_glue']`` aliased
-                                (sample-PRESERVED — RMD displacement role)
-      * ``obsm[z_clust_key]`` = secondary's ``obsm['X_glue']`` merged in
-                                (sample-REMOVED — cluster role)
+      * ``obsm[z_rmd_key]``  = primary's ``obsm['X_glue']`` aliased
+                               (sample-PRESERVED — RMD displacement role)
+      * ``obsm[z_comp_key]`` = secondary's ``obsm['X_glue']`` merged in
+                               (sample-REMOVED — composition role)
 
     ``obsm['X_glue']`` on the primary is left untouched as the raw scGLUE
-    output. Downstream code reads ``Z_rmd`` / ``Z_clust``.
+    output. Downstream code reads ``Z_rmd`` / ``Z_comp``.
     """
+    if z_clust_key is not None:
+        warnings.warn("z_clust_key= is deprecated and will be removed in 1.0; "
+                      "use z_comp_key=.", FutureWarning, stacklevel=2)
+        z_comp_key = z_clust_key
     import os as _os
     for mod in ("rna", "atac"):
         primary  = _os.path.join(glue_dir, f"{primary_prefix}-{mod}-emb.h5ad")
@@ -817,11 +826,13 @@ def _merge_second_glue_embedding_into_primary_h5ads(
             raise ValueError(
                 f"primary/secondary cell count mismatch for {mod}: "
                 f"{a_primary.n_obs} vs {a_secondary.n_obs}")
-        a_primary.obsm[z_rmd_key]   = a_primary.obsm["X_glue"]
-        a_primary.obsm[z_clust_key] = a_secondary.obsm["X_glue"]
+        a_primary.obsm[z_rmd_key]  = a_primary.obsm["X_glue"]
+        a_primary.obsm[z_comp_key] = a_secondary.obsm["X_glue"]
+        if WRITE_LEGACY_ALIAS and z_comp_key == COMP_KEY:
+            a_primary.obsm[LEGACY_COMP_KEY] = a_primary.obsm[z_comp_key]
         a_primary.write(primary, compression="gzip")
         print(f"  ✓ {mod}: obsm[{z_rmd_key!r}] (from primary X_glue) "
-              f"+ obsm[{z_clust_key!r}] (from {secondary_prefix}) → {primary}")
+              f"+ obsm[{z_comp_key!r}] (from {secondary_prefix}) → {primary}")
 
 
 def multiomics_preparation(
@@ -872,12 +883,12 @@ def multiomics_preparation(
     array_shuffle_num_workers: int = 0,
     graph_shuffle_num_workers: int = 0,
     # Optional second scGLUE training run for the sample-REMOVED cluster
-    # embedding (paper's ``Z_clust``). When True, scGLUE is invoked a
+    # embedding (paper's ``Z_comp``). When True, scGLUE is invoked a
     # SECOND time with ``treat_sample_as_batch=True`` (use_batch=sample,
     # which implicitly removes batch too since each sample is in exactly
     # one batch). After training, the merge helper writes both
     # ``obsm['Z_rmd']`` (primary's X_glue, aliased) and
-    # ``obsm['Z_clust']`` (secondary's X_glue) into the primary RNA + ATAC
+    # ``obsm['Z_comp']`` (secondary's X_glue) into the primary RNA + ATAC
     # h5ads so downstream code reads paper-aligned keys uniformly.
     run_second_glue_for_sample_removal: bool = False,
     second_run_save_prefix: str = "glue_no_sample",
@@ -971,13 +982,13 @@ def multiomics_preparation(
         print("Training completed.")
 
         # Step 2b (optional): SECOND scGLUE run that ALSO removes per-sample
-        # variance → produces the paper's Z_clust. With sample as use_batch
+        # variance → produces the paper's Z_comp. With sample as use_batch
         # (each sample lives in exactly one batch, so removing sample also
         # removes batch), this is the end-to-end alternative to running a
         # Harmony post-pass on Z_rmd.
         if run_second_glue_for_sample_removal:
             print(f"Running second scGLUE pass for sample removal "
-                  f"(treat_sample_as_batch=True) → obsm['Z_clust']")
+                  f"(treat_sample_as_batch=True) → obsm['Z_comp']")
             glue_train(
                 preprocess_output_dir=glue_output_dir,
                 save_prefix=second_run_save_prefix,

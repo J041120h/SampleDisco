@@ -13,6 +13,7 @@ import pandas as pd
 import anndata as ad
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
+sys.path.insert(0, "/users/hjiang/GenoDistance/code/src")
 from sampledisco.sample_embedding.blocks import (
     assemble_units, composition_per_unit, soft_assign, loo_rmd,
     derive_weights, build_emb_from_blocks,
@@ -72,7 +73,9 @@ def build_blocks(adata):
     coarse = dict(zip(all_cellids, ct))
     RMD = loo_rmd(rmd_units, unit_cellids, coarse,
                   max_dim_per_cluster=RMD_DIM, seed=SEED, loo=True, verbose=False)
-    return dict(A1=A1, A2=A2, A3=A3, RMD=RMD, K_c=K_c, K_med=K_med, K_fine=K_fine,
+    RMD_noloo = loo_rmd(rmd_units, unit_cellids, coarse,
+                  max_dim_per_cluster=RMD_DIM, seed=SEED, loo=False, verbose=False)
+    return dict(A1=A1, A2=A2, A3=A3, RMD=RMD, RMD_noloo=RMD_noloo, K_c=K_c, K_med=K_med, K_fine=K_fine,
                 unit_ids=unit_ids, unit_groups=unit_groups, unit_batches=unit_batches)
 
 
@@ -93,6 +96,9 @@ def assemble(variant, B):
         return build_emb_from_blocks(full, w4, batch_method="none", **common)
     if variant == "linear_regression":
         return build_emb_from_blocks(full, w4, batch_method="linear", **common)
+    if variant == "no_loo":
+        return build_emb_from_blocks([B["A1"], B["A2"], B["A3"], B["RMD_noloo"]], w4,
+                                     batch_method="harmony", **common)
     if variant == "original":
         return build_emb_from_blocks(full, w4, batch_method="harmony", **common)
     raise ValueError(variant)
@@ -101,6 +107,8 @@ def assemble(variant, B):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--outroot", required=True)
+    ap.add_argument("--variants", default=",".join(VARIANTS),
+                    help="comma-separated subset of variants to run")
     a = ap.parse_args()
     out = a.outroot; os.makedirs(out, exist_ok=True)
     print("[ha] reading adata lite", flush=True)
@@ -111,13 +119,13 @@ def main():
           f"RMD_dim={B['RMD'].shape[1]} n_units={len(B['unit_ids'])}", flush=True)
 
     env = dict(os.environ, PYTHONNOUSERSITE="1")
-    for v in VARIANTS:
+    for v in [x for x in a.variants.split(',') if x]:
         vout = os.path.join(out, v); os.makedirs(vout, exist_ok=True)
         emb = assemble(v, B)
         emb_csv = os.path.join(vout, "embedding.csv"); emb.to_csv(emb_csv)
         for tag, short in TESTS:
             subprocess.run(
-                ["/users/hjiang/.conda/envs/hongkai/bin/python", "-u", f"{tag}.py",
+                [sys.executable, "-u", f"{tag}.py",
                  "--embedding", emb_csv, "--meta", META,
                  "--out", os.path.join(vout, f"{short}.json")],
                 cwd=SCRIPTS, env=env, check=True)

@@ -531,9 +531,9 @@ def visualize_multimodal_embedding(adata, modality_col=None, color_col=None, tar
     target_modality : str or None
         Which modality to highlight in the visualization (None for default plot)
     expression_key : str
-        Key for expression-based embedding (default: 'X_DR_expression')
+        Key for the sample-level embedding (default: 'X_DR_sample')
     proportion_key : str
-        Key for proportion-based embedding (default: 'X_DR_proportion')
+        Key for the sample-level embedding (default: 'X_DR_sample')
     figsize : tuple
         Figure size for combined plot (default: (20, 8))
     point_size : int

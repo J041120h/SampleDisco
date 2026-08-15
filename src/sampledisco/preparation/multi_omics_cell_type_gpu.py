@@ -13,6 +13,7 @@ from scipy import sparse
 import sys
 from sampledisco.utils.safe_save import safe_h5ad_write, ensure_cpu_arrays
 from sampledisco.utils.imbalance_cell_type_handler import filter_modality_imbalanced_clusters
+from sampledisco.utils.embedding_keys import XGLUE_KEY, resolve_comp_key
 
 
 def cell_types_multiomics_gpu(
@@ -22,7 +23,7 @@ def cell_types_multiomics_gpu(
     atac_modality_value="ATAC",
     cell_type_column="cell_type",
     cluster_resolution=0.8,
-    use_rep="X_glue",
+    use_rep=None,
     num_PCs=50,
     k_neighbors=15,
     transfer_metric="cosine",
@@ -35,7 +36,8 @@ def cell_types_multiomics_gpu(
 ):
     """GPU variant of cell_types_multiomics (rapids_singlecell Leiden + cuML kNN).
 
-    use_rep should be Z_clust (sample-REMOVED); wrapper resolves automatically.
+    use_rep is the sample-REMOVED embedding (Z_comp); ``None`` auto-resolves it
+    from .obsm (legacy names accepted).
     """
     if verbose:
         print("\n" + "="*60)
@@ -48,8 +50,8 @@ def cell_types_multiomics_gpu(
     if modality_column not in adata.obs.columns:
         raise ValueError(f"Modality column '{modality_column}' not found in adata.obs")
 
-    if use_rep not in adata.obsm:
-        raise ValueError(f"Representation '{use_rep}' not found in adata.obsm")
+    use_rep = resolve_comp_key(adata, use_rep, fallbacks=(XGLUE_KEY,),
+                               context="cell_types_multiomics")
 
     rna_mask = adata.obs[modality_column] == rna_modality_value
     atac_mask = adata.obs[modality_column] == atac_modality_value

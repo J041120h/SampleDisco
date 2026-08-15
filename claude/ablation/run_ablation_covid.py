@@ -19,6 +19,7 @@ import numpy as np
 import scanpy as sc
 
 sys.path.insert(0, "/users/hjiang/GenoDistance/code")
+sys.path.insert(0, "/users/hjiang/GenoDistance/code/src")
 sys.path.insert(0, "/users/hjiang/GenoDistance/code/Benchmark_covid")
 
 from sampledisco.sample_embedding.blocks import (
@@ -69,8 +70,10 @@ def build_blocks(adata):
     coarse = dict(zip(all_cellids, ct))
     RMD = loo_rmd(rmd_units, unit_cellids, coarse,
                   max_dim_per_cluster=RMD_DIM, seed=SEED, loo=True, verbose=False)
+    RMD_noloo = loo_rmd(rmd_units, unit_cellids, coarse,
+                  max_dim_per_cluster=RMD_DIM, seed=SEED, loo=False, verbose=False)
 
-    return dict(A1=A1, A2=A2, A3=A3, RMD=RMD, K_c=K_c, K_med=K_med, K_fine=K_fine,
+    return dict(A1=A1, A2=A2, A3=A3, RMD=RMD, RMD_noloo=RMD_noloo, K_c=K_c, K_med=K_med, K_fine=K_fine,
                 unit_ids=unit_ids, unit_groups=unit_groups, unit_batches=unit_batches)
 
 
@@ -93,6 +96,9 @@ def assemble(variant, B):
         return build_emb_from_blocks(full, w4, batch_method="none", **common)
     if variant == "linear_regression":
         return build_emb_from_blocks(full, w4, batch_method="linear", **common)
+    if variant == "no_loo":
+        return build_emb_from_blocks([B["A1"], B["A2"], B["A3"], B["RMD_noloo"]], w4,
+                                     batch_method="harmony", **common)
     if variant == "original":
         return build_emb_from_blocks(full, w4, batch_method="harmony", **common)
     raise ValueError(variant)
@@ -104,6 +110,8 @@ def main():
     ap.add_argument("--adata", required=True)
     ap.add_argument("--meta", required=True)
     ap.add_argument("--outroot", required=True)
+    ap.add_argument("--variants", default=",".join(VARIANTS),
+                    help="comma-separated subset of variants to run")
     a = ap.parse_args()
 
     print(f"[ablation covid {a.size}] loading {a.adata}", flush=True)
@@ -121,7 +129,7 @@ def main():
 
     os.makedirs(a.outroot, exist_ok=True)
     summary = os.path.join(a.outroot, f"ablation_summary_covid_{a.size}.csv")
-    for v in VARIANTS:
+    for v in [x for x in a.variants.split(',') if x]:
         outdir = os.path.join(a.outroot, f"covid_{a.size}", v)
         os.makedirs(outdir, exist_ok=True)
         emb = assemble(v, B)

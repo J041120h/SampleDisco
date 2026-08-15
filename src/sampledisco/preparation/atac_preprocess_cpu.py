@@ -8,6 +8,7 @@ import scanpy as sc
 import muon as mu
 from muon import atac as ac
 from sampledisco.utils.harmony_compat import harmonize_embedding
+from sampledisco.utils.embedding_keys import COMP_KEY, LEGACY_COMP_KEY, write_comp_key
 from scipy.sparse import issparse
 
 from sampledisco.utils.safe_save import safe_h5ad_write
@@ -20,7 +21,7 @@ def _run_lsi_on_hvg(adata, n_comps, drop_first, hvg_col="highly_variable", out_k
 
     muon's `ac.tl.lsi` doesn't accept `use_highly_variable`, so we run on a
     temporary HVF-only copy. varm['LSI'] and uns['lsi'] are only written for the
-    canonical out_key='X_lsi' to avoid clobbering the Z_clust basis.
+    canonical out_key='X_lsi' to avoid clobbering the Z_comp basis.
     """
     hvg_mask = adata.var[hvg_col].values
     if hvg_mask.sum() < n_comps + 1:
@@ -62,7 +63,7 @@ def anndata_cluster(
       - `.X`                             TF-IDF + log1p normalized
       - `.var['highly_variable']`        HVF flag (no subsetting)
       - `.obsm['X_lsi']`                 LSI on HVF subset (drop_first applied if set)
-      - `.obsm['Z_clust']`         sample-removed Harmony
+      - `.obsm['Z_comp']`         sample-removed Harmony
       - `.obsm['Z_rmd']`  sample-preserved Harmony (RMD)
 
     Writes a single file: `<output_dir>/adata_preprocessed.h5ad`.
@@ -102,18 +103,18 @@ def anndata_cluster(
         print("=== [CPU] Harmony pass 1: WITH sample (sample-removed) ===")
         print("  batch keys:", ", ".join(cell_level_batch_key_for_harmony or []))
     if cell_level_batch_key_for_harmony:
-        adata.obsm["Z_clust"] = harmonize_embedding(
+        write_comp_key(adata, harmonize_embedding(
             adata.obsm["X_lsi"], adata.obs,
             batch_key=cell_level_batch_key_for_harmony,
             max_iter_harmony=num_harmony_iterations,
             use_gpu=False,
-        )
+        ))
     else:
-        adata.obsm["Z_clust"] = adata.obsm["X_lsi"].copy()
+        write_comp_key(adata, adata.obsm["X_lsi"].copy())
 
     # HVF2 for RMD basis: sample-naive (batch_key=None). ATAC has no raw-counts
     # layer post TF-IDF, so HVF2 runs on the same TF-IDF+log1p .X as HVF1.
-    # Placed after Z_clust Harmony to preserve RNG ordering.
+    # Placed after Z_comp Harmony to preserve RNG ordering.
     adata.var["highly_variable_clust"] = adata.var["highly_variable"].to_numpy().copy()
     if verbose:
         print("Running HVF2 (sample-naive) selection...")
@@ -146,7 +147,9 @@ def anndata_cluster(
             adata.obsm["X_lsi_rmd"], dtype=np.float32)
 
     if verbose:
-        print(f"  Z_clust   shape: {adata.obsm['Z_clust'].shape}")
+        print(f"  Z_comp    shape: {adata.obsm[COMP_KEY].shape}")
+        if LEGACY_COMP_KEY in adata.obsm:
+            print(f"  (legacy alias obsm['{LEGACY_COMP_KEY}'] also written; removed in 1.0)")
         print(f"  X_lsi_rmd shape: {adata.obsm['X_lsi_rmd'].shape}")
         print(f"  Z_rmd     shape: {adata.obsm['Z_rmd'].shape}")
 

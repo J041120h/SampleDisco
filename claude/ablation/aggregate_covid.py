@@ -13,9 +13,11 @@ import glob, os, re
 import numpy as np
 import pandas as pd
 
-ROOT = "/dcs07/hongkai/data/harry/result/ablation/covid"
-VARIANTS = ["proportion_only", "rmd_only", "no_batch_removal",
-            "linear_regression", "original"]
+ABL = os.environ.get("ABL_DIR", "/dcs07/hongkai/data/harry/result/ablation")
+ROOT = os.path.join(ABL, "covid")
+VARIANTS = os.environ.get(
+    "ABL_VARIANTS",
+    "proportion_only,rmd_only,no_batch_removal,linear_regression,original").split(",")
 COVID_METRICS = ["batch_partial_eta_sq", "iLISI_norm", "ASW_batch",
                  "severity_partial_eta_sq", "Spearman_Correlation",
                  "Custom_ANOVA_eta_sq", "ARI", "NMI", "Avg_Purity",

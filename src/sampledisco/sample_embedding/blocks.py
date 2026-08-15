@@ -92,7 +92,7 @@ def clr_transform(comp: np.ndarray, eps: float = 1e-3) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------- #
-# Counterfactual displacement (RMD)                                            #
+# Reference-relative mean displacement (RMD)                                   #
 # --------------------------------------------------------------------------- #
 
 def loo_rmd(
@@ -105,7 +105,7 @@ def loo_rmd(
     loo: bool = True,
     verbose: bool = False,
 ) -> np.ndarray:
-    """Leave-One-Out per-(group, cluster) counterfactual displacement.
+    """Leave-One-Out per-(group, cluster) reference-relative mean displacement.
 
     `units[i] = (uid, group_label, cells_in_latent)` — `group_label` is
     typically `modality` for multi-omics or `batch` for single-omics.
@@ -440,7 +440,7 @@ def build_emb_from_blocks(
 def assemble_units(
     adata,
     sample_col: str,
-    cluster_emb_key: str,
+    comp_emb_key: str,
     modality_col: Optional[str] = None,
     batch_col: Optional[str] = None,
 ) -> Tuple[
@@ -449,7 +449,7 @@ def assemble_units(
         List[str],                            # unit_ids
         List[str],                            # groups per unit
         Optional[List[str]],                  # batches per unit (or None)
-        List[str],                            # ordered cluster_emb cell ids
+        List[str],                            # ordered comp_emb cell ids
         np.ndarray,                           # stacked Z (n_cells, d_emb)
 ]:
     """Build (unit_id, group_label, cells_in_emb) tuples from an AnnData.
@@ -461,7 +461,7 @@ def assemble_units(
 
     Returns rich tuple for downstream wiring.
     """
-    Z = np.asarray(adata.obsm[cluster_emb_key], dtype=np.float32)
+    Z = np.asarray(adata.obsm[comp_emb_key], dtype=np.float32)
     cell_ids = adata.obs_names.astype(str).values
     sample_arr = adata.obs[sample_col].astype(str).values
 

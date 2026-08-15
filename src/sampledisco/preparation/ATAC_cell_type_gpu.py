@@ -8,6 +8,7 @@ import rapids_singlecell as rsc
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
 import time
+from sampledisco.utils.embedding_keys import resolve_comp_key
 
 def standardize_cell_type_column_gpu(adata, verbose=True):
     """Coerce obs['cell_type'] to string categorical, handling Leiden integer output."""
@@ -56,7 +57,7 @@ def cell_types_atac_gpu(
     Save=False,
     output_dir=None,
     cluster_resolution=0.8,
-    use_rep='Z_clust',
+    use_rep=None,
     peaks=None, 
     method='average', 
     metric='euclidean', 
@@ -75,6 +76,8 @@ def cell_types_atac_gpu(
     _recursion_depth is internal; do not set manually.
     """
     start_time = time.time() if verbose else None
+    use_rep = resolve_comp_key(adata, use_rep, fallbacks=('X_lsi',),
+                               context="cell_types_atac_gpu")
 
     if _recursion_depth > 10:
         raise RuntimeError(f"Maximum recursion depth exceeded. Could not achieve {n_target_clusters} clusters.")
@@ -284,7 +287,7 @@ def cell_type_dendrogram_atac_gpu(
     method='average',
     metric='euclidean',
     distance_mode='centroid',
-    use_rep='Z_clust',
+    use_rep=None,
     num_DMs=20,
     verbose=True
 ):
@@ -297,8 +300,8 @@ def cell_type_dendrogram_atac_gpu(
         print(f'=== Preparing data for dendrogram (using {use_rep}) ===')
     if groupby not in adata.obs.columns:
         raise ValueError(f"The groupby key '{groupby}' is not present in adata.obs.")
-    if use_rep not in adata.obsm:
-        raise ValueError(f"The representation '{use_rep}' is not present in adata.obsm.")
+    use_rep = resolve_comp_key(adata, use_rep, fallbacks=('X_lsi',),
+                               context="cell_type_dendrogram_atac_gpu")
 
     # Convert from GPU array if needed.
     if hasattr(adata.obsm[use_rep], 'get'):

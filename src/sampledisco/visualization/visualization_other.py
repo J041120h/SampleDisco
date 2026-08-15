@@ -8,6 +8,7 @@ import scanpy as sc
 import sys
 from sampledisco.utils.Grouping import find_sample_grouping
 from sampledisco.visualization.visualization_embedding import plot_proportion_embedding, plot_expression_embedding
+from sampledisco.utils.embedding_keys import resolve_comp_key
 
 def _preprocessing(
     adata_pseudobulk,
@@ -39,10 +40,9 @@ def _preprocessing(
     return output_dir
 
 def plot_dendrogram(AnnData_cell, output_dir, verbose=True):
-    obsm = AnnData_cell.obsm
-    if 'Z_clust' not in obsm and "X_glue" not in obsm:
-        raise ValueError("Neither Z_clust (single-omics) nor X_glue (multi-omics) found in AnnData_cell.obsm.")
-    X_harmony = obsm['Z_clust'] if 'Z_clust' in obsm else obsm['X_glue']
+    emb_key = resolve_comp_key(AnnData_cell, None, fallbacks=('X_glue',),
+                               context="plot_dendrogram")
+    X_harmony = AnnData_cell.obsm[emb_key]
     cell_type_col = next((col for col in ['cell_type', 'celltype', 'cluster', 'leiden', 'seurat_clusters'] if col in AnnData_cell.obs.columns), None)
     if cell_type_col is None:
         raise ValueError("No cell type column found.")

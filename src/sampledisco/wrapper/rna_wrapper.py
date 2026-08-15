@@ -8,6 +8,7 @@ import scanpy as sc
 
 
 from sampledisco.sample_embedding import compute_sample_embedding
+from sampledisco.utils.embedding_keys import resolve_embedding_keys
 from sampledisco.preparation.rna_preprocess_cpu import preprocess
 from sampledisco.preparation.cell_type_cpu import cell_types
 
@@ -70,7 +71,7 @@ def rna_wrapper(
     autotune_search: str = "bayesian",
     autotune_scoring: str = "auto",
     autotune_scope: str = "alpha_only",
-    autotune_alpha_bounds=(0.1, 10.0),
+    autotune_alpha_bounds=(0.1, 100.0),
     autotune_grouping_col: Optional[str] = None,
 
     seed: int = 42,
@@ -179,8 +180,8 @@ def rna_wrapper(
                 "Run cell-type clustering or provide an input with celltype labels."
             )
 
-        cluster_emb_key = cell_embedding_column or "Z_clust"
-        rmd_emb_key = "Z_rmd" if "Z_rmd" in adata.obsm else cluster_emb_key
+        comp_emb_key, rmd_emb_key = resolve_embedding_keys(
+            adata, cell_embedding_column, context="rna_wrapper")
 
         if autotune_enable:
             from sampledisco.parameter_selection.autotune import run_autotune
@@ -188,7 +189,7 @@ def rna_wrapper(
                 adata, rna_output_dir,
                 sample_col=sample_col,
                 celltype_col=celltype_col,
-                cluster_emb_key=cluster_emb_key,
+                comp_emb_key=comp_emb_key,
                 rmd_emb_key=rmd_emb_key,
                 modality_col=None,
                 batch_col=sample_level_batch_col or None,
@@ -211,7 +212,7 @@ def rna_wrapper(
                 use_gpu=use_gpu,
                 sample_col=sample_col,
                 celltype_col=celltype_col,
-                cluster_emb_key=cluster_emb_key,
+                comp_emb_key=comp_emb_key,
                 rmd_emb_key=rmd_emb_key,
                 modality_col=None,
                 batch_col=sample_level_batch_col or None,

@@ -8,6 +8,7 @@ import scanpy as sc
 import time
 import matplotlib.pyplot as plt
 from sampledisco.utils.safe_save import safe_h5ad_write  # Importing the new safe save method
+from sampledisco.utils.embedding_keys import resolve_comp_key
 
 def clean_obs_for_saving(adata, verbose=True):
     """
@@ -214,7 +215,7 @@ def cell_types_atac(
     Save=False,
     output_dir=None,
     cluster_resolution=0.8,
-    use_rep='Z_clust',
+    use_rep=None,
     peaks=None, 
     method='average', 
     metric='euclidean', 
@@ -234,7 +235,7 @@ def cell_types_atac(
     Assigns cell types based on existing annotations or performs Leiden clustering if no annotation exists.
     Uses recursive strategy to adaptively find optimal clustering resolution when target clusters specified.
     
-    ATAC VERSION: Uses dimension reduction (Z_clust) for dendrogram construction and differential peaks.
+    ATAC VERSION: Uses dimension reduction (Z_comp) for dendrogram construction and differential peaks.
 
     Parameters:
     - adata: AnnData object
@@ -245,7 +246,7 @@ def cell_types_atac(
     - Save: Boolean, whether to save the output
     - output_dir: Directory to save the output if Save=True
     - cluster_resolution: Starting resolution for Leiden clustering
-    - use_rep: Representation to use for neighborhood graph (default: 'Z_clust')
+    - use_rep: Representation to use for neighborhood graph (default: 'Z_comp')
     - peaks: List of peak names for mapping numeric IDs to names
     - method, metric, distance_mode: Parameters for hierarchical clustering
     - num_DMs: Number of diffusion map components for neighborhood graph
@@ -264,6 +265,8 @@ def cell_types_atac(
     start_time = time.time() if verbose else None
     from sampledisco.utils.random_seed import set_global_seed
     set_global_seed(seed = 42)
+    use_rep = resolve_comp_key(adata, use_rep, fallbacks=('X_lsi',),
+                               context="cell_types_atac")
     
     if _recursion_depth > 10:
         raise RuntimeError(f"Maximum recursion depth exceeded. Could not achieve {n_target_clusters} clusters.")

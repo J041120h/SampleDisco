@@ -11,44 +11,24 @@ from sampledisco.preparation.multi_omics_merge import propagate_cell_type
 from sampledisco.preparation.multi_omics_cell_type_cpu import cell_types_multiomics
 from sampledisco.preparation.multi_omics_batch_correction import (
     harmonize_xglue,
-    Z_RMD_KEY,      # paper "Z_rmd"   — sample-preserved, RMD displacement role
-    Z_CLUST_KEY,    # paper "Z_clust" — sample-removed,   cluster / composition role
+    Z_RMD_KEY,      # paper "Z_rmd"  — sample-preserved, RMD displacement role
+    Z_COMP_KEY,     # paper "Z_comp" — sample-removed,   composition role
     XGLUE_KEY,      # internal — scGLUE's native obsm key (fallback only)
 )
+from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_embedding_keys
 
 
-def _resolve_embedding_keys(adata, cluster_override=None, rmd_override=None):
-    """Return (cluster_emb_key, rmd_emb_key) for the SE / cell typing stack.
+def _resolve_embedding_keys(adata, comp_override=None, rmd_override=None):
+    """Return (comp_emb_key, rmd_emb_key) for the SE / cell typing stack.
 
-    Paper-aligned (Fig. 1, Stage 2): the cluster role reads ``Z_clust`` and
-    the RMD role reads ``Z_rmd``. Both keys are written into the integrated
-    h5ad by either the Harmony post-pass (Mode A) or the 2-run scGLUE merge
-    (Mode B). Falls back to ``X_glue`` only when neither has run (un-
-    supported in the current pipeline, but keeps the failure mode honest).
+    The composition role MUST use the sample-removed view (no X_glue
+    fallback — that would leak per-sample variance into the composition
+    blocks); the RMD role falls back to ``X_glue``, which IS the
+    sample-preserved scGLUE output.
     """
-    # Cluster role MUST use the sample-removed Z_clust; falling back to
-    # X_glue (sample-preserved) here would silently leak per-sample variance
-    # into the composition blocks.
-    if cluster_override:
-        cluster = cluster_override
-    elif Z_CLUST_KEY in adata.obsm:
-        cluster = Z_CLUST_KEY
-    else:
-        raise KeyError(
-            f"Cluster embedding key {Z_CLUST_KEY!r} not found in adata.obsm "
-            f"(available: {list(adata.obsm.keys())}). "
-            "The sample-removed cluster embedding is required for the composition "
-            "blocks. Run harmonize_xglue or set run_glue_twice_for_sample_removal=True."
-        )
-    rmd = rmd_override or (
-        Z_RMD_KEY if Z_RMD_KEY in adata.obsm else XGLUE_KEY
-    )
-    for role, key in (("cluster", cluster), ("rmd", rmd)):
-        if key not in adata.obsm:
-            raise KeyError(
-                f"{role}_emb_key={key!r} not in adata.obsm "
-                f"(available: {list(adata.obsm.keys())})")
-    return cluster, rmd
+    return resolve_embedding_keys(adata, comp_override, rmd_override,
+                                  rmd_fallbacks=(XGLUE_KEY,),
+                                  context="multiomics_wrapper")
 
 
 def multiomics_wrapper(
@@ -67,13 +47,13 @@ def multiomics_wrapper(
     # always provides one via ONE of two paths:
     #
     #   (default) Harmony post-pass on X_glue with the sample column
-    #             (and batch, if present) → X_glue_harmony.
+    #             (and batch, if present) → Z_comp.
     #   (opt-in)  Train scGLUE TWICE in STEP 1; the second run (with
-    #             treat_sample_as_batch=True) yields X_glue_harmony
-    #             end-to-end. When this is enabled the Harmony post-pass
-    #             auto-skips because X_glue_harmony already exists.
+    #             treat_sample_as_batch=True) yields Z_comp end-to-end.
+    #             When this is enabled the Harmony post-pass auto-skips
+    #             because Z_comp already exists.
     #
-    # No "legacy" path exists — the cluster embedding is always derived.
+    # No "legacy" path exists — the composition embedding is always derived.
     harmonize_xglue_max_iter=50,
     run_glue_twice_for_sample_removal=False,
 
@@ -161,8 +141,8 @@ def multiomics_wrapper(
     existing_cell_types=False,
     n_target_clusters=10,
     cluster_resolution=0.8,
-    # If None: auto-resolved at runtime to X_glue_harmony (sample-removed,
-    # cluster role) when present, else X_glue. Explicit override accepted.
+    # If None: auto-resolved at runtime to Z_comp (sample-removed,
+    # composition role); legacy names accepted. Explicit override accepted.
     use_rep_celltype=None,
     markers=None,
     generate_umap_celltype=True,
@@ -185,7 +165,7 @@ def multiomics_wrapper(
     autotune_search: str = "bayesian",
     autotune_scoring: str = "auto",
     autotune_scope: str = "alpha_only",
-    autotune_alpha_bounds=(0.1, 10.0),
+    autotune_alpha_bounds=(0.1, 100.0),
     autotune_grouping_col: Optional[str] = None,
     autotune_tune_on_modality: Optional[str] = None,
 
@@ -197,8 +177,8 @@ def multiomics_wrapper(
     status_flags=None,
 ) -> Dict[str, Any]:
     """Multi-omics wrapper: GLUE integration, preprocessing, cell typing, and the
-    new single-key sample embedding (composition + RMD). The cluster / composition
-    role uses ``Z_clust`` (sample-removed, from Harmony post-pass or 2-run GLUE);
+    new single-key sample embedding (composition + RMD). The composition
+    role uses ``Z_comp`` (sample-removed, from Harmony post-pass or 2-run GLUE);
     the RMD displacement role uses ``Z_rmd`` (= ``X_glue``, sample-preserved).
     Multi-omics groups RMD blocks by ``modality_col``.
 
@@ -242,7 +222,7 @@ def multiomics_wrapper(
 
     # `adata_sample.h5ad` is now the embedding-only union written by
     # build_embedding_union (preparation/multi_omics_merge.py). It carries
-    # obs (sample, modality, batch, sev.level …) + obsm (X_glue, Z_clust,
+    # obs (sample, modality, batch, sev.level …) + obsm (X_glue, Z_comp,
     # Z_rmd) but no expression X — DGE/RAISIN reads the per-modality
     # preprocessed h5ads instead.
     h5ad_path = (integrated_h5ad_path
@@ -333,22 +313,24 @@ def multiomics_wrapper(
             "run_glue_merge=True or provide integrated_h5ad_path.")
     results['adata'] = current_adata
 
-    # ==================== STEP 2b: PROVIDE Z_clust (paper-aligned cluster view) ===
-    # Z_clust (sample-removed cluster / composition embedding) is required
-    # downstream. Two equivalent providers — STEP 1 may have set it
-    # already via the 2-run scGLUE merge; otherwise this step runs a
-    # Harmony pass on Z_rmd (= X_glue) with sample as batch_key.
+    # ==================== STEP 2b: PROVIDE Z_comp (paper-aligned composition view) ===
+    # Z_comp (sample-removed composition embedding) is required downstream.
+    # Two equivalent providers — STEP 1 may have set it already via the
+    # 2-run scGLUE merge; otherwise this step runs a Harmony pass on
+    # Z_rmd (= X_glue) with sample as batch_key.
     if current_adata is None:
         current_adata = ad.read_h5ad(h5ad_path)
-    if Z_CLUST_KEY in current_adata.obsm:
+    existing_comp = resolve_comp_key(current_adata, None, required=False,
+                                     context="multiomics_wrapper")
+    if existing_comp is not None:
         if multiomics_verbose:
-            print(f"Step 2b: obsm['{Z_CLUST_KEY}'] already present "
+            print(f"Step 2b: obsm['{existing_comp}'] already present "
                   f"(end-to-end from 2-run scGLUE) — no Harmony pass needed.")
         status_flags["multiomics"]["harmonize_xglue"] = True
     else:
         if multiomics_verbose:
             print(f"Step 2b: Harmony post-pass on obsm['{XGLUE_KEY}'] "
-                  f"→ obsm['{Z_CLUST_KEY}'] (sample-removed cluster view)...")
+                  f"→ obsm['{Z_COMP_KEY}'] (sample-removed composition view)...")
         current_adata = harmonize_xglue(
             current_adata,
             sample_col=sample_col,
@@ -358,7 +340,7 @@ def multiomics_wrapper(
             random_state=random_state,
             verbose=multiomics_verbose,
         )
-        if Z_CLUST_KEY in current_adata.obsm:
+        if Z_COMP_KEY in current_adata.obsm:
             status_flags["multiomics"]["harmonize_xglue"] = True
             if save_intermediate:
                 sc.write(h5ad_path, current_adata)
@@ -366,16 +348,16 @@ def multiomics_wrapper(
                     print(f"[xglue-harmony] re-saved {h5ad_path}")
 
     # ==================== STEP 2c: CELL TYPE CLUSTERING ====================
-    # Uses the paper's Z_clust (sample-removed cluster embedding), produced
+    # Uses the paper's Z_comp (sample-removed composition embedding), produced
     # in STEP 2b by either the Harmony post-pass or the 2-run scGLUE merge.
     if cell_type_cluster:
         if current_adata is None:
             current_adata = ad.read_h5ad(h5ad_path)
 
-        cluster_key, _ = _resolve_embedding_keys(
-            current_adata, cluster_override=use_rep_celltype)
+        comp_key, _ = _resolve_embedding_keys(
+            current_adata, comp_override=use_rep_celltype)
         if multiomics_verbose:
-            print(f"Step 2c: Cell type assignment (use_rep={cluster_key})...")
+            print(f"Step 2c: Cell type assignment (use_rep={comp_key})...")
 
         cell_types_func = cell_types_multiomics
         if use_gpu:
@@ -393,7 +375,7 @@ def multiomics_wrapper(
             atac_modality_value="ATAC",
             cell_type_column=celltype_col,
             cluster_resolution=cluster_resolution,
-            use_rep=cluster_key,
+            use_rep=comp_key,
             k_neighbors=3,
             transfer_metric=metric,
             compute_umap=generate_umap_celltype,
@@ -432,7 +414,7 @@ def multiomics_wrapper(
                 f"Cell type column '{celltype_col}' not in adata.obs. Run "
                 "cell_type_cluster=True or provide pre-typed input.")
 
-        cluster_emb_key, rmd_emb_key = _resolve_embedding_keys(current_adata)
+        comp_emb_key, rmd_emb_key = _resolve_embedding_keys(current_adata)
 
         if autotune_enable:
             from sampledisco.parameter_selection.autotune import run_autotune
@@ -440,7 +422,7 @@ def multiomics_wrapper(
                 current_adata, multiomics_output_dir,
                 sample_col=sample_col,
                 celltype_col=celltype_col,
-                cluster_emb_key=cluster_emb_key,
+                comp_emb_key=comp_emb_key,
                 rmd_emb_key=rmd_emb_key,
                 modality_col=modality_col,
                 batch_col=batch_col,
@@ -464,7 +446,7 @@ def multiomics_wrapper(
                 use_gpu=use_gpu,
                 sample_col=sample_col,
                 celltype_col=celltype_col,
-                cluster_emb_key=cluster_emb_key,
+                comp_emb_key=comp_emb_key,
                 rmd_emb_key=rmd_emb_key,
                 modality_col=modality_col,
                 batch_col=batch_col,

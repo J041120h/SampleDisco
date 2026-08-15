@@ -16,8 +16,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-ABL = "/dcs07/hongkai/data/harry/result/ablation"
-VARIANTS = ["proportion_only", "rmd_only", "no_batch_removal", "linear_regression", "original"]
+ABL = os.environ.get("ABL_DIR", "/dcs07/hongkai/data/harry/result/ablation")
+VARIANTS = os.environ.get(
+    "ABL_VARIANTS",
+    "proportion_only,rmd_only,no_batch_removal,linear_regression,original").split(",")
 N = len(VARIANTS)
 
 # metric -> (display label, direction)  direction: 'up' higher=better, 'inv' 1/x, 'abs' |x|
@@ -38,6 +40,28 @@ HA_M = {
     "ASW_batch": ("ASW batch", "up"), "iLISI_batch_norm": ("iLISI batch", "up"),
     "ASW_file": ("ASW file", "up"), "iLISI_file_norm": ("iLISI file", "up"),
 }
+
+
+TIE_TOL = float(os.environ.get("ABL_TIE_TOL", "0.01"))
+
+
+def rank_tol(s, tol=TIE_TOL):
+    """Rank descending, treating differences below tol*(row spread) as ties.
+
+    A variant is ranked below another only if the other beats it by more than
+    the tolerance, so numerically indistinguishable variants share a rank (and
+    therefore share a dot size). tol=0 reproduces rank(method="min").
+    """
+    vals = s.dropna()
+    spread = (vals.max() - vals.min()) if len(vals) else 0.0
+    thr = tol * spread if np.isfinite(spread) and spread > 0 else 0.0
+    out = {}
+    for name, v in s.items():
+        if pd.isna(v):
+            out[name] = float(len(s))
+        else:
+            out[name] = 1.0 + sum(1 for u in vals if u > v + thr)
+    return pd.Series(out).reindex(s.index)
 
 
 def tr(v, d):
@@ -90,7 +114,7 @@ def main(exclude=(), suffix=""):
     rank_rows, norm_rows = [], []
     for _, _, vals in rows:
         s = pd.Series(vals).reindex(VARIANTS)
-        rank_rows.append(s.rank(ascending=False, method="min", na_option="bottom"))
+        rank_rows.append(rank_tol(s))
         lo, hi = s.min(), s.max()
         norm_rows.append((s - lo) / (hi - lo) if hi > lo else s * 0 + 0.5)
     rank_df = pd.DataFrame(rank_rows)          # row x variant
@@ -100,7 +124,7 @@ def main(exclude=(), suffix=""):
     # ---------- (A) dot heatmap ----------
     nrow = len(rows)
     cmap = plt.cm.get_cmap("viridis")
-    fig, ax = plt.subplots(figsize=(7.0, 0.34*nrow + 2.2))
+    fig, ax = plt.subplots(figsize=(1.4*N, 0.34*nrow + 2.2))
     smin, smax = 40, 360
     for yi, (ds, lab, _) in enumerate(rows):
         y = nrow - 1 - yi
@@ -131,7 +155,7 @@ def main(exclude=(), suffix=""):
     cb.set_label("within-metric normalized value (1=best)", fontsize=7)
     size_leg = [Line2D([0], [0], marker="o", color="w", markerfacecolor="#555",
                        markersize=np.sqrt(smin + (N - r)/(N-1)*(smax-smin))/2.2,
-                       label=f"rank {int(r)}") for r in [1, 3, 5]]
+                       label=f"rank {int(r)}") for r in [1, (N+1)//2, N]]
     ax.legend(handles=size_leg, loc="upper left", bbox_to_anchor=(1.02, 1.0),
               frameon=False, fontsize=7, title="dot size", title_fontsize=7, labelspacing=1.0)
     outA = f"{ABL}/ablation_score_dotheatmap{suffix}.png"

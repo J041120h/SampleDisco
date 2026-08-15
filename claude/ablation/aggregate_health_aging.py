@@ -8,9 +8,11 @@ import json, os
 import numpy as np
 import pandas as pd
 
-ROOT = "/dcs07/hongkai/data/harry/result/ablation/health_aging"
-VARIANTS = ["proportion_only", "rmd_only", "no_batch_removal",
-            "linear_regression", "original"]
+ABL = os.environ.get("ABL_DIR", "/dcs07/hongkai/data/harry/result/ablation")
+ROOT = os.path.join(ABL, "health_aging")
+VARIANTS = os.environ.get(
+    "ABL_VARIANTS",
+    "proportion_only,rmd_only,no_batch_removal,linear_regression,original").split(",")
 TESTS = ["P1", "P2", "P3", "G1"]
 RANK_METRICS = ["age_CCA", "age_best_PC_spearman",
                 "cd4cd8_CCA", "cd4cd8_best_PC_spearman",

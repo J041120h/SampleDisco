@@ -95,7 +95,7 @@ rna_autotune_enable: false
 rna_autotune_search: "bayesian"
 rna_autotune_scoring: "auto"
 rna_autotune_scope: "alpha_only"
-rna_autotune_alpha_bounds: [0.1, 10.0]
+rna_autotune_alpha_bounds: [0.1, 100.0]
 rna_autotune_grouping_col:
 
 # --- Trajectory Analysis Parameters ---
@@ -216,7 +216,7 @@ atac_autotune_enable: false
 atac_autotune_search: "bayesian"
 atac_autotune_scoring: "auto"
 atac_autotune_scope: "alpha_only"
-atac_autotune_alpha_bounds: [0.1, 10.0]
+atac_autotune_alpha_bounds: [0.1, 100.0]
 atac_autotune_grouping_col:
 
 # --- Trajectory Analysis Parameters ---
@@ -332,9 +332,9 @@ multiomics_treat_sample_as_batch: false  # GLUE preserves per-sample variance (V
 
 # --- Sample-removed cluster embedding (X_glue from scGLUE is the RMD/sample-preserved emb) ---
 # By default, one Harmony pass on X_glue removes per-sample variance to
-# produce X_glue_harmony (used by cell typing + A1/A2/A3). Alternative:
+# produce Z_comp (used by cell typing + A1/A2/A3). Alternative:
 # train scGLUE a second time with treat_sample_as_batch=True; that run's
-# embedding is merged in as X_glue_harmony and the Harmony pass auto-skips.
+# embedding is merged in as Z_comp and the Harmony pass auto-skips.
 multiomics_harmonize_xglue_max_iter: 30
 multiomics_run_glue_twice_for_sample_removal: false
 multiomics_save_prefix: "glue"
@@ -355,7 +355,7 @@ multiomics_metric: "cosine"
 multiomics_existing_cell_types: false
 multiomics_n_target_clusters: 8
 multiomics_cluster_resolution: 0.8
-# null → auto-resolve to X_glue_harmony (sample-removed) if present, else X_glue
+# null → auto-resolve to Z_comp (sample-removed); legacy key names accepted
 multiomics_use_rep_celltype:
 multiomics_markers:
 multiomics_generate_umap_celltype: true
@@ -384,7 +384,7 @@ multiomics_autotune_enable: false
 multiomics_autotune_search: "bayesian"
 multiomics_autotune_scoring: "auto"
 multiomics_autotune_scope: "alpha_only"
-multiomics_autotune_alpha_bounds: [0.1, 10.0]
+multiomics_autotune_alpha_bounds: [0.1, 100.0]
 multiomics_autotune_grouping_col:
 
 # --- Trajectory Analysis Parameters ---
