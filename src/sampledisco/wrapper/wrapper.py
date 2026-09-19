@@ -52,6 +52,15 @@ def _store_pseudotime_in_obs(pseudo_adata, ptime, col_name: str) -> None:
         print(f"Warning: could not store pseudotime column '{col_name}': {e}")
 
 
+def _sample_adata_or_none(adata, **kwargs):
+    """Sample-level AnnData for downstream analysis, or None when phase 1 stopped
+    before the sample embedding (no ``uns['X_DR_sample']``)."""
+    if adata is None or "X_DR_sample" not in adata.uns:
+        return None
+    from sampledisco.sample_embedding.sample_embedding import build_sample_adata
+    return build_sample_adata(adata, **kwargs)
+
+
 def _first_batch_col_for_raisin(
     batch_col: Optional[Union[str, List[str]]],
 ) -> Optional[str]:
@@ -201,7 +210,15 @@ def downstream_analysis(
     
     Note: CCA-based resolution selection is handled by each individual wrapper,
     not here, because it occurs at different pipeline positions per modality.
+
+    ``pseudo_adata=None`` (no sample embedding yet) skips every step, so a run
+    can stop after phase 1 and resume later.
     """
+    if pseudo_adata is None:
+        print(f"\n{modality.upper()}: no sample embedding (uns['X_DR_sample']) — "
+              f"stopped after phase 1; downstream analysis skipped.")
+        return {'pseudo_adata': None, 'status_flags': status_flags}
+
     import scanpy as sc
     import pandas as pd
     
@@ -1165,8 +1182,7 @@ def wrapper(
 
             # Build the in-memory sample-level AnnData from the cell-level adata
             # (its .uns['X_DR_sample'] was populated by compute_sample_embedding).
-            from sampledisco.sample_embedding.sample_embedding import build_sample_adata
-            _rna_sample_adata = build_sample_adata(
+            _rna_sample_adata = _sample_adata_or_none(
                 rna_results['adata'], sample_col=rna_sample_col)
 
             # Phase 2: Downstream analysis
@@ -1318,8 +1334,7 @@ def wrapper(
             )
             status_flags = atac_results['status_flags']
             
-            from sampledisco.sample_embedding.sample_embedding import build_sample_adata
-            _atac_sample_adata = build_sample_adata(
+            _atac_sample_adata = _sample_adata_or_none(
                 atac_results['adata'], sample_col=atac_sample_col)
 
             # Phase 2: Downstream analysis
@@ -1526,6 +1541,12 @@ def wrapper(
                         multiomics_adata_cell = sc.read(_p)
                         break
 
+            _mo_sample_adata = _sample_adata_or_none(
+                multiomics_adata_cell,
+                sample_col=multiomics_sample_col,
+                modality_col=multiomics_modality_col,
+            )
+
             # DGE / RAISIN need RNA cells with real expression X; the
             # embedding-only union has X=empty. The per-modality RNA h5ad
             # (preprocess_rna_for_downstream) supplies cell-level expression
@@ -1535,14 +1556,9 @@ def wrapper(
             _mo_rna_pre_path = os.path.join(
                 multiomics_output_dir, "preprocess", "adata_rna_preprocessed.h5ad")
             multiomics_adata_for_dge = (
-                sc.read(_mo_rna_pre_path) if os.path.exists(_mo_rna_pre_path) else None)
-
-            from sampledisco.sample_embedding.sample_embedding import build_sample_adata
-            _mo_sample_adata = build_sample_adata(
-                multiomics_adata_cell,
-                sample_col=multiomics_sample_col,
-                modality_col=multiomics_modality_col,
-            )
+                sc.read(_mo_rna_pre_path)
+                if _mo_sample_adata is not None and os.path.exists(_mo_rna_pre_path)
+                else None)
 
             # Phase 2: Downstream analysis
             downstream_results = downstream_analysis(
