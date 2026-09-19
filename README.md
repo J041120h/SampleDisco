@@ -4,7 +4,7 @@ A cross-omics, cross-condition **sample embedding** tool for single-cell data.
 
 SampleDisco takes a cell-level embedding (from any standard scRNA / scATAC / multi-omics integration method) and lifts it to a **sample-level embedding** that captures both cell-type composition and the per-cell-type state of each sample. Every downstream analysis — sample-to-sample distance, clustering, trajectory inference, phenotype association — then runs on that single shared sample embedding, regardless of modality.
 
-Paper draft: [`/users/hjiang/GenoDistance/SampleDisco_Draft-11.pdf`](../SampleDisco_Draft-11.pdf)
+Documentation and tutorial: <https://j041120h.github.io/SampleDisco_tutorial/>
 
 ---
 
@@ -32,46 +32,50 @@ The four blocks are inverse-variance weighted, Frobenius-stacked, PCA-reduced to
 
 ```
 code/
-├── SampleDisc.py              # CLI entry point (simple or complex mode)
-├── config/                    # 9 YAML configs covering covid / blood / eye / heart / ENCODE / tabula / long_covid / unpaired / default
-├── wrapper/                   # Orchestration
-│   ├── wrapper.py             # Master wrapper; gates RNA + ATAC + multiomics + shared downstream
-│   ├── rna_wrapper.py
-│   ├── atac_wrapper.py
-│   └── multiomics_wrapper.py
-├── preparation/               # Preprocessing
-│   ├── rna_preprocess_{cpu,gpu}.py   # QC → HVG → PCA → dual Harmony → Z_comp + Z_rmd
-│   ├── atac_preprocess_{cpu,gpu}.py  # QC → TF-IDF → HVF → LSI → dual Harmony → Z_comp + Z_rmd
-│   ├── cell_type_{cpu,gpu}.py        # Leiden clustering on Z_comp (RNA or ATAC)
-│   ├── ATAC_cell_type{,_gpu}.py      # ATAC-specific cell typing variants
-│   ├── multi_omics_glue.py           # scGLUE integration (cross-modality VAE + guidance graph)
-│   ├── multi_omics_batch_correction.py # Harmony post-pass on X_glue → Z_comp
-│   ├── multi_omics_merge.py          # post-GLUE merge + per-modality preprocess/slimming
-│   └── multi_omics_cell_type_{cpu,gpu}.py  # RNA-Leiden + k-NN label transfer to ATAC
-├── sample_embedding/          # Core method
-│   ├── blocks.py              # composition, RMD, weighting, Frobenius stack, final PCA + Harmony
-│   ├── sample_embedding.py    # CPU pipeline
-│   └── sample_embedding_gpu.py # GPU pipeline (cuML + cupy)
-├── parameter_selection/
-│   └── autotune.py            # Bayesian GP sweep over RMD α; adaptive proxy ensemble
-├── sample_distance/           # Pairwise sample distances (DR / EMD / chi-square / JS)
-├── sample_clustering/         # Hierarchical (HRA / HRC / NN / UPGMA / consensus), K-means, proportion test, RAISIN
-├── sample_trajectory/         # CCA (supervised) and TSCAN (unsupervised) + GAM-based trajectory DGE
-├── sample_association/        # Per-PC variance explained vs sample-level covariates (permutation FDR)
-├── visualization/             # Embedding plots, dendrograms, DGE volcanos, modality-aware multi-omics scatters
-├── utils/                     # Shared helpers: seed, safe h5ad I/O, limma, TF-IDF, batch regress, Grouping
-├── gene_activity/             # ATAC peak → gene activity inference + RNA-ATAC validation
-└── claude/                    # Active one-off run scripts (rerun launchers, monitored SE, parameter sweeps)
+├── pyproject.toml                 # package metadata; `pip install -e .` installs the `sampledisco` command
+├── config/                        # 10 YAML configs for the paper's datasets: covid / blood (1M-scBloodNL) / eye / heart / ENCODE / healthy-aging PBMC / long_covid / unpaired (+ RNA-tuned) / default
+├── src/sampledisco/               # the package
+│   ├── cli.py                     # `sampledisco` command: `-m complex --config <yaml>`, `--init-config <path>`
+│   ├── config/config_demo.yaml    # demo config written by `sampledisco --init-config`
+│   ├── wrapper/                   # Orchestration
+│   │   ├── wrapper.py             # Master wrapper; gates RNA + ATAC + multiomics + shared downstream
+│   │   ├── rna_wrapper.py
+│   │   ├── atac_wrapper.py
+│   │   └── multiomics_wrapper.py
+│   ├── preparation/               # Preprocessing
+│   │   ├── rna_preprocess_{cpu,gpu}.py   # QC → HVG → PCA → dual Harmony → Z_comp + Z_rmd
+│   │   ├── atac_preprocess_{cpu,gpu}.py  # QC → TF-IDF → HVF → LSI → dual Harmony → Z_comp + Z_rmd
+│   │   ├── cell_type_{cpu,gpu}.py        # Leiden clustering on Z_comp (RNA or ATAC)
+│   │   ├── ATAC_cell_type{,_gpu}.py      # ATAC-specific cell typing variants
+│   │   ├── multi_omics_glue.py           # scGLUE integration (cross-modality VAE + guidance graph)
+│   │   ├── multi_omics_batch_correction.py # Harmony post-pass on X_glue → Z_comp
+│   │   ├── multi_omics_merge.py          # post-GLUE merge + per-modality preprocess/slimming
+│   │   └── multi_omics_cell_type_{cpu,gpu}.py  # RNA-Leiden + k-NN label transfer to ATAC
+│   ├── sample_embedding/          # Core method
+│   │   ├── blocks.py              # composition, RMD, weighting, Frobenius stack, final PCA + Harmony
+│   │   ├── sample_embedding.py    # CPU pipeline
+│   │   └── sample_embedding_gpu.py # GPU pipeline (cuML + cupy)
+│   ├── parameter_selection/
+│   │   └── autotune.py            # Bayesian GP sweep over RMD α; adaptive proxy ensemble
+│   ├── sample_distance/           # Pairwise sample distances (DR / EMD / chi-square / JS)
+│   ├── sample_clustering/         # Hierarchical (HRA / HRC / NN / UPGMA / consensus), K-means, proportion test, RAISIN
+│   ├── sample_trajectory/         # CCA (supervised) and TSCAN (unsupervised) + GAM-based trajectory DGE
+│   ├── sample_association/        # Per-PC variance explained vs sample-level covariates (permutation FDR)
+│   ├── visualization/             # Embedding plots, dendrograms, DGE volcanos, modality-aware multi-omics scatters
+│   ├── utils/                     # Shared helpers: seed, safe h5ad I/O, limma, TF-IDF, batch regress, Grouping
+│   └── gene_activity/             # ATAC peak → gene activity inference + RNA-ATAC validation
+├── Benchmark_covid/, Benchmark_multiomics/  # benchmark drivers used for the paper
+└── claude/                        # one-off run scripts (rerun launchers, monitored runs, parameter sweeps)
 ```
 
 ---
 
 ## Usage
 
-### Complex mode (recommended) — YAML-driven
+### Run — YAML-driven
 
 ```bash
-python SampleDisc.py -m complex --config config/config.yaml
+sampledisco -m complex --config config/config.yaml     # same as: python -m sampledisco.cli -m complex --config ...
 ```
 
 The YAML drives every flag and parameter for all three pipelines:
@@ -81,13 +85,15 @@ The YAML drives every flag and parameter for all three pipelines:
 - **Per-modality downstream gates** (Phase 2): `*_sample_distance_calculation`, `*_trajectory_analysis`, `*_trajectory_dge`, `*_sample_cluster`, `*_proportion_test`, `*_cluster_dge`, `*_visualize_data`, `*_dimension_association_analysis`
 - **Multi-omics-specific**: `multiomics_run_glue_*`, `multiomics_treat_sample_as_batch`, `multiomics_run_glue_twice_for_sample_removal`
 
-The 9 ready-to-use configs in `config/` are point-in-time snapshots for the datasets used in the paper; copy one and adjust paths / column names for your own data.
+The 10 ready-to-use configs in `config/` are point-in-time snapshots for the datasets used in the paper; copy one and adjust paths / column names for your own data.
 
-### Simple mode — one positional file, defaults everywhere
+### Starter config
 
 ```bash
-python SampleDisc.py -m simple -c <count_data.h5ad> -o <output_dir>
+sampledisco --init-config my_config.yaml
 ```
+
+writes the demo config (tuned for the Zenodo demo dataset) to `my_config.yaml`. The YAML is validated against every `wrapper()` parameter, so edit values rather than deleting keys.
 
 ---
 
@@ -135,7 +141,7 @@ detects and uses them at runtime. There is no separate "GPU build" of SampleDisc
 ### 1. Core install (CPU)
 
 ```bash
-pip install sampledisco          # once published — or `pip install -e .` from a clone
+pip install sampledisco          # or `pip install -e .` from a clone
 ```
 
 ### 2. System prerequisite — bedtools
