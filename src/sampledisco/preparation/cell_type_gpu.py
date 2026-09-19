@@ -98,20 +98,21 @@ def cell_types_gpu(
                 if verbose:
                     print(f"{indent}[cell_types] Found {num_clusters_found} clusters")
 
+                # Recursive results fall through (no early return) so the
+                # depth-0 call still runs its UMAP / CSV / save block below.
+                new_resolution = leiden_cluster_resolution + RESOLUTION_STEP
                 if num_clusters_found >= n_target_clusters:
                     if num_clusters_found > n_target_clusters and verbose:
                         print(f"{indent}[cell_types] Over-shot target; recursing with dendrogram aggregation")
 
-                    return cell_types_gpu(
+                    adata = cell_types_gpu(
                         anndata_cell=adata, cell_type_column="cell_type",
                         existing_cell_types=True, n_target_clusters=n_target_clusters, umap=False, save=False,
                         cell_embedding_column=cell_embedding_column, cell_embedding_num_PCs=cell_embedding_num_PCs,
                         verbose=verbose, umap_plots=False, _recursion_depth=_recursion_depth + 1,
                     )
-
-                new_resolution = leiden_cluster_resolution + RESOLUTION_STEP
-                if new_resolution <= MAX_RESOLUTION:
-                    return cell_types_gpu(
+                elif new_resolution <= MAX_RESOLUTION:
+                    adata = cell_types_gpu(
                         anndata_cell=adata, cell_type_column=cell_type_column,
                         existing_cell_types=False, n_target_clusters=n_target_clusters, umap=False, save=False,
                         leiden_cluster_resolution=new_resolution, cell_embedding_column=cell_embedding_column,
