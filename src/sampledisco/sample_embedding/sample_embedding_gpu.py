@@ -258,6 +258,7 @@ def compute_sample_embedding(
     blocks = [A1, A2, A3]
 
     # ---- RMD: per-(group, coarse cluster) LOO displacement — CPU (per-cluster PCA is small) ----
+    RMD = np.empty((n_units, 0), dtype=np.float32)
     if use_rmd:
         if verbose:
             print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
@@ -364,6 +365,16 @@ def compute_sample_embedding(
         os.makedirs(out_dir, exist_ok=True)
         emb_csv = os.path.join(out_dir, "sample_embedding.csv")
         emb_df.to_csv(emb_csv)
+        blocks_npz = os.path.join(out_dir, "sample_embedding_blocks.npz")
+        np.savez_compressed(
+            blocks_npz,
+            unit_ids=np.asarray(unit_ids, dtype=str),
+            A1_cell_types=np.asarray(unique_cts, dtype=str),
+            A1=A1,
+            A2=A2,
+            A3=A3,
+            RMD=RMD,
+        )
         preprocessed_h5 = os.path.join(output_dir, "preprocess", "adata_preprocessed.h5ad")
         if os.path.exists(preprocessed_h5):
             try:
@@ -374,6 +385,7 @@ def compute_sample_embedding(
                           f"{preprocessed_h5}: {exc}")
         if verbose:
             print(f"[sample_embedding_gpu] wrote {emb_csv}")
+            print(f"[sample_embedding_gpu] wrote {blocks_npz}")
             if os.path.exists(preprocessed_h5):
                 print(f"[sample_embedding_gpu] updated {preprocessed_h5} (.uns['X_DR_sample'])")
 

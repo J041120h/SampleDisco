@@ -152,6 +152,17 @@ def loo_rmd(
         grand_sum[units_groupidx[ui]] += sums_smk[ui]
         grand_cnt[units_groupidx[ui]] += cnts_smk[ui]
 
+    # Overall latent centroids provide a deterministic notion of the nearest
+    # batch/group for leave-one-out edge cases.  In particular, a sample that
+    # is alone in its batch has no within-batch reference; using zero would
+    # turn its RMD into an absolute position rather than a displacement.
+    group_sum = grand_sum.sum(axis=1)
+    group_cnt = grand_cnt.sum(axis=1)
+    group_mean = group_sum / np.maximum(group_cnt[:, None], 1)
+    unit_sum = sums_smk.sum(axis=1)
+    unit_cnt = cnts_smk.sum(axis=1)
+    unit_mean = unit_sum / np.maximum(unit_cnt[:, None], 1)
+
     per_disp = np.zeros((n_units, K, d_latent), dtype=np.float32)
     for ui in range(n_units):
         gi = units_groupidx[ui]
@@ -161,9 +172,25 @@ def loo_rmd(
         else:
             ref_sum = grand_sum[gi]
             ref_cnt = grand_cnt[gi]
-        ref = np.where(ref_cnt[:, None] > 0,
-                        ref_sum / np.maximum(ref_cnt[:, None], 1),
-                        0.0).astype(np.float32)
+        ref = ref_sum / np.maximum(ref_cnt[:, None], 1)
+        missing = ref_cnt == 0
+        if np.any(missing):
+            distances = np.linalg.norm(group_mean - unit_mean[ui], axis=1)
+            distances[gi] = np.inf
+            nearest_groups = np.argsort(distances)
+            for ki in np.flatnonzero(missing):
+                for gj in nearest_groups:
+                    if np.isfinite(distances[gj]) and grand_cnt[gj, ki] > 0:
+                        ref[ki] = grand_sum[gj, ki] / grand_cnt[gj, ki]
+                        break
+                else:
+                    # The cell type exists only in this unit/group.  A zero
+                    # displacement is safer than an absolute-position feature.
+                    if cnts_smk[ui, ki] > 0:
+                        ref[ki] = sums_smk[ui, ki] / cnts_smk[ui, ki]
+                    else:
+                        ref[ki] = 0.0
+        ref = ref.astype(np.float32)
         own_cnt = cnts_smk[ui]
         own_mean = np.where(own_cnt[:, None] > 0,
                               sums_smk[ui] / np.maximum(own_cnt[:, None], 1),
