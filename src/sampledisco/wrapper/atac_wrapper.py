@@ -77,6 +77,7 @@ def atac_wrapper(
     autotune_scoring: str = "auto",
     autotune_scope: str = "alpha_only",
     autotune_alpha_bounds=(0.1, 100.0),
+    save_cell_adata_after_embedding: bool = True,
     autotune_grouping_col: Optional[str] = None,
 
     seed: int = 42,
@@ -208,6 +209,7 @@ def atac_wrapper(
                 scope=autotune_scope,
                 alpha_bounds=autotune_alpha_bounds,
                 save=True, verbose=verbose,
+                save_cell_adata=save_cell_adata_after_embedding,
             )
             status_flags["atac"]["autotune"] = True
         else:
@@ -230,6 +232,7 @@ def atac_wrapper(
                 pca_components=sample_embedding_pca_components,
                 batch_method=sample_embedding_batch_method,
                 save=True, verbose=verbose,
+                save_cell_adata=save_cell_adata_after_embedding,
                 seed=seed,
             )
         status_flags["atac"]["derive_sample_embedding"] = True

@@ -45,6 +45,7 @@ from sampledisco.sample_embedding.blocks import (
     derive_weights,
     loo_rmd,
     soft_assign,
+    warn_if_stale_embedding,
 )
 from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
 
@@ -606,6 +607,7 @@ def run_autotune(
     verbose: bool = True,
     tune_on_modality: Optional[str] = None,
     cluster_emb_key: Optional[str] = None,
+    save_cell_adata: bool = True,
 ) -> Dict:
     """Run autotune and return the best params + final sample-AnnData.
 
@@ -681,7 +683,7 @@ def run_autotune(
                          scope=scope, alpha_bounds=alpha_bounds,
                          pca_components=pca_components,
                          batch_method=batch_method,
-                         output_dir=output_dir, save=save,
+                         output_dir=output_dir, save=save, save_cell_adata=save_cell_adata,
                          t_start=t0, verbose=verbose,
                          tune_on_modality=tune_on_modality,
                          score_n_units=int(score_mask.sum()))
@@ -737,7 +739,7 @@ def run_autotune(
                      scope=scope, alpha_bounds=alpha_bounds,
                      pca_components=pca_components,
                      batch_method=batch_method,
-                     output_dir=output_dir, save=save,
+                     output_dir=output_dir, save=save, save_cell_adata=save_cell_adata,
                      t_start=t0, verbose=verbose,
                      tune_on_modality=tune_on_modality,
                      score_n_units=int(score_mask.sum()))
@@ -869,7 +871,7 @@ def _finalize(adata, blocks, final_emb, weights, *,
                search, scoring, scope, alpha_bounds,
                pca_components, batch_method,
                output_dir, save, t_start, verbose,
-               tune_on_modality=None, score_n_units=None):
+               tune_on_modality=None, score_n_units=None, save_cell_adata=True):
     """Write the autotuned embedding into the cell-level adata and persist artifacts."""
     elapsed = time.time() - t_start
     adata.uns["X_DR_sample"] = final_emb.copy()
@@ -905,7 +907,9 @@ def _finalize(adata, blocks, final_emb, weights, *,
         final_emb.to_csv(emb_csv)
 
         preprocessed_h5 = os.path.join(output_dir, "preprocess", "adata_preprocessed.h5ad")
-        if os.path.exists(preprocessed_h5):
+        if not save_cell_adata:
+            warn_if_stale_embedding(preprocessed_h5, emb_csv)
+        if save_cell_adata and os.path.exists(preprocessed_h5):
             try:
                 sc.write(preprocessed_h5, adata)
             except Exception as exc:

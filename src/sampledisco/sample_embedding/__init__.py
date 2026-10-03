@@ -44,6 +44,7 @@ def compute_sample_embedding(
     verbose: bool = True,
     seed: int = 42,
     cluster_emb_key: Optional[str] = None,
+    save_cell_adata: bool = True,
 ) -> AnnData:
     """Dispatch to the CPU or GPU implementation.
 
@@ -73,6 +74,7 @@ def compute_sample_embedding(
         save=save,
         verbose=verbose,
         seed=seed,
+        save_cell_adata=save_cell_adata,
     )
 
     if use_gpu and not _gpu_stack_available():

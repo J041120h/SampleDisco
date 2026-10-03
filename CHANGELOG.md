@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+Faster sample-embedding step with unchanged results, plus an option to skip the
+cell-level h5ad rewrite.
+
+- **New config keys `rna_/atac_/multiomics_save_cell_adata_after_embedding`**
+  (default `true` = previous behaviour; `compute_sample_embedding(save_cell_adata=)`
+  and `run_autotune(save_cell_adata=)`). `false` skips re-writing the whole
+  cell-level h5ad (gzip) only to store `.uns['X_DR_sample']`; the CSV and block
+  files are still written. If that h5ad (or the multi-omics union h5ad) already
+  holds an older `.uns['X_DR_sample']`, a `UserWarning` is raised: a later run with
+  `derive_sample_embedding: false` would reuse that stale embedding.
+- **Backward-compatible config:** the bundled config now has 304 keys; existing
+  301-key configs (0.2.0 and earlier) still validate and run. `validate_config`
+  treats only these three keys as optional (absent = `true`); every other key is
+  still required (`tests/test_config_validation.py`).
+- **Speed-ups with identical output** (`compute_sample_embedding`, CPU and GPU):
+  units and cell types indexed by integer codes instead of per-cell id dicts;
+  RMD sums by `np.bincount` (same float64 accumulation order); MiniBatchKMeans
+  with `compute_labels=False` (the skipped final labelling pass never fed the
+  embedding); on CPU the softmax and per-unit mean run unit by unit on the
+  n_cells x K distance matrix, so the separate soft-assignment matrix and its
+  temporaries are no longer built; the two independent k-means fits run
+  concurrently. Compared with commit 1c4168a, A1, A2, A3, RMD and the final
+  embedding are bit-identical (max abs difference 0) on COVID 25 and 405 samples,
+  heart, lifespan and Sound Life (`tests/test_sample_embedding_equivalence.py`
+  checks the helpers on synthetic data).
+
 ## 0.3.0
 
 Cell-level embedding keys are renamed to match the manuscript's notation, behind a

@@ -618,6 +618,7 @@ def wrapper(
     rna_autotune_scoring: str = "auto",
     rna_autotune_scope: str = "alpha_only",
     rna_autotune_alpha_bounds: tuple = (0.1, 100.0),
+    rna_save_cell_adata_after_embedding: bool = True,
     rna_autotune_grouping_col: Optional[str] = None,
 
     # Trajectory analysis parameters
@@ -730,6 +731,7 @@ def wrapper(
     atac_autotune_scoring: str = "auto",
     atac_autotune_scope: str = "alpha_only",
     atac_autotune_alpha_bounds: tuple = (0.1, 100.0),
+    atac_save_cell_adata_after_embedding: bool = True,
     atac_autotune_grouping_col: Optional[str] = None,
 
     
@@ -904,6 +906,7 @@ def wrapper(
     multiomics_autotune_scoring: str = "auto",
     multiomics_autotune_scope: str = "alpha_only",
     multiomics_autotune_alpha_bounds: tuple = (0.1, 100.0),
+    multiomics_save_cell_adata_after_embedding: bool = True,
     multiomics_autotune_grouping_col: Optional[str] = None,
     multiomics_autotune_tune_on_modality: Optional[str] = None,
 
@@ -1175,6 +1178,7 @@ def wrapper(
                 autotune_scoring=rna_autotune_scoring,
                 autotune_scope=rna_autotune_scope,
                 autotune_alpha_bounds=rna_autotune_alpha_bounds,
+                save_cell_adata_after_embedding=rna_save_cell_adata_after_embedding,
                 autotune_grouping_col=rna_autotune_grouping_col,
                 seed=random_state,
             )
@@ -1329,6 +1333,7 @@ def wrapper(
                 autotune_scoring=atac_autotune_scoring,
                 autotune_scope=atac_autotune_scope,
                 autotune_alpha_bounds=atac_autotune_alpha_bounds,
+                save_cell_adata_after_embedding=atac_save_cell_adata_after_embedding,
                 autotune_grouping_col=atac_autotune_grouping_col,
                 seed=random_state,
             )
@@ -1520,6 +1525,7 @@ def wrapper(
                 autotune_scoring=multiomics_autotune_scoring,
                 autotune_scope=multiomics_autotune_scope,
                 autotune_alpha_bounds=multiomics_autotune_alpha_bounds,
+                save_cell_adata_after_embedding=multiomics_save_cell_adata_after_embedding,
                 autotune_grouping_col=multiomics_autotune_grouping_col,
                 autotune_tune_on_modality=multiomics_autotune_tune_on_modality,
                 # Paths for skipping

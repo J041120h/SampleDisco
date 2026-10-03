@@ -24,14 +24,19 @@ import scanpy as sc
 from anndata import AnnData
 
 from sampledisco.sample_embedding.blocks import (
-    assemble_units,
     clr_transform,
-    composition_per_unit,
     composite_batch_labels,
+    composition_from_rows,
     derive_weights,
     frobenius_stack,
-    loo_rmd,
+    harmony_meta_from_index,
+    kmeans_centers_pair,
+    loo_rmd_from_index,
+    n_worker_threads,
     regress_out_batch_linear,
+    sorted_codes,
+    unit_index,
+    warn_if_stale_embedding,
 )
 from sampledisco.sample_embedding.sample_embedding import (
     _aggregate_obs,
@@ -40,29 +45,27 @@ from sampledisco.sample_embedding.sample_embedding import (
 from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
 
 
-def _gpu_kmeans_soft(Z_np: np.ndarray, K: int, seed: int):
-    """GPU MiniBatchKMeans + RBF soft assignment.
-
-    Returns:
-        soft (np.ndarray, n_cells × K) — soft assignment probabilities
-    """
+def _gpu_kmeans_centers_pair(Z_np: np.ndarray, Z_gpu, K_med: int, K_fine: int, seed: int,
+                             n_threads: int):
+    """MiniBatchKMeans centres at K_med (seed) and K_fine (seed + 1): cuML when it provides
+    MiniBatchKMeans, otherwise sklearn on the CPU (the two fits run concurrently there)."""
     import cupy as cp
     try:
         from cuml.cluster import MiniBatchKMeans as cuMiniBatchKMeans
-        Z_gpu = cp.asarray(Z_np)
-        km = cuMiniBatchKMeans(n_clusters=K, random_state=seed,
-                                batch_size=4096, n_init=5, max_iter=200)
-        km.fit(Z_gpu)
-        centers = cp.asarray(km.cluster_centers_)
+        centers = []
+        for K, sd in ((K_med, seed), (K_fine, seed + 1)):
+            km = cuMiniBatchKMeans(n_clusters=K, random_state=sd,
+                                   batch_size=4096, n_init=5, max_iter=200)
+            km.fit(Z_gpu)
+            centers.append(cp.asarray(km.cluster_centers_))
+        return centers
     except Exception:
-        # cuml unavailable: sklearn k-means on CPU, then move data to GPU for soft-assign
-        from sklearn.cluster import MiniBatchKMeans
-        km = MiniBatchKMeans(n_clusters=K, random_state=seed,
-                              batch_size=4096, n_init=5, max_iter=200).fit(Z_np)
-        Z_gpu = cp.asarray(Z_np)
-        centers = cp.asarray(km.cluster_centers_)
+        return [cp.asarray(c) for c in kmeans_centers_pair(Z_np, K_med, K_fine, seed, n_threads)]
 
-    # Pairwise sq distances on GPU
+
+def _gpu_soft(Z_gpu, centers):
+    """RBF soft assignment on the GPU; returns the n_cells x K matrix as numpy."""
+    import cupy as cp
     Z_sq = (Z_gpu * Z_gpu).sum(axis=1, keepdims=True)
     A_sq = (centers * centers).sum(axis=1, keepdims=True).T
     D2 = Z_sq + A_sq - 2.0 * (Z_gpu @ centers.T)
@@ -173,6 +176,7 @@ def compute_sample_embedding(
     verbose: bool = True,
     seed: int = 42,
     cluster_emb_key: Optional[str] = None,
+    save_cell_adata: bool = True,
 ) -> AnnData:
     """GPU compute_sample_embedding — see CPU version for full docstring."""
     start_time = time.time() if verbose else None
@@ -195,7 +199,7 @@ def compute_sample_embedding(
     if verbose:
         print(f"[sample_embedding_gpu] comp_emb={comp_key}, rmd_emb={rmd_key}")
 
-    # primary_batch: first col → assemble_units (group labelling); batch_cols_multi → Harmony multi-cov
+    # primary_batch: first col → unit_index (group labelling); batch_cols_multi → Harmony multi-cov
     if isinstance(batch_col, (list, tuple)):
         batch_cols_multi = [c for c in batch_col if c]
     elif batch_col:
@@ -204,55 +208,48 @@ def compute_sample_embedding(
         batch_cols_multi = []
     primary_batch = batch_cols_multi[0] if batch_cols_multi else None
 
-    units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_comp = \
-        assemble_units(adata, sample_col, comp_key,
-                       modality_col=modality_col, batch_col=primary_batch)
-    n_units = len(units)
+    unit_ids, unit_groups, unit_batches, unit_of_cell, unit_rows = unit_index(
+        adata, sample_col, modality_col=modality_col, batch_col=primary_batch)
+    Z_comp = np.asarray(adata.obsm[comp_key], dtype=np.float32)
+    n_units = len(unit_ids)
     if n_units < 2:
         raise ValueError(f"need ≥2 units, got {n_units}")
-    cellid_idx = {cid: i for i, cid in enumerate(all_cellids)}
     if verbose:
         print(f"[sample_embedding_gpu] {n_units} units; "
               f"{Z_comp.shape[0]} cells; comp_emb dim={Z_comp.shape[1]}")
 
-    cell_type = adata.obs[celltype_col].astype(str).values
-    unique_cts = sorted(set(cell_type))
+    unique_cts, ct_codes = sorted_codes(adata.obs[celltype_col])
     K_c = len(unique_cts)
     if K_c < 2:
         raise ValueError(f"need ≥2 cell types, got {K_c}")
 
     # ---- A1: coarse cell-type composition (one-hot, mean per unit) ----------
-    L1 = {ct: i for i, ct in enumerate(unique_cts)}
     soft1 = np.zeros((Z_comp.shape[0], K_c), dtype=np.float32)
-    for i, ct in enumerate(cell_type):
-        soft1[i, L1[ct]] = 1.0
-    unit_cellids_list = [unit_cellids[uid] for uid in unit_ids]
-    A1 = composition_per_unit(unit_cellids_list, soft1, cellid_idx)
+    soft1[np.arange(Z_comp.shape[0]), ct_codes] = 1.0
+    A1 = composition_from_rows(unit_rows, soft1)
+    del soft1
     if use_clr:
         A1 = clr_transform(A1)
     if verbose:
         print(f"[A1] shape={A1.shape}")
 
-    # ---- A2: soft k-means at K_med (GPU) ----
+    # ---- A2 / A3: k-means centres, soft assignment on the GPU ----
+    import cupy as cp
     K_med = min(medium_K, max(2, Z_comp.shape[0] // 200))
-    if verbose:
-        print(f"[A2] GPU MiniBatchKMeans K={K_med}...", flush=True)
-    soft2 = _gpu_kmeans_soft(Z_comp, K_med, seed)
-    A2 = composition_per_unit(unit_cellids_list, soft2, cellid_idx)
-    if use_clr:
-        A2 = clr_transform(A2)
-    if verbose:
-        print(f"[A2] shape={A2.shape}")
-
-    # ---- A3: soft k-means at K_fine (GPU) ----
     K_fine = min(fine_K, max(2, Z_comp.shape[0] // 100))
     if verbose:
-        print(f"[A3] GPU MiniBatchKMeans K={K_fine}...", flush=True)
-    soft3 = _gpu_kmeans_soft(Z_comp, K_fine, seed + 1)
-    A3 = composition_per_unit(unit_cellids_list, soft3, cellid_idx)
+        print(f"[A2/A3] MiniBatchKMeans K={K_med} and K={K_fine}; GPU soft assignment...", flush=True)
+    Z_gpu = cp.asarray(Z_comp)
+    C_med, C_fine = _gpu_kmeans_centers_pair(Z_comp, Z_gpu, K_med, K_fine, seed,
+                                             n_worker_threads())
+    A2 = composition_from_rows(unit_rows, _gpu_soft(Z_gpu, C_med))
+    A3 = composition_from_rows(unit_rows, _gpu_soft(Z_gpu, C_fine))
+    del Z_gpu
     if use_clr:
+        A2 = clr_transform(A2)
         A3 = clr_transform(A3)
     if verbose:
+        print(f"[A2] shape={A2.shape}")
         print(f"[A3] shape={A3.shape}")
 
     blocks = [A1, A2, A3]
@@ -263,14 +260,8 @@ def compute_sample_embedding(
         if verbose:
             print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
         Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
-        rmd_units = []
-        for uid, group in zip(unit_ids, unit_groups):
-            cids = unit_cellids[uid]
-            idxs = [cellid_idx[c] for c in cids if c in cellid_idx]
-            rmd_units.append((uid, group, Z_rmd[idxs]))
-        coarse_label_map = dict(zip(all_cellids, cell_type))
-        RMD = loo_rmd(
-            rmd_units, unit_cellids, coarse_label_map,
+        RMD = loo_rmd_from_index(
+            Z_rmd, unit_of_cell, ct_codes, K_c, unit_groups,
             max_dim_per_cluster=rmd_dim_per_cluster, seed=seed, loo=True,
             verbose=verbose,
         )
@@ -299,9 +290,8 @@ def compute_sample_embedding(
     Fp = _gpu_pca(F, n_pc_full, seed)
 
     # Sample-level Harmony — multi-covariate when >=2 batch_cols given, else legacy
-    from sampledisco.sample_embedding.blocks import build_harmony_meta_df
     multi_meta_df = (
-        build_harmony_meta_df(adata, unit_cellids, unit_ids, batch_cols_multi)
+        harmony_meta_from_index(adata, unit_of_cell, unit_ids, batch_cols_multi)
         if len(batch_cols_multi) >= 2 else None
     )
 
@@ -376,7 +366,10 @@ def compute_sample_embedding(
             RMD=RMD,
         )
         preprocessed_h5 = os.path.join(output_dir, "preprocess", "adata_preprocessed.h5ad")
-        if os.path.exists(preprocessed_h5):
+        resave = save_cell_adata and os.path.exists(preprocessed_h5)
+        if not save_cell_adata:
+            warn_if_stale_embedding(preprocessed_h5, emb_csv)
+        if resave:
             try:
                 sc.write(preprocessed_h5, adata)
             except Exception as exc:
@@ -386,7 +379,7 @@ def compute_sample_embedding(
         if verbose:
             print(f"[sample_embedding_gpu] wrote {emb_csv}")
             print(f"[sample_embedding_gpu] wrote {blocks_npz}")
-            if os.path.exists(preprocessed_h5):
+            if resave:
                 print(f"[sample_embedding_gpu] updated {preprocessed_h5} (.uns['X_DR_sample'])")
 
     if verbose and start_time is not None:

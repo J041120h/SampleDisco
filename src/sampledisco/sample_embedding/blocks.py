@@ -11,7 +11,9 @@ The recipe ports the `wire_singleRMD` / `wire_singleRMD_dualembed` variants
 from __future__ import annotations
 
 import math
+import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -82,6 +84,108 @@ def composition_per_unit(unit_cellids, soft, cellid_idx) -> np.ndarray:
     return comp
 
 
+def composition_from_rows(unit_rows: List[np.ndarray], soft) -> np.ndarray:
+    """`composition_per_unit` with per-unit row-index arrays (same reduction, no cell-id lookups)."""
+    soft_np = _to_numpy(soft)
+    comp = np.zeros((len(unit_rows), soft_np.shape[1]), dtype=np.float32)
+    for i, rows in enumerate(unit_rows):
+        if len(rows):
+            comp[i] = soft_np[rows].mean(axis=0)
+    return comp
+
+
+def soft_composition(Z: np.ndarray, anchors: np.ndarray, unit_rows: List[np.ndarray],
+                     n_threads: int = 1) -> np.ndarray:
+    """`composition_from_rows(unit_rows, soft_assign(Z, anchors))` without building the
+    n_cells x K soft matrix: the row-wise softmax and the per-unit mean run unit by unit
+    (identical arithmetic per row), threaded over units. sigma = median(sqrt(D2)) is read
+    from a partition of D2 (sqrt is monotone), as `np.median` does on sqrt(D2)."""
+    G = Z @ anchors.T
+    G *= 2.0
+    D2 = (Z * Z).sum(axis=1, keepdims=True) + (anchors * anchors).sum(axis=1, keepdims=True).T
+    D2 -= G
+    del G
+    np.maximum(D2, 0, out=D2)
+    flat = D2.ravel()
+    k = flat.size // 2
+    if flat.size % 2:
+        sigma = float(np.sqrt(np.partition(flat, k)[k]))
+    else:
+        part = np.partition(flat, [k - 1, k])
+        sigma = float(np.mean(np.sqrt(part[[k - 1, k]])))
+    denom = 2.0 * sigma * sigma + 1e-12
+
+    def unit_mean(rows):
+        if not len(rows):
+            return np.zeros(D2.shape[1], dtype=np.float32)
+        L = D2[rows]
+        np.negative(L, out=L)
+        L /= denom
+        L -= L.max(axis=1, keepdims=True)
+        np.exp(L, out=L)
+        L /= np.maximum(L.sum(axis=1, keepdims=True), 1e-12)
+        return L.mean(axis=0)
+
+    if n_threads > 1:
+        with ThreadPoolExecutor(n_threads) as ex:
+            rows_out = list(ex.map(unit_mean, unit_rows))
+    else:
+        rows_out = [unit_mean(r) for r in unit_rows]
+    return np.vstack(rows_out).astype(np.float32)
+
+
+def n_worker_threads(cap: int = 16) -> int:
+    n = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
+    return max(1, min(cap, n))
+
+
+def kmeans_centers(Z: np.ndarray, K: int, seed: int) -> np.ndarray:
+    """MiniBatchKMeans centres. compute_labels=False skips the final full labelling pass,
+    which runs after the centres are fixed and whose output the embedding never uses."""
+    from sklearn.cluster import MiniBatchKMeans
+    return MiniBatchKMeans(n_clusters=K, random_state=seed, batch_size=4096, n_init=5,
+                           max_iter=200, compute_labels=False).fit(Z).cluster_centers_
+
+
+def kmeans_centers_pair(Z: np.ndarray, K_med: int, K_fine: int, seed: int,
+                        n_threads: int = 1) -> Tuple[np.ndarray, np.ndarray]:
+    """Centres at K_med (seed) and K_fine (seed + 1). With n_threads > 1 the two independent
+    fits run concurrently (each keeps its own RandomState). BLAS (process-wide) is held at one
+    thread because k-means++ issues thousands of tiny GEMMs; the OpenMP thread count is a
+    per-thread setting, so each worker sets its own share."""
+    if n_threads < 2:
+        return kmeans_centers(Z, K_med, seed), kmeans_centers(Z, K_fine, seed + 1)
+    from threadpoolctl import threadpool_limits
+
+    def fit(K, sd):
+        with threadpool_limits(limits=max(1, n_threads // 2), user_api="openmp"):
+            return kmeans_centers(Z, K, sd)
+
+    with threadpool_limits(limits=1, user_api="blas"), ThreadPoolExecutor(2) as ex:
+        f_med = ex.submit(fit, K_med, seed)
+        f_fine = ex.submit(fit, K_fine, seed + 1)
+        return f_med.result(), f_fine.result()
+
+
+def warn_if_stale_embedding(path: str, csv_path: str) -> None:
+    """Called when the cell-level h5ad is NOT re-written: warn if it still carries an older
+    .uns['X_DR_sample'], which a later run with derive_sample_embedding=False would reuse."""
+    if not (path and os.path.exists(path)):
+        return
+    import h5py
+    try:
+        with h5py.File(path, "r") as f:
+            stale = "uns" in f and "X_DR_sample" in f["uns"]
+    except OSError:
+        return
+    if stale:
+        import warnings
+        warnings.warn(
+            f"save_cell_adata=False: {path} still holds an OLDER .uns['X_DR_sample']. A later run "
+            f"with derive_sample_embedding=False would silently reuse that stale embedding; the "
+            f"current one is only in {csv_path}.", UserWarning, stacklevel=3)
+
+
 def clr_transform(comp: np.ndarray, eps: float = 1e-3) -> np.ndarray:
     """Aitchison centred-log-ratio. Optional; the singleRMD variant does NOT
     use this transform, but it is exposed for callers that want to opt in."""
@@ -119,8 +223,6 @@ def loo_rmd(
     Each cluster's displacement matrix is reduced via PCA to at most
     `max_dim_per_cluster` PCs and the per-cluster blocks are concatenated.
     """
-    from sklearn.decomposition import PCA
-
     cluster_labels = sorted(set(label_for_cellid.values()),
                              key=lambda s: str(s))
     K = len(cluster_labels)
@@ -146,6 +248,50 @@ def loo_rmd(
             sums_smk[ui, ki] += cv
             cnts_smk[ui, ki] += 1
 
+    out = _loo_rmd_from_sums(sums_smk, cnts_smk, units_groupidx, G,
+                             max_dim_per_cluster=max_dim_per_cluster, seed=seed, loo=loo)
+    if verbose:
+        print(f"  [RMD] shape={out.shape}")
+    return out
+
+
+def loo_rmd_from_index(
+    Z_rmd: np.ndarray,
+    unit_of_cell: np.ndarray,
+    label_codes: np.ndarray,
+    n_labels: int,
+    unit_groups: List[str],
+    *,
+    max_dim_per_cluster: int = 8,
+    seed: int = 42,
+    loo: bool = True,
+    verbose: bool = False,
+) -> np.ndarray:
+    """`loo_rmd` from integer codes (cell -> unit, cell -> sorted label). The per-(unit, label)
+    sums use np.bincount, which accumulates in float64 in cell order exactly like the
+    per-cell loop of `loo_rmd`; the rest is shared with it."""
+    n_units = len(unit_groups)
+    groups = sorted(set(unit_groups))
+    G_idx = {g: i for i, g in enumerate(groups)}
+    units_groupidx = np.array([G_idx[g] for g in unit_groups], dtype=np.int64)
+    keep = unit_of_cell >= 0
+    key = unit_of_cell[keep] * n_labels + label_codes[keep]
+    Zk = Z_rmd[keep]
+    sums_smk = np.stack([np.bincount(key, weights=Zk[:, j], minlength=n_units * n_labels)
+                         for j in range(Zk.shape[1])], axis=1).reshape(n_units, n_labels, -1)
+    cnts_smk = np.bincount(key, minlength=n_units * n_labels).reshape(n_units, n_labels).astype(np.int64)
+    out = _loo_rmd_from_sums(sums_smk, cnts_smk, units_groupidx, len(groups),
+                             max_dim_per_cluster=max_dim_per_cluster, seed=seed, loo=loo)
+    if verbose:
+        print(f"  [RMD] shape={out.shape}")
+    return out
+
+
+def _loo_rmd_from_sums(sums_smk, cnts_smk, units_groupidx, G, *,
+                       max_dim_per_cluster, seed, loo):
+    from sklearn.decomposition import PCA
+
+    n_units, K, d_latent = sums_smk.shape
     grand_sum = np.zeros((G, K, d_latent), dtype=np.float64)
     grand_cnt = np.zeros((G, K), dtype=np.int64)
     for ui in range(n_units):
@@ -216,11 +362,8 @@ def loo_rmd(
             print(f"  [RMD] PCA failed for cluster {ki} (shape={sub.shape}, nc={nc}): "
                   f"{type(exc).__name__}: {exc}; cluster dropped from RMD block")
             continue
-    out = (np.concatenate(out_blocks, axis=1) if out_blocks
+    return (np.concatenate(out_blocks, axis=1) if out_blocks
             else np.zeros((n_units, 0), dtype=np.float32))
-    if verbose:
-        print(f"  [RMD] shape={out.shape}")
-    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -294,42 +437,6 @@ def regress_out_batch_linear(X: np.ndarray, batch_labels) -> np.ndarray:
         return X
     reg = LinearRegression(fit_intercept=True).fit(B, X)
     return (X - reg.predict(B)).astype(np.float32)
-
-
-def build_harmony_meta_df(
-    adata,
-    unit_cellids: Dict[str, List[str]],
-    unit_ids: List[str],
-    batch_cols: Optional[Sequence[str]],
-) -> Optional[pd.DataFrame]:
-    """Build a per-unit DataFrame for multi-covariate Harmony.
-
-    Each row is a unit (sample), each column a batch covariate, value = majority
-    label across the unit's cells. Returns None when batch_cols is empty or no
-    cols match adata.obs. Used when >=2 batch_cols are passed; single batch_col
-    goes through the legacy single-key code path.
-    """
-    if not batch_cols:
-        return None
-    cols = [batch_cols] if isinstance(batch_cols, str) else list(batch_cols)
-    cols = [c for c in cols if c in adata.obs.columns]
-    if not cols:
-        return None
-    cellid_to_batches = {
-        c: dict(zip(
-            adata.obs_names.astype(str).values,
-            adata.obs[c].astype(str).values,
-        )) for c in cols
-    }
-    rows = {c: [] for c in cols}
-    for uid in unit_ids:
-        cids = unit_cellids.get(uid, [])
-        for c in cols:
-            mapper = cellid_to_batches[c]
-            bs = [mapper.get(cid) for cid in cids if cid in mapper]
-            bs = [b for b in bs if b is not None and b != "nan"]
-            rows[c].append(max(sorted(set(bs)), key=bs.count) if bs else "UNK")
-    return pd.DataFrame(rows, index=unit_ids)
 
 
 def composite_batch_labels(
@@ -566,3 +673,103 @@ def _per_unit_batch(
         else:
             out.append(max(sorted(set(bs)), key=bs.count))
     return out
+
+
+# --------------------------------------------------------------------------- #
+# Integer-index unit assembly (same units as assemble_units, no cell-id dicts) #
+# --------------------------------------------------------------------------- #
+
+def sorted_codes(series) -> Tuple[np.ndarray, np.ndarray]:
+    """Equivalent to ``np.unique(series.astype(str).values, return_inverse=True)``,
+    computed from the categorical codes (no string conversion of every cell)."""
+    cat = series if isinstance(series.dtype, pd.CategoricalDtype) else series.astype("category")
+    codes = cat.cat.codes.to_numpy().astype(np.int64)
+    if (codes < 0).any():  # missing values become the label 'nan', as with astype(str)
+        return np.unique(series.astype(str).values, return_inverse=True)
+    labels = np.asarray(cat.cat.categories.astype(str), dtype=object)
+    if len(set(labels)) != len(labels):  # distinct categories with equal str()
+        return np.unique(series.astype(str).values, return_inverse=True)
+    present = np.flatnonzero(np.bincount(codes, minlength=len(labels)) > 0)
+    order = present[np.argsort(labels[present].astype(str), kind="stable")]
+    remap = np.full(len(labels), -1, dtype=np.int64)
+    remap[order] = np.arange(len(order))
+    return labels[order].astype(str), remap[codes]
+
+
+def _majority_per_unit(series, unit_of_cell: np.ndarray, n_units: int, *,
+                       skip_nan: bool, empty: Optional[str]) -> List[str]:
+    """Most frequent str label per unit; ties go to the first label in sorted order
+    (``max(sorted(set(labels)), key=labels.count)``). With skip_nan, the label 'nan' is
+    ignored and a unit with no other label gets `empty`."""
+    labels, codes = sorted_codes(series)
+    keep = unit_of_cell >= 0
+    cnt = np.bincount(unit_of_cell[keep] * len(labels) + codes[keep],
+                      minlength=n_units * len(labels)).reshape(n_units, len(labels))
+    if skip_nan:
+        cnt[:, labels == "nan"] = 0
+    best = cnt.argmax(axis=1)
+    return [str(labels[b]) if cnt[i, b] > 0 else empty for i, b in enumerate(best)]
+
+
+def unit_index(
+    adata,
+    sample_col: str,
+    modality_col: Optional[str] = None,
+    batch_col: Optional[str] = None,
+) -> Tuple[List[str], List[str], Optional[List[str]], np.ndarray, List[np.ndarray]]:
+    """Integer-index twin of `assemble_units`: the same unit ids, order, groups and batches,
+    plus ``unit_of_cell`` (cell -> unit position) and ``unit_rows`` (unit -> row indices in
+    obs order). Rows are positions, so repeated obs_names are handled per cell."""
+    s_labels, s_codes = sorted_codes(adata.obs[sample_col])
+    n_cells = len(s_codes)
+    multi = modality_col is not None and modality_col in adata.obs.columns
+    if multi:
+        m_labels, m_codes = sorted_codes(adata.obs[modality_col])
+        pair = s_codes * len(m_labels) + m_codes
+        present = np.flatnonzero(np.bincount(pair, minlength=len(s_labels) * len(m_labels)) > 0)
+        unit_ids, unit_groups = [], []
+        for p in present:
+            s_uniq, m = str(s_labels[p // len(m_labels)]), str(m_labels[p % len(m_labels)])
+            bio = s_uniq
+            for suf in (f"_{m}", f"_{m.lower()}"):
+                if bio.endswith(suf):
+                    bio = bio[: -len(suf)]
+                    break
+            unit_ids.append(bio if bio.endswith(f"_{m}") else f"{bio}_{m}")
+            unit_groups.append(m)
+        remap = np.full(len(s_labels) * len(m_labels), -1, dtype=np.int64)
+        remap[present] = np.arange(len(present))
+        unit_of_cell = remap[pair]
+    else:
+        unit_ids = [str(x) for x in s_labels]
+        unit_of_cell = s_codes
+    n_units = len(unit_ids)
+    order = np.argsort(unit_of_cell, kind="stable")
+    bounds = np.r_[0, np.cumsum(np.bincount(unit_of_cell, minlength=n_units))]
+    unit_rows = [order[bounds[i]:bounds[i + 1]] for i in range(n_units)]
+    has_batch = batch_col is not None and batch_col in adata.obs.columns
+    if multi:
+        unit_batches = (_majority_per_unit(adata.obs[batch_col], unit_of_cell, n_units,
+                                           skip_nan=True, empty="UNK") if has_batch else None)
+    else:
+        unit_groups = (_majority_per_unit(adata.obs[batch_col], unit_of_cell, n_units,
+                                          skip_nan=False, empty=None)
+                       if has_batch else ["single"] * n_units)
+        unit_batches = None
+    assert len(unit_of_cell) == n_cells
+    return unit_ids, unit_groups, unit_batches, unit_of_cell, unit_rows
+
+
+def harmony_meta_from_index(adata, unit_of_cell: np.ndarray, unit_ids: List[str],
+                            batch_cols: Optional[Sequence[str]]) -> Optional[pd.DataFrame]:
+    """Per-unit majority label of each batch column ('nan' ignored, 'UNK' if none) for
+    multi-covariate sample-level Harmony."""
+    if not batch_cols:
+        return None
+    cols = [batch_cols] if isinstance(batch_cols, str) else list(batch_cols)
+    cols = [c for c in cols if c in adata.obs.columns]
+    if not cols:
+        return None
+    return pd.DataFrame({c: _majority_per_unit(adata.obs[c], unit_of_cell, len(unit_ids),
+                                               skip_nan=True, empty="UNK") for c in cols},
+                        index=unit_ids)
