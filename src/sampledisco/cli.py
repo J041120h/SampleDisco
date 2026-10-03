@@ -35,13 +35,19 @@ def load_config(config_path):
         return yaml.safe_load(f)
 
 
+# Keys added after 0.2.0. Configs written before them may omit these keys, which
+# then take their wrapper() default; every other key stays required.
+OPTIONAL_KEYS = frozenset(f"{m}_save_cell_adata_after_embedding"
+                          for m in ("rna", "atac", "multiomics"))
+
+
 def validate_config(config, func):
     valid_params = inspect.signature(func).parameters
     for key in config:
         if key not in valid_params:
             raise ValueError(f"Unexpected parameter in config: '{key}'")
     for key in valid_params:
-        if key not in config:
+        if key not in config and key not in OPTIONAL_KEYS:
             raise ValueError(f"Missing required parameter in config: '{key}'")
 
 

@@ -89,6 +89,7 @@ rna_sample_embedding_block_weights:
 rna_sample_embedding_rmd_weight: 0.60
 rna_sample_embedding_pca_components: 10
 rna_sample_embedding_batch_method: "harmony"
+rna_save_cell_adata_after_embedding: true   # re-write the cell-level h5ad to store .uns['X_DR_sample'] (slow on large data; false = keep only the CSV)
 
 # --- Autotune Parameters ---
 rna_autotune_enable: false
@@ -210,6 +211,7 @@ atac_sample_embedding_block_weights:
 atac_sample_embedding_rmd_weight: 0.60
 atac_sample_embedding_pca_components: 10
 atac_sample_embedding_batch_method: "harmony"
+atac_save_cell_adata_after_embedding: true   # re-write the cell-level h5ad to store .uns['X_DR_sample'] (slow on large data; false = keep only the CSV)
 
 # --- Autotune Parameters ---
 atac_autotune_enable: false
@@ -378,6 +380,7 @@ multiomics_sample_embedding_block_weights:
 multiomics_sample_embedding_rmd_weight: 0.60
 multiomics_sample_embedding_pca_components: 10
 multiomics_sample_embedding_batch_method: "harmony"
+multiomics_save_cell_adata_after_embedding: true   # re-write the cell-level h5ad to store .uns['X_DR_sample'] (slow on large data; false = keep only the CSV)
 
 # --- Autotune Parameters ---
 multiomics_autotune_enable: false

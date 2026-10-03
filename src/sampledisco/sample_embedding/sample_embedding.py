@@ -36,16 +36,20 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 from anndata import AnnData
-from sklearn.cluster import MiniBatchKMeans
 
 from sampledisco.sample_embedding.blocks import (
-    assemble_units,
     build_emb_from_blocks,
     clr_transform,
-    composition_per_unit,
+    composition_from_rows,
     derive_weights,
-    loo_rmd,
-    soft_assign,
+    harmony_meta_from_index,
+    kmeans_centers_pair,
+    loo_rmd_from_index,
+    n_worker_threads,
+    soft_composition,
+    sorted_codes,
+    unit_index,
+    warn_if_stale_embedding,
 )
 from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
 
@@ -158,6 +162,7 @@ def compute_sample_embedding(
     verbose: bool = True,
     seed: int = 42,
     cluster_emb_key: Optional[str] = None,
+    save_cell_adata: bool = True,
 ) -> AnnData:
     """Compute sample-level embedding (singleRMD recipe).
 
@@ -172,6 +177,10 @@ def compute_sample_embedding(
     (cell-level) adata has no `.obsm['X_DR_sample']` — use
     `build_sample_adata` to materialize a per-sample AnnData that carries the
     embedding as `.obsm['X_DR_sample']`.
+
+    With `save=True`, `save_cell_adata=False` skips re-writing
+    `output_dir/preprocess/adata_preprocessed.h5ad` (the CSV and block files are
+    still written; `.uns['X_DR_sample']` then lives only in memory and in the CSV).
     """
     start_time = time.time() if verbose else None
 
@@ -194,7 +203,7 @@ def compute_sample_embedding(
     if verbose:
         print(f"[sample_embedding] comp_emb={comp_key}, rmd_emb={rmd_key}")
 
-    # primary_batch: first col → assemble_units (group labelling); batch_cols_multi → Harmony multi-cov
+    # primary_batch: first col → unit_index (group labelling); batch_cols_multi → Harmony multi-cov
     if isinstance(batch_col, (list, tuple)):
         batch_cols_multi = [c for c in batch_col if c]
     elif batch_col:
@@ -203,60 +212,46 @@ def compute_sample_embedding(
         batch_cols_multi = []
     primary_batch = batch_cols_multi[0] if batch_cols_multi else None
 
-    units, unit_cellids, unit_ids, unit_groups, unit_batches, all_cellids, Z_comp = \
-        assemble_units(adata, sample_col, comp_key,
-                       modality_col=modality_col, batch_col=primary_batch)
-    n_units = len(units)
+    unit_ids, unit_groups, unit_batches, unit_of_cell, unit_rows = unit_index(
+        adata, sample_col, modality_col=modality_col, batch_col=primary_batch)
+    Z_comp = np.asarray(adata.obsm[comp_key], dtype=np.float32)
+    n_units = len(unit_ids)
     if n_units < 2:
         raise ValueError(f"need ≥2 units to compute embedding, got {n_units}")
+    n_threads = n_worker_threads()
 
-    cellid_idx = {cid: i for i, cid in enumerate(all_cellids)}
     if verbose:
         print(f"[sample_embedding] {n_units} units; "
               f"{Z_comp.shape[0]} cells; comp_emb dim={Z_comp.shape[1]}")
 
-    cell_type = adata.obs[celltype_col].astype(str).values
-    unique_cts = sorted(set(cell_type))
+    unique_cts, ct_codes = sorted_codes(adata.obs[celltype_col])
     K_c = len(unique_cts)
     if K_c < 2:
         raise ValueError(f"need ≥2 cell types, got {K_c}")
 
     # ---- A1: coarse cell-type composition (one-hot, mean per unit) ----------
-    L1 = {ct: i for i, ct in enumerate(unique_cts)}
     soft1 = np.zeros((Z_comp.shape[0], K_c), dtype=np.float32)
-    for i, ct in enumerate(cell_type):
-        soft1[i, L1[ct]] = 1.0
-    unit_cellids_list = [unit_cellids[uid] for uid in unit_ids]
-    A1 = composition_per_unit(unit_cellids_list, soft1, cellid_idx)
+    soft1[np.arange(Z_comp.shape[0]), ct_codes] = 1.0
+    A1 = composition_from_rows(unit_rows, soft1)
+    del soft1
     if use_clr:
         A1 = clr_transform(A1)
     if verbose:
         print(f"[A1] coarse cell-type composition: shape={A1.shape}")
 
-    # ---- A2: soft k-means at K_med ----
+    # ---- A2 / A3: soft k-means composition at K_med and K_fine ----
     K_med = min(medium_K, max(2, Z_comp.shape[0] // 200))
-    if verbose:
-        print(f"[A2] MiniBatchKMeans K={K_med}...", flush=True)
-    km_med = MiniBatchKMeans(n_clusters=K_med, random_state=seed,
-                              batch_size=4096, n_init=5, max_iter=200).fit(Z_comp)
-    soft2 = soft_assign(Z_comp, km_med.cluster_centers_)
-    A2 = composition_per_unit(unit_cellids_list, soft2, cellid_idx)
-    if use_clr:
-        A2 = clr_transform(A2)
-    if verbose:
-        print(f"[A2] shape={A2.shape}")
-
-    # ---- A3: soft k-means at K_fine ----
     K_fine = min(fine_K, max(2, Z_comp.shape[0] // 100))
     if verbose:
-        print(f"[A3] MiniBatchKMeans K={K_fine}...", flush=True)
-    km_fine = MiniBatchKMeans(n_clusters=K_fine, random_state=seed + 1,
-                                batch_size=4096, n_init=5, max_iter=200).fit(Z_comp)
-    soft3 = soft_assign(Z_comp, km_fine.cluster_centers_)
-    A3 = composition_per_unit(unit_cellids_list, soft3, cellid_idx)
+        print(f"[A2/A3] MiniBatchKMeans K={K_med} and K={K_fine}...", flush=True)
+    C_med, C_fine = kmeans_centers_pair(Z_comp, K_med, K_fine, seed, n_threads)
+    A2 = soft_composition(Z_comp, C_med, unit_rows, n_threads)
+    A3 = soft_composition(Z_comp, C_fine, unit_rows, n_threads)
     if use_clr:
+        A2 = clr_transform(A2)
         A3 = clr_transform(A3)
     if verbose:
+        print(f"[A2] shape={A2.shape}")
         print(f"[A3] shape={A3.shape}")
 
     blocks = [A1, A2, A3]
@@ -268,14 +263,8 @@ def compute_sample_embedding(
             print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
         # rmd_key may differ from comp_key (sample-preserved vs sample-removed)
         Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
-        rmd_units = []
-        for uid, group in zip(unit_ids, unit_groups):
-            cids = unit_cellids[uid]
-            idxs = [cellid_idx[c] for c in cids if c in cellid_idx]
-            rmd_units.append((uid, group, Z_rmd[idxs]))
-        coarse_label_map = dict(zip(all_cellids, cell_type))
-        RMD = loo_rmd(
-            rmd_units, unit_cellids, coarse_label_map,
+        RMD = loo_rmd_from_index(
+            Z_rmd, unit_of_cell, ct_codes, K_c, unit_groups,
             max_dim_per_cluster=rmd_dim_per_cluster, seed=seed, loo=True,
             verbose=verbose,
         )
@@ -297,9 +286,8 @@ def compute_sample_embedding(
               f"(n_blocks={len(blocks)})")
 
     # Multi-covariate Harmony: build per-unit metadata only when >=2 batch_cols given
-    from sampledisco.sample_embedding.blocks import build_harmony_meta_df
     harmony_meta_df = (
-        build_harmony_meta_df(adata, unit_cellids, unit_ids, batch_cols_multi)
+        harmony_meta_from_index(adata, unit_of_cell, unit_ids, batch_cols_multi)
         if len(batch_cols_multi) >= 2 else None
     )
     if verbose and harmony_meta_df is not None:
@@ -360,7 +348,10 @@ def compute_sample_embedding(
 
         # Re-save adata_preprocessed.h5ad so .uns['X_DR_sample'] persists across sessions.
         preprocessed_h5 = os.path.join(output_dir, "preprocess", "adata_preprocessed.h5ad")
-        if os.path.exists(preprocessed_h5):
+        resave = save_cell_adata and os.path.exists(preprocessed_h5)
+        if not save_cell_adata:
+            warn_if_stale_embedding(preprocessed_h5, emb_csv)
+        if resave:
             try:
                 sc.write(preprocessed_h5, adata)
             except Exception as exc:
@@ -371,7 +362,7 @@ def compute_sample_embedding(
         if verbose:
             print(f"[sample_embedding] wrote {emb_csv}")
             print(f"[sample_embedding] wrote {blocks_npz}")
-            if os.path.exists(preprocessed_h5):
+            if resave:
                 print(f"[sample_embedding] updated {preprocessed_h5} (.uns['X_DR_sample'])")
 
     if verbose and start_time is not None:

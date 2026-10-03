@@ -166,6 +166,7 @@ def multiomics_wrapper(
     autotune_scoring: str = "auto",
     autotune_scope: str = "alpha_only",
     autotune_alpha_bounds=(0.1, 100.0),
+    save_cell_adata_after_embedding: bool = True,
     autotune_grouping_col: Optional[str] = None,
     autotune_tune_on_modality: Optional[str] = None,
 
@@ -438,6 +439,7 @@ def multiomics_wrapper(
                 alpha_bounds=autotune_alpha_bounds,
                 tune_on_modality=autotune_tune_on_modality,
                 save=True, verbose=multiomics_verbose,
+                save_cell_adata=save_cell_adata_after_embedding,
             )
             status_flags["multiomics"]["autotune"] = True
         else:
@@ -460,14 +462,19 @@ def multiomics_wrapper(
                 pca_components=sample_embedding_pca_components,
                 batch_method=sample_embedding_batch_method,
                 save=True, verbose=multiomics_verbose,
+                save_cell_adata=save_cell_adata_after_embedding,
             )
         status_flags["multiomics"]["derive_sample_embedding"] = True
         # Persist X_DR_sample (set in-memory by the SE step) into the union so
         # a resume-from-disk downstream run can read it. The SE step's own
         # re-save targets the single-omics adata_preprocessed.h5ad, which
         # does not exist in the multiomics flow.
-        if save_intermediate and "X_DR_sample" in current_adata.uns:
+        if (save_intermediate and save_cell_adata_after_embedding
+                and "X_DR_sample" in current_adata.uns):
             sc.write(h5ad_path, current_adata)
+        elif not save_cell_adata_after_embedding:
+            from sampledisco.sample_embedding.blocks import warn_if_stale_embedding
+            warn_if_stale_embedding(h5ad_path, os.path.join(multiomics_output_dir, "sample_embedding"))
     else:
         if current_adata is not None and "X_DR_sample" in current_adata.uns:
             status_flags["multiomics"]["derive_sample_embedding"] = True
