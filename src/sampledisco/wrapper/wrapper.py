@@ -608,7 +608,7 @@ def wrapper(
     rna_sample_embedding_use_clr: bool = False,
     rna_sample_embedding_use_rmd: bool = True,
     rna_sample_embedding_block_weights: Optional[List[float]] = None,
-    rna_sample_embedding_rmd_weight: float = 0.60,
+    rna_sample_embedding_rmd_weight: Union[float, str] = "equal",
     rna_sample_embedding_pca_components: int = 10,
     rna_sample_embedding_batch_method: str = "harmony",
 
@@ -721,7 +721,7 @@ def wrapper(
     atac_sample_embedding_use_clr: bool = False,
     atac_sample_embedding_use_rmd: bool = True,
     atac_sample_embedding_block_weights: Optional[List[float]] = None,
-    atac_sample_embedding_rmd_weight: float = 0.60,
+    atac_sample_embedding_rmd_weight: Union[float, str] = "equal",
     atac_sample_embedding_pca_components: int = 10,
     atac_sample_embedding_batch_method: str = "harmony",
 
@@ -896,7 +896,7 @@ def wrapper(
     multiomics_sample_embedding_use_clr: bool = False,
     multiomics_sample_embedding_use_rmd: bool = True,
     multiomics_sample_embedding_block_weights: Optional[List[float]] = None,
-    multiomics_sample_embedding_rmd_weight: float = 0.60,
+    multiomics_sample_embedding_rmd_weight: Union[float, str] = "equal",
     multiomics_sample_embedding_pca_components: int = 10,
     multiomics_sample_embedding_batch_method: str = "harmony",
 

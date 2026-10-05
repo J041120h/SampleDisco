@@ -2,7 +2,7 @@
 
 import os
 import sys
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import scanpy as sc
 
@@ -68,7 +68,7 @@ def atac_wrapper(
     sample_embedding_use_clr: bool = False,
     sample_embedding_use_rmd: bool = True,
     sample_embedding_block_weights: Optional[List[float]] = None,
-    sample_embedding_rmd_weight: float = 0.60,
+    sample_embedding_rmd_weight: Union[float, str] = "equal",
     sample_embedding_pca_components: int = 10,
     sample_embedding_batch_method: str = "harmony",
 

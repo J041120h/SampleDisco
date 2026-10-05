@@ -37,7 +37,7 @@ def compute_sample_embedding(
     use_clr: bool = False,
     use_rmd: bool = True,
     block_weights: Optional[List[float]] = None,
-    rmd_weight: float = 0.60,
+    rmd_weight: Union[float, str] = "equal",
     pca_components: int = 10,
     batch_method: str = "harmony",
     save: bool = True,
@@ -54,6 +54,8 @@ def compute_sample_embedding(
     around the module import is not enough (the import succeeds and the crash
     lands mid-run). We probe for the stack up front and also guard the call.
     """
+    from sampledisco.sample_embedding.blocks import check_rmd_weight
+    check_rmd_weight(rmd_weight)  # before the GPU attempt, so a bad value is not reported as "GPU unavailable"
     kwargs = dict(
         sample_col=sample_col,
         celltype_col=celltype_col,
