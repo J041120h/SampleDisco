@@ -7,6 +7,7 @@ numpy>=1.23
 pandas>=1.5
 scipy>=1.9
 scikit-learn>=1.2
+threadpoolctl>=3.1   # imported directly (ThreadpoolController)
 scikit-image>=0.19   # scrublet-based ATAC doublet detection (doublet_detection=True)
 scikit-misc>=0.3
 statsmodels>=0.13
