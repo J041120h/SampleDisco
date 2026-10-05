@@ -154,9 +154,9 @@ def kmeans_centers_pair(Z: np.ndarray, K_med: int, K_fine: int, seed: int,
     thread because k-means++ issues thousands of tiny GEMMs; the OpenMP thread count is a
     per-thread setting, so each worker sets its own share.
 
-    The library scan (threadpoolctl) and the sklearn import happen here, in the calling thread: a
-    scan in one worker (dl_iterate_phdr callback, needs the GIL) racing a first import in the other
-    (dlopen with the GIL held) deadlocks. The workers only call the scanned controller's limit()."""
+    sklearn.cluster is imported here, in the calling thread, so no library is loaded inside the
+    worker threads: a library scan (threadpoolctl) in one thread racing a first import of a
+    compiled extension in another can deadlock."""
     if n_threads < 2:
         return kmeans_centers(Z, K_med, seed), kmeans_centers(Z, K_fine, seed + 1)
     from sklearn.cluster import MiniBatchKMeans  # noqa: F401  (load sklearn's extensions before the threads start)

@@ -5,8 +5,9 @@
 - **Fix a deadlock in 0.4.0** in the concurrent k-means fits (`kmeans_centers_pair`, CPU and GPU
   paths): a threadpoolctl library scan in one worker thread could deadlock with a first import of
   scikit-learn's compiled extensions in the other. Observed in 2 of 3 warm GPU runs on the
-  25-sample COVID object. The scan and the import now happen once in the calling thread; the k-means
-  centres are unchanged (bit-identical). `threadpoolctl>=3.1` is now a direct requirement.
+  25-sample COVID object. `sklearn.cluster` is now imported in the calling thread, so no library is
+  loaded inside the worker threads; the k-means centres are unchanged (bit-identical).
+  `threadpoolctl>=3.1` is now a direct requirement.
 
 ## 0.4.0
 

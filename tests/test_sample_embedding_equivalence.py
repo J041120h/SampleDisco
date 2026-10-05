@@ -2,6 +2,8 @@
 save_cell_adata switch leaves the cell-level h5ad untouched. Synthetic data, CPU only.
 Run with `pytest tests/` or `python tests/test_sample_embedding_equivalence.py`."""
 import os
+import subprocess
+import sys
 import tempfile
 import warnings
 
@@ -98,6 +100,28 @@ def test_kmeans_centers_pair_matches_serial_fits():
     Z = np.random.default_rng(3).normal(size=(5000, 8)).astype(np.float32)
     pair = kmeans_centers_pair(Z, 6, 12, 0, n_threads=4)
     assert np.array_equal(pair[0], kmeans_centers(Z, 6, 0)) and np.array_equal(pair[1], kmeans_centers(Z, 12, 1))
+
+
+_NO_WORKER_IMPORTS = """
+import sys, threading
+import numpy as np
+from sampledisco.sample_embedding.blocks import kmeans_centers_pair
+assert "sklearn.cluster" not in sys.modules
+seen = []
+sys.addaudithook(lambda ev, args: ev == "import" and seen.append((args[0], threading.current_thread())))
+kmeans_centers_pair(np.random.default_rng(3).normal(size=(5000, 8)).astype(np.float32), 6, 12, 0, n_threads=4)
+bad = sorted({m for m, t in seen if t is not threading.main_thread()})
+assert not bad, f"{len(bad)} modules first imported in worker threads, e.g. {bad[:5]}"
+"""
+
+
+def test_kmeans_centers_pair_no_imports_in_workers():
+    """A first import inside a worker thread can deadlock against a threadpoolctl scan in the other (0.4.0)."""
+    import sampledisco
+    env = dict(os.environ, PYTHONPATH=os.pathsep.join(
+        [os.path.dirname(os.path.dirname(sampledisco.__file__)), os.environ.get("PYTHONPATH", "")]))
+    r = subprocess.run([sys.executable, "-c", _NO_WORKER_IMPORTS], env=env, capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, r.stderr[-1500:]
 
 
 def _write_old_cell_h5ad(out):
