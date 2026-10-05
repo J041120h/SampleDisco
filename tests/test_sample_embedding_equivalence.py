@@ -93,6 +93,13 @@ def test_soft_composition_bit_identical_odd_and_even():
             assert np.array_equal(old, soft_composition(Z, C, rows, n_threads=threads)), (n, K, threads)
 
 
+def test_kmeans_centers_pair_matches_serial_fits():
+    from sampledisco.sample_embedding.blocks import kmeans_centers, kmeans_centers_pair
+    Z = np.random.default_rng(3).normal(size=(5000, 8)).astype(np.float32)
+    pair = kmeans_centers_pair(Z, 6, 12, 0, n_threads=4)
+    assert np.array_equal(pair[0], kmeans_centers(Z, 6, 0)) and np.array_equal(pair[1], kmeans_centers(Z, 12, 1))
+
+
 def _write_old_cell_h5ad(out):
     a = make_adata()
     a.uns["X_DR_sample"] = pd.DataFrame({"PC1": [1.0]}, index=["old"])

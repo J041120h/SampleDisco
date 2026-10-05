@@ -152,16 +152,22 @@ def kmeans_centers_pair(Z: np.ndarray, K_med: int, K_fine: int, seed: int,
     """Centres at K_med (seed) and K_fine (seed + 1). With n_threads > 1 the two independent
     fits run concurrently (each keeps its own RandomState). BLAS (process-wide) is held at one
     thread because k-means++ issues thousands of tiny GEMMs; the OpenMP thread count is a
-    per-thread setting, so each worker sets its own share."""
+    per-thread setting, so each worker sets its own share.
+
+    The library scan (threadpoolctl) and the sklearn import happen here, in the calling thread: a
+    scan in one worker (dl_iterate_phdr callback, needs the GIL) racing a first import in the other
+    (dlopen with the GIL held) deadlocks. The workers only call the scanned controller's limit()."""
     if n_threads < 2:
         return kmeans_centers(Z, K_med, seed), kmeans_centers(Z, K_fine, seed + 1)
-    from threadpoolctl import threadpool_limits
+    from sklearn.cluster import MiniBatchKMeans  # noqa: F401  (load sklearn's extensions before the threads start)
+    from threadpoolctl import ThreadpoolController
+    ctl = ThreadpoolController()
 
     def fit(K, sd):
-        with threadpool_limits(limits=max(1, n_threads // 2), user_api="openmp"):
+        with ctl.limit(limits=max(1, n_threads // 2), user_api="openmp"):
             return kmeans_centers(Z, K, sd)
 
-    with threadpool_limits(limits=1, user_api="blas"), ThreadPoolExecutor(2) as ex:
+    with ctl.limit(limits=1, user_api="blas"), ThreadPoolExecutor(2) as ex:
         f_med = ex.submit(fit, K_med, seed)
         f_fine = ex.submit(fit, K_fine, seed + 1)
         return f_med.result(), f_fine.result()
