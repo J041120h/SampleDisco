@@ -1,9 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 New default RMD weight (`rmd_weight="equal"`), a faster sample-embedding step with
 unchanged results, and the embedding is now stored in the cell-level h5ad in place.
+
+- **harmonypy pinned to 0.2.0** (was `>=0.0.9,<0.0.10`), the version used for the published
+  results; sample-level Harmony output depends on the harmonypy version. harmonypy 0.2.0
+  requires torch, so `pip install sampledisco` now also installs PyTorch.
 
 ### ⚠️ Behaviour change: default RMD weight is now `"equal"`
 
