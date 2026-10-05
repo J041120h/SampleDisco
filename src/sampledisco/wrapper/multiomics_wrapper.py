@@ -157,7 +157,7 @@ def multiomics_wrapper(
     sample_embedding_use_clr: bool = False,
     sample_embedding_use_rmd: bool = True,
     sample_embedding_block_weights: Optional[List[float]] = None,
-    sample_embedding_rmd_weight: float = 0.60,
+    sample_embedding_rmd_weight: Union[float, str] = "equal",
     sample_embedding_pca_components: int = 10,
     sample_embedding_batch_method: str = "harmony",
 
@@ -471,7 +471,8 @@ def multiomics_wrapper(
         # does not exist in the multiomics flow.
         if (save_intermediate and save_cell_adata_after_embedding
                 and "X_DR_sample" in current_adata.uns):
-            sc.write(h5ad_path, current_adata)
+            from sampledisco.sample_embedding.blocks import save_embedding_to_h5ad
+            save_embedding_to_h5ad(h5ad_path, current_adata)
         elif not save_cell_adata_after_embedding:
             from sampledisco.sample_embedding.blocks import warn_if_stale_embedding
             warn_if_stale_embedding(h5ad_path, os.path.join(multiomics_output_dir, "sample_embedding"))

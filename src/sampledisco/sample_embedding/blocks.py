@@ -14,7 +14,7 @@ import math
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -165,6 +165,122 @@ def kmeans_centers_pair(Z: np.ndarray, K_med: int, K_fine: int, seed: int,
         f_med = ex.submit(fit, K_med, seed)
         f_fine = ex.submit(fit, K_fine, seed + 1)
         return f_med.result(), f_fine.result()
+
+
+UNS_EMBEDDING_KEYS = ("X_DR_sample", "sample_embedding_params")
+_N_PROBE = 64  # rows (dense) or stored entries (sparse) compared per matrix
+
+
+def _probe(n: int) -> np.ndarray:
+    return np.unique(np.linspace(0, n - 1, min(n, _N_PROBE)).astype(np.int64)) if n > 0 else np.empty(0, np.int64)
+
+
+def _same_matrix(elem, mem) -> bool:
+    """Same shape, dtype, format and a fixed sample of stored values (on-disk X / layer / obsm / obsp / varm vs memory)."""
+    import h5py
+    import scipy.sparse as sp
+    if isinstance(elem, h5py.Dataset):
+        if sp.issparse(mem) or not isinstance(mem, np.ndarray) or elem.shape != mem.shape or elem.dtype != mem.dtype:
+            return False
+        rows = _probe(mem.shape[0])
+        return np.array_equal(elem[rows], mem[rows], equal_nan=mem.dtype.kind in "fc")
+    enc = elem.attrs.get("encoding-type")
+    if enc not in ("csr_matrix", "csc_matrix") or not sp.issparse(mem) or mem.format != enc[:3]:
+        return False
+    if tuple(elem.attrs["shape"]) != mem.shape or elem["data"].dtype != mem.data.dtype or elem["data"].shape[0] != mem.nnz:
+        return False
+    pos, ptr = _probe(mem.nnz), _probe(len(mem.indptr))
+    return (np.array_equal(elem["data"][pos], mem.data[pos], equal_nan=True)
+            and np.array_equal(elem["indices"][pos], mem.indices[pos])
+            and np.array_equal(elem["indptr"][ptr], mem.indptr[ptr]))
+
+
+def _same_frame(disk: pd.DataFrame, mem: pd.DataFrame) -> bool:
+    """Same index, same column names and identical values and dtypes per column (column order ignored)."""
+    if not disk.index.equals(mem.index) or set(map(str, disk.columns)) != set(map(str, mem.columns)):
+        return False
+    for c in mem.columns:
+        d, m = disk[str(c)], mem[c]
+        if d.dtype != m.dtype:
+            return False
+        if isinstance(m.dtype, pd.CategoricalDtype):  # unordered dtype equality ignores category order: check it
+            if not (d.cat.categories.equals(m.cat.categories)
+                    and np.array_equal(d.cat.codes.to_numpy(), m.cat.codes.to_numpy())):
+                return False
+        elif not d.equals(m):
+            return False
+    return True
+
+
+def _file_matches(f, adata) -> bool:
+    """True when the open h5ad holds the same object as `adata`, apart from the two embedding entries:
+    identical obs and var (names, columns and values), the same obsm/layers/obsp/varm keys, X and every
+    obsm/layers/obsp/varm entry with the same shape, dtype and a sample of values, and the same uns key names
+    (uns values are not compared). Any doubt -> False."""
+    try:
+        from anndata.io import read_elem
+    except ImportError:
+        from anndata.experimental import read_elem
+    try:
+        if not (_same_frame(read_elem(f["obs"]), adata.obs) and _same_frame(read_elem(f["var"]), adata.var)):
+            return False
+        disk_uns = {k for k in f["uns"] if not k.startswith(("__new_", "__old_"))} if "uns" in f else set()
+        if disk_uns - set(UNS_EMBEDDING_KEYS) != set(adata.uns) - set(UNS_EMBEDDING_KEYS):
+            return False
+        if ("X" in f) != (adata.X is not None) or (adata.X is not None and not _same_matrix(f["X"], adata.X)):
+            return False
+        for name, mem in (("obsm", adata.obsm), ("layers", adata.layers), ("obsp", adata.obsp), ("varm", adata.varm)):
+            disk = f[name] if name in f else {}
+            if set(disk) != set(mem.keys()) or not all(_same_matrix(disk[k], mem[k]) for k in mem.keys()):
+                return False
+        return True
+    except Exception:  # old/unknown h5ad format, unexpected types: fall back to the full re-write
+        return False
+
+
+def write_embedding_uns(path: str, adata) -> bool:
+    """Persist adata.uns['X_DR_sample'] / ['sample_embedding_params'] into an existing .h5ad in place,
+    replacing only those two uns entries (X, layers, obs, obsm are not rewritten).
+
+    Only done when the file holds the same object as `adata` (`_file_matches`); otherwise returns False
+    without touching the file and the caller re-writes the whole file as before. In-memory changes to obs and
+    var (names, columns, values) and to X / layers / obsm / obsp / varm (shape, dtype, sampled values) are
+    detected and trigger the full re-write. For the other uns entries only the key names are compared, not
+    their values: a changed value under an existing uns key is NOT detected and is not saved.
+    Each entry is written under a temporary key and then moved into place, so an interrupted update leaves
+    the old or the new value, never neither."""
+    import h5py
+    try:
+        from anndata.io import write_elem
+    except ImportError:
+        from anndata.experimental import write_elem
+    with h5py.File(path, "r+") as f:
+        if not _file_matches(f, adata):
+            return False
+        uns = f.require_group("uns")
+        for key in UNS_EMBEDDING_KEYS:
+            new, old = f"__new_{key}", f"__old_{key}"
+            if new in uns:
+                del uns[new]
+            write_elem(uns, new, adata.uns[key])
+            if key in uns:
+                if old in uns:
+                    del uns[old]
+                uns.move(key, old)
+            uns.move(new, key)
+            if old in uns:
+                del uns[old]
+    return True
+
+
+def save_embedding_to_h5ad(path: str, adata) -> str:
+    """Store the sample embedding in the cell-level h5ad: in place when the file matches `adata`,
+    otherwise a full re-write (previous behaviour). Returns 'in-place' or 'rewrite'."""
+    if write_embedding_uns(path, adata):
+        return "in-place"
+    import scanpy as sc
+    sc.write(path, adata)
+    return "rewrite"
 
 
 def warn_if_stale_embedding(path: str, csv_path: str) -> None:
@@ -389,8 +505,8 @@ def derive_weights(
 
     When the user changes any of `medium_K`, `fine_K`, or the data's number
     of cell-type labels (`K_c`), composition weights auto-rescale so the
-    relative balance among A1/A2/A3 stays meaningful. The default rmd_weight
-    (0.60) is taken from the winning variant.
+    relative balance among A1/A2/A3 stays meaningful. `rmd_weight` here must be numeric; the
+    package default ``"equal"`` is resolved by `resolve_rmd_weight` before this is called.
     """
     K_c = max(int(K_c), 2)
     K_med = max(int(K_med), 2)
@@ -402,6 +518,28 @@ def derive_weights(
     if n_blocks >= 4:
         weights.append(float(rmd_weight))
     return weights
+
+
+def check_rmd_weight(rmd_weight) -> None:
+    """Accept ``"equal"`` or a finite positive number; raise ValueError otherwise (typos, bools, nan, <= 0)."""
+    if isinstance(rmd_weight, str):
+        ok = rmd_weight == "equal"
+    else:
+        ok = (isinstance(rmd_weight, (int, float, np.integer, np.floating))
+              and not isinstance(rmd_weight, (bool, np.bool_))
+              and math.isfinite(rmd_weight) and rmd_weight > 0)
+    if not ok:
+        raise ValueError(f"rmd_weight must be 'equal' or a finite positive number (got {rmd_weight!r})")
+
+
+def resolve_rmd_weight(rmd_weight: Union[float, str], K_c: int, K_med: int, K_fine: int) -> float:
+    """Numeric RMD weight α. ``"equal"`` gives the RMD block the same energy as the three
+    composition blocks together: α² = w_A1² + w_A2² + w_A3² (so α depends only on K_c, K_med and
+    K_fine), rounded to 2 decimals as reported. A number is used as given."""
+    check_rmd_weight(rmd_weight)
+    if isinstance(rmd_weight, str):
+        return round(math.sqrt(sum(w * w for w in derive_weights(K_c, K_med, K_fine, n_blocks=3))), 2)
+    return float(rmd_weight)
 
 
 # --------------------------------------------------------------------------- #

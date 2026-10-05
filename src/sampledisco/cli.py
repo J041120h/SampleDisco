@@ -49,6 +49,13 @@ def validate_config(config, func):
     for key in valid_params:
         if key not in config and key not in OPTIONAL_KEYS:
             raise ValueError(f"Missing required parameter in config: '{key}'")
+    from sampledisco.sample_embedding.blocks import check_rmd_weight
+    for key in config:
+        if key.endswith("_sample_embedding_rmd_weight"):
+            try:
+                check_rmd_weight(config[key])
+            except ValueError as e:
+                raise ValueError(f"Invalid value for '{key}': {e}") from None
 
 
 def write_template(dest):

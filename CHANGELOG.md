@@ -2,14 +2,51 @@
 
 ## Unreleased
 
-Faster sample-embedding step with unchanged results, plus an option to skip the
-cell-level h5ad rewrite.
+New default RMD weight (`rmd_weight="equal"`), a faster sample-embedding step with
+unchanged results, and the embedding is now stored in the cell-level h5ad in place.
+
+### ⚠️ Behaviour change: default RMD weight is now `"equal"`
+
+- **`rmd_weight="equal"`** (new default of `compute_sample_embedding`, the wrappers and
+  `*_sample_embedding_rmd_weight` in the bundled config) gives the RMD displacement block
+  the same energy as the three composition blocks together:
+  α² = w_A1² + w_A2² + w_A3², with w_A1 = √(K_fine/K_c), w_A2 = √(K_fine/K_med),
+  w_A3 = 1, rounded to 2 decimals. α depends only on the number of cell types and the
+  two k-means resolutions (with the defaults 120/300 and at least 30,000 cells, where
+  neither resolution is capped by the cell count, it is √(300/K_c + 3.5)); the
+  composition weights are unchanged. A number keeps the previous behaviour
+  (`0.60` reproduces earlier releases exactly). The value used is recorded in
+  `.uns['sample_embedding_params']['rmd_weight']`. Only `"equal"` or a finite positive
+  number is accepted; anything else raises `ValueError` up front (also in the CLI
+  config check), before any GPU attempt.
+- `run_autotune` is unchanged when it searches; with no batch and no grouping column
+  (no search) it now uses the `"equal"` α instead of 0.60.
+
+### Embedding stored in the cell-level h5ad in place
+
+- With `save_cell_adata=True` (default), `.uns['X_DR_sample']` and
+  `.uns['sample_embedding_params']` are written into the existing
+  `preprocess/adata_preprocessed.h5ad` (or the multi-omics union h5ad) in place:
+  only those two entries are replaced, X, layers, obs and obsm are not re-written.
+  At 405 COVID samples (898k cells, 3.3 GB) this takes about 5 s, including the check
+  below, instead of the full gzip re-write (273 s of the previous 295 s step). The in-place path is
+  taken only when the file holds the same object as memory: identical obs and var
+  (names, columns and values), the same obsm/layers/obsp/varm keys, the same shape,
+  dtype and a fixed sample of values for X and every matrix, and the same uns key
+  names (values of other uns entries are not compared, so a changed value under an
+  existing uns key is not detected). Otherwise (for
+  example cell types relabelled in memory, or an old-format file) the whole file is
+  re-written as before. Each entry is written under a temporary key and then moved
+  into place, so an interrupted update never leaves the file without an embedding. The
+  stored values are identical to a full re-write
+  (`tests/test_inplace_uns_and_equal_weight.py`).
+
+### Faster sample embedding, identical output
 
 - **New config keys `rna_/atac_/multiomics_save_cell_adata_after_embedding`**
-  (default `true` = previous behaviour; `compute_sample_embedding(save_cell_adata=)`
-  and `run_autotune(save_cell_adata=)`). `false` skips re-writing the whole
-  cell-level h5ad (gzip) only to store `.uns['X_DR_sample']`; the CSV and block
-  files are still written. If that h5ad (or the multi-omics union h5ad) already
+  (default `true`; `compute_sample_embedding(save_cell_adata=)` and
+  `run_autotune(save_cell_adata=)`). `false` skips storing `.uns['X_DR_sample']` in
+  the cell-level h5ad; the CSV and block files are still written. If that h5ad (or the multi-omics union h5ad) already
   holds an older `.uns['X_DR_sample']`, a `UserWarning` is raised: a later run with
   `derive_sample_embedding: false` would reuse that stale embedding.
 - **Backward-compatible config:** the bundled config now has 304 keys; existing
@@ -23,7 +60,7 @@ cell-level h5ad rewrite.
   embedding); on CPU the softmax and per-unit mean run unit by unit on the
   n_cells x K distance matrix, so the separate soft-assignment matrix and its
   temporaries are no longer built; the two independent k-means fits run
-  concurrently. Compared with commit 1c4168a, A1, A2, A3, RMD and the final
+  concurrently. Compared with commit 1c4168a at the same α, A1, A2, A3, RMD and the final
   embedding are bit-identical (max abs difference 0) on COVID 25 and 405 samples,
   heart, lifespan and Sound Life (`tests/test_sample_embedding_equivalence.py`
   checks the helpers on synthetic data).

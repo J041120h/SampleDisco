@@ -25,7 +25,6 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import scanpy as sc
 from anndata import AnnData
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.cross_decomposition import CCA
@@ -44,6 +43,8 @@ from sampledisco.sample_embedding.blocks import (
     composition_per_unit,
     derive_weights,
     loo_rmd,
+    resolve_rmd_weight,
+    save_embedding_to_h5ad,
     soft_assign,
     warn_if_stale_embedding,
 )
@@ -662,11 +663,12 @@ def run_autotune(
                   f"scoring on {int(score_mask.sum())}/{blocks['n_units']} units")
 
     if not score_meta["has_batch"] and not score_meta["has_grouping"]:
+        alpha = resolve_rmd_weight("equal", blocks["K_c"], blocks["K_med"], blocks["K_fine"])
         if verbose:
-            print("[autotune] no batch and no grouping column → using fixed defaults; "
-                  "no search performed.")
+            print(f"[autotune] no batch and no grouping column → using the default "
+                  f"rmd_weight='equal' (α={alpha}); no search performed.")
         weights = derive_weights(blocks["K_c"], blocks["K_med"], blocks["K_fine"],
-                                   rmd_weight=0.60, n_blocks=4)
+                                   rmd_weight=alpha, n_blocks=4)
         final_emb = build_emb_from_blocks(
             [blocks["A1"], blocks["A2"], blocks["A3"], blocks["RMD"]],
             weights,
@@ -677,7 +679,7 @@ def run_autotune(
             seed=seed, verbose=verbose,
         )
         return _finalize(adata, blocks, final_emb, weights,
-                         best_params={"rmd_weight": 0.60},
+                         best_params={"rmd_weight": alpha},
                          best_score=float("nan"),
                          trace=[], search=search, scoring=scoring,
                          scope=scope, alpha_bounds=alpha_bounds,
@@ -911,7 +913,7 @@ def _finalize(adata, blocks, final_emb, weights, *,
             warn_if_stale_embedding(preprocessed_h5, emb_csv)
         if save_cell_adata and os.path.exists(preprocessed_h5):
             try:
-                sc.write(preprocessed_h5, adata)
+                save_embedding_to_h5ad(preprocessed_h5, adata)
             except Exception as exc:
                 if verbose:
                     print(f"[autotune] WARNING: could not re-save "

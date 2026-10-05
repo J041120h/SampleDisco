@@ -20,7 +20,6 @@ from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
-import scanpy as sc
 from anndata import AnnData
 
 from sampledisco.sample_embedding.blocks import (
@@ -33,6 +32,8 @@ from sampledisco.sample_embedding.blocks import (
     kmeans_centers_pair,
     loo_rmd_from_index,
     n_worker_threads,
+    resolve_rmd_weight,
+    save_embedding_to_h5ad,
     regress_out_batch_linear,
     sorted_codes,
     unit_index,
@@ -169,7 +170,7 @@ def compute_sample_embedding(
     use_clr: bool = False,
     use_rmd: bool = True,
     block_weights: Optional[List[float]] = None,
-    rmd_weight: float = 0.60,
+    rmd_weight: Union[float, str] = "equal",
     pca_components: int = 10,
     batch_method: str = "harmony",
     save: bool = True,
@@ -269,6 +270,7 @@ def compute_sample_embedding(
             blocks.append(RMD)
 
     # ---- Weights (auto-scaled by K_c/K_med/K_fine when not overridden) ----
+    rmd_weight = resolve_rmd_weight(rmd_weight, K_c, K_med, K_fine)
     if block_weights is None:
         weights = derive_weights(K_c, K_med, K_fine,
                                    rmd_weight=rmd_weight,
@@ -371,7 +373,9 @@ def compute_sample_embedding(
             warn_if_stale_embedding(preprocessed_h5, emb_csv)
         if resave:
             try:
-                sc.write(preprocessed_h5, adata)
+                how = save_embedding_to_h5ad(preprocessed_h5, adata)
+                if verbose:
+                    print(f"[sample_embedding_gpu] updated {preprocessed_h5} (.uns['X_DR_sample'], {how})")
             except Exception as exc:
                 if verbose:
                     print(f"[sample_embedding_gpu] WARNING: could not re-save "
@@ -379,8 +383,6 @@ def compute_sample_embedding(
         if verbose:
             print(f"[sample_embedding_gpu] wrote {emb_csv}")
             print(f"[sample_embedding_gpu] wrote {blocks_npz}")
-            if resave:
-                print(f"[sample_embedding_gpu] updated {preprocessed_h5} (.uns['X_DR_sample'])")
 
     if verbose and start_time is not None:
         print(f"[sample_embedding_gpu] done in {time.time() - start_time:.2f}s; "
