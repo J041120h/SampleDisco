@@ -32,7 +32,7 @@ dependencies:
   - patsy
   - mudata
   - muon
-  - harmonypy<0.0.10   # pure-NumPy release (0.0.10+ imports torch)
+  - harmonypy==0.2.0   # matches the package pin (requires torch)
   - python-igraph
   - leidenalg
   - networkx
