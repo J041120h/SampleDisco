@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.2
+
+- **New autotune scoring option `scoring="ilisi_label"`**: a two-term objective, the mean of one
+  biology term (grouping tracking: canonical correlation for a numeric label, PC-R² for a
+  categorical one) and one batch term (iLISI on the batch key), each min-max scaled as in
+  `"auto"`. It drops the second biology term (SPS) and the second batch term (−ASW) of the
+  four-term `"auto"` ensemble. Terms are gated by the available metadata as in `"auto"`.
+  Available through `run_autotune(scoring=...)` and `*_autotune_scoring` in the config;
+  the default stays `"auto"`.
+- **Fix:** the autotune report is written as UTF-8, so `run_autotune(save=True)` no longer
+  fails on nodes with an ASCII locale.
+
 ## 0.4.1
 
 - **Fix a deadlock in 0.4.0** in the concurrent k-means fits (`kmeans_centers_pair`, CPU and GPU
