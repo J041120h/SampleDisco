@@ -10,6 +10,9 @@ the data can't support:
     (CCA, SPS, CV-kNN, pseudotime-Spearman).
   - If neither → emit a warning and short-circuit with fixed defaults.
 
+``scoring="ilisi_label"`` is the two-term variant: one biology term (grouping
+tracking: CCA or categorical PC-R²) and one batch term (iLISI), equally weighted.
+
 Generalized version of `wire_autotune_dualembed_v2.py`. No dataset-specific
 paths; all data flows through the same `compute_sample_embedding` primitives
 in `sample_embedding/blocks.py`.
@@ -427,17 +430,20 @@ def make_scorer(name: str, meta: Dict, lam: float = 0.5) -> Callable[[np.ndarray
             - lam * (_asw_safe(emb, batch) if has_batch else 0.0)
         )
 
-    if name in ("multi_metric_proxy", "auto"):
+    if name in ("multi_metric_proxy", "auto", "ilisi_label"):
+        two_term = name == "ilisi_label"
         components: List[Callable[[np.ndarray], float]] = []
         if has_grouping:
             tracking_key = "pc_r2_categorical" if grouping_is_categorical else "cca"
             components.append(
                 lambda emb: _minmax(_grouping_tracking_score(emb),
                                     *SCORING_BOUNDS[tracking_key]))
-            components.append(lambda emb: _minmax(_sps_continuous(emb, grouping), *SCORING_BOUNDS["sps"]))
+            if not two_term:
+                components.append(lambda emb: _minmax(_sps_continuous(emb, grouping), *SCORING_BOUNDS["sps"]))
         if has_batch:
             components.append(lambda emb: _minmax(_ilisi_norm(emb, batch), *SCORING_BOUNDS["ilisi_norm"]))
-            components.append(lambda emb: _minmax(-_asw_safe(emb, batch), *SCORING_BOUNDS["neg_asw_batch"]))
+            if not two_term:
+                components.append(lambda emb: _minmax(-_asw_safe(emb, batch), *SCORING_BOUNDS["neg_asw_batch"]))
         if not components:
             return lambda emb: 0.0
 
@@ -760,12 +766,13 @@ _PROXY_DESCRIPTIONS = {
 
 def _active_proxies(scoring: str, has_batch: bool, has_grouping: bool):
     """Return the list of proxy names the scorer actually evaluates."""
-    if scoring in ("auto", "multi_metric_proxy"):
+    if scoring in ("auto", "multi_metric_proxy", "ilisi_label"):
+        two_term = scoring == "ilisi_label"
         names = []
         if has_grouping:
-            names += ["cca", "sps"]
+            names += ["cca"] if two_term else ["cca", "sps"]
         if has_batch:
-            names += ["ilisi_batch", "neg_asw_batch"]
+            names += ["ilisi_batch"] if two_term else ["ilisi_batch", "neg_asw_batch"]
         return names
     return [scoring] if scoring in _PROXY_DESCRIPTIONS else [scoring]
 
@@ -818,8 +825,8 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
         for name in proxies:
             kind, desc = _PROXY_DESCRIPTIONS.get(name, ("?", name))
             lines.append(f"  - [{kind:<12s}] {name:<20s}  {desc}")
-        if scoring in ("auto", "multi_metric_proxy"):
-            lines.append("  ensemble: multi_metric_proxy = mean of the proxies above (each min-max scaled).")
+        if scoring in ("auto", "multi_metric_proxy", "ilisi_label"):
+            lines.append(f"  ensemble: {scoring} = mean of the proxies above (each min-max scaled).")
     lines.append("")
     lines.append("Result")
     lines.append("-" * 68)
@@ -928,7 +935,7 @@ def _finalize(adata, blocks, final_emb, weights, *,
             tune_on_modality=tune_on_modality, score_n_units=score_n_units,
         )
         report_path = os.path.join(out_dir, "autotune_record.txt")
-        with open(report_path, "w") as f:
+        with open(report_path, "w", encoding="utf-8") as f:
             f.write(report)
         if verbose:
             print(f"[autotune] wrote {emb_csv}")
