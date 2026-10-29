@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.5.0
+
+Two new supervised downstream functions on the sample embedding. Python API only: the
+config file and `wrapper()` are unchanged (existing configs validate and run as before).
+
+- **New `predict_phenotype`** (`sampledisco.predict_phenotype`, module
+  `sampledisco.sample_prediction`): out-of-fold prediction of a sample phenotype from the
+  first `n_pcs` PCs of `uns['X_DR_sample']`. The PCs are standardized and fed to an L2
+  logistic regression (binary or multiclass) or, with `task="regression"`, a ridge
+  regression. The penalty (C in {10, 1, 0.1, 0.01}; alpha in {0.1, 1, 10, 100}) is chosen
+  by an inner 3-fold grouped cross-validation inside each training split, and a tie goes to
+  the weakest penalty. The outer split is `n_splits`-fold (default 5), stratified by class
+  and seeded by `random_state`. With `group_col` (for example a donor column) every sample
+  of a group stays in one fold, so repeated draws of a donor are never in training and test
+  at once. Returns the per-sample out-of-fold predictions (with class probabilities) and
+  AUC (binary), accuracy and balanced accuracy, or R². `score_by="group"` averages the
+  out-of-fold probabilities (or predictions) per group before scoring. This is the recipe
+  of the paper's Sound Life trait prediction: with `score_by="group"` it reproduces the
+  paper's within-assay donor-level AUCs exactly.
+- **New `transfer_labels`** (`sampledisco.transfer_labels`): assigns labels to query samples
+  (unlabelled samples, or a boolean `query` mask) by a vote of their `n_neighbors` nearest
+  labelled samples in the embedding (Euclidean on the first `n_pcs` PCs; majority vote, or
+  1/distance-weighted with `weighted=True`; ties go to the nearest tied neighbour). Returns
+  each label with its confidence (vote share), and a leave-one-out accuracy and balanced
+  accuracy on the labelled samples; with `group_col` the other samples of the same group
+  are left out too (use `group_col="sample"` for multi-omics units).
+- Tests: `tests/test_sample_prediction.py` (synthetic data with known answers).
+
 ## 0.4.2
 
 - **New autotune scoring option `scoring="ilisi_label"`**: a two-term objective, the mean of one
