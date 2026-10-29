@@ -4,6 +4,8 @@ import anndata as ad
 import numpy as np
 import pandas as pd
 
+from sklearn.metrics import r2_score, roc_auc_score
+
 from sampledisco import predict_phenotype, transfer_labels
 
 
@@ -24,7 +26,8 @@ def separated(n=60, pc=0, seed=0):
 
 def test_binary_perfect():
     pred, m = predict_phenotype(separated(), "status")
-    assert m["auc"] == 1.0 and m["accuracy"] == 1.0 and m["n_pcs"] == 5 and len(m["C"]) == 5
+    assert m["auc"] == 1.0 and m["accuracy"] == 1.0 and m["n_pcs"] == 5
+    assert m["C"] == [10] * 5                                  # every C ties on separable data: weakest penalty
     assert (pred["predicted"] == pred["label"]).all()
     assert np.allclose(pred[["prob_healthy", "prob_severe"]].sum(1), 1)
 
@@ -71,6 +74,24 @@ def test_groups_never_split_and_seeded():
     assert leaky["auc"] > 0.95
     again, _ = predict_phenotype(a, "status", group_col="donor")
     assert again.equals(pred)
+
+
+def test_score_by_group():
+    """Group scores = scores of the per-group mean of the out-of-fold predictions."""
+    rng = np.random.default_rng(5)
+    donors = np.repeat([f"d{i}" for i in range(30)], 3)
+    trait = np.repeat(rng.choice(["neg", "pos"], 30), 3)
+    X = rng.normal(size=(90, 4))
+    X[:, 0] += np.where(trait == "pos", 1.0, -1.0)
+    a = make(X, trait=trait, donor=donors, bmi=X[:, 0] + rng.normal(size=90))
+    pred, m = predict_phenotype(a, "trait", group_col="donor", score_by="group")
+    d = pred.groupby(a.obs["donor"]).agg(label=("label", "first"), p=("prob_pos", "mean"))
+    assert np.isclose(m["auc"], roc_auc_score(d["label"] == "pos", d["p"]))
+    assert np.isclose(m["accuracy"], ((d["p"] > 0.5) == (d["label"] == "pos")).mean())
+    assert pred.equals(predict_phenotype(a, "trait", group_col="donor")[0])   # only the scoring changes
+    pred, m = predict_phenotype(a, "bmi", group_col="donor", task="regression", score_by="group")
+    d = pred.groupby(a.obs["donor"])[["label", "predicted"]].mean()
+    assert np.isclose(m["r2"], r2_score(d["label"], d["predicted"]))
 
 
 def test_missing_labels_skipped_and_obsm_fallback():
