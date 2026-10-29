@@ -61,6 +61,7 @@ code/
 │   ├── sample_clustering/         # Hierarchical (HRA / HRC / NN / UPGMA / consensus), K-means, proportion test, RAISIN
 │   ├── sample_trajectory/         # CCA (supervised) and TSCAN (unsupervised) + GAM-based trajectory DGE
 │   ├── sample_association/        # Per-PC variance explained vs sample-level covariates (permutation FDR)
+│   ├── sample_prediction/         # Cross-validated phenotype prediction from the PCs; kNN label transfer
 │   ├── visualization/             # Embedding plots, dendrograms, DGE volcanos, modality-aware multi-omics scatters
 │   ├── utils/                     # Shared helpers: seed, safe h5ad I/O, limma, TF-IDF, batch regress, Grouping
 │   └── gene_activity/             # ATAC peak → gene activity inference + RNA-ATAC validation
