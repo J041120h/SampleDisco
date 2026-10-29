@@ -35,30 +35,35 @@ def predict_phenotype(
     group_col: Optional[str] = None,
     n_pcs: Optional[int] = None,
     task: str = "classification",
+    score_by: str = "sample",
     n_splits: int = 5,
     random_state: int = 0,
 ) -> Tuple[pd.DataFrame, Dict]:
     """Out-of-fold prediction of a sample phenotype from the first ``n_pcs`` embedding PCs.
 
     Standardized PCs feed an L2 logistic regression (``task="classification"``, binary or
-    multiclass) or a ridge regression (``task="regression"``). The penalty (C in
-    {0.01, 0.1, 1, 10}, or alpha in {0.1, 1, 10, 100}) is chosen by an inner 3-fold
-    grouped CV inside each training split (scored by AUC, balanced accuracy or R²). The
-    outer split is ``n_splits``-fold, stratified by class for classification and seeded by
-    ``random_state``. With ``group_col`` (e.g. donor) every sample of a group falls in the
-    same fold, outer and inner, so draws of one donor are never in training and test at
-    once. Samples with a missing label are left out. This is the recipe of the paper's
-    Sound Life trait prediction.
+    multiclass) or a ridge regression (``task="regression"``). The penalty is chosen by an
+    inner 3-fold grouped CV inside each training split (scored by AUC, balanced accuracy
+    or R²) from C in {10, 1, 0.1, 0.01} or alpha in {0.1, 1, 10, 100}; a tie goes to the
+    weakest penalty. The outer split is ``n_splits``-fold, stratified by class for
+    classification and seeded by ``random_state``. With ``group_col`` (e.g. donor) every
+    sample of a group falls in the same fold, outer and inner, so draws of one donor are
+    never in training and test at once. Samples with a missing label are left out. This is
+    the recipe of the paper's Sound Life trait prediction.
+
+    ``score_by="group"`` scores groups instead of samples: the out-of-fold probabilities
+    (or predictions) and the labels are averaged over ``group_col`` before scoring (the
+    majority label for classification), as for the paper's donor-level AUCs.
 
     Returns ``(predictions, metrics)``. ``predictions`` is indexed by sample with columns
     ``label``, ``predicted``, ``fold`` and, for classification, ``prob_<class>``.
     ``metrics`` holds ``n_samples``, ``n_groups``, ``n_pcs``, the penalty chosen in each
     fold (``C`` or ``alpha``) and ``auc`` (binary; the second class in sorted order is
     positive), ``accuracy`` and ``balanced_accuracy`` (classification) or ``r2``
-    (regression), all computed on the out-of-fold predictions of every sample.
+    (regression), computed on the out-of-fold predictions at the ``score_by`` level.
     """
-    if task not in ("classification", "regression"):
-        raise ValueError("task must be 'classification' or 'regression'.")
+    if task not in ("classification", "regression") or score_by not in ("sample", "group"):
+        raise ValueError("task must be 'classification' or 'regression', score_by 'sample' or 'group'.")
     obs = pseudo_adata.obs
     keep = obs[label_col].notna().to_numpy()
     X = _embedding(pseudo_adata, n_pcs)[keep]
@@ -68,7 +73,7 @@ def predict_phenotype(
     if task == "classification":
         classes, y = np.unique(labels, return_inverse=True)
         model, param = LogisticRegression(max_iter=3000), "C"
-        grid, scoring = [0.01, 0.1, 1, 10], "roc_auc" if len(classes) == 2 else "balanced_accuracy"
+        grid, scoring = [10, 1, 0.1, 0.01], "roc_auc" if len(classes) == 2 else "balanced_accuracy"
         outer = StratifiedGroupKFold(n_splits, shuffle=True, random_state=random_state).split(X, y, groups)
         P = np.zeros((len(y), len(classes)))
     else:
@@ -91,20 +96,26 @@ def predict_phenotype(
         else:
             pred[te] = gs.predict(X[te])
 
-    metrics = {"task": task, "n_samples": len(y), "n_groups": len(np.unique(groups)), "n_pcs": X.shape[1],
-               param: chosen}
+    metrics = {"task": task, "score_by": score_by, "n_samples": len(y), "n_groups": len(np.unique(groups)),
+               "n_pcs": X.shape[1], param: chosen}
     out = pd.DataFrame({"label": labels}, index=obs.index[keep])
     if task == "classification":
-        hard = P.argmax(1)
-        out["predicted"] = classes[hard]
+        out["predicted"] = classes[P.argmax(1)]
         for j, c in enumerate(classes):
             out[f"prob_{c}"] = P[:, j]
+        Y = np.eye(len(classes))[y]  # one-hot; summed over a group = class counts
+        if score_by == "group":
+            Y = pd.DataFrame(Y).groupby(groups).sum().to_numpy()
+            P = pd.DataFrame(P).groupby(groups).mean().to_numpy()
+        y, hard = Y.argmax(1), P.argmax(1)
         if len(classes) == 2:
             metrics["auc"] = float(roc_auc_score(y, P[:, 1]))
         metrics["accuracy"] = float(accuracy_score(y, hard))
         metrics["balanced_accuracy"] = float(balanced_accuracy_score(y, hard))
     else:
         out["predicted"] = pred
+        if score_by == "group":
+            y, pred = (pd.Series(v).groupby(groups).mean().to_numpy() for v in (y, pred))
         metrics["r2"] = float(r2_score(y, pred))
     out["fold"] = fold
     return out.infer_objects(), metrics
