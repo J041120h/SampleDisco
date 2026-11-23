@@ -47,10 +47,14 @@ the pyensembl → gtfparse chain declares pyarrow ≥ 18 in its pip metadata.
 ## pip only (no env file)
 
 ```bash
-conda create -n sampledisco python=3.10 pip && conda activate sampledisco
+conda create -n sampledisco -c conda-forge -c bioconda python=3.10 pip bedtools   # bedtools: binary that scGLUE/pybedtools call
+conda activate sampledisco
 pip install "sampledisco[all]"
-conda install -c bioconda -c conda-forge bedtools   # binary that scGLUE/pybedtools call
 ```
+
+Create the env with Python and bedtools in one step. On Miniconda (default channel
+`defaults`), installing bedtools from conda-forge into an existing env can swap its
+Python for an incompatible build (observed: GraalPy), after which nothing imports.
 
 `pip install sampledisco` alone gives the core pipeline. The extras add the
 optional parts: `[glue]` (scGLUE 0.3.2 + harmony-pytorch), `[maxfuse]`, or `[all]`

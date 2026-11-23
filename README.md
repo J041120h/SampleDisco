@@ -147,7 +147,8 @@ conda env create -f environment-gpu.yml && conda activate sampledisco-gpu
 pip install --no-deps rapids-singlecell==0.13.1 sampledisco==0.6.0
 
 # pip only
-pip install "sampledisco[all]" && conda install -c bioconda -c conda-forge bedtools
+conda create -n sampledisco -c conda-forge -c bioconda python=3.10 pip bedtools && conda activate sampledisco
+pip install "sampledisco[all]"
 ```
 
 `pip install sampledisco` alone gives the core pipeline; the extras `[glue]`, `[maxfuse]`
