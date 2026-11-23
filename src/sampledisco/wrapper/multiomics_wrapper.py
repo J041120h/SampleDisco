@@ -226,9 +226,11 @@ def multiomics_wrapper(
     # obs (sample, modality, batch, sev.level …) + obsm (X_glue, Z_comp,
     # Z_rmd) but no expression X — DGE/RAISIN reads the per-modality
     # preprocessed h5ads instead.
-    h5ad_path = (integrated_h5ad_path
-                 if integrated_h5ad_path and os.path.exists(integrated_h5ad_path)
-                 else f"{multiomics_output_dir}/preprocess/adata_sample.h5ad")
+    # Every write below goes to h5ad_path (the output-dir union). The user's
+    # integrated_h5ad_path is input only and is never written to; it is read
+    # only when the output-dir union does not exist yet (see STEP 2).
+    h5ad_path = f"{multiomics_output_dir}/preprocess/adata_sample.h5ad"
+    os.makedirs(os.path.dirname(h5ad_path), exist_ok=True)
     rna_pre_path  = f"{multiomics_output_dir}/preprocess/adata_rna_preprocessed.h5ad"
     atac_pre_path = f"{multiomics_output_dir}/preprocess/adata_atac_preprocessed.h5ad"
 
@@ -303,15 +305,21 @@ def multiomics_wrapper(
             "exist on disk at those paths."
         )
 
-    # Load the embedding-only union (built in STEP 1 by build_embedding_union).
+    # Load the embedding-only union (built in STEP 1 by build_embedding_union):
+    # this run's / a previous run's output first, else the user's input file.
     if os.path.exists(h5ad_path):
-        current_adata = sc.read(h5ad_path)
-        if multiomics_verbose:
-            print(f"Loaded embedding union from: {h5ad_path}")
+        read_path = h5ad_path
+    elif integrated_h5ad_path and os.path.exists(integrated_h5ad_path):
+        read_path = integrated_h5ad_path
     else:
         raise ValueError(
             f"Embedding union not found at {h5ad_path}. Set "
             "run_glue_merge=True or provide integrated_h5ad_path.")
+    current_adata = sc.read(read_path)
+    if multiomics_verbose:
+        print(f"Loaded embedding union from: {read_path}")
+        if read_path != h5ad_path:
+            print(f"Updates are written to {h5ad_path}; the input file is not modified.")
     results['adata'] = current_adata
 
     # ==================== STEP 2b: PROVIDE Z_comp (paper-aligned composition view) ===

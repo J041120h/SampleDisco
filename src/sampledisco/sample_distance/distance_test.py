@@ -13,7 +13,8 @@ def distanceCheck(
     adata: AnnData = None,
     grouping_columns: List[str] = ['sev.level'],
     summary_csv_path: Optional[str] = None,
-    allow_prefix_fallback: bool = False
+    allow_prefix_fallback: bool = False,
+    sample_column: str = 'sample'
 ) -> float:
     """
     Calculate in-group vs. between-group distances based on sample grouping.
@@ -29,7 +30,9 @@ def distanceCheck(
     output_dir : str
         Directory to save results
     adata : AnnData or None
-        Pseudobulked AnnData with sample metadata in `adata.obs`
+        Pseudobulked AnnData with sample metadata in `adata.obs`. A cell-level
+        AnnData also works: when no sample ID is in `adata.obs.index`, samples
+        are grouped by the first non-null grouping value per `obs[sample_column]`.
     grouping_columns : list of str
         Column names in `adata.obs` for grouping samples
     summary_csv_path : str or None
@@ -38,6 +41,8 @@ def distanceCheck(
         If True, fall back to grouping samples by their first two characters
         when no valid grouping column is found. Off by default; when off,
         a missing/invalid grouping raises a ValueError.
+    sample_column : str
+        Cell-level sample column, used only when `adata` is cell-level.
 
     Returns
     -------
@@ -47,7 +52,8 @@ def distanceCheck(
     samples = distance_df.index.tolist()
     os.makedirs(output_dir, exist_ok=True)
 
-    groups = _get_sample_groups(samples, adata, grouping_columns, allow_prefix_fallback)
+    groups = _get_sample_groups(samples, adata, grouping_columns, allow_prefix_fallback,
+                                sample_column)
     in_group, between_group = _compute_distances(samples, distance_df, groups)
 
     avg_in = np.mean(in_group) if in_group else np.nan
@@ -61,7 +67,8 @@ def distanceCheck(
 
 
 def _get_sample_groups(samples: List[str], adata: AnnData, grouping_columns: List[str],
-                        allow_prefix_fallback: bool = False) -> dict:
+                        allow_prefix_fallback: bool = False,
+                        sample_column: str = 'sample') -> dict:
     """Determine sample groupings from AnnData. Raises if no valid grouping column is
     found, unless `allow_prefix_fallback` explicitly opts into prefix-based grouping."""
     if adata is None or not hasattr(adata, 'obs') or adata.obs.empty:
@@ -75,9 +82,9 @@ def _get_sample_groups(samples: List[str], adata: AnnData, grouping_columns: Lis
         if allow_prefix_fallback:
             print("Warning: No samples from distance matrix found in adata.obs, using fallback grouping")
             return {sample: sample[:2] for sample in samples}
-        raise ValueError("No samples from distance matrix found in adata.obs; cannot determine sample groups")
+        return _get_sample_groups_from_cells(samples, adata.obs, grouping_columns, sample_column)
 
-    grouping_column = next((col for col in grouping_columns if col in adata.obs.columns), None)
+    grouping_column = next((col for col in (grouping_columns or []) if col in adata.obs.columns), None)
     if grouping_column is None:
         if allow_prefix_fallback:
             print(f"Warning: None of the grouping columns {grouping_columns} found in adata.obs, using fallback grouping")
@@ -85,6 +92,33 @@ def _get_sample_groups(samples: List[str], adata: AnnData, grouping_columns: Lis
         raise ValueError(f"None of the grouping columns {grouping_columns} found in adata.obs")
 
     groups = {s: str(adata.obs.loc[s, grouping_column]) for s in available_samples}
+    for sample in samples:
+        groups.setdefault(sample, 'Unknown')
+    return groups
+
+
+def _get_sample_groups_from_cells(samples: List[str], obs: pd.DataFrame,
+                                  grouping_columns: List[str], sample_column: str) -> dict:
+    """Groups from a cell-level obs (index = cell barcodes): one value per sample,
+    the first non-null grouping value per obs[sample_column] (as build_sample_adata)."""
+    hint = ("pass the sample-level (pseudobulk) AnnData instead, e.g. "
+            "build_sample_adata(adata) from sampledisco.sample_embedding.sample_embedding")
+    if sample_column not in obs.columns:
+        raise ValueError(
+            f"No samples from distance matrix found in adata.obs (index), and adata.obs "
+            f"has no '{sample_column}' column to map cells to samples; {hint}")
+    grouping_column = next((col for col in (grouping_columns or []) if col in obs.columns), None)
+    if grouping_column is None:
+        raise ValueError(f"None of the grouping columns {grouping_columns} found in adata.obs")
+    first = obs.groupby(obs[sample_column].astype(str), observed=True)[grouping_column].first()
+    groups = {s: str(first[str(s)]) for s in samples if str(s) in first.index}
+    if not groups:
+        raise ValueError(
+            f"No samples from distance matrix found in adata.obs (index or "
+            f"'{sample_column}' column; e.g. {list(samples[:3])} vs "
+            f"{list(first.index[:3])}); {hint}")
+    print(f"Note: adata is cell-level; grouping samples by the first '{grouping_column}' "
+          f"value per obs['{sample_column}']")
     for sample in samples:
         groups.setdefault(sample, 'Unknown')
     return groups

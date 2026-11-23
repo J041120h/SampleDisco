@@ -1,8 +1,10 @@
 """GPU sample-embedding entry point.
 
 Same API as `sample_embedding.compute_sample_embedding`, but the hot
-primitives (k-means, RBF soft-assign, final-stack PCA) run on the GPU via
-`cuml` / `cupy` / `rapids_singlecell`. The sample-level Harmony step runs on
+primitives (RBF soft-assign, final-stack PCA) run on the GPU via
+`cuml` / `cupy` / `rapids_singlecell`. The k-means centres are fitted on the
+CPU with scikit-learn's MiniBatchKMeans (cuML 24.12 has no MiniBatchKMeans; a
+cuML build that provides one is used instead). The sample-level Harmony step runs on
 the CPU via `harmonypy` — identical to `sample_embedding.py` — because that
 matrix is tiny (n_units x PCs) and a GPU Harmony gives no speedup; using the
 same implementation keeps the GPU and CPU sample embeddings consistent.
@@ -129,6 +131,7 @@ def _gpu_harmonize(
 
     try:
         import harmonypy as hm
+        from sampledisco.utils.harmony_compat import harmonypy_cpu_kwargs
         nclust = max(2, min(meta.nunique().max() if isinstance(batch_keys, list)
                             else len(set(meta["batch"])),
                             n_units // 2))
@@ -136,7 +139,9 @@ def _gpu_harmonize(
                             batch_keys,  # str OR list[str]
                             nclust=nclust,
                             max_iter_harmony=30,
-                            random_state=seed)
+                            random_state=seed,
+                            # CPU on purpose (see docstring): same as the CPU path
+                            **harmonypy_cpu_kwargs(hm))
         Zc = ho.Z_corr
         if Zc.shape[0] != n_units:
             Zc = Zc.T

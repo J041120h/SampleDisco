@@ -177,6 +177,9 @@ def atac_wrapper(
             umap_plots=True,
         )
         status_flags["atac"]["cell_type_cluster"] = True
+        # cell_types() writes its (possibly aggregated) labels to obs['cell_type'];
+        # later stages must read those, not the input labels in celltype_col.
+        celltype_col = "cell_type"
 
     # ============================ SAMPLE EMBEDDING =========================
     if derive_sample_embedding:
@@ -244,4 +247,5 @@ def atac_wrapper(
     return {
         'adata': adata,
         'status_flags': status_flags,
+        'celltype_col': celltype_col,  # column the embedding used; downstream reads it
     }

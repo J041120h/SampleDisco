@@ -11,6 +11,18 @@ from typing import Optional, Sequence, Union
 import numpy as np
 
 
+def harmonypy_cpu_kwargs(hm) -> dict:
+    """``{'device': 'cpu'}`` when this harmonypy's ``run_harmony`` takes ``device``
+    (>= 0.2, PyTorch backend, which otherwise picks CUDA/MPS whenever torch sees a
+    GPU); ``{}`` for older harmonypy, which always runs on the CPU."""
+    import inspect
+    try:
+        params = inspect.signature(hm.run_harmony).parameters
+    except (TypeError, ValueError):
+        return {}
+    return {"device": "cpu"} if "device" in params else {}
+
+
 def harmonize_embedding(
     embedding: np.ndarray,
     obs,
@@ -35,14 +47,23 @@ def harmonize_embedding(
         import harmonypy as hm
         ho = hm.run_harmony(
             X, obs, keys, max_iter_harmony=max_iter_harmony, random_state=seed,
+            **({} if use_gpu else harmonypy_cpu_kwargs(hm)),
         )
         Z = ho.Z_corr
         if Z.shape[0] != X.shape[0]:  # harmonypy returns (n_dims x n_cells)
             Z = Z.T
         return np.asarray(Z, dtype=np.float32)
 
+    # harmony-pytorch's default n_jobs=-1 sets torch to every physical core of the
+    # node, ignoring the SLURM allocation; give it the usable CPU count instead.
+    import inspect
+    from sampledisco.utils.cpus import usable_cpu_count
+    try:
+        takes_n_jobs = "n_jobs" in inspect.signature(harmonize).parameters
+    except (TypeError, ValueError):
+        takes_n_jobs = False
     Z = harmonize(
         X, obs, batch_key=keys, max_iter_harmony=max_iter_harmony, use_gpu=use_gpu,
-        random_state=seed,
+        random_state=seed, **({"n_jobs": usable_cpu_count()} if takes_n_jobs else {}),
     )
     return np.asarray(Z, dtype=np.float32)

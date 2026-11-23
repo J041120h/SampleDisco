@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import warnings
 import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import CCA
 from sklearn.preprocessing import StandardScaler
@@ -516,6 +517,43 @@ def create_comprehensive_summary_rna(df_results, best_resolution, column, output
     print(f"Detailed results saved to: {detailed_csv_path}")
 
 
+def _plot_null_histogram(simulated_scores, input_correlation, p_value, plot_path):
+    """Save the permutation-null histogram. Never raises: the plot is cosmetic and
+    must not abort the test (the p-value is computed before this is called)."""
+    plt.figure(figsize=(8, 5))
+    try:
+        try:
+            plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
+        except ValueError:
+            if not np.all(np.isfinite(simulated_scores)):
+                raise
+            # Degenerate null: every permuted |r| is equal up to float noise (e.g.
+            # n_pcs >= n_samples - 1 makes CCA fit any labelling perfectly), and
+            # numpy cannot cut a ~1e-16 range into 30 bins. Draw one bar instead.
+            lo, hi = float(np.min(simulated_scores)), float(np.max(simulated_scores))
+            warnings.warn(
+                f"[CCA p-test] permutation null is degenerate (all {len(simulated_scores)} "
+                f"permuted |r| in [{lo:.6g}, {hi:.6g}]); drawing a single-bin histogram. "
+                f"The p-value carries little information in this case.",
+                RuntimeWarning, stacklevel=3)
+            plt.cla()
+            plt.hist(simulated_scores, bins=1, range=(lo - 0.005, hi + 0.005),
+                     alpha=0.7, edgecolor='black')
+        plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
+                    label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
+        plt.xlabel('Simulated Correlation Scores')
+        plt.ylabel('Frequency')
+        plt.title('Permutation Test: CCA Correlations')
+        plt.legend()
+        plt.savefig(plot_path, dpi=300)
+    except Exception as exc:
+        warnings.warn(f"[CCA p-test] could not draw the null histogram ({exc}); "
+                      f"skipping {plot_path}. The p-value is unaffected.",
+                      RuntimeWarning, stacklevel=3)
+    finally:
+        plt.close()
+
+
 def cca_pvalue_test(
     pseudo_adata: AnnData,
     column: str,
@@ -530,8 +568,10 @@ def cca_pvalue_test(
     """
     Permutation p-value test for a CCA correlation on n_pcs-dimensional coordinates.
 
-    Shuffles trajectory labels to build a null distribution of |corr|,
-    then computes the fraction of null scores >= input_correlation.
+    Shuffles trajectory labels to build a null distribution of |corr|, then
+    reports the permutation p-value (1 + k) / (N + 1), where k is the number of
+    null scores >= input_correlation and N = num_simulations (never 0; the
+    smallest attainable value is 1 / (N + 1)).
     abs() is used because CCA canonical correlation is sign-invariant.
     Samples with a missing (NaN) trajectory value are dropped, mirroring the
     mask used in run_cca_on_pca_from_adata, so the null and the observed
@@ -608,26 +648,22 @@ def cca_pvalue_test(
         simulated_scores.append(corr)
 
     simulated_scores = np.array(simulated_scores)
-    p_value = np.mean(simulated_scores >= input_correlation)
+    # Standard permutation p-value (counts the observed labelling as one draw).
+    n_ge = int(np.sum(simulated_scores >= input_correlation))
+    p_value = (1 + n_ge) / (len(simulated_scores) + 1)
 
-    plt.figure(figsize=(8, 5))
-    plt.hist(simulated_scores, bins=30, alpha=0.7, edgecolor='black')
-    plt.axvline(input_correlation, color='red', linestyle='dashed', linewidth=2,
-                label=f'Observed corr: {input_correlation:.3f} (p={p_value:.4f})')
-    plt.xlabel('Simulated Correlation Scores')
-    plt.ylabel('Frequency')
-    plt.title('Permutation Test: CCA Correlations')
-    plt.legend()
     plot_path = os.path.join(output_directory, f"cca_pvalue_distribution_{column}.png")
-    plt.savefig(plot_path, dpi=300)
-    plt.close()
+    _plot_null_histogram(simulated_scores, input_correlation, p_value, plot_path)
 
     with open(os.path.join(output_directory, f"cca_pvalue_result_{column}.txt"), "w") as f:
         f.write(f"Observed correlation: {input_correlation}\n")
         f.write(f"P-value: {p_value}\n")
+        f.write(f"P-value definition: (1 + k) / (N + 1) with k = {n_ge} of "
+                f"N = {len(simulated_scores)} permuted |r| >= observed\n")
         f.write(f"N samples used: {len(sev_levels_numerical)}\n")
 
-    print(f"P-value for observed correlation {input_correlation}: {p_value}")
+    print(f"P-value for observed correlation {input_correlation}: {p_value} "
+          f"[(1 + {n_ge}) / ({len(simulated_scores)} + 1)]")
 
     if verbose:
         print(f"[CCA p-test] Runtime: {time.time() - start_time:.2f} seconds")

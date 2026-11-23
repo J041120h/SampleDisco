@@ -12,7 +12,7 @@ from scipy.spatial.distance import jensenshannon
 from anndata._core.aligned_df import ImplicitModificationWarning
 
 import sys
-from sampledisco.visualization.visualization_helper import visualizeDistanceMatrix
+from sampledisco.visualization.visualization_helper import visualizeDistanceMatrix, plot_cell_type_abundances
 from sampledisco.sample_distance.distance_test import distanceCheck
 
 

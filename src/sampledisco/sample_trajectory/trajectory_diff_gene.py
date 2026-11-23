@@ -151,6 +151,16 @@ def _build_sample_pseudobulk(
     sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
     pb_obs = pb_obs.join(sample_to_meta, how="left")
 
+    if batch_col_to_use is not None and batch_col_to_use in pb_obs.columns:
+        per_batch = pb_obs[batch_col_to_use].value_counts(dropna=True)
+        singles = sorted(str(b) for b in per_batch.index[per_batch == 1])
+        if len(per_batch) >= 2 and singles:   # same condition as the limma call below
+            warnings.warn(
+                f"[trajectory_diff_gene] batch(es) {singles} of '{batch_col_to_use}' contain "
+                f"a single sample: the limma batch regression fits that sample exactly, so "
+                f"its information is removed from the pseudobulk.",
+                RuntimeWarning, stacklevel=2)
+
     _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
     X_full = _X.tocsr() if issparse(_X) else _X
 
@@ -666,6 +676,22 @@ def fit_gam_models_for_genes(
             for reason, count in skip_counts.items():
                 if count > 0:
                     print(f"      {reason}: {count}")
+
+    if good == 0 and skip_counts["too_few_samples"] > 0:
+        n_usable = int(finite_rows.sum())
+        cause = (f"with only {n_usable} samples no gene can pass" if n_usable < min_needed
+                 else "too few samples are non-zero per gene")
+        warnings.warn(
+            f"[trajectory_diff_gene] No gene was fitted: the spline identifiability "
+            f"check needs >= {min_needed} non-zero samples per gene (spline order "
+            f"{adj_order} + {adj_n_splines} splines + 2; requested spline_order="
+            f"{spline_order}, num_splines={num_splines}, adjusted for {n_samples} "
+            f"samples) and rejected {skip_counts['too_few_samples']}/{total} genes — "
+            f"{cause}. Use a lower spline_order (e.g. 2) and/or num_splines; "
+            f"num_splines is raised to at least spline_order + 1.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
     if not results:
         cols = ["gene", "pval", "dev_exp", "fdr", "significant"]

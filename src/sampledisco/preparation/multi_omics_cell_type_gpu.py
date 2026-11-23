@@ -242,6 +242,7 @@ def cell_types_multiomics_gpu(
         adata=adata,
         modality_column=modality_column,
         cluster_column=cell_type_column,
+        modality_values=(rna_modality_value, atac_modality_value),
         min_proportion_of_expected=0.05,
         verbose=verbose
     )
@@ -312,9 +313,10 @@ def cell_types_multiomics_gpu(
         )
 
     if save and output_dir and not defined_output_path:
-        out_pre = os.path.join(output_dir, "preprocess")
-        os.makedirs(out_pre, exist_ok=True)
-        save_path = os.path.join(out_pre, "adata_preprocessed.h5ad")
+        # output_dir already points at <output_dir>/preprocess (rebound above);
+        # joining "preprocess" again wrote preprocess/preprocess/ in <= 0.5.0.
+        os.makedirs(output_dir, exist_ok=True)
+        save_path = os.path.join(output_dir, "adata_preprocessed.h5ad")
         print(f"Saving integrated data to: {save_path}")
         safe_h5ad_write(adata, save_path)
 

@@ -282,7 +282,7 @@ def write_embedding_uns(path: str, adata) -> bool:
 def save_embedding_to_h5ad(path: str, adata) -> str:
     """Store the sample embedding in the cell-level h5ad: in place when the file matches `adata`,
     otherwise a full re-write (previous behaviour). Returns 'in-place' or 'rewrite'."""
-    if write_embedding_uns(path, adata):
+    if os.path.exists(path) and write_embedding_uns(path, adata):
         return "in-place"
     import scanpy as sc
     sc.write(path, adata)
@@ -678,6 +678,7 @@ def build_emb_from_blocks(
                 joint = meta["batch"].values
             try:
                 import harmonypy as hm
+                from sampledisco.utils.harmony_compat import harmonypy_cpu_kwargs
                 nclust = max(2, min(meta.nunique().max() if isinstance(batch_keys, list)
                                     else len(set(meta["batch"])),
                                     n_units // 2))
@@ -685,7 +686,9 @@ def build_emb_from_blocks(
                                     batch_keys,  # str OR list[str]
                                     nclust=nclust,
                                     max_iter_harmony=30,
-                                    random_state=seed)
+                                    random_state=seed,
+                                    # CPU path: never let harmonypy pick a GPU itself
+                                    **harmonypy_cpu_kwargs(hm))
                 Zc = ho.Z_corr
                 if Zc.shape[0] != n_units:
                     Zc = Zc.T

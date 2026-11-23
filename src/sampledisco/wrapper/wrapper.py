@@ -74,6 +74,17 @@ def _first_batch_col_for_raisin(
     return None
 
 
+def _skip_multiomics_dge(trajectory_dge: bool, cluster_dge: bool, rna_pre_path: str):
+    """Multi-omics DGE / RAISIN need the per-modality RNA expression h5ad. Without it
+    (e.g. multiomics_integration: false) they would fall back to the expression-less
+    embedding union and crash, so turn both off with one warning."""
+    if trajectory_dge or cluster_dge:
+        print(f"WARNING: skipping multi-omics trajectory DGE and cluster DGE (RAISIN): the "
+              f"per-modality RNA expression file {rna_pre_path} was not found (it is written "
+              f"when multiomics_integration is true). The other downstream steps still run.")
+    return False, False
+
+
 def _remap_units_to_modality(mapping, modality: Optional[str]):
     """Remap a {unit_id: value} dict from sample×modality unit IDs to bare
     sample IDs for one modality.
@@ -234,7 +245,12 @@ def downstream_analysis(
         trajectory_visualization_label = ['sev.level']
     if summary_sample_csv_path is None:
         summary_sample_csv_path = os.path.join(output_dir, 'summary_sample.csv')
-    
+        remove_summary_csv = True
+    else:
+        # User-supplied path: only remove a file this run creates, never one that
+        # already existed (it may be the user's own file).
+        remove_summary_csv = not os.path.exists(summary_sample_csv_path)
+
     trajectory_diff_gene_output_dir = os.path.join(output_dir, 'trajectoryDEG')
 
     # ==================== SAMPLE DISTANCE CALCULATION ====================
@@ -352,7 +368,7 @@ def downstream_analysis(
             sf["trajectory_dge"] = True
             print("Trajectory differential gene analysis completed!")
 
-    if os.path.exists(summary_sample_csv_path):
+    if remove_summary_csv and os.path.exists(summary_sample_csv_path):
         os.remove(summary_sample_csv_path)
 
     # ==================== SAMPLE CLUSTERING ====================
@@ -1212,7 +1228,7 @@ def wrapper(
                 # Column names
                 sample_col=rna_sample_col,
                 batch_col=rna_slb_list or None,
-                celltype_col=rna_celltype_col,
+                celltype_col=rna_results.get('celltype_col', rna_celltype_col),
                 # Sample distance
                 sample_distance_methods=rna_sample_distance_methods or ['cosine', 'correlation'],
                 grouping_columns=rna_grouping_columns or ['sev.level'],
@@ -1365,7 +1381,7 @@ def wrapper(
                 # Column names
                 sample_col=atac_sample_col,
                 batch_col=atac_slb_list or None,
-                celltype_col=atac_celltype_col,
+                celltype_col=atac_results.get('celltype_col', atac_celltype_col),
                 # Sample distance
                 sample_distance_methods=atac_sample_distance_methods or ['cosine', 'correlation'],
                 grouping_columns=atac_grouping_columns or ['sev.level'],
@@ -1538,9 +1554,9 @@ def wrapper(
             import scanpy as sc
             multiomics_adata_cell = multiomics_results.get("adata")
             if multiomics_adata_cell is None:
-                _candidate_paths = [
-                    multiomics_integrated_h5ad_path,
+                _candidate_paths = [  # this run's output first, then the user's input
                     os.path.join(multiomics_output_dir, "preprocess", "adata_sample.h5ad"),
+                    multiomics_integrated_h5ad_path,
                 ]
                 for _p in _candidate_paths:
                     if _p and os.path.exists(_p):
@@ -1565,6 +1581,10 @@ def wrapper(
                 sc.read(_mo_rna_pre_path)
                 if _mo_sample_adata is not None and os.path.exists(_mo_rna_pre_path)
                 else None)
+            _mo_trajectory_dge, _mo_cluster_dge = multiomics_trajectory_dge, multiomics_cluster_dge
+            if _mo_sample_adata is not None and multiomics_adata_for_dge is None:
+                _mo_trajectory_dge, _mo_cluster_dge = _skip_multiomics_dge(
+                    _mo_trajectory_dge, _mo_cluster_dge, _mo_rna_pre_path)
 
             # Phase 2: Downstream analysis
             downstream_results = downstream_analysis(
@@ -1580,10 +1600,10 @@ def wrapper(
                 # Step control
                 sample_distance_calculation=multiomics_sample_distance_calculation,
                 trajectory_analysis=multiomics_trajectory_analysis,
-                trajectory_DGE=multiomics_trajectory_dge,
+                trajectory_DGE=_mo_trajectory_dge,
                 sample_cluster=multiomics_sample_cluster,
                 proportion_test=multiomics_proportion_test,
-                cluster_DGE=multiomics_cluster_dge,
+                cluster_DGE=_mo_cluster_dge,
                 visualize_data=False,
                 visualize_embedding=multiomics_visualize_embedding,
                 # General

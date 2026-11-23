@@ -1,14 +1,16 @@
-# SampleDisco — CPU environment (validated build, 2026-06-13).
+# SampleDisco — CPU environment: ONE environment that runs every part of the package
+# except the NVIDIA RAPIDS GPU stack (for that, use environment-gpu.yml instead).
 #
-#   conda env create -f environment-cpu.yml
-#   conda activate sampledisco-cpu
-#   pip install -e . --no-deps          # add the sampledisco package itself
+#   conda env create -f environment-cpu.yml && conda activate sampledisco-cpu
 #
-# This is the exact spec that built and passed the import/coexistence smoke test
-# (numpy 2.0.2 + scGLUE 0.3.2 + scanpy 1.11.4 + anndata 0.10.9, torch CPU).
+# Contents: the core pipeline, scGLUE 0.3.2 (+ the bedtools binary it needs) and
+# harmony-pytorch on torch 2.5.1 (conda-forge CPU build), MaxFuse 0.0.2, and
+# SampleDisco itself (the last pip line), so there is nothing else to install.
+# Validated build 2026-11-22: numpy 2.0.2, scanpy 1.11.4, anndata 0.10.9,
+# scikit-learn 1.6.1, numba 0.60, pynndescent 0.6 / umap-learn 0.5.
+#
 # scGLUE MUST come from pip, never `conda install -c bioconda scglue` (the bioconda
-# recipe caps numpy<1.22 and breaks the rest of the stack). GPU acceleration is a
-# separate env: see environment-gpu.yml.
+# recipe caps numpy<1.22 and breaks the rest of the stack).
 name: sampledisco-cpu
 channels:
   - conda-forge
@@ -20,24 +22,30 @@ dependencies:
   # --- code-sensitive pins (validated against the pipeline) ---
   - numpy=2.0.2
   - scanpy=1.11.4
-  - anndata=0.10.9
+  - anndata=0.10.9     # scGLUE 0.3.2 needs <0.11, MaxFuse 0.0.2 needs <0.13
   - scikit-learn=1.6.1
   - numba=0.60
+  # pynndescent 0.7 / umap-learn 0.6 break sc.pp.neighbors (scanpy 1.11) on > ~8k cells
+  - pynndescent<0.7
+  - umap-learn<0.6
 
   # --- core scientific / single-cell stack (conda-forge) ---
   - pandas
   - scipy
-  - scikit-misc
+  # (scikit-misc comes from pip as a sampledisco dependency: conda-forge's py3.10
+  #  builds report version 0.0.0 to pip, which made pip reinstall it over conda's)
+  - scikit-image       # scrublet-based ATAC doublet detection
   - statsmodels
   - patsy
   - mudata
   - muon
   - harmonypy==0.2.0   # matches the package pin (requires torch)
+  # CPU torch for harmonypy / harmony-pytorch / scGLUE. 2.5.1 = the GPU env's torch;
+  # scGLUE 0.3.2 training passes ReduceLROnPlateau(verbose=...), which torch >= 2.7 removed.
+  - pytorch=2.5.1=cpu*
   - python-igraph
   - leidenalg
   - networkx
-  - umap-learn
-  - pynndescent
   - pot            # POT (optimal transport, EMD distance)
   - pygam
   - matplotlib
@@ -50,15 +58,19 @@ dependencies:
   - htslib
   - pybedtools
   - pysam
-  - pyensembl      # multi-omics gene annotation
+  # multi-omics gene annotation. Pinned: left free, conda picks pyensembl/gtfparse
+  # builds whose pip metadata pip then "fixes" by reinstalling them (gtfparse >= 3.1
+  # wants pandas >= 3, which needs python >= 3.11).
+  - pyensembl=2.27.3
+  - gtfparse=3.0.4
 
   - pip
   - pip:
-      # pip-only deps (CPU core; torch/scGLUE/harmony-pytorch are the optional
-      # [multiomics] extra — install via `pip install "sampledisco[multiomics]"`):
+      # pip-only packages:
       - combat==0.3.3          # RAISIN ComBat batch correction
       - adjustText==1.3.0      # RAISIN_TEST volcano labels
-
-# Optional: phylogenetic-tree clustering island (orphan, not on the live wrapper
-# path). Only if you need NN/UPGMA/consensus tree methods:
-#   pip install biopython==1.85 scikit-bio==0.6.3 dendropy==5.0.8
+      - scglue==0.3.2          # RNA+ATAC integration (pip only, see above)
+      - harmony-pytorch==0.1.8
+      - maxfuse==0.0.2         # RNA + protein/flow integration (needs anndata<0.13)
+      # SampleDisco itself — keep this line last:
+      - sampledisco==0.6.0

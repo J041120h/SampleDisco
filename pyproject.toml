@@ -9,8 +9,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sampledisco"
-version = "0.5.0"
-description = "Cross-omics, cross-condition sample embedding for single-cell data (RNA + ATAC)"
+version = "0.6.0"
+description = "Cross-omics, cross-condition sample embedding for single-cell data (RNA, ATAC, multi-omics)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -29,10 +29,31 @@ classifiers = [
 ]
 dynamic = ["dependencies"]
 
+# Optional feature sets. `pip install "sampledisco[all]"` gives one environment
+# that runs every CPU part of the package (RAPIDS GPU stack: environment-gpu.yml).
+# Training GLUE additionally needs the bedtools binary: conda install -c bioconda bedtools
+[project.optional-dependencies]
+# MaxFuse 0.0.2 calls AnnData(arr, dtype=...), which anndata 0.13 removed.
+maxfuse = ["maxfuse==0.0.2", "anndata<0.13"]
+# scGLUE 0.3.2 imports anndata._core.sparse_dataset.SparseDataset, removed in
+# anndata 0.11, and its training calls ReduceLROnPlateau(verbose=...), removed in
+# torch 2.7 (its own metadata says only anndata>=0.7, torch>=1.8). harmony-pytorch is
+# the torch Harmony backend used by the RNA+ATAC gene-activity path.
+glue = ["scglue==0.3.2", "harmony-pytorch==0.1.8", "anndata<0.11", "torch<2.7"]
+# Same as glue; the name used in older docs and in sampledisco.utils.harmony_compat.
+multiomics = ["scglue==0.3.2", "harmony-pytorch==0.1.8", "anndata<0.11", "torch<2.7"]
+all = [
+    "maxfuse==0.0.2",
+    "scglue==0.3.2",
+    "harmony-pytorch==0.1.8",
+    "anndata<0.11",
+    "torch<2.7",
+]
+
 [project.urls]
-Homepage = "https://github.com/J041120h/GenoDistance"
+Homepage = "https://github.com/J041120h/SampleDisco"
 Documentation = "https://j041120h.github.io/SampleDisco_tutorial/"
-Repository = "https://github.com/J041120h/GenoDistance"
+Repository = "https://github.com/J041120h/SampleDisco"
 
 [project.scripts]
 sampledisco = "sampledisco.cli:main"

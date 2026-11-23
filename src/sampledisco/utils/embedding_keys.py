@@ -60,12 +60,26 @@ def _deprecation_msg(old: str, canonical: str, version: str, context: str) -> st
     )
 
 
-def _check_override(adata, override: str, role: str) -> str:
-    if override not in adata.obsm:
-        raise KeyError(
-            f"{role} embedding key {override!r} not in adata.obsm "
-            f"(available: {list(adata.obsm.keys())})")
-    return override
+def _check_override(adata, override: str, role: str, aliases=(),
+                    context: str = "") -> str:
+    if override in adata.obsm:
+        return override
+    # An explicitly passed *canonical* key on a file written by an older release:
+    # use its legacy alias, exactly as auto-resolution (override=None) would.
+    if aliases and override == aliases[0][0]:
+        for key, version in aliases[1:]:
+            if key in adata.obsm:
+                where = f"[{context}] " if context else ""
+                _warn_once(f"{override}->{key}", context, (
+                    f"[sampledisco] {where}{role} embedding key {override!r} not in "
+                    f"adata.obsm; using its legacy alias {key!r} (written by "
+                    f"sampledisco {version}). To migrate in place: from "
+                    f"sampledisco.utils.embedding_keys import migrate_obsm_keys; "
+                    f"migrate_obsm_keys(adata)."), FutureWarning)
+                return key
+    raise KeyError(
+        f"{role} embedding key {override!r} not in adata.obsm "
+        f"(available: {list(adata.obsm.keys())})")
 
 
 def _scan(adata, aliases, canonical: str, context: str) -> Optional[str]:
@@ -84,7 +98,7 @@ def resolve_comp_key(adata, override: Optional[str] = None, *,
                      context: str = "") -> Optional[str]:
     """Resolve the sample-REMOVED (composition / anchor / clustering) obsm key."""
     if override:
-        return _check_override(adata, override, "comp")
+        return _check_override(adata, override, "comp", COMP_ALIASES, context)
     key = _scan(adata, COMP_ALIASES, COMP_KEY, context)
     if key is not None:
         return key
@@ -108,7 +122,7 @@ def resolve_rmd_key(adata, override: Optional[str] = None, *,
     loud RuntimeWarning — the resulting RMD block is near-degenerate.
     """
     if override:
-        return _check_override(adata, override, "rmd")
+        return _check_override(adata, override, "rmd", RMD_ALIASES, context)
     key = _scan(adata, RMD_ALIASES, RMD_KEY, context)
     if key is not None:
         return key

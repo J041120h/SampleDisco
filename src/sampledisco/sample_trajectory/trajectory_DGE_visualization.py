@@ -19,9 +19,19 @@ from typing import Dict, List, Optional, Tuple, Union
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import pdist
 from sklearn.cluster import KMeans
+import functools
 import warnings
 
-warnings.filterwarnings('ignore')
+
+def _quiet(fn):
+    """Silence warnings inside `fn` only. A module-level filterwarnings('ignore')
+    here used to hide every later warning in the session once this was imported."""
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return fn(*args, **kwargs)
+    return wrapped
 
 # =============================================================================
 # COLOR SCHEMES (following Lamian paper style)
@@ -363,8 +373,6 @@ from typing import Dict, List, Optional, Tuple
 from scipy.ndimage import uniform_filter1d
 import warnings
 
-warnings.filterwarnings('ignore')
-
 """
 Fixed plot_gene_expression_curves function
 
@@ -381,8 +389,6 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Optional, Tuple
 from scipy.ndimage import uniform_filter1d
 import warnings
-
-warnings.filterwarnings('ignore')
 
 
 def _plot_fallback_smooth(ax, x, y, color, linewidth=2, alpha=0.9):
@@ -1381,6 +1387,7 @@ def _get_top_genes_by_effect_size(
     return top_genes
 
 
+@_quiet
 def generate_all_visualizations(
     X: 'pd.DataFrame',
     Y: 'pd.DataFrame',

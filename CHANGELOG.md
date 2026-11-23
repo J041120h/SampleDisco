@@ -1,5 +1,102 @@
 # Changelog
 
+## 0.6.0
+
+One environment for the whole package, and fixes for every bug the rewritten tutorials hit.
+Config files are unchanged: every existing config validates as before. Results on the
+default configs are unchanged except where a fix below says otherwise.
+
+**Installation**
+
+- **One environment runs everything.** `environment-cpu.yml` now installs the core pipeline,
+  scGLUE 0.3.2 (with the `bedtools` binary), harmony-pytorch, MaxFuse 0.0.2 and SampleDisco
+  itself. `environment-gpu.yml` is the same plus RAPIDS 24.12: create it, then run
+  `pip install --no-deps rapids-singlecell==0.13.1 sampledisco==0.6.0`. See `INSTALL.md`.
+- **New pip extras:** `[glue]` (alias `[multiomics]`), `[maxfuse]` and `[all]`.
+  `pip install "sampledisco[all]"` plus `conda install -c bioconda bedtools` gives the same
+  feature set without an env file. The extras pin what the upstream packages leave out:
+  scGLUE 0.3.2 needs `anndata<0.11` and `torch<2.7`, and MaxFuse 0.0.2 needs `anndata<0.13`.
+- **`pynndescent<0.7`** is now a dependency. pynndescent 0.7 (and umap-learn 0.6) break
+  `scanpy.pp.neighbors` on more than about 8,000 cells
+  (`'csr_array' object has no attribute 'getnnz'`), so a fresh `pip install sampledisco`
+  0.5.0 failed on real data.
+- The unused tree-clustering dependencies (biopython, scikit-bio, dendropy) are gone from
+  the env files. The project URLs now point to the SampleDisco repository.
+
+**Fixes**
+
+- **`from sampledisco import wrapper` works.** It used to return the `sampledisco.wrapper`
+  subpackage, so `wrapper(**config)` raised `TypeError: 'module' object is not callable`.
+  The subpackage is now callable. Existing import paths work unchanged, including
+  `from sampledisco.wrapper.wrapper import wrapper`.
+- **Multi-omics no longer overwrites its input file.** With `multiomics_integration: false`,
+  the wrapper used to write cell types and the sample embedding back into
+  `multiomics_integrated_h5ad_path`, the user's input. It now writes to
+  `<output_dir>/multiomics/preprocess/adata_sample.h5ad` (the same file the integration
+  route writes), and reads that file first on later runs.
+- **Embedding keys:** passing `comp_emb_key="Z_comp"` or `rmd_emb_key="Z_rmd"` explicitly
+  now falls back to the legacy alias (`Z_clust`, `Z_cmd`, …) with a `FutureWarning`, as
+  automatic resolution already did. This fixes the demo `test_multiomics_integrated.h5ad`.
+- **Cell-type labels after cell typing:** once the wrapper's cell-typing stage has run, the
+  sample embedding and downstream stages use the labels it wrote (`obs['cell_type']`).
+  Before, a different `*_celltype_col` together with `*_existing_cell_types: true` made the
+  embedding silently use the original, unmerged labels.
+- **Custom sample column plus a sample-metadata CSV:** merging the metadata no longer
+  renames the sample column away, which caused `KeyError: '<sample_col>'`. The column is
+  kept and copied to `sample`.
+- **`cell_types_multiomics(save=True)`** writes `<output_dir>/preprocess/adata_preprocessed.h5ad`.
+  It used to write to `preprocess/preprocess/`, so `compute_sample_embedding` never saved the
+  embedding back.
+- **Sample distance:**
+  - `chi_square` and `jensen_shannon` no longer raise `NameError`
+    (`plot_cell_type_abundances`), and they now receive `grouping_columns`.
+  - The group check works when it is given cell-level AnnData: it matches on
+    `obs['sample']`.
+  - With no grouping column, the check is skipped with a clear message.
+- **CCA p-value:** the permutation p-value is now `(1 + k) / (N + 1)` (k = permutations at
+  least as extreme as the observed score, N = permutations), so it is never reported as 0.
+  It was `k / N`. A degenerate permutation null no longer crashes the histogram. That null
+  (all |r| ≈ 1) happens when the number of PCs is at least the number of samples minus 1;
+  use fewer CCA PCs than that, or the p-value is meaningless. The statistic itself is
+  unchanged.
+- **Supervised CCA pseudotime is oriented** so it increases with `trajectory_col` (it is
+  flipped, with a log line, when its Spearman correlation with the trajectory variable is
+  negative). Its sign was arbitrary, so trajectory-DGE "up/down" could mean the reverse of
+  the trajectory variable. The CCA score and p-value are unchanged.
+- **RAISIN:**
+  - Comparisons that involve a group with a single sample are skipped, with a warning, and
+    marked `FAILED`. Such a group has zero residual degrees of freedom and its variance was
+    set to 0, which produced thousands of false "significant" genes. Comparisons between
+    groups of two or more samples give identical results.
+  - Automatic worker counts are capped at the Slurm allocation (`SLURM_CPUS_PER_TASK`).
+- **Harmony:**
+  - harmony-pytorch is now given the usable CPU count (the CPU affinity mask, capped at
+    `SLURM_CPUS_PER_TASK`). It used to set torch to every physical core of the machine,
+    which oversubscribed shared nodes (about 4× slower RNA preprocessing on an 8-CPU job)
+    and made cell-level Harmony non-deterministic between runs.
+  - harmonypy (the sample-level Harmony, and the cell-level fallback) is pinned to the CPU
+    unless `use_gpu` is set. harmonypy 0.2.0 otherwise moves itself to any visible GPU, so
+    the same CPU run gave different results on GPU nodes. The GPU sample-embedding path now
+    also runs this step on the CPU, so GPU and CPU sample embeddings agree.
+- **Multi-omics cell typing** with a second modality other than `"ATAC"` (for example
+  `"FLOW"`) no longer drops every cell in the modality-balance filter.
+- **Multi-omics from a pre-integrated file** (`multiomics_integration: false`) with
+  `multiomics_trajectory_dge` or `multiomics_cluster_dge` switched on used to crash
+  (`No features survived pseudobulk aggregation`). There is no per-modality expression file
+  in that case, so both stages are now skipped with one warning and the other downstream
+  stages run.
+- **Trajectory DGE** warns once about batches that contain a single sample, because the
+  batch regression removes their information.
+- **Trajectory DGE:** a clear warning when the spline settings leave no gene fittable (for
+  example `spline_order=3` on 8 samples). Importing the DGE plotting module no longer turns
+  off Python warnings for the rest of the session.
+- **`*_summary_sample_csv_path`:** a user-supplied file that already existed is no longer
+  deleted at the end of the run.
+- **Config template:** the demo-data DOI is now 10.5281/zenodo.22549610. The
+  `*_tscan_pseudotime_mode` comments list the valid values, `"rank"` and `"distance"`, instead
+  of `"projection"`. This is a comment-only change.
+- Tests: `tests/test_tutorial_fixes.py`.
+
 ## 0.5.0
 
 Two new supervised downstream functions on the sample embedding. Python API only: the

@@ -131,7 +131,7 @@ def run_cca_on_pca_from_adata(
     return pca_coords_subset, sev_levels, samples, n_components
 
 
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 
 
 def plot_cca_on_2d_pca(
@@ -451,6 +451,17 @@ def CCA_Call(
                 cca=cca_model,
                 sample_labels=samples,
             )
+            # The CCA direction's sign is arbitrary: orient the (min-max scaled)
+            # pseudotime to increase with the numeric trajectory column. The score
+            # is |r| and is unaffected.
+            pt = sample_dicts[key]
+            pt_vals = np.array([pt[str(s)] for s in samples], dtype=float)
+            if len(pt_vals) >= 2 and np.ptp(pt_vals) > 0 and np.ptp(sev_levels) > 0:
+                rho = spearmanr(pt_vals, sev_levels)[0]
+                if np.isfinite(rho) and rho < 0:
+                    sample_dicts[key] = {s: 1.0 - v for s, v in pt.items()}
+                    print(f"[CCA] Flipped pseudotime so it increases with "
+                          f"'{trajectory_col}' (Spearman rho before flip: {rho:.3f})")
 
         except Exception as e:
             if verbose:

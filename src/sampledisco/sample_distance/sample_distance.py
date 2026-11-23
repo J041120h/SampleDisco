@@ -263,7 +263,8 @@ def emd_distance(
             output_dir=emd_output_dir,
             adata=check_adata,
             grouping_columns=grouping_columns,
-            summary_csv_path=summary_csv_path
+            summary_csv_path=summary_csv_path,
+            sample_column=sample_column
         )
         print(f"  Distance check score: {score:.6f}")
     except Exception as e:
@@ -328,19 +329,25 @@ def calculate_sample_distances_DR(
     distance_path = os.path.join(output_dir, f'distance_matrix_{dr_name}.csv')
     distance_df.to_csv(distance_path)
 
-    try:
-        score = distanceCheck(
-            distance_df=distance_df,
-            row=dr_name,
-            method=method,
-            output_dir=output_dir,
-            adata=adata,
-            grouping_columns=grouping_columns,
-            summary_csv_path=summary_csv_path
-        )
-        print(f"  Distance check for {dr_name}: score = {score:.6f}")
-    except Exception as e:
-        print(f"  Warning: Distance check failed for {dr_name}: {e}")
+    if not grouping_columns:
+        # sample_distance_vector sets this to None when none of the requested
+        # grouping columns exists in adata.obs; skip instead of failing on None.
+        print(f"  Skipping group distance check for {dr_name}: no grouping column "
+              f"available in adata.obs (set grouping_columns to existing obs columns).")
+    else:
+        try:
+            score = distanceCheck(
+                distance_df=distance_df,
+                row=dr_name,
+                method=method,
+                output_dir=output_dir,
+                adata=adata,
+                grouping_columns=grouping_columns,
+                summary_csv_path=summary_csv_path
+            )
+            print(f"  Distance check for {dr_name}: score = {score:.6f}")
+        except Exception as e:
+            print(f"  Warning: Distance check failed for {dr_name}: {e}")
     
     try:
         visualizeDistanceMatrix(
@@ -605,7 +612,8 @@ def sample_distance(
             summary_csv_path=summary_csv_path,
             cell_type_column=cell_type_column,
             sample_column=sample_column,
-            pseudobulk_adata=pseudobulk_adata
+            pseudobulk_adata=pseudobulk_adata,
+            grouping_columns=grouping_columns
         )
         return None  # saves internally
 
@@ -621,7 +629,8 @@ def sample_distance(
             summary_csv_path=summary_csv_path,
             cell_type_column=cell_type_column,
             sample_column=sample_column,
-            pseudobulk_adata=pseudobulk_adata
+            pseudobulk_adata=pseudobulk_adata,
+            grouping_columns=grouping_columns
         )
         return None  # saves internally
     

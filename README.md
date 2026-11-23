@@ -24,14 +24,14 @@ It then assembles **four blocks** per sample (or per sample × modality for mult
 3. **A3** — soft k-means composition at K_fine (≈300)
 4. **RMD** — leave-one-out cell-type-resolved displacement on `Z_rmd`
 
-The four blocks are inverse-variance weighted, Frobenius-stacked, PCA-reduced to 10 dimensions, and Harmony-corrected at sample level. The result is stored as `adata.uns['X_DR_sample']` and feeds every downstream module.
+The four blocks are inverse-variance weighted, Frobenius-stacked, PCA-reduced to 10 dimensions (at most the number of samples − 1), and Harmony-corrected at sample level when there are at least 8 samples in more than one batch / modality group. The result is stored as `adata.uns['X_DR_sample']` and feeds every downstream module.
 
 ---
 
 ## Repository layout
 
 ```
-code/
+./
 ├── pyproject.toml                 # package metadata; `pip install -e .` installs the `sampledisco` command
 ├── config/                        # 10 YAML configs for the paper's datasets: covid / blood (1M-scBloodNL) / eye / heart / ENCODE / healthy-aging PBMC / long_covid / unpaired (+ RNA-tuned) / default
 ├── src/sampledisco/               # the package
@@ -58,7 +58,7 @@ code/
 │   ├── parameter_selection/
 │   │   └── autotune.py            # Bayesian GP sweep over RMD α; adaptive proxy ensemble
 │   ├── sample_distance/           # Pairwise sample distances (DR / EMD / chi-square / JS)
-│   ├── sample_clustering/         # Hierarchical (HRA / HRC / NN / UPGMA / consensus), K-means, proportion test, RAISIN
+│   ├── sample_clustering/         # K-means sample clusters, proportion test, RAISIN cluster DGE
 │   ├── sample_trajectory/         # CCA (supervised) and TSCAN (unsupervised) + GAM-based trajectory DGE
 │   ├── sample_association/        # Per-PC variance explained vs sample-level covariates (permutation FDR)
 │   ├── sample_prediction/         # Cross-validated phenotype prediction from the PCs; kNN label transfer
@@ -135,51 +135,22 @@ For multi-omics, the pipeline takes two separate h5ads (RNA + ATAC) and integrat
 
 ## Installation
 
-SampleDisco is **one package**. The CPU install is pip-only; **GPU acceleration is
-activated simply by installing the GPU libraries separately** — the same package
-detects and uses them at runtime. There is no separate "GPU build" of SampleDisco.
-
-### 1. Core install (CPU)
+One conda environment runs every part of the package: the RNA / ATAC / multi-omics
+pipelines, scGLUE training (with `bedtools`), MaxFuse and all downstream analyses.
 
 ```bash
-pip install sampledisco          # or `pip install -e .` from a clone
+# CPU (recommended)
+conda env create -f environment-cpu.yml && conda activate sampledisco-cpu
+
+# GPU (Linux + NVIDIA): the CPU environment + RAPIDS 24.12
+conda env create -f environment-gpu.yml && conda activate sampledisco-gpu
+pip install --no-deps rapids-singlecell==0.13.1 sampledisco==0.6.0
+
+# pip only
+pip install "sampledisco[all]" && conda install -c bioconda -c conda-forge bedtools
 ```
 
-### 2. System prerequisite — bedtools
-
-scGLUE (the multi-omics integrator) calls the `bedtools` binary, which pip cannot
-provide:
-
-```bash
-conda install -c bioconda bedtools
-```
-
-### 3. GPU acceleration (optional, install yourself)
-
-The GPU functions (RAPIDS-accelerated normalization, Harmony, k-means / PCA, Leiden,
-scGLUE training) turn on **only when the RAPIDS stack is present** in your
-environment. RAPIDS is CUDA-driver-specific and conda-only, so you install it
-separately, matching your driver (the pins below target a CUDA-12.5 driver such as
-the cluster's GPU nodes):
-
-```bash
-conda install -c rapidsai -c conda-forge -c nvidia \
-    cuml=24.12 cudf=24.12 cugraph=24.12 rmm=24.12 cuvs=24.12 cupy=13 cuda-version=12.5
-pip install rapids-singlecell==0.13.1 --no-deps
-```
-
-Then set `use_gpu: true` in your config. **You do not reinstall SampleDisco** — once
-those packages are importable the GPU paths activate automatically; if they are
-missing or the driver is too old, SampleDisco falls back to CPU equivalents
-(`harmonypy` / linear regression, scikit-learn k-means, PyTorch CPU).
-
-### One-command environments (recommended)
-
-For a fully reproducible environment (including bedtools), use the provided conda
-files instead of the manual steps above — see `INSTALL.md` for the driver/version
-notes:
-
-```bash
-conda env create -f environment-cpu.yml      # CPU
-conda env create -f environment-gpu.yml      # GPU (RAPIDS 24.12)
-```
+`pip install sampledisco` alone gives the core pipeline; the extras `[glue]`, `[maxfuse]`
+and `[all]` add scGLUE and MaxFuse. GPU acceleration runs only with `use_gpu: true` in the
+config (otherwise, or when RAPIDS is missing, the CPU path runs). See `INSTALL.md` for the
+version pins, driver notes and troubleshooting.

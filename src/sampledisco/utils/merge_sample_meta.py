@@ -9,12 +9,13 @@ def merge_sample_metadata(
     verbose: bool = True,
 ) -> AnnData:
     """
-    Merge sample-level metadata (CSV file) into AnnData.obs, then ensure the
-    join-key column is named 'sample'.
+    Merge sample-level metadata (CSV file) into AnnData.obs, then ensure a
+    'sample' column exists.
 
     The join is a left join on ``sample_column``. Overlapping columns in
     ``adata.obs`` are dropped in favour of the metadata file's version.
-    If ``sample_column != 'sample'``, the column is renamed after the join.
+    If ``sample_column != 'sample'``, it is copied to 'sample' after the join
+    and kept under its own name.
 
     Parameters
     ----------
@@ -80,10 +81,11 @@ def merge_sample_metadata(
 
     if sample_column != "sample":
         if sample_column in adata.obs.columns:
+            # Also expose the key as 'sample', but keep the caller's column:
+            # preprocessing keeps using `sample_column` after the merge.
             adata.obs["sample"] = adata.obs[sample_column]
-            adata.obs = adata.obs.drop(columns=[sample_column])
             if verbose:
-                print(f"   🔄 Renamed '{sample_column}' ➝ 'sample'")
+                print(f"   🔄 Copied '{sample_column}' ➝ 'sample' (kept '{sample_column}')")
     
     added_cols = adata.obs.shape[1] - original_cols
     total_cells = adata.obs.shape[0]

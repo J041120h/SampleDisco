@@ -26,8 +26,12 @@ __all__ = ["wrapper", "compute_sample_embedding", "predict_phenotype", "transfer
 def __getattr__(name: str):
     # PEP 562 lazy attribute access — defer heavy imports to first use.
     if name == "wrapper":
-        from sampledisco.wrapper.wrapper import wrapper
-        return wrapper
+        # Return the (callable) ``sampledisco.wrapper`` subpackage, not the function:
+        # importing any of its submodules rebinds this attribute to the package, so
+        # returning the function here made ``from sampledisco import wrapper`` yield
+        # a non-callable module. Calling the package runs wrapper.wrapper.wrapper.
+        import importlib
+        return importlib.import_module("sampledisco.wrapper")
     if name == "compute_sample_embedding":
         from sampledisco.sample_embedding import compute_sample_embedding
         return compute_sample_embedding

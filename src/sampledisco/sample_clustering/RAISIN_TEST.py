@@ -410,6 +410,24 @@ def plot_journal_dotplot(
     plt.close()
 
 
+def _failgroups_hit(fit, kZ, group):
+    """Groups in fit['failgroup'] (variance not estimable, set to 0) whose variance
+    enters this contrast's variance, i.e. with a non-zero weight in k @ Z."""
+    fail = {str(g) for g in (fit.get('failgroup') or [])}
+    if not fail:
+        return []
+    w = np.abs(np.asarray(kZ, dtype=np.float64))
+    used = w > 1e-8 * max(w.max(), np.finfo(np.float64).tiny)
+    return sorted(str(g) for g in fail & set(np.asarray(group).astype(str)[used]))
+
+
+def _contrast_kZ(fit, contrast):
+    """k @ Z for a contrast, computed exactly as in raisintest."""
+    X = np.asarray(fit['X'], dtype=np.float64)
+    k = np.asarray(contrast, dtype=np.float64) @ np.linalg.pinv(X.T @ X) @ X.T
+    return k @ np.asarray(fit['Z'], dtype=np.float64)
+
+
 def raisintest(
     fit,
     coef: int = 2,
@@ -482,6 +500,21 @@ def raisintest(
         b = means @ k
         
         kZ = k @ Z
+        bad = _failgroups_hit(fit, kZ, group)
+        if bad:
+            # A zero (non-estimable) variance would make every gene look significant.
+            warnings.warn(
+                f"[RAISIN] contrast uses group(s) {bad} whose variance could not be "
+                f"estimated (zero residual df, e.g. a single sample); stat/pvalue/FDR "
+                f"are set to NaN.", RuntimeWarning, stacklevel=2)
+            nan = np.full(G, np.nan)
+            res = pd.DataFrame({'Foldchange': b, 'stat': nan, 'pvalue': nan, 'FDR': nan},
+                               index=gene_names)
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+                res.to_csv(os.path.join(output_dir, "raisin_results.csv"))
+            return res
+
         sigma2_by_group = np.zeros((G, len(group)))
         for i, g in enumerate(group):
             if g in sigma2_columns:
@@ -649,6 +682,15 @@ def run_pairwise_tests(
     if verbose:
         print(f"Starting pairwise comparisons. Found {len(pairs)} pairs.")
 
+    failgroups = sorted({str(g) for g in (fit.get('failgroup') or [])})
+    if failgroups:
+        warnings.warn(
+            f"[RAISIN] Variance could not be estimated for group(s) {failgroups} (zero "
+            f"residual degrees of freedom, e.g. a single-sample group) and was set to 0. "
+            f"Comparisons that use these groups would be badly overconfident, so they are "
+            f"skipped (marked FAILED) and report no significant genes.",
+            RuntimeWarning, stacklevel=2)
+
     results_summary = {}
     all_results = {}
     failed_comparisons = {}
@@ -681,6 +723,19 @@ def run_pairwise_tests(
         contrast = np.zeros(len(x_cols))
         contrast[idx_g1] = 1
         contrast[idx_g2] = -1
+
+        bad = (_failgroups_hit(fit, _contrast_kZ(fit, contrast), fit['group'])
+               if failgroups else [])
+        if bad:
+            reason = (f"variance not estimable for group(s) {bad} (zero residual df, "
+                      f"e.g. a single sample); not tested")
+            print(f"Skipping {comp_name}: {reason}.")
+            failed_comparisons[comp_name] = f"skipped: {reason}"
+            if output_dir:
+                os.makedirs(sub_dir, exist_ok=True)
+                with open(os.path.join(sub_dir, "FAILED"), "w") as fh:
+                    fh.write(f"skipped: {reason}\n")
+            continue
 
         try:
             res = raisintest(

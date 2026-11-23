@@ -1,8 +1,8 @@
 # SampleDisco core (CPU) dependencies. PyTorch is installed as a dependency of harmonypy 0.2.0.
-# The deep-learning stack (scglue, harmony-pytorch, a CUDA build of torch) and RAPIDS GPU
-# acceleration are NOT installed here — they're OS/driver-specific and you
-# install them yourself (see the Installation page). SampleDisco falls back to
-# the CPU path when they are absent.
+# scGLUE/harmony-pytorch and MaxFuse are optional extras
+# (pip install "sampledisco[all]", see pyproject.toml). A CUDA build of torch and RAPIDS
+# GPU acceleration are NOT installed here — they're OS/driver-specific (see INSTALL.md,
+# environment-gpu.yml). SampleDisco falls back to the CPU path when they are absent.
 numpy>=1.23
 pandas>=1.5
 scipy>=1.9
@@ -19,6 +19,7 @@ harmonypy==0.2.0   # the version used for the published results; it requires tor
 python-igraph>=0.10
 leidenalg>=0.9
 networkx>=3.0
+pynndescent>=0.5.13,<0.7   # 0.7 (and umap-learn 0.6, which needs it) break sc.pp.neighbors on >~8k cells
 POT>=0.9
 pygam>=0.9
 numba>=0.57
@@ -33,6 +34,6 @@ pyensembl>=2.3
 # cluster-DGE (RAISIN) — both on the live downstream path
 combat>=0.3
 adjustText>=1.0
-# NOTE: scGLUE (only for training GLUE from scratch) is NOT a dependency here —
-# install it yourself from PyPI (`pip install scglue`), never `conda install -c
-# bioconda scglue` — the bioconda recipe caps numpy<1.22 and breaks the stack.
+# NOTE: scGLUE (only for training GLUE from scratch) is the [glue] extra, not a core
+# dependency — install it from PyPI (`pip install "sampledisco[glue]"`), never `conda
+# install -c bioconda scglue` — the bioconda recipe caps numpy<1.22 and breaks the stack.

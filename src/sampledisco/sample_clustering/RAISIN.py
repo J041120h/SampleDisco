@@ -200,6 +200,12 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
     return adata_corrected
 
 
+# Worker count for n_jobs None/-1: the CPU-affinity/cgroup mask (not the node-wide
+# core count, which over-subscribes shared nodes and multiplies ComBat's peak
+# memory), capped at SLURM_CPUS_PER_TASK. Shared with utils.harmony_compat.
+from sampledisco.utils.cpus import resolve_n_jobs as _resolve_n_jobs
+
+
 def raisinfit(
     adata,
     sample_col,
@@ -277,14 +283,7 @@ def raisinfit(
     # -----------------------------------------------------------------
     #  Setup
     # -----------------------------------------------------------------
-    if n_jobs in (None, -1):
-        # Respect the CPU-affinity/cgroup mask (SLURM, containers, cgroups) rather
-        # than the node-wide core count — the latter over-subscribes on shared
-        # nodes and multiplies peak memory (ComBat), causing OOM kills.
-        try:
-            n_jobs = len(os.sched_getaffinity(0))
-        except AttributeError:  # sched_getaffinity is Linux-only
-            n_jobs = cpu_count()
+    n_jobs = _resolve_n_jobs(n_jobs)
     if verbose:
         print(f"Using {n_jobs} CPU cores")
 

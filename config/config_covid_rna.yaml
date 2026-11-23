@@ -93,7 +93,7 @@ rna_trajectory_visualization_label:
 rna_cca_pvalue: true
 rna_tscan_origin:
 rna_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
-rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+rna_tscan_pseudotime_mode: "rank"  # "rank" or "distance"
 
 # --- Sample Distance Parameters ---
 rna_sample_distance_methods:
@@ -214,7 +214,7 @@ atac_trajectory_visualization_label:
 atac_cca_pvalue: false
 atac_tscan_origin:
 atac_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
-atac_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+atac_tscan_pseudotime_mode: "rank"  # "rank" or "distance"
 
 # --- Sample Distance Parameters ---
 atac_sample_distance_methods:
@@ -385,7 +385,7 @@ multiomics_n_cca_pcs: 2
 multiomics_cca_pvalue: false
 multiomics_tscan_origin:
 multiomics_tscan_n_clusters:       # int; null lets TSCAN auto-select via BIC (2-20)
-multiomics_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+multiomics_tscan_pseudotime_mode: "rank"  # "rank" or "distance"
 
 # --- Sample Distance Parameters ---
 multiomics_sample_distance_methods:

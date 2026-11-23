@@ -2,7 +2,7 @@
 # SampleDisco — DEMO CONFIG (Zenodo tutorial data)
 # =============================================================================
 # Ready-to-run config for the demo datasets published at
-#   https://doi.org/10.5281/zenodo.20988712   (concept DOI — always resolves to the latest version)
+#   https://doi.org/10.5281/zenodo.22549610   (concept DOI — always resolves to the latest version)
 # Quick start (run from a folder that contains ./data/test_RNA.h5ad and
 # ./data/test_ATAC.h5ad — see the "Demo data" tutorial page):
 #   sampledisco -m complex --config <this-file>.yaml
@@ -59,7 +59,7 @@ rna_pseudo_adata_path:
 # --- Common Column Names ---
 rna_sample_col: "sample"
 rna_sample_level_batch_col: "batch"
-rna_celltype_col: "cell_type"   # where de-novo cluster labels are written (existing_cell_types:false). The demo .h5ad's precomputed labels are in 'celltype' — set this to "celltype" only if you flip existing_cell_types:true.
+rna_celltype_col: "cell_type"   # existing labels to start from (existing_cell_types:true) and the label column used when cell typing is off. Cell typing always writes obs['cell_type'], which later stages then use. The demo .h5ad's precomputed labels are in 'celltype' — set this to "celltype" only if you flip existing_cell_types:true.
 
 # --- Preprocessing Parameters ---
 rna_min_cells: 100
@@ -108,7 +108,7 @@ rna_trajectory_visualization_label:
 rna_cca_pvalue: false
 rna_tscan_origin:
 rna_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
-rna_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+rna_tscan_pseudotime_mode: "rank"  # "rank" or "distance"
 
 # --- Sample Distance Parameters ---
 rna_sample_distance_methods:
@@ -230,7 +230,7 @@ atac_trajectory_visualization_label:
 atac_cca_pvalue: false
 atac_tscan_origin:
 atac_tscan_n_clusters: 3  # int; null lets TSCAN auto-select via BIC (2-20)
-atac_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+atac_tscan_pseudotime_mode: "rank"  # "rank" or "distance"
 
 # --- Sample Distance Parameters ---
 atac_sample_distance_methods:
@@ -399,7 +399,7 @@ multiomics_n_cca_pcs: 5
 multiomics_cca_pvalue: false
 multiomics_tscan_origin:
 multiomics_tscan_n_clusters:       # int; null lets TSCAN auto-select via BIC (2-20)
-multiomics_tscan_pseudotime_mode: "rank"  # "rank" or "projection"
+multiomics_tscan_pseudotime_mode: "rank"  # "rank" or "distance"
 
 # --- Sample Distance Parameters ---
 multiomics_sample_distance_methods:
