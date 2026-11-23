@@ -2,7 +2,7 @@
 # ONE environment that runs every part of the package, with GPU acceleration.
 #
 #   conda env create -f environment-gpu.yml && conda activate sampledisco-gpu
-#   pip install --no-deps rapids-singlecell==0.13.1 sampledisco==0.6.0
+#   pip install --no-deps rapids-singlecell==0.13.1 sampledisco==0.6.1
 #
 # (Creating it on a machine without a GPU? Prefix the first command with
 #  CONDA_OVERRIDE_CUDA=12.5.)
@@ -99,5 +99,5 @@ dependencies:
       - maxfuse==0.0.2         # RNA + protein/flow integration (needs anndata<0.13)
       # scikit-misc from pip: conda-forge's py3.10 builds report version 0.0.0 to pip
       - scikit-misc
-      # NOTE: rapids-singlecell==0.13.1 and sampledisco==0.6.0 are installed by the
+      # NOTE: rapids-singlecell==0.13.1 and sampledisco==0.6.1 are installed by the
       # post-create command at the top (pip --no-deps; see there for why).

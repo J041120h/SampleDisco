@@ -143,7 +143,10 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
     Returns
     -------
     AnnData
-        New AnnData object with batch-corrected expression in .X
+        New AnnData object with batch-corrected expression in .X. When ``adata.raw``
+        is present, ComBat runs on ``adata.raw`` and the result covers the raw genes,
+        with no ``.raw`` (raisinfit reads ``.raw`` first, which would otherwise
+        replace the corrected values with the uncorrected ones).
     """
     try:
         from combat.pycombat import pycombat
@@ -157,7 +160,8 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
         print(f"\n===== Applying ComBat batch correction =====")
         print(f"Batch variable: {batch_col}")
 
-    if adata.raw is not None and adata.raw.X is not None:
+    use_raw = adata.raw is not None and adata.raw.X is not None
+    if use_raw:
         _rawX = adata.raw.X.get() if hasattr(adata.raw.X, "get") else adata.raw.X
         expr = _rawX.toarray() if hasattr(_rawX, "toarray") else np.array(_rawX)
         gene_names = adata.raw.var_names
@@ -185,13 +189,19 @@ def apply_combat_correction(adata, batch_col, group_col=None, sample_col=None, v
 
     corrected_expr = pycombat(expr_df, batch=batch, mod=mod)
 
-    adata_corrected = adata.copy()
-    adata_corrected.X = corrected_expr.T.values
-
-    if adata.raw is not None:
+    if use_raw:
+        # ComBat ran on the raw genes: return them in .X (they may differ from
+        # adata.var) and leave .raw out so the fit uses the corrected values.
+        adata_corrected = adata.raw.to_adata()
+        adata_corrected.X = corrected_expr.T.values
         adata_corrected.layers["original_raw"] = adata.raw.X.copy()
     else:
-        adata_corrected.layers["original"] = expr
+        adata_corrected = adata.copy()
+        adata_corrected.X = corrected_expr.T.values
+        # Keep the original in its input format: a sparse input stays sparse
+        # (`expr` is the dense copy made for pycombat).
+        from scipy.sparse import issparse
+        adata_corrected.layers["original"] = _X.copy() if issparse(_X) else expr
 
     if verbose:
         print("ComBat correction complete")
@@ -370,7 +380,9 @@ def raisinfit(
             print("Using raw counts from adata.raw.X")
     else:
         _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
-        expr = _X.toarray() if hasattr(_X, "toarray") else np.array(_X)
+        # asarray: no second dense copy when .X is already dense (e.g. after ComBat);
+        # expr is only read below.
+        expr = _X.toarray() if hasattr(_X, "toarray") else np.asarray(_X)
         gene_names = np.array(adata.var_names)
         if verbose:
             print("Using counts from adata.X")

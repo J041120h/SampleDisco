@@ -132,16 +132,18 @@ def _gpu_harmonize(
     try:
         import harmonypy as hm
         from sampledisco.utils.harmony_compat import harmonypy_cpu_kwargs
+        from sampledisco.utils.cpus import single_threaded
         nclust = max(2, min(meta.nunique().max() if isinstance(batch_keys, list)
                             else len(set(meta["batch"])),
                             n_units // 2))
-        ho = hm.run_harmony(np.asarray(Fp, dtype=np.float32), meta,
-                            batch_keys,  # str OR list[str]
-                            nclust=nclust,
-                            max_iter_harmony=30,
-                            random_state=seed,
-                            # CPU on purpose (see docstring): same as the CPU path
-                            **harmonypy_cpu_kwargs(hm))
+        with single_threaded():   # bit-reproducible, as on the CPU path
+            ho = hm.run_harmony(np.asarray(Fp, dtype=np.float32), meta,
+                                batch_keys,  # str OR list[str]
+                                nclust=nclust,
+                                max_iter_harmony=30,
+                                random_state=seed,
+                                # CPU on purpose (see docstring): same as the CPU path
+                                **harmonypy_cpu_kwargs(hm))
         Zc = ho.Z_corr
         if Zc.shape[0] != n_units:
             Zc = Zc.T
@@ -186,6 +188,8 @@ def compute_sample_embedding(
 ) -> AnnData:
     """GPU compute_sample_embedding — see CPU version for full docstring."""
     start_time = time.time() if verbose else None
+    from sampledisco.sample_embedding.blocks import check_batch_method
+    check_batch_method(batch_method)   # fail before any heavy work
 
     if cluster_emb_key is not None:
         warnings.warn("cluster_emb_key= is deprecated and will be removed in 1.0; "
@@ -344,7 +348,8 @@ def compute_sample_embedding(
         "use_rmd": bool(use_rmd),
         "rmd_weight": float(rmd_weight),
         "block_weights": list(map(float, weights)),
-        "pca_components": int(pca_components),
+        "pca_components": int(emb_df.shape[1]),        # used (capped at n_units - 1)
+        "pca_components_requested": int(pca_components),
         "batch_method": str(batch_method),
         "comp_emb_key": str(comp_key),
         "rmd_emb_key": str(rmd_key),

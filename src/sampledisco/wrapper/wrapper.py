@@ -509,11 +509,48 @@ def downstream_analysis(
                 show_sample_names=multiomics_show_sample_names,
                 force_data_type=multiomics_force_data_type,
                 verbose=verbose,
+                show_default=True,
             )
             sf["embedding_visualization"] = True
             print("Embedding visualization completed successfully")
         except Exception as exc:
             print(f"[embedding_visualization] failed: {exc}")
+        # Modality-highlight plots, in addition to the defaults, when a target
+        # modality is configured: colour by multiomics_color_col, else by the
+        # first visualization/grouping column present in pseudo_adata.obs.
+        if multiomics_target_modality:
+            _groups = []
+            for _g in (multiomics_visualization_grouping_column, grouping_columns):
+                _groups += [_g] if isinstance(_g, str) else list(_g or [])
+            _hl_col = multiomics_color_col or next(
+                (c for c in _groups if c in pseudo_adata.obs.columns), None)
+            if _hl_col is None:
+                print("[embedding_visualization] multiomics_target_modality is set but no "
+                      "colour column (multiomics_color_col or a grouping column); "
+                      "skipping the modality-highlight plots.")
+            else:
+                try:
+                    visualize_multimodal_embedding(
+                        adata=pseudo_adata,
+                        modality_col=multiomics_modality_col,
+                        color_col=_hl_col,
+                        target_modality=multiomics_target_modality,
+                        expression_key=multiomics_sample_embedding_key,
+                        proportion_key=multiomics_sample_embedding_key,
+                        figsize=multiomics_figsize,
+                        point_size=multiomics_point_size,
+                        alpha=multiomics_alpha,
+                        colormap=multiomics_colormap,
+                        output_dir=output_dir,
+                        show_sample_names=multiomics_show_sample_names,
+                        force_data_type=multiomics_force_data_type,
+                        verbose=verbose,
+                        show_default=False,
+                    )
+                    print(f"Modality-highlight plots ({multiomics_target_modality}, "
+                          f"coloured by {_hl_col}) completed")
+                except Exception as exc:
+                    print(f"[embedding_visualization] modality-highlight plots failed: {exc}")
 
     # ==================== DIMENSION ASSOCIATION ANALYSIS ====================
     if dimension_association_analysis:

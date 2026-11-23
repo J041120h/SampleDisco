@@ -1,5 +1,5 @@
-# SampleDisco core (CPU) dependencies. PyTorch is installed as a dependency of harmonypy 0.2.0.
-# scGLUE/harmony-pytorch and MaxFuse are optional extras
+# SampleDisco core (CPU) dependencies. PyTorch is installed as a dependency of harmonypy 0.2.0
+# and harmony-pytorch. scGLUE and MaxFuse are optional extras
 # (pip install "sampledisco[all]", see pyproject.toml). A CUDA build of torch and RAPIDS
 # GPU acceleration are NOT installed here — they're OS/driver-specific (see INSTALL.md,
 # environment-gpu.yml). SampleDisco falls back to the CPU path when they are absent.
@@ -16,7 +16,8 @@ scanpy>=1.11
 anndata>=0.10
 muon>=0.1
 harmonypy==0.2.0   # the version used for the published results; it requires torch
-python-igraph>=0.10
+harmony-pytorch==0.1.8   # cell-level Harmony (reproducible with fixed n_jobs); same backend as the conda envs
+igraph>=0.10   # the PyPI name since 0.10 (conda-forge's python-igraph registers as igraph)
 leidenalg>=0.9
 networkx>=3.0
 pynndescent>=0.5.13,<0.7   # 0.7 (and umap-learn 0.6, which needs it) break sc.pp.neighbors on >~8k cells

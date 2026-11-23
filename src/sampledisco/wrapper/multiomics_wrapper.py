@@ -185,8 +185,12 @@ def multiomics_wrapper(
 
     Returns dict with adata, sample_adata, status_flags.
     """
-    if any(var is None for var in [rna_file, atac_file, multiomics_output_dir]):
-        raise ValueError("rna_file, atac_file, and multiomics_output_dir must all be provided")
+    if multiomics_output_dir is None:
+        raise ValueError("multiomics_output_dir must be provided")
+    # rna_file / atac_file feed only the GLUE integration step; with integration=False
+    # the run starts from integrated_h5ad_path (or this output dir's union, STEP 2).
+    if integration and (rna_file is None or atac_file is None):
+        raise ValueError("rna_file and atac_file must be provided when integration=True")
 
     default_status = {
         "glue_integration": False,
@@ -300,9 +304,9 @@ def multiomics_wrapper(
         print(
             "WARNING: integration=False — per-modality preprocessed h5ads "
             f"({rna_pre_path}, {atac_pre_path}) will NOT be (re)generated. "
-            "propagate_cell_type and downstream DGE/RAISIN steps that depend "
-            "on these files will be silently skipped unless they already "
-            "exist on disk at those paths."
+            "Unless they already exist at those paths, propagate_cell_type is "
+            "skipped, and multi-omics trajectory DGE / cluster DGE (RAISIN) are "
+            "skipped (a WARNING naming the missing file follows if they are enabled)."
         )
 
     # Load the embedding-only union (built in STEP 1 by build_embedding_union):

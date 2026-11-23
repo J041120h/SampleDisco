@@ -66,7 +66,10 @@ def build_sample_adata(adata, sample_col: str = "sample",
     """Materialize an in-memory sample-level AnnData from a cell-level adata.
 
     Reads the sample-level embedding from ``adata.uns['X_DR_sample']`` and
-    aggregates per-unit metadata from ``adata.obs``. The result is suitable
+    aggregates per-unit metadata from ``adata.obs``: only columns that are
+    constant within every unit (ignoring NaN) are kept, with that value; columns
+    that vary within a unit (per-cell values) are dropped and listed in one log
+    line. The result is suitable
     for the downstream consumers (sample_distance, sample_association,
     sample_trajectory, etc.) that expect one row per sample (or per
     sample × modality for multi-omics).
@@ -103,12 +106,28 @@ def _aggregate_obs(adata, sample_col: str, modality_col: Optional[str],
         obs["__modality__"] = ""
     grouped = obs.groupby(["__sample__", "__modality__"], observed=True)
     rec = {}
+    dropped = []
     for col in obs.columns:
         if col in ("__sample__", "__modality__"):
+            continue
+        # Keep only unit-level columns: constant within every unit, ignoring NaN.
+        # Per-cell columns (n_genes, total_counts, cell_type, ...) would otherwise
+        # carry an arbitrary first cell's value and be tested as sample covariates.
+        try:
+            constant = bool((grouped[col].nunique(dropna=True) <= 1).all())
+        except TypeError:   # unhashable values
+            constant = False
+        if not constant:
+            dropped.append(col)
             continue
         rec[col] = grouped[col].agg(
             lambda s: s.dropna().iloc[0] if s.dropna().size else np.nan
         )
+    if dropped:
+        unit = ("sample x modality unit"
+                if modality_col is not None and modality_col in adata.obs.columns else "sample")
+        print(f"[build_sample_adata] dropped {len(dropped)} obs column(s) that vary within "
+              f"a {unit} (per-cell values): {dropped}")
     if rec:
         agg = pd.concat(rec, axis=1)
     else:
@@ -184,6 +203,8 @@ def compute_sample_embedding(
     still written; `.uns['X_DR_sample']` then lives only in memory and in the CSV).
     """
     start_time = time.time() if verbose else None
+    from sampledisco.sample_embedding.blocks import check_batch_method
+    check_batch_method(batch_method)   # fail before any heavy work
 
     if cluster_emb_key is not None:
         warnings.warn("cluster_emb_key= is deprecated and will be removed in 1.0; "
@@ -319,7 +340,8 @@ def compute_sample_embedding(
         "use_rmd": bool(use_rmd),
         "rmd_weight": float(rmd_weight),
         "block_weights": list(map(float, weights)),
-        "pca_components": int(pca_components),
+        "pca_components": int(emb_df.shape[1]),        # used (capped at n_units - 1)
+        "pca_components_requested": int(pca_components),
         "batch_method": str(batch_method),
         "comp_emb_key": str(comp_key),
         "rmd_emb_key": str(rmd_key),

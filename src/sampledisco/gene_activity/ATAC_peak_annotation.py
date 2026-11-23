@@ -12,7 +12,7 @@ import anndata as ad
 import pyensembl
 from tqdm import tqdm
 
-warnings.filterwarnings("ignore")
+from sampledisco.utils.quiet import quiet_warnings  # scoped; no module-level filter
 
 def parse_peak(peak_str):
     """Parse a 'chr-start-end' style peak string into tuple(chrom, start, end)."""
@@ -113,6 +113,7 @@ def process_chromosome_batch(args):
     return overlaps
 
 
+@quiet_warnings
 def annotate_atac_peaks_parallel(
     atac_file_path,
     *,

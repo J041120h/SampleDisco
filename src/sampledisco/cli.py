@@ -49,11 +49,13 @@ def validate_config(config, func):
     for key in valid_params:
         if key not in config and key not in OPTIONAL_KEYS:
             raise ValueError(f"Missing required parameter in config: '{key}'")
-    from sampledisco.sample_embedding.blocks import check_rmd_weight
+    from sampledisco.sample_embedding.blocks import check_batch_method, check_rmd_weight
     for key in config:
-        if key.endswith("_sample_embedding_rmd_weight"):
+        check = (check_rmd_weight if key.endswith("_sample_embedding_rmd_weight") else
+                 check_batch_method if key.endswith("_sample_embedding_batch_method") else None)
+        if check is not None:
             try:
-                check_rmd_weight(config[key])
+                check(config[key])
             except ValueError as e:
                 raise ValueError(f"Invalid value for '{key}': {e}") from None
 

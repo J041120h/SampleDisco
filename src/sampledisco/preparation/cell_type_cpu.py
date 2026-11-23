@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist
-from scipy.cluster.hierarchy import fcluster
+from sampledisco.utils.linkage_cut import cut_linkage
 import scanpy as sc
 
 from sampledisco.visualization.visualization_helper import generate_umap_visualizations
@@ -55,6 +55,16 @@ def cell_types(
             print(f"{indent}[cell_types] Current number of cell types: {current_n_types}")
 
         if n_target_clusters is not None and current_n_types > n_target_clusters:
+            if _recursion_depth == 0:
+                # Only for user-supplied labels (depth 0); deeper calls merge Leiden overshoot.
+                import warnings
+                warnings.warn(
+                    f"[cell_types] existing_cell_types=True with n_target_clusters="
+                    f"{n_target_clusters} < {current_n_types} existing labels in "
+                    f"'{cell_type_column}': the labels are merged into {n_target_clusters} "
+                    f"groups by dendrogram (obs['cell_type']); the original labels stay in "
+                    f"'{cell_type_column}'. Set n_target_cell_clusters to null to keep them all.",
+                    UserWarning, stacklevel=2)
             if verbose:
                 print(f"{indent}[cell_types] Aggregating {current_n_types} → {n_target_clusters} using dendrogram")
 
@@ -150,7 +160,7 @@ def cell_types(
             preprocess_output_dir = os.path.join(output_dir, "preprocess")
             os.makedirs(preprocess_output_dir, exist_ok=True)
             cell_save_path = defined_output_path or os.path.join(preprocess_output_dir, "adata_preprocessed.h5ad")
-            adata.write(cell_save_path)
+            adata.write(cell_save_path, compression="gzip")  # as the preprocess write (sc.write)
             if verbose:
                 print(f"[cell_types] Saved {cell_save_path}")
 
@@ -177,7 +187,9 @@ def cell_type_dendrogram(adata, n_clusters, groupby="cell_type", cell_embedding_
     linkage_matrix = sch.linkage(centroid_distance_matrix, method="average")
 
     n_clusters_capped = min(n_clusters, cell_type_centroids.shape[0])
-    hierarchical_cluster_labels = fcluster(linkage_matrix, t=n_clusters_capped, criterion="maxclust")
+    # exactly n_clusters_capped groups (fcluster "maxclust" can return fewer); same
+    # partition and numbering as fcluster whenever it returned that many
+    hierarchical_cluster_labels = cut_linkage(linkage_matrix, n_clusters_capped)
     celltype_to_cluster_mapping = dict(zip(cell_type_centroids.index, map(str, hierarchical_cluster_labels)))
 
     adata.obs[f"{groupby}_original"] = adata.obs[groupby].copy()

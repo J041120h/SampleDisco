@@ -10,6 +10,7 @@ from muon import atac as ac
 from sampledisco.utils.harmony_compat import harmonize_embedding
 from sampledisco.utils.embedding_keys import COMP_KEY, LEGACY_COMP_KEY, write_comp_key
 from scipy.sparse import issparse
+from sampledisco.utils.cpus import single_threaded
 
 from sampledisco.utils.safe_save import safe_h5ad_write
 from sampledisco.utils.random_seed import set_global_seed
@@ -27,7 +28,10 @@ def _run_lsi_on_hvg(adata, n_comps, drop_first, hvg_col="highly_variable", out_k
     if hvg_mask.sum() < n_comps + 1:
         hvg_mask = np.ones(adata.n_vars, dtype=bool)
     sub = adata[:, hvg_mask].copy()
-    ac.tl.lsi(sub, n_comps=n_comps)
+    # One BLAS/OpenMP/torch thread: multi-threaded BLAS (e.g. MKL) reductions in the SVD made
+    # the LSI differ between identical runs, which Harmony then amplifies.
+    with single_threaded():
+        ac.tl.lsi(sub, n_comps=n_comps)
     if drop_first:
         sub.obsm["X_lsi"] = sub.obsm["X_lsi"][:, 1:]
         sub.varm["LSI"] = sub.varm["LSI"][:, 1:]

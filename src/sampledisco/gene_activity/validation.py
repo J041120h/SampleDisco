@@ -23,7 +23,7 @@ from scipy import stats as sp_stats
 from typing import Optional, List, Dict, Any
 from tqdm import tqdm
 import warnings
-warnings.filterwarnings('ignore')
+from sampledisco.utils.quiet import quiet_warnings  # scoped; no module-level filter
 
 import matplotlib
 matplotlib.use("Agg")
@@ -96,6 +96,7 @@ def _choose_unified_key(rna_ids: pd.DataFrame, atac_ids: pd.DataFrame, prefer: s
     return "ensembl" if ens_overlap >= sym_overlap else "symbol"
 
 
+@quiet_warnings
 def unify_and_align_genes(
     adata_rna: sc.AnnData,
     adata_atac: sc.AnnData,
@@ -338,6 +339,7 @@ def _aggregate_and_correlate_cpu(
 # MAIN VALIDATION FUNCTION
 # =============================================================================
 
+@quiet_warnings
 def validate_gene_activity(
     adata_rna: sc.AnnData,
     adata_atac: sc.AnnData,

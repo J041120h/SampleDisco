@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sampledisco"
-version = "0.6.0"
+version = "0.6.1"
 description = "Cross-omics, cross-condition sample embedding for single-cell data (RNA, ATAC, multi-omics)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,15 +37,14 @@ dynamic = ["dependencies"]
 maxfuse = ["maxfuse==0.0.2", "anndata<0.13"]
 # scGLUE 0.3.2 imports anndata._core.sparse_dataset.SparseDataset, removed in
 # anndata 0.11, and its training calls ReduceLROnPlateau(verbose=...), removed in
-# torch 2.7 (its own metadata says only anndata>=0.7, torch>=1.8). harmony-pytorch is
-# the torch Harmony backend used by the RNA+ATAC gene-activity path.
-glue = ["scglue==0.3.2", "harmony-pytorch==0.1.8", "anndata<0.11", "torch<2.7"]
+# torch 2.7 (its own metadata says only anndata>=0.7, torch>=1.8). harmony-pytorch is a
+# core dependency since 0.6.1 (requirements.txt).
+glue = ["scglue==0.3.2", "anndata<0.11", "torch<2.7"]
 # Same as glue; the name used in older docs and in sampledisco.utils.harmony_compat.
-multiomics = ["scglue==0.3.2", "harmony-pytorch==0.1.8", "anndata<0.11", "torch<2.7"]
+multiomics = ["scglue==0.3.2", "anndata<0.11", "torch<2.7"]
 all = [
     "maxfuse==0.0.2",
     "scglue==0.3.2",
-    "harmony-pytorch==0.1.8",
     "anndata<0.11",
     "torch<2.7",
 ]

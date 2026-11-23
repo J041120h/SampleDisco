@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist
-from scipy.cluster.hierarchy import fcluster
+from sampledisco.utils.linkage_cut import cut_linkage
 import scanpy as sc
 import time
 import matplotlib.pyplot as plt
@@ -206,9 +206,62 @@ def standardize_cell_type_column(adata, verbose=True):
         print(f"[standardize] Final cell types (n={unique_types}): {sorted(adata.obs['cell_type'].cat.categories.tolist())}")
 
 
+def cell_type_dendrogram_atac(
+    adata,
+    n_clusters,
+    groupby='cell_type',
+    method='average',
+    metric='euclidean',
+    distance_mode='centroid',
+    use_rep=None,
+    num_DMs=20,
+    verbose=True
+):
+    """Aggregate fine clusters into n_clusters via hierarchical clustering of their
+    centroids in use_rep. CPU port of ATAC_cell_type_gpu.cell_type_dendrogram_atac_gpu
+    (same centroids, linkage, cut into exactly n_clusters and outputs: obs[groupby], obs[f'{groupby}_original'],
+    uns['cell_type_linkage'], uns['cluster_mapping'])."""
+    if n_clusters < 1:
+        raise ValueError("n_clusters must be >= 1")
+    if groupby not in adata.obs.columns:
+        raise ValueError(f"The groupby key '{groupby}' is not present in adata.obs.")
+    if distance_mode != 'centroid':
+        raise ValueError(f"Unsupported distance_mode '{distance_mode}' for dimension reduction approach.")
+    use_rep = resolve_comp_key(adata, use_rep, fallbacks=('X_lsi',),
+                               context="cell_type_dendrogram_atac")
+    dim_data = np.asarray(adata.obsm[use_rep])
+    if num_DMs is not None and 'DM' in use_rep:
+        dim_data = dim_data[:, :num_DMs]
+
+    df_dims = pd.DataFrame(dim_data, index=adata.obs_names)
+    df_dims[groupby] = adata.obs[groupby].values
+    centroids = df_dims.groupby(groupby).mean()
+    original_n_types = centroids.shape[0]
+    Z = sch.linkage(pdist(centroids.values, metric=metric), method=method)
+    adata.uns['cell_type_linkage'] = Z
+    if n_clusters > original_n_types:
+        n_clusters = original_n_types
+
+    cluster_labels = cut_linkage(Z, n_clusters)   # exactly n_clusters (fcluster maxclust can return fewer)
+    celltype_to_cluster = dict(zip(centroids.index, [str(label) for label in cluster_labels]))
+    adata.obs[f'{groupby}_original'] = adata.obs[groupby].copy()
+    adata.obs[groupby] = adata.obs[groupby].map(celltype_to_cluster).astype('category')
+
+    cluster_mapping = {}
+    for original_type, new_cluster in celltype_to_cluster.items():
+        cluster_mapping.setdefault(new_cluster, []).append(original_type)
+    adata.uns['cluster_mapping'] = cluster_mapping
+    if verbose:
+        print(f"[cell_type_dendrogram_atac] {original_n_types} cell types -> "
+              f"{len(cluster_mapping)} clusters ({method} linkage, {metric} on {use_rep} centroids)")
+        for cluster_id, original_types in sorted(cluster_mapping.items()):
+            print(f"  Cluster {cluster_id}: {', '.join(map(str, sorted(original_types)))}")
+    return adata
+
+
 def cell_types_atac(
-    adata, 
-    cell_column='cell_type', 
+    adata,
+    cell_column='cell_type',
     existing_cell_types=False,
     n_target_clusters=None,
     umap=False,

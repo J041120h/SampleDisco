@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.6.1
+
+Reproducible runs, faster trajectory DGE, and fixes for the remaining known issues. Config
+files are unchanged and validate as before.
+
+**Reproducibility**
+
+- Rerunning the same input on the same kind of machine (CPU type and CPU count) now gives
+  bit-identical results, whichever way the package was installed. Results still differ
+  slightly between CPU generations (for example AVX2 vs AVX-512), because the
+  floating-point arithmetic differs.
+  - **harmony-pytorch 0.1.8 is now a core dependency**, so every install, pip or conda,
+    runs cell-level Harmony with the same implementation. harmonypy remains the fallback.
+  - The sample-level Harmony (harmonypy), the RNA PCA and the ATAC LSI run single-threaded.
+    Multithreaded BLAS made them differ between identical runs. The extra time on the demo
+    data is negligible.
+- **Trajectory DGE p-values no longer depend on the number of workers.** One pyGAM term
+  object was shared across genes and kept the spline knots of the first fit, so the
+  serial run and `n_jobs=8` disagreed on about 300 of 10,000 genes (p-value differences
+  up to 0.26). The terms are now built for each gene. On the demo, no gene changes
+  significance.
+
+**Performance**
+
+- Each trajectory-DGE (GAM) worker uses one BLAS thread. With MKL (the conda environments)
+  every worker used to start as many threads as the job had CPUs; on AMD CPUs this made
+  the stage up to 20× slower (about 220 s → 12 s on the demo).
+- Worker pools (GAM, k-means threads) are capped at the Slurm allocation.
+- The cell-typing step saves its h5ad gzip-compressed (RNA demo 718 MB → 208 MB, values
+  identical).
+- RAISIN no longer keeps dense copies of the expression matrix after ComBat.
+
+**Fixes**
+
+- **Merging cell types now always gives the requested number of types.** With scipy 1.14
+  (the version in the conda environments), `fcluster(..., criterion="maxclust")` can return
+  fewer clusters than asked for. On the ATAC demo, 9 Leiden clusters merged to 7 types
+  instead of 8. Results are unchanged wherever the old merge already gave the requested
+  number, as in the RNA demo.
+- **`build_sample_adata` keeps only sample-level columns** (constant within each sample,
+  ignoring NaN), and logs which per-cell columns it drops. It used to copy the first
+  cell's value of every column, so dimension association tested per-cell columns such as
+  `n_genes` or `celltype` as if they were sample covariates.
+- **RAISIN with `.raw`:** the ComBat correction was discarded (same genes) or crashed
+  (more genes in `.raw`). The corrected values are now used.
+- **`cell_types_atac`** no longer fails with `NameError` when merging clusters.
+- **Gene activity (CPU path)** no longer fails on a missing import.
+- **Multi-omics:**
+  - `multiomics_target_modality` / `multiomics_color_col` now produce the
+    modality-highlight plots.
+  - `rna_file` / `atac_file` are no longer required when starting from a pre-integrated
+    file.
+- **GPU preprocessing** defaults `sample_level_batch_key` to `None`, as on CPU, so data
+  without a `batch` column no longer fails.
+- **`batch_method`** must be `"harmony"`, `"linear"` or `"none"`. Other values raise
+  instead of silently running Harmony.
+- **Warnings and messages:**
+  - A warning when existing cell-type labels will be merged to fewer
+    `*_n_target_cell_clusters`.
+  - Importing optional modules no longer switches off Python warnings.
+  - No "CuPy not available" message on import.
+- `uns['sample_embedding_params']['pca_components']` records the number of PCs used (at
+  most units − 1); the requested value is in `pca_components_requested`.
+- CCA resolution-selection p-values use `(1 + k) / (N + 1)`, like the CCA p-value.
+- The requirement on `python-igraph` is now `igraph`, the name conda-forge registers, so
+  `pip check` passes in the conda environments.
+- Tests: `tests/test_061_fixes.py`.
+
 ## 0.6.0
 
 One environment for the whole package, and fixes for every bug the rewritten tutorials hit.

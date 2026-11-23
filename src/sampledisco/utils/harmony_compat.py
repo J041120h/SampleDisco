@@ -1,11 +1,10 @@
-"""Harmony backend shim so PyTorch stays an optional dependency.
+"""Harmony backend shim for the cell-level Harmony passes.
 
-Prefers ``harmony-pytorch`` (fast, GPU-capable) when it — and therefore torch —
-is importable; otherwise falls back to the pure-NumPy ``harmonypy``. Behaviour
-with torch installed is identical to calling ``harmony.harmonize`` directly, so
-existing (torch) environments are unaffected. A core ``pip install sampledisco``
-runs Harmony on CPU via harmonypy; ``pip install sampledisco[multiomics]`` pulls
-torch and the faster harmony-pytorch is used automatically.
+Uses ``harmony-pytorch`` (a core dependency since 0.6.1, so pip and conda
+installs run the same implementation). With ``n_jobs`` fixed to the usable CPU
+count it is reproducible run to run. If it cannot be imported, falls back to
+``harmonypy`` run single-threaded (``utils.cpus.single_threaded``), since
+harmonypy's PyTorch backend is not bit-reproducible with several threads.
 """
 from typing import Optional, Sequence, Union
 import numpy as np
@@ -45,10 +44,12 @@ def harmonize_embedding(
         from harmony import harmonize  # harmony-pytorch (needs torch)
     except ImportError:
         import harmonypy as hm
-        ho = hm.run_harmony(
-            X, obs, keys, max_iter_harmony=max_iter_harmony, random_state=seed,
-            **({} if use_gpu else harmonypy_cpu_kwargs(hm)),
-        )
+        from sampledisco.utils.cpus import single_threaded
+        with single_threaded():   # reproducible; restores the thread settings after
+            ho = hm.run_harmony(
+                X, obs, keys, max_iter_harmony=max_iter_harmony, random_state=seed,
+                **({} if use_gpu else harmonypy_cpu_kwargs(hm)),
+            )
         Z = ho.Z_corr
         if Z.shape[0] != X.shape[0]:  # harmonypy returns (n_dims x n_cells)
             Z = Z.T

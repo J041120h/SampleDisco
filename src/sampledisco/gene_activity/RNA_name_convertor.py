@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 import json
 
-warnings.filterwarnings("ignore")
+from sampledisco.utils.quiet import quiet_warnings  # scoped; no module-level filter
 
 
 def detect_gene_identifier_type(gene_list, sample_size=1000):
@@ -47,6 +47,7 @@ def detect_gene_identifier_type(gene_list, sample_size=1000):
         return 'mixed'
 
 
+@quiet_warnings
 def create_gene_mapping(ensembl_release, species="homo_sapiens", verbose=True):
     """Return (name_to_id, id_to_name, stats) from a pyensembl release."""
     if verbose:
@@ -100,6 +101,7 @@ def create_gene_mapping(ensembl_release, species="homo_sapiens", verbose=True):
     return name_to_id, id_to_name, stats
 
 
+@quiet_warnings
 def convert_rna_to_gene_ids(
     adata_path,
     ensembl_release,

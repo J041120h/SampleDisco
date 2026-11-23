@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Optional, List
 import warnings
-warnings.filterwarnings('ignore')
+from sampledisco.utils.quiet import quiet_warnings  # scoped; no module-level filter
 
 # Initialize RMM BEFORE importing cupy operations
 import rmm
@@ -291,6 +291,7 @@ def _aggregate_and_correlate_batched(
     return corrs, rna_sparsity, atac_sparsity
 
 
+@quiet_warnings
 def analyze_knn_aggregation_correlation_gpu(
     adata_rna: sc.AnnData,
     adata_atac: sc.AnnData,

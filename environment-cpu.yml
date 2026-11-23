@@ -73,4 +73,4 @@ dependencies:
       - harmony-pytorch==0.1.8
       - maxfuse==0.0.2         # RNA + protein/flow integration (needs anndata<0.13)
       # SampleDisco itself — keep this line last:
-      - sampledisco==0.6.0
+      - sampledisco==0.6.1

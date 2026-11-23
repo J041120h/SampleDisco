@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist
-from scipy.cluster.hierarchy import fcluster
+from sampledisco.utils.linkage_cut import cut_linkage
 import rapids_singlecell as rsc 
 import scanpy as sc
 from sklearn.neighbors import KNeighborsTransformer
@@ -268,7 +268,7 @@ def cell_types_atac_gpu(
             output_dir = os.path.join(output_dir, 'harmony')
             os.makedirs(output_dir, exist_ok=True)
             save_path = os.path.join(output_dir, 'adata_cell_atac.h5ad')
-            adata.write(save_path)
+            adata.write(save_path, compression="gzip")
             if verbose:
                 print(f"[cell_types_atac_gpu] Saved AnnData object to {save_path}")
         
@@ -355,7 +355,7 @@ def cell_type_dendrogram_atac_gpu(
     if verbose:
         print(f'=== Aggregating cell types into {n_clusters} clusters ===')
 
-    cluster_labels = fcluster(Z, t=n_clusters, criterion='maxclust')
+    cluster_labels = cut_linkage(Z, n_clusters)   # exactly n_clusters (fcluster maxclust can return fewer)
     actual_n_clusters = len(np.unique(cluster_labels))
     if verbose:
         print(f'Successfully created {actual_n_clusters} clusters')
@@ -423,6 +423,6 @@ def cell_type_assign_atac_gpu(adata_cluster, adata, Save=False, output_dir=None,
     if Save and output_dir:
         output_dir = os.path.join(output_dir, 'harmony')
         save_path = os.path.join(output_dir, 'adata_sample_atac.h5ad')
-        adata.write(save_path)  # saving in CPU-based .h5ad format
+        adata.write(save_path, compression="gzip")  # saving in CPU-based .h5ad format
         if verbose:
             print(f"[cell_types_atac_gpu] Saved AnnData object to {save_path}")

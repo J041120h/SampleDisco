@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import scipy.cluster.hierarchy as sch
 from scipy.spatial.distance import pdist
-from scipy.cluster.hierarchy import fcluster
+from sampledisco.utils.linkage_cut import cut_linkage
 import rapids_singlecell as rsc
 
 from sampledisco.visualization.visualization_helper import generate_umap_visualizations
@@ -211,7 +211,8 @@ def cell_type_dendrogram_gpu(adata, n_clusters, groupby="cell_type", cell_embedd
     linkage_matrix = sch.linkage(centroid_distance_matrix, method="average")
 
     n_clusters_capped = min(n_clusters, cell_type_centroids.shape[0])
-    hierarchical_cluster_labels = fcluster(linkage_matrix, t=n_clusters_capped, criterion="maxclust")
+    # exactly n_clusters_capped groups (fcluster "maxclust" can return fewer)
+    hierarchical_cluster_labels = cut_linkage(linkage_matrix, n_clusters_capped)
     celltype_to_cluster_mapping = dict(zip(cell_type_centroids.index, map(str, hierarchical_cluster_labels)))
 
     adata.obs[f"{groupby}_original"] = adata.obs[groupby].copy()

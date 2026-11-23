@@ -584,10 +584,15 @@ def fit_gam_models_for_genes(
     # which is only correct when pseudotime is the first column of X.
     assert spline_idx == 0, f"spline_term '{spline_term}' must be X's first column, got index {spline_idx}"
 
-    terms = s(spline_idx, n_splines=adj_n_splines, spline_order=adj_order)
-    for j in range(X_dense.shape[1]):
-        if j != spline_idx:
-            terms += f(j)
+    def _make_terms():
+        # Fresh terms for every gene: pyGAM's SplineTerm keeps the edge knots from the
+        # first fit, so one shared `terms` object made each gene's knots (and p-value)
+        # depend on which gene a process fitted first, i.e. on n_jobs and joblib batching.
+        t = s(spline_idx, n_splines=adj_n_splines, spline_order=adj_order)
+        for j in range(X_dense.shape[1]):
+            if j != spline_idx:
+                t += f(j)
+        return t
 
     gene_to_col = (
         {g: i for i, g in enumerate(Y.columns)}
@@ -638,7 +643,7 @@ def fit_gam_models_for_genes(
             return ("skip", "low_variance")
 
         try:
-            gam = LinearGAM(terms).fit(X_fit, y_fit)
+            gam = LinearGAM(_make_terms()).fit(X_fit, y_fit)
             pval = gam.statistics_["p_values"][spline_idx]
             dev = gam.statistics_["pseudo_r2"]["explained_deviance"]
             if np.isfinite(pval) and np.isfinite(dev):
@@ -649,15 +654,20 @@ def fit_gam_models_for_genes(
 
     if n_jobs in (None, -1) or n_jobs > 1:
         if n_jobs in (None, -1):
-            try:
-                n_jobs = len(os.sched_getaffinity(0))
-            except AttributeError:
-                n_jobs = os.cpu_count() or 1
+            # affinity mask capped at SLURM_CPUS_PER_TASK (shared with RAISIN / Harmony)
+            from sampledisco.utils.cpus import resolve_n_jobs
+            n_jobs = resolve_n_jobs(n_jobs)
+    # One BLAS/OpenMP thread per fit: each fit is small, and with OMP/MKL_NUM_THREADS
+    # exported every worker otherwise ran that many BLAS threads (n_jobs x threads
+    # oversubscription; the GAM stage went from ~15 s to 200-340 s on AMD).
     if n_jobs and n_jobs > 1:
-        from joblib import Parallel, delayed
-        outcomes = Parallel(n_jobs=n_jobs)(delayed(_fit_one_gene)(g) for g in gene_names)
+        from joblib import Parallel, delayed, parallel_backend
+        with parallel_backend("loky", inner_max_num_threads=1):
+            outcomes = Parallel(n_jobs=n_jobs)(delayed(_fit_one_gene)(g) for g in gene_names)
     else:
-        outcomes = [_fit_one_gene(g) for g in gene_names]
+        from sampledisco.utils.cpus import single_threaded
+        with single_threaded():   # threadpoolctl + torch's thread-local MKL count
+            outcomes = [_fit_one_gene(g) for g in gene_names]
 
     for oc in outcomes:
         if oc[0] == "ok":

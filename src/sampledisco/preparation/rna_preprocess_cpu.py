@@ -6,6 +6,7 @@ import scanpy as sc
 from sampledisco.utils.harmony_compat import harmonize_embedding
 from sampledisco.utils.embedding_keys import COMP_KEY, LEGACY_COMP_KEY, write_comp_key
 from scipy.sparse import issparse
+from sampledisco.utils.cpus import single_threaded
 
 from sampledisco.utils.safe_save import safe_h5ad_write
 from sampledisco.utils.random_seed import set_global_seed
@@ -73,8 +74,11 @@ def anndata_cluster(
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
 
-    sc.tl.pca(adata, n_comps=cell_embedding_num_PCs, svd_solver="arpack",
-              use_highly_variable=True)
+    # One BLAS/OpenMP/torch thread: multi-threaded BLAS (e.g. MKL) reductions made X_pca differ
+    # between identical runs (~1e-3), which Harmony then amplifies.
+    with single_threaded():
+        sc.tl.pca(adata, n_comps=cell_embedding_num_PCs, svd_solver="arpack",
+                  use_highly_variable=True)
 
     # --- Pass 1: sample-removed (batch_key includes sample → removes per-sample variance) ---
     if verbose:
@@ -112,8 +116,9 @@ def anndata_cluster(
     adata.var["highly_variable"] = adata.var["highly_variable_clust"]
 
     sub = adata[:, adata.var["highly_variable_rmd"].to_numpy()].copy()
-    sc.tl.pca(sub, n_comps=cell_embedding_num_PCs, svd_solver="arpack",
-              use_highly_variable=False)
+    with single_threaded():   # reproducible, as for X_pca above
+        sc.tl.pca(sub, n_comps=cell_embedding_num_PCs, svd_solver="arpack",
+                  use_highly_variable=False)
     adata.obsm["X_pca_rmd"] = sub.obsm["X_pca"]
 
     # --- Pass 2: sample-preserved (batch_key excludes sample → Z_rmd for RMD block) ---

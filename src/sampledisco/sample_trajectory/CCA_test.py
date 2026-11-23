@@ -127,6 +127,14 @@ def generate_corrected_null_distribution(all_resolution_results, n_permutations=
     return np.array(corrected_null_scores)
 
 
+def _permutation_pvalue(null, observed):
+    """(1 + k) / (N + 1) with k = #null >= observed (never 0); NaN for an empty null."""
+    null = np.asarray(null)
+    if null.size == 0:
+        return np.nan
+    return (1 + int(np.sum(null >= observed))) / (null.size + 1)
+
+
 def compute_corrected_pvalues(df_results, corrected_null_distribution, output_dir, column):
     """
     Compute corrected p-values for all CCA scores and save one diagnostic plot per resolution.
@@ -139,6 +147,7 @@ def compute_corrected_pvalues(df_results, corrected_null_distribution, output_di
 
     Returns:
         df_results with 'corrected_pvalue' column added
+        ((1 + k) / (N + 1) over the corrected null, never 0)
     """
     pvalue_dir = os.path.join(output_dir, "corrected_p_values")
     os.makedirs(pvalue_dir, exist_ok=True)
@@ -150,7 +159,7 @@ def compute_corrected_pvalues(df_results, corrected_null_distribution, output_di
         cca_score = row['cca_score']
 
         if not np.isnan(cca_score):
-            corrected_p_value = np.mean(corrected_null_distribution >= cca_score)
+            corrected_p_value = _permutation_pvalue(corrected_null_distribution, cca_score)
             df_results.loc[idx, 'corrected_pvalue'] = corrected_p_value
 
             plt.figure(figsize=(10, 6))
@@ -333,6 +342,7 @@ def compute_corrected_pvalues_rna(df_results, corrected_null_distribution, outpu
 
     Returns:
         df_results with 'corrected_pvalue' column added
+        ((1 + k) / (N + 1) over the corrected null, never 0)
     """
     pvalue_dir = os.path.join(output_dir, "corrected_p_values")
     os.makedirs(pvalue_dir, exist_ok=True)
@@ -344,7 +354,7 @@ def compute_corrected_pvalues_rna(df_results, corrected_null_distribution, outpu
         cca_score = row['cca_score']
 
         if not np.isnan(cca_score):
-            corrected_p_value = np.mean(corrected_null_distribution >= cca_score)
+            corrected_p_value = _permutation_pvalue(corrected_null_distribution, cca_score)
             df_results.loc[idx, 'corrected_pvalue'] = corrected_p_value
 
             plt.figure(figsize=(10, 6))

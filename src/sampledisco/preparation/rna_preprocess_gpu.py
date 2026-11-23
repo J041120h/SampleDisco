@@ -171,7 +171,7 @@ def preprocess_gpu(
     output_dir,
     cell_meta_path=None,
     sample_column="sample",
-    sample_level_batch_key="batch",
+    sample_level_batch_key=None,  # as in the CPU preprocess; "batch" raised KeyError without that column
     cell_embedding_num_PCs=20,
     num_harmony_iterations=30,
     num_cell_hvgs=2000,

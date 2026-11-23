@@ -135,8 +135,9 @@ def soft_composition(Z: np.ndarray, anchors: np.ndarray, unit_rows: List[np.ndar
 
 
 def n_worker_threads(cap: int = 16) -> int:
-    n = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
-    return max(1, min(cap, n))
+    # affinity mask capped at SLURM_CPUS_PER_TASK (shared with RAISIN / GAM / Harmony)
+    from sampledisco.utils.cpus import usable_cpu_count
+    return max(1, min(cap, usable_cpu_count()))
 
 
 def kmeans_centers(Z: np.ndarray, K: int, seed: int) -> np.ndarray:
@@ -538,6 +539,17 @@ def check_rmd_weight(rmd_weight) -> None:
         raise ValueError(f"rmd_weight must be 'equal' or a finite positive number (got {rmd_weight!r})")
 
 
+BATCH_METHODS = ("harmony", "linear", "none")
+
+
+def check_batch_method(batch_method) -> None:
+    """Accept one of BATCH_METHODS; raise ValueError otherwise (any other value used to
+    run Harmony silently)."""
+    if not isinstance(batch_method, str) or batch_method not in BATCH_METHODS:
+        raise ValueError(f"batch_method must be one of {list(BATCH_METHODS)} "
+                         f"(got {batch_method!r})")
+
+
 def resolve_rmd_weight(rmd_weight: Union[float, str], K_c: int, K_med: int, K_fine: int) -> float:
     """Numeric RMD weight α. ``"equal"`` gives the RMD block the same energy as the three
     composition blocks together: α² = w_A1² + w_A2² + w_A3² (so α depends only on K_c, K_med and
@@ -627,6 +639,7 @@ def build_emb_from_blocks(
     """
     from sklearn.decomposition import PCA
 
+    check_batch_method(batch_method)
     F = frobenius_stack(blocks, weights)
     n_units = F.shape[0]
     n_pc_full = min(pca_components, F.shape[0] - 1, F.shape[1])
@@ -679,16 +692,19 @@ def build_emb_from_blocks(
             try:
                 import harmonypy as hm
                 from sampledisco.utils.harmony_compat import harmonypy_cpu_kwargs
+                from sampledisco.utils.cpus import single_threaded
                 nclust = max(2, min(meta.nunique().max() if isinstance(batch_keys, list)
                                     else len(set(meta["batch"])),
                                     n_units // 2))
-                ho = hm.run_harmony(Fp, meta,
-                                    batch_keys,  # str OR list[str]
-                                    nclust=nclust,
-                                    max_iter_harmony=30,
-                                    random_state=seed,
-                                    # CPU path: never let harmonypy pick a GPU itself
-                                    **harmonypy_cpu_kwargs(hm))
+                # one thread: bit-reproducible, and units x PCs is tiny
+                with single_threaded():
+                    ho = hm.run_harmony(Fp, meta,
+                                        batch_keys,  # str OR list[str]
+                                        nclust=nclust,
+                                        max_iter_harmony=30,
+                                        random_state=seed,
+                                        # CPU path: never let harmonypy pick a GPU itself
+                                        **harmonypy_cpu_kwargs(hm))
                 Zc = ho.Z_corr
                 if Zc.shape[0] != n_units:
                     Zc = Zc.T

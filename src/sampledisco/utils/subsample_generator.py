@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 import warnings
-warnings.filterwarnings('ignore')
+from sampledisco.utils.quiet import quiet_warnings  # scoped; no module-level filter
 
 def load_data(h5ad_path: str, meta_csv_path: str) -> Tuple[ad.AnnData, pd.DataFrame]:
     """Load the h5ad and its companion metadata CSV."""
@@ -295,6 +295,7 @@ def record_subsample_stats(adata_sub: ad.AnnData, meta_sub: pd.DataFrame,
             prop = count / len(meta_sub)
             summary_lines.append(f"  {batch}: {count} samples ({prop*100:.1f}%)")
 
+@quiet_warnings
 def main(h5ad_path: str, meta_csv_path: str, output_dir: str = None,
          sample_sizes: List[int] = [25, 50, 100, 200], seed: int = 42,
          min_batch_samples: int = 3):

@@ -25,10 +25,9 @@ try:
     import cupyx.scipy.sparse as cusparse
     GPU_AVAILABLE = True
 except ImportError:
-    GPU_AVAILABLE = False
-    print("CuPy not available. Install with: pip install cupy-cuda11x (adjust for your CUDA version)")
+    GPU_AVAILABLE = False   # reported only when the GPU path is requested (use_gpu=True)
 
-warnings.filterwarnings("ignore")
+from sampledisco.utils.quiet import quiet_warnings  # scoped; no module-level filter
 
 
 def process_gene_batch_gpu(args):
@@ -137,6 +136,55 @@ def process_gene_batch_gpu(args):
     return csr_matrix(batch_activity_cpu), batch_stats
 
 
+def process_gene_batch(args):
+    """CPU worker: same aggregation and per-gene stats as process_gene_batch_gpu, with
+    numpy/scipy instead of CuPy. args = (gene_batch, gene2peaks_weighted, peak_to_idx,
+    X, aggregation_method, decay_params)."""
+    gene_batch, gene2peaks_weighted, peak_to_idx, X, aggregation_method, decay_params = args
+    batch_activity = np.zeros((X.shape[0], len(gene_batch)), dtype=np.float32)
+    batch_stats = []
+    for gene_idx, gene_id in enumerate(gene_batch):
+        if gene_id not in gene2peaks_weighted:
+            batch_stats.append({'gene_id': gene_id, 'gene_name': 'Unknown', 'n_peaks': 0,
+                                'total_weight': 0, 'mean_distance': np.nan,
+                                'n_promoter_peaks': 0, 'n_gene_body_peaks': 0})
+            continue
+        peak_data = gene2peaks_weighted[gene_id]
+        peak_indices, weights, distances = [], [], []
+        n_promoter = n_gene_body = 0
+        for peak_info in peak_data:
+            if peak_info['peak'] in peak_to_idx:
+                peak_indices.append(peak_to_idx[peak_info['peak']])
+                weights.append(peak_info.get('combined_weight', 1.0))
+                distances.append(peak_info.get('distance_to_tss', 0))
+                n_promoter += bool(peak_info.get('in_promoter', False))
+                n_gene_body += bool(peak_info.get('in_gene_body', False))
+        if peak_indices:
+            w = np.asarray(weights, dtype=np.float32)
+            counts = X[:, peak_indices]
+            if aggregation_method == 'sum':
+                values = counts.sum(axis=1)
+            else:
+                weighted = counts.multiply(w) if issparse(counts) else counts * w
+                if aggregation_method == 'max_weighted':
+                    values = weighted.max(axis=1)
+                else:                                   # 'weighted_sum' / 'weighted_mean'
+                    values = weighted.sum(axis=1)
+                    if aggregation_method == 'weighted_mean':
+                        values = values / w.sum()
+            if issparse(values):
+                values = values.toarray()
+            batch_activity[:, gene_idx] = np.asarray(values, dtype=np.float32).ravel()
+        gene_name = next((p['gene_name'] for p in peak_data if 'gene_name' in p), "Unknown")
+        batch_stats.append({
+            'gene_id': gene_id, 'gene_name': gene_name, 'n_peaks': len(peak_indices),
+            'total_weight': float(np.sum(weights)) if weights else 0,
+            'mean_distance': np.mean(distances) if distances else np.nan,
+            'n_promoter_peaks': n_promoter, 'n_gene_body_peaks': n_gene_body})
+    return csr_matrix(batch_activity), batch_stats
+
+
+@quiet_warnings
 def peak_to_gene_activity_weighted_gpu(
     atac,
     annotation_results,
@@ -197,7 +245,8 @@ def peak_to_gene_activity_weighted_gpu(
     """
     
     if use_gpu and not GPU_AVAILABLE:
-        print("GPU requested but CuPy not available. Falling back to CPU.")
+        print("GPU requested but CuPy not available (install e.g. cupy-cuda11x for your "
+              "CUDA version). Falling back to CPU.")
         use_gpu = False
     
     if use_gpu:
@@ -387,8 +436,7 @@ def peak_to_gene_activity_weighted_gpu(
         cp.get_default_memory_pool().free_all_blocks()
         
     else:
-        from peak_to_gene_activity_weighted import process_gene_batch
-        
+        # CPU path: process_gene_batch (this module) mirrors process_gene_batch_gpu.
         batch_size = max(1, n_genes // (n_gpu_workers * 4))
         gene_batches = [gene_ids[i:i + batch_size] for i in range(0, n_genes, batch_size)]
         
