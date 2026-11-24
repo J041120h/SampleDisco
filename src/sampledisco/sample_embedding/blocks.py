@@ -14,10 +14,12 @@ import math
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+
+from sampledisco.utils.batch_keys import BatchCols, batch_col_list
 
 
 # --------------------------------------------------------------------------- #
@@ -334,8 +336,8 @@ def loo_rmd(
 ) -> np.ndarray:
     """Leave-One-Out per-(group, cluster) reference-relative mean displacement.
 
-    `units[i] = (uid, group_label, cells_in_latent)` — `group_label` is
-    typically `modality` for multi-omics or `batch` for single-omics.
+    `units[i] = (uid, group_label, cells_in_latent)` — `group_label` is the RMD
+    reference group from `rmd_reference_groups`.
 
     For each unit `u` (group `g`) and cluster `k`:
         μ_{u,k}   = mean of u's cells in cluster k
@@ -415,6 +417,11 @@ def _loo_rmd_from_sums(sums_smk, cnts_smk, units_groupidx, G, *,
     from sklearn.decomposition import PCA
 
     n_units, K, d_latent = sums_smk.shape
+    if loo:
+        n_single = int((np.bincount(units_groupidx, minlength=G) == 1).sum())
+        if n_single:
+            print(f"  [RMD] WARNING: {n_single} of {G} reference groups hold a single unit; "
+                  f"each such unit is referenced against the nearest other group")
     grand_sum = np.zeros((G, K, d_latent), dtype=np.float64)
     grand_cnt = np.zeros((G, K), dtype=np.int64)
     for ui in range(n_units):
@@ -739,7 +746,7 @@ def assemble_units(
     sample_col: str,
     comp_emb_key: str,
     modality_col: Optional[str] = None,
-    batch_col: Optional[str] = None,
+    batch_col: BatchCols = None,
 ) -> Tuple[
         List[Tuple[str, str, np.ndarray]],  # units: (uid, group, cells)
         Dict[str, List[str]],                # uid -> list of cell ids
@@ -751,12 +758,15 @@ def assemble_units(
 ]:
     """Build (unit_id, group_label, cells_in_emb) tuples from an AnnData.
 
-    - Multi-omics:  units = (sample, modality), uid = f"{sample}_{modality}",
-                    group = modality.
-    - Single-omics: units = sample, uid = sample,
-                    group = batch (if batch_col given) else "single".
+    `batch_col` is one column or a list; a unit's batch label is its majority value of each
+    column, joined with "__".
 
-    Returns rich tuple for downstream wiring.
+    - Multi-omics:  units = (sample, modality), uid = f"{sample}_{modality}",
+                    group = modality, batch = batch label (None without batch_col).
+    - Single-omics: units = sample, uid = sample,
+                    group = batch label (if batch_col given) else "single".
+
+    The RMD reference group is `rmd_reference_groups(groups, batches)`.
     """
     Z = np.asarray(adata.obsm[comp_emb_key], dtype=np.float32)
     cell_ids = adata.obs_names.astype(str).values
@@ -789,11 +799,9 @@ def assemble_units(
                 unit_groups.append(m)
         unit_batches = _per_unit_batch(adata, unit_cellids_d, batch_col)
     else:
-        # Single-omics — group label = majority batch; falls back to "single"
-        if batch_col is not None and batch_col in adata.obs.columns:
-            batch_arr = adata.obs[batch_col].astype(str).values
-        else:
-            batch_arr = np.array(["single"] * len(sample_arr), dtype=object)
+        # Single-omics — group label = majority value of each batch column, joined; "single" without batch
+        batch_arrs = [adata.obs[c].astype(str).values
+                      for c in batch_col_list(batch_col) if c in adata.obs.columns]
         unit_cellids_d = {}
         units = []
         unit_ids = []
@@ -802,9 +810,8 @@ def assemble_units(
             mask = sample_arr == s_uniq
             if mask.sum() == 0:
                 continue
-            # Majority batch for the sample
-            sample_batches = batch_arr[mask]
-            grp = max(sorted(set(sample_batches)), key=list(sample_batches).count)
+            grp = ("__".join(max(sorted(set(b[mask])), key=list(b[mask]).count) for b in batch_arrs)
+                   if batch_arrs else "single")
             uid = s_uniq
             cids = cell_ids[mask].tolist()
             units.append((uid, grp, Z[mask]))
@@ -819,23 +826,36 @@ def assemble_units(
 def _per_unit_batch(
     adata,
     unit_cellids: Dict[str, List[str]],
-    batch_col: Optional[str],
+    batch_col: BatchCols,
 ) -> Optional[List[str]]:
-    if batch_col is None or batch_col not in adata.obs.columns:
+    cols = [c for c in batch_col_list(batch_col) if c in adata.obs.columns]
+    if not cols:
         return None
-    cellid_to_batch = dict(zip(
-        adata.obs_names.astype(str).values,
-        adata.obs[batch_col].astype(str).values,
-    ))
-    out = []
-    for uid, cids in unit_cellids.items():
-        bs = [cellid_to_batch.get(c) for c in cids if c in cellid_to_batch]
-        bs = [b for b in bs if b is not None and b != "nan"]
-        if not bs:
-            out.append("UNK")
-        else:
-            out.append(max(sorted(set(bs)), key=bs.count))
-    return out
+    per_col = []
+    for col in cols:
+        cellid_to_batch = dict(zip(
+            adata.obs_names.astype(str).values,
+            adata.obs[col].astype(str).values,
+        ))
+        out = []
+        for uid, cids in unit_cellids.items():
+            bs = [cellid_to_batch.get(c) for c in cids if c in cellid_to_batch]
+            bs = [b for b in bs if b is not None and b != "nan"]
+            if not bs:
+                out.append("UNK")
+            else:
+                out.append(max(sorted(set(bs)), key=bs.count))
+        per_col.append(out)
+    return ["__".join(t) for t in zip(*per_col)]
+
+
+def rmd_reference_groups(unit_groups: List[str],
+                         unit_batches: Optional[List[str]]) -> List[str]:
+    """RMD reference group per unit: the sample-level batch label (all batch columns), crossed
+    with modality for multi-omics (`unit_groups` = modality there, `unit_batches` = batch label)."""
+    if unit_batches is None:
+        return list(unit_groups)
+    return [f"{g}__{b}" for g, b in zip(unit_groups, unit_batches)]
 
 
 # --------------------------------------------------------------------------- #
@@ -874,11 +894,21 @@ def _majority_per_unit(series, unit_of_cell: np.ndarray, n_units: int, *,
     return [str(labels[b]) if cnt[i, b] > 0 else empty for i, b in enumerate(best)]
 
 
+def _joint_majority_per_unit(adata, cols: List[str], unit_of_cell: np.ndarray, n_units: int, *,
+                             skip_nan: bool, empty: Optional[str]) -> Optional[List[str]]:
+    """`_majority_per_unit` of each column in `cols`, joined with "__"; None without columns."""
+    if not cols:
+        return None
+    per_col = [_majority_per_unit(adata.obs[c], unit_of_cell, n_units, skip_nan=skip_nan, empty=empty)
+               for c in cols]
+    return ["__".join(t) for t in zip(*per_col)]
+
+
 def unit_index(
     adata,
     sample_col: str,
     modality_col: Optional[str] = None,
-    batch_col: Optional[str] = None,
+    batch_col: BatchCols = None,
 ) -> Tuple[List[str], List[str], Optional[List[str]], np.ndarray, List[np.ndarray]]:
     """Integer-index twin of `assemble_units`: the same unit ids, order, groups and batches,
     plus ``unit_of_cell`` (cell -> unit position) and ``unit_rows`` (unit -> row indices in
@@ -910,26 +940,31 @@ def unit_index(
     order = np.argsort(unit_of_cell, kind="stable")
     bounds = np.r_[0, np.cumsum(np.bincount(unit_of_cell, minlength=n_units))]
     unit_rows = [order[bounds[i]:bounds[i + 1]] for i in range(n_units)]
-    has_batch = batch_col is not None and batch_col in adata.obs.columns
+    cols = [c for c in batch_col_list(batch_col) if c in adata.obs.columns]
     if multi:
-        unit_batches = (_majority_per_unit(adata.obs[batch_col], unit_of_cell, n_units,
-                                           skip_nan=True, empty="UNK") if has_batch else None)
+        unit_batches = _joint_majority_per_unit(adata, cols, unit_of_cell, n_units,
+                                                skip_nan=True, empty="UNK")
     else:
-        unit_groups = (_majority_per_unit(adata.obs[batch_col], unit_of_cell, n_units,
-                                          skip_nan=False, empty=None)
-                       if has_batch else ["single"] * n_units)
+        unit_groups = (_joint_majority_per_unit(adata, cols, unit_of_cell, n_units,
+                                                skip_nan=False, empty=None)
+                       or ["single"] * n_units)
         unit_batches = None
     assert len(unit_of_cell) == n_cells
     return unit_ids, unit_groups, unit_batches, unit_of_cell, unit_rows
 
 
 def harmony_meta_from_index(adata, unit_of_cell: np.ndarray, unit_ids: List[str],
-                            batch_cols: Optional[Sequence[str]]) -> Optional[pd.DataFrame]:
+                            batch_cols: BatchCols,
+                            modality_col: Optional[str] = None) -> Optional[pd.DataFrame]:
     """Per-unit majority label of each batch column ('nan' ignored, 'UNK' if none) for
-    multi-covariate sample-level Harmony."""
-    if not batch_cols:
+    multi-covariate sample-level Harmony, which runs when >= 2 batch columns are given
+    (multi-omics adds the modality column). None otherwise: one batch column goes through
+    the single-key path of `build_emb_from_blocks`."""
+    cols = batch_col_list(batch_cols)
+    if len(cols) < 2:
         return None
-    cols = [batch_cols] if isinstance(batch_cols, str) else list(batch_cols)
+    if modality_col is not None and modality_col in adata.obs.columns:
+        cols = [modality_col] + cols
     cols = [c for c in cols if c in adata.obs.columns]
     if not cols:
         return None

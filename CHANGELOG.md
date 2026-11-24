@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+**Batch columns at two levels**
+
+- New default batch keys `rna_batch_col`, `atac_batch_col` (and the existing `multiomics_batch_col`),
+  used at both levels unless a level is set. Cell level (`*_cell_level_batch_key`, new
+  `multiomics_cell_level_batch_key`) corrects `Z_comp` and `Z_rmd`. Sample level
+  (`*_sample_level_batch_col`, new `multiomics_sample_level_batch_col`) defines the RMD reference
+  group, the sample-level Harmony covariates, the autotune batch term and the downstream DE batch.
+  A level left `null` inherits the default; `[]` turns it off. The four new keys are optional, so
+  existing configs validate and run as before.
+- **The RMD reference group now uses every sample-level batch column.** Single-omics used only
+  the first column (`[batch, sex]` and `[sex, batch]` gave different embeddings). It is now the
+  joint label of all columns. Multi-omics used modality only; it is now modality crossed with the
+  sample-level batch columns.
+- **Autotune matches the final embedding.** Its batch term uses the same joint label (crossed
+  with modality for multi-omics, where it used batch alone), and its sample-level Harmony now
+  uses every batch column (it used only the first).
+- Multi-omics sample-level Harmony with two or more batch columns now includes modality.
+- A warning names reference groups that hold a single unit; such a unit has no leave-one-out
+  reference and borrows the nearest other group.
+- Results are bit-identical to 0.6.1 for no batch column or one column in single-omics, and
+  for no batch column in multi-omics. They change for several sample-level columns, and for
+  multi-omics with a batch column.
+
 ## 0.6.1
 
 Reproducible runs, faster trajectory DGE, and fixes for the remaining known issues. Config

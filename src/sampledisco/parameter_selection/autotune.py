@@ -45,10 +45,13 @@ from sampledisco.sample_embedding.blocks import (
     build_emb_from_blocks,
     composition_per_unit,
     derive_weights,
+    harmony_meta_from_index,
     loo_rmd,
     resolve_rmd_weight,
+    rmd_reference_groups,
     save_embedding_to_h5ad,
     soft_assign,
+    unit_index,
     warn_if_stale_embedding,
 )
 from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
@@ -74,7 +77,7 @@ def build_blocks(
     comp_emb_key: Optional[str] = None,
     rmd_emb_key: Optional[str] = None,
     modality_col: Optional[str] = None,
-    batch_col: Optional[str] = None,
+    batch_col: Optional[Union[str, List[str]]] = None,
     grouping_col: Optional[str] = None,
     medium_K: int = 120,
     fine_K: int = 300,
@@ -121,10 +124,11 @@ def build_blocks(
     soft3 = soft_assign(Z_comp, km_fine.cluster_centers_)
     A3 = composition_per_unit(unit_cellids_list, soft3, cellid_idx)
 
-    # RMD
+    # RMD — reference group over every batch column (x modality for multi-omics)
+    rmd_groups = rmd_reference_groups(unit_groups, unit_batches)
     Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
     rmd_units = []
-    for uid, group in zip(unit_ids, unit_groups):
+    for uid, group in zip(unit_ids, rmd_groups):
         cids = unit_cellids[uid]
         idxs = [cellid_idx[c] for c in cids if c in cellid_idx]
         rmd_units.append((uid, group, Z_rmd[idxs]))
@@ -153,9 +157,10 @@ def build_blocks(
     else:
         grouping_arr = None
 
-    batch_arr = (np.asarray(unit_batches) if unit_batches is not None
-                  else np.asarray(unit_groups))
+    batch_arr = np.asarray(rmd_groups)
     has_batch = len(set(batch_arr.tolist())) > 1
+    _, _, _, unit_of_cell, _ = unit_index(adata, sample_col, modality_col=modality_col)
+    harmony_meta = harmony_meta_from_index(adata, unit_of_cell, unit_ids, batch_col, modality_col)
     has_grouping = grouping_arr is not None and len(
         set(x for x in grouping_arr.tolist() if pd.notna(x))
     ) > 1
@@ -164,6 +169,7 @@ def build_blocks(
         A1=A1, A2=A2, A3=A3, RMD=RMD,
         K_c=K_c, K_med=K_med, K_fine=K_fine,
         unit_ids=unit_ids, unit_groups=unit_groups, unit_batches=unit_batches,
+        rmd_groups=rmd_groups, harmony_meta=harmony_meta,
         n_units=n_units, grouping=grouping_arr, batch=batch_arr,
         has_batch=has_batch, has_grouping=has_grouping,
         comp_emb_key=comp_key, rmd_emb_key=rmd_key,
@@ -632,14 +638,10 @@ def run_autotune(
             comp_emb_key = cluster_emb_key
 
     t0 = time.time()
-    primary_batch = batch_col[0] if isinstance(batch_col, (list, tuple)) and batch_col else batch_col
-    if isinstance(primary_batch, list):
-        primary_batch = primary_batch[0] if primary_batch else None
-
     blocks = build_blocks(
         adata, sample_col=sample_col, celltype_col=celltype_col,
         comp_emb_key=comp_emb_key, rmd_emb_key=rmd_emb_key,
-        modality_col=modality_col, batch_col=primary_batch,
+        modality_col=modality_col, batch_col=batch_col,
         grouping_col=grouping_col, medium_K=medium_K, fine_K=fine_K,
         rmd_dim=rmd_dim, seed=seed, verbose=verbose,
     )
@@ -681,6 +683,7 @@ def run_autotune(
             unit_ids=blocks["unit_ids"],
             unit_groups=blocks["unit_groups"],
             unit_batches=blocks["unit_batches"],
+            harmony_meta_df=blocks["harmony_meta"],
             pca_components=pca_components, batch_method=batch_method,
             seed=seed, verbose=verbose,
         )
@@ -712,6 +715,7 @@ def run_autotune(
             unit_ids=blocks["unit_ids"],
             unit_groups=blocks["unit_groups"],
             unit_batches=blocks["unit_batches"],
+            harmony_meta_df=blocks["harmony_meta"],
             pca_components=pca_components, batch_method=batch_method,
             seed=seed, verbose=False,
         )
@@ -736,6 +740,7 @@ def run_autotune(
         unit_ids=blocks["unit_ids"],
         unit_groups=blocks["unit_groups"],
         unit_batches=blocks["unit_batches"],
+        harmony_meta_df=blocks["harmony_meta"],
         pca_components=pca_components, batch_method=batch_method,
         seed=seed, verbose=verbose,
     )
@@ -785,7 +790,7 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     has_batch = bool(blocks.get("has_batch"))
     has_grouping = bool(blocks.get("has_grouping"))
     n_units = int(blocks.get("n_units", 0))
-    n_groups = len(set(blocks.get("unit_groups") or []))
+    n_groups = len(set(blocks.get("rmd_groups") or []))
     proxies = _active_proxies(scoring, has_batch, has_grouping)
 
     lines = []
@@ -801,7 +806,7 @@ def _format_autotune_report(*, best_params, best_score, trace, weights,
     lines.append(f"  PCA components     : {pca_components}")
     lines.append(f"  sample Harmony     : {batch_method}")
     lines.append(f"  number of units    : {n_units}")
-    lines.append(f"  unique groups      : {n_groups}")
+    lines.append(f"  RMD ref. groups    : {n_groups}")
     lines.append(f"  has batch column   : {has_batch}")
     lines.append(f"  has grouping col   : {has_grouping}")
     if tune_on_modality is not None:

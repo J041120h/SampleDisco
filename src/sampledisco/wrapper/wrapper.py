@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Any, Tuple, Union
 
 import pandas as pd
 
+from sampledisco.utils.batch_keys import resolve_batch_levels
 from .rna_wrapper import rna_wrapper
 from .atac_wrapper import atac_wrapper
 
@@ -634,6 +635,10 @@ def wrapper(
     
     # Common column names
     rna_sample_col: str = 'sample',
+    # Batch: rna_batch_col is the default for both levels; a level left None inherits it, [] disables it.
+    # Cell level -> Z_comp / Z_rmd Harmony. Sample level (every column) -> RMD reference group,
+    # sample-level Harmony, autotune batch term, downstream DE batch.
+    rna_batch_col: Optional[Union[str, List[str]]] = None,
     rna_sample_level_batch_col: Optional[Union[str, List[str]]] = None,
     rna_celltype_col: str = 'cell_type',
     
@@ -645,7 +650,7 @@ def wrapper(
     rna_num_cell_hvgs: int = 2000,
     rna_cell_embedding_num_pcs: int = 20,
     rna_num_harmony_iterations: int = 30,
-    rna_cell_level_batch_key: Optional[List] = None,
+    rna_cell_level_batch_key: Optional[Union[str, List[str]]] = None,
     
     # Cell type clustering parameters
     rna_leiden_cluster_resolution: float = 0.8,
@@ -742,6 +747,8 @@ def wrapper(
     
     # Common column names
     atac_sample_col: str = "sample",
+    # Batch levels as for RNA (atac_batch_col = default for both levels).
+    atac_batch_col: Optional[Union[str, List[str]]] = None,
     atac_sample_level_batch_col: Optional[Union[str, List[str]]] = None,
     atac_celltype_col: str = "cell_type",
     atac_cell_embedding_column: Optional[str] = None,
@@ -752,7 +759,7 @@ def wrapper(
     atac_max_features: int = 15000,
     atac_min_cells_per_sample: int = 1,
     atac_exclude_features: Optional[List] = None,
-    atac_cell_level_batch_key: Optional[List] = None,
+    atac_cell_level_batch_key: Optional[Union[str, List[str]]] = None,
     atac_doublet_detection: bool = True,
     atac_num_cell_hvfs: int = 50000,
     atac_cell_embedding_num_pcs: int = 50,
@@ -866,7 +873,13 @@ def wrapper(
     multiomics_rna_sample_column: str = "sample",
     multiomics_atac_sample_column: str = "sample",
     multiomics_sample_col: str = 'sample',
-    multiomics_batch_col: Optional[str] = None,
+    # Batch: multiomics_batch_col is the default for both levels; a level left None inherits it,
+    # [] disables it. Cell level (one column) -> scGLUE use_batch + Z_comp Harmony. Sample level
+    # (every column) -> RMD reference group (crossed with modality), sample-level Harmony
+    # (with modality), autotune batch term, downstream DE batch.
+    multiomics_batch_col: Optional[Union[str, List[str]]] = None,
+    multiomics_cell_level_batch_key: Optional[Union[str, List[str]]] = None,
+    multiomics_sample_level_batch_col: Optional[Union[str, List[str]]] = None,
     multiomics_celltype_col: str = 'cell_type',
     multiomics_modality_col: str = 'modality',
     
@@ -1178,7 +1191,8 @@ def wrapper(
             raise ValueError("RNA pipeline requires rna_count_data_path")
         
         try:
-            rna_slb_list = _coerce_sample_level_batch_col_list(rna_sample_level_batch_col)
+            rna_cell_list, rna_slb_list = resolve_batch_levels(
+                rna_batch_col, rna_cell_level_batch_key, rna_sample_level_batch_col)
             # Phase 1: Preprocessing + sample embedding
             rna_results = rna_wrapper(
                 rna_count_data_path=rna_count_data_path,
@@ -1209,7 +1223,7 @@ def wrapper(
                 num_cell_hvgs=rna_num_cell_hvgs,
                 cell_embedding_num_pcs=rna_cell_embedding_num_pcs,
                 num_harmony_iterations=rna_num_harmony_iterations,
-                cell_level_batch_key=rna_cell_level_batch_key,
+                cell_level_batch_key=rna_cell_list,
                 # Cell type clustering
                 leiden_cluster_resolution=rna_leiden_cluster_resolution,
                 cell_embedding_column=rna_cell_embedding_column,
@@ -1328,7 +1342,8 @@ def wrapper(
             raise ValueError("ATAC pipeline requires atac_count_data_path")
         
         try:
-            atac_slb_list = _coerce_sample_level_batch_col_list(atac_sample_level_batch_col)
+            atac_cell_list, atac_slb_list = resolve_batch_levels(
+                atac_batch_col, atac_cell_level_batch_key, atac_sample_level_batch_col)
             # Phase 1: Preprocessing + sample embedding
             atac_results = atac_wrapper(
                 atac_count_data_path=atac_count_data_path,
@@ -1358,7 +1373,7 @@ def wrapper(
                 max_features=atac_max_features,
                 min_cells_per_sample=atac_min_cells_per_sample,
                 exclude_features=atac_exclude_features,
-                cell_level_batch_key=atac_cell_level_batch_key,
+                cell_level_batch_key=atac_cell_list,
                 doublet_detection=atac_doublet_detection,
                 num_cell_hvfs=atac_num_cell_hvfs,
                 cell_embedding_num_pcs=atac_cell_embedding_num_pcs,
@@ -1500,6 +1515,8 @@ def wrapper(
                 atac_sample_column=multiomics_atac_sample_column,
                 sample_col=multiomics_sample_col,
                 batch_col=multiomics_batch_col,
+                cell_level_batch_key=multiomics_cell_level_batch_key,
+                sample_level_batch_col=multiomics_sample_level_batch_col,
                 celltype_col=multiomics_celltype_col,
                 modality_col=multiomics_modality_col,
                 multiomics_verbose=multiomics_verbose,
@@ -1649,7 +1666,8 @@ def wrapper(
                 random_state=random_state,
                 # Column names
                 sample_col=multiomics_sample_col,
-                batch_col=multiomics_batch_col,
+                batch_col=resolve_batch_levels(multiomics_batch_col, multiomics_cell_level_batch_key,
+                                               multiomics_sample_level_batch_col)[1] or None,
                 celltype_col=multiomics_celltype_col,
                 # Sample distance
                 sample_distance_methods=multiomics_sample_distance_methods or ['cosine', 'correlation'],

@@ -16,9 +16,11 @@ Algorithm (matches the singleRMD recipe; no CLR by default):
     1. A1  — coarse cell-type composition (one-hot, mean per unit)
     2. A2  — soft k-means composition at K_med
     3. A3  — soft k-means composition at K_fine
-    4. RMD — per-(group, cluster) LOO displacement from the rmd_emb;
-             group = modality_col (MO) or batch_col (single-omics).
-    5. Frobenius weighted stack → PCA → composite-batch Harmony.
+    4. RMD — per-(reference group, cluster) LOO displacement from the rmd_emb;
+             reference group = the unit's label over every batch_col column,
+             crossed with modality_col for multi-omics.
+    5. Frobenius weighted stack → PCA → sample-level Harmony on the batch_col
+       columns (and modality for multi-omics).
 
 When `block_weights=None`, weights are auto-rescaled via inverse-variance
 schedule using the actual K_c, K_med, K_fine values so user-modified cluster
@@ -46,12 +48,14 @@ from sampledisco.sample_embedding.blocks import (
     loo_rmd_from_index,
     n_worker_threads,
     resolve_rmd_weight,
+    rmd_reference_groups,
     save_embedding_to_h5ad,
     soft_composition,
     sorted_codes,
     unit_index,
     warn_if_stale_embedding,
 )
+from sampledisco.utils.batch_keys import batch_col_list
 from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
 
 
@@ -225,17 +229,13 @@ def compute_sample_embedding(
     if verbose:
         print(f"[sample_embedding] comp_emb={comp_key}, rmd_emb={rmd_key}")
 
-    # primary_batch: first col → unit_index (group labelling); batch_cols_multi → Harmony multi-cov
-    if isinstance(batch_col, (list, tuple)):
-        batch_cols_multi = [c for c in batch_col if c]
-    elif batch_col:
-        batch_cols_multi = [batch_col]
-    else:
-        batch_cols_multi = []
-    primary_batch = batch_cols_multi[0] if batch_cols_multi else None
+    # Every sample-level batch column feeds the RMD reference group, Harmony and the params record
+    batch_cols = batch_col_list(batch_col)
+    multi = modality_col is not None and modality_col in adata.obs.columns
+    rmd_reference_cols = ([modality_col] if multi else []) + batch_cols
 
     unit_ids, unit_groups, unit_batches, unit_of_cell, unit_rows = unit_index(
-        adata, sample_col, modality_col=modality_col, batch_col=primary_batch)
+        adata, sample_col, modality_col=modality_col, batch_col=batch_cols)
     Z_comp = np.asarray(adata.obsm[comp_key], dtype=np.float32)
     n_units = len(unit_ids)
     if n_units < 2:
@@ -281,12 +281,14 @@ def compute_sample_embedding(
     # ---- RMD: per-(group, coarse cluster) LOO displacement ----
     RMD = np.empty((n_units, 0), dtype=np.float32)
     if use_rmd:
+        rmd_groups = rmd_reference_groups(unit_groups, unit_batches)
         if verbose:
-            print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
+            print(f"[RMD] LOO displacement on rmd_emb; {len(set(rmd_groups))} reference group(s) "
+                  f"by {' x '.join(rmd_reference_cols) or 'none (all units)'}...", flush=True)
         # rmd_key may differ from comp_key (sample-preserved vs sample-removed)
         Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
         RMD = loo_rmd_from_index(
-            Z_rmd, unit_of_cell, ct_codes, K_c, unit_groups,
+            Z_rmd, unit_of_cell, ct_codes, K_c, rmd_groups,
             max_dim_per_cluster=rmd_dim_per_cluster, seed=seed, loo=True,
             verbose=verbose,
         )
@@ -308,11 +310,9 @@ def compute_sample_embedding(
         print(f"[sample_embedding] weights={[round(w, 3) for w in weights]} "
               f"(n_blocks={len(blocks)})")
 
-    # Multi-covariate Harmony: build per-unit metadata only when >=2 batch_cols given
-    harmony_meta_df = (
-        harmony_meta_from_index(adata, unit_of_cell, unit_ids, batch_cols_multi)
-        if len(batch_cols_multi) >= 2 else None
-    )
+    # Multi-covariate Harmony when >=2 batch_cols are given (None otherwise)
+    harmony_meta_df = harmony_meta_from_index(adata, unit_of_cell, unit_ids, batch_cols,
+                                              modality_col)
     if verbose and harmony_meta_df is not None:
         print(f"[sample_embedding] multi-covariate Harmony meta: cols={list(harmony_meta_df.columns)}, "
               f"strata_per_col={[harmony_meta_df[c].nunique() for c in harmony_meta_df.columns]}")
@@ -348,8 +348,8 @@ def compute_sample_embedding(
         # Deprecated 0.2.0 spelling, kept for readers of this dict; removed in 1.0.
         "cluster_emb_key": str(comp_key),
         "modality_col": str(modality_col) if modality_col else "",
-        "batch_col": str(primary_batch) if primary_batch else "",
-        "batch_cols_multi": list(batch_cols_multi),
+        "batch_cols": list(batch_cols),
+        "rmd_reference_cols": list(rmd_reference_cols),
         "seed": int(seed),
         "backend": "cpu",
     }

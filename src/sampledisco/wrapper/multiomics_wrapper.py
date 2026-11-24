@@ -15,6 +15,7 @@ from sampledisco.preparation.multi_omics_batch_correction import (
     Z_COMP_KEY,     # paper "Z_comp" — sample-removed,   composition role
     XGLUE_KEY,      # internal — scGLUE's native obsm key (fallback only)
 )
+from sampledisco.utils.batch_keys import resolve_batch_levels
 from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_embedding_keys
 
 
@@ -64,7 +65,12 @@ def multiomics_wrapper(
     rna_sample_column="sample",
     atac_sample_column="sample",
     sample_col='sample',
+    # Default batch column for both levels; a level left None inherits it, [] disables it.
+    # Cell level (scGLUE use_batch + the Z_comp Harmony pass) takes one column. Sample level
+    # (RMD reference = modality x these columns, sample-level Harmony, autotune) takes any number.
     batch_col=None,
+    cell_level_batch_key=None,
+    sample_level_batch_col=None,
     celltype_col='cell_type',
     modality_col='modality',
     multiomics_verbose=True,
@@ -97,7 +103,7 @@ def multiomics_wrapper(
 
     # GLUE training parameters
     consistency_threshold=0.05,
-    # V2 default: scGLUE removes the technical batch column (``batch_col``)
+    # V2 default: scGLUE removes the cell-level batch column
     # during training but PRESERVES per-sample variance, so its output
     # X_glue is suitable as the RMD displacement embedding. Set
     # treat_sample_as_batch=True only to force sample removal inside GLUE
@@ -181,7 +187,7 @@ def multiomics_wrapper(
     new single-key sample embedding (composition + RMD). The composition
     role uses ``Z_comp`` (sample-removed, from Harmony post-pass or 2-run GLUE);
     the RMD displacement role uses ``Z_rmd`` (= ``X_glue``, sample-preserved).
-    Multi-omics groups RMD blocks by ``modality_col``.
+    The RMD reference group is ``modality_col`` crossed with every sample-level batch column.
 
     Returns dict with adata, sample_adata, status_flags.
     """
@@ -217,6 +223,14 @@ def multiomics_wrapper(
         status_flags = {"multiomics": default_status.copy()}
     elif "multiomics" not in status_flags:
         status_flags["multiomics"] = default_status.copy()
+
+    cell_batch_cols, sample_batch_cols = resolve_batch_levels(
+        batch_col, cell_level_batch_key, sample_level_batch_col)
+    if len(cell_batch_cols) > 1:
+        raise ValueError(
+            f"multi-omics cell-level batch correction takes one column (scGLUE use_batch), got "
+            f"{cell_batch_cols}; set cell_level_batch_key to a single column")
+    cell_batch = cell_batch_cols[0] if cell_batch_cols else None
 
     results: Dict[str, Any] = {}
     Path(multiomics_output_dir).mkdir(parents=True, exist_ok=True)
@@ -266,7 +280,7 @@ def multiomics_wrapper(
             rna_sample_column=rna_sample_column, atac_sample_column=atac_sample_column,
             consistency_threshold=consistency_threshold,
             treat_sample_as_batch=treat_sample_as_batch, save_prefix=save_prefix,
-            batch_key=batch_col, sample_key=sample_col,
+            batch_key=cell_batch, sample_key=sample_col,
             data_batch_size=glue_data_batch_size, max_epochs=glue_max_epochs,
             dataloader_num_workers=glue_dataloader_num_workers,
             dataloader_fetches_per_worker=glue_dataloader_fetches_per_worker,
@@ -347,7 +361,7 @@ def multiomics_wrapper(
         current_adata = harmonize_xglue(
             current_adata,
             sample_col=sample_col,
-            batch_col=batch_col,
+            batch_col=cell_batch,
             use_gpu=use_gpu,
             max_iter=harmonize_xglue_max_iter,
             random_state=random_state,
@@ -438,7 +452,7 @@ def multiomics_wrapper(
                 comp_emb_key=comp_emb_key,
                 rmd_emb_key=rmd_emb_key,
                 modality_col=modality_col,
-                batch_col=batch_col,
+                batch_col=sample_batch_cols or None,
                 grouping_col=autotune_grouping_col,
                 medium_K=sample_embedding_medium_K,
                 fine_K=sample_embedding_fine_K,
@@ -463,7 +477,7 @@ def multiomics_wrapper(
                 comp_emb_key=comp_emb_key,
                 rmd_emb_key=rmd_emb_key,
                 modality_col=modality_col,
-                batch_col=batch_col,
+                batch_col=sample_batch_cols or None,
                 medium_K=sample_embedding_medium_K,
                 fine_K=sample_embedding_fine_K,
                 rmd_dim_per_cluster=sample_embedding_rmd_dim,

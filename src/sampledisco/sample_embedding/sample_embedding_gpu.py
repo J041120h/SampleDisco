@@ -35,6 +35,7 @@ from sampledisco.sample_embedding.blocks import (
     loo_rmd_from_index,
     n_worker_threads,
     resolve_rmd_weight,
+    rmd_reference_groups,
     save_embedding_to_h5ad,
     regress_out_batch_linear,
     sorted_codes,
@@ -45,6 +46,7 @@ from sampledisco.sample_embedding.sample_embedding import (
     _aggregate_obs,
     _resolve_rmd_emb_key,
 )
+from sampledisco.utils.batch_keys import batch_col_list
 from sampledisco.utils.embedding_keys import resolve_comp_key, resolve_rmd_key
 
 
@@ -209,17 +211,13 @@ def compute_sample_embedding(
     if verbose:
         print(f"[sample_embedding_gpu] comp_emb={comp_key}, rmd_emb={rmd_key}")
 
-    # primary_batch: first col → unit_index (group labelling); batch_cols_multi → Harmony multi-cov
-    if isinstance(batch_col, (list, tuple)):
-        batch_cols_multi = [c for c in batch_col if c]
-    elif batch_col:
-        batch_cols_multi = [batch_col]
-    else:
-        batch_cols_multi = []
-    primary_batch = batch_cols_multi[0] if batch_cols_multi else None
+    # Every sample-level batch column feeds the RMD reference group, Harmony and the params record
+    batch_cols = batch_col_list(batch_col)
+    multi = modality_col is not None and modality_col in adata.obs.columns
+    rmd_reference_cols = ([modality_col] if multi else []) + batch_cols
 
     unit_ids, unit_groups, unit_batches, unit_of_cell, unit_rows = unit_index(
-        adata, sample_col, modality_col=modality_col, batch_col=primary_batch)
+        adata, sample_col, modality_col=modality_col, batch_col=batch_cols)
     Z_comp = np.asarray(adata.obsm[comp_key], dtype=np.float32)
     n_units = len(unit_ids)
     if n_units < 2:
@@ -267,11 +265,13 @@ def compute_sample_embedding(
     # ---- RMD: per-(group, coarse cluster) LOO displacement — CPU (per-cluster PCA is small) ----
     RMD = np.empty((n_units, 0), dtype=np.float32)
     if use_rmd:
+        rmd_groups = rmd_reference_groups(unit_groups, unit_batches)
         if verbose:
-            print(f"[RMD] LOO displacement on rmd_emb...", flush=True)
+            print(f"[RMD] LOO displacement on rmd_emb; {len(set(rmd_groups))} reference group(s) "
+                  f"by {' x '.join(rmd_reference_cols) or 'none (all units)'}...", flush=True)
         Z_rmd = np.asarray(adata.obsm[rmd_key], dtype=np.float32)
         RMD = loo_rmd_from_index(
-            Z_rmd, unit_of_cell, ct_codes, K_c, unit_groups,
+            Z_rmd, unit_of_cell, ct_codes, K_c, rmd_groups,
             max_dim_per_cluster=rmd_dim_per_cluster, seed=seed, loo=True,
             verbose=verbose,
         )
@@ -300,11 +300,9 @@ def compute_sample_embedding(
             f"insufficient data for PCA (shape={F.shape}, requested {pca_components})")
     Fp = _gpu_pca(F, n_pc_full, seed)
 
-    # Sample-level Harmony — multi-covariate when >=2 batch_cols given, else legacy
-    multi_meta_df = (
-        harmony_meta_from_index(adata, unit_of_cell, unit_ids, batch_cols_multi)
-        if len(batch_cols_multi) >= 2 else None
-    )
+    # Sample-level Harmony — multi-covariate when >=2 batch_cols given (None otherwise), else legacy
+    multi_meta_df = harmony_meta_from_index(adata, unit_of_cell, unit_ids, batch_cols,
+                                            modality_col)
 
     batch_labels, used_composite = composite_batch_labels(unit_groups, unit_batches)
     if multi_meta_df is not None:
@@ -356,8 +354,8 @@ def compute_sample_embedding(
         # Deprecated 0.2.0 spelling, kept for readers of this dict; removed in 1.0.
         "cluster_emb_key": str(comp_key),
         "modality_col": str(modality_col) if modality_col else "",
-        "batch_col": str(primary_batch) if primary_batch else "",
-        "batch_cols_multi": list(batch_cols_multi),
+        "batch_cols": list(batch_cols),
+        "rmd_reference_cols": list(rmd_reference_cols),
         "seed": int(seed),
         "backend": "gpu",
     }

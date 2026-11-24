@@ -1,4 +1,4 @@
-"""Config validation: the three post-0.2.0 keys are optional, every other key is required.
+"""Config validation: the post-0.2.0 keys are optional, every other key is required.
 Run with `pytest tests/` or `python tests/test_config_validation.py`."""
 import inspect
 from importlib.resources import files
@@ -24,16 +24,17 @@ def demo_config():
 
 def test_full_config_validates():
     cfg = demo_config()
-    assert len(cfg) == len(inspect.signature(wrapper).parameters) == 304
+    assert len(cfg) == len(inspect.signature(wrapper).parameters) == 308
     validate_config(cfg, wrapper)
 
 
-def test_pre_0_3_config_validates_and_defaults_to_true():
+def test_pre_0_3_config_validates_and_defaults_keep_old_behaviour():
     cfg = {k: v for k, v in demo_config().items() if k not in OPTIONAL_KEYS}
     assert len(cfg) == 301
     validate_config(cfg, wrapper)
     params = inspect.signature(wrapper).parameters
-    assert all(params[k].default is True for k in OPTIONAL_KEYS)
+    assert all(params[k].default is (True if k.endswith("_save_cell_adata_after_embedding") else None)
+               for k in OPTIONAL_KEYS)
 
 
 def test_other_missing_key_still_rejected():
