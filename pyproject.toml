@@ -2,7 +2,7 @@
 # Installable as a normal package (src/ layout): `pip install -e .` exposes the
 # `sampledisco` import and the `sampledisco` console command from anywhere — no
 # more `cd code && python SampleDisc.py`. Core deps are declared in
-# requirements.txt; optional GPU acceleration is in requirements-gpu.txt.
+# requirements.txt; the full CPU / GPU environments are environment-cpu.yml / environment-gpu.yml.
 [build-system]
 requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"

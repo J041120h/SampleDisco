@@ -17,3 +17,6 @@ logs/
 
 # Notebooks
 .ipynb_checkpoints/
+
+# Claude Code local state
+.claude/
