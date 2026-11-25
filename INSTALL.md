@@ -28,7 +28,7 @@ MaxFuse 0.0.2, bedtools 2.31.
 ```bash
 conda env create -f environment-gpu.yml      # no GPU on this machine? prefix CONDA_OVERRIDE_CUDA=12.5
 conda activate sampledisco-gpu
-pip install --no-deps rapids-singlecell==0.13.1 sampledisco==0.6.1
+pip install --no-deps rapids-singlecell==0.13.1 sampledisco==0.7.0
 ```
 
 Validated stack: the CPU stack **+ RAPIDS 24.12** (cuml/cudf/cugraph/rmm/cuvs 24.12,
