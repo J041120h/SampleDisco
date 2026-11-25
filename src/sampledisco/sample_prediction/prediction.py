@@ -4,17 +4,24 @@ Both functions take a one-row-per-sample AnnData (``build_sample_adata``), read 
 first ``n_pcs`` components of ``uns['X_DR_sample']`` (``obsm`` as fallback) and the
 labels from ``.obs``.
 """
+import warnings
 from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import cdist
-from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.base import clone
+from sklearn.compose import TransformedTargetRegressor
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, r2_score, roc_auc_score
-from sklearn.model_selection import GridSearchCV, GroupKFold, StratifiedGroupKFold
+from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+
+MODELS = ("mlp", "knn")
 
 
 def _embedding(pseudo_adata: AnnData, n_pcs: Optional[int]) -> np.ndarray:
@@ -28,28 +35,45 @@ def _embedding(pseudo_adata: AnnData, n_pcs: Optional[int]) -> np.ndarray:
     return X[:, :n_pcs]
 
 
+def _model(model: str, task: str, n_neighbors: int, random_state: int) -> Pipeline:
+    clf = task == "classification"
+    if model == "knn":
+        return Pipeline([("model", (KNeighborsClassifier if clf else KNeighborsRegressor)(n_neighbors))])
+    mlp = (MLPClassifier if clf else MLPRegressor)(alpha=10.0, random_state=random_state)
+    est = mlp if clf else TransformedTargetRegressor(mlp, transformer=StandardScaler())
+    return Pipeline([("scale", StandardScaler()), ("model", est)])
+
+
 def predict_phenotype(
     pseudo_adata: AnnData,
     label_col: str,
     *,
+    model: str = "mlp",
     group_col: Optional[str] = None,
     n_pcs: Optional[int] = None,
     task: str = "classification",
+    n_neighbors: int = 5,
     score_by: str = "sample",
     n_splits: int = 5,
     random_state: int = 0,
 ) -> Tuple[pd.DataFrame, Dict]:
     """Out-of-fold prediction of a sample phenotype from the first ``n_pcs`` embedding PCs.
 
-    Standardized PCs feed an L2 logistic regression (``task="classification"``, binary or
-    multiclass) or a ridge regression (``task="regression"``). The penalty is chosen by an
-    inner 3-fold grouped CV inside each training split (scored by AUC, balanced accuracy
-    or R²) from C in {10, 1, 0.1, 0.01} or alpha in {0.1, 1, 10, 100}; a tie goes to the
-    weakest penalty. The outer split is ``n_splits``-fold, stratified by class for
-    classification and seeded by ``random_state``. With ``group_col`` (e.g. donor) every
-    sample of a group falls in the same fold, outer and inner, so draws of one donor are
-    never in training and test at once. Samples with a missing label are left out. This is
-    the recipe of the paper's Sound Life trait prediction.
+    ``model`` (binary or multiclass ``task="classification"``, or ``task="regression"``):
+
+    - ``"mlp"`` (default, the paper's classifier): standardized PCs into a multilayer
+      perceptron with one hidden layer of 100 ReLU units, trained with Adam (learning rate
+      0.001, batches of 200, 200 epochs) and an L2 weight penalty of 10. Nothing is tuned.
+      For regression the target is standardized too.
+    - ``"knn"``: the majority (or mean, for regression) of the ``n_neighbors`` nearest
+      training samples, Euclidean on the raw PCs as in ``transfer_labels``; the class
+      probability is the neighbours' vote share. It fits no parameters, so it suits small
+      cohorts (tens of samples). ``n_neighbors`` is capped at the training-split size.
+
+    The outer split is ``n_splits``-fold, stratified by class for classification and
+    seeded by ``random_state`` (which also seeds the MLP). With ``group_col`` (e.g. donor)
+    every sample of a group falls in the same fold, so draws of one donor are never in
+    training and test at once. Samples with a missing label are left out.
 
     ``score_by="group"`` scores groups instead of samples: the out-of-fold probabilities
     (or predictions) and the labels are averaged over ``group_col`` before scoring (the
@@ -57,11 +81,14 @@ def predict_phenotype(
 
     Returns ``(predictions, metrics)``. ``predictions`` is indexed by sample with columns
     ``label``, ``predicted``, ``fold`` and, for classification, ``prob_<class>``.
-    ``metrics`` holds ``n_samples``, ``n_groups``, ``n_pcs``, the penalty chosen in each
-    fold (``C`` or ``alpha``) and ``auc`` (binary; the second class in sorted order is
-    positive), ``accuracy`` and ``balanced_accuracy`` (classification) or ``r2``
-    (regression), computed on the out-of-fold predictions at the ``score_by`` level.
+    ``metrics`` holds ``model``, ``n_samples``, ``n_groups``, ``n_pcs``, ``n_neighbors``
+    (knn), and ``auc``
+    (binary; the second class in sorted order is positive), ``accuracy`` and
+    ``balanced_accuracy`` (classification) or ``r2`` (regression), computed on the
+    out-of-fold predictions at the ``score_by`` level.
     """
+    if model not in MODELS:
+        raise ValueError(f"model must be one of {MODELS}.")
     if task not in ("classification", "regression") or score_by not in ("sample", "group"):
         raise ValueError("task must be 'classification' or 'regression', score_by 'sample' or 'group'.")
     obs = pseudo_adata.obs
@@ -72,32 +99,34 @@ def predict_phenotype(
 
     if task == "classification":
         classes, y = np.unique(labels, return_inverse=True)
-        model, param = LogisticRegression(max_iter=3000), "C"
-        grid, scoring = [10, 1, 0.1, 0.01], "roc_auc" if len(classes) == 2 else "balanced_accuracy"
         outer = StratifiedGroupKFold(n_splits, shuffle=True, random_state=random_state).split(X, y, groups)
         P = np.zeros((len(y), len(classes)))
     else:
         y = labels.astype(float)
-        model, param, grid, scoring = Ridge(), "alpha", [0.1, 1, 10, 100], "r2"
         codes = np.unique(groups, return_inverse=True)[1]
         shuffled = np.random.default_rng(random_state).permutation(codes.max() + 1)[codes]
         outer = GroupKFold(n_splits).split(X, y, shuffled)
         pred = np.zeros(len(y))
 
-    fold, chosen = np.zeros(len(y), dtype=int), []
-    pipe = Pipeline([("scale", StandardScaler()), ("model", model)])
+    base = _model(model, task, n_neighbors, random_state)
+    fold = np.zeros(len(y), dtype=int)
     for i, (tr, te) in enumerate(outer):
-        gs = GridSearchCV(pipe, {f"model__{param}": grid}, cv=GroupKFold(3), scoring=scoring)
-        gs.fit(X[tr], y[tr], groups=groups[tr])
-        chosen.append(gs.best_params_[f"model__{param}"])
+        est = clone(base)
+        if model == "knn":
+            est.set_params(model__n_neighbors=min(n_neighbors, len(tr)))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ConvergenceWarning)   # Adam stops at its fixed 200 epochs
+            est.fit(X[tr], y[tr])
         fold[te] = i
         if task == "classification":
-            P[np.ix_(te, gs.classes_)] = gs.predict_proba(X[te])
+            P[np.ix_(te, est.classes_)] = est.predict_proba(X[te])
         else:
-            pred[te] = gs.predict(X[te])
+            pred[te] = est.predict(X[te])
 
-    metrics = {"task": task, "score_by": score_by, "n_samples": len(y), "n_groups": len(np.unique(groups)),
-               "n_pcs": X.shape[1], param: chosen}
+    metrics = {"task": task, "model": model, "score_by": score_by, "n_samples": len(y),
+               "n_groups": len(np.unique(groups)), "n_pcs": X.shape[1]}
+    if model == "knn":
+        metrics["n_neighbors"] = n_neighbors
     out = pd.DataFrame({"label": labels}, index=obs.index[keep])
     if task == "classification":
         out["predicted"] = classes[P.argmax(1)]

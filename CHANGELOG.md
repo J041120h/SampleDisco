@@ -25,6 +25,21 @@
   for no batch column in multi-omics. They change for several sample-level columns, and for
   multi-omics with a batch column.
 
+**Phenotype prediction: MLP by default, KNN for small cohorts**
+
+- `predict_phenotype` takes `model="mlp"` (default) or `"knn"`.
+  - `"mlp"`: the paper's classifier. Standardized PCs into a multilayer perceptron (one
+    hidden layer of 100 ReLU units, Adam, L2 weight penalty 10, seeded by `random_state`);
+    nothing is tuned. With the paper's settings it reproduces the Sound Life out-of-fold
+    predictions and donor-level AUCs exactly.
+  - `"knn"`: vote (or mean) of the `n_neighbors` nearest training samples (default 5,
+    capped at the training-split size) on the raw PCs, as in `transfer_labels`. It fits no
+    parameters, for cohorts of tens of samples.
+- The logistic / ridge model with the inner-CV penalty (0.5.0-0.6.1) is removed, and with it
+  the `C` / `alpha` entries of `metrics`. Folds, grouping, seeding and outputs are unchanged;
+  `metrics` gains `model`, and `n_neighbors` for knn.
+- Tests: `tests/test_sample_prediction.py`.
+
 ## 0.6.1
 
 Reproducible runs, faster trajectory DGE, and fixes for the remaining known issues. Config

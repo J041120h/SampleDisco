@@ -25,11 +25,24 @@ def separated(n=60, pc=0, seed=0):
 
 
 def test_binary_perfect():
-    pred, m = predict_phenotype(separated(), "status")
-    assert m["auc"] == 1.0 and m["accuracy"] == 1.0 and m["n_pcs"] == 5
-    assert m["C"] == [10] * 5                                  # every C ties on separable data: weakest penalty
-    assert (pred["predicted"] == pred["label"]).all()
-    assert np.allclose(pred[["prob_healthy", "prob_severe"]].sum(1), 1)
+    for model in ("mlp", "knn"):
+        pred, m = predict_phenotype(separated(), "status", model=model)
+        assert m["model"] == model and m["auc"] == 1.0 and m["accuracy"] == 1.0 and m["n_pcs"] == 5
+        assert (pred["predicted"] == pred["label"]).all()
+        assert np.allclose(pred[["prob_healthy", "prob_severe"]].sum(1), 1)
+
+
+def test_knn_small_cohort_and_bad_model():
+    """12 samples, 3 folds: 8 training samples per fold, so n_neighbors=10 is capped at 8."""
+    a = separated(n=12)
+    pred, m = predict_phenotype(a, "status", model="knn", n_neighbors=3, n_splits=3)
+    assert m["auc"] == 1.0 and m["n_neighbors"] == 3 and set(np.unique(pred[["prob_healthy"]])) <= {0, 1 / 3, 2 / 3, 1}
+    assert predict_phenotype(a, "status", model="knn", n_neighbors=10, n_splits=3)[1]["n_samples"] == 12
+    try:
+        predict_phenotype(a, "status", model="svm")
+        raise AssertionError("unknown model accepted")
+    except ValueError:
+        pass
 
 
 def test_only_first_n_pcs_used():
@@ -55,8 +68,8 @@ def test_multiclass_and_regression():
     a = make(X, grade=y, score=3 * X[:, 0] + rng.normal(size=90))
     pred, m = predict_phenotype(a, "grade")
     assert "auc" not in m and m["accuracy"] > 0.95 and {"prob_0", "prob_1", "prob_2"} <= set(pred.columns)
-    pred, m = predict_phenotype(a, "score", task="regression")
-    assert m["r2"] > 0.95 and len(m["alpha"]) == 5
+    for model in ("mlp", "knn"):
+        assert predict_phenotype(a, "score", task="regression", model=model)[1]["r2"] > 0.95
 
 
 def test_groups_never_split_and_seeded():
