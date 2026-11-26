@@ -447,6 +447,13 @@ def test_linear_test_equals_statsmodels_ols_with_and_without_batch():
             np.testing.assert_allclose(models[g].coef_[0], fit.params[1], rtol=1e-8)
 
 
+def test_linear_skips_a_feature_whose_slope_is_not_identifiable():
+    X, d, Y = _ols_design(n=30, n_batches=3)
+    X["pseudotime"] = d.sum(axis=1) * 0.5                      # pseudotime is a function of the batch dummies
+    res, models = fit_linear_models_for_genes(pd.concat([X, d], axis=1), Y, list(Y.columns))
+    assert len(res) == 0 and not models
+
+
 def test_linear_effect_size_and_direction():
     X, d, Y = _ols_design(slope=-1.5)
     XX = pd.concat([X, d], axis=1)

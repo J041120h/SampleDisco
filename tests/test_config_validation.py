@@ -38,14 +38,34 @@ def test_pre_0_3_config_validates_and_defaults_keep_old_behaviour():
                for k in OPTIONAL_KEYS)
 
 
-def test_trajectory_test_keys_reach_the_dge_call():
+def test_trajectory_test_keys_reach_the_dge_call(tmp_path, monkeypatch):
+    import sampledisco.wrapper.wrapper as W
+    import sampledisco.wrapper.multiomics_wrapper as MW
+    calls = {}
+
+    def fake_downstream(**kw):
+        calls[kw["modality"]] = kw
+        return {"status_flags": kw.get("status_flags", {})}
+
+    fake_pre = lambda **kw: {"adata": None, "status_flags": kw.get("status_flags", {})}
+    monkeypatch.setattr(W, "downstream_analysis", fake_downstream)
+    monkeypatch.setattr(W, "rna_wrapper", fake_pre)
+    monkeypatch.setattr(W, "atac_wrapper", fake_pre)
+    monkeypatch.setattr(MW, "multiomics_wrapper", fake_pre)
+    monkeypatch.setattr(W, "_sample_adata_or_none", lambda *a, **k: None)
     cfg = demo_config()
-    assert {cfg[f"{m}_trajectory_test"] for m in ("rna", "atac", "multiomics")} == {"gam"}
-    src = inspect.getsource(inspect.getmodule(wrapper))
-    for m in ("rna", "atac", "multiomics"):
-        assert f"trajectory_test={m}_trajectory_test," in src
-    assert "test=trajectory_test," in src
-    assert "dge_pseudobulk_min_variance_ratio=0," in src.split("trajectory_test=atac_trajectory_test,")[1].split("\n")[1]
+    cfg.update(output_dir=str(tmp_path), run_multiomics_pipeline=True, multiomics_integration=False,
+               rna_trajectory_test="linear", atac_trajectory_test="gam", multiomics_trajectory_test="linear")
+    W.wrapper(**cfg)
+    assert [calls[m]["trajectory_test"] for m in ("rna", "atac", "multiomics")] == ["linear", "gam", "linear"]
+    assert calls["atac"]["dge_pseudobulk_min_variance_ratio"] == 0
+    assert "dge_pseudobulk_min_variance_ratio" not in calls["rna"]
+    assert "dge_pseudobulk_min_variance_ratio" not in calls["multiomics"]
+
+
+def test_invalid_trajectory_test_value_rejected():
+    for key in ("rna_trajectory_test", "atac_trajectory_test", "multiomics_trajectory_test"):
+        raises(f"Invalid value for '{key}'", validate_config, dict(demo_config(), **{key: "quadratic"}), wrapper)
 
 
 def test_other_missing_key_still_rejected():

@@ -54,6 +54,8 @@ def validate_config(config, func):
             raise ValueError(f"Missing required parameter in config: '{key}'")
     from sampledisco.sample_embedding.blocks import check_batch_method, check_rmd_weight
     for key in config:
+        if key.endswith("_trajectory_test") and config[key] not in ("gam", "linear"):
+            raise ValueError(f"Invalid value for '{key}': must be 'gam' or 'linear', got {config[key]!r}")
         check = (check_rmd_weight if key.endswith("_sample_embedding_rmd_weight") else
                  check_batch_method if key.endswith("_sample_embedding_batch_method") else None)
         if check is not None:

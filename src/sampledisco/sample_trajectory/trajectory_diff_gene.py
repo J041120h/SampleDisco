@@ -779,7 +779,8 @@ def fit_linear_models_for_genes(
     Per-gene OLS of expression on all columns of X (pseudotime first, then the batch dummies / covariates)
     plus an intercept; two-sided t-test on the pseudotime slope with n - rank residual df. ``dev_exp`` is
     the R^2 of the full model. Each gene is fitted on every sample with a finite design row and value
-    (at least ``X.shape[1] + 2``); BH as in the GAM fit.
+    (at least ``X.shape[1] + 2``) in which the pseudotime column is identifiable from the rest of the design
+    (otherwise it is skipped: slope_not_identifiable); BH as in the GAM fit.
     """
     X_dense = X.to_numpy(dtype=float)
     Y_dense = Y.to_numpy(dtype=float)
@@ -795,6 +796,8 @@ def fit_linear_models_for_genes(
         if y.size < min_needed or np.var(y) < 1e-10:
             continue
         A = np.column_stack([X_dense[mask], np.ones(y.size)])
+        if np.linalg.matrix_rank(A) == np.linalg.matrix_rank(A[:, 1:]):
+            continue                                  # slope_not_identifiable
         beta, _, rank, _ = np.linalg.lstsq(A, y, rcond=None)
         rss = float(np.sum((y - A @ beta) ** 2))
         df = y.size - rank
@@ -1454,10 +1457,12 @@ def trajectory_test_features(
 ) -> pd.DataFrame:
     """Trajectory test of every feature of a precomputed unit-level matrix (e.g. chromVAR motif deviations).
 
-    `adata` has one row per unit (a sample, or a sample x cell type) and one column per feature; `adata.X`
-    is used as given, with no pseudobulk building and no variance filter (NaN marks a missing unit).
-    `pseudotime_source` is as in `run_trajectory_gam_differential_gene_analysis` and must be keyed by
-    `adata.obs_names`. `batch_col` (a column of `adata.obs`) enters the model as an unpenalised categorical
+    `adata` has one row per unit and one column per feature; `adata.X` is used as given (NaN marks a missing
+    unit), with no pseudobulk building and no variance-ratio filter; features with variance < 1e-6 are
+    dropped by the shared input preparation. Each row needs its own pseudotime, keyed by `adata.obs_names`
+    (as in `run_trajectory_gam_differential_gene_analysis`), and the tests treat rows as independent: run it
+    per cell type (one row per sample) or put cell types in columns, never several rows of the same sample
+    in one test. `batch_col` (a column of `adata.obs`) enters the model as an unpenalised categorical
     covariate, `covariate_columns` as in the GAM design. `test="linear"` (OLS slope, t-test) or `"gam"`
     (spline Wald test); BH, effect size, direction (UP/DOWN), pseudoDEG selection and outputs are those of
     the trajectory DGE. Returns the per-feature table (gene = feature name).
