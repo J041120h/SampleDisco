@@ -317,12 +317,110 @@ def test_adjusted_curve_equals_predict_without_covariates_and_covariate_mean_wit
     y = np.sin(3 * X["pseudotime"].to_numpy()) + 2 * d["b2"].to_numpy() + rng.normal(0, 0.1, len(X))
     grid = np.linspace(X["pseudotime"].min(), X["pseudotime"].max(), 15)
     _, m0 = fit_gam_models_for_genes(X, pd.DataFrame({"g": y}, index=X.index), ["g"], n_jobs=1)
-    np.testing.assert_allclose(_adjusted_curve(m0["g"], grid, X), m0["g"].predict(grid.reshape(-1, 1)), atol=1e-10)
+    np.testing.assert_allclose(_adjusted_curve(m0["g"], grid, X, y), m0["g"].predict(grid.reshape(-1, 1)), atol=1e-10)
     XX = pd.concat([X, d], axis=1)
     _, m1 = fit_gam_models_for_genes(XX, pd.DataFrame({"g": y}, index=X.index), ["g"], n_jobs=1,
                                      unpenalised_columns=list(d.columns))
     expect = [np.mean(m1["g"].predict(np.column_stack([np.full(len(XX), t), d.to_numpy()]))) for t in grid]
-    np.testing.assert_allclose(_adjusted_curve(m1["g"], grid, XX), expect, atol=1e-8)
+    np.testing.assert_allclose(_adjusted_curve(m1["g"], grid, XX, y), expect, atol=1e-8)
+
+
+def _null_pvalues(n, n_batches, confounded, genes=600, seed=0, rename=None):
+    """Pure-noise genes (plus a batch shift per gene when batched); pseudotime tied to batch if `confounded`."""
+    rng = np.random.default_rng(seed)
+    idx = [f"s{i}" for i in range(n)]
+    bi = np.arange(n) % n_batches
+    pt = rng.uniform(0, 1, n) + (0.7 * bi if confounded else 0)
+    Y = rng.normal(0, 1, (n, genes)) + (bi[:, None] * rng.normal(0, 1.5, genes) if n_batches > 1 else 0)
+    X, un = pd.DataFrame({"pseudotime": pt}, index=idx), []
+    if n_batches > 1:
+        lab = pd.Series([f"b{i}" for i in bi], index=idx).replace(rename or {})
+        d = pd.get_dummies(lab, drop_first=True).astype(float)
+        X, un = pd.concat([X, d], axis=1), list(d.columns)
+    names = [f"g{j}" for j in range(genes)]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res, _ = fit_gam_models_for_genes(X, pd.DataFrame(Y, index=idx, columns=names), names, n_jobs=1,
+                                          unpenalised_columns=un)
+    return res.set_index("gene").sort_index()["pval"]
+
+
+def test_pvalue_is_calibrated_without_batch():
+    for n in (26, 85, 405):
+        assert (_null_pvalues(n, 1, False) < 0.05).mean() <= 0.07, n
+
+
+def test_pvalue_is_calibrated_with_a_confounded_batch():
+    for n, nb in ((60, 3), (120, 4)):
+        assert (_null_pvalues(n, nb, True) < 0.05).mean() <= 0.07, (n, nb)
+
+
+def test_pvalue_is_invariant_to_the_batch_labels():
+    a = _null_pvalues(60, 3, True, genes=60)
+    b = _null_pvalues(60, 3, True, genes=60, rename={"b0": "z0"})
+    np.testing.assert_allclose(a, b, rtol=1e-6)
+
+
+def _batch_pb(batch):
+    a = _cells()
+    a.obs["batch"] = a.obs["sample"].map(lambda s: batch(int(s[1:])))
+    return a, dict(zip([f"S{i}" for i in range(N_SAMPLES)], np.random.default_rng(0).normal(0, 1.0, N_SAMPLES)))
+
+
+def _run(a, pt, **kw):
+    with tempfile.TemporaryDirectory() as d, warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return tdg.run_trajectory_gam_differential_gene_analysis(
+            a, pt, n_jobs=1, output_dir=d, generate_visualizations=False, verbose=False, **kw).set_index("gene").sort_index()
+
+
+def test_string_integer_and_object_batch_dtypes_give_the_same_result():
+    lab = lambda si: "b1" if si < 8 else "b2"
+    ref = None
+    for cast in (lambda s: s.astype(object), lambda s: s.astype("string"), lambda s: s.astype("category"),
+                 lambda s: s.map({"b1": 1, "b2": 2}).astype(int)):
+        a, pt = _batch_pb(lab)
+        a.obs["batch"] = cast(a.obs["batch"])
+        res = _run(a, pt, batch_col="batch")
+        ref = res if ref is None else ref
+        np.testing.assert_allclose(res["pval"], ref["pval"], rtol=1e-6)
+
+
+def test_batch_dummies_have_lam_zero_and_other_covariates_the_default():
+    X, d, Y = _batch_design(seed=3)
+    X["sex"] = (np.arange(len(X)) % 2).astype(float)
+    XX = pd.concat([X, d], axis=1)
+    _, models = fit_gam_models_for_genes(XX, Y[["g0"]], ["g0"], n_jobs=1, unpenalised_columns=list(d.columns))
+    lams = {c: models["g0"].terms[j].lam[0] for j, c in enumerate(XX.columns) if j}
+    assert all(lams[c] == 0 for c in d.columns) and lams["sex"] == 0.6
+
+
+def test_categorical_batch_with_an_unused_category_and_missing_batch():
+    a, pt = _batch_pb(lambda si: "b1" if si < 8 else "b2")
+    a.obs["batch"] = pd.Categorical(a.obs["batch"], categories=["b1", "b2", "unused"])
+    assert len(_run(a, pt, batch_col="batch")) > 0
+    a, pt = _batch_pb(lambda si: "b1" if si < 8 else "b2")
+    a.obs["batch"] = a.obs["batch"].where(a.obs["sample"] != "S3")
+    with warnings.catch_warnings(record=True) as rec:
+        warnings.simplefilter("always")
+        pb = _build(a, min_variance_ratio=0)
+    assert sum("missing 'batch'" in str(w.message) for w in rec) == 1
+    assert np.isnan(pb[["S3"]].X).all() and np.isfinite(pb[[f"S{i}" for i in range(N_SAMPLES) if i != 3]].X).all()
+    X, Y, _ = prepare_gam_input_data_improved(pb, {f"S{i}": float(i) for i in range(N_SAMPLES)},
+                                              covariate_columns=["batch"], unpenalised_columns=["batch"])
+    assert X.loc["S3"].isna()["batch_b2"] and X.drop(index="S3").notna().all().all()
+
+
+def test_adjusted_curve_for_a_gene_missing_one_batch():
+    X, d, Y = _batch_design(seed=4, confounded=False)
+    XX = pd.concat([X, d], axis=1)
+    y = Y["g0"].copy()
+    y[d["b3"] == 1.0] = np.nan                                  # gene never measured in batch b3
+    _, m = fit_gam_models_for_genes(XX, y.to_frame(), ["g0"], n_jobs=1, unpenalised_columns=list(d.columns))
+    grid = np.linspace(X["pseudotime"].min(), X["pseudotime"].max(), 10)
+    fit = np.isfinite(y.to_numpy())
+    expect = [np.mean(m["g0"].predict(np.column_stack([np.full(fit.sum(), t), d.to_numpy()[fit]]))) for t in grid]
+    np.testing.assert_allclose(_adjusted_curve(m["g0"], grid, XX, y), expect, atol=1e-8)
 
 
 if __name__ == "__main__":

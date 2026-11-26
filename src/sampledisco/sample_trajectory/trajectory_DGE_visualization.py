@@ -37,15 +37,17 @@ def _quiet(fn):
 # COLOR SCHEMES (following Lamian paper style)
 # =============================================================================
 
-def _adjusted_curve(gam, ptime, X):
-    """Batch-adjusted fitted curve: pseudotime term + intercept + each covariate term averaged over the samples of X."""
+def _adjusted_curve(gam, ptime, X, y):
+    """Batch-adjusted fitted curve: pseudotime term + intercept + each covariate term averaged over the
+    samples the gene was fitted on (finite design row and finite `y`)."""
     n_feat = len(gam.terms) - 1
-    grid = np.zeros((len(ptime), n_feat))
+    X_fit = X.iloc[:, :n_feat].to_numpy(float)
+    X_fit = X_fit[np.isfinite(X_fit).all(axis=1) & np.isfinite(np.asarray(y, dtype=float))]
+    grid = np.tile(X_fit[0], (len(ptime), 1))
     grid[:, 0] = ptime
     curve = gam.partial_dependence(term=0, X=grid) + gam.coef_[-1]
-    if n_feat > 1:
-        X_fit = X.iloc[:, :n_feat].to_numpy(float)
-        curve = curve + sum(gam.partial_dependence(term=j, X=X_fit).mean() for j in range(1, n_feat))
+    for j in range(1, n_feat):
+        curve = curve + gam.partial_dependence(term=j, X=X_fit).mean()
     return curve
 
 
@@ -143,7 +145,7 @@ def plot_tde_heatmap(
     for gene in available_genes:
         try:
             model = gam_models[gene]
-            y_pred = _adjusted_curve(model, ptime_sorted, X)
+            y_pred = _adjusted_curve(model, ptime_sorted, X, Y[gene])
             fitted_data.append(y_pred)
         except Exception:
             raw_vals = Y[gene].iloc[sort_idx].values
@@ -461,7 +463,7 @@ def plot_gene_expression_curves(
                         ptime_min, ptime_max = xg.min(), xg.max()
                         ptime_pred = np.linspace(ptime_min, ptime_max, n_curve_points)
                         
-                        y_pred = _adjusted_curve(gam, ptime_pred, X)
+                        y_pred = _adjusted_curve(gam, ptime_pred, X, Y[gene])
                         
                         ax.plot(
                             ptime_pred, y_pred,
@@ -496,7 +498,7 @@ def plot_gene_expression_curves(
                     ptime_min, ptime_max = ptime.min(), ptime.max()
                     ptime_pred = np.linspace(ptime_min, ptime_max, n_curve_points)
                     
-                    y_pred = _adjusted_curve(gam, ptime_pred, X)
+                    y_pred = _adjusted_curve(gam, ptime_pred, X, Y[gene])
                     
                     ax.plot(
                         ptime_pred, y_pred,
@@ -682,12 +684,12 @@ def plot_sample_level_curves(
                 ptime_min, ptime_max = g_ptime.min(), g_ptime.max()
                 ptime_pred = np.linspace(ptime_min, ptime_max, n_curve_points)
                 
-                y_pred = _adjusted_curve(gam_model, ptime_pred, X)
+                y_pred = _adjusted_curve(gam_model, ptime_pred, X, Y[gene])
                 
                 ax2.plot(ptime_pred, y_pred, color=group_colors.get(g, 'gray'), 
                         linewidth=3, label=str(g), alpha=0.95, zorder=10)
                 
-                y_fitted = _adjusted_curve(gam_model, g_ptime, X)
+                y_fitted = _adjusted_curve(gam_model, g_ptime, X, Y[gene])
                 residuals = g_expr - y_fitted
                 std_approx = np.std(residuals)
                 
@@ -710,10 +712,10 @@ def plot_sample_level_curves(
         try:
             ptime_pred = np.linspace(ptime_nz.min(), ptime_nz.max(), n_curve_points)
             
-            y_pred = _adjusted_curve(gam_model, ptime_pred, X)
+            y_pred = _adjusted_curve(gam_model, ptime_pred, X, Y[gene])
             ax2.plot(ptime_pred, y_pred, c=line_color, linewidth=3, alpha=0.95)
             
-            y_fitted = _adjusted_curve(gam_model, ptime_nz, X)
+            y_fitted = _adjusted_curve(gam_model, ptime_nz, X, Y[gene])
             residuals = expr_nz - y_fitted
             std_approx = np.std(residuals)
             ax2.fill_between(ptime_pred, y_pred - std_approx, y_pred + std_approx,

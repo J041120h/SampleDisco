@@ -29,6 +29,8 @@ import anndata as ad
 from scipy.sparse import csr_matrix, issparse
 from statsmodels.stats.multitest import multipletests
 from pygam import LinearGAM, s, f
+from scipy import stats
+from scipy.linalg import pinv
 
 
 # =============================================================================
@@ -61,7 +63,7 @@ def _attempt_limma(temp_adata, batch_col, preserve_cols, verbose=False):
         temp_adata.X = limma(
             pheno=temp_adata.obs, exprs=X,
             covariate_formula=covariate_formula,
-            design_formula=f'~ Q("{batch_col}")',
+            design_formula=f'~ C(Q("{batch_col}"))',
             rcond=1e-8, verbose=False,
         )
         return True
@@ -162,6 +164,14 @@ def _build_sample_pseudobulk(
     sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
     pb_obs = pb_obs.join(sample_to_meta, how="left")
 
+    has_batch = (np.ones(n_samples, dtype=bool) if batch_col_to_use is None
+                 else pb_obs[batch_col_to_use].notna().to_numpy())
+    if not has_batch.all():
+        warnings.warn(
+            f"[trajectory_diff_gene] samples {list(pb_obs.index[~has_batch])} have a missing "
+            f"'{batch_col_to_use}'; they are treated as missing (not fitted, not in the filter).",
+            RuntimeWarning, stacklevel=2)
+
     _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
     X_full = _X.tocsr() if issparse(_X) else _X
 
@@ -178,7 +188,7 @@ def _build_sample_pseudobulk(
             shape=(n_samples, n_cells_ct),
         )
         n_cells = np.bincount(ct_sample_idx, minlength=n_samples)
-        retained = np.flatnonzero(n_cells >= min_cells_per_group)
+        retained = np.flatnonzero((n_cells >= min_cells_per_group) & has_batch)
         n_r = len(retained)
 
         X_ct = X_full[ct_mask].astype(np.float64)
@@ -420,8 +430,10 @@ def prepare_gam_input_data_improved(
 ) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """Prepare X (design, float) and Y (expression) for GAM fitting.
 
-    `X.attrs["unpenalised"]` lists the X columns encoding the covariates named in
-    `unpenalised_columns` (one-hot dummies for categorical ones).
+    Non-numeric covariates and those named in `unpenalised_columns` (the batch, even if
+    integer-coded) are one-hot encoded (drop_first); a sample with a missing value gets
+    NaN dummies and is left out of every fit. `X.attrs["unpenalised"]` lists the dummy
+    columns of `unpenalised_columns`.
     """
     if ptime_expression is None or not ptime_expression:
         raise ValueError("Pseudotime values must be provided.")
@@ -498,13 +510,17 @@ def prepare_gam_input_data_improved(
 
         if valid_covs:
             covs = filtered_meta[valid_covs].copy()
-            unpenalised_x = list(pd.get_dummies(
-                covs[[c for c in valid_covs if c in (unpenalised_columns or [])]], drop_first=True).columns)
-            cat_cols = covs.select_dtypes(include=["object", "category"]).columns
-            if len(cat_cols) > 0:
-                if verbose:
-                    print(f"  → One-hot encoding categorical covariates: {list(cat_cols)}")
-                covs = pd.get_dummies(covs, columns=list(cat_cols), drop_first=True)
+            cat_cols = [c for c in valid_covs
+                        if c in (unpenalised_columns or []) or not pd.api.types.is_numeric_dtype(covs[c])]
+            if cat_cols and verbose:
+                print(f"  → One-hot encoding categorical covariates: {cat_cols}")
+            dummies = {}
+            for c in cat_cols:
+                d = pd.get_dummies(covs[c].astype(object), prefix=c, drop_first=True).astype(float)
+                d[covs[c].isna().to_numpy()] = np.nan
+                dummies[c] = d
+            covs = pd.concat([covs.drop(columns=cat_cols)] + list(dummies.values()), axis=1)
+            unpenalised_x = [n for c, d in dummies.items() if c in (unpenalised_columns or []) for n in d.columns]
             X = pd.concat([X, covs], axis=1)
 
     X = X.astype(float)
@@ -517,6 +533,20 @@ def prepare_gam_input_data_improved(
         print(f"  → Expression matrix: {Y.shape[0]} samples × {Y.shape[1]} genes")
 
     return X, Y, gene_names
+
+
+def _pseudotime_pvalue(gam: LinearGAM) -> float:
+    """Wald test that all spline coefficients are equal (contrasts orthogonal to the constant), F reference.
+
+    Same test as tradeSeq's associationTest (Van den Berge et al. 2020, Nat Commun). Replaces pyGAM's
+    ``statistics_["p_values"]``, which is far too small (pyGAM issue #163) and depends on the batch reference level.
+    """
+    ii = gam.terms.get_coef_indices(0)
+    k = len(ii)
+    P = np.eye(k) - 1.0 / k
+    b = P @ gam.coef_[ii]
+    Vi, rank = pinv(P @ gam.statistics_["cov"][np.ix_(ii, ii)] @ P, return_rank=True)
+    return stats.f.sf(b @ Vi @ b / rank, rank, gam.statistics_["n_samples"] - gam.statistics_["edof"])
 
 
 def fit_gam_models_for_genes(
@@ -578,8 +608,8 @@ def fit_gam_models_for_genes(
         spline_idx = list(X.columns).index(spline_term)
     except ValueError:
         raise ValueError(f"spline_term '{spline_term}' not found in X.columns: {list(X.columns)}")
-    # p_values below is indexed positionally (gam.statistics_["p_values"][spline_idx]),
-    # which is only correct when pseudotime is the first column of X.
+    # The p-value and effect size read the spline as term 0, which is only correct
+    # when pseudotime is the first column of X.
     assert spline_idx == 0, f"spline_term '{spline_term}' must be X's first column, got index {spline_idx}"
 
     def _make_terms():
@@ -636,7 +666,7 @@ def fit_gam_models_for_genes(
 
         try:
             gam = LinearGAM(_make_terms()).fit(X_fit, y_fit)
-            pval = gam.statistics_["p_values"][spline_idx]
+            pval = _pseudotime_pvalue(gam)
             dev = gam.statistics_["pseudo_r2"]["explained_deviance"]
             if np.isfinite(pval) and np.isfinite(dev):
                 return ("ok", gene, pval, dev, gam)

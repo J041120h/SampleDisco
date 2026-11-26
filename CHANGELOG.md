@@ -13,6 +13,15 @@
 - Effect size and direction are computed from the pseudotime term's partial dependence, so batch
   differences no longer inflate the range or flip the direction. Without covariates the numbers are
   unchanged. Fitted-curve plots draw the batch-adjusted curve.
+- The p-value of the pseudotime term is now a Wald test that all spline coefficients are equal (F
+  reference, as in tradeSeq's associationTest), replacing pyGAM's `p_values`, which were far too
+  small (about 30-40% of null genes at p < 0.05) and changed with the batch reference level. This
+  changes all trajectory-DGE p-values and FDRs, with or without covariates; effect size and
+  direction without covariates are unchanged. `dev_exp` is the full model's explained deviance
+  (batch included).
+- A sample with a missing batch is treated as missing (warned once) instead of joining the reference
+  batch, and the batch is categorical in the GAM and in the filter even when integer-coded. Fixed
+  crashes for pandas `string` batches and for fitted curves of genes missing a batch.
 - Fixed a crash with covariates: the one-hot design was boolean (object dtype), which broke the
   effect-size calculation; the design is now float.
 
