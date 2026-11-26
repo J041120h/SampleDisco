@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.0
+
+**Linear or GAM trajectory test**
+
+- `run_trajectory_gam_differential_gene_analysis(..., test="gam" | "linear")` and the wrapper keys
+  `rna_trajectory_test`, `atac_trajectory_test`, `multiomics_trajectory_test` (default `"gam"`, results
+  unchanged). `"linear"` is an OLS of each feature on pseudotime plus the same unpenalised batch dummies
+  and covariates, with a t-test on the slope; effect size is |slope| x pseudotime range / residual SD,
+  direction is the slope's sign, `dev_exp` is the model R^2. Same pseudobulk, filter, BH and outputs;
+  it suits small cohorts.
+- New `trajectory_test_features` runs the same per-feature test (linear or GAM, batch covariate, BH,
+  effect size, direction) on a precomputed unit-level matrix such as chromVAR motif deviations, with no
+  pseudobulk building and no variance filter.
+- The ATAC trajectory DGE no longer applies the variance-ratio filter (`min_variance_ratio=0`); it is
+  a gene filter. Before, ATAC used the default 2.0.
+
 ## 0.9.0
 
 **Trajectory DGE: batch as a covariate in the GAM instead of limma pre-correction**

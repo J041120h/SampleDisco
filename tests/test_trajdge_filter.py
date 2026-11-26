@@ -15,7 +15,7 @@ import scipy.sparse as sp
 import sampledisco.sample_trajectory.trajectory_diff_gene as tdg
 from sampledisco.sample_trajectory.trajectory_diff_gene import (
     _build_sample_pseudobulk, calculate_effect_size_and_direction, fit_gam_models_for_genes,
-    prepare_gam_input_data_improved)
+    prepare_gam_input_data_improved, fit_linear_models_for_genes, trajectory_test_features)
 from sampledisco.sample_trajectory.trajectory_DGE_visualization import _adjusted_curve
 
 N_SAMPLES, N_GENES = 16, 40
@@ -421,6 +421,103 @@ def test_adjusted_curve_for_a_gene_missing_one_batch():
     fit = np.isfinite(y.to_numpy())
     expect = [np.mean(m["g0"].predict(np.column_stack([np.full(fit.sum(), t), d.to_numpy()[fit]]))) for t in grid]
     np.testing.assert_allclose(_adjusted_curve(m["g0"], grid, XX, y), expect, atol=1e-8)
+
+
+def _ols_design(n=30, n_batches=3, seed=0, slope=0.0):
+    rng = np.random.default_rng(seed)
+    idx = [f"s{i}" for i in range(n)]
+    pt = rng.uniform(0, 1, n)
+    d = pd.get_dummies(pd.Series([f"b{i % n_batches}" for i in range(n)], index=idx), drop_first=True).astype(float)
+    Y = pd.DataFrame(rng.normal(0, 1, (n, 25)) + slope * pt[:, None] + 2 * d.sum(axis=1).to_numpy()[:, None],
+                     index=idx, columns=[f"g{j}" for j in range(25)])
+    Y.iloc[[2, 7], 3] = np.nan
+    return pd.DataFrame({"pseudotime": pt}, index=idx), d, Y
+
+
+def test_linear_test_equals_statsmodels_ols_with_and_without_batch():
+    import statsmodels.api as sm
+    X0, d, Y = _ols_design(slope=0.8)
+    for X in (X0, pd.concat([X0, d], axis=1)):
+        res, models = fit_linear_models_for_genes(X, Y, list(Y.columns))
+        for g, row in res.set_index("gene").iterrows():
+            m = Y[g].notna().to_numpy()
+            fit = sm.OLS(Y[g].to_numpy()[m], sm.add_constant(X.to_numpy()[m])).fit()
+            np.testing.assert_allclose(row["pval"], fit.pvalues[1], rtol=1e-8)
+            np.testing.assert_allclose(row["dev_exp"], fit.rsquared, rtol=1e-8)
+            np.testing.assert_allclose(models[g].coef_[0], fit.params[1], rtol=1e-8)
+
+
+def test_linear_effect_size_and_direction():
+    X, d, Y = _ols_design(slope=-1.5)
+    XX = pd.concat([X, d], axis=1)
+    res, models = fit_linear_models_for_genes(XX, Y, ["g0"])
+    es = calculate_effect_size_and_direction(XX, Y, models, ["g0"]).iloc[0]
+    fit = models["g0"]
+    resid = Y["g0"].to_numpy() - fit.predict(XX.to_numpy())
+    sd = np.sqrt((resid ** 2).sum() / (len(Y) - XX.shape[1] - 1))
+    np.testing.assert_allclose(es["effect_size"], abs(fit.coef_[0]) * np.ptp(X["pseudotime"]) / sd, rtol=1e-10)
+    assert es["regulation"] == "DOWN"
+
+
+def test_linear_pvalue_is_calibrated():
+    for n, nb, conf in ((26, 1, False), (85, 1, False), (60, 3, True)):
+        X, _, _ = _ols_design(n=n, n_batches=max(nb, 2))
+        rng = np.random.default_rng(1)
+        bi = np.arange(n) % nb
+        X = X.assign(pseudotime=rng.uniform(0, 1, n) + (0.7 * bi if conf else 0))
+        if nb > 1:
+            X = pd.concat([X, pd.get_dummies(pd.Series(bi, index=X.index).astype(str), drop_first=True).astype(float)], axis=1)
+        Y = pd.DataFrame(rng.normal(0, 1, (n, 600)) + (bi[:, None] * rng.normal(0, 1.5, 600) if nb > 1 else 0), index=X.index)
+        res, _ = fit_linear_models_for_genes(X, Y, list(Y.columns))
+        assert (res["pval"] < 0.05).mean() <= 0.07, (n, nb)
+
+
+def _pb_and_pt():
+    a = _cells()
+    pt = dict(zip([f"S{i}" for i in range(N_SAMPLES)], np.random.default_rng(0).normal(0, 1.0, N_SAMPLES)))
+    return a, pt, _build(a, min_variance_ratio=0)
+
+
+def test_gam_test_equals_the_stepwise_pipeline():
+    a, pt, pb = _pb_and_pt()
+    X, Y, names = prepare_gam_input_data_improved(pb, pt, covariate_columns=["batch"], unpenalised_columns=["batch"])
+    res, models = fit_gam_models_for_genes(X, Y, names, n_jobs=1, unpenalised_columns=X.attrs["unpenalised"])
+    es = calculate_effect_size_and_direction(X, Y, models, list(res.loc[res["fdr"] < 0.05, "gene"]))
+    exp = res.merge(es, on="gene", how="left").set_index("gene").sort_index()
+    for kw in ({}, {"test": "gam"}):
+        got = _run(a, pt, batch_col="batch", min_variance_ratio=0, **kw)
+        np.testing.assert_array_equal(got["pval"], exp["pval"])
+        np.testing.assert_array_equal(got["effect_size"].fillna(-1), exp["effect_size"].fillna(-1))
+
+
+def test_trajectory_test_features_reproduces_the_run_function():
+    a, pt, pb = _pb_and_pt()
+    for test in ("linear", "gam"):
+        ref = _run(a, pt, batch_col="batch", min_variance_ratio=0, test=test, top_n_genes=5)
+        with tempfile.TemporaryDirectory() as d, warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            got = trajectory_test_features(pb, pt, test=test, batch_col="batch", n_jobs=1, output_dir=d,
+                                           top_n_genes=5, verbose=False).set_index("gene").sort_index()
+        assert list(got.index) == list(ref.index)
+        for c in ("pval", "fdr", "dev_exp", "effect_size"):
+            np.testing.assert_allclose(got[c].astype(float), ref[c].astype(float), rtol=1e-10, equal_nan=True)
+        assert (got["regulation"].fillna("") == ref["regulation"].fillna("")).all()
+        assert (got["pseudoDEG"] == ref["pseudoDEG"]).all()
+
+
+def test_linear_run_with_visualizations_and_invalid_test_rejected():
+    a, pt, _ = _pb_and_pt()
+    with tempfile.TemporaryDirectory() as d, warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res = tdg.run_trajectory_gam_differential_gene_analysis(
+            a, pt, batch_col="batch", test="linear", n_jobs=1, output_dir=d, verbose=True, top_n_genes=5)
+        assert os.path.exists(os.path.join(d, "visualizations", "05_gene_curves.png"))
+    assert (res.set_index("gene").loc["T - g0", "regulation"]) == "UP"
+    try:
+        _run(a, pt, test="quadratic")
+    except ValueError:
+        return
+    raise AssertionError("invalid test accepted")
 
 
 if __name__ == "__main__":

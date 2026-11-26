@@ -24,7 +24,7 @@ def demo_config():
 
 def test_full_config_validates():
     cfg = demo_config()
-    assert len(cfg) == len(inspect.signature(wrapper).parameters) == 308
+    assert len(cfg) == len(inspect.signature(wrapper).parameters) == 311
     validate_config(cfg, wrapper)
 
 
@@ -33,8 +33,19 @@ def test_pre_0_3_config_validates_and_defaults_keep_old_behaviour():
     assert len(cfg) == 301
     validate_config(cfg, wrapper)
     params = inspect.signature(wrapper).parameters
-    assert all(params[k].default is (True if k.endswith("_save_cell_adata_after_embedding") else None)
+    assert all(params[k].default == ("gam" if k.endswith("_trajectory_test")
+                                     else True if k.endswith("_save_cell_adata_after_embedding") else None)
                for k in OPTIONAL_KEYS)
+
+
+def test_trajectory_test_keys_reach_the_dge_call():
+    cfg = demo_config()
+    assert {cfg[f"{m}_trajectory_test"] for m in ("rna", "atac", "multiomics")} == {"gam"}
+    src = inspect.getsource(inspect.getmodule(wrapper))
+    for m in ("rna", "atac", "multiomics"):
+        assert f"trajectory_test={m}_trajectory_test," in src
+    assert "test=trajectory_test," in src
+    assert "dge_pseudobulk_min_variance_ratio=0," in src.split("trajectory_test=atac_trajectory_test,")[1].split("\n")[1]
 
 
 def test_other_missing_key_still_rejected():

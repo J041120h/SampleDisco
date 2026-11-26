@@ -746,6 +746,76 @@ def fit_gam_models_for_genes(
 
     return res_df.sort_values("fdr").reset_index(drop=True), gam_models
 
+def _check_test(test: str) -> None:
+    if test not in ("gam", "linear"):
+        raise ValueError(f"test must be 'gam' or 'linear', got {test!r}")
+
+
+class _LinearModel:
+    """OLS fit exposing the part of the pyGAM interface the effect size and the plots use
+    (``coef_`` with slopes then intercept, ``terms``, ``predict``, ``partial_dependence``, ``statistics_["edof"]``)."""
+
+    def __init__(self, beta: np.ndarray, edof: int):
+        self.coef_ = beta
+        self.terms = list(range(len(beta)))
+        self.statistics_ = {"edof": edof}
+
+    def partial_dependence(self, term: int, X) -> np.ndarray:
+        return np.asarray(X, dtype=float)[:, term] * self.coef_[term]
+
+    def predict(self, X) -> np.ndarray:
+        return np.asarray(X, dtype=float) @ self.coef_[:-1] + self.coef_[-1]
+
+
+def fit_linear_models_for_genes(
+    X: pd.DataFrame,
+    Y: pd.DataFrame,
+    gene_names: List[str],
+    *,
+    fdr_threshold: float = 0.05,
+    verbose: bool = False
+) -> Tuple[pd.DataFrame, Dict[str, _LinearModel]]:
+    """
+    Per-gene OLS of expression on all columns of X (pseudotime first, then the batch dummies / covariates)
+    plus an intercept; two-sided t-test on the pseudotime slope with n - rank residual df. ``dev_exp`` is
+    the R^2 of the full model. Each gene is fitted on every sample with a finite design row and value
+    (at least ``X.shape[1] + 2``); BH as in the GAM fit.
+    """
+    X_dense = X.to_numpy(dtype=float)
+    Y_dense = Y.to_numpy(dtype=float)
+    finite_rows = np.isfinite(X_dense).all(axis=1)
+    min_needed = X_dense.shape[1] + 2
+    gene_to_col = {g: i for i, g in enumerate(Y.columns)}
+
+    results, models = [], {}
+    for gene in gene_names:
+        y_all = Y_dense[:, gene_to_col[gene]]
+        mask = finite_rows & np.isfinite(y_all)
+        y = y_all[mask]
+        if y.size < min_needed or np.var(y) < 1e-10:
+            continue
+        A = np.column_stack([X_dense[mask], np.ones(y.size)])
+        beta, _, rank, _ = np.linalg.lstsq(A, y, rcond=None)
+        rss = float(np.sum((y - A @ beta) ** 2))
+        df = y.size - rank
+        se = np.sqrt(rss / df * np.linalg.pinv(A.T @ A)[0, 0])
+        with np.errstate(divide="ignore", invalid="ignore"):
+            pval = 2 * stats.t.sf(abs(beta[0] / se), df)
+            dev = 1 - rss / np.sum((y - y.mean()) ** 2)
+        if np.isfinite(pval) and np.isfinite(dev):
+            results.append((gene, pval, dev))
+            models[gene] = _LinearModel(beta, rank)
+
+    if verbose:
+        print(f"  → Successfully fitted {len(results)}/{len(gene_names)} features")
+    if not results:
+        return pd.DataFrame(columns=["gene", "pval", "dev_exp", "fdr", "significant"]), {}
+    res_df = pd.DataFrame(results, columns=["gene", "pval", "dev_exp"])
+    res_df["fdr"] = multipletests(res_df["pval"], method="fdr_bh")[1]
+    res_df["significant"] = res_df["fdr"] < fdr_threshold
+    return res_df.sort_values("fdr").reset_index(drop=True), models
+
+
 def calculate_effect_size_and_direction(
     X: pd.DataFrame,
     Y: pd.DataFrame,
@@ -1013,120 +1083,31 @@ def generate_gene_visualizations(
     if verbose and error_count > 0:
         print(f"  → Visualization failed for {error_count} genes")
 
-def run_trajectory_gam_differential_gene_analysis(
-    adata: ad.AnnData,
+def _test_features(
+    pseudobulk_adata: ad.AnnData,
     pseudotime_source: Union[str, pd.DataFrame, Dict],
     *,
-    sample_col: str = "sample",
-    celltype_col: Optional[str] = "cell_type",
-    batch_col: Optional[Union[str, List[str]]] = None,
-    min_cells_per_group: int = 10,
-    min_variance_ratio: float = 2.0,
-    columns_to_preserve: Optional[Union[str, List[str]]] = None,
-    pseudotime_col: str = "pseudotime",
-    covariate_columns: Optional[List[str]] = None,
-    fdr_threshold: float = 0.05,
-    effect_size_threshold: float = 1.0,
-    top_n_genes: int = 100,
-    num_splines: int = 5,
-    spline_order: int = 3,
-    n_jobs: int = -1,
-    output_dir: str = "trajectory_diff_gene_results_single",
-    visualization_gene_list: Optional[List[str]] = None,
-    # New visualization parameters
-    generate_visualizations: bool = True,
-    group_col: Optional[str] = None,
-    n_clusters: int = 3,
-    top_n_genes_for_curves: int = 20,
-    # anchor_col: numeric obs column used to orient pseudotime so that
-    # "UP" always means increasing with the biological axis (e.g. sev.level).
-    # When provided, pseudotime is flipped if corr(pseudotime, anchor) < 0.
-    anchor_col: Optional[str] = None,
-    verbose: bool = True,
+    test: str,
+    sample_col: str,
+    batch_col: Optional[str],
+    pseudotime_col: str,
+    covariate_columns: Optional[List[str]],
+    fdr_threshold: float,
+    effect_size_threshold: float,
+    top_n_genes: int,
+    num_splines: int,
+    spline_order: int,
+    n_jobs: int,
+    output_dir: str,
+    visualization_gene_list: Optional[List[str]],
+    generate_visualizations: bool,
+    group_col: Optional[str],
+    n_clusters: int,
+    top_n_genes_for_curves: int,
+    anchor_col: Optional[str],
+    verbose: bool,
 ) -> pd.DataFrame:
-    """
-    Run trajectory differential gene analysis for ONE pseudotime vector.
-
-    `pseudotime_source` can be:
-      - path to CSV/TSV
-      - DataFrame
-      - dict with 'pseudotime_df'/'pseudotime_file'
-      - dict mapping {sample_id: pseudotime}
-    
-    Parameters
-    ----------
-    pseudobulk_adata : AnnData
-        Pseudobulk expression data (samples x genes)
-    pseudotime_source : str, DataFrame, or dict
-        Pseudotime information for samples
-    sample_col : str
-        Column name for sample IDs
-    batch_col : str or list, optional
-        Batch of each sample. The pseudobulk values are not batch-corrected: the batch
-        enters the GAM as an unpenalised categorical covariate (expression ~
-        s(pseudotime) + batch), and the p-value, effect size and direction describe the
-        pseudotime term only. It is also the regression behind ``min_variance_ratio``.
-    min_cells_per_group : int
-        A sample x cell-type group with fewer cells is dropped (NaN) (>= 2)
-    min_variance_ratio : float
-        A gene is tested in a cell type when its between-sample variance (residual after
-        the batch regression) is at least this multiple of the variance expected from
-        cell sampling alone
-    pseudotime_col : str
-        Column name for pseudotime values
-    covariate_columns : list, optional
-        Additional covariates for GAM model (``batch_col`` is added automatically)
-    fdr_threshold : float
-        FDR threshold for significance
-    effect_size_threshold : float
-        Effect size threshold for pseudoDEG selection
-    top_n_genes : int
-        Number of top genes to select as pseudoDEGs
-    num_splines : int
-        Number of splines for GAM
-    spline_order : int
-        Order of spline basis
-    output_dir : str
-        Output directory
-    visualization_gene_list : list, optional
-        Specific genes to generate individual visualizations for
-    generate_visualizations : bool
-        Whether to generate Lamian-style visualization plots (default: True)
-    group_col : str, optional
-        Column for group comparison in XDE visualizations (e.g., 'condition', 'severity')
-    n_clusters : int
-        Number of clusters for heatmap visualization (default: 5)
-    top_n_genes_for_curves : int
-        Number of genes to show in expression curve plots (default: 20)
-    verbose : bool
-        Print progress messages
-        
-    Returns
-    -------
-    results : pd.DataFrame
-        DataFrame with analysis results for all genes
-    """
-    os.makedirs(output_dir, exist_ok=True)
-
-    if verbose:
-        print("="*70)
-        print("TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS")
-        print("="*70)
-
-    if verbose:
-        print("\n[0/5] Building per-sample pseudobulk from cell-level adata...")
-    batch_col = _resolve_batch_col(adata, batch_col)
-    pseudobulk_adata = _build_sample_pseudobulk(
-        adata,
-        sample_col=sample_col,
-        celltype_col=celltype_col,
-        batch_col=batch_col,
-        min_cells_per_group=min_cells_per_group,
-        min_variance_ratio=min_variance_ratio,
-        columns_to_preserve=columns_to_preserve,
-        verbose=verbose,
-    )
-
+    """Steps 1-5 of the trajectory test on a samples x features AnnData."""
     if verbose:
         print("\n[1/5] Loading pseudotime...")
     ptime_dict = load_sample_pseudotime(
@@ -1178,19 +1159,23 @@ def run_trajectory_gam_differential_gene_analysis(
     )
 
     if verbose:
-        print(f"\n[3/5] Fitting GAM models for {len(gene_names)} genes...")
-    stat_results, gam_models = fit_gam_models_for_genes(
-        X=X,
-        Y=Y,
-        gene_names=gene_names,
-        spline_term="pseudotime",
-        num_splines=num_splines,
-        spline_order=spline_order,
-        fdr_threshold=fdr_threshold,
-        n_jobs=n_jobs,
-        verbose=verbose,
-        unpenalised_columns=X.attrs["unpenalised"]
-    )
+        print(f"\n[3/5] Fitting {test.upper()} models for {len(gene_names)} features...")
+    if test == "linear":
+        stat_results, gam_models = fit_linear_models_for_genes(
+            X=X, Y=Y, gene_names=gene_names, fdr_threshold=fdr_threshold, verbose=verbose)
+    else:
+        stat_results, gam_models = fit_gam_models_for_genes(
+            X=X,
+            Y=Y,
+            gene_names=gene_names,
+            spline_term="pseudotime",
+            num_splines=num_splines,
+            spline_order=spline_order,
+            fdr_threshold=fdr_threshold,
+            n_jobs=n_jobs,
+            verbose=verbose,
+            unpenalised_columns=X.attrs["unpenalised"]
+        )
 
     if len(stat_results) == 0:
         if verbose:
@@ -1311,3 +1296,178 @@ def run_trajectory_gam_differential_gene_analysis(
         print("="*70)
 
     return results
+
+
+def run_trajectory_gam_differential_gene_analysis(
+    adata: ad.AnnData,
+    pseudotime_source: Union[str, pd.DataFrame, Dict],
+    *,
+    sample_col: str = "sample",
+    celltype_col: Optional[str] = "cell_type",
+    batch_col: Optional[Union[str, List[str]]] = None,
+    min_cells_per_group: int = 10,
+    min_variance_ratio: float = 2.0,
+    columns_to_preserve: Optional[Union[str, List[str]]] = None,
+    pseudotime_col: str = "pseudotime",
+    covariate_columns: Optional[List[str]] = None,
+    fdr_threshold: float = 0.05,
+    effect_size_threshold: float = 1.0,
+    top_n_genes: int = 100,
+    num_splines: int = 5,
+    spline_order: int = 3,
+    test: str = "gam",
+    n_jobs: int = -1,
+    output_dir: str = "trajectory_diff_gene_results_single",
+    visualization_gene_list: Optional[List[str]] = None,
+    # New visualization parameters
+    generate_visualizations: bool = True,
+    group_col: Optional[str] = None,
+    n_clusters: int = 3,
+    top_n_genes_for_curves: int = 20,
+    # anchor_col: numeric obs column used to orient pseudotime so that
+    # "UP" always means increasing with the biological axis (e.g. sev.level).
+    # When provided, pseudotime is flipped if corr(pseudotime, anchor) < 0.
+    anchor_col: Optional[str] = None,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """
+    Run trajectory differential gene analysis for ONE pseudotime vector.
+
+    `pseudotime_source` can be:
+      - path to CSV/TSV
+      - DataFrame
+      - dict with 'pseudotime_df'/'pseudotime_file'
+      - dict mapping {sample_id: pseudotime}
+    
+    Parameters
+    ----------
+    pseudobulk_adata : AnnData
+        Pseudobulk expression data (samples x genes)
+    pseudotime_source : str, DataFrame, or dict
+        Pseudotime information for samples
+    sample_col : str
+        Column name for sample IDs
+    batch_col : str or list, optional
+        Batch of each sample. The pseudobulk values are not batch-corrected: the batch
+        enters the GAM as an unpenalised categorical covariate (expression ~
+        s(pseudotime) + batch), and the p-value, effect size and direction describe the
+        pseudotime term only. It is also the regression behind ``min_variance_ratio``.
+    min_cells_per_group : int
+        A sample x cell-type group with fewer cells is dropped (NaN) (>= 2)
+    min_variance_ratio : float
+        A gene is tested in a cell type when its between-sample variance (residual after
+        the batch regression) is at least this multiple of the variance expected from
+        cell sampling alone
+    pseudotime_col : str
+        Column name for pseudotime values
+    covariate_columns : list, optional
+        Additional covariates for GAM model (``batch_col`` is added automatically)
+    fdr_threshold : float
+        FDR threshold for significance
+    effect_size_threshold : float
+        Effect size threshold for pseudoDEG selection
+    top_n_genes : int
+        Number of top genes to select as pseudoDEGs
+    num_splines : int
+        Number of splines for GAM
+    spline_order : int
+        Order of spline basis
+    test : {"gam", "linear"}
+        "gam" (default): spline GAM with a Wald test on the pseudotime term. "linear":
+        OLS on pseudotime + the same batch dummies / covariates, t-test on the slope
+        (effect size = |slope| x pseudotime range / residual SD; suits small cohorts).
+        Same pseudobulk, filter, BH and outputs for both.
+    output_dir : str
+        Output directory
+    visualization_gene_list : list, optional
+        Specific genes to generate individual visualizations for
+    generate_visualizations : bool
+        Whether to generate Lamian-style visualization plots (default: True)
+    group_col : str, optional
+        Column for group comparison in XDE visualizations (e.g., 'condition', 'severity')
+    n_clusters : int
+        Number of clusters for heatmap visualization (default: 5)
+    top_n_genes_for_curves : int
+        Number of genes to show in expression curve plots (default: 20)
+    verbose : bool
+        Print progress messages
+        
+    Returns
+    -------
+    results : pd.DataFrame
+        DataFrame with analysis results for all genes
+    """
+    _check_test(test)
+    os.makedirs(output_dir, exist_ok=True)
+
+    if verbose:
+        print("="*70)
+        print("TRAJECTORY GAM DIFFERENTIAL GENE ANALYSIS")
+        print("="*70)
+
+    if verbose:
+        print("\n[0/5] Building per-sample pseudobulk from cell-level adata...")
+    batch_col = _resolve_batch_col(adata, batch_col)
+    pseudobulk_adata = _build_sample_pseudobulk(
+        adata,
+        sample_col=sample_col,
+        celltype_col=celltype_col,
+        batch_col=batch_col,
+        min_cells_per_group=min_cells_per_group,
+        min_variance_ratio=min_variance_ratio,
+        columns_to_preserve=columns_to_preserve,
+        verbose=verbose,
+    )
+
+    return _test_features(
+        pseudobulk_adata, pseudotime_source, test=test, sample_col=sample_col, batch_col=batch_col,
+        pseudotime_col=pseudotime_col, covariate_columns=covariate_columns, fdr_threshold=fdr_threshold,
+        effect_size_threshold=effect_size_threshold, top_n_genes=top_n_genes, num_splines=num_splines,
+        spline_order=spline_order, n_jobs=n_jobs, output_dir=output_dir,
+        visualization_gene_list=visualization_gene_list, generate_visualizations=generate_visualizations,
+        group_col=group_col, n_clusters=n_clusters, top_n_genes_for_curves=top_n_genes_for_curves,
+        anchor_col=anchor_col, verbose=verbose)
+
+
+def trajectory_test_features(
+    adata: ad.AnnData,
+    pseudotime_source: Union[str, pd.DataFrame, Dict],
+    *,
+    test: str = "linear",
+    sample_col: str = "sample",
+    batch_col: Optional[Union[str, List[str]]] = None,
+    covariate_columns: Optional[List[str]] = None,
+    pseudotime_col: str = "pseudotime",
+    fdr_threshold: float = 0.05,
+    effect_size_threshold: float = 1.0,
+    top_n_genes: int = 100,
+    num_splines: int = 5,
+    spline_order: int = 3,
+    n_jobs: int = -1,
+    output_dir: str = "trajectory_test_features_results",
+    generate_visualizations: bool = False,
+    group_col: Optional[str] = None,
+    n_clusters: int = 3,
+    top_n_genes_for_curves: int = 20,
+    anchor_col: Optional[str] = None,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """Trajectory test of every feature of a precomputed unit-level matrix (e.g. chromVAR motif deviations).
+
+    `adata` has one row per unit (a sample, or a sample x cell type) and one column per feature; `adata.X`
+    is used as given, with no pseudobulk building and no variance filter (NaN marks a missing unit).
+    `pseudotime_source` is as in `run_trajectory_gam_differential_gene_analysis` and must be keyed by
+    `adata.obs_names`. `batch_col` (a column of `adata.obs`) enters the model as an unpenalised categorical
+    covariate, `covariate_columns` as in the GAM design. `test="linear"` (OLS slope, t-test) or `"gam"`
+    (spline Wald test); BH, effect size, direction (UP/DOWN), pseudoDEG selection and outputs are those of
+    the trajectory DGE. Returns the per-feature table (gene = feature name).
+    """
+    _check_test(test)
+    os.makedirs(output_dir, exist_ok=True)
+    return _test_features(
+        adata, pseudotime_source, test=test, sample_col=sample_col, batch_col=_resolve_batch_col(adata, batch_col),
+        pseudotime_col=pseudotime_col, covariate_columns=covariate_columns, fdr_threshold=fdr_threshold,
+        effect_size_threshold=effect_size_threshold, top_n_genes=top_n_genes, num_splines=num_splines,
+        spline_order=spline_order, n_jobs=n_jobs, output_dir=output_dir, visualization_gene_list=None,
+        generate_visualizations=generate_visualizations, group_col=group_col, n_clusters=n_clusters,
+        top_n_genes_for_curves=top_n_genes_for_curves, anchor_col=anchor_col, verbose=verbose)

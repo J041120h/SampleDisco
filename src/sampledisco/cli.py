@@ -39,6 +39,7 @@ def load_config(config_path):
 # then take their wrapper() default (unchanged behaviour); every other key stays required.
 OPTIONAL_KEYS = frozenset(
     [f"{m}_save_cell_adata_after_embedding" for m in ("rna", "atac", "multiomics")]
+    + [f"{m}_trajectory_test" for m in ("rna", "atac", "multiomics")]
     + ["rna_batch_col", "atac_batch_col",
        "multiomics_cell_level_batch_key", "multiomics_sample_level_batch_col"])
 
