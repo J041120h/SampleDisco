@@ -8,9 +8,9 @@ pipeline. The recipe mirrors the original `compute_pseudobulk_adata`:
 
   1. Aggregate cells per (sample × celltype) by mean (no double normalization —
      `.X` is already normalized + log1p from preprocessing).
-  2. Per cell type: optional Limma batch correction; optional first-round HVG
-     selection for noise reduction.
-  3. Concatenate per-celltype HVGs → `samples × (celltype-gene)` matrix.
+  2. Per cell type: drop groups with too few cells, optional Limma batch correction
+     on the retained groups, variance-ratio gene filter.
+  3. Concatenate per-celltype genes → `samples × (celltype-gene)` matrix.
 
 The existing GAM stack operates on that samples × features matrix unchanged.
 """
@@ -23,7 +23,6 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import anndata as ad
-import scanpy as sc
 
 from scipy.sparse import csr_matrix, issparse
 from statsmodels.stats.multitest import multipletests
@@ -79,17 +78,24 @@ def _build_sample_pseudobulk(
     sample_col: str,
     celltype_col: Optional[str] = "cell_type",
     batch_col: Optional[Union[str, List[str]]] = None,
-    n_features_per_celltype: Optional[int] = 2000,
+    min_cells_per_group: int = 10,
+    min_variance_ratio: float = 2.0,
     columns_to_preserve: Optional[Union[str, List[str]]] = None,
     verbose: bool = False,
 ) -> ad.AnnData:
     """Aggregate cell-level `adata` into a `samples × (celltype-gene)` AnnData.
 
-    Mirrors the recipe used by the legacy ``compute_pseudobulk_adata`` (per-
-    cell-type aggregation + optional Limma + optional first-round HVG), but
-    omits the second normalization pass (``adata.X`` is already normalized /
-    log-transformed by preprocessing) and the second HVG round.
+    Per cell type, sample × cell-type groups with fewer than ``min_cells_per_group``
+    cells are dropped (NaN rows, never zero) before the optional Limma batch
+    correction, which runs on the retained groups only. A gene is kept when its
+    between-sample variance (residual variance after Limma) is at least
+    ``min_variance_ratio`` times the variance expected from sampling the cells of
+    each group alone; the ratio is unit-free. A batch left with one retained sample
+    is set to NaN, because Limma fits it exactly. ``adata.X`` is already normalized /
+    log-transformed by preprocessing.
     """
+    if min_cells_per_group < 2:
+        raise ValueError("min_cells_per_group must be >= 2 (within-group variance needs 2 cells)")
     if sample_col not in adata.obs.columns:
         raise KeyError(f"sample_col '{sample_col}' not in adata.obs")
 
@@ -170,62 +176,59 @@ def _build_sample_pseudobulk(
         ct_mask = celltype_arr == celltype
         if ct_mask.sum() == 0:
             continue
-        ct_samples = sample_arr[ct_mask]
-        ct_sample_idx = np.array([sample_idx[s] for s in ct_samples])
+        ct_sample_idx = np.array([sample_idx[s] for s in sample_arr[ct_mask]])
         n_cells_ct = len(ct_sample_idx)
         indicator = csr_matrix(
-            (np.ones(n_cells_ct, dtype=np.float32),
-             (ct_sample_idx, np.arange(n_cells_ct))),
+            (np.ones(n_cells_ct), (ct_sample_idx, np.arange(n_cells_ct))),
             shape=(n_samples, n_cells_ct),
         )
-        cells_per = np.array(indicator.sum(axis=1)).flatten()
-        cells_per_safe = cells_per.copy()
-        cells_per_safe[cells_per_safe == 0] = 1
-        X_ct = X_full[ct_mask]
-        summed = indicator @ X_ct
-        if issparse(summed):
-            summed = np.asarray(summed.todense())
-        ct_pb = (summed / cells_per_safe[:, None]).astype(np.float32)
+        n_cells = np.bincount(ct_sample_idx, minlength=n_samples)
+        retained = np.flatnonzero(n_cells >= min_cells_per_group)
+        n_r = len(retained)
 
-        temp = sc.AnnData(
-            X=ct_pb.copy(),
-            obs=pb_obs.copy(),
-            var=adata.var.copy(),
-        )
-        gene_keep = np.asarray((ct_pb != 0).any(axis=0)).flatten()
-        if gene_keep.sum() == 0:
-            continue
-        temp = temp[:, gene_keep].copy()
+        X_ct = X_full[ct_mask].astype(np.float64)
+        S1 = indicator @ X_ct
+        S2 = indicator @ (X_ct.power(2) if issparse(X_ct) else X_ct ** 2)
+        if issparse(S1):
+            S1, S2 = S1.toarray(), S2.toarray()
+        n = n_cells[retained, None].astype(np.float64)
+        mean = S1[retained] / n
+        within_var = np.clip((S2[retained] - n * mean ** 2) / (n - 1), 0, None)
 
+        temp = ad.AnnData(X=mean, obs=pb_obs.iloc[retained].copy())
+        groups = np.zeros(n_r, dtype=int)
         if batch_col_to_use is not None and batch_col_to_use in temp.obs.columns:
-            nb = temp.obs[batch_col_to_use].nunique(dropna=True)
-            if nb >= 2:
-                _attempt_limma(temp, batch_col_to_use, preserve_cols, verbose=verbose)
-
-        if issparse(temp.X):
-            mask = np.isnan(temp.X.data) | np.isinf(temp.X.data)
-            if mask.any():
-                temp.X.data[mask] = 0.0
-                temp.X.eliminate_zeros()
-        else:
-            np.nan_to_num(temp.X, copy=False)
-
-        if n_features_per_celltype is not None and 0 < n_features_per_celltype < temp.n_vars:
-            try:
-                sc.pp.highly_variable_genes(
-                    temp, n_top_genes=n_features_per_celltype, subset=False,
-                )
-                hvg_mask = temp.var["highly_variable"].values
-                temp = temp[:, hvg_mask].copy()
-            except Exception as exc:
-                if verbose:
-                    print(f"    HVG selection failed for celltype '{celltype}': {exc}")
-
-        if temp.n_vars == 0:
+            if temp.obs[batch_col_to_use].nunique(dropna=True) >= 2:
+                if _attempt_limma(temp, batch_col_to_use, preserve_cols, verbose=verbose):
+                    groups = pd.factorize(temp.obs[batch_col_to_use])[0]
+        corrected = np.asarray(temp.X, dtype=np.float64)
+        dof = n_r - len(np.unique(groups))
+        if dof <= 0:
+            warnings.warn(
+                f"[trajectory_diff_gene] cell type '{celltype}' skipped: {n_r} retained samples "
+                f"leave {dof} degrees of freedom for the variance ratio.",
+                RuntimeWarning, stacklevel=2)
             continue
-        block = temp.X.toarray() if issparse(temp.X) else np.asarray(temp.X)
-        feature_blocks.append(block.astype(np.float32))
-        feature_names.extend(f"{celltype} - {g}" for g in temp.var_names)
+        batch_size = np.bincount(groups)[groups]
+        single = batch_size == 1
+        if single.any():
+            warnings.warn(
+                f"[trajectory_diff_gene] cell type '{celltype}': batch(es) "
+                f"{sorted(set(temp.obs[batch_col_to_use].astype(str)[single]))} of '{batch_col_to_use}' "
+                f"keep a single retained sample; limma fits it exactly, so it is set to NaN.",
+                RuntimeWarning, stacklevel=2)
+        total_var = ((corrected - corrected.mean(0)) ** 2).sum(0) / dof
+        tech_var = ((1 - 1 / batch_size)[:, None] * within_var / n).sum(0) / dof
+        with np.errstate(divide="ignore", invalid="ignore"):
+            keep = (tech_var > 0) & (total_var > 0) & (total_var / tech_var >= min_variance_ratio)
+        if not keep.any():
+            continue
+
+        block = np.full((n_samples, int(keep.sum())), np.nan, dtype=np.float32)
+        block[retained] = corrected[:, keep]
+        block[retained[single]] = np.nan
+        feature_blocks.append(block)
+        feature_names.extend(f"{celltype} - {g}" for g in adata.var_names[keep])
 
     if not feature_blocks:
         raise RuntimeError("No features survived pseudobulk aggregation")
@@ -466,12 +469,6 @@ def prepare_gam_input_data_improved(
     # Ensure it is a standard numpy array (not np.matrix or other subclass)
     expression_matrix = np.array(expression_matrix, copy=False)
 
-    if np.any(np.isnan(expression_matrix)):
-        n_nan = int(np.sum(np.isnan(expression_matrix)))
-        if verbose:
-            print(f"  → Replacing {n_nan} NaN values with 0")
-        expression_matrix = np.nan_to_num(expression_matrix, nan=0.0)
-
     Y = pd.DataFrame(expression_matrix, index=filtered_sample_names, columns=filtered_adata.var_names)
 
     # Filter low-variance genes
@@ -540,8 +537,8 @@ def fit_gam_models_for_genes(
     """
     Fit per-gene LinearGAM models with adaptive spline parameters.
 
-    Per-gene masking (Option B): each gene is fitted only on the samples where
-    that gene is non-zero, so structural zeros don't bias the spline toward zero.
+    Each gene is fitted on every sample with a finite value (NaN marks a sample
+    x cell-type group dropped for too few cells); true zeros are fitted.
 
     ``n_jobs`` only distributes the (independent) per-gene fits — each gene's GAM
     is deterministic, so results are identical to the serial path. ``n_jobs=1``
@@ -608,7 +605,6 @@ def fit_gam_models_for_genes(
     # Skip counters
     skip_counts = {
         "no_column": 0,
-        "no_nonzero_samples": 0,
         "too_few_samples": 0,
         "low_variance": 0,
         "fit_error": 0,
@@ -625,13 +621,8 @@ def fit_gam_models_for_genes(
 
         y_raw = Y_dense[:, col_idx]
 
-        # Per-gene mask: finite X + finite y + gene non-zero (Option B per-gene masking)
-        base_mask = finite_rows & np.isfinite(y_raw)
-        mask = base_mask & (y_raw != 0.0)
-
+        mask = finite_rows & np.isfinite(y_raw)
         if mask.sum() == 0:
-            return ("skip", "no_nonzero_samples")
-        if base_mask.sum() == 0:
             return ("skip", "nonfinite_rows")
 
         X_fit = X_dense[mask]
@@ -690,10 +681,10 @@ def fit_gam_models_for_genes(
     if good == 0 and skip_counts["too_few_samples"] > 0:
         n_usable = int(finite_rows.sum())
         cause = (f"with only {n_usable} samples no gene can pass" if n_usable < min_needed
-                 else "too few samples are non-zero per gene")
+                 else "too few samples have a finite value per gene")
         warnings.warn(
             f"[trajectory_diff_gene] No gene was fitted: the spline identifiability "
-            f"check needs >= {min_needed} non-zero samples per gene (spline order "
+            f"check needs >= {min_needed} finite samples per gene (spline order "
             f"{adj_order} + {adj_n_splines} splines + 2; requested spline_order="
             f"{spline_order}, num_splines={num_splines}, adjusted for {n_samples} "
             f"samples) and rejected {skip_counts['too_few_samples']}/{total} genes — "
@@ -736,7 +727,7 @@ def calculate_effect_size_and_direction(
 
     Effect size: (max_pred - min_pred) / residual_std — the fitted dynamic range
     relative to noise. Direction: "UP" if corr(pseudotime, y_pred) > 0, else "DOWN".
-    Both are computed on the non-zero subset used for fitting (Option B masking).
+    Both are computed on the finite samples used for fitting.
     """
     effect_sizes = []
     error_count = 0
@@ -757,9 +748,8 @@ def calculate_effect_size_and_direction(
 
             y_full = Y[gene].values
             finite_y = np.isfinite(y_full)
-            nonzero = y_full != 0.0
 
-            mask = finite_X_rows & finite_y & nonzero
+            mask = finite_X_rows & finite_y
             if mask.sum() == 0:
                 continue
 
@@ -997,7 +987,8 @@ def run_trajectory_gam_differential_gene_analysis(
     sample_col: str = "sample",
     celltype_col: Optional[str] = "cell_type",
     batch_col: Optional[Union[str, List[str]]] = None,
-    n_features_per_celltype: Optional[int] = 2000,
+    min_cells_per_group: int = 10,
+    min_variance_ratio: float = 2.0,
     columns_to_preserve: Optional[Union[str, List[str]]] = None,
     pseudotime_col: str = "pseudotime",
     covariate_columns: Optional[List[str]] = None,
@@ -1037,6 +1028,11 @@ def run_trajectory_gam_differential_gene_analysis(
         Pseudotime information for samples
     sample_col : str
         Column name for sample IDs
+    min_cells_per_group : int
+        A sample x cell-type group with fewer cells is dropped (NaN), before Limma (>= 2)
+    min_variance_ratio : float
+        A gene is tested in a cell type when its between-sample variance is at least
+        this multiple of the variance expected from cell sampling alone
     pseudotime_col : str
         Column name for pseudotime values
     covariate_columns : list, optional
@@ -1085,7 +1081,8 @@ def run_trajectory_gam_differential_gene_analysis(
         sample_col=sample_col,
         celltype_col=celltype_col,
         batch_col=batch_col,
-        n_features_per_celltype=n_features_per_celltype,
+        min_cells_per_group=min_cells_per_group,
+        min_variance_ratio=min_variance_ratio,
         columns_to_preserve=columns_to_preserve,
         verbose=verbose,
     )

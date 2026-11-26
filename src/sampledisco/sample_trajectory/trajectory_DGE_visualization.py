@@ -401,7 +401,7 @@ def plot_gene_expression_curves(
         
         expr_full = Y[gene].values
         
-        nonzero_mask = (expr_full != 0.0) & np.isfinite(expr_full) & np.isfinite(ptime_full)
+        nonzero_mask = np.isfinite(expr_full) & np.isfinite(ptime_full)
         n_nonzero = nonzero_mask.sum()
         
         if n_nonzero < 3:
@@ -652,7 +652,7 @@ def plot_sample_level_curves(
         ax1.legend(loc='best', fontsize=9)
     
     ax2 = axes[1]
-    nonzero_mask = (expr != 0.0) & np.isfinite(expr) & np.isfinite(ptime)
+    nonzero_mask = np.isfinite(expr) & np.isfinite(ptime)
     
     if groups and gam_model is not None:
         for g in groups:

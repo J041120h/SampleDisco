@@ -210,7 +210,8 @@ def downstream_analysis(
     # ===== DGE pseudobulk parameters (used by trajectory_DGE) =====
     dge_pseudobulk_celltype_col: Optional[str] = None,
     dge_pseudobulk_batch_col: Optional[Union[str, List[str]]] = None,
-    dge_pseudobulk_n_features_per_celltype: Optional[int] = 2000,
+    dge_pseudobulk_min_cells_per_group: int = 10,
+    dge_pseudobulk_min_variance_ratio: float = 2.0,
     dge_pseudobulk_columns_to_preserve: Optional[Union[str, List[str]]] = None,
 ) -> dict:
     """
@@ -349,7 +350,8 @@ def downstream_analysis(
                 sample_col=sample_col,
                 celltype_col=dge_pseudobulk_celltype_col or celltype_col,
                 batch_col=dge_pseudobulk_batch_col or batch_col,
-                n_features_per_celltype=dge_pseudobulk_n_features_per_celltype,
+                min_cells_per_group=dge_pseudobulk_min_cells_per_group,
+                min_variance_ratio=dge_pseudobulk_min_variance_ratio,
                 columns_to_preserve=dge_pseudobulk_columns_to_preserve,
                 pseudotime_col="pseudotime",
                 covariate_columns=trajectory_diff_gene_covariate,

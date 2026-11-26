@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+**Trajectory DGE: variance-ratio gene filter, minimum cells per group, zeros fitted**
+
+- The "top 2,000 HVG per cell type" first round is replaced by a variance-ratio filter. Within each
+  cell type a gene is tested when its between-sample variance (residual variance after the limma
+  batch correction) is at least `min_variance_ratio = 2.0` times the variance expected from
+  sampling the cells of each group alone (per-group within-cell variance / n cells, with a
+  leverage correction for the batch regression). The ratio is unit-free and does not use
+  pseudotime. A cell type with no residual degrees of freedom is skipped with a warning.
+- A sample x cell-type group with fewer than `min_cells_per_group = 10` cells (at least 2) is
+  missing (NaN), not zero, and is dropped before limma, which now runs on the retained groups
+  only. A batch left with a single retained sample is set to NaN (limma would fit it exactly) and
+  warned about per cell type.
+- The per-gene "value != 0" mask is removed everywhere (GAM fit, effect size, plots). Each gene is
+  fitted on all samples with a finite value, true zeros included; NaN is no longer turned into 0.
+  Previously exact zeros survived mostly in the limma reference batch, so which samples a gene was
+  fitted on depended on the batch layout.
+- `n_features_per_celltype` / `dge_pseudobulk_n_features_per_celltype` are replaced by
+  `min_cells_per_group` / `min_variance_ratio` (`dge_pseudobulk_min_cells_per_group`,
+  `dge_pseudobulk_min_variance_ratio` in `downstream_analysis`). They are not `wrapper()` / YAML keys.
+  Trajectory gene sets, and the TF motif analysis built on them, change.
+
 ## 0.7.0
 
 **Batch columns at two levels**

@@ -533,8 +533,8 @@ def _gam_toy():
     pt = np.linspace(0, 1, n)
     X = pd.DataFrame({"pseudotime": pt}, index=idx)
     Y = pd.DataFrame({
-        "early": np.where(pt < 0.5, 2 + 3 * pt + rng.normal(0, 0.3, n), 0.0),   # non-zero on [0, .5)
-        "late": np.where(pt > 0.3, 1 + np.sin(4 * pt) + rng.normal(0, 0.3, n), 0.0),
+        "early": np.where(pt < 0.5, 2 + 3 * pt + rng.normal(0, 0.3, n), np.nan),   # observed on [0, .5)
+        "late": np.where(pt > 0.3, 1 + np.sin(4 * pt) + rng.normal(0, 0.3, n), np.nan),
         "all": 2 + np.cos(3 * pt) + rng.normal(0, 0.3, n),
     }, index=idx)
     return X, Y

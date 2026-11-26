@@ -684,10 +684,10 @@ def test_single_sample_batches_warn_before_limma():
     a.obs["batch"] = a.obs["sample"].map({"S1": "b1", "S2": "b1", "S3": "b2", "S4": "b2", "S5": "b3"})
     with pytest.warns(RuntimeWarning, match=r"\['b3'\].*single sample.*removed"):
         _build_sample_pseudobulk(a, "sample", "cell_type", batch_col="batch",
-                                 n_features_per_celltype=None)
+                                 min_cells_per_group=2, min_variance_ratio=0)
     a.obs["batch"] = a.obs["sample"].map({"S1": "b1", "S2": "b1", "S3": "b2", "S4": "b2", "S5": "b2"})
     with warnings.catch_warnings(record=True) as rec:
         warnings.simplefilter("always")
         _build_sample_pseudobulk(a, "sample", "cell_type", batch_col="batch",
-                                 n_features_per_celltype=None)
+                                 min_cells_per_group=2, min_variance_ratio=0)
     assert not any("single sample" in str(w.message) for w in rec)
