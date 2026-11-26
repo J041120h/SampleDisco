@@ -1,5 +1,5 @@
-"""Trajectory-DGE variance-ratio gene filter, minimum cells per group and zero handling.
-Synthetic data, CPU only.
+"""Trajectory-DGE variance-ratio gene filter, minimum cells per group, zero handling and the
+batch covariate in the GAM. Synthetic data, CPU only.
 
 Run: python tests/test_trajdge_filter.py
 """
@@ -14,7 +14,9 @@ import scipy.sparse as sp
 
 import sampledisco.sample_trajectory.trajectory_diff_gene as tdg
 from sampledisco.sample_trajectory.trajectory_diff_gene import (
-    _build_sample_pseudobulk, calculate_effect_size_and_direction, fit_gam_models_for_genes)
+    _build_sample_pseudobulk, calculate_effect_size_and_direction, fit_gam_models_for_genes,
+    prepare_gam_input_data_improved)
+from sampledisco.sample_trajectory.trajectory_DGE_visualization import _adjusted_curve
 
 N_SAMPLES, N_GENES = 16, 40
 
@@ -98,7 +100,7 @@ def test_null_calibration_pure_noise_passes_at_the_expected_rate():
     assert 0.3 < at1 / n < 0.65 and at2 / n < 0.06, (at1 / n, at2 / n)
 
 
-def test_small_groups_are_nan_and_do_not_change_limma_estimates():
+def test_small_groups_are_nan_and_do_not_change_the_other_groups():
     a = _cells(small={("S3", "T"), ("S12", "T")})
     pb = _build(a)
     col = pb.var_names.get_loc("T - g0")
@@ -117,15 +119,20 @@ def test_empty_group_is_nan_not_zero():
     assert np.isnan(pb[["S5"], [i for i in pb.var_names if i.startswith("B - ")]].X).all()
 
 
-def test_single_sample_batch_row_is_nan_and_warns_per_celltype():
+def test_single_sample_batch_is_kept_without_warning():
     a = _cells(batch_of=_unbalanced)
     with warnings.catch_warnings(record=True) as rec:
         warnings.simplefilter("always")
         pb = _build(a, min_variance_ratio=0)
-    msgs = [str(w.message) for w in rec if "single retained sample" in str(w.message)]
-    assert len(msgs) == 2 and all("['b4']" in m for m in msgs)
-    assert "'B'" in "".join(msgs) and "'T'" in "".join(msgs)
-    assert np.isnan(pb[["S15"]].X).all() and np.isfinite(pb[[f"S{i}" for i in range(15)]].X).all()
+    assert not any("single" in str(w.message) for w in rec)
+    assert np.isfinite(pb.X).all()
+
+
+def test_pseudobulk_values_are_not_batch_corrected():
+    a = _cells()
+    corrected = _build(a, min_variance_ratio=0)
+    plain = _build_sample_pseudobulk(a, "sample", "cell_type", batch_col=None, min_variance_ratio=0)
+    np.testing.assert_allclose(corrected.X, plain.X)
 
 
 def test_celltype_with_no_degrees_of_freedom_is_skipped_with_warning():
@@ -226,6 +233,96 @@ def test_effect_size_uses_finite_samples_and_keeps_true_zeros():
     assert seen == [28]
     np.testing.assert_allclose(es["effect_size"].iloc[0], expect)
     assert es["regulation"].iloc[0] == "UP"
+
+
+def _batch_design(n=24, seed=0, confounded=True):
+    """Pseudotime strongly tied to a 3-level batch; genes carry a batch shift and no pseudotime effect."""
+    rng = np.random.default_rng(seed)
+    batch = np.repeat(["b1", "b2", "b3"], n // 3)
+    pt = (np.repeat([0.0, 1.0, 2.0], n // 3) if confounded else 0) + rng.uniform(0, 1, n)
+    idx = [f"s{i}" for i in range(n)]
+    d = pd.get_dummies(pd.Series(batch, index=idx), drop_first=True).astype(float)
+    Y = pd.DataFrame(np.outer(d.sum(axis=1) * 3 + d["b3"], np.ones(60)) + rng.normal(0, 1, (n, 60)),
+                     index=idx, columns=[f"g{j}" for j in range(60)])
+    return pd.DataFrame({"pseudotime": pt}, index=idx), d, Y
+
+
+def test_batch_covariate_removes_batch_driven_false_positives():
+    X, d, Y = _batch_design()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        bare, _ = fit_gam_models_for_genes(X, Y, list(Y.columns), n_jobs=1)
+        adj, _ = fit_gam_models_for_genes(pd.concat([X, d], axis=1), Y, list(Y.columns), n_jobs=1,
+                                          unpenalised_columns=list(d.columns))
+    assert (bare["pval"] < 0.05).mean() > 0.8
+    assert (adj["pval"] < 0.05).mean() < 0.15            # pyGAM p-values are mildly liberal
+
+
+def test_unpenalised_batch_contrast_is_recovered_exactly():
+    X, d, _ = _batch_design(seed=1, confounded=False)
+    y = 1.0 + 2.0 * d["b2"].to_numpy() - 3.0 * d["b3"].to_numpy()
+    XX = pd.concat([X, d], axis=1)
+    _, models = fit_gam_models_for_genes(XX, pd.DataFrame({"g": y}, index=X.index), ["g"], n_jobs=1,
+                                         unpenalised_columns=list(d.columns))
+    gam = models["g"]
+    for j, truth in ((1, 2.0), (2, -3.0)):
+        on = XX.to_numpy().copy()
+        off = on.copy()
+        on[:, j] = 1.0
+        off[:, j] = 0.0
+        assert abs((gam.partial_dependence(term=j, X=on) - gam.partial_dependence(term=j, X=off)).mean() - truth) < 1e-6
+
+
+def test_effect_size_and_direction_ignore_a_pure_batch_shift():
+    rng = np.random.default_rng(5)
+    n = 24
+    idx = [f"s{i}" for i in range(n)]
+    batch = pd.Series(np.tile(["b1", "b2"], n // 2), index=idx)
+    pt = np.linspace(0, 1, n)
+    base = -2 * pt + rng.normal(0, 0.1, n)
+    d = pd.get_dummies(batch, drop_first=True).astype(float)
+    X = pd.concat([pd.DataFrame({"pseudotime": pt}, index=idx), d], axis=1)
+    out = []
+    for shift in (0.0, 8.0):
+        Y = pd.DataFrame({"g": base + shift * d["b2"]}, index=idx)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _, models = fit_gam_models_for_genes(X, Y, ["g"], n_jobs=1, unpenalised_columns=list(d.columns))
+        out.append(calculate_effect_size_and_direction(X, Y, models, ["g"]).iloc[0])
+    assert out[0]["regulation"] == out[1]["regulation"] == "DOWN"
+    np.testing.assert_allclose(out[0]["effect_size"], out[1]["effect_size"], rtol=1e-6)
+
+
+def test_covariate_design_is_float_and_pipeline_runs_with_batch_and_covariate():
+    a = _cells()
+    a.obs["sex"] = a.obs["sample"].map(lambda s: "F" if int(s[1:]) % 2 else "M")
+    pt = dict(zip([f"S{i}" for i in range(N_SAMPLES)], np.random.default_rng(0).normal(0, 1.0, N_SAMPLES)))   # g0's sample shift
+    pb = _build(a)
+    pb.obs["sex"] = pb.obs["sex"].astype(str)
+    X, Y, _ = prepare_gam_input_data_improved(pb, pt, covariate_columns=["sex", "batch"], unpenalised_columns=["batch"])
+    assert (X.dtypes == float).all() and np.isfinite(X.to_numpy()).all()
+    assert X.attrs["unpenalised"] == ["batch_b2"]
+    with tempfile.TemporaryDirectory() as d, warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res = tdg.run_trajectory_gam_differential_gene_analysis(
+            a, pt, batch_col="batch", covariate_columns=["sex", "batch"], n_jobs=1, output_dir=d,
+            generate_visualizations=False, verbose=False, top_n_genes=5)
+    top = res[res["gene"].str.endswith(" - g0")]
+    assert (top["fdr"] < 0.05).all() and top["effect_size"].notna().all() and (top["regulation"] == "UP").all()
+
+
+def test_adjusted_curve_equals_predict_without_covariates_and_covariate_mean_with():
+    rng = np.random.default_rng(6)
+    X, d, _ = _batch_design(seed=2, confounded=False)
+    y = np.sin(3 * X["pseudotime"].to_numpy()) + 2 * d["b2"].to_numpy() + rng.normal(0, 0.1, len(X))
+    grid = np.linspace(X["pseudotime"].min(), X["pseudotime"].max(), 15)
+    _, m0 = fit_gam_models_for_genes(X, pd.DataFrame({"g": y}, index=X.index), ["g"], n_jobs=1)
+    np.testing.assert_allclose(_adjusted_curve(m0["g"], grid, X), m0["g"].predict(grid.reshape(-1, 1)), atol=1e-10)
+    XX = pd.concat([X, d], axis=1)
+    _, m1 = fit_gam_models_for_genes(XX, pd.DataFrame({"g": y}, index=X.index), ["g"], n_jobs=1,
+                                     unpenalised_columns=list(d.columns))
+    expect = [np.mean(m1["g"].predict(np.column_stack([np.full(len(XX), t), d.to_numpy()]))) for t in grid]
+    np.testing.assert_allclose(_adjusted_curve(m1["g"], grid, XX), expect, atol=1e-8)
 
 
 if __name__ == "__main__":

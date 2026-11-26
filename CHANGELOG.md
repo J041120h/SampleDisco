@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.0
+
+**Trajectory DGE: batch as a covariate in the GAM instead of limma pre-correction**
+
+- With `batch_col` set, the pseudobulk values passed to the GAM are no longer limma-corrected. The
+  batch enters the model as an unpenalised categorical covariate (expression ~ s(pseudotime) +
+  batch; one-hot dummies, `lam=0`), and the p-value tests the pseudotime term only.
+- The variance-ratio gene filter keeps its definition (residual after a batch regression on the
+  retained groups, same genes pass). A batch left with a single retained sample is kept instead of
+  set to NaN, and its warning is removed.
+- Effect size and direction are computed from the pseudotime term's partial dependence, so batch
+  differences no longer inflate the range or flip the direction. Without covariates the numbers are
+  unchanged. Fitted-curve plots draw the batch-adjusted curve.
+- Fixed a crash with covariates: the one-hot design was boolean (object dtype), which broke the
+  effect-size calculation; the design is now float.
+
 ## 0.8.0
 
 **Trajectory DGE: variance-ratio gene filter, minimum cells per group, zeros fitted**

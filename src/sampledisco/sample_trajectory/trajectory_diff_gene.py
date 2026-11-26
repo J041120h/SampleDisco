@@ -8,11 +8,13 @@ pipeline. The recipe mirrors the original `compute_pseudobulk_adata`:
 
   1. Aggregate cells per (sample × celltype) by mean (no double normalization —
      `.X` is already normalized + log1p from preprocessing).
-  2. Per cell type: drop groups with too few cells, optional Limma batch correction
-     on the retained groups, variance-ratio gene filter.
+  2. Per cell type: drop groups with too few cells, variance-ratio gene filter (its
+     between-sample variance is the residual after a Limma batch regression on the
+     retained groups; the pseudobulk values themselves are NOT batch-corrected).
   3. Concatenate per-celltype genes → `samples × (celltype-gene)` matrix.
 
-The existing GAM stack operates on that samples × features matrix unchanged.
+The existing GAM stack operates on that samples × features matrix; the batch enters
+the GAM as an unpenalised categorical covariate.
 """
 
 import os
@@ -42,10 +44,11 @@ def _to_list(value):
 
 
 def _attempt_limma(temp_adata, batch_col, preserve_cols, verbose=False):
-    """Apply Limma correction in-place on `temp_adata.X`.
+    """Apply Limma correction in-place on `temp_adata.X` (used for the variance-ratio statistic).
 
-    On failure, emits a WARNING (unconditional, not gated by verbose) so that
-    batch-confounded results are not silently produced, and returns False.
+    On failure, emits a WARNING (unconditional, not gated by verbose) so that a
+    filter computed without the batch regression is not silently produced, and
+    returns False.
     """
     try:
         from sampledisco.utils.limma import limma
@@ -65,12 +68,26 @@ def _attempt_limma(temp_adata, batch_col, preserve_cols, verbose=False):
     except Exception as exc:
         warnings.warn(
             f"[trajectory_diff_gene] Limma batch correction (batch_col={batch_col!r}) "
-            f"FAILED: {type(exc).__name__}: {exc}. Pseudobulk will be returned WITHOUT "
-            f"batch correction — downstream results may be batch-confounded.",
+            f"FAILED: {type(exc).__name__}: {exc}. The variance-ratio filter is computed "
+            f"WITHOUT the batch regression.",
             RuntimeWarning,
             stacklevel=2,
         )
         return False
+
+
+def _resolve_batch_col(adata, batch_col):
+    """Name of the single batch column in `adata.obs` (None if absent); several columns are combined."""
+    if isinstance(batch_col, list):
+        batch_cols = [c for c in batch_col if c and c in adata.obs.columns]
+        if not batch_cols:
+            return None
+        if len(batch_cols) == 1:
+            return batch_cols[0]
+        # Multiple batch cols: combine into a synthetic interaction column.
+        adata.obs["__pb_batch__"] = adata.obs[batch_cols].astype(str).agg("|".join, axis=1)
+        return "__pb_batch__"
+    return batch_col if (batch_col and batch_col in adata.obs.columns) else None
 
 
 def _build_sample_pseudobulk(
@@ -86,13 +103,12 @@ def _build_sample_pseudobulk(
     """Aggregate cell-level `adata` into a `samples × (celltype-gene)` AnnData.
 
     Per cell type, sample × cell-type groups with fewer than ``min_cells_per_group``
-    cells are dropped (NaN rows, never zero) before the optional Limma batch
-    correction, which runs on the retained groups only. A gene is kept when its
-    between-sample variance (residual variance after Limma) is at least
-    ``min_variance_ratio`` times the variance expected from sampling the cells of
-    each group alone; the ratio is unit-free. A batch left with one retained sample
-    is set to NaN, because Limma fits it exactly. ``adata.X`` is already normalized /
-    log-transformed by preprocessing.
+    cells are dropped (NaN rows, never zero). A gene is kept when its between-sample
+    variance (residual variance after a Limma batch regression on the retained groups)
+    is at least ``min_variance_ratio`` times the variance expected from sampling the
+    cells of each group alone; the ratio is unit-free. The returned values are the
+    uncorrected group means: the batch is handled by the caller as a model covariate.
+    ``adata.X`` is already normalized / log-transformed by preprocessing.
     """
     if min_cells_per_group < 2:
         raise ValueError("min_cells_per_group must be >= 2 (within-group variance needs 2 cells)")
@@ -101,18 +117,7 @@ def _build_sample_pseudobulk(
 
     preserve_cols = [c for c in _to_list(columns_to_preserve)
                      if c in adata.obs.columns]
-    if isinstance(batch_col, list):
-        batch_cols = [c for c in batch_col if c and c in adata.obs.columns]
-        if not batch_cols:
-            batch_col_to_use = None
-        elif len(batch_cols) == 1:
-            batch_col_to_use = batch_cols[0]
-        else:
-            # Multiple batch cols: combine into a synthetic interaction column.
-            adata.obs["__pb_batch__"] = adata.obs[batch_cols].astype(str).agg("|".join, axis=1)
-            batch_col_to_use = "__pb_batch__"
-    else:
-        batch_col_to_use = batch_col if (batch_col and batch_col in adata.obs.columns) else None
+    batch_col_to_use = _resolve_batch_col(adata, batch_col)
 
     samples_sorted = sorted(adata.obs[sample_col].astype(str).unique())
     sample_idx = {s: i for i, s in enumerate(samples_sorted)}
@@ -157,16 +162,6 @@ def _build_sample_pseudobulk(
     sample_to_meta = adata.obs.groupby(sample_col, observed=True).first()
     pb_obs = pb_obs.join(sample_to_meta, how="left")
 
-    if batch_col_to_use is not None and batch_col_to_use in pb_obs.columns:
-        per_batch = pb_obs[batch_col_to_use].value_counts(dropna=True)
-        singles = sorted(str(b) for b in per_batch.index[per_batch == 1])
-        if len(per_batch) >= 2 and singles:   # same condition as the limma call below
-            warnings.warn(
-                f"[trajectory_diff_gene] batch(es) {singles} of '{batch_col_to_use}' contain "
-                f"a single sample: the limma batch regression fits that sample exactly, so "
-                f"its information is removed from the pseudobulk.",
-                RuntimeWarning, stacklevel=2)
-
     _X = adata.X.get() if hasattr(adata.X, "get") else adata.X
     X_full = _X.tocsr() if issparse(_X) else _X
 
@@ -210,13 +205,6 @@ def _build_sample_pseudobulk(
                 RuntimeWarning, stacklevel=2)
             continue
         batch_size = np.bincount(groups)[groups]
-        single = batch_size == 1
-        if single.any():
-            warnings.warn(
-                f"[trajectory_diff_gene] cell type '{celltype}': batch(es) "
-                f"{sorted(set(temp.obs[batch_col_to_use].astype(str)[single]))} of '{batch_col_to_use}' "
-                f"keep a single retained sample; limma fits it exactly, so it is set to NaN.",
-                RuntimeWarning, stacklevel=2)
         total_var = ((corrected - corrected.mean(0)) ** 2).sum(0) / dof
         tech_var = ((1 - 1 / batch_size)[:, None] * within_var / n).sum(0) / dof
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -225,8 +213,7 @@ def _build_sample_pseudobulk(
             continue
 
         block = np.full((n_samples, int(keep.sum())), np.nan, dtype=np.float32)
-        block[retained] = corrected[:, keep]
-        block[retained[single]] = np.nan
+        block[retained] = mean[:, keep]
         feature_blocks.append(block)
         feature_names.extend(f"{celltype} - {g}" for g in adata.var_names[keep])
 
@@ -428,9 +415,14 @@ def prepare_gam_input_data_improved(
     covariate_columns: Optional[List[str]] = None,
     sample_col: str = "sample",
     min_variance_threshold: float = 1e-6,
-    verbose: bool = False
+    verbose: bool = False,
+    unpenalised_columns: Optional[List[str]] = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
-    """Prepare X (design) and Y (expression) for GAM fitting."""
+    """Prepare X (design, float) and Y (expression) for GAM fitting.
+
+    `X.attrs["unpenalised"]` lists the X columns encoding the covariates named in
+    `unpenalised_columns` (one-hot dummies for categorical ones).
+    """
     if ptime_expression is None or not ptime_expression:
         raise ValueError("Pseudotime values must be provided.")
 
@@ -495,6 +487,7 @@ def prepare_gam_input_data_improved(
 
     # Build X
     X = filtered_meta[["pseudotime"]].copy()
+    unpenalised_x = []
 
     # Add covariates if provided
     if covariate_columns:
@@ -505,6 +498,8 @@ def prepare_gam_input_data_improved(
 
         if valid_covs:
             covs = filtered_meta[valid_covs].copy()
+            unpenalised_x = list(pd.get_dummies(
+                covs[[c for c in valid_covs if c in (unpenalised_columns or [])]], drop_first=True).columns)
             cat_cols = covs.select_dtypes(include=["object", "category"]).columns
             if len(cat_cols) > 0:
                 if verbose:
@@ -512,7 +507,9 @@ def prepare_gam_input_data_improved(
                 covs = pd.get_dummies(covs, columns=list(cat_cols), drop_first=True)
             X = pd.concat([X, covs], axis=1)
 
+    X = X.astype(float)
     X.index = Y.index
+    X.attrs["unpenalised"] = unpenalised_x
     gene_names = list(Y.columns)
 
     if verbose:
@@ -532,10 +529,14 @@ def fit_gam_models_for_genes(
     spline_order: int = 3,
     fdr_threshold: float = 0.05,
     n_jobs: int = 1,
-    verbose: bool = False
+    verbose: bool = False,
+    unpenalised_columns: Optional[List[str]] = None
 ) -> Tuple[pd.DataFrame, Dict[str, LinearGAM]]:
     """
     Fit per-gene LinearGAM models with adaptive spline parameters.
+
+    Every non-spline column of X gets a factor term; those in ``unpenalised_columns``
+    (the batch dummies) are fitted with lam=0, the others with pyGAM's default penalty.
 
     Each gene is fitted on every sample with a finite value (NaN marks a sample
     x cell-type group dropped for too few cells); true zeros are fitted.
@@ -588,7 +589,7 @@ def fit_gam_models_for_genes(
         t = s(spline_idx, n_splines=adj_n_splines, spline_order=adj_order)
         for j in range(X_dense.shape[1]):
             if j != spline_idx:
-                t += f(j)
+                t += f(j, lam=0) if X.columns[j] in (unpenalised_columns or ()) else f(j)
         return t
 
     gene_to_col = (
@@ -725,9 +726,10 @@ def calculate_effect_size_and_direction(
     """
     Compute effect size and regulation direction for each gene's GAM fit.
 
-    Effect size: (max_pred - min_pred) / residual_std — the fitted dynamic range
-    relative to noise. Direction: "UP" if corr(pseudotime, y_pred) > 0, else "DOWN".
-    Both are computed on the finite samples used for fitting.
+    Effect size: (max - min) / residual_std — the dynamic range of the pseudotime
+    term (its partial dependence, so covariates such as batch do not enter) relative
+    to the residual SD of the full model. Direction: "UP" if corr(pseudotime, term) > 0,
+    else "DOWN". Both are computed on the finite samples used for fitting.
     """
     effect_sizes = []
     error_count = 0
@@ -763,10 +765,11 @@ def calculate_effect_size_and_direction(
             rss = np.sum(residuals ** 2)
 
             if rss > 0 and df_e > 0:
-                es = (np.max(y_pred) - np.min(y_pred)) / np.sqrt(rss / df_e)
+                y_term = gam.partial_dependence(term=0, X=X_used)
+                es = (np.max(y_term) - np.min(y_term)) / np.sqrt(rss / df_e)
 
                 pt_values = X_used[:, pt_idx]
-                correlation = np.corrcoef(pt_values, y_pred)[0, 1]
+                correlation = np.corrcoef(pt_values, y_term)[0, 1]
                 direction = "UP" if correlation > 0 else "DOWN"
                 
                 effect_sizes.append((gene, es, direction))
@@ -1028,15 +1031,21 @@ def run_trajectory_gam_differential_gene_analysis(
         Pseudotime information for samples
     sample_col : str
         Column name for sample IDs
+    batch_col : str or list, optional
+        Batch of each sample. The pseudobulk values are not batch-corrected: the batch
+        enters the GAM as an unpenalised categorical covariate (expression ~
+        s(pseudotime) + batch), and the p-value, effect size and direction describe the
+        pseudotime term only. It is also the regression behind ``min_variance_ratio``.
     min_cells_per_group : int
-        A sample x cell-type group with fewer cells is dropped (NaN), before Limma (>= 2)
+        A sample x cell-type group with fewer cells is dropped (NaN) (>= 2)
     min_variance_ratio : float
-        A gene is tested in a cell type when its between-sample variance is at least
-        this multiple of the variance expected from cell sampling alone
+        A gene is tested in a cell type when its between-sample variance (residual after
+        the batch regression) is at least this multiple of the variance expected from
+        cell sampling alone
     pseudotime_col : str
         Column name for pseudotime values
     covariate_columns : list, optional
-        Additional covariates for GAM model
+        Additional covariates for GAM model (``batch_col`` is added automatically)
     fdr_threshold : float
         FDR threshold for significance
     effect_size_threshold : float
@@ -1076,6 +1085,7 @@ def run_trajectory_gam_differential_gene_analysis(
 
     if verbose:
         print("\n[0/5] Building per-sample pseudobulk from cell-level adata...")
+    batch_col = _resolve_batch_col(adata, batch_col)
     pseudobulk_adata = _build_sample_pseudobulk(
         adata,
         sample_col=sample_col,
@@ -1125,12 +1135,16 @@ def run_trajectory_gam_differential_gene_analysis(
 
     if verbose:
         print("\n[2/5] Preparing GAM input matrices...")
+    gam_covariates = _to_list(covariate_columns)
+    if batch_col and batch_col not in gam_covariates:
+        gam_covariates.append(batch_col)
     X, Y, gene_names = prepare_gam_input_data_improved(
         pseudobulk_adata=pseudobulk_adata,
         ptime_expression=ptime_dict,
-        covariate_columns=covariate_columns,
+        covariate_columns=gam_covariates,
         sample_col=sample_col,
-        verbose=verbose
+        verbose=verbose,
+        unpenalised_columns=_to_list(batch_col)
     )
 
     if verbose:
@@ -1144,7 +1158,8 @@ def run_trajectory_gam_differential_gene_analysis(
         spline_order=spline_order,
         fdr_threshold=fdr_threshold,
         n_jobs=n_jobs,
-        verbose=verbose
+        verbose=verbose,
+        unpenalised_columns=X.attrs["unpenalised"]
     )
 
     if len(stat_results) == 0:

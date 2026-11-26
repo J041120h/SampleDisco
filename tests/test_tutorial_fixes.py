@@ -671,7 +671,7 @@ def test_multiomics_dge_skipped_without_rna_expression_file(capsys):
 
 
 # -------------------------------------------------------------------------- 25
-def test_single_sample_batches_warn_before_limma():
+def test_single_sample_batches_are_kept_without_warning():
     from sampledisco.sample_trajectory.trajectory_diff_gene import _build_sample_pseudobulk
     rng = np.random.default_rng(15)
     samples = ["S1", "S2", "S3", "S4", "S5"]
@@ -682,12 +682,8 @@ def test_single_sample_batches_warn_before_limma():
     a = ad.AnnData(rng.gamma(2.0, size=(len(cells), 30)).astype(np.float32), obs=obs,
                    var=pd.DataFrame(index=[f"g{j}" for j in range(30)]))
     a.obs["batch"] = a.obs["sample"].map({"S1": "b1", "S2": "b1", "S3": "b2", "S4": "b2", "S5": "b3"})
-    with pytest.warns(RuntimeWarning, match=r"\['b3'\].*single sample.*removed"):
-        _build_sample_pseudobulk(a, "sample", "cell_type", batch_col="batch",
-                                 min_cells_per_group=2, min_variance_ratio=0)
-    a.obs["batch"] = a.obs["sample"].map({"S1": "b1", "S2": "b1", "S3": "b2", "S4": "b2", "S5": "b2"})
     with warnings.catch_warnings(record=True) as rec:
         warnings.simplefilter("always")
         _build_sample_pseudobulk(a, "sample", "cell_type", batch_col="batch",
                                  min_cells_per_group=2, min_variance_ratio=0)
-    assert not any("single sample" in str(w.message) for w in rec)
+    assert not any("single" in str(w.message) for w in rec)
