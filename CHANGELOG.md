@@ -11,11 +11,11 @@
   retained groups, same genes pass). A batch left with a single retained sample is kept instead of
   set to NaN, and its warning is removed.
 - Effect size and direction are computed from the pseudotime term's partial dependence, so batch
-  differences no longer inflate the range or flip the direction. Without covariates the numbers are
-  unchanged. Fitted-curve plots draw the batch-adjusted curve.
+  differences no longer inflate the range or flip the direction. Without covariates effect size and
+  direction are unchanged. Fitted-curve plots draw the batch-adjusted curve.
 - The p-value of the pseudotime term is now a Wald test that all spline coefficients are equal (F
   reference, as in tradeSeq's associationTest), replacing pyGAM's `p_values`, which were far too
-  small (about 30-40% of null genes at p < 0.05) and changed with the batch reference level. This
+  small (on pure noise, 10% of genes at p < 0.05 with 30 samples and 60% with 405) and changed with the batch reference level. This
   changes all trajectory-DGE p-values and FDRs, with or without covariates; effect size and
   direction without covariates are unchanged. `dev_exp` is the full model's explained deviance
   (batch included).
